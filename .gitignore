@@ -112,11 +112,8 @@ manifest.mf
 # Custom
 ##############
 docs/
-/luaj/lib
 /target
 /build
 !gradle-wrapper.jar
 /lib
-
 /dist/
-computer/
