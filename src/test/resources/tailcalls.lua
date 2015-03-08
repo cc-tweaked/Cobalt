@@ -1,70 +1,69 @@
-
 -- tostring replacement that assigns ids
-local ts,id,nid,types = tostring,{},0,{table='tbl',thread='thr',userdata='uda',['function']='func'}
+local ts, id, nid, types = tostring, {}, 0, { table = 'tbl', thread = 'thr', userdata = 'uda', ['function'] = 'func' }
 tostring = function(x)
 	if not x or not types[type(x)] then return ts(x) end
-	if not id[x] then nid=nid+1; id[x]=types[type(x)]..'.'..nid end
+	if not id[x] then nid = nid + 1; id[x] = types[type(x)] .. '.' .. nid end
 	return id[x]
 end
 
-	
-function a() 
-	return pcall( function() end )
+
+function a()
+	return pcall(function() end)
 end
 
-function b() 
-	return pcall( function() print 'b' end )
+function b()
+	return pcall(function() print 'b' end)
 end
 
-function c() 
-	return pcall( function() return 'c' end )
+function c()
+	return pcall(function() return 'c' end)
 end
 
-print( pcall( a )  )
-print( pcall( b )  )
-print( pcall( c )  )
+print(pcall(a))
+print(pcall(b))
+print(pcall(c))
 
 local function sum(...)
 	local s = 0
-	for i,v in ipairs({...}) do
+	for i, v in ipairs({ ... }) do
 		s = s + v
 	end
 	return s
 end
 
-local function f1(n,a,b,c)
+local function f1(n, a, b, c)
 	local a = a or 0
 	local b = b or 0
 	local c = c or 0
-	if n <= 0 then 
-		return a,a+b,a+b+c
+	if n <= 0 then
+		return a, a + b, a + b + c
 	end
-	return f1(n-1,a,a+b,a+b+c)
+	return f1(n - 1, a, a + b, a + b + c)
 end
 
-local function f2(n,...)
-	if n <= 0 then 
-			print( " --f2, n<=0, returning sum(...)", ... )
+local function f2(n, ...)
+	if n <= 0 then
+		print(" --f2, n<=0, returning sum(...)", ...)
 		return sum(...)
 	end
-	print( " --f2, n>0, returning f2(n-1,n,...)", n-1,n,... )
-	return f2(n-1,n,...)
+	print(" --f2, n>0, returning f2(n-1,n,...)", n - 1, n, ...)
+	return f2(n - 1, n, ...)
 end
 
-local function f3(n,...)
-	if n <= 0 then 
+local function f3(n, ...)
+	if n <= 0 then
 		return sum(...)
 	end
-	print( "    f3,n-1,n,...", f3,n-1,n,... )
-	return pcall(f3,n-1,n,...)
+	print("    f3,n-1,n,...", f3, n - 1, n, ...)
+	return pcall(f3, n - 1, n, ...)
 end
 
 local function all(f)
-	for n=0,3 do
+	for n = 0, 3 do
 		t = {}
-		for m=1,5 do 
-			print( "--f, n, unpack(t)", f, n, unpack(t) )
-			print( pcall( f, n, unpack(t)) )
+		for m = 1, 5 do
+			print("--f, n, unpack(t)", f, n, unpack(t))
+			print(pcall(f, n, unpack(t)))
 			t[m] = m
 		end
 	end
@@ -89,6 +88,7 @@ local function factorial(i)
 			return helper(n * product, n - 1)
 		end
 	end
+
 	return helper(1, i)
 end
 
@@ -97,7 +97,7 @@ print(result1)
 print(factorial(5))
 
 local result2 = f(-1234)
-print( result2 )
+print(result2)
 
 local function fib_bad(n)
 	local function helper(i, a, b)
@@ -109,6 +109,7 @@ local function fib_bad(n)
 			return result
 		end
 	end
+
 	return helper(1, 1, 1)
 end
 
@@ -121,6 +122,7 @@ local function fib_good(n)
 			return helper(i + 1, b, a + b)
 		end
 	end
+
 	return helper(1, 1, 1)
 end
 
@@ -130,9 +132,9 @@ local aliases = {
 	['1.#IND'] = 'nan',
 	['-1.#IND'] = 'nan',
 }
-	
-local p = function( s,e )
-	print( s, e and aliases[tostring(e)] or e )
+
+local p = function(s, e)
+	print(s, e and aliases[tostring(e)] or e)
 end
 p(pcall(fib_bad, 30))
 --p((pcall(fib_bad, 25000)))
@@ -146,7 +148,7 @@ local function fib_all(n, i, a, b)
 	if i >= n then
 		return
 	else
-		return a, fib_all(n, i+1, b, a+b)
+		return a, fib_all(n, i + 1, b, a + b)
 	end
 end
 

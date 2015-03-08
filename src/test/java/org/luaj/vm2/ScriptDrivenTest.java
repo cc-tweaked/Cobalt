@@ -21,23 +21,15 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import junit.framework.TestCase;
-
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.jse.JseProcess;
 import org.luaj.vm2.luajc.LuaJC;
+
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 abstract
 public class ScriptDrivenTest extends TestCase implements ResourceFinder {
@@ -54,20 +46,20 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 	static final String zipdir = "test/lua/";
 	static final String zipfile = "luaj2.0-tests.zip";
 
-	protected ScriptDrivenTest( PlatformType platform, String subdir ) {
+	protected ScriptDrivenTest(PlatformType platform, String subdir) {
 		this.platform = platform;
 		this.subdir = subdir;
 		initGlobals();
 	}
 
 	private void initGlobals() {
-		switch ( platform ) {
-		default:
-		case JSE:
-		case LUAJIT:
-		case LUA2JAVA:
-			globals = org.luaj.vm2.lib.jse.JsePlatform.debugGlobals();
-			break;
+		switch (platform) {
+			default:
+			case JSE:
+			case LUAJIT:
+			case LUA2JAVA:
+				globals = org.luaj.vm2.lib.jse.JsePlatform.debugGlobals();
+				break;
 		}
 	}
 
@@ -82,15 +74,15 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 	public InputStream findResource(String filename) {
 		InputStream is = findInPlainFile(filename);
 		if (is != null) return is;
-		is = findInPlainFileAsResource("",filename);
+		is = findInPlainFileAsResource("", filename);
 		if (is != null) return is;
-		is = findInPlainFileAsResource("/",filename);
+		is = findInPlainFileAsResource("/", filename);
 		if (is != null) return is;
 		is = findInZipFileAsPlainFile(filename);
 		if (is != null) return is;
-		is = findInZipFileAsResource("",filename);
+		is = findInZipFileAsResource("", filename);
 		if (is != null) return is;
-		is = findInZipFileAsResource("/",filename);
+		is = findInZipFileAsResource("/", filename);
 		return is;
 	}
 
@@ -100,10 +92,10 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 
 	private InputStream findInPlainFile(String filename) {
 		try {
-			File f = new File(zipdir+subdir+filename);
+			File f = new File(zipdir + subdir + filename);
 			if (f.exists())
 				return new FileInputStream(f);
-		} catch ( IOException ioe ) {
+		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
 		return null;
@@ -111,14 +103,14 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 
 	private InputStream findInZipFileAsPlainFile(String filename) {
 		URL zip;
-    	File file = new File(zipdir+zipfile);
+		File file = new File(zipdir + zipfile);
 		try {
-	    	if ( file.exists() ) {
+			if (file.exists()) {
 				zip = file.toURI().toURL();
-				String path = "jar:"+zip.toExternalForm()+ "!/"+subdir+filename;
+				String path = "jar:" + zip.toExternalForm() + "!/" + subdir + filename;
 				URL url = new URL(path);
 				return url.openStream();
-	    	}
+			}
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
@@ -131,11 +123,11 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 
 
 	private InputStream findInZipFileAsResource(String prefix, String filename) {
-    	URL zip = null;
+		URL zip = null;
 		zip = getClass().getResource(zipfile);
-		if ( zip != null )
+		if (zip != null)
 			try {
-				String path = "jar:"+zip.toExternalForm()+ "!/"+subdir+filename;
+				String path = "jar:" + zip.toExternalForm() + "!/" + subdir + filename;
 				URL url = new URL(path);
 				return url.openStream();
 			} catch (IOException ioe) {
@@ -150,7 +142,7 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 			// override print()
 			final ByteArrayOutputStream output = new ByteArrayOutputStream();
 			final PrintStream oldps = BaseLib.instance.STDOUT;
-			final PrintStream ps = new PrintStream( output );
+			final PrintStream ps = new PrintStream(output);
 			BaseLib.instance.STDOUT = ps;
 
 			// run the script
@@ -169,61 +161,61 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 				BaseLib.instance.STDOUT = oldps;
 				ps.close();
 			}
-		} catch ( IOException ioe ) {
+		} catch (IOException ioe) {
 			throw new RuntimeException(ioe.toString());
-		} catch ( InterruptedException ie ) {
+		} catch (InterruptedException ie) {
 			throw new RuntimeException(ie.toString());
 		}
 	}
 
 	protected LuaValue loadScript(String name, LuaTable _G) throws IOException {
-		InputStream script = this.findResource(name+".lua");
-		if ( script == null )
+		InputStream script = this.findResource(name + ".lua");
+		if (script == null)
 			fail("Could not load script for test case: " + name);
 		try {
-			switch ( this.platform ) {
-			case LUAJIT:
-				if ( nocompile ) {
-					LuaValue c = (LuaValue) Class.forName(name).newInstance();
-					return c;
-				} else {
-					return LuaJC.getInstance().load( script, name, _G);
-				}
-			default:
-				return LoadState.load(script, "@"+name+".lua", _G);
+			switch (this.platform) {
+				case LUAJIT:
+					if (nocompile) {
+						LuaValue c = (LuaValue) Class.forName(name).newInstance();
+						return c;
+					} else {
+						return LuaJC.getInstance().load(script, name, _G);
+					}
+				default:
+					return LoadState.load(script, "@" + name + ".lua", _G);
 			}
-		} catch ( Exception e ) {
+		} catch (Exception e) {
 			e.printStackTrace();
-			throw new IOException( e.toString() );
+			throw new IOException(e.toString());
 		} finally {
 			script.close();
 		}
 	}
 
 	private String getExpectedOutput(final String name) throws IOException,
-			InterruptedException {
-		InputStream output = this.findResource(name+".out");
+		InterruptedException {
+		InputStream output = this.findResource(name + ".out");
 		if (output != null)
 			try {
 				return readString(output);
 			} finally {
 				output.close();
 			}
- 		String expectedOutput = executeLuaProcess(name);
- 		if (expectedOutput == null)
- 			throw new IOException("Failed to get comparison output or run process for "+name);
- 		return expectedOutput;
+		String expectedOutput = executeLuaProcess(name);
+		if (expectedOutput == null)
+			throw new IOException("Failed to get comparison output or run process for " + name);
+		return expectedOutput;
 	}
 
 	private String executeLuaProcess(String name) throws IOException, InterruptedException {
-		InputStream script = findResource(name+".lua");
-		if ( script == null )
-			throw new IOException("Failed to find source file "+script);
+		InputStream script = findResource(name + ".lua");
+		if (script == null)
+			throw new IOException("Failed to find source file " + script);
 		try {
-		    String luaCommand = System.getProperty("LUA_COMMAND");
-		    if ( luaCommand == null )
-		        luaCommand = "lua";
-		    String[] args = new String[] { luaCommand, "-", platform.toString() };
+			String luaCommand = System.getProperty("LUA_COMMAND");
+			if (luaCommand == null)
+				luaCommand = "lua";
+			String[] args = new String[]{luaCommand, "-", platform.toString()};
 			return collectProcessOutput(args, script);
 		} finally {
 			script.close();
@@ -231,7 +223,7 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 	}
 
 	public static String collectProcessOutput(String[] cmd, final InputStream input)
-			throws IOException, InterruptedException {
+		throws IOException, InterruptedException {
 		Runtime r = Runtime.getRuntime();
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		new JseProcess(cmd, input, baos, System.err).waitFor();

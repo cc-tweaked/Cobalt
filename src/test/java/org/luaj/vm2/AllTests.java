@@ -23,7 +23,6 @@ package org.luaj.vm2;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
 import org.luaj.vm2.WeakTableTest.WeakKeyTableTest;
 import org.luaj.vm2.WeakTableTest.WeakKeyValueTableTest;
 import org.luaj.vm2.WeakTableTest.WeakValueTableTest;
@@ -76,7 +75,7 @@ public class AllTests {
 
 		// compatiblity tests
 		TestSuite compat = CompatibiltyTest.suite();
-		suite.addTest( compat );
+		suite.addTest(compat);
 		compat.addTestSuite(ErrorsTest.class);
 
 		return suite;

@@ -21,7 +21,7 @@ t[2] = [[
 ]]
 for i = 3, 149 do
 	t[i] = template:gsub("<([^>]+)>", function(s)
-		local c = assert(loadstring('return '..s), 'could not compile: '..s)
+		local c = assert(loadstring('return ' .. s), 'could not compile: ' .. s)
 		setfenv(c, { i = i })
 		return c()
 	end)

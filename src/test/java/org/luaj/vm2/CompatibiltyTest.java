@@ -22,12 +22,11 @@
 package org.luaj.vm2;
 
 import junit.framework.TestSuite;
-
 import org.luaj.vm2.luajc.LuaJC;
 
 /**
  * Compatibility tests for the Luaj VM
- *
+ * <p>
  * Results are compared for exact match with
  * the installed C-based lua environment.
  */
@@ -37,8 +36,9 @@ public class CompatibiltyTest extends TestSuite {
 
 	abstract protected static class CompatibiltyTestSuite extends ScriptDrivenTest {
 		LuaValue savedStringMetatable;
+
 		protected CompatibiltyTestSuite(PlatformType platform) {
-			super(platform,dir);
+			super(platform, dir);
 		}
 
 		protected void setUp() throws Exception {
@@ -56,28 +56,72 @@ public class CompatibiltyTest extends TestSuite {
 			LuaString.s_metatable = savedStringMetatable;
 		}
 
-		public void testBaseLib()       { runTest("baselib");   }
-		public void testCoroutineLib()  { runTest("coroutinelib"); }
-		public void testDebugLib()      { runTest("debuglib"); }
-		public void testErrors()        { runTest("errors"); }
-		public void testFunctions()     { runTest("functions"); }
-		public void testIoLib()         { runTest("iolib");     }
-		public void testManyUpvals()    { runTest("manyupvals"); }
-		public void testMathLib()       { runTest("mathlib"); }
-		public void testMetatags()      { runTest("metatags"); }
-		public void testOsLib()         { runTest("oslib"); }
-		public void testStringLib()     { runTest("stringlib"); }
-		public void testTableLib()      { runTest("tablelib"); }
-		public void testTailcalls()     { runTest("tailcalls"); }
-		public void testUpvalues()      { runTest("upvalues"); }
-		public void testVm()            { runTest("vm"); }
+		public void testBaseLib() {
+			runTest("baselib");
+		}
+
+		public void testCoroutineLib() {
+			runTest("coroutinelib");
+		}
+
+		public void testDebugLib() {
+			runTest("debuglib");
+		}
+
+		public void testErrors() {
+			runTest("errors");
+		}
+
+		public void testFunctions() {
+			runTest("functions");
+		}
+
+		public void testIoLib() {
+			runTest("iolib");
+		}
+
+		public void testManyUpvals() {
+			runTest("manyupvals");
+		}
+
+		public void testMathLib() {
+			runTest("mathlib");
+		}
+
+		public void testMetatags() {
+			runTest("metatags");
+		}
+
+		public void testOsLib() {
+			runTest("oslib");
+		}
+
+		public void testStringLib() {
+			runTest("stringlib");
+		}
+
+		public void testTableLib() {
+			runTest("tablelib");
+		}
+
+		public void testTailcalls() {
+			runTest("tailcalls");
+		}
+
+		public void testUpvalues() {
+			runTest("upvalues");
+		}
+
+		public void testVm() {
+			runTest("vm");
+		}
 	}
 
 
 	public static TestSuite suite() {
 		TestSuite suite = new TestSuite("Compatibility Tests");
-		suite.addTest( new TestSuite( JseCompatibilityTest.class,   "JSE Tests" ) );
-		suite.addTest( new TestSuite( LuaJCTest.class,        "JSE Bytecode Tests" ) );
+		suite.addTest(new TestSuite(JseCompatibilityTest.class, "JSE Tests"));
+		suite.addTest(new TestSuite(LuaJCTest.class, "JSE Bytecode Tests"));
 		return suite;
 	}
 
@@ -85,21 +129,26 @@ public class CompatibiltyTest extends TestSuite {
 		public JseCompatibilityTest() {
 			super(ScriptDrivenTest.PlatformType.JSE);
 		}
+
 		protected void setUp() throws Exception {
 			super.setUp();
 			System.setProperty("JSE", "false");
 		}
 	}
+
 	public static class LuaJCTest extends CompatibiltyTestSuite {
 		public LuaJCTest() {
 			super(ScriptDrivenTest.PlatformType.LUAJIT);
 		}
+
 		protected void setUp() throws Exception {
 			super.setUp();
 			System.setProperty("JSE", "false");
 			LuaJC.install();
 		}
+
 		// not supported on this platform - don't test
-		public void testDebugLib()      {}
+		public void testDebugLib() {
+		}
 	}
 }

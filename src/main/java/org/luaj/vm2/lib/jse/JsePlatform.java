@@ -21,17 +21,14 @@
  ******************************************************************************/
 package org.luaj.vm2.lib.jse;
 
-import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.lib.CoroutineLib;
-import org.luaj.vm2.lib.DebugLib;
-import org.luaj.vm2.lib.PackageLib;
-import org.luaj.vm2.lib.StringLib;
-import org.luaj.vm2.lib.TableLib;
+import org.luaj.vm2.compiler.LuaC;
+import org.luaj.vm2.lib.*;
 
-/** The {@link JsePlatform} class is a convenience class to standardize
+/**
+ * The {@link JsePlatform} class is a convenience class to standardize
  * how globals tables are initialized for the JSE platform.
  * <p>
  * It is used to allocate either a set of standard globals using
@@ -45,7 +42,7 @@ import org.luaj.vm2.lib.TableLib;
  * <p>
  * Once globals are created, a simple way to load and run a script is:
  * <pre> {@code
- * LoadState.load( new FileInputStream("main.lua"), "main.lua", _G ).call();
+ * LoadState.load(new FileInputStream("main.lua"), "main.lua", _G ).call();
  * } </pre>
  * <p>
  * although {@code require} could also be used:
@@ -73,6 +70,7 @@ import org.luaj.vm2.lib.TableLib;
  * <p>
  * The class ensures that initialization is done in the correct order,
  * and that linkage is made  to {@link LuaThread#setGlobals(LuaValue)}.
+ *
  * @see JmePlatform
  */
 public class JsePlatform {
@@ -100,7 +98,8 @@ public class JsePlatform {
 		return _G;
 	}
 
-	/** Create standard globals including the {@link debug} library.
+	/**
+	 * Create standard globals including the {@link debug} library.
 	 *
 	 * @return Table of globals initialized with the standard JSE and debug libraries
 	 * @see #standardGlobals()

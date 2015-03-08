@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.luaj.vm2.luajc;
 
@@ -36,9 +36,9 @@ public class VarInfo {
 
 	public UpvalInfo upvalue; // not null if this var is an upvalue
 	public boolean allocupvalue; // true if this variable allocates r/w upvalue
-									// storage
+	// storage
 	public boolean isreferenced; // true if this variable is refenced by some
-									// opcode
+	// opcode
 
 	public VarInfo(int slot, int pc) {
 		this.slot = slot;
@@ -49,11 +49,12 @@ public class VarInfo {
 		return slot < 0 ? "x.x" : (slot + "." + pc);
 	}
 
-	/** Return replacement variable if there is exactly one value possible, 
-	 * otherwise compute entire collection of variables and return null. 
-	 * Computes the list of aall variable values, and saves it for the future. 
-	 * 
-	 * @return new Variable to replace with if there is only one value, or null to leave alone. 
+	/**
+	 * Return replacement variable if there is exactly one value possible,
+	 * otherwise compute entire collection of variables and return null.
+	 * Computes the list of aall variable values, and saves it for the future.
+	 *
+	 * @return new Variable to replace with if there is only one value, or null to leave alone.
 	 */
 	public VarInfo resolvePhiVariableValues() {
 		return null;
@@ -82,11 +83,11 @@ public class VarInfo {
 
 		public String toString() {
 			StringBuffer sb = new StringBuffer();
-			sb.append( super.toString() );
+			sb.append(super.toString());
 			sb.append("={");
-			for (int i=0, n=(values!=null? values.length : 0); i<n; i++) {
-				if ( i>0 ) 
-					sb.append( "," );
+			for (int i = 0, n = (values != null ? values.length : 0); i < n; i++) {
+				if (i > 0)
+					sb.append(",");
 				sb.append(String.valueOf(values[i]));
 			}
 			sb.append("}");
@@ -107,7 +108,7 @@ public class VarInfo {
 				return v;
 			}
 			this.values = new VarInfo[n];
-			for ( int i=0; i<n; i++ ) {
+			for (int i = 0; i < n; i++) {
 				this.values[i] = (VarInfo) it.next();
 				this.values[i].isreferenced |= this.isreferenced;
 			}
@@ -116,14 +117,14 @@ public class VarInfo {
 
 		protected void collectUniqueValues(Set visitedBlocks, Set vars) {
 			BasicBlock b = pi.blocks[pc];
-			if ( pc == 0 )
+			if (pc == 0)
 				vars.add(pi.params[slot]);
 			for (int i = 0, n = b.prev != null ? b.prev.length : 0; i < n; i++) {
 				BasicBlock bp = b.prev[i];
 				if (!visitedBlocks.contains(bp)) {
 					visitedBlocks.add(bp);
 					VarInfo v = pi.vars[slot][bp.pc1];
-					if ( v != null )
+					if (v != null)
 						v.collectUniqueValues(visitedBlocks, vars);
 				}
 			}

@@ -10,7 +10,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,18 +21,17 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
+import org.luaj.vm2.lib.BaseLib;
+
 import java.io.IOException;
 import java.io.InputStream;
-
-import org.luaj.vm2.compiler.LuaC;
-import org.luaj.vm2.lib.BaseLib;
 
 
 /**
  * Test argument type check errors
- * 
- * Results are compared for exact match with 
- * the installed C-based lua environment. 
+ * <p>
+ * Results are compared for exact match with
+ * the installed C-based lua environment.
  */
 public class ErrorsTest extends ScriptDrivenTest {
 
@@ -41,25 +40,46 @@ public class ErrorsTest extends ScriptDrivenTest {
 	public ErrorsTest() {
 		super(ScriptDrivenTest.PlatformType.JSE, dir);
 	}
-	
+
 	protected void setUp() throws Exception {
 		super.setUp();
 	}
 
-	public void testBaseLibArgs()       { 
+	public void testBaseLibArgs() {
 		BaseLib.instance.STDIN = new InputStream() {
 			public int read() throws IOException {
 				return -1;
 			}
 		};
-		runTest("baselibargs");      
+		runTest("baselibargs");
 	}
-	public void testCoroutineLibArgs()  { runTest("coroutinelibargs"); }	
-	public void testIoLibArgs()         { runTest("iolibargs");        }	
-	public void testMathLibArgs()       { runTest("mathlibargs");      }	
-	public void testModuleLibArgs()     { runTest("modulelibargs");    }	
-	public void testOperators()         { runTest("operators");        }
-	public void testStringLibArgs()     { runTest("stringlibargs");    }
-	public void testTableLibArgs()      { runTest("tablelibargs");     }
-	
+
+	public void testCoroutineLibArgs() {
+		runTest("coroutinelibargs");
+	}
+
+	public void testIoLibArgs() {
+		runTest("iolibargs");
+	}
+
+	public void testMathLibArgs() {
+		runTest("mathlibargs");
+	}
+
+	public void testModuleLibArgs() {
+		runTest("modulelibargs");
+	}
+
+	public void testOperators() {
+		runTest("operators");
+	}
+
+	public void testStringLibArgs() {
+		runTest("stringlibargs");
+	}
+
+	public void testTableLibArgs() {
+		runTest("tablelibargs");
+	}
+
 }

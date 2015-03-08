@@ -10,7 +10,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,29 +21,32 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
-/** 
- * Base class for functions implemented in Java. 
+/**
+ * Base class for functions implemented in Java.
  * <p>
- * Direct subclass include {@link LibFunction} which is the base class for 
- * all built-in library functions coded in Java, 
- * and {@link LuaClosure}, which represents a lua closure 
- * whose bytecode is interpreted when the function is invoked.    
+ * Direct subclass include {@link LibFunction} which is the base class for
+ * all built-in library functions coded in Java,
+ * and {@link LuaClosure}, which represents a lua closure
+ * whose bytecode is interpreted when the function is invoked.
+ *
  * @see LuaValue
  * @see LibFunction
  * @see LuaClosure
  */
 abstract
 public class LuaFunction extends LuaValue {
-	
-	/** Shared static metatable for all functions and closures. */
+
+	/**
+	 * Shared static metatable for all functions and closures.
+	 */
 	public static LuaValue s_metatable;
 
 	protected LuaValue env;
-	
+
 	public LuaFunction() {
 		this.env = NIL;
 	}
-	
+
 	public LuaFunction(LuaValue env) {
 		this.env = env;
 	}
@@ -51,32 +54,32 @@ public class LuaFunction extends LuaValue {
 	public int type() {
 		return TFUNCTION;
 	}
-	
+
 	public String typename() {
 		return "function";
 	}
-	
+
 	public boolean isfunction() {
 		return true;
 	}
 
-	public LuaValue checkfunction()  {
+	public LuaValue checkfunction() {
 		return this;
 	}
-	
+
 	public LuaFunction optfunction(LuaFunction defval) {
-		return this; 
+		return this;
 	}
 
-	public LuaValue getmetatable() { 
-		return s_metatable; 
+	public LuaValue getmetatable() {
+		return s_metatable;
 	}
-	
+
 	public LuaValue getfenv() {
 		return env;
 	}
 
 	public void setfenv(LuaValue env) {
-		this.env = env!=null? env: NIL;
+		this.env = env != null ? env : NIL;
 	}
 }

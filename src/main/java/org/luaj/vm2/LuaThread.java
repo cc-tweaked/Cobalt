@@ -1,153 +1,163 @@
 /*******************************************************************************
-* Copyright (c) 2007-2012 LuaJ. All rights reserved.
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-* THE SOFTWARE.
-******************************************************************************/
+ * Copyright (c) 2007-2012 LuaJ. All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ ******************************************************************************/
 package org.luaj.vm2;
 
 
-import java.lang.ref.WeakReference;
-
 import org.luaj.vm2.lib.DebugLib;
 
-/** 
- * Subclass of {@link LuaValue} that implements 
+import java.lang.ref.WeakReference;
+
+/**
+ * Subclass of {@link LuaValue} that implements
  * a lua coroutine thread using Java Threads.
  * <p>
- * A LuaThread is typically created in response to a scripted call to 
+ * A LuaThread is typically created in response to a scripted call to
  * {@code coroutine.create()}
  * <p>
- * The threads must be initialized with the globals, so that 
- * the global environment may be passed along according to rules of lua. 
- * This is done via a call to {@link #setGlobals(LuaValue)} 
+ * The threads must be initialized with the globals, so that
+ * the global environment may be passed along according to rules of lua.
+ * This is done via a call to {@link #setGlobals(LuaValue)}
  * at some point during globals initialization.
- * See {@link BaseLib} for additional documentation and example code.  
- * <p> 
- * The utility classes {@link JsePlatform} and {@link JmePlatform} 
- * see to it that this initialization is done properly.  
- * For this reason it is highly recommended to use one of these classes
- * when initializing globals. 
+ * See {@link BaseLib} for additional documentation and example code.
  * <p>
- * The behavior of coroutine threads matches closely the behavior 
- * of C coroutine library.  However, because of the use of Java threads 
- * to manage call state, it is possible to yield from anywhere in luaj. 
+ * The utility classes {@link JsePlatform} and {@link JmePlatform}
+ * see to it that this initialization is done properly.
+ * For this reason it is highly recommended to use one of these classes
+ * when initializing globals.
+ * <p>
+ * The behavior of coroutine threads matches closely the behavior
+ * of C coroutine library.  However, because of the use of Java threads
+ * to manage call state, it is possible to yield from anywhere in luaj.
  * <p>
  * Each Java thread wakes up at regular intervals and checks a weak reference
- * to determine if it can ever be resumed.  If not, it throws 
- * {@link OrphanedThread} which is an {@link java.lang.Error}. 
+ * to determine if it can ever be resumed.  If not, it throws
+ * {@link OrphanedThread} which is an {@link java.lang.Error}.
  * Applications should not catch {@link OrphanedThread}, because it can break
  * the thread safety of luaj.
- *   
+ *
  * @see LuaValue
  * @see JsePlatform
  * @see JmePlatform
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {
-	
+
 	public static LuaValue s_metatable;
 
 	public static int coroutine_count = 0;
 
-	/** Interval at which to check for lua threads that are no longer referenced. 
+	/**
+	 * Interval at which to check for lua threads that are no longer referenced.
 	 * This can be changed by Java startup code if desired.
 	 */
 	static long thread_orphan_check_interval = 30000;
-	
-	private static final int STATUS_INITIAL       = 0;
-	private static final int STATUS_SUSPENDED     = 1;
-	private static final int STATUS_RUNNING       = 2;
-	private static final int STATUS_NORMAL        = 3;
-	private static final int STATUS_DEAD          = 4;
-	private static final String[] STATUS_NAMES = { 
-		"suspended", 
-		"suspended", 
-		"running", 
-		"normal", 
+
+	private static final int STATUS_INITIAL = 0;
+	private static final int STATUS_SUSPENDED = 1;
+	private static final int STATUS_RUNNING = 2;
+	private static final int STATUS_NORMAL = 3;
+	private static final int STATUS_DEAD = 4;
+	private static final String[] STATUS_NAMES = {
+		"suspended",
+		"suspended",
+		"running",
+		"normal",
 		"dead",};
-	
+
 	private LuaValue env;
 	private final State state;
 
-	/** Field to hold state of error condition during debug hook function calls. */
+	/**
+	 * Field to hold state of error condition during debug hook function calls.
+	 */
 	public LuaValue err;
-	
-	final CallStack callstack = new CallStack();
-	
-	public static final int        MAX_CALLSTACK = 256;
-	
-	private static final LuaThread main_thread = new LuaThread();
-	
-	// state of running thread including call stack
-	private static LuaThread       running_thread    = main_thread;
 
-	/** Interval to check for LuaThread dereferencing.  */
+	final CallStack callstack = new CallStack();
+
+	public static final int MAX_CALLSTACK = 256;
+
+	private static final LuaThread main_thread = new LuaThread();
+
+	// state of running thread including call stack
+	private static LuaThread running_thread = main_thread;
+
+	/**
+	 * Interval to check for LuaThread dereferencing.
+	 */
 	public static int GC_INTERVAL = 30000;
 
-	/** Thread-local used by DebugLib to store debugging state.  */
+	/**
+	 * Thread-local used by DebugLib to store debugging state.
+	 */
 	public Object debugState;
 
-	/** Private constructor for main thread only */
+	/**
+	 * Private constructor for main thread only
+	 */
 	private LuaThread() {
 		state = new State(this, null);
 		state.status = STATUS_RUNNING;
 	}
-	
-	/** 
+
+	/**
 	 * Create a LuaThread around a function and environment
+	 *
 	 * @param func The function to execute
-	 * @param env The environment to apply to the thread
+	 * @param env  The environment to apply to the thread
 	 */
-	public LuaThread(LuaValue func, LuaValue env) {	
+	public LuaThread(LuaValue func, LuaValue env) {
 		LuaValue.assert_(func != null, "function cannot be null");
 		this.env = env;
 		state = new State(this, func);
 	}
-	
+
 	public int type() {
 		return LuaValue.TTHREAD;
 	}
-	
+
 	public String typename() {
 		return "thread";
 	}
-	
+
 	public boolean isthread() {
 		return true;
 	}
-	
+
 	public LuaThread optthread(LuaThread defval) {
 		return this;
 	}
-	
+
 	public LuaThread checkthread() {
 		return this;
 	}
-	
-	public LuaValue getmetatable() { 
-		return s_metatable; 
+
+	public LuaValue getmetatable() {
+		return s_metatable;
 	}
-	
+
 	public LuaValue getfenv() {
 		return env;
 	}
-	
+
 	public void setfenv(LuaValue env) {
 		this.env = env;
 	}
@@ -157,41 +167,47 @@ public class LuaThread extends LuaValue {
 	}
 
 	/**
-	 * Get the currently running thread. 
+	 * Get the currently running thread.
+	 *
 	 * @return {@link LuaThread} that is currenly running
 	 */
 	public static LuaThread getRunning() {
 		return running_thread;
 	}
-	
+
 	/**
-	 * Test if this is the main thread 
+	 * Test if this is the main thread
+	 *
 	 * @return true if this is the main thread
 	 */
-	public static boolean isMainThread(LuaThread r) {		
+	public static boolean isMainThread(LuaThread r) {
 		return r == main_thread;
 	}
-	
-	/** 
+
+	/**
 	 * Set the globals of the current thread.
 	 * <p>
 	 * This must be done once before any other code executes.
-	 * @param globals The global variables for the main ghread. 
+	 *
+	 * @param globals The global variables for the main ghread.
 	 */
 	public static void setGlobals(LuaValue globals) {
 		running_thread.env = globals;
 	}
-	
-	/** Get the current thread's environment 
+
+	/**
+	 * Get the current thread's environment
+	 *
 	 * @return {@link LuaValue} containing the global variables of the current thread.
 	 */
 	public static LuaValue getGlobals() {
 		LuaValue e = running_thread.env;
-		return e!=null? e: LuaValue.error("LuaThread.setGlobals() not initialized");
+		return e != null ? e : LuaValue.error("LuaThread.setGlobals() not initialized");
 	}
 
 	/**
 	 * Callback used at the beginning of a call to prepare for possible getfenv/setfenv calls
+	 *
 	 * @param function Function being called
 	 * @return CallStack which is used to signal the return or a tail-call recursion
 	 * @see DebugLib
@@ -204,6 +220,7 @@ public class LuaThread extends LuaValue {
 
 	/**
 	 * Get the function called as a specific location on the stack.
+	 *
 	 * @param level 1 for the function calling this one, 2 for the next one.
 	 * @return LuaFunction on the call stack, or null if outside of range of active stack
 	 */
@@ -213,6 +230,7 @@ public class LuaThread extends LuaValue {
 
 	/**
 	 * Replace the error function of the currently running thread.
+	 *
 	 * @param errfunc the new error function to use.
 	 * @return the previous error function.
 	 */
@@ -222,8 +240,9 @@ public class LuaThread extends LuaValue {
 		return prev;
 	}
 
-	/** Yield the current thread with arguments 
-	 * 
+	/**
+	 * Yield the current thread with arguments
+	 *
 	 * @param args The arguments to send as return values to {@link #resume(Varargs)}
 	 * @return {@link Varargs} provided as arguments to {@link #resume(Varargs)}
 	 */
@@ -233,16 +252,17 @@ public class LuaThread extends LuaValue {
 			throw new LuaError("cannot yield main thread");
 		return s.lua_yield(args);
 	}
-	
-	/** Start or resume this thread 
-	 * 
+
+	/**
+	 * Start or resume this thread
+	 *
 	 * @param args The arguments to send as return values to {@link #yield(Varargs)}
 	 * @return {@link Varargs} provided as arguments to {@link #yield(Varargs)}
 	 */
 	public Varargs resume(Varargs args) {
 		if (this.state.status > STATUS_SUSPENDED)
-			return LuaValue.varargsOf(LuaValue.FALSE, 
-					LuaValue.valueOf("cannot resume "+LuaThread.STATUS_NAMES[this.state.status]+" coroutine"));
+			return LuaValue.varargsOf(LuaValue.FALSE,
+				LuaValue.valueOf("cannot resume " + LuaThread.STATUS_NAMES[this.state.status] + " coroutine"));
 		return state.lua_resume(this, args);
 	}
 
@@ -258,7 +278,7 @@ public class LuaThread extends LuaValue {
 			this.lua_thread = new WeakReference(lua_thread);
 			this.function = function;
 		}
-		
+
 		public synchronized void run() {
 			try {
 				Varargs a = this.args;
@@ -278,22 +298,22 @@ public class LuaThread extends LuaValue {
 				LuaThread.running_thread = new_thread;
 				this.args = args;
 				if (this.status == STATUS_INITIAL) {
-					this.status = STATUS_RUNNING; 
-					new Thread(this, "Coroutine-"+(++coroutine_count)).start();
+					this.status = STATUS_RUNNING;
+					new Thread(this, "Coroutine-" + (++coroutine_count)).start();
 				} else {
 					this.notify();
 				}
 				previous_thread.state.status = STATUS_NORMAL;
 				this.status = STATUS_RUNNING;
 				this.wait();
-				return (this.error != null? 
-					LuaValue.varargsOf(LuaValue.FALSE, LuaValue.valueOf(this.error)):
+				return (this.error != null ?
+					LuaValue.varargsOf(LuaValue.FALSE, LuaValue.valueOf(this.error)) :
 					LuaValue.varargsOf(LuaValue.TRUE, this.result));
 			} catch (InterruptedException ie) {
 				throw new OrphanedThread();
 			} finally {
 				running_thread = previous_thread;
-				running_thread.state.status =STATUS_RUNNING;
+				running_thread.state.status = STATUS_RUNNING;
 				this.args = LuaValue.NONE;
 				this.result = LuaValue.NONE;
 				this.error = null;
@@ -324,31 +344,34 @@ public class LuaThread extends LuaValue {
 	}
 
 	public static class CallStack {
-		final LuaFunction[]     functions     = new LuaFunction[MAX_CALLSTACK];
-		int                     calls         = 0;
+		final LuaFunction[] functions = new LuaFunction[MAX_CALLSTACK];
+		int calls = 0;
 
 		/**
 		 * Method to indicate the start of a call
+		 *
 		 * @see DebugLib
 		 */
 		final void onCall(LuaFunction function) {
 			functions[calls++] = function;
-			if (DebugLib.DEBUG_ENABLED) 
+			if (DebugLib.DEBUG_ENABLED)
 				DebugLib.debugOnCall(running_thread, calls, function);
 		}
-		
+
 		/**
 		 * Method to signal the end of a call
+		 *
 		 * @see DebugLib
 		 */
 		public final void onReturn() {
 			functions[--calls] = null;
-			if (DebugLib.DEBUG_ENABLED) 
+			if (DebugLib.DEBUG_ENABLED)
 				DebugLib.debugOnReturn(running_thread, calls);
 		}
-		
+
 		/**
 		 * Get number of calls in stack
+		 *
 		 * @return number of calls in current call stack
 		 * @see DebugLib
 		 */
@@ -356,13 +379,14 @@ public class LuaThread extends LuaValue {
 			return calls;
 		}
 
-		/** 
+		/**
 		 * Get the function at a particular level of the stack.
+		 *
 		 * @param level # of levels back from the top of the stack.
 		 * @return LuaFunction, or null if beyond the stack limits.
 		 */
 		LuaFunction getFunction(int level) {
-			return level>0 && level<=calls? functions[calls-level]: null;
+			return level > 0 && level <= calls ? functions[calls - level] : null;
 		}
 	}
 }

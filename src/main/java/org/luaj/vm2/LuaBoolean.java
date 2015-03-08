@@ -10,7 +10,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,18 +22,19 @@
 package org.luaj.vm2;
 
 /**
- * Extension of {@link LuaValue} which can hold a Java boolean as its value. 
+ * Extension of {@link LuaValue} which can hold a Java boolean as its value.
  * <p>
- * These instance are not instantiated directly by clients.  
- * Instead, there are exactly twon instances of this class, 
- * {@link LuaValue#TRUE} and {@link LuaValue#FALSE} 
+ * These instance are not instantiated directly by clients.
+ * Instead, there are exactly twon instances of this class,
+ * {@link LuaValue#TRUE} and {@link LuaValue#FALSE}
  * representing the lua values {@code true} and {@link false}.
- * The function {@link LuaValue#valueOf(boolean)} will always 
- * return one of these two values. 
+ * The function {@link LuaValue#valueOf(boolean)} will always
+ * return one of these two values.
  * <p>
- * Any {@link LuaValue} can be converted to its equivalent 
+ * Any {@link LuaValue} can be converted to its equivalent
  * boolean representation using {@link LuaValue#toboolean()}
  * <p>
+ *
  * @see LuaValue
  * @see LuaValue#valueOf(boolean)
  * @see LuaValue#TRUE
@@ -41,16 +42,24 @@ package org.luaj.vm2;
  */
 public final class LuaBoolean extends LuaValue {
 
-	/** The singleton instance representing lua {@code true} */
+	/**
+	 * The singleton instance representing lua {@code true}
+	 */
 	static final LuaBoolean _TRUE = new LuaBoolean(true);
-	
-	/** The singleton instance representing lua {@code false} */
+
+	/**
+	 * The singleton instance representing lua {@code false}
+	 */
 	static final LuaBoolean _FALSE = new LuaBoolean(false);
-	
-	/** Shared static metatable for boolean values represented in lua. */
+
+	/**
+	 * Shared static metatable for boolean values represented in lua.
+	 */
 	public static LuaValue s_metatable;
 
-	/** The value of the boolean */
+	/**
+	 * The value of the boolean
+	 */
 	public final boolean v;
 
 	LuaBoolean(boolean b) {
@@ -75,6 +84,7 @@ public final class LuaBoolean extends LuaValue {
 
 	/**
 	 * Return the boolean value for this boolean
+	 *
 	 * @return value as a Java boolean
 	 */
 	public boolean booleanValue() {
@@ -92,12 +102,12 @@ public final class LuaBoolean extends LuaValue {
 	public boolean optboolean(boolean defval) {
 		return this.v;
 	}
-	
+
 	public boolean checkboolean() {
 		return v;
 	}
-	
-	public LuaValue getmetatable() { 
-		return s_metatable; 
+
+	public LuaValue getmetatable() {
+		return s_metatable;
 	}
 }
