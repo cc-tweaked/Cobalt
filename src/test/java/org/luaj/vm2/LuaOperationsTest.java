@@ -25,6 +25,7 @@ import junit.framework.TestCase;
 import org.luaj.vm2.TypeTest.MyData;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.ZeroArgFunction;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -182,9 +183,9 @@ public class LuaOperationsTest extends TestCase {
 
 	public Prototype createPrototype(String script, String name) {
 		try {
-			LuaTable _G = org.luaj.vm2.lib.jse.JsePlatform.standardGlobals();
+			JsePlatform.standardGlobals();
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
-			return LuaC.instance.compile(is, name);
+			return LuaC.compile(is, name);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -198,7 +199,7 @@ public class LuaOperationsTest extends TestCase {
 		// set up suitable environments for execution
 		LuaValue aaa = LuaValue.valueOf("aaa");
 		LuaValue eee = LuaValue.valueOf("eee");
-		LuaTable _G = org.luaj.vm2.lib.jse.JsePlatform.standardGlobals();
+		LuaTable _G = JsePlatform.standardGlobals();
 		LuaTable newenv = LuaValue.tableOf(new LuaValue[]{
 			LuaValue.valueOf("a"), LuaValue.valueOf("aaa"),
 			LuaValue.valueOf("b"), LuaValue.valueOf("bbb"),});

@@ -161,10 +161,8 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 				BaseLib.instance.STDOUT = oldps;
 				ps.close();
 			}
-		} catch (IOException ioe) {
+		} catch (IOException | InterruptedException ioe) {
 			throw new RuntimeException(ioe.toString());
-		} catch (InterruptedException ie) {
-			throw new RuntimeException(ie.toString());
 		}
 	}
 
@@ -176,8 +174,7 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 			switch (this.platform) {
 				case LUAJIT:
 					if (nocompile) {
-						LuaValue c = (LuaValue) Class.forName(name).newInstance();
-						return c;
+						return (LuaValue) Class.forName(name).newInstance();
 					} else {
 						return LuaJC.getInstance().load(script, name, _G);
 					}
@@ -210,7 +207,7 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 	private String executeLuaProcess(String name) throws IOException, InterruptedException {
 		InputStream script = findResource(name + ".lua");
 		if (script == null)
-			throw new IOException("Failed to find source file " + script);
+			throw new IOException("Failed to find source file " + name);
 		try {
 			String luaCommand = System.getProperty("LUA_COMMAND");
 			if (luaCommand == null)
@@ -224,7 +221,7 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 
 	public static String collectProcessOutput(String[] cmd, final InputStream input)
 		throws IOException, InterruptedException {
-		Runtime r = Runtime.getRuntime();
+		Runtime.getRuntime();
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		new JseProcess(cmd, input, baos, System.err).waitFor();
 		return new String(baos.toByteArray());

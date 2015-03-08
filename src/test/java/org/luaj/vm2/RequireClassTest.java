@@ -8,11 +8,10 @@ import org.luaj.vm2.require.RequireSampleLoadRuntimeExcep;
 
 public class RequireClassTest extends TestCase {
 
-	private LuaTable globals;
 	private LuaValue require;
 
 	public void setUp() {
-		globals = JsePlatform.standardGlobals();
+		LuaTable globals = JsePlatform.standardGlobals();
 		require = globals.get("require");
 	}
 

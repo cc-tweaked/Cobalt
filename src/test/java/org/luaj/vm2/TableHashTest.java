@@ -85,8 +85,8 @@ public class TableHashTest extends TestCase {
 			else
 				assertTrue(0 <= t.getHashLength());
 		}
-		for (int i = 0; i < keys.length; ++i) {
-			assertEquals(LuaValue.NIL, t.get(keys[i]));
+		for (String key : keys) {
+			assertEquals(LuaValue.NIL, t.get(key));
 		}
 	}
 

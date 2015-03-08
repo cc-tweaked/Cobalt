@@ -73,7 +73,7 @@ public class DumpLoadEndianIntTest extends TestCase {
 
 			// compile into prototype
 			InputStream is = new ByteArrayInputStream(script.getBytes());
-			Prototype p = LuaC.instance.compile(is, "script");
+			Prototype p = LuaC.compile(is, "script");
 
 			// double check script result before dumping
 			LuaFunction f = new LuaClosure(p, _G);

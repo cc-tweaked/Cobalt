@@ -133,9 +133,7 @@ public class TableTest extends TestCase {
 		int stringKeys = 0;
 
 		assertEquals(20, keys.length);
-		for (int i = 0; i < keys.length; ++i) {
-			LuaValue k = keys[i];
-
+		for (LuaValue k : keys) {
 			if (k instanceof LuaInteger) {
 				final int ik = k.toint();
 				assertTrue(ik >= 0 && ik < 10);
@@ -265,7 +263,7 @@ public class TableTest extends TestCase {
 		}
 	}
 
-	private static final void compareLists(LuaTable t, Vector v) {
+	private static void compareLists(LuaTable t, Vector v) {
 		int n = v.size();
 		assertEquals(v.size(), t.length());
 		for (int j = 0; j < n; j++) {
@@ -313,7 +311,7 @@ public class TableTest extends TestCase {
 		}
 	}
 
-	private static final void prefillLists(LuaTable t, Vector v) {
+	private static void prefillLists(LuaTable t, Vector v) {
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaValue.valueOf("Test Value! " + i);
 			t.insert(0, test);

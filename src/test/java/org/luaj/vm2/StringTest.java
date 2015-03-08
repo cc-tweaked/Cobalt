@@ -68,7 +68,7 @@ public class StringTest extends TestCase {
 
 	public void testUtf820482051() throws UnsupportedEncodingException {
 		int i = 2048;
-		char[] c = {(char) (i + 0), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
+		char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
 		String before = new String(c) + " " + i + "-" + (i + 4);
 		LuaString ls = LuaString.valueOf(before);
 		String after = ls.tojstring();
@@ -78,7 +78,7 @@ public class StringTest extends TestCase {
 
 	public void testUtf8() {
 		for (int i = 4; i < 0xffff; i += 4) {
-			char[] c = {(char) (i + 0), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
+			char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
 			String before = new String(c) + " " + i + "-" + (i + 4);
 			LuaString ls = LuaString.valueOf(before);
 			String after = ls.tojstring();

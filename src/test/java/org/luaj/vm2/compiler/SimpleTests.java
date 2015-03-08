@@ -86,7 +86,7 @@ public class SimpleTests extends TestCase {
 			assertEquals(hj, hd);
 		}
 		for (int i = 0; i < diffhash.length; i += 2) {
-			LuaValue c = LuaValue.valueOf(diffhash[i + 0]);
+			LuaValue c = LuaValue.valueOf(diffhash[i]);
 			LuaValue d = LuaValue.valueOf(diffhash[i + 1]);
 			int hc = c.hashCode();
 			int hd = d.hashCode();

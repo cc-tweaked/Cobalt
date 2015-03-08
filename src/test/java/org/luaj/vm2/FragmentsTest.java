@@ -33,6 +33,7 @@ import java.io.InputStream;
  * Test compilation of various fragments that have
  * caused problems for jit compiling during development.
  */
+@SuppressWarnings("UnusedDeclaration")
 public class FragmentsTest extends TestSuite {
 
 	static final int TEST_TYPE_LUAC = 0;

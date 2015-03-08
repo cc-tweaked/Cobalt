@@ -61,7 +61,7 @@ abstract public class AbstractUnitTests extends TestCase {
 
 			// compile in memory
 			InputStream is = new ByteArrayInputStream(lua);
-			Prototype p = LuaC.instance.compile(is, "@" + file);
+			Prototype p = LuaC.compile(is, "@" + file);
 			String actual = protoToString(p);
 
 			// load expected value from jar
@@ -108,9 +108,8 @@ abstract public class AbstractUnitTests extends TestCase {
 
 	protected String protoToString(Prototype p) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		PrintStream ps = new PrintStream(baos);
-		Print.ps = ps;
-		new Print().printFunction(p, true);
+		Print.ps = new PrintStream(baos);
+		Print.printFunction(p, true);
 		return baos.toString();
 	}
 
