@@ -10,7 +10,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,9 +31,6 @@ import org.luaj.vm2.compiler.CompilerUnitTests;
 import org.luaj.vm2.compiler.DumpLoadEndianIntTest;
 import org.luaj.vm2.compiler.RegressionTests;
 import org.luaj.vm2.compiler.SimpleTests;
-import org.luaj.vm2.lib.jse.LuaJavaCoercionTest;
-import org.luaj.vm2.lib.jse.LuajavaAccessibleMembersTest;
-import org.luaj.vm2.lib.jse.LuajavaClassMembersTest;
 
 public class AllTests {
 
@@ -59,11 +56,11 @@ public class AllTests {
 		table.addTestSuite(WeakKeyTableTest.class);
 		table.addTestSuite(WeakKeyValueTableTest.class);
 		suite.addTest(table);
-		
+
 		// bytecode compilers regression tests
 		TestSuite bytecodetests = FragmentsTest.suite();
 		suite.addTest(bytecodetests);
-		
+
 		// prototype compiler
 		TestSuite compiler = new TestSuite("Lua Compiler Tests");
 		compiler.addTestSuite(CompilerUnitTests.class);
@@ -71,20 +68,17 @@ public class AllTests {
 		compiler.addTestSuite(RegressionTests.class);
 		compiler.addTestSuite(SimpleTests.class);
 		suite.addTest(compiler);
-		
+
 		// library tests
 		TestSuite lib = new TestSuite("Library Tests");
-		lib.addTestSuite(LuajavaAccessibleMembersTest.class);
-		lib.addTestSuite(LuajavaClassMembersTest.class);
-		lib.addTestSuite(LuaJavaCoercionTest.class);
 		lib.addTestSuite(RequireClassTest.class);
 		suite.addTest(lib);
-		
+
 		// compatiblity tests
 		TestSuite compat = CompatibiltyTest.suite();
 		suite.addTest( compat );
 		compat.addTestSuite(ErrorsTest.class);
-		
+
 		return suite;
 	}
 

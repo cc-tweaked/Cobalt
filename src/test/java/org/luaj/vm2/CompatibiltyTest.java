@@ -10,7 +10,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,25 +23,24 @@ package org.luaj.vm2;
 
 import junit.framework.TestSuite;
 
-import org.luaj.vm2.lua2java.Lua2Java;
 import org.luaj.vm2.luajc.LuaJC;
 
 /**
  * Compatibility tests for the Luaj VM
- * 
- * Results are compared for exact match with 
- * the installed C-based lua environment. 
+ *
+ * Results are compared for exact match with
+ * the installed C-based lua environment.
  */
 public class CompatibiltyTest extends TestSuite {
 
 	private static final String dir = "";
-	
-	abstract protected static class CompatibiltyTestSuite extends ScriptDrivenTest {	
+
+	abstract protected static class CompatibiltyTestSuite extends ScriptDrivenTest {
 		LuaValue savedStringMetatable;
 		protected CompatibiltyTestSuite(PlatformType platform) {
 			super(platform,dir);
 		}
-		
+
 		protected void setUp() throws Exception {
 			savedStringMetatable = LuaString.s_metatable;
 			super.setUp();
@@ -58,10 +57,10 @@ public class CompatibiltyTest extends TestSuite {
 		}
 
 		public void testBaseLib()       { runTest("baselib");   }
-		public void testCoroutineLib()  { runTest("coroutinelib"); }	
-		public void testDebugLib()      { runTest("debuglib"); }	
-		public void testErrors()        { runTest("errors"); }	
-		public void testFunctions()     { runTest("functions"); }	
+		public void testCoroutineLib()  { runTest("coroutinelib"); }
+		public void testDebugLib()      { runTest("debuglib"); }
+		public void testErrors()        { runTest("errors"); }
+		public void testFunctions()     { runTest("functions"); }
 		public void testIoLib()         { runTest("iolib");     }
 		public void testManyUpvals()    { runTest("manyupvals"); }
 		public void testMathLib()       { runTest("mathlib"); }
@@ -78,39 +77,17 @@ public class CompatibiltyTest extends TestSuite {
 	public static TestSuite suite() {
 		TestSuite suite = new TestSuite("Compatibility Tests");
 		suite.addTest( new TestSuite( JseCompatibilityTest.class,   "JSE Tests" ) );
-		suite.addTest( new TestSuite( JmeCompatibilityTest.class,   "JME Tests" ) );
 		suite.addTest( new TestSuite( LuaJCTest.class,        "JSE Bytecode Tests" ) );
-		suite.addTest( new TestSuite( Lua2JavaTest.class,   		"Lua2Java Tests" ) );
 		return suite;
 	}
-	
-	public static class Lua2JavaTest extends CompatibiltyTestSuite {
-		public Lua2JavaTest() {
-			super(ScriptDrivenTest.PlatformType.LUA2JAVA);
-		}
-		protected void setUp() throws Exception {
-			super.setUp();
-			System.setProperty("JME", "false");
-			Lua2Java.install();
-		}
-	}
 
-	public static class JmeCompatibilityTest extends CompatibiltyTestSuite {
-		public JmeCompatibilityTest() {
-			super(ScriptDrivenTest.PlatformType.JME);
-		}
-		protected void setUp() throws Exception {
-			System.setProperty("JME", "true");
-			super.setUp();
-		}
-	}
 	public static class JseCompatibilityTest extends CompatibiltyTestSuite {
 		public JseCompatibilityTest() {
 			super(ScriptDrivenTest.PlatformType.JSE);
 		}
 		protected void setUp() throws Exception {
 			super.setUp();
-			System.setProperty("JME", "false");
+			System.setProperty("JSE", "false");
 		}
 	}
 	public static class LuaJCTest extends CompatibiltyTestSuite {
@@ -119,10 +96,10 @@ public class CompatibiltyTest extends TestSuite {
 		}
 		protected void setUp() throws Exception {
 			super.setUp();
-			System.setProperty("JME", "false");
+			System.setProperty("JSE", "false");
 			LuaJC.install();
 		}
 		// not supported on this platform - don't test
-		public void testDebugLib()      {}	
+		public void testDebugLib()      {}
 	}
 }

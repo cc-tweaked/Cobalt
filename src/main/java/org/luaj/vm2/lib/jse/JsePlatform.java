@@ -10,7 +10,7 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,10 +31,10 @@ import org.luaj.vm2.lib.PackageLib;
 import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.TableLib;
 
-/** The {@link JsePlatform} class is a convenience class to standardize 
- * how globals tables are initialized for the JSE platform. 
+/** The {@link JsePlatform} class is a convenience class to standardize
+ * how globals tables are initialized for the JSE platform.
  * <p>
- * It is used to allocate either a set of standard globals using 
+ * It is used to allocate either a set of standard globals using
  * {@link #standardGlobals()} or debug globals using {@link #debugGlobals()}
  * <p>
  * A simple example of initializing globals and using them from Java is:
@@ -48,7 +48,7 @@ import org.luaj.vm2.lib.TableLib;
  * LoadState.load( new FileInputStream("main.lua"), "main.lua", _G ).call();
  * } </pre>
  * <p>
- * although {@code require} could also be used: 
+ * although {@code require} could also be used:
  * <pre> {@code
  * _G.get("require").call(LuaValue.valueOf("main"));
  * } </pre>
@@ -67,19 +67,19 @@ import org.luaj.vm2.lib.TableLib;
  * <li>{@link JseOsLib}</li>
  * <li>{@link LuajavaLib}</li>
  * </ul>
- * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form. 
- * <p> 
+ * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
+ * <p>
  * The debug globals are simply the standard globals plus the {@code debug} library {@link DebugLib}.
  * <p>
- * The class ensures that initialization is done in the correct order, 
- * and that linkage is made  to {@link LuaThread#setGlobals(LuaValue)}. 
+ * The class ensures that initialization is done in the correct order,
+ * and that linkage is made  to {@link LuaThread#setGlobals(LuaValue)}.
  * @see JmePlatform
  */
 public class JsePlatform {
 
 	/**
 	 * Create a standard set of globals for JSE including all the libraries.
-	 * 
+	 *
 	 * @return Table of globals initialized with the standard JSE libraries
 	 * @see #debugGlobals()
 	 * @see JsePlatform
@@ -95,14 +95,13 @@ public class JsePlatform {
 		_G.load(new JseMathLib());
 		_G.load(new JseIoLib());
 		_G.load(new JseOsLib());
-		_G.load(new LuajavaLib());
 		LuaThread.setGlobals(_G);
 		LuaC.install();
-		return _G;		
+		return _G;
 	}
 
 	/** Create standard globals including the {@link debug} library.
-	 * 
+	 *
 	 * @return Table of globals initialized with the standard JSE and debug libraries
 	 * @see #standardGlobals()
 	 * @see JsePlatform

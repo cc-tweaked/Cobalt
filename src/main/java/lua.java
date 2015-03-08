@@ -10,7 +10,7 @@
 *
 * The above copyright notice and this permission notice shall be included in
 * all copies or substantial portions of the Software.
-* 
+*
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,7 +35,6 @@ import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.lua2java.Lua2Java;
 import org.luaj.vm2.luajc.LuaJC;
 
 
@@ -45,14 +44,13 @@ import org.luaj.vm2.luajc.LuaJC;
 public class lua {
 	private static final String version = Lua._VERSION + "Copyright (c) 2009 Luaj.org.org";
 
-	private static final String usage = 
+	private static final String usage =
 		"usage: java -cp luaj-jse.jar lua [options] [script [args]].\n" +
 		"Available options are:\n" +
 		"  -e stat  execute string 'stat'\n" +
 		"  -l name  require library 'name'\n" +
 		"  -i       enter interactive mode after executing 'script'\n" +
 		"  -v       show version information\n" +
-		"  -j      	use lua2java source-to-source compiler\n" +
 		"  -b      	use luajc bytecode-to-bytecode compiler (requires bcel on class path)\n" +
 		"  -n      	nodebug - do not load debug library by default\n" +
 		"  --       stop handling options\n" +
@@ -60,11 +58,11 @@ public class lua {
 
 	private static void usageExit() {
 		System.out.println(usage);
-		System.exit(-1);		
+		System.exit(-1);
 	}
 
 	private static LuaValue _G;
-	
+
 	public static void main( String[] args ) throws IOException {
 
 		// process args
@@ -73,7 +71,6 @@ public class lua {
 		boolean processing = true;
 		boolean nodebug = false;
 		boolean luajc = false;
-		boolean lua2java = false;
 		Vector libs = null;
 		try {
 			// stateful argument processing
@@ -93,9 +90,6 @@ public class lua {
 						break;
 					case 'b':
 						luajc = true;
-						break;
-					case 'j':
-						lua2java = true;
 						break;
 					case 'l':
 						if ( ++i >= args.length )
@@ -127,14 +121,13 @@ public class lua {
 			// echo version
 			if ( versioninfo )
 				System.out.println(version);
-			
+
 			// new lua state
 			_G = nodebug? JsePlatform.standardGlobals(): JsePlatform.debugGlobals();
 			if ( luajc ) LuaJC.install();
-			if ( lua2java) Lua2Java.install();
 			for ( int i=0, n=libs!=null? libs.size(): 0; i<n; i++ )
 				loadLibrary( (String) libs.elementAt(i) );
-			
+
 			// input script processing
 			processing = true;
 			for ( int i=0; i<args.length; i++ ) {
@@ -159,10 +152,10 @@ public class lua {
 					}
 				}
 			}
-			
+
 			if ( interactive )
 				interactiveMode();
-			
+
 		} catch ( IOException ioe ) {
 			System.err.println( ioe.toString() );
 			System.exit(-2);
@@ -170,14 +163,14 @@ public class lua {
 	}
 
 	private static void loadLibrary( String libname ) throws IOException {
-		LuaValue slibname =LuaValue.valueOf(libname); 
+		LuaValue slibname =LuaValue.valueOf(libname);
 		try {
 			// load via plain require
 			_G.get("require").call(slibname);
 		} catch ( Exception e ) {
 			try {
 				// load as java class
-				LuaValue v = (LuaValue) Class.forName(libname).newInstance(); 
+				LuaValue v = (LuaValue) Class.forName(libname).newInstance();
 				v.setfenv(_G);
 				v.call(slibname, _G);
 			} catch ( Exception f ) {
@@ -185,7 +178,7 @@ public class lua {
 			}
 		}
 	}
-	
+
 	private static void processScript( InputStream script, String chunkname, String[] args, int firstarg ) throws IOException {
 		try {
 			LuaFunction c;

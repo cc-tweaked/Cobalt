@@ -25,7 +25,7 @@ abstract public class AbstractUnitTests extends TestCase {
 
     public AbstractUnitTests(String zipdir, String zipfile, String dir) {
     	URL zip = null;
-		zip = getClass().getResource(zipfile);
+		zip = getClass().getResource("/" + zipfile);
 		if ( zip == null ) {
 	    	File file = new File(zipdir+"/"+zipfile);
 			try {
@@ -49,16 +49,16 @@ abstract public class AbstractUnitTests extends TestCase {
     protected String pathOfFile(String file) {
         return jar + dir + "/" + file;
     }
-    
+
     protected InputStream inputStreamOfPath(String path) throws IOException {
         URL url = new URL(path);
         return url.openStream();
     }
-    
+
     protected InputStream inputStreamOfFile(String file) throws IOException {
     	return inputStreamOfPath(pathOfFile(file));
     }
-    
+
     protected void doTest(String file) {
         try {
             // load source from jar
