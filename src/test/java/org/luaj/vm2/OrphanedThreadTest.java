@@ -21,7 +21,8 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
@@ -29,39 +30,48 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 import java.io.ByteArrayInputStream;
 import java.lang.ref.WeakReference;
 
+import static org.junit.Assert.*;
 
-public class OrphanedThreadTest extends TestCase {
+public class OrphanedThreadTest {
+	private LuaValue function;
+	private LuaValue env;
 
-	LuaThread luathread;
-	WeakReference luathr_ref;
-	LuaValue function;
-	WeakReference func_ref;
-	LuaValue env;
+	@SuppressWarnings("FieldCanBeLocal")
+	private WeakReference<LuaValue> luathr_ref;
 
-	protected void setUp() throws Exception {
+	@SuppressWarnings("FieldCanBeLocal")
+	private WeakReference<LuaValue> func_ref;
+
+	@Before
+	public void setup() throws Exception {
 		LuaThread.thread_orphan_check_interval = 5;
 		env = JsePlatform.standardGlobals();
 	}
 
-	protected void tearDown() {
+	@Before
+	public void tearDown() {
 		LuaThread.thread_orphan_check_interval = 30000;
 	}
 
+	@Test
 	public void testCollectOrphanedNormalThread() throws Exception {
 		function = new NormalFunction();
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
 	}
 
+	@Test
 	public void testCollectOrphanedEarlyCompletionThread() throws Exception {
 		function = new EarlyCompletionFunction();
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
 	}
 
+	@Test
 	public void testCollectOrphanedAbnormalThread() throws Exception {
 		function = new AbnormalFunction();
 		doTest(LuaValue.FALSE, LuaValue.valueOf("abnormal condition"));
 	}
 
+	@Test
 	public void testCollectOrphanedClosureThread() throws Exception {
 		String script =
 			"print('in closure, arg is '..(...))\n" +
@@ -75,6 +85,7 @@ public class OrphanedThreadTest extends TestCase {
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
 	}
 
+	@Test
 	public void testCollectOrphanedPcallClosureThread() throws Exception {
 		String script =
 			"f = function(x)\n" +
@@ -91,6 +102,7 @@ public class OrphanedThreadTest extends TestCase {
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
 	}
 
+	@Test
 	public void testCollectOrphanedLoadCloasureThread() throws Exception {
 		String script =
 			"t = { \"print \", \"'hello, \", \"world'\", }\n" +
@@ -109,9 +121,9 @@ public class OrphanedThreadTest extends TestCase {
 	}
 
 	private void doTest(LuaValue status2, LuaValue value2) throws Exception {
-		luathread = new LuaThread(function, env);
-		luathr_ref = new WeakReference(luathread);
-		func_ref = new WeakReference(function);
+		LuaThread luathread = new LuaThread(function, env);
+		luathr_ref = new WeakReference<>(luathread);
+		func_ref = new WeakReference<>(function);
 		assertNotNull(luathr_ref.get());
 
 		// resume two times
@@ -138,7 +150,7 @@ public class OrphanedThreadTest extends TestCase {
 	}
 
 
-	static class NormalFunction extends OneArgFunction {
+	private static class NormalFunction extends OneArgFunction {
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in normal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
@@ -149,7 +161,7 @@ public class OrphanedThreadTest extends TestCase {
 		}
 	}
 
-	static class EarlyCompletionFunction extends OneArgFunction {
+	private static class EarlyCompletionFunction extends OneArgFunction {
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in early.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
@@ -158,17 +170,7 @@ public class OrphanedThreadTest extends TestCase {
 		}
 	}
 
-	static class AbnormalFunction extends OneArgFunction {
-		public LuaValue call(LuaValue arg) {
-			System.out.println("in abnormal.1, arg is " + arg);
-			arg = LuaThread.yield(ONE).arg1();
-			System.out.println("in abnormal.2, arg is " + arg);
-			error("abnormal condition");
-			return ZERO;
-		}
-	}
-
-	static class ClosureFunction extends OneArgFunction {
+	private static class AbnormalFunction extends OneArgFunction {
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();

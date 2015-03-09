@@ -1,13 +1,17 @@
 package org.luaj.vm2.compiler;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.*;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-public class DumpLoadEndianIntTest extends TestCase {
+
+public class DumpLoadEndianIntTest {
 	private static final String SAVECHUNKS = "SAVECHUNKS";
 
 	private static final boolean SHOULDPASS = true;
@@ -19,22 +23,25 @@ public class DumpLoadEndianIntTest extends TestCase {
 
 	private LuaTable _G;
 
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setup() throws Exception {
 		_G = JsePlatform.standardGlobals();
 		DumpState.ALLOW_INTEGER_CASTING = false;
 	}
 
+	@Test
 	public void testBigDoubleCompile() {
 		doTest(false, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(false, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
+	@Test
 	public void testLittleDoubleCompile() {
 		doTest(true, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(true, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
+	@Test
 	public void testBigIntCompile() {
 		DumpState.ALLOW_INTEGER_CASTING = true;
 		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
@@ -46,6 +53,7 @@ public class DumpLoadEndianIntTest extends TestCase {
 		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, true, intscript, withints, withints, SHOULDPASS);
 	}
 
+	@Test
 	public void testLittleIntCompile() {
 		DumpState.ALLOW_INTEGER_CASTING = true;
 		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
@@ -57,11 +65,13 @@ public class DumpLoadEndianIntTest extends TestCase {
 		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, true, intscript, withints, withints, SHOULDPASS);
 	}
 
+	@Test
 	public void testBigNumpatchCompile() {
 		doTest(false, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(false, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
+	@Test
 	public void testLittleNumpatchCompile() {
 		doTest(true, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(true, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);

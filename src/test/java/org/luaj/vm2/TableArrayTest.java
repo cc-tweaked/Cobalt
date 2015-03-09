@@ -21,14 +21,16 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import java.util.Vector;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for tables used as lists.
  */
-public class TableArrayTest extends TestCase {
+public class TableArrayTest {
 
 	protected LuaTable new_Table() {
 		return new LuaTable();
@@ -38,6 +40,7 @@ public class TableArrayTest extends TestCase {
 		return new LuaTable(n, m);
 	}
 
+	@Test
 	public void testInOrderIntegerKeyInsertion() {
 		LuaTable t = new_Table();
 
@@ -58,6 +61,7 @@ public class TableArrayTest extends TestCase {
 
 	}
 
+	@Test
 	public void testResize() {
 		LuaTable t = new_Table();
 
@@ -77,6 +81,7 @@ public class TableArrayTest extends TestCase {
 		assertTrue(t.getHashLength() >= 4);
 	}
 
+	@Test
 	public void testOutOfOrderIntegerKeyInsertion() {
 		LuaTable t = new_Table();
 
@@ -98,6 +103,7 @@ public class TableArrayTest extends TestCase {
 
 	}
 
+	@Test
 	public void testStringAndIntegerKeys() {
 		LuaTable t = new_Table();
 
@@ -143,6 +149,7 @@ public class TableArrayTest extends TestCase {
 		assertEquals(0x03FF, stringKeys);
 	}
 
+	@Test
 	public void testBadInitialCapacity() {
 		LuaTable t = new_Table(0, 1);
 
@@ -151,6 +158,7 @@ public class TableArrayTest extends TestCase {
 		assertEquals(2, t.keyCount());
 	}
 
+	@Test
 	public void testRemove0() {
 		LuaTable t = new_Table(2, 0);
 
@@ -168,6 +176,7 @@ public class TableArrayTest extends TestCase {
 		assertEquals(LuaValue.NIL, t.get(3));
 	}
 
+	@Test
 	public void testRemove1() {
 		LuaTable t = new_Table(0, 1);
 		assertEquals(0, t.keyCount());
@@ -188,6 +197,7 @@ public class TableArrayTest extends TestCase {
 		assertEquals(0, t.keyCount());
 	}
 
+	@Test
 	public void testRemove2() {
 		LuaTable t = new_Table(0, 1);
 
@@ -212,6 +222,7 @@ public class TableArrayTest extends TestCase {
 		assertEquals(0, t.keyCount());
 	}
 
+	@Test
 	public void testInOrderlen() {
 		LuaTable t = new_Table();
 
@@ -223,6 +234,7 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testOutOfOrderlen() {
 		LuaTable t = new_Table();
 
@@ -235,6 +247,7 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testStringKeyslen() {
 		LuaTable t = new_Table();
 
@@ -245,6 +258,7 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testMixedKeyslen() {
 		LuaTable t = new_Table();
 
@@ -256,7 +270,7 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
-	private static final void compareLists(LuaTable t, Vector v) {
+	private static void compareLists(LuaTable t, Vector v) {
 		int n = v.size();
 		assertEquals(v.size(), t.length());
 		for (int j = 0; j < n; j++) {

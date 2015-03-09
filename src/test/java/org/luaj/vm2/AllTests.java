@@ -21,8 +21,8 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 import org.luaj.vm2.WeakTableTest.WeakKeyTableTest;
 import org.luaj.vm2.WeakTableTest.WeakKeyValueTableTest;
 import org.luaj.vm2.WeakTableTest.WeakValueTableTest;
@@ -31,54 +31,47 @@ import org.luaj.vm2.compiler.DumpLoadEndianIntTest;
 import org.luaj.vm2.compiler.RegressionTests;
 import org.luaj.vm2.compiler.SimpleTests;
 
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+	AllTests.VmTests.class,
+	AllTests.TableTests.class,
+	AllTests.CompilerTests.class,
+	RequireClassTest.class,
+	ErrorsTest.class,
+})
 public class AllTests {
 
-	public static Test suite() {
-		TestSuite suite = new TestSuite("All Tests for Luaj-vm2");
-
-		// vm tests
-		TestSuite vm = new TestSuite("VM Tests");
-		vm.addTestSuite(TypeTest.class);
-		vm.addTestSuite(UnaryBinaryOperatorsTest.class);
-		vm.addTestSuite(MetatableTest.class);
-		vm.addTestSuite(LuaOperationsTest.class);
-		vm.addTestSuite(StringTest.class);
-		vm.addTestSuite(OrphanedThreadTest.class);
-		suite.addTest(vm);
-
-		// table tests
-		TestSuite table = new TestSuite("Table Tests");
-		table.addTestSuite(TableTest.class);
-		table.addTestSuite(TableArrayTest.class);
-		table.addTestSuite(TableHashTest.class);
-		table.addTestSuite(WeakValueTableTest.class);
-		table.addTestSuite(WeakKeyTableTest.class);
-		table.addTestSuite(WeakKeyValueTableTest.class);
-		suite.addTest(table);
-
-		// bytecode compilers regression tests
-		TestSuite bytecodetests = FragmentsTest.suite();
-		suite.addTest(bytecodetests);
-
-		// prototype compiler
-		TestSuite compiler = new TestSuite("Lua Compiler Tests");
-		compiler.addTestSuite(CompilerUnitTests.class);
-		compiler.addTestSuite(DumpLoadEndianIntTest.class);
-		compiler.addTestSuite(RegressionTests.class);
-		compiler.addTestSuite(SimpleTests.class);
-		suite.addTest(compiler);
-
-		// library tests
-		TestSuite lib = new TestSuite("Library Tests");
-		lib.addTestSuite(RequireClassTest.class);
-		suite.addTest(lib);
-
-		// compatiblity tests
-		TestSuite compat = CompatibiltyTest.suite();
-		suite.addTest(compat);
-		compat.addTestSuite(ErrorsTest.class);
-
-		return suite;
+	@RunWith(Suite.class)
+	@Suite.SuiteClasses({
+		TypeTest.class,
+		UnaryBinaryOperatorsTest.class,
+		MetatableTest.class,
+		LuaOperationsTest.class,
+		StringTest.class,
+		OrphanedThreadTest.class,
+	})
+	public class VmTests {
 	}
 
+	@RunWith(Suite.class)
+	@Suite.SuiteClasses({
+		TableTest.class,
+		TableArrayTest.class,
+		TableHashTest.class,
+		WeakValueTableTest.class,
+		WeakKeyTableTest.class,
+		WeakKeyValueTableTest.class,
+	})
+	public class TableTests {
+	}
+
+	@RunWith(Suite.class)
+	@Suite.SuiteClasses({
+		CompilerUnitTests.class,
+		DumpLoadEndianIntTest.class,
+		RegressionTests.class,
+		SimpleTests.class,
+	})
+	public class CompilerTests {
+	}
 }

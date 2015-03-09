@@ -21,10 +21,16 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.luaj.vm2.lib.BaseLib;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
 
 
 /**
@@ -33,53 +39,43 @@ import java.io.InputStream;
  * Results are compared for exact match with
  * the installed C-based lua environment.
  */
-public class ErrorsTest extends ScriptDrivenTest {
+@RunWith(Parameterized.class)
+public class ErrorsTest {
+	private ScriptDrivenHelpers helpers = new ScriptDrivenHelpers(ScriptDrivenHelpers.PlatformType.JSE, "/errors/");
+	private String name;
 
-	private static final String dir = "errors/";
-
-	public ErrorsTest() {
-		super(ScriptDrivenTest.PlatformType.JSE, dir);
+	public ErrorsTest(String name) {
+		this.name = name;
 	}
 
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setup() throws Exception {
+		helpers.setup();
 	}
 
-	public void testBaseLibArgs() {
+	@Parameterized.Parameters(name = "{0}")
+	public static Collection<Object[]> getTests() {
+		return Arrays.asList(new Object[][]{
+			{"baselibargs"},
+			{"coroutinelibargs"},
+			{"iolibargs"},
+			{"mathlibargs"},
+			{"modulelibargs"},
+			{"operators"},
+			{"stringlibargs"},
+			{"tablelibargs"},
+		});
+	}
+
+	@Test
+	public void testBaseLibArgs() throws Exception {
 		BaseLib.instance.STDIN = new InputStream() {
 			public int read() throws IOException {
 				return -1;
 			}
 		};
-		runTest("baselibargs");
-	}
 
-	public void testCoroutineLibArgs() {
-		runTest("coroutinelibargs");
-	}
-
-	public void testIoLibArgs() {
-		runTest("iolibargs");
-	}
-
-	public void testMathLibArgs() {
-		runTest("mathlibargs");
-	}
-
-	public void testModuleLibArgs() {
-		runTest("modulelibargs");
-	}
-
-	public void testOperators() {
-		runTest("operators");
-	}
-
-	public void testStringLibArgs() {
-		runTest("stringlibargs");
-	}
-
-	public void testTableLibArgs() {
-		runTest("tablelibargs");
+		helpers.runTest(name);
 	}
 
 }
