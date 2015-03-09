@@ -15,9 +15,8 @@ package org.luaj.vm2.compiler;
  * @author jrosebor
  */
 public class RegressionTests extends AbstractUnitTests {
-
 	public RegressionTests() {
-		super("test/lua", "luaj2.0-tests.zip", "regressions");
+		super("regressions");
 	}
 
 	public void testModulo() {

@@ -2,62 +2,27 @@ package org.luaj.vm2.compiler;
 
 import junit.framework.TestCase;
 import org.luaj.vm2.LoadState;
-import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.Print;
 import org.luaj.vm2.Prototype;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 abstract public class AbstractUnitTests extends TestCase {
+	public final String dir;
 
-	private final String dir;
-	private final String jar;
-	private LuaTable _G;
-
-	public AbstractUnitTests(String zipdir, String zipfile, String dir) {
-		URL zip = null;
-		zip = getClass().getResource("/" + zipfile);
-		if (zip == null) {
-			File file = new File(zipdir + "/" + zipfile);
-			try {
-				if (file.exists())
-					zip = file.toURI().toURL();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			}
-		}
-		if (zip == null)
-			throw new RuntimeException("not found: " + zipfile);
-		this.jar = "jar:" + zip.toExternalForm() + "!/";
-		this.dir = dir;
+	public AbstractUnitTests(String dir) {
+		this.dir = "/" + dir + "/";
 	}
-
 	protected void setUp() throws Exception {
 		super.setUp();
-		_G = JsePlatform.standardGlobals();
-	}
-
-	protected String pathOfFile(String file) {
-		return jar + dir + "/" + file;
-	}
-
-	protected InputStream inputStreamOfPath(String path) throws IOException {
-		URL url = new URL(path);
-		return url.openStream();
-	}
-
-	protected InputStream inputStreamOfFile(String file) throws IOException {
-		return inputStreamOfPath(pathOfFile(file));
+		JsePlatform.standardGlobals();
 	}
 
 	protected void doTest(String file) {
 		try {
 			// load source from jar
-			String path = pathOfFile(file);
-			byte[] lua = bytesFromJar(path);
+			byte[] lua = bytesFromJar(file);
 
 			// compile in memory
 			InputStream is = new ByteArrayInputStream(lua);
@@ -65,7 +30,7 @@ abstract public class AbstractUnitTests extends TestCase {
 			String actual = protoToString(p);
 
 			// load expected value from jar
-			byte[] luac = bytesFromJar(path.substring(0, path.length() - 4) + ".lc");
+			byte[] luac = bytesFromJar(file.substring(0, file.length() - 4) + ".lc");
 			Prototype e = loadFromBytes(luac, file);
 			String expected = protoToString(e);
 
@@ -90,7 +55,8 @@ abstract public class AbstractUnitTests extends TestCase {
 	}
 
 	protected byte[] bytesFromJar(String path) throws IOException {
-		InputStream is = inputStreamOfPath(path);
+		InputStream is = getClass().getResourceAsStream(dir + path);
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		byte[] buffer = new byte[2048];
 		int n;

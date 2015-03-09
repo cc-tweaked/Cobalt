@@ -1,0 +1,17 @@
+os	table
+os.clock()	true	number
+os.date()	true	string
+os.difftime(123000, 21500)	true	number
+os.execute("bogus")	true	number
+os.getenv()	false	string
+os.getenv("bogus.key")	true	nil
+os.tmpname()	true	string
+os.tmpname()	true	string
+io.open	true	userdata
+write	false	string
+close	false	string
+os.rename(p,q)	true	boolean
+os.remove(q)	true	boolean
+os.remove(q)	true	nil
+os.setlocale("C")	true	string
+os.exit	function

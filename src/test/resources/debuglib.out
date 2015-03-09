@@ -1,0 +1,177 @@
+has debug	true
+----- debug.getfenv, debug.setfenv
+true	table	nil	false	true	f:abc|nil
+true	function	nil	false	true	f:abc|def
+true	table	nil	false	true	f:abc|def
+----- debug.getlocal, debug.setlocal
+true	h-3-0 -> 3-0 get=nil,nil set=nil,nil get=nil,nil 	g locals=7,8,9 tbl={3,0,#}	f locals=,3,0,#,4,5,6
+true	h-3-1 -> 3-1 get=a,3 set=a,nil get=a,# 	g locals=7,8,9 tbl={3,1,#}	f locals=,#,1,#,4,5,6
+true	h-3-2 -> 3-2 get=b,2 set=b,nil get=b,# 	g locals=7,8,9 tbl={3,2,#}	f locals=,3,#,#,4,5,6
+true	h-3-3 -> 3-3 get=c,# set=c,nil get=c,# 	g locals=7,8,9 tbl={3,3,#}	f locals=,3,3,#,4,5,6
+true	h-3-4 -> 3-4 get=d,4 set=d,nil get=d,# 	g locals=7,8,9 tbl={3,4,#}	f locals=,3,4,#,#,5,6
+true	h-3-5 -> 3-5 get=e,5 set=e,nil get=e,# 	g locals=7,8,9 tbl={3,5,#}	f locals=,3,5,#,4,#,6
+true	h-3-6 -> 3-6 get=f,6 set=f,nil get=f,# 	g locals=7,8,9 tbl={3,6,#}	f locals=,3,6,#,4,5,#
+true	h-3-7 -> 3-7 get=nil,nil set=nil,nil get=nil,nil 	g locals=7,8,9 tbl={3,7,#}	f locals=,3,7,#,4,5,6
+true	h-2-0 -> 2-0 get=nil,nil set=nil,nil get=nil,nil 	g locals=7,8,9 tbl={2,0,#}	f locals=,2,0,#,4,5,6
+true	h-2-1 -> 2-1 get=arg,nil set=arg,nil get=arg,# 	g locals=7,8,9 tbl={2,1,#}	f locals=,2,1,#,4,5,6
+true	h-2-2 -> 2-2 get=p,7 set=p,nil get=p,# 	g locals=#,8,9 tbl={2,2,#}	f locals=,2,2,#,4,5,6
+true	h-2-3 -> 2-3 get=q,8 set=q,nil get=q,# 	g locals=7,#,9 tbl={2,3,#}	f locals=,2,3,#,4,5,6
+true	h-2-4 -> 2-4 get=r,9 set=r,nil get=r,# 	g locals=7,8,# tbl={2,4,#}	f locals=,2,4,#,4,5,6
+true	h-2-5 -> 2-5 get=nil,nil set=nil,nil get=nil,nil 	g locals=7,8,9 tbl={2,5,#}	f locals=,2,5,#,4,5,6
+true	h-2-6 -> 2-6 get=nil,nil set=nil,nil get=nil,nil 	g locals=7,8,9 tbl={2,6,#}	f locals=,2,6,#,4,5,6
+true	h-2-7 -> 2-7 get=nil,nil set=nil,nil get=nil,nil 	g locals=7,8,9 tbl={2,7,#}	f locals=,2,7,#,4,5,6
+true	h-1-3 -> 1-3 get=n,# set=n,nil get=n,# 	g locals=7,8,9 tbl={1,3,#}	f locals=,1,3,#,4,5,6
+true	h-1-4 -> 1-4 get=#,nil set=x1,nil get=x1,# 	g locals=7,8,9 tbl={1,4,#}	f locals=,1,4,#,4,5,6
+true	h-1-5 -> 1-5 get=nil,# set=y1,nil get=y1,# 	g locals=7,8,9 tbl={1,5,#}	f locals=,1,5,#,4,5,6
+true	h-1-6 -> 1-6 get=nil,nil set=nil,nil get=x2,nil 	g locals=7,8,9 tbl={1,6,#}	f locals=,1,6,#,4,5,6
+true	h-1-7 -> 1-7 get=nil,nil set=nil,nil get=y2,nil 	g locals=7,8,9 tbl={1,7,#}	f locals=,1,7,#,4,5,6
+----- debug.getupvalue, debug.setupvalue
+h	101	102	103	104	105	106	107	108	109
+f -> 1-0 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,101,102,103,104,105,106,107,108,109
+f -> 1-1 get=true,m,101 set=true,m,nil get=true,m,777001 tbl=true,777001,102,103,104,105,106,107,108,109
+f -> 1-2 get=true,n,102 set=true,n,nil get=true,n,777002 tbl=true,777001,777002,103,104,105,106,107,108,109
+f -> 1-3 get=true,o,103 set=true,o,nil get=true,o,777003 tbl=true,777001,777002,777003,104,105,106,107,108,109
+f -> 1-4 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+f -> 1-5 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+f -> 1-6 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+f -> 1-7 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+f -> 1-8 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+f -> 1-9 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+f -> 1-10 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+g -> 2-0 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,777001,777002,777003,104,105,106,107,108,109
+g -> 2-1 get=true,m,777001 set=true,m,nil get=true,m,888001 tbl=true,888001,777002,777003,104,105,106,107,108,109
+g -> 2-2 get=true,n,777002 set=true,n,nil get=true,n,888002 tbl=true,888001,888002,777003,104,105,106,107,108,109
+g -> 2-3 get=true,o,777003 set=true,o,nil get=true,o,888003 tbl=true,888001,888002,888003,104,105,106,107,108,109
+g -> 2-4 get=true,p,104 set=true,p,nil get=true,p,888004 tbl=true,888001,888002,888003,888004,105,106,107,108,109
+g -> 2-5 get=true,q,105 set=true,q,nil get=true,q,888005 tbl=true,888001,888002,888003,888004,888005,106,107,108,109
+g -> 2-6 get=true,r,106 set=true,r,nil get=true,r,888006 tbl=true,888001,888002,888003,888004,888005,888006,107,108,109
+g -> 2-7 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,888001,888002,888003,888004,888005,888006,107,108,109
+g -> 2-8 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,888001,888002,888003,888004,888005,888006,107,108,109
+g -> 2-9 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,888001,888002,888003,888004,888005,888006,107,108,109
+g -> 2-10 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,888001,888002,888003,888004,888005,888006,107,108,109
+h -> 3-0 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,888001,888002,888003,888004,888005,888006,107,108,109
+h -> 3-1 get=true,m,888001 set=true,m,nil get=true,m,999001 tbl=true,999001,888002,888003,888004,888005,888006,107,108,109
+h -> 3-2 get=true,n,888002 set=true,n,nil get=true,n,999002 tbl=true,999001,999002,888003,888004,888005,888006,107,108,109
+h -> 3-3 get=true,o,888003 set=true,o,nil get=true,o,999003 tbl=true,999001,999002,999003,888004,888005,888006,107,108,109
+h -> 3-4 get=true,p,888004 set=true,p,nil get=true,p,999004 tbl=true,999001,999002,999003,999004,888005,888006,107,108,109
+h -> 3-5 get=true,q,888005 set=true,q,nil get=true,q,999005 tbl=true,999001,999002,999003,999004,999005,888006,107,108,109
+h -> 3-6 get=true,r,888006 set=true,r,nil get=true,r,999006 tbl=true,999001,999002,999003,999004,999005,999006,107,108,109
+h -> 3-7 get=true,v,107 set=true,v,nil get=true,v,999007 tbl=true,999001,999002,999003,999004,999005,999006,999007,108,109
+h -> 3-8 get=true,w,108 set=true,w,nil get=true,w,999008 tbl=true,999001,999002,999003,999004,999005,999006,999007,999008,109
+h -> 3-9 get=true,x,109 set=true,x,nil get=true,x,999009 tbl=true,999001,999002,999003,999004,999005,999006,999007,999008,999009
+h -> 3-10 get=true,nil,nil set=true,nil,nil get=true,nil,nil tbl=true,999001,999002,999003,999004,999005,999006,999007,999008,999009
+----- debug.setmetatable, debug.getmetatable
+a.a=bbb a.b=nil b.a=nil b.b=nil
+a.a=bbb a.b=ccc b.a=nil b.b=nil
+a.a=bbb a.b=nil b.a=nil b.b=nil
+get=true,true,nil
+set=true,false,nil
+get=true,true,nil
+get=true,true,nil
+set=true,false,nil
+get=true,true,nil
+true	nil
+true	true
+true	true
+----- debug.getinfo
+6
+---
+debug.getinfo(1)
+    source: @debuglib.lua
+    short_src: debuglib.lua
+    what: Lua
+    currentline: 155
+    linedefined: 152
+    lastlinedefined: 172
+    nups: 4
+    func: function
+debug.getinfo(1,"")
+debug.getinfo(1,"l")
+    currentline: 157
+debug.getinfo(1,"fL")
+    func: function
+    activelines: {}
+debug.getinfo(2)
+    source: @debuglib.lua
+    short_src: debuglib.lua
+    what: Lua
+    currentline: 174
+    linedefined: 146
+    lastlinedefined: 176
+    nups: 5
+    func: function
+debug.getinfo(2,"l")
+    currentline: 174
+debug.getinfo(2,"fL")
+    func: function
+    activelines: {}
+debug.getinfo(10,"")
+true
+debug.getinfo(-10,"")
+true
+---
+5
+e,f,g	true	function	function
+debug.getinfo(f)
+true
+    source: @debuglib.lua
+    short_src: debuglib.lua
+    what: Lua
+    currentline: -1
+    linedefined: 148
+    lastlinedefined: 151
+    nups: 1
+    func: function
+debug.getinfo(f,"nSlufL")
+true
+    source: @debuglib.lua
+    short_src: debuglib.lua
+    what: Lua
+    currentline: -1
+    linedefined: 148
+    lastlinedefined: 151
+    nups: 1
+    func: function
+    activelines: {}
+debug.getinfo(f,"n")
+true
+debug.getinfo(f,"S")
+true
+    source: @debuglib.lua
+    short_src: debuglib.lua
+    what: Lua
+    linedefined: 148
+    lastlinedefined: 151
+debug.getinfo(f,"l")
+true
+    currentline: -1
+debug.getinfo(f,"u")
+true
+    nups: 1
+debug.getinfo(f,"f")
+true
+    func: function
+debug.getinfo(f,"L")
+true
+    activelines: {}
+debug.getinfo(g)
+true
+    source: @debuglib.lua
+    short_src: debuglib.lua
+    what: Lua
+    currentline: -1
+    linedefined: 152
+    lastlinedefined: 172
+    nups: 4
+    func: function
+debug.getinfo(test)
+true
+    source: @debuglib.lua
+    short_src: debuglib.lua
+    what: Lua
+    currentline: -1
+    linedefined: 146
+    lastlinedefined: 176
+    nups: 5
+    func: function
+----- debug.sethook, debug.gethook
