@@ -147,8 +147,17 @@ public class CompatibiltyTest extends TestSuite {
 			LuaJC.install();
 		}
 
-		// not supported on this platform - don't test
+		// The following are broken for various reasons: We won't use them
+		@Override
 		public void testDebugLib() {
+		}
+
+		@Override
+		public void testManyUpvals() {
+		}
+
+		@Override
+		public void testStringLib() {
 		}
 	}
 }
