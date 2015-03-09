@@ -1,5 +1,4 @@
 local platform = ...
-print('platform', platform)
 
 -- simple io-library tests
 --

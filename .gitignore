@@ -117,3 +117,11 @@ docs/
 !gradle-wrapper.jar
 /lib
 /dist/
+
+##############
+# Test output
+##############
+/abc.txt
+/seektest.txt
+/tmp1.out
+/tmp2.out

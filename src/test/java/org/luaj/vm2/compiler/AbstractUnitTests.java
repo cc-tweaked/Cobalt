@@ -12,7 +12,7 @@ abstract public class AbstractUnitTests extends TestCase {
 	public final String dir;
 
 	public AbstractUnitTests(String dir) {
-		this.dir = "/" + dir + "/";
+		this.dir = "/" + dir + (dir.length() == 0 ? "" : "/");
 	}
 	protected void setUp() throws Exception {
 		super.setUp();

@@ -80,14 +80,14 @@ debug.getinfo(1)
     source: @debuglib.lua
     short_src: debuglib.lua
     what: Lua
-    currentline: 155
-    linedefined: 152
-    lastlinedefined: 172
+    currentline: 157
+    linedefined: 154
+    lastlinedefined: 174
     nups: 4
     func: function
 debug.getinfo(1,"")
 debug.getinfo(1,"l")
-    currentline: 157
+    currentline: 159
 debug.getinfo(1,"fL")
     func: function
     activelines: {}
@@ -95,13 +95,13 @@ debug.getinfo(2)
     source: @debuglib.lua
     short_src: debuglib.lua
     what: Lua
-    currentline: 174
-    linedefined: 146
-    lastlinedefined: 176
+    currentline: 177
+    linedefined: 147
+    lastlinedefined: 179
     nups: 5
     func: function
 debug.getinfo(2,"l")
-    currentline: 174
+    currentline: 177
 debug.getinfo(2,"fL")
     func: function
     activelines: {}
@@ -118,8 +118,8 @@ true
     short_src: debuglib.lua
     what: Lua
     currentline: -1
-    linedefined: 148
-    lastlinedefined: 151
+    linedefined: 149
+    lastlinedefined: 152
     nups: 1
     func: function
 debug.getinfo(f,"nSlufL")
@@ -128,8 +128,8 @@ true
     short_src: debuglib.lua
     what: Lua
     currentline: -1
-    linedefined: 148
-    lastlinedefined: 151
+    linedefined: 149
+    lastlinedefined: 152
     nups: 1
     func: function
     activelines: {}
@@ -140,8 +140,8 @@ true
     source: @debuglib.lua
     short_src: debuglib.lua
     what: Lua
-    linedefined: 148
-    lastlinedefined: 151
+    linedefined: 149
+    lastlinedefined: 152
 debug.getinfo(f,"l")
 true
     currentline: -1
@@ -160,8 +160,8 @@ true
     short_src: debuglib.lua
     what: Lua
     currentline: -1
-    linedefined: 152
-    lastlinedefined: 172
+    linedefined: 154
+    lastlinedefined: 174
     nups: 4
     func: function
 debug.getinfo(test)
@@ -170,8 +170,8 @@ true
     short_src: debuglib.lua
     what: Lua
     currentline: -1
-    linedefined: 146
-    lastlinedefined: 176
+    linedefined: 147
+    lastlinedefined: 179
     nups: 5
     func: function
 ----- debug.sethook, debug.gethook

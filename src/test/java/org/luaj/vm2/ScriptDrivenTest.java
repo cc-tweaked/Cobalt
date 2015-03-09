@@ -24,12 +24,11 @@ package org.luaj.vm2;
 import junit.framework.TestCase;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.ResourceFinder;
+import org.luaj.vm2.lib.jse.JsePlatform;
 import org.luaj.vm2.lib.jse.JseProcess;
 import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 abstract
 public class ScriptDrivenTest extends TestCase implements ResourceFinder {
@@ -43,12 +42,9 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 	private final String subdir;
 	protected LuaTable globals;
 
-	static final String zipdir = "test/lua/";
-	static final String zipfile = "luaj2.0-tests.zip";
-
 	protected ScriptDrivenTest(PlatformType platform, String subdir) {
 		this.platform = platform;
-		this.subdir = subdir;
+		this.subdir = "/" + subdir + (subdir.length() == 0 ? "" : "/");
 		initGlobals();
 	}
 
@@ -58,7 +54,7 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 			case JSE:
 			case LUAJIT:
 			case LUA2JAVA:
-				globals = org.luaj.vm2.lib.jse.JsePlatform.debugGlobals();
+				globals = JsePlatform.debugGlobals();
 				break;
 		}
 	}
@@ -72,71 +68,10 @@ public class ScriptDrivenTest extends TestCase implements ResourceFinder {
 
 	// ResourceFinder implementation.
 	public InputStream findResource(String filename) {
-		InputStream is = findInPlainFile(filename);
-		if (is != null) return is;
-		is = findInPlainFileAsResource("", filename);
-		if (is != null) return is;
-		is = findInPlainFileAsResource("/", filename);
-		if (is != null) return is;
-		is = findInZipFileAsPlainFile(filename);
-		if (is != null) return is;
-		is = findInZipFileAsResource("", filename);
-		if (is != null) return is;
-		is = findInZipFileAsResource("/", filename);
-		return is;
-	}
-
-	private InputStream findInPlainFileAsResource(String prefix, String filename) {
-		return getClass().getResourceAsStream(prefix + subdir + filename);
-	}
-
-	private InputStream findInPlainFile(String filename) {
-		try {
-			File f = new File(zipdir + subdir + filename);
-			if (f.exists())
-				return new FileInputStream(f);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-		return null;
-	}
-
-	private InputStream findInZipFileAsPlainFile(String filename) {
-		URL zip;
-		File file = new File(zipdir + zipfile);
-		try {
-			if (file.exists()) {
-				zip = file.toURI().toURL();
-				String path = "jar:" + zip.toExternalForm() + "!/" + subdir + filename;
-				URL url = new URL(path);
-				return url.openStream();
-			}
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			// Ignore and return null.
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-		return null;
+		return getClass().getResourceAsStream(subdir + filename);
 	}
 
 
-	private InputStream findInZipFileAsResource(String prefix, String filename) {
-		URL zip = null;
-		zip = getClass().getResource(zipfile);
-		if (zip != null)
-			try {
-				String path = "jar:" + zip.toExternalForm() + "!/" + subdir + filename;
-				URL url = new URL(path);
-				return url.openStream();
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
-		return null;
-	}
-
-	// */
 	protected void runTest(String testName) {
 		try {
 			// override print()
