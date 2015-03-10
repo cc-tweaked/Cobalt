@@ -26,7 +26,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Suite;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,11 +37,6 @@ import java.util.stream.Collectors;
  * Results are compared for exact match with
  * the installed C-based lua environment.
  */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	CompatibilityTest.JseCompatibilityTest.class,
-	CompatibilityTest.LuaJCCompatibilityTest.class
-})
 public class CompatibilityTest {
 
 	/**

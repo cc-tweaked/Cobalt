@@ -19,16 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.luaj.vm2.TypeTest.MyData;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.ThreeArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
+import org.luaj.vm2.vm.TypeTest.MyData;
 
 import static org.junit.Assert.assertEquals;
 

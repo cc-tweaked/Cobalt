@@ -19,9 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.table;
 
 import org.junit.Test;
+import org.luaj.vm2.*;
 
 import java.util.ArrayList;
 import java.util.Vector;

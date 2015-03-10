@@ -19,9 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
 import org.junit.Test;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.ZeroArgFunction;
 
 import java.lang.reflect.InvocationTargetException;
@@ -907,7 +908,7 @@ public class TypeTest {
 			fail("did not throw bad type error");
 			assertTrue(o instanceof MyData);
 		} catch (LuaError le) {
-			assertEquals("org.luaj.vm2.TypeTest$MyData expected, got userdata", le.getMessage());
+			assertEquals("org.luaj.vm2.vm.TypeTest$MyData expected, got userdata", le.getMessage());
 		}
 	}
 
@@ -1269,7 +1270,7 @@ public class TypeTest {
 			fail("did not throw bad type error");
 			assertTrue(o instanceof MyData);
 		} catch (LuaError le) {
-			assertEquals("org.luaj.vm2.TypeTest$MyData expected, got userdata", le.getMessage());
+			assertEquals("org.luaj.vm2.vm.TypeTest$MyData expected, got userdata", le.getMessage());
 		}
 	}
 

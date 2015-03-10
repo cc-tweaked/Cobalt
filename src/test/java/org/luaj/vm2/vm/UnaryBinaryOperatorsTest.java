@@ -19,10 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.TwoArgFunction;
 
 import java.lang.reflect.InvocationTargetException;
@@ -40,7 +42,7 @@ public class UnaryBinaryOperatorsTest {
 
 	@Test
 	public void testEqualsBool() {
-		assertEquals(LuaValue.FALSE, LuaValue.FALSE);
+		Assert.assertEquals(LuaValue.FALSE, LuaValue.FALSE);
 		assertEquals(LuaValue.TRUE, LuaValue.TRUE);
 		assertTrue(LuaValue.FALSE.equals(LuaValue.FALSE));
 		assertTrue(LuaValue.TRUE.equals(LuaValue.TRUE));

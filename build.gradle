@@ -29,6 +29,9 @@ test {
 		includeTestsMatching "org.luaj.*"
 	}
 
+	// --tests org.luaj.vm2.AllTests
+	// include "org.luaj.vm2.AllTests"
+
 	beforeTest { descriptor ->
 		logger.lifecycle("Running test: " + descriptor)
 	}

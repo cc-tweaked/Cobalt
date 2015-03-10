@@ -1,7 +1,8 @@
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.luaj.vm2.LuaString;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.IOException;

@@ -77,28 +77,6 @@ public class WeakTable extends LuaTable {
 		m_metatable = source.m_metatable;
 	}
 
-	public void presize(int narray) {
-		super.presize(narray);
-	}
-
-	/**
-	 * Presize capacity of both array and hash parts.
-	 *
-	 * @param narray capacity of array part
-	 * @param nhash  capacity of hash part
-	 */
-	public void presize(int narray, int nhash) {
-		super.presize(narray, nhash);
-	}
-
-	protected int getArrayLength() {
-		return super.getArrayLength();
-	}
-
-	protected int getHashLength() {
-		return super.getHashLength();
-	}
-
 	protected LuaTable changemode(boolean weakkeys, boolean weakvalues) {
 		this.weakkeys = weakkeys;
 		this.weakvalues = weakvalues;

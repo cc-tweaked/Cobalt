@@ -19,10 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.luaj.vm2.LoadState;
+import org.luaj.vm2.LuaThread;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Varargs;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
@@ -37,10 +41,10 @@ public class OrphanedThreadTest {
 	private LuaValue env;
 
 	@SuppressWarnings("FieldCanBeLocal")
-	private WeakReference<LuaValue> luathr_ref;
+	private WeakReference luathr_ref;
 
 	@SuppressWarnings("FieldCanBeLocal")
-	private WeakReference<LuaValue> func_ref;
+	private WeakReference func_ref;
 
 	@Before
 	public void setup() throws Exception {
@@ -120,10 +124,11 @@ public class OrphanedThreadTest {
 		doTest(LuaValue.TRUE, LuaValue.ONE);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void doTest(LuaValue status2, LuaValue value2) throws Exception {
 		LuaThread luathread = new LuaThread(function, env);
-		luathr_ref = new WeakReference<>(luathread);
-		func_ref = new WeakReference<>(function);
+		luathr_ref = new WeakReference(luathread);
+		func_ref = new WeakReference(function);
 		assertNotNull(luathr_ref.get());
 
 		// resume two times

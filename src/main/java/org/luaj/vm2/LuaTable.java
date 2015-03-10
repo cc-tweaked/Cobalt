@@ -212,7 +212,7 @@ public class LuaTable extends LuaValue {
 	 *
 	 * @return length of the array part, does not relate to count of objects in the table.
 	 */
-	protected int getArrayLength() {
+	public int getArrayLength() {
 		return array.length;
 	}
 
@@ -221,7 +221,7 @@ public class LuaTable extends LuaValue {
 	 *
 	 * @return length of the hash part, does not relate to count of objects in the table.
 	 */
-	protected int getHashLength() {
+	public int getHashLength() {
 		return hashValues.length;
 	}
 
