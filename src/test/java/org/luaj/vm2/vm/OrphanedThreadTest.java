@@ -21,6 +21,7 @@
  ******************************************************************************/
 package org.luaj.vm2.vm;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.LoadState;
@@ -36,15 +37,11 @@ import java.lang.ref.WeakReference;
 
 import static org.junit.Assert.*;
 
+
 public class OrphanedThreadTest {
+
 	private LuaValue function;
 	private LuaValue env;
-
-	@SuppressWarnings("FieldCanBeLocal")
-	private WeakReference luathr_ref;
-
-	@SuppressWarnings("FieldCanBeLocal")
-	private WeakReference func_ref;
 
 	@Before
 	public void setup() throws Exception {
@@ -52,7 +49,7 @@ public class OrphanedThreadTest {
 		env = JsePlatform.standardGlobals();
 	}
 
-	@Before
+	@After
 	public void tearDown() {
 		LuaThread.thread_orphan_check_interval = 30000;
 	}
@@ -78,12 +75,12 @@ public class OrphanedThreadTest {
 	@Test
 	public void testCollectOrphanedClosureThread() throws Exception {
 		String script =
-			"print('in closure, arg is '..(...))\n" +
-				"arg = coroutine.yield(1)\n" +
-				"print('in closure.2, arg is '..arg)\n" +
-				"arg = coroutine.yield(0)\n" +
-				"print('leakage in closure.3, arg is '..arg)\n" +
-				"return 'done'\n";
+				"print('in closure, arg is '..(...))\n" +
+						"arg = coroutine.yield(1)\n" +
+						"print('in closure.2, arg is '..arg)\n" +
+						"arg = coroutine.yield(0)\n" +
+						"print('leakage in closure.3, arg is '..arg)\n" +
+						"return 'done'\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
@@ -92,15 +89,15 @@ public class OrphanedThreadTest {
 	@Test
 	public void testCollectOrphanedPcallClosureThread() throws Exception {
 		String script =
-			"f = function(x)\n" +
-				"  print('in pcall-closure, arg is '..(x))\n" +
-				"  arg = coroutine.yield(1)\n" +
-				"  print('in pcall-closure.2, arg is '..arg)\n" +
-				"  arg = coroutine.yield(0)\n" +
-				"  print('leakage in pcall-closure.3, arg is '..arg)\n" +
-				"  return 'done'\n" +
-				"end\n" +
-				"print( 'pcall-closre.result:', pcall( f, ... ) )\n";
+				"f = function(x)\n" +
+						"  print('in pcall-closure, arg is '..(x))\n" +
+						"  arg = coroutine.yield(1)\n" +
+						"  print('in pcall-closure.2, arg is '..arg)\n" +
+						"  arg = coroutine.yield(0)\n" +
+						"  print('leakage in pcall-closure.3, arg is '..arg)\n" +
+						"  return 'done'\n" +
+						"end\n" +
+						"print( 'pcall-closre.result:', pcall( f, ... ) )\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
@@ -109,26 +106,25 @@ public class OrphanedThreadTest {
 	@Test
 	public void testCollectOrphanedLoadCloasureThread() throws Exception {
 		String script =
-			"t = { \"print \", \"'hello, \", \"world'\", }\n" +
-				"i = 0\n" +
-				"arg = ...\n" +
-				"f = function()\n" +
-				"	i = i + 1\n" +
-				"   print('in load-closure, arg is', arg, 'next is', t[i])\n" +
-				"   arg = coroutine.yield(1)\n" +
-				"	return t[i]\n" +
-				"end\n" +
-				"load(f)()\n";
+				"t = { \"print \", \"'hello, \", \"world'\", }\n" +
+						"i = 0\n" +
+						"arg = ...\n" +
+						"f = function()\n" +
+						"	i = i + 1\n" +
+						"   print('in load-closure, arg is', arg, 'next is', t[i])\n" +
+						"   arg = coroutine.yield(1)\n" +
+						"	return t[i]\n" +
+						"end\n" +
+						"load(f)()\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(LuaValue.TRUE, LuaValue.ONE);
 	}
 
-	@SuppressWarnings("unchecked")
 	private void doTest(LuaValue status2, LuaValue value2) throws Exception {
 		LuaThread luathread = new LuaThread(function, env);
-		luathr_ref = new WeakReference(luathread);
-		func_ref = new WeakReference(function);
+		WeakReference luathr_ref = new WeakReference<>(luathread);
+		WeakReference func_ref = new WeakReference<>(function);
 		assertNotNull(luathr_ref.get());
 
 		// resume two times
@@ -176,6 +172,16 @@ public class OrphanedThreadTest {
 	}
 
 	private static class AbnormalFunction extends OneArgFunction {
+		public LuaValue call(LuaValue arg) {
+			System.out.println("in abnormal.1, arg is " + arg);
+			arg = LuaThread.yield(ONE).arg1();
+			System.out.println("in abnormal.2, arg is " + arg);
+			error("abnormal condition");
+			return ZERO;
+		}
+	}
+
+	private static class ClosureFunction extends OneArgFunction {
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
