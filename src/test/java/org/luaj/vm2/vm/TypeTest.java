@@ -19,14 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.ZeroArgFunction;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class TypeTest extends TestCase {
+import static org.junit.Assert.*;
+
+public class TypeTest {
 
 	private final int sampleint = 77;
 	private final long samplelong = 123400000000L;
@@ -67,6 +70,7 @@ public class TypeTest extends TestCase {
 
 	// ===================== type checks =======================
 
+	@Test
 	public void testIsBoolean() {
 		assertEquals(false, somenil.isboolean());
 		assertEquals(true, sometrue.isboolean());
@@ -87,6 +91,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isboolean());
 	}
 
+	@Test
 	public void testIsClosure() {
 		assertEquals(false, somenil.isclosure());
 		assertEquals(false, sometrue.isclosure());
@@ -107,7 +112,7 @@ public class TypeTest extends TestCase {
 		assertEquals(true, someclosure.isclosure());
 	}
 
-
+	@Test
 	public void testIsFunction() {
 		assertEquals(false, somenil.isfunction());
 		assertEquals(false, sometrue.isfunction());
@@ -128,7 +133,7 @@ public class TypeTest extends TestCase {
 		assertEquals(true, someclosure.isfunction());
 	}
 
-
+	@Test
 	public void testIsInt() {
 		assertEquals(false, somenil.isint());
 		assertEquals(false, sometrue.isint());
@@ -148,6 +153,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isint());
 	}
 
+	@Test
 	public void testIsIntType() {
 		assertEquals(false, somenil.isinttype());
 		assertEquals(false, sometrue.isinttype());
@@ -168,6 +174,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isinttype());
 	}
 
+	@Test
 	public void testIsLong() {
 		assertEquals(false, somenil.islong());
 		assertEquals(false, sometrue.islong());
@@ -187,6 +194,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.islong());
 	}
 
+	@Test
 	public void testIsNil() {
 		assertEquals(true, somenil.isnil());
 		assertEquals(false, sometrue.isnil());
@@ -207,6 +215,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isnil());
 	}
 
+	@Test
 	public void testIsNumber() {
 		assertEquals(false, somenil.isnumber());
 		assertEquals(false, sometrue.isnumber());
@@ -227,6 +236,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isnumber());
 	}
 
+	@Test
 	public void testIsString() {
 		assertEquals(false, somenil.isstring());
 		assertEquals(false, sometrue.isstring());
@@ -246,6 +256,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isstring());
 	}
 
+	@Test
 	public void testIsThread() {
 		assertEquals(false, somenil.isthread());
 		assertEquals(false, sometrue.isthread());
@@ -264,6 +275,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isthread());
 	}
 
+	@Test
 	public void testIsTable() {
 		assertEquals(false, somenil.istable());
 		assertEquals(false, sometrue.istable());
@@ -282,6 +294,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.istable());
 	}
 
+	@Test
 	public void testIsUserdata() {
 		assertEquals(false, somenil.isuserdata());
 		assertEquals(false, sometrue.isuserdata());
@@ -300,6 +313,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isuserdata());
 	}
 
+	@Test
 	public void testIsUserdataObject() {
 		assertEquals(false, somenil.isuserdata(Object.class));
 		assertEquals(false, sometrue.isuserdata(Object.class));
@@ -317,6 +331,7 @@ public class TypeTest extends TestCase {
 		assertEquals(false, someclosure.isuserdata(Object.class));
 	}
 
+	@Test
 	public void testIsUserdataMyData() {
 		assertEquals(false, somenil.isuserdata(MyData.class));
 		assertEquals(false, sometrue.isuserdata(MyData.class));
@@ -336,7 +351,7 @@ public class TypeTest extends TestCase {
 
 
 	// ===================== Coerce to Java =======================
-
+	@Test
 	public void testToBoolean() {
 		assertEquals(false, somenil.toboolean());
 		assertEquals(true, sometrue.toboolean());
@@ -357,6 +372,7 @@ public class TypeTest extends TestCase {
 		assertEquals(true, someclosure.toboolean());
 	}
 
+	@Test
 	public void testToByte() {
 		assertEquals((byte) 0, somenil.tobyte());
 		assertEquals((byte) 0, somefalse.tobyte());
@@ -377,6 +393,7 @@ public class TypeTest extends TestCase {
 		assertEquals((byte) 0, someclosure.tobyte());
 	}
 
+	@Test
 	public void testToChar() {
 		assertEquals((char) 0, somenil.tochar());
 		assertEquals((char) 0, somefalse.tochar());
@@ -397,56 +414,59 @@ public class TypeTest extends TestCase {
 		assertEquals((char) 0, someclosure.tochar());
 	}
 
+	@Test
 	public void testToDouble() {
-		assertEquals(0., somenil.todouble());
-		assertEquals(0., somefalse.todouble());
-		assertEquals(0., sometrue.todouble());
-		assertEquals(0., zero.todouble());
-		assertEquals((double) sampleint, intint.todouble());
-		assertEquals((double) samplelong, longdouble.todouble());
-		assertEquals((double) sampledouble, doubledouble.todouble());
-		assertEquals((double) 0, stringstring.todouble());
-		assertEquals((double) sampleint, stringint.todouble());
-		assertEquals((double) samplelong, stringlong.todouble());
-		assertEquals((double) sampledouble, stringdouble.todouble());
-		assertEquals(0., thread.todouble());
-		assertEquals(0., table.todouble());
-		assertEquals(0., userdataobj.todouble());
-		assertEquals(0., userdatacls.todouble());
-		assertEquals(0., somefunc.todouble());
-		assertEquals(0., someclosure.todouble());
+		assertDoubleEquals(0., somenil.todouble());
+		assertDoubleEquals(0., somefalse.todouble());
+		assertDoubleEquals(0., sometrue.todouble());
+		assertDoubleEquals(0., zero.todouble());
+		assertDoubleEquals((double) sampleint, intint.todouble());
+		assertDoubleEquals((double) samplelong, longdouble.todouble());
+		assertDoubleEquals(sampledouble, doubledouble.todouble());
+		assertDoubleEquals((double) 0, stringstring.todouble());
+		assertDoubleEquals((double) sampleint, stringint.todouble());
+		assertDoubleEquals((double) samplelong, stringlong.todouble());
+		assertDoubleEquals(sampledouble, stringdouble.todouble());
+		assertDoubleEquals(0., thread.todouble());
+		assertDoubleEquals(0., table.todouble());
+		assertDoubleEquals(0., userdataobj.todouble());
+		assertDoubleEquals(0., userdatacls.todouble());
+		assertDoubleEquals(0., somefunc.todouble());
+		assertDoubleEquals(0., someclosure.todouble());
 	}
 
+	@Test
 	public void testToFloat() {
-		assertEquals(0.f, somenil.tofloat());
-		assertEquals(0.f, somefalse.tofloat());
-		assertEquals(0.f, sometrue.tofloat());
-		assertEquals(0.f, zero.tofloat());
-		assertEquals((float) sampleint, intint.tofloat());
-		assertEquals((float) samplelong, longdouble.tofloat());
-		assertEquals((float) sampledouble, doubledouble.tofloat());
-		assertEquals((float) 0, stringstring.tofloat());
-		assertEquals((float) sampleint, stringint.tofloat());
-		assertEquals((float) samplelong, stringlong.tofloat());
-		assertEquals((float) sampledouble, stringdouble.tofloat());
-		assertEquals(0.f, thread.tofloat());
-		assertEquals(0.f, table.tofloat());
-		assertEquals(0.f, userdataobj.tofloat());
-		assertEquals(0.f, userdatacls.tofloat());
-		assertEquals(0.f, somefunc.tofloat());
-		assertEquals(0.f, someclosure.tofloat());
+		assertDoubleEquals(0.f, somenil.tofloat());
+		assertDoubleEquals(0.f, somefalse.tofloat());
+		assertDoubleEquals(0.f, sometrue.tofloat());
+		assertDoubleEquals(0.f, zero.tofloat());
+		assertDoubleEquals((float) sampleint, intint.tofloat());
+		assertDoubleEquals((float) samplelong, longdouble.tofloat());
+		assertDoubleEquals((float) sampledouble, doubledouble.tofloat());
+		assertDoubleEquals((float) 0, stringstring.tofloat());
+		assertDoubleEquals((float) sampleint, stringint.tofloat());
+		assertDoubleEquals((float) samplelong, stringlong.tofloat());
+		assertDoubleEquals((float) sampledouble, stringdouble.tofloat());
+		assertDoubleEquals(0.f, thread.tofloat());
+		assertDoubleEquals(0.f, table.tofloat());
+		assertDoubleEquals(0.f, userdataobj.tofloat());
+		assertDoubleEquals(0.f, userdatacls.tofloat());
+		assertDoubleEquals(0.f, somefunc.tofloat());
+		assertDoubleEquals(0.f, someclosure.tofloat());
 	}
 
+	@Test
 	public void testToInt() {
 		assertEquals(0, somenil.toint());
 		assertEquals(0, somefalse.toint());
 		assertEquals(0, sometrue.toint());
 		assertEquals(0, zero.toint());
-		assertEquals((int) sampleint, intint.toint());
+		assertEquals(sampleint, intint.toint());
 		assertEquals((int) samplelong, longdouble.toint());
 		assertEquals((int) sampledouble, doubledouble.toint());
-		assertEquals((int) 0, stringstring.toint());
-		assertEquals((int) sampleint, stringint.toint());
+		assertEquals(0, stringstring.toint());
+		assertEquals(sampleint, stringint.toint());
 		assertEquals((int) samplelong, stringlong.toint());
 		assertEquals((int) sampledouble, stringdouble.toint());
 		assertEquals(0, thread.toint());
@@ -457,17 +477,18 @@ public class TypeTest extends TestCase {
 		assertEquals(0, someclosure.toint());
 	}
 
+	@Test
 	public void testToLong() {
 		assertEquals(0L, somenil.tolong());
 		assertEquals(0L, somefalse.tolong());
 		assertEquals(0L, sometrue.tolong());
 		assertEquals(0L, zero.tolong());
 		assertEquals((long) sampleint, intint.tolong());
-		assertEquals((long) samplelong, longdouble.tolong());
+		assertEquals(samplelong, longdouble.tolong());
 		assertEquals((long) sampledouble, doubledouble.tolong());
 		assertEquals((long) 0, stringstring.tolong());
 		assertEquals((long) sampleint, stringint.tolong());
-		assertEquals((long) samplelong, stringlong.tolong());
+		assertEquals(samplelong, stringlong.tolong());
 		assertEquals((long) sampledouble, stringdouble.tolong());
 		assertEquals(0L, thread.tolong());
 		assertEquals(0L, table.tolong());
@@ -477,6 +498,7 @@ public class TypeTest extends TestCase {
 		assertEquals(0L, someclosure.tolong());
 	}
 
+	@Test
 	public void testToShort() {
 		assertEquals((short) 0, somenil.toshort());
 		assertEquals((short) 0, somefalse.toshort());
@@ -497,6 +519,7 @@ public class TypeTest extends TestCase {
 		assertEquals((short) 0, someclosure.toshort());
 	}
 
+	@Test
 	public void testToString() {
 		assertEquals("nil", somenil.tojstring());
 		assertEquals("false", somefalse.tojstring());
@@ -517,6 +540,7 @@ public class TypeTest extends TestCase {
 		assertEquals("function: ", someclosure.tojstring().substring(0, 10));
 	}
 
+	@Test
 	public void testToUserdata() {
 		assertEquals(null, somenil.touserdata());
 		assertEquals(null, somefalse.touserdata());
@@ -554,6 +578,7 @@ public class TypeTest extends TestCase {
 		fail("failed to throw LuaError as required");
 	}
 
+	@Test
 	public void testOptBoolean() {
 		assertEquals(true, somenil.optboolean(true));
 		assertEquals(false, somenil.optboolean(false));
@@ -575,6 +600,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optboolean", boolean.class, Boolean.FALSE);
 	}
 
+	@Test
 	public void testOptClosure() {
 		assertEquals(someclosure, somenil.optclosure(someclosure));
 		assertEquals(null, somenil.optclosure(null));
@@ -597,26 +623,28 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optclosure", LuaClosure.class, someclosure);
 	}
 
+	@Test
 	public void testOptDouble() {
-		assertEquals(33., somenil.optdouble(33.));
+		assertDoubleEquals(33., somenil.optdouble(33.));
 		throwsError(sometrue, "optdouble", double.class, 33.);
 		throwsError(somefalse, "optdouble", double.class, 33.);
-		assertEquals(0., zero.optdouble(33.));
-		assertEquals((double) sampleint, intint.optdouble(33.));
-		assertEquals((double) samplelong, longdouble.optdouble(33.));
-		assertEquals(sampledouble, doubledouble.optdouble(33.));
+		assertDoubleEquals(0., zero.optdouble(33.));
+		assertDoubleEquals((double) sampleint, intint.optdouble(33.));
+		assertDoubleEquals((double) samplelong, longdouble.optdouble(33.));
+		assertDoubleEquals(sampledouble, doubledouble.optdouble(33.));
 		throwsError(somefunc, "optdouble", double.class, 33.);
 		throwsError(someclosure, "optdouble", double.class, 33.);
 		throwsError(stringstring, "optdouble", double.class, 33.);
-		assertEquals((double) sampleint, stringint.optdouble(33.));
-		assertEquals((double) samplelong, stringlong.optdouble(33.));
-		assertEquals(sampledouble, stringdouble.optdouble(33.));
+		assertDoubleEquals((double) sampleint, stringint.optdouble(33.));
+		assertDoubleEquals((double) samplelong, stringlong.optdouble(33.));
+		assertDoubleEquals(sampledouble, stringdouble.optdouble(33.));
 		throwsError(thread, "optdouble", double.class, 33.);
 		throwsError(table, "optdouble", double.class, 33.);
 		throwsError(userdataobj, "optdouble", double.class, 33.);
 		throwsError(userdatacls, "optdouble", double.class, 33.);
 	}
 
+	@Test
 	public void testOptFunction() {
 		assertEquals(somefunc, somenil.optfunction(somefunc));
 		assertEquals(null, somenil.optfunction(null));
@@ -640,6 +668,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optfunction", LuaFunction.class, somefunc);
 	}
 
+	@Test
 	public void testOptInt() {
 		assertEquals(33, somenil.optint(33));
 		throwsError(sometrue, "optint", int.class, new Integer(33));
@@ -660,6 +689,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optint", int.class, new Integer(33));
 	}
 
+	@Test
 	public void testOptInteger() {
 		assertEquals(LuaValue.valueOf(33), somenil.optinteger(LuaValue.valueOf(33)));
 		throwsError(sometrue, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
@@ -680,19 +710,20 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
 	}
 
+	@Test
 	public void testOptLong() {
 		assertEquals(33L, somenil.optlong(33));
 		throwsError(sometrue, "optlong", long.class, new Long(33));
 		throwsError(somefalse, "optlong", long.class, new Long(33));
 		assertEquals(0L, zero.optlong(33));
 		assertEquals(sampleint, intint.optlong(33));
-		assertEquals((long) samplelong, longdouble.optlong(33));
+		assertEquals(samplelong, longdouble.optlong(33));
 		assertEquals((long) sampledouble, doubledouble.optlong(33));
 		throwsError(somefunc, "optlong", long.class, new Long(33));
 		throwsError(someclosure, "optlong", long.class, new Long(33));
 		throwsError(stringstring, "optlong", long.class, new Long(33));
 		assertEquals(sampleint, stringint.optlong(33));
-		assertEquals((long) samplelong, stringlong.optlong(33));
+		assertEquals(samplelong, stringlong.optlong(33));
 		assertEquals((long) sampledouble, stringdouble.optlong(33));
 		throwsError(thread, "optlong", long.class, new Long(33));
 		throwsError(table, "optlong", long.class, new Long(33));
@@ -700,6 +731,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optlong", long.class, new Long(33));
 	}
 
+	@Test
 	public void testOptNumber() {
 		assertEquals(LuaValue.valueOf(33), somenil.optnumber(LuaValue.valueOf(33)));
 		throwsError(sometrue, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
@@ -720,6 +752,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
 	}
 
+	@Test
 	public void testOptTable() {
 		assertEquals(table, somenil.opttable(table));
 		assertEquals(null, somenil.opttable(null));
@@ -742,6 +775,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "opttable", LuaTable.class, table);
 	}
 
+	@Test
 	public void testOptThread() {
 		assertEquals(thread, somenil.optthread(thread));
 		assertEquals(null, somenil.optthread(null));
@@ -764,6 +798,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optthread", LuaThread.class, thread);
 	}
 
+	@Test
 	public void testOptJavaString() {
 		assertEquals("xyz", somenil.optjstring("xyz"));
 		assertEquals(null, somenil.optjstring(null));
@@ -785,6 +820,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optjstring", String.class, "xyz");
 	}
 
+	@Test
 	public void testOptLuaString() {
 		assertEquals(LuaValue.valueOf("xyz"), somenil.optstring(LuaValue.valueOf("xyz")));
 		assertEquals(null, somenil.optstring(null));
@@ -806,6 +842,7 @@ public class TypeTest extends TestCase {
 		throwsError(userdatacls, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
 	}
 
+	@Test
 	public void testOptUserdata() {
 		assertEquals(sampleobject, somenil.optuserdata(sampleobject));
 		assertEquals(sampledata, somenil.optuserdata(sampledata));
@@ -842,6 +879,7 @@ public class TypeTest extends TestCase {
 		fail("failed to throw LuaError as required");
 	}
 
+	@Test
 	public void testOptUserdataClass() {
 		assertEquals(sampledata, somenil.optuserdata(MyData.class, sampledata));
 		assertEquals(sampleobject, somenil.optuserdata(Object.class, sampleobject));
@@ -870,10 +908,11 @@ public class TypeTest extends TestCase {
 			fail("did not throw bad type error");
 			assertTrue(o instanceof MyData);
 		} catch (LuaError le) {
-			assertEquals("org.luaj.vm2.TypeTest$MyData expected, got userdata", le.getMessage());
+			assertEquals("org.luaj.vm2.vm.TypeTest$MyData expected, got userdata", le.getMessage());
 		}
 	}
 
+	@Test
 	public void testOptValue() {
 		assertEquals(zero, somenil.optvalue(zero));
 		assertEquals(stringstring, somenil.optvalue(stringstring));
@@ -911,6 +950,7 @@ public class TypeTest extends TestCase {
 		fail("failed to throw LuaError as required");
 	}
 
+	@Test
 	public void testCheckBoolean() {
 		throwsErrorReq(somenil, "checkboolean");
 		assertEquals(true, sometrue.checkboolean());
@@ -931,6 +971,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkboolean");
 	}
 
+	@Test
 	public void testCheckClosure() {
 		throwsErrorReq(somenil, "checkclosure");
 		throwsErrorReq(sometrue, "checkclosure");
@@ -952,26 +993,28 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkclosure");
 	}
 
+	@Test
 	public void testCheckDouble() {
 		throwsErrorReq(somenil, "checkdouble");
 		throwsErrorReq(sometrue, "checkdouble");
 		throwsErrorReq(somefalse, "checkdouble");
-		assertEquals(0., zero.checkdouble());
-		assertEquals((double) sampleint, intint.checkdouble());
-		assertEquals((double) samplelong, longdouble.checkdouble());
-		assertEquals(sampledouble, doubledouble.checkdouble());
+		assertDoubleEquals(0., zero.checkdouble());
+		assertDoubleEquals((double) sampleint, intint.checkdouble());
+		assertDoubleEquals((double) samplelong, longdouble.checkdouble());
+		assertDoubleEquals(sampledouble, doubledouble.checkdouble());
 		throwsErrorReq(somefunc, "checkdouble");
 		throwsErrorReq(someclosure, "checkdouble");
 		throwsErrorReq(stringstring, "checkdouble");
-		assertEquals((double) sampleint, stringint.checkdouble());
-		assertEquals((double) samplelong, stringlong.checkdouble());
-		assertEquals(sampledouble, stringdouble.checkdouble());
+		assertDoubleEquals((double) sampleint, stringint.checkdouble());
+		assertDoubleEquals((double) samplelong, stringlong.checkdouble());
+		assertDoubleEquals(sampledouble, stringdouble.checkdouble());
 		throwsErrorReq(thread, "checkdouble");
 		throwsErrorReq(table, "checkdouble");
 		throwsErrorReq(userdataobj, "checkdouble");
 		throwsErrorReq(userdatacls, "checkdouble");
 	}
 
+	@Test
 	public void testCheckFunction() {
 		throwsErrorReq(somenil, "checkfunction");
 		throwsErrorReq(sometrue, "checkfunction");
@@ -994,6 +1037,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkfunction");
 	}
 
+	@Test
 	public void testCheckInt() {
 		throwsErrorReq(somenil, "checkint");
 		throwsErrorReq(sometrue, "checkint");
@@ -1014,6 +1058,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkint");
 	}
 
+	@Test
 	public void testCheckInteger() {
 		throwsErrorReq(somenil, "checkinteger");
 		throwsErrorReq(sometrue, "checkinteger");
@@ -1034,19 +1079,20 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkinteger");
 	}
 
+	@Test
 	public void testCheckLong() {
 		throwsErrorReq(somenil, "checklong");
 		throwsErrorReq(sometrue, "checklong");
 		throwsErrorReq(somefalse, "checklong");
 		assertEquals(0L, zero.checklong());
 		assertEquals(sampleint, intint.checklong());
-		assertEquals((long) samplelong, longdouble.checklong());
+		assertEquals(samplelong, longdouble.checklong());
 		assertEquals((long) sampledouble, doubledouble.checklong());
 		throwsErrorReq(somefunc, "checklong");
 		throwsErrorReq(someclosure, "checklong");
 		throwsErrorReq(stringstring, "checklong");
 		assertEquals(sampleint, stringint.checklong());
-		assertEquals((long) samplelong, stringlong.checklong());
+		assertEquals(samplelong, stringlong.checklong());
 		assertEquals((long) sampledouble, stringdouble.checklong());
 		throwsErrorReq(thread, "checklong");
 		throwsErrorReq(table, "checklong");
@@ -1054,6 +1100,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checklong");
 	}
 
+	@Test
 	public void testCheckNumber() {
 		throwsErrorReq(somenil, "checknumber");
 		throwsErrorReq(sometrue, "checknumber");
@@ -1074,6 +1121,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checknumber");
 	}
 
+	@Test
 	public void testCheckTable() {
 		throwsErrorReq(somenil, "checktable");
 		throwsErrorReq(sometrue, "checktable");
@@ -1095,6 +1143,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checktable");
 	}
 
+	@Test
 	public void testCheckThread() {
 		throwsErrorReq(somenil, "checkthread");
 		throwsErrorReq(sometrue, "checkthread");
@@ -1116,6 +1165,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkthread");
 	}
 
+	@Test
 	public void testCheckJavaString() {
 		throwsErrorReq(somenil, "checkjstring");
 		throwsErrorReq(sometrue, "checkjstring");
@@ -1136,6 +1186,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkjstring");
 	}
 
+	@Test
 	public void testCheckLuaString() {
 		throwsErrorReq(somenil, "checkstring");
 		throwsErrorReq(sometrue, "checkstring");
@@ -1156,6 +1207,7 @@ public class TypeTest extends TestCase {
 		throwsErrorReq(userdatacls, "checkstring");
 	}
 
+	@Test
 	public void testCheckUserdata() {
 		throwsErrorReq(somenil, "checkuserdata");
 		throwsErrorReq(sometrue, "checkuserdata");
@@ -1190,6 +1242,7 @@ public class TypeTest extends TestCase {
 		fail("failed to throw LuaError as required");
 	}
 
+	@Test
 	public void testCheckUserdataClass() {
 		throwsErrorReqCheckUserdataClass(somenil, Object.class);
 		throwsErrorReqCheckUserdataClass(somenil, MyData.class);
@@ -1217,10 +1270,11 @@ public class TypeTest extends TestCase {
 			fail("did not throw bad type error");
 			assertTrue(o instanceof MyData);
 		} catch (LuaError le) {
-			assertEquals("org.luaj.vm2.TypeTest$MyData expected, got userdata", le.getMessage());
+			assertEquals("org.luaj.vm2.vm.TypeTest$MyData expected, got userdata", le.getMessage());
 		}
 	}
 
+	@Test
 	public void testCheckValue() {
 		throwsErrorReq(somenil, "checknotnil");
 		assertEquals(sometrue, sometrue.checknotnil());
@@ -1240,4 +1294,13 @@ public class TypeTest extends TestCase {
 		assertEquals(userdatacls, userdatacls.checknotnil());
 	}
 
+	/**
+	 * Really bad function to make it easier to compare doubles
+	 *
+	 * @param a
+	 * @param b
+	 */
+	public static void assertDoubleEquals(double a, double b) {
+		assertEquals(a, b, 1e-10);
+	}
 }

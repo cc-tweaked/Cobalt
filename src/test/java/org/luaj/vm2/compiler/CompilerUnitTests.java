@@ -1,103 +1,61 @@
 package org.luaj.vm2.compiler;
 
-public class CompilerUnitTests extends AbstractUnitTests {
-	public CompilerUnitTests() {
-		super("lua5.1-tests");
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.luaj.vm2.lib.jse.JsePlatform;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+@RunWith(Parameterized.class)
+public class CompilerUnitTests {
+	public String fileName;
+
+	public CompilerUnitTests(String file) {
+		fileName = file;
 	}
 
-	public void testAll() {
-		doTest("all.lua");
+	@Before
+	public void setup() throws Exception {
+		JsePlatform.standardGlobals();
 	}
 
-	public void testApi() {
-		doTest("api.lua");
+	@Test
+	public void compareBytecode() throws Exception {
+		CompileTestHelper.compareResults("/lua5.1-tests/", fileName);
 	}
 
-	public void testAttrib() {
-		doTest("attrib.lua");
-	}
+	@Parameterized.Parameters(name = "{0}")
+	public static Collection<Object[]> getTests() {
+		Object[][] tests = {
+			{"all"},
+			{"api"},
+			{"attrib"},
+			{"big"},
+			{"calls"},
+			{"checktable"},
+			{"closure"},
+			{"code"},
+			{"constructs"},
+			{"db"},
+			{"errors"},
+			{"events"},
+			{"files"},
+			{"gc"},
+			{"literals"},
+			{"locals"},
+			{"main"},
+			{"math"},
+			{"nextvar"},
+			{"pm"},
+			{"sort"},
+			{"strings"},
+			{"vararg"},
+			{"verybig"},
+		};
 
-	public void testBig() {
-		doTest("big.lua");
-	}
-
-	public void testCalls() {
-		doTest("calls.lua");
-	}
-
-	public void testChecktable() {
-		doTest("checktable.lua");
-	}
-
-	public void testClosure() {
-		doTest("closure.lua");
-	}
-
-	public void testCode() {
-		doTest("code.lua");
-	}
-
-	public void testConstruct() {
-		doTest("constructs.lua");
-	}
-
-	public void testDb() {
-		doTest("db.lua");
-	}
-
-	public void testErrors() {
-		doTest("errors.lua");
-	}
-
-	public void testEvents() {
-		doTest("events.lua");
-	}
-
-	public void testFiles() {
-		doTest("files.lua");
-	}
-
-	public void testGc() {
-		doTest("gc.lua");
-	}
-
-	public void testLiterals() {
-		doTest("literals.lua");
-	}
-
-	public void testLocals() {
-		doTest("locals.lua");
-	}
-
-	public void testMain() {
-		doTest("main.lua");
-	}
-
-	public void testMath() {
-		doTest("math.lua");
-	}
-
-	public void testNextvar() {
-		doTest("nextvar.lua");
-	}
-
-	public void testPm() {
-		doTest("pm.lua");
-	}
-
-	public void testSort() {
-		doTest("sort.lua");
-	}
-
-	public void testStrings() {
-		doTest("strings.lua");
-	}
-
-	public void testVararg() {
-		doTest("vararg.lua");
-	}
-
-	public void testVerybig() {
-		doTest("verybig.lua");
+		return Arrays.asList(tests);
 	}
 }

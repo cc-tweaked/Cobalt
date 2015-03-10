@@ -19,24 +19,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.table;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.luaj.vm2.LuaString;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.TwoArgFunction;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for tables used as lists.
  */
-public class TableHashTest extends TestCase {
-
+public class TableHashTest {
 	protected LuaTable new_Table() {
 		return new LuaTable();
 	}
 
-	protected LuaTable new_Table(int n, int m) {
-		return new LuaTable(n, m);
-	}
-
+	@Test
 	public void testSetRemove() {
 		LuaTable t = new_Table();
 
@@ -90,6 +92,7 @@ public class TableHashTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testIndexMetatag() {
 		LuaTable t = new_Table();
 		LuaTable mt = new_Table();
@@ -147,6 +150,7 @@ public class TableHashTest extends TestCase {
 		assertEquals("nil", t.get(456).tojstring());
 	}
 
+	@Test
 	public void testIndexFunction() {
 		final LuaTable t = new_Table();
 		final LuaTable mt = new_Table();
@@ -202,6 +206,7 @@ public class TableHashTest extends TestCase {
 		assertEquals("nil", t.get(456).tojstring());
 	}
 
+	@Test
 	public void testNext() {
 		final LuaTable t = new_Table();
 		assertEquals(LuaValue.NIL, t.next(LuaValue.NIL));

@@ -1,18 +1,24 @@
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+import org.luaj.vm2.LuaString;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
-public class StringTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-	protected void setUp() throws Exception {
+public class StringTest {
+	@Before
+	public void setup() throws Exception {
 		JsePlatform.standardGlobals();
 	}
 
+	@Test
 	public void testToInputStream() throws IOException {
 		LuaString str = LuaString.valueOf("Hello");
 
@@ -53,7 +59,7 @@ public class StringTest extends TestCase {
 	}
 
 
-	private static final String userFriendly(String s) {
+	private static String userFriendly(String s) {
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0, n = s.length(); i < n; i++) {
 			int c = s.charAt(i);
@@ -66,6 +72,7 @@ public class StringTest extends TestCase {
 		return sb.toString();
 	}
 
+	@Test
 	public void testUtf820482051() throws UnsupportedEncodingException {
 		int i = 2048;
 		char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
@@ -76,6 +83,7 @@ public class StringTest extends TestCase {
 
 	}
 
+	@Test
 	public void testUtf8() {
 		for (int i = 4; i < 0xffff; i += 4) {
 			char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
@@ -92,6 +100,7 @@ public class StringTest extends TestCase {
 
 	}
 
+	@Test
 	public void testSpotCheckUtf8() throws UnsupportedEncodingException {
 		byte[] bytes = {(byte) 194, (byte) 160, (byte) 194, (byte) 161, (byte) 194, (byte) 162, (byte) 194, (byte) 163, (byte) 194, (byte) 164};
 		String expected = new String(bytes, "UTF8");
@@ -105,6 +114,7 @@ public class StringTest extends TestCase {
 
 	}
 
+	@Test
 	public void testNullTerminated() {
 		char[] c = {'a', 'b', 'c', '\0', 'd', 'e', 'f'};
 		String before = new String(c);

@@ -1,20 +1,26 @@
 package org.luaj.vm2;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import org.luaj.vm2.require.RequireSampleClassCastExcep;
 import org.luaj.vm2.require.RequireSampleLoadLuaError;
 import org.luaj.vm2.require.RequireSampleLoadRuntimeExcep;
 
-public class RequireClassTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+public class RequireClassTest {
 
 	private LuaValue require;
 
-	public void setUp() {
+	@Before
+	public void setup() {
 		LuaTable globals = JsePlatform.standardGlobals();
 		require = globals.get("require");
 	}
 
+	@Test
 	public void testRequireClassSuccess() {
 		LuaValue result = require.call(LuaValue.valueOf("org.luaj.vm2.require.RequireSampleSuccess"));
 		assertEquals("require-sample-success", result.tojstring());
@@ -22,6 +28,7 @@ public class RequireClassTest extends TestCase {
 		assertEquals("require-sample-success", result.tojstring());
 	}
 
+	@Test
 	public void testRequireClassLoadLuaError() {
 		try {
 			LuaValue result = require.call(LuaValue.valueOf(RequireSampleLoadLuaError.class.getName()));
@@ -41,6 +48,7 @@ public class RequireClassTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testRequireClassLoadRuntimeException() {
 		try {
 			LuaValue result = require.call(LuaValue.valueOf(RequireSampleLoadRuntimeExcep.class.getName()));
@@ -60,7 +68,7 @@ public class RequireClassTest extends TestCase {
 		}
 	}
 
-
+	@Test
 	public void testRequireClassClassCastException() {
 		try {
 			LuaValue result = require.call(LuaValue.valueOf(RequireSampleClassCastExcep.class.getName()));

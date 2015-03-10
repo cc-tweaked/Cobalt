@@ -1,11 +1,14 @@
 package org.luaj.vm2;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 import org.luaj.vm2.lib.MathLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
-public class MathLibTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+public class MathLibTest {
 	private LuaValue j2se;
 	private LuaValue j2me;
 	private boolean supportedOnJ2me;
@@ -17,10 +20,12 @@ public class MathLibTest extends TestCase {
 		j2me = g.get("math");
 	}
 
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		supportedOnJ2me = true;
 	}
 
+	@Test
 	public void testMathDPow() {
 		assertEquals(1, j2mepow(2, 0), 0);
 		assertEquals(2, j2mepow(2, 1), 0);
@@ -48,24 +53,29 @@ public class MathLibTest extends TestCase {
 		return j2me.get("pow").call(LuaValue.valueOf(x), LuaValue.valueOf(y)).todouble();
 	}
 
+	@Test
 	public void testAbs() {
 		tryMathOp("abs", 23.45);
 		tryMathOp("abs", -23.45);
 	}
 
+	@Test
 	public void testCos() {
 		tryTrigOps("cos");
 	}
 
+	@Test
 	public void testCosh() {
 		supportedOnJ2me = false;
 		tryTrigOps("cosh");
 	}
 
+	@Test
 	public void testDeg() {
 		tryTrigOps("deg");
 	}
 
+	@Test
 	public void testExp() {
 		//supportedOnJ2me = false;
 		tryMathOp("exp", 0);
@@ -79,6 +89,7 @@ public class MathLibTest extends TestCase {
 		tryMathOp("exp", -9);
 	}
 
+	@Test
 	public void testLog() {
 		supportedOnJ2me = false;
 		tryMathOp("log", 0.1);
@@ -91,6 +102,7 @@ public class MathLibTest extends TestCase {
 		tryMathOp("log", -9);
 	}
 
+	@Test
 	public void testLog10() {
 		supportedOnJ2me = false;
 		tryMathOp("log10", 0.1);
@@ -107,6 +119,7 @@ public class MathLibTest extends TestCase {
 		tryMathOp("log10", -100);
 	}
 
+	@Test
 	public void testRad() {
 		tryMathOp("rad", 0);
 		tryMathOp("rad", 0.1);
@@ -123,15 +136,18 @@ public class MathLibTest extends TestCase {
 		tryMathOp("rad", -100);
 	}
 
+	@Test
 	public void testSin() {
 		tryTrigOps("sin");
 	}
 
+	@Test
 	public void testSinh() {
 		supportedOnJ2me = false;
 		tryTrigOps("sinh");
 	}
 
+	@Test
 	public void testSqrt() {
 		tryMathOp("sqrt", 0);
 		tryMathOp("sqrt", 0.1);
@@ -142,24 +158,29 @@ public class MathLibTest extends TestCase {
 		tryMathOp("sqrt", 100);
 	}
 
+	@Test
 	public void testTan() {
 		tryTrigOps("tan");
 	}
 
+	@Test
 	public void testTanh() {
 		supportedOnJ2me = false;
 		tryTrigOps("tanh");
 	}
 
+	@Test
 	public void testAtan2() {
 		supportedOnJ2me = false;
 		tryDoubleOps("atan2", false);
 	}
 
+	@Test
 	public void testFmod() {
 		tryDoubleOps("fmod", false);
 	}
 
+	@Test
 	public void testPow() {
 		tryDoubleOps("pow", true);
 	}

@@ -19,20 +19,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.vm;
 
-import junit.framework.TestCase;
-import org.luaj.vm2.TypeTest.MyData;
+import org.junit.Test;
+import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.vm.TypeTest.MyData;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 
-public class LuaOperationsTest extends TestCase {
+import static org.junit.Assert.*;
 
+public class LuaOperationsTest {
 	private final int sampleint = 77;
 	private final long samplelong = 123400000000L;
 	private final double sampledouble = 55.25;
@@ -71,9 +73,9 @@ public class LuaOperationsTest extends TestCase {
 			LuaValue.class.getMethod(methodName).invoke(obj);
 			fail("failed to throw LuaError as required");
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
-			return; // pass
+			}
 		} catch (Exception e) {
 			fail("bad exception: " + e);
 		}
@@ -84,14 +86,15 @@ public class LuaOperationsTest extends TestCase {
 			LuaValue.class.getMethod(methodName, LuaValue.class).invoke(obj, arg);
 			fail("failed to throw LuaError as required");
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
-			return; // pass
+			}
 		} catch (Exception e) {
 			fail("bad exception: " + e);
 		}
 	}
 
+	@Test
 	public void testLen() {
 		throwsLuaError("len", somenil);
 		throwsLuaError("len", sometrue);
@@ -112,6 +115,7 @@ public class LuaOperationsTest extends TestCase {
 		throwsLuaError("len", userdatacls);
 	}
 
+	@Test
 	public void testLength() {
 		throwsLuaError("length", somenil);
 		throwsLuaError("length", sometrue);
@@ -132,6 +136,7 @@ public class LuaOperationsTest extends TestCase {
 		throwsLuaError("length", userdatacls);
 	}
 
+	@Test
 	public void testGetfenv() {
 		throwsLuaError("getfenv", somenil);
 		throwsLuaError("getfenv", sometrue);
@@ -152,6 +157,7 @@ public class LuaOperationsTest extends TestCase {
 		throwsLuaError("getfenv", userdatacls);
 	}
 
+	@Test
 	public void testSetfenv() {
 		LuaTable table2 = LuaValue.listOf(new LuaValue[]{
 			LuaValue.valueOf("ccc"),
@@ -194,6 +200,7 @@ public class LuaOperationsTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testFunctionClosureThreadEnv() {
 
 		// set up suitable environments for execution

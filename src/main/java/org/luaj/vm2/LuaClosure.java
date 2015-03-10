@@ -93,7 +93,7 @@ public class LuaClosure extends LuaFunction {
 	public final Prototype p;
 	public final UpValue[] upValues;
 
-	LuaClosure() {
+	public LuaClosure() {
 		p = null;
 		upValues = null;
 	}

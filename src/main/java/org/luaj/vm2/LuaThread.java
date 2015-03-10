@@ -69,7 +69,7 @@ public class LuaThread extends LuaValue {
 	 * Interval at which to check for lua threads that are no longer referenced.
 	 * This can be changed by Java startup code if desired.
 	 */
-	static long thread_orphan_check_interval = 30000;
+	public static long thread_orphan_check_interval = 30000;
 
 	private static final int STATUS_INITIAL = 0;
 	private static final int STATUS_SUSPENDED = 1;

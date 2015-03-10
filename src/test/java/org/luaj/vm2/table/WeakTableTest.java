@@ -19,11 +19,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.table;
+
+import org.junit.Test;
+import org.luaj.vm2.LuaString;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.WeakTable;
 
 import java.lang.ref.WeakReference;
 
-abstract public class WeakTableTest extends TableTest {
+import static org.junit.Assert.*;
+
+abstract public class WeakTableTest {
 
 	public static class MyData {
 		public final int value;
@@ -63,10 +71,7 @@ abstract public class WeakTableTest extends TableTest {
 			return new WeakTable(false, true);
 		}
 
-		protected LuaTable new_Table(int n, int m) {
-			return new WeakTable(false, true);
-		}
-
+		@Test
 		public void testWeakValuesTable() {
 			LuaTable t = new_Table();
 
@@ -109,14 +114,7 @@ abstract public class WeakTableTest extends TableTest {
 	}
 
 	public static class WeakKeyTableTest extends WeakTableTest {
-		protected LuaTable new_Table() {
-			return new WeakTable(true, false);
-		}
-
-		protected LuaTable new_Table(int n, int m) {
-			return new WeakTable(true, false);
-		}
-
+		@Test
 		public void testWeakKeysTable() {
 			LuaTable t = new WeakTable(true, false);
 
@@ -150,6 +148,7 @@ abstract public class WeakTableTest extends TableTest {
 			assertEquals(null, origval.get());
 		}
 
+		@Test
 		public void testNext() {
 			LuaTable t = new WeakTable(true, true);
 
@@ -180,15 +179,9 @@ abstract public class WeakTableTest extends TableTest {
 		}
 	}
 
+
 	public static class WeakKeyValueTableTest extends WeakTableTest {
-		protected LuaTable new_Table() {
-			return new WeakTable(true, true);
-		}
-
-		protected LuaTable new_Table(int n, int m) {
-			return new WeakTable(true, true);
-		}
-
+		@Test
 		public void testWeakKeysValuesTable() {
 			LuaTable t = new WeakTable(true, true);
 
@@ -212,12 +205,12 @@ abstract public class WeakTableTest extends TableTest {
 			assertEquals(val3, t.get(key3));
 
 			// drop key and value references, replace them with new ones
-			WeakReference origkey = new WeakReference(key);
-			WeakReference origval = new WeakReference(val);
-			WeakReference origkey2 = new WeakReference(key2);
-			WeakReference origval2 = new WeakReference(val2);
-			WeakReference origkey3 = new WeakReference(key3);
-			WeakReference origval3 = new WeakReference(val3);
+			WeakReference<LuaValue> origkey = new WeakReference<>(key);
+			WeakReference<LuaValue> origval = new WeakReference<>(val);
+			WeakReference<LuaValue> origkey2 = new WeakReference<>(key2);
+			WeakReference<LuaValue> origval2 = new WeakReference<>(val2);
+			WeakReference<LuaValue> origkey3 = new WeakReference<>(key3);
+			WeakReference<LuaValue> origval3 = new WeakReference<>(val3);
 			key = LuaValue.userdataOf(new MyData(111));
 			val = LuaValue.userdataOf(new MyData(222));
 			key2 = LuaValue.userdataOf(new MyData(333));
@@ -242,6 +235,7 @@ abstract public class WeakTableTest extends TableTest {
 			assertEquals(null, origkey3.get());
 		}
 
+		@Test
 		public void testReplace() {
 			LuaTable t = new WeakTable(true, true);
 

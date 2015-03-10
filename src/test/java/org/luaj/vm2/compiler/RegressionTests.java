@@ -1,49 +1,47 @@
 package org.luaj.vm2.compiler;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.luaj.vm2.lib.jse.JsePlatform;
+
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * Framework to add regression tests as problem areas are found.
- * <p>
- * To add a new regression test:
- * 1) run "unpack.sh" in the project root
- * 2) add a new "lua" file in the "regressions" subdirectory
- * 3) run "repack.sh" in the project root
- * 4) add a line to the source file naming the new test
- * <p>
- * After adding a test, check in the zip file
- * rather than the individual regression test files.
- *
- * @author jrosebor
  */
-public class RegressionTests extends AbstractUnitTests {
-	public RegressionTests() {
-		super("regressions");
+@RunWith(Parameterized.class)
+public class RegressionTests {
+	public String fileName;
+
+	public RegressionTests(String file) {
+		fileName = file;
 	}
 
-	public void testModulo() {
-		doTest("modulo.lua");
+	@Before
+	public void setup() throws Exception {
+		JsePlatform.standardGlobals();
 	}
 
-	public void testConstruct() {
-		doTest("construct.lua");
+	@Test
+	public void compareBytecode() throws Exception {
+		CompileTestHelper.compareResults("/regressions/", fileName);
 	}
 
-	public void testBigAttrs() {
-		doTest("bigattr.lua");
-	}
+	@Parameterized.Parameters(name = "{0}")
+	public static Collection<Object[]> getTests() {
+		Object[][] tests = {
+			{"modulo"},
+			{"construct"},
+			{"bigattr"},
+			{"controlchars"},
+			{"comparators"},
+			{"mathrandomseed"},
+			{"varargs"},
+		};
 
-	public void testControlChars() {
-		doTest("controlchars.lua");
-	}
-
-	public void testComparators() {
-		doTest("comparators.lua");
-	}
-
-	public void testMathRandomseed() {
-		doTest("mathrandomseed.lua");
-	}
-
-	public void testVarargs() {
-		doTest("varargs.lua");
+		return Arrays.asList(tests);
 	}
 }

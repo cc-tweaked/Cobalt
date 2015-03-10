@@ -19,16 +19,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2;
+package org.luaj.vm2.table;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.luaj.vm2.*;
 
+import java.util.ArrayList;
 import java.util.Vector;
 
-/**
- * Tests for tables used as lists.
- */
-public class TableArrayTest extends TestCase {
+import static org.junit.Assert.*;
+
+public class TableTest {
 
 	protected LuaTable new_Table() {
 		return new LuaTable();
@@ -38,11 +39,29 @@ public class TableArrayTest extends TestCase {
 		return new LuaTable(n, m);
 	}
 
+	private int keyCount(LuaTable t) {
+		return keys(t).length;
+	}
+
+	private LuaValue[] keys(LuaTable t) {
+		ArrayList<LuaValue> l = new ArrayList<LuaValue>();
+		LuaValue k = LuaValue.NIL;
+		while (true) {
+			Varargs n = t.next(k);
+			if ((k = n.arg1()).isnil())
+				break;
+			l.add(k);
+		}
+		return l.toArray(new LuaValue[t.length()]);
+	}
+
+
+	@Test
 	public void testInOrderIntegerKeyInsertion() {
 		LuaTable t = new_Table();
 
 		for (int i = 1; i <= 32; ++i) {
-			t.set(i, LuaString.valueOf("Test Value! " + i));
+			t.set(i, LuaValue.valueOf("Test Value! " + i));
 		}
 
 		// Ensure all keys are still there.
@@ -58,7 +77,8 @@ public class TableArrayTest extends TestCase {
 
 	}
 
-	public void testResize() {
+	@Test
+	public void testRekeyCount() {
 		LuaTable t = new_Table();
 
 		// NOTE: This order of insertion is important.
@@ -77,11 +97,12 @@ public class TableArrayTest extends TestCase {
 		assertTrue(t.getHashLength() >= 4);
 	}
 
+	@Test
 	public void testOutOfOrderIntegerKeyInsertion() {
 		LuaTable t = new_Table();
 
 		for (int i = 32; i > 0; --i) {
-			t.set(i, LuaString.valueOf("Test Value! " + i));
+			t.set(i, LuaValue.valueOf("Test Value! " + i));
 		}
 
 		// Ensure all keys are still there.
@@ -98,11 +119,12 @@ public class TableArrayTest extends TestCase {
 
 	}
 
+	@Test
 	public void testStringAndIntegerKeys() {
 		LuaTable t = new_Table();
 
 		for (int i = 0; i < 10; ++i) {
-			LuaString str = LuaString.valueOf(String.valueOf(i));
+			LuaString str = LuaValue.valueOf(String.valueOf(i));
 			t.set(i, str);
 			t.set(str, LuaInteger.valueOf(i));
 		}
@@ -112,15 +134,13 @@ public class TableArrayTest extends TestCase {
 		assertTrue(t.getHashLength() >= 11); // 0, "0", "1", ..., "9"
 		assertTrue(t.getHashLength() <= 33);
 
-		LuaValue[] keys = t.keys();
+		LuaValue[] keys = keys(t);
 
 		int intKeys = 0;
 		int stringKeys = 0;
 
 		assertEquals(20, keys.length);
-		for (int i = 0; i < keys.length; ++i) {
-			LuaValue k = keys[i];
-
+		for (LuaValue k : keys) {
 			if (k instanceof LuaInteger) {
 				final int ik = k.toint();
 				assertTrue(ik >= 0 && ik < 10);
@@ -128,8 +148,8 @@ public class TableArrayTest extends TestCase {
 				assertTrue((intKeys & mask) == 0);
 				intKeys |= mask;
 			} else if (k instanceof LuaString) {
-				final int ik = Integer.parseInt(k.tojstring());
-				assertEquals(String.valueOf(ik), k.tojstring());
+				final int ik = Integer.parseInt(k.strvalue().tojstring());
+				assertEquals(String.valueOf(ik), k.strvalue().tojstring());
 				assertTrue(ik >= 0 && ik < 10);
 				final int mask = 1 << ik;
 				assertTrue("Key \"" + ik + "\" found more than once", (stringKeys & mask) == 0);
@@ -143,19 +163,21 @@ public class TableArrayTest extends TestCase {
 		assertEquals(0x03FF, stringKeys);
 	}
 
+	@Test
 	public void testBadInitialCapacity() {
 		LuaTable t = new_Table(0, 1);
 
-		t.set("test", LuaString.valueOf("foo"));
-		t.set("explode", LuaString.valueOf("explode"));
-		assertEquals(2, t.keyCount());
+		t.set("test", LuaValue.valueOf("foo"));
+		t.set("explode", LuaValue.valueOf("explode"));
+		assertEquals(2, keyCount(t));
 	}
 
+	@Test
 	public void testRemove0() {
 		LuaTable t = new_Table(2, 0);
 
-		t.set(1, LuaString.valueOf("foo"));
-		t.set(2, LuaString.valueOf("bah"));
+		t.set(1, LuaValue.valueOf("foo"));
+		t.set(2, LuaValue.valueOf("bah"));
 		assertNotSame(LuaValue.NIL, t.get(1));
 		assertNotSame(LuaValue.NIL, t.get(2));
 		assertEquals(LuaValue.NIL, t.get(3));
@@ -168,95 +190,95 @@ public class TableArrayTest extends TestCase {
 		assertEquals(LuaValue.NIL, t.get(3));
 	}
 
+	@Test
 	public void testRemove1() {
 		LuaTable t = new_Table(0, 1);
-		assertEquals(0, t.keyCount());
 
-		t.set("test", LuaString.valueOf("foo"));
-		assertEquals(1, t.keyCount());
+		t.set("test", LuaValue.valueOf("foo"));
 		t.set("explode", LuaValue.NIL);
-		assertEquals(1, t.keyCount());
 		t.set(42, LuaValue.NIL);
-		assertEquals(1, t.keyCount());
 		t.set(new_Table(), LuaValue.NIL);
-		assertEquals(1, t.keyCount());
 		t.set("test", LuaValue.NIL);
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 
 		t.set(10, LuaInteger.valueOf(5));
 		t.set(10, LuaValue.NIL);
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 	}
 
+	@Test
 	public void testRemove2() {
 		LuaTable t = new_Table(0, 1);
 
-		t.set("test", LuaString.valueOf("foo"));
+		t.set("test", LuaValue.valueOf("foo"));
 		t.set("string", LuaInteger.valueOf(10));
-		assertEquals(2, t.keyCount());
+		assertEquals(2, keyCount(t));
 
 		t.set("string", LuaValue.NIL);
-		t.set("three", LuaDouble.valueOf(3.14));
-		assertEquals(2, t.keyCount());
+		t.set("three", LuaValue.valueOf(3.14));
+		assertEquals(2, keyCount(t));
 
 		t.set("test", LuaValue.NIL);
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 
 		t.set(10, LuaInteger.valueOf(5));
-		assertEquals(2, t.keyCount());
+		assertEquals(2, keyCount(t));
 
 		t.set(10, LuaValue.NIL);
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 
 		t.set("three", LuaValue.NIL);
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 	}
 
-	public void testInOrderlen() {
+	@Test
+	public void testInOrderLuaLength() {
 		LuaTable t = new_Table();
 
 		for (int i = 1; i <= 32; ++i) {
-			LuaValue v = LuaString.valueOf("Test Value! " + i);
-			t.set(i, v);
+			t.set(i, LuaValue.valueOf("Test Value! " + i));
 			assertEquals(i, t.length());
 			assertEquals(i, t.maxn());
 		}
 	}
 
-	public void testOutOfOrderlen() {
+	@Test
+	public void testOutOfOrderLuaLength() {
 		LuaTable t = new_Table();
 
 		for (int j = 8; j < 32; j += 8) {
 			for (int i = j; i > 0; --i) {
-				t.set(i, LuaString.valueOf("Test Value! " + i));
+				t.set(i, LuaValue.valueOf("Test Value! " + i));
 			}
 			assertEquals(j, t.length());
 			assertEquals(j, t.maxn());
 		}
 	}
 
-	public void testStringKeyslen() {
+	@Test
+	public void testStringKeysLuaLength() {
 		LuaTable t = new_Table();
 
 		for (int i = 1; i <= 32; ++i) {
-			t.set("str-" + i, LuaString.valueOf("String Key Test Value! " + i));
+			t.set("str-" + i, LuaValue.valueOf("String Key Test Value! " + i));
 			assertEquals(0, t.length());
 			assertEquals(0, t.maxn());
 		}
 	}
 
-	public void testMixedKeyslen() {
+	@Test
+	public void testMixedKeysLuaLength() {
 		LuaTable t = new_Table();
 
 		for (int i = 1; i <= 32; ++i) {
-			t.set("str-" + i, LuaString.valueOf("String Key Test Value! " + i));
-			t.set(i, LuaString.valueOf("Int Key Test Value! " + i));
+			t.set("str-" + i, LuaValue.valueOf("String Key Test Value! " + i));
+			t.set(i, LuaValue.valueOf("Int Key Test Value! " + i));
 			assertEquals(i, t.length());
 			assertEquals(i, t.maxn());
 		}
 	}
 
-	private static final void compareLists(LuaTable t, Vector v) {
+	private static void compareLists(LuaTable t, Vector v) {
 		int n = v.size();
 		assertEquals(v.size(), t.length());
 		for (int j = 0; j < n; j++) {
@@ -267,36 +289,39 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testInsertBeginningOfList() {
 		LuaTable t = new_Table();
 		Vector v = new Vector();
 
 		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
+			LuaString test = LuaValue.valueOf("Test Value! " + i);
 			t.insert(1, test);
 			v.insertElementAt(test, 0);
 			compareLists(t, v);
 		}
 	}
 
+	@Test
 	public void testInsertEndOfList() {
 		LuaTable t = new_Table();
 		Vector v = new Vector();
 
 		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
+			LuaString test = LuaValue.valueOf("Test Value! " + i);
 			t.insert(0, test);
 			v.insertElementAt(test, v.size());
 			compareLists(t, v);
 		}
 	}
 
+	@Test
 	public void testInsertMiddleOfList() {
 		LuaTable t = new_Table();
 		Vector v = new Vector();
 
 		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
+			LuaString test = LuaValue.valueOf("Test Value! " + i);
 			int m = i / 2;
 			t.insert(m + 1, test);
 			v.insertElementAt(test, m);
@@ -304,14 +329,15 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
-	private static final void prefillLists(LuaTable t, Vector v) {
+	private static void prefillLists(LuaTable t, Vector v) {
 		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
+			LuaString test = LuaValue.valueOf("Test Value! " + i);
 			t.insert(0, test);
 			v.insertElementAt(test, v.size());
 		}
 	}
 
+	@Test
 	public void testRemoveBeginningOfList() {
 		LuaTable t = new_Table();
 		Vector v = new Vector();
@@ -323,6 +349,7 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testRemoveEndOfList() {
 		LuaTable t = new_Table();
 		Vector v = new Vector();
@@ -334,6 +361,7 @@ public class TableArrayTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testRemoveMiddleOfList() {
 		LuaTable t = new_Table();
 		Vector v = new Vector();
