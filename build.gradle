@@ -1,43 +1,21 @@
 apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.7
 version = '0.1'
 
 repositories {
 	mavenCentral()
+	maven {
+		name = "squiddev"
+		url = "http://maven.bonzodandd.co.uk"
+	}
 }
 
 dependencies {
-	// Core Libraries
-	compile group: 'org.ow2.asm', name: 'asm-all', version: '5.+'
-	compile group: 'org.apache.bcel', name: 'bcel', version: '5.2'
-	testCompile group: 'junit', name: 'junit', version: '4.+'
-}
+	compile 'org.apache.bcel:bcel:5.2'
+	testCompile 'junit:junit:4.+'
 
-uploadArchives {
-	repositories {
-		flatDir {
-			dirs 'build'
-		}
+	compile('org.squiddev:luaj.api:1.+') {
+		exclude group: '*'
 	}
-}
-
-test {
-	filter {
-		includeTestsMatching "org.luaj.*"
-	}
-
-	// --tests org.luaj.vm2.AllTests
-	// include "org.luaj.vm2.AllTests"
-
-	beforeTest { descriptor ->
-		logger.lifecycle("Running test: " + descriptor)
-	}
-
-	// listen to standard out and standard error of the test JVM(s)
-	/*onOutput { descriptor, event ->
-		logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message)
-	}*/
 }
