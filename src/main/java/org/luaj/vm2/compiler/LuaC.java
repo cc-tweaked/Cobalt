@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.compiler;
 
 import org.luaj.vm2.*;
@@ -74,8 +76,9 @@ public class LuaC extends Lua implements LuaCompiler {
 	}
 
 	protected static void _assert(boolean b) {
-		if (!b)
+		if (!b) {
 			throw new LuaError("compiler assert failed");
+		}
 	}
 
 	public static final int MAXSTACK = 250;
@@ -139,43 +142,49 @@ public class LuaC extends Lua implements LuaCompiler {
 
 	static LuaValue[] realloc(LuaValue[] v, int n) {
 		LuaValue[] a = new LuaValue[n];
-		if (v != null)
+		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		}
 		return a;
 	}
 
 	static Prototype[] realloc(Prototype[] v, int n) {
 		Prototype[] a = new Prototype[n];
-		if (v != null)
+		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		}
 		return a;
 	}
 
 	static LuaString[] realloc(LuaString[] v, int n) {
 		LuaString[] a = new LuaString[n];
-		if (v != null)
+		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		}
 		return a;
 	}
 
 	static LocVars[] realloc(LocVars[] v, int n) {
 		LocVars[] a = new LocVars[n];
-		if (v != null)
+		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		}
 		return a;
 	}
 
 	static int[] realloc(int[] v, int n) {
 		int[] a = new int[n];
-		if (v != null)
+		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		}
 		return a;
 	}
 
 	static byte[] realloc(byte[] v, int n) {
 		byte[] a = new byte[n];
-		if (v != null)
+		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		}
 		return a;
 	}
 

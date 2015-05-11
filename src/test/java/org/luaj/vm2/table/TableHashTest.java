@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.table;
 
 import org.junit.Test;
@@ -82,10 +84,11 @@ public class TableHashTest {
 			t.set(keys[i], LuaValue.NIL);
 			assertEquals(0, t.length());
 			assertEquals(keys.length - i - 1, t.keyCount());
-			if (i < keys.length - 1)
+			if (i < keys.length - 1) {
 				assertEquals(capacities[keys.length], t.getHashLength());
-			else
+			} else {
 				assertTrue(0 <= t.getHashLength());
+			}
 		}
 		for (String key : keys) {
 			assertEquals(LuaValue.NIL, t.get(key));

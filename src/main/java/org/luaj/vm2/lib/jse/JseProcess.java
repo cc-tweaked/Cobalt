@@ -87,12 +87,15 @@ public class JseProcess {
 	 */
 	public int waitFor() throws InterruptedException {
 		int r = process.waitFor();
-		if (input != null)
+		if (input != null) {
 			input.join();
-		if (output != null)
+		}
+		if (output != null) {
 			output.join();
-		if (error != null)
+		}
+		if (error != null) {
 			error.join();
+		}
 		process.destroy();
 		return r;
 	}
@@ -113,10 +116,12 @@ public class JseProcess {
 							output.write(buf, 0, r);
 						}
 					} finally {
-						if (ownedInput != null)
+						if (ownedInput != null) {
 							ownedInput.close();
-						if (ownedOutput != null)
+						}
+						if (ownedOutput != null) {
 							ownedOutput.close();
+						}
 					}
 				} catch (IOException e) {
 					e.printStackTrace();

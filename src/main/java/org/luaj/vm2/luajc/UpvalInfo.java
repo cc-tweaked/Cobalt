@@ -18,23 +18,28 @@ public class UpvalInfo {
 		this.nvars = 0;
 		this.var = null;
 		includeVarAndPosteriorVars(pi.vars[slot][pc]);
-		for (int i = 0; i < nvars; i++)
+		for (int i = 0; i < nvars; i++) {
 			var[i].allocupvalue = testIsAllocUpvalue(var[i]);
+		}
 		this.rw = nvars > 1;
 	}
 
 	private boolean includeVarAndPosteriorVars(VarInfo var) {
-		if (var == null || var == VarInfo.INVALID)
+		if (var == null || var == VarInfo.INVALID) {
 			return false;
-		if (var.upvalue == this)
+		}
+		if (var.upvalue == this) {
 			return true;
+		}
 		var.upvalue = this;
 		appendVar(var);
-		if (isLoopVariable(var))
+		if (isLoopVariable(var)) {
 			return false;
+		}
 		boolean loopDetected = includePosteriorVarsCheckLoops(var);
-		if (loopDetected)
+		if (loopDetected) {
 			includePriorVarsIgnoreLoops(var);
+		}
 		return loopDetected;
 	}
 
@@ -60,8 +65,9 @@ public class UpvalInfo {
 					VarInfo v1 = pi.vars[slot][b1.pc0];
 					if (v1 != prior) {
 						loopDetected |= includeVarAndPosteriorVars(v1);
-						if (v1.isPhiVar())
+						if (v1.isPhiVar()) {
 							includePriorVarsIgnoreLoops(v1);
+						}
 					}
 				}
 			} else {
@@ -84,8 +90,9 @@ public class UpvalInfo {
 				for (int j = 0, m = b.prev != null ? b.prev.length : 0; j < m; j++) {
 					BasicBlock b0 = b.prev[j];
 					VarInfo v0 = pi.vars[slot][b0.pc1];
-					if (v0 != poster)
+					if (v0 != poster) {
 						includeVarAndPosteriorVars(v0);
+					}
 				}
 			} else {
 				for (int pc = b.pc0 + 1; pc <= b.pc1; pc++) {
@@ -116,26 +123,31 @@ public class UpvalInfo {
 			sb.append(i > 0 ? "," : " ");
 			sb.append(String.valueOf(var[i]));
 		}
-		if (rw)
+		if (rw) {
 			sb.append("(rw)");
+		}
 		return sb.toString();
 	}
 
 	private boolean testIsAllocUpvalue(VarInfo v) {
-		if (v.pc < 0)
+		if (v.pc < 0) {
 			return true;
+		}
 		BasicBlock b = pi.blocks[v.pc];
-		if (v.pc > b.pc0)
+		if (v.pc > b.pc0) {
 			return pi.vars[slot][v.pc - 1].upvalue != this;
+		}
 		if (b.prev == null) {
 			v = pi.params[slot];
-			if (v != null && v.upvalue != this)
+			if (v != null && v.upvalue != this) {
 				return true;
+			}
 		} else {
 			for (int i = 0, n = b.prev.length; i < n; i++) {
 				v = pi.vars[slot][b.prev[i].pc1];
-				if (v != null && v.upvalue != this)
+				if (v != null && v.upvalue != this) {
 					return true;
+				}
 			}
 		}
 		return false;

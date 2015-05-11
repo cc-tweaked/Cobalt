@@ -91,8 +91,9 @@ public class JseBaseLib extends BaseLib {
 	 */
 	public InputStream findResource(String filename) {
 		File f = new File(filename);
-		if (!f.exists())
+		if (!f.exists()) {
 			return super.findResource(filename);
+		}
 		try {
 			return new FileInputStream(f);
 		} catch (IOException ioe) {

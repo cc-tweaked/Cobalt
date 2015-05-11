@@ -201,19 +201,23 @@ public class MathLib extends OneArgFunction {
 	 * @return Resultant number
 	 */
 	protected static double dpow_default(double a, double b) {
-		if (b < 0)
+		if (b < 0) {
 			return 1 / dpow_default(a, -b);
+		}
 		double p = 1;
 		int whole = (int) b;
-		for (double v = a; whole > 0; whole >>= 1, v *= v)
-			if ((whole & 1) != 0)
+		for (double v = a; whole > 0; whole >>= 1, v *= v) {
+			if ((whole & 1) != 0) {
 				p *= v;
+			}
+		}
 		if ((b -= whole) > 0) {
 			int frac = (int) (0x10000 * b);
 			for (; (frac & 0xffff) != 0; frac <<= 1) {
 				a = Math.sqrt(a);
-				if ((frac & 0x8000) != 0)
+				if ((frac & 0x8000) != 0) {
 					p *= a;
+				}
 			}
 		}
 		return p;
@@ -234,14 +238,16 @@ public class MathLib extends OneArgFunction {
 				}
 				case 1: { // max
 					double m = args.checkdouble(1);
-					for (int i = 2, n = args.narg(); i <= n; ++i)
+					for (int i = 2, n = args.narg(); i <= n; ++i) {
 						m = Math.max(m, args.checkdouble(i));
+					}
 					return valueOf(m);
 				}
 				case 2: { // min
 					double m = args.checkdouble(1);
-					for (int i = 2, n = args.narg(); i <= n; ++i)
+					for (int i = 2, n = args.narg(); i <= n; ++i) {
 						m = Math.min(m, args.checkdouble(i));
+					}
 					return valueOf(m);
 				}
 				case 3: { // modf
@@ -256,8 +262,9 @@ public class MathLib extends OneArgFunction {
 					return NONE;
 				}
 				case 5: { // random
-					if (mathlib.random == null)
+					if (mathlib.random == null) {
 						mathlib.random = new Random();
+					}
 
 					switch (args.narg()) {
 						case 0:

@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2010 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.luajc;
 
 import org.apache.bcel.Constants;
@@ -136,8 +138,9 @@ public class JavaBuilder {
 
 		// what class to inherit from
 		superclassType = p.numparams;
-		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS)
+		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS) {
 			superclassType = SUPERTYPE_VARARGS;
+		}
 		for (int i = 0, n = p.code.length; i < n; i++) {
 			int inst = p.code[i];
 			int o = Lua.GET_OPCODE(inst);
@@ -287,8 +290,9 @@ public class JavaBuilder {
 
 	private int findSlot(int slot, Map<Integer, Integer> map, String prefix, Type type) {
 		Integer islot = Integer.valueOf(slot);
-		if (map.containsKey(islot))
+		if (map.containsKey(islot)) {
 			return ((Integer) map.get(islot)).intValue();
+		}
 		String name = prefix + slot;
 		LocalVariableGen local = mg.addLocalVariable(name, type, null, null);
 		int index = local.getIndex();
@@ -417,8 +421,9 @@ public class JavaBuilder {
 	}
 
 	private int getVarresultIndex() {
-		if (varresult == null)
+		if (varresult == null) {
 			varresult = mg.addLocalVariable(NAME_VARRESULT, TYPE_VARARGS, null, null);
+		}
 		return varresult.getIndex();
 	}
 
@@ -706,8 +711,9 @@ public class JavaBuilder {
 				TYPE_LUASTRING, ARG_TYPES_STRING, Constants.INVOKESTATIC));
 		} else {
 			char[] c = new char[ls.m_length];
-			for (int j = 0; j < ls.m_length; j++)
+			for (int j = 0; j < ls.m_length; j++) {
 				c[j] = (char) (0xff & (int) (ls.m_bytes[ls.m_offset + j]));
+			}
 			init.append(new PUSH(cp, new String(c)));
 			init.append(factory.createInvoke(STR_STRING, "toCharArray",
 				TYPE_CHARARRAY, Type.NO_ARGS,
@@ -756,8 +762,9 @@ public class JavaBuilder {
 	}
 
 	private void conditionalSetBeginningOfLua(InstructionHandle ih) {
-		if (beginningOfLuaInstruction == null)
+		if (beginningOfLuaInstruction == null) {
 			beginningOfLuaInstruction = ih;
+		}
 	}
 
 	public void onEndOfLuaInstruction(int pc) {
@@ -770,10 +777,12 @@ public class JavaBuilder {
 		for (int pc = 0; pc < nc; pc++) {
 			if (branches[pc] != null) {
 				int t = targets[pc];
-				while (t < branchDestHandles.length && branchDestHandles[t] == null)
+				while (t < branchDestHandles.length && branchDestHandles[t] == null) {
 					t++;
-				if (t >= branchDestHandles.length)
+				}
+				if (t >= branchDestHandles.length) {
 					throw new IllegalArgumentException("no target at or after " + targets[pc] + " op=" + Lua.GET_OPCODE(p.code[targets[pc]]));
+				}
 				branches[pc].setTarget(branchDestHandles[t]);
 			}
 		}

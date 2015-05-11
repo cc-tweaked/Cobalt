@@ -67,8 +67,9 @@ public class LuaJC implements LuaCompiler {
 	private static LuaJC instance;
 
 	public static LuaJC getInstance() {
-		if (instance == null)
+		if (instance == null) {
 			instance = new LuaJC();
+		}
 		return instance;
 	}
 
@@ -95,8 +96,9 @@ public class LuaJC implements LuaCompiler {
 
 	private void insert(Hashtable h, JavaGen gen) {
 		h.put(gen.classname, gen.bytecode);
-		for (int i = 0, n = gen.inners != null ? gen.inners.length : 0; i < n; i++)
+		for (int i = 0, n = gen.inners != null ? gen.inners.length : 0; i < n; i++) {
 			insert(h, gen.inners[i]);
+		}
 	}
 
 	public LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
@@ -111,8 +113,9 @@ public class LuaJC implements LuaCompiler {
 		String stub = toStub(luachunkname);
 		String classname = stub.replace('/', '.').replaceAll(NON_IDENTIFIER, "_");
 		int c = classname.charAt(0);
-		if (c != '_' && !Character.isJavaIdentifierStart(c))
+		if (c != '_' && !Character.isJavaIdentifierStart(c)) {
 			classname = "_" + classname;
+		}
 		return classname;
 	}
 

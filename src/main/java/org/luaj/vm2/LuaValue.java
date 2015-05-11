@@ -341,8 +341,9 @@ public class LuaValue extends Varargs {
 	public static final LuaValue[] NILS = new LuaValue[MAXSTACK];
 
 	static {
-		for (int i = 0; i < MAXSTACK; i++)
+		for (int i = 0; i < MAXSTACK; i++) {
 			NILS[i] = NIL;
+		}
 	}
 
 	// type
@@ -1394,7 +1395,7 @@ public class LuaValue extends Varargs {
 	/**
 	 * Assert a condition is true, or throw a {@link LuaError} if not
 	 *
-	 * @param b condition to test
+	 * @param b   condition to test
 	 * @param msg Error message
 	 * @throws LuaError if b is not true
 	 */
@@ -1451,7 +1452,7 @@ public class LuaValue extends Varargs {
 	 * Throw a {@link LuaError} indicating an illegal operation occurred,
 	 * typically involved in managing weak references
 	 *
-	 * @param op Operation
+	 * @param op       Operation
 	 * @param typename Current type
 	 * @return Nothing
 	 * @throws LuaError in all cases
@@ -1767,7 +1768,9 @@ public class LuaValue extends Varargs {
 	 * @throws LuaError if this is not a table.
 	 */
 	public void rawsetlist(int key0, Varargs values) {
-		for (int i = 0, n = values.narg(); i < n; i++) rawset(key0 + i, values.arg(i + 1));
+		for (int i = 0, n = values.narg(); i < n; i++) {
+			rawset(key0 + i, values.arg(i + 1));
+		}
 	}
 
 	/**
@@ -3242,8 +3245,9 @@ public class LuaValue extends Varargs {
 		LuaValue h = this.metatag(tag);
 		if (h.isnil()) {
 			h = op2.metatag(tag);
-			if (h.isnil())
+			if (h.isnil()) {
 				error("attempt to perform arithmetic " + tag + " on " + typename() + " and " + op2.typename());
+			}
 		}
 		return h.call(this, op2);
 	}
@@ -3273,8 +3277,9 @@ public class LuaValue extends Varargs {
 	 */
 	protected LuaValue arithmtwith(LuaValue tag, double op1) {
 		LuaValue h = metatag(tag);
-		if (h.isnil())
+		if (h.isnil()) {
 			error("attempt to perform arithmetic " + tag + " on number and " + typename());
+		}
 		return h.call(LuaValue.valueOf(op1), this);
 	}
 
@@ -3778,8 +3783,9 @@ public class LuaValue extends Varargs {
 	public LuaValue comparemt(LuaValue tag, LuaValue op1) {
 		if (type() == op1.type()) {
 			LuaValue h = metatag(tag);
-			if (!h.isnil() && h == op1.metatag(tag))
+			if (!h.isnil() && h == op1.metatag(tag)) {
 				return h.call(this, op1);
+			}
 		}
 		return error("attempt to compare " + tag + " on " + typename() + " and " + op1.typename());
 	}
@@ -3810,8 +3816,8 @@ public class LuaValue extends Varargs {
 	 * each operand must derive from {@link LuaString}.
 	 *
 	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @throws LuaError if this is not a string
 	 * @return int &lt; 0 for {@code (this &lt; rhs)}, int &gt; 0 for {@code (this &gt; rhs)}, or 0 when same string.
+	 * @throws LuaError if this is not a string
 	 */
 	public int strcmp(LuaString rhs) {
 		error("attempt to compare " + typename());
@@ -3826,9 +3832,9 @@ public class LuaValue extends Varargs {
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
 	 * @param rhs The right-hand-side value to perform the operation with
+	 * @return {@link LuaValue} resulting from concatenation of {@code (this .. rhs)}
 	 * @throws LuaError if either operand is not of an appropriate type,
 	 *                  such as nil or a table
-	 * @return {@link LuaValue} resulting from concatenation of {@code (this .. rhs)}
 	 */
 	public LuaValue concat(LuaValue rhs) {
 		return this.concatmt(rhs);
@@ -3844,9 +3850,9 @@ public class LuaValue extends Varargs {
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
 	 * @param lhs The left-hand-side value onto which this will be concatenated
+	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @throws LuaError if either operand is not of an appropriate type,
 	 *                  such as nil or a table
-	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @see #concat(LuaValue)
 	 */
 	public LuaValue concatTo(LuaValue lhs) {
@@ -3863,9 +3869,9 @@ public class LuaValue extends Varargs {
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
 	 * @param lhs The left-hand-side value onto which this will be concatenated
+	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @throws LuaError if either operand is not of an appropriate type,
 	 *                  such as nil or a table
-	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @see #concat(LuaValue)
 	 */
 	public LuaValue concatTo(LuaNumber lhs) {
@@ -3882,9 +3888,9 @@ public class LuaValue extends Varargs {
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
 	 * @param lhs The left-hand-side value onto which this will be concatenated
+	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @throws LuaError if either operand is not of an appropriate type,
 	 *                  such as nil or a table
-	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @see #concat(LuaValue)
 	 */
 	public LuaValue concatTo(LuaString lhs) {
@@ -3929,8 +3935,9 @@ public class LuaValue extends Varargs {
 	 */
 	public LuaValue concatmt(LuaValue rhs) {
 		LuaValue h = metatag(CONCAT);
-		if (h.isnil() && (h = rhs.metatag(CONCAT)).isnil())
+		if (h.isnil() && (h = rhs.metatag(CONCAT)).isnil()) {
 			error("attempt to concatenate " + typename() + " and " + rhs.typename());
+		}
 		return h.call(this, rhs);
 	}
 
@@ -4199,7 +4206,8 @@ public class LuaValue extends Varargs {
 
 	/**
 	 * Return value for field reference including metatag processing, or {@link LuaValue#NIL} if it doesn't exist.
-	 * @param t {@link LuaValue} on which field is being referenced, typically a table or something with the metatag {@link LuaValue#INDEX} defined
+	 *
+	 * @param t   {@link LuaValue} on which field is being referenced, typically a table or something with the metatag {@link LuaValue#INDEX} defined
 	 * @param key {@link LuaValue} naming the field to reference
 	 * @return {@link LuaValue} for the {@code key} if it exists, or {@link LuaValue#NIL}
 	 * @throws LuaError if there is a loop in metatag processing
@@ -4210,12 +4218,15 @@ public class LuaValue extends Varargs {
 		do {
 			if (t.istable()) {
 				LuaValue res = t.rawget(key);
-				if ((!res.isnil()) || (tm = t.metatag(INDEX)).isnil())
+				if ((!res.isnil()) || (tm = t.metatag(INDEX)).isnil()) {
 					return res;
-			} else if ((tm = t.metatag(INDEX)).isnil())
+				}
+			} else if ((tm = t.metatag(INDEX)).isnil()) {
 				t.indexerror();
-			if (tm.isfunction())
+			}
+			if (tm.isfunction()) {
 				return tm.call(t, key);
+			}
 			t = tm;
 		}
 		while (++loop < MAXTAGLOOP);
@@ -4241,8 +4252,9 @@ public class LuaValue extends Varargs {
 					t.rawset(key, value);
 					return true;
 				}
-			} else if ((tm = t.metatag(NEWINDEX)).isnil())
+			} else if ((tm = t.metatag(NEWINDEX)).isnil()) {
 				t.typerror("index");
+			}
 			if (tm.isfunction()) {
 				tm.call(t, key, value);
 				return true;
@@ -4263,8 +4275,9 @@ public class LuaValue extends Varargs {
 	 */
 	public LuaValue metatag(LuaValue tag) {
 		LuaValue mt = getmetatable();
-		if (mt == null)
+		if (mt == null) {
 			return NIL;
+		}
 		return mt.rawget(tag);
 	}
 
@@ -4279,8 +4292,9 @@ public class LuaValue extends Varargs {
 	 */
 	protected LuaValue checkmetatag(LuaValue tag, String reason) {
 		LuaValue h = this.metatag(tag);
-		if (h.isnil())
+		if (h.isnil()) {
 			throw new LuaError(reason + typename());
+		}
 		return h;
 	}
 

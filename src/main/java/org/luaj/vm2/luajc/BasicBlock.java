@@ -28,13 +28,15 @@ public class BasicBlock {
 	}
 
 	private String str(BasicBlock[] b, int p) {
-		if (b == null)
+		if (b == null) {
 			return "";
+		}
 		StringBuffer sb = new StringBuffer();
 		sb.append("(");
 		for (int i = 0, n = b.length; i < n; i++) {
-			if (i > 0)
+			if (i > 0) {
 				sb.append(",");
+			}
 			sb.append(String.valueOf(p == 1 ? b[i].pc1 + 1 : b[i].pc0 + 1));
 		}
 		sb.append(")");
@@ -67,8 +69,9 @@ public class BasicBlock {
 			isbeg[i] = true;
 			BasicBlock b = new BasicBlock(p, i);
 			blocks[i] = b;
-			while (!isend[i] && i + 1 < n && !isbeg[i + 1])
+			while (!isend[i] && i + 1 < n && !isbeg[i + 1]) {
 				blocks[b.pc1 = ++i] = b;
+			}
 		}
 
 		// count previous, next
@@ -115,10 +118,12 @@ public class BasicBlock {
 			int ins = code[i];
 			switch (Lua.GET_OPCODE(ins)) {
 				case Lua.OP_LOADBOOL:
-					if (0 == Lua.GETARG_C(ins))
+					if (0 == Lua.GETARG_C(ins)) {
 						break;
-					if (Lua.GET_OPCODE(code[i + 1]) == Lua.OP_JMP)
+					}
+					if (Lua.GET_OPCODE(code[i + 1]) == Lua.OP_JMP) {
 						throw new IllegalArgumentException("OP_LOADBOOL followed by jump at " + i);
+					}
 					visitor.visitBranch(i, i + 2);
 					continue;
 				case Lua.OP_EQ:
@@ -127,8 +132,9 @@ public class BasicBlock {
 				case Lua.OP_TEST:
 				case Lua.OP_TESTSET:
 				case Lua.OP_TFORLOOP:
-					if (Lua.GET_OPCODE(code[i + 1]) != Lua.OP_JMP)
+					if (Lua.GET_OPCODE(code[i + 1]) != Lua.OP_JMP) {
 						throw new IllegalArgumentException("test not followed by jump at " + i);
+					}
 					sbx = Lua.GETARG_sBx(code[i + 1]);
 					++i;
 					j = i + sbx + 1;
@@ -152,8 +158,9 @@ public class BasicBlock {
 					visitor.visitReturn(i);
 					continue;
 			}
-			if (i + 1 < n && visitor.isbeg[i + 1])
+			if (i + 1 < n && visitor.isbeg[i + 1]) {
 				visitor.visitBranch(i, i + 1);
+			}
 		}
 	}
 
@@ -166,17 +173,21 @@ public class BasicBlock {
 			next.removeElementAt(0);
 			if (!b.islive) {
 				b.islive = true;
-				for (int i = 0, n = b.next != null ? b.next.length : 0; i < n; i++)
-					if (!b.next[i].islive)
+				for (int i = 0, n = b.next != null ? b.next.length : 0; i < n; i++) {
+					if (!b.next[i].islive) {
 						next.addElement(b.next[i]);
+					}
+				}
 			}
 		}
 
 		// create list in natural order
 		Vector list = new Vector();
-		for (int i = 0; i < blocks.length; i = blocks[i].pc1 + 1)
-			if (blocks[i].islive)
+		for (int i = 0; i < blocks.length; i = blocks[i].pc1 + 1) {
+			if (blocks[i].islive) {
 				list.addElement(blocks[i]);
+			}
+		}
 
 		// convert to array
 		BasicBlock[] array = new BasicBlock[list.size()];

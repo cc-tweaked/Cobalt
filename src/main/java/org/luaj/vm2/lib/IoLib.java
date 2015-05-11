@@ -261,8 +261,9 @@ public class IoLib extends OneArgFunction {
 
 	private void setLibInstance(LuaTable t) {
 		LuaValue[] k = t.keys();
-		for (int i = 0, n = k.length; i < n; i++)
+		for (int i = 0, n = k.length; i < n; i++) {
 			((IoLibV) t.get(k[i])).iolib = this;
+		}
 	}
 
 	static final class IoLibV extends VarArgFunction {
@@ -475,9 +476,9 @@ public class IoLib extends OneArgFunction {
 	}
 
 	private static Varargs ioclose(File f) throws IOException {
-		if (f.isstdfile())
+		if (f.isstdfile()) {
 			return errorresult("cannot close standard file");
-		else {
+		} else {
 			f.close();
 			return successresult();
 		}
@@ -505,8 +506,9 @@ public class IoLib extends OneArgFunction {
 	}
 
 	private static Varargs iowrite(File f, Varargs args) throws IOException {
-		for (int i = 1, n = args.narg(); i <= n; i++)
+		for (int i = 1, n = args.narg(); i <= n; i++) {
 			f.write(args.checkstring(i));
+		}
 		return LuaValue.TRUE;
 	}
 
@@ -539,16 +541,18 @@ public class IoLib extends OneArgFunction {
 				default:
 					return argerror(i + 1, "(invalid format)");
 			}
-			if ((v[i++] = vi).isnil())
+			if ((v[i++] = vi).isnil()) {
 				break;
+			}
 		}
 		return i == 0 ? NIL : varargsOf(v, 0, i);
 	}
 
 	private static File checkfile(LuaValue val) {
 		File f = optfile(val);
-		if (f == null)
+		if (f == null) {
 			argerror(1, "file");
+		}
 		checkopen(f);
 		return f;
 	}
@@ -558,8 +562,9 @@ public class IoLib extends OneArgFunction {
 	}
 
 	private static File checkopen(File file) {
-		if (file.isclosed())
+		if (file.isclosed()) {
 			error("attempt to use a closed file");
+		}
 		return file;
 	}
 
@@ -583,8 +588,9 @@ public class IoLib extends OneArgFunction {
 	public static LuaValue freadbytes(File f, int count) throws IOException {
 		byte[] b = new byte[count];
 		int r;
-		if ((r = f.read(b, 0, b.length)) < 0)
+		if ((r = f.read(b, 0, b.length)) < 0) {
 			return NIL;
+		}
 		return LuaString.valueOf(b, 0, r);
 	}
 
@@ -606,8 +612,9 @@ public class IoLib extends OneArgFunction {
 					}
 				}
 			} else {
-				while ((c = f.read()) > 0)
+				while ((c = f.read()) > 0) {
 					baos.write(c);
+				}
 			}
 		} catch (EOFException e) {
 			c = -1;
@@ -654,8 +661,9 @@ public class IoLib extends OneArgFunction {
 				return;
 			}
 			f.read();
-			if (baos != null)
+			if (baos != null) {
 				baos.write(c);
+			}
 		}
 	}
 

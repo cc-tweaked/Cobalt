@@ -244,13 +244,15 @@ public class MathLibTest {
 		try {
 			double expected = j2se.get(op).call(LuaValue.valueOf(x)).todouble();
 			double actual = j2me.get(op).call(LuaValue.valueOf(x)).todouble();
-			if (supportedOnJ2me)
+			if (supportedOnJ2me) {
 				assertEquals(expected, actual, 1.e-4);
-			else
+			} else {
 				fail("j2me should throw exception for math." + op + " but returned " + actual);
+			}
 		} catch (LuaError lee) {
-			if (supportedOnJ2me)
+			if (supportedOnJ2me) {
 				throw lee;
+			}
 		}
 	}
 
@@ -259,13 +261,15 @@ public class MathLibTest {
 		try {
 			double expected = j2se.get(op).call(LuaValue.valueOf(a), LuaValue.valueOf(b)).todouble();
 			double actual = j2me.get(op).call(LuaValue.valueOf(a), LuaValue.valueOf(b)).todouble();
-			if (supportedOnJ2me)
+			if (supportedOnJ2me) {
 				assertEquals(expected, actual, 1.e-5);
-			else
+			} else {
 				fail("j2me should throw exception for math." + op + " but returned " + actual);
+			}
 		} catch (LuaError lee) {
-			if (supportedOnJ2me)
+			if (supportedOnJ2me) {
 				throw lee;
+			}
 		}
 	}
 }

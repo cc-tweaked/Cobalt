@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 
 import org.luaj.vm2.Lua;
 import org.luaj.vm2.Print;
@@ -83,8 +85,9 @@ public class luac {
 							list = true;
 							break;
 						case 'o':
-							if (++i >= args.length)
+							if (++i >= args.length) {
 								usageExit();
+							}
 							output = args[i];
 							break;
 						case 'p':
@@ -97,16 +100,18 @@ public class luac {
 							littleendian = true;
 							break;
 						case 'i':
-							if (args[i].length() <= 2)
+							if (args[i].length() <= 2) {
 								usageExit();
+							}
 							numberformat = Integer.parseInt(args[i].substring(2));
 							break;
 						case 'v':
 							versioninfo = true;
 							break;
 						case '-':
-							if (args[i].length() > 2)
+							if (args[i].length() > 2) {
 								usageExit();
+							}
 							processing = false;
 							break;
 						default:
@@ -117,8 +122,9 @@ public class luac {
 			}
 
 			// echo version
-			if (versioninfo)
+			if (versioninfo) {
 				System.out.println(version);
+			}
 
 			// open output file
 			OutputStream fos = new FileOutputStream(output);
@@ -160,8 +166,9 @@ public class luac {
 			Prototype chunk = LuaC.instance.compile(script, chunkname);
 
 			// list the chunk
-			if (list)
+			if (list) {
 				Print.printCode(chunk);
+			}
 
 			// write out the chunk
 			if (!parseonly) {

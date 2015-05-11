@@ -247,8 +247,9 @@ public class DebugLib extends VarArgFunction {
 			// if ( func != null )
 			// 	return func.tojstring();
 			LuaString[] kind = getfunckind();
-			if (kind == null)
+			if (kind == null) {
 				return "function ?";
+			}
 			return "function " + kind[0].tojstring();
 		}
 
@@ -280,8 +281,9 @@ public class DebugLib extends VarArgFunction {
 
 		public DebugInfo nextInfo() {
 			DebugInfo di = debugInfo[debugCalls];
-			if (di == null)
+			if (di == null) {
 				debugInfo[debugCalls] = di = new DebugInfo();
+			}
 			return di;
 		}
 
@@ -294,13 +296,15 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public void popInfo(int calls) {
-			while (debugCalls > calls)
+			while (debugCalls > calls) {
 				debugInfo[--debugCalls].clear();
+			}
 		}
 
 		void callHookFunc(DebugState ds, LuaString type, LuaValue arg) {
-			if (inhook || hookfunc == null)
+			if (inhook || hookfunc == null) {
 				return;
+			}
 			inhook = true;
 			try {
 				int n = debugCalls;
@@ -330,8 +334,9 @@ public class DebugLib extends VarArgFunction {
 			try {
 				return debugInfo[debugCalls - 1];
 			} catch (Exception e) {
-				if (debugCalls <= 0)
+				if (debugCalls <= 0) {
 					return debugInfo[debugCalls++] = new DebugInfo();
+				}
 				return null;
 			}
 		}
@@ -356,8 +361,9 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	static DebugState getDebugState(LuaThread thread) {
-		if (thread.debugState == null)
+		if (thread.debugState == null) {
 			thread.debugState = new DebugState(thread);
+		}
 		return (DebugState) thread.debugState;
 	}
 
@@ -373,8 +379,9 @@ public class DebugLib extends VarArgFunction {
 	 */
 	public static void debugSetupCall(Varargs args, LuaValue[] stack) {
 		DebugState ds = getDebugState();
-		if (ds.inhook)
+		if (ds.inhook) {
 			return;
+		}
 		ds.nextInfo().setargs(args, stack);
 	}
 
@@ -387,13 +394,15 @@ public class DebugLib extends VarArgFunction {
 	 */
 	public static void debugOnCall(LuaThread thread, int calls, LuaFunction func) {
 		DebugState ds = getDebugState();
-		if (ds.inhook)
+		if (ds.inhook) {
 			return;
+		}
 		DebugInfo di = ds.pushInfo(calls);
 		di.setfunction(func);
 		if (CALLS) System.out.println("calling " + func);
-		if (ds.hookcall)
+		if (ds.hookcall) {
 			ds.callHookFunc(ds, CALL, LuaValue.NIL);
+		}
 	}
 
 	/**
@@ -404,12 +413,14 @@ public class DebugLib extends VarArgFunction {
 	 */
 	public static void debugOnReturn(LuaThread thread, int calls) {
 		DebugState ds = getDebugState(thread);
-		if (ds.inhook)
+		if (ds.inhook) {
 			return;
+		}
 		if (CALLS) System.out.println("returning");
 		try {
-			if (ds.hookrtrn)
+			if (ds.hookrtrn) {
 				ds.callHookFunc(ds, RETURN, LuaValue.NIL);
+			}
 		} finally {
 			getDebugState().popInfo(calls);
 		}
@@ -424,8 +435,9 @@ public class DebugLib extends VarArgFunction {
 	 */
 	public static void debugBytecode(int pc, Varargs extras, int top) {
 		DebugState ds = getDebugState();
-		if (ds.inhook)
+		if (ds.inhook) {
 			return;
+		}
 		DebugInfo di = ds.getDebugInfo();
 		if (TRACE) Print.printState(di.closure, pc, di.stack, top, di.varargs);
 		di.bytecode(pc, extras, top);
@@ -472,7 +484,7 @@ public class DebugLib extends VarArgFunction {
 		String str = args.optjstring(a++, "");
 		int count = args.optint(a++, 0);
 		boolean call = false, line = false, rtrn = false;
-		for (int i = 0; i < str.length(); i++)
+		for (int i = 0; i < str.length(); i++) {
 			switch (str.charAt(i)) {
 				case 'c':
 					call = true;
@@ -484,6 +496,7 @@ public class DebugLib extends VarArgFunction {
 					rtrn = true;
 					break;
 			}
+		}
 		getDebugState(thread).sethook(func, call, line, rtrn, count);
 		return NONE;
 	}
@@ -518,8 +531,9 @@ public class DebugLib extends VarArgFunction {
 		} else {
 			di = ds.findDebugInfo(func.checkfunction());
 		}
-		if (di == null)
+		if (di == null) {
 			return NIL;
+		}
 
 		// start a table
 		LuaTable info = new LuaTable();
@@ -581,10 +595,11 @@ public class DebugLib extends VarArgFunction {
 
 	public static String sourceshort(Prototype p) {
 		String name = p.source.tojstring();
-		if (name.startsWith("@") || name.startsWith("="))
+		if (name.startsWith("@") || name.startsWith("=")) {
 			name = name.substring(1);
-		else if (name.startsWith("\033"))
+		} else if (name.startsWith("\033")) {
 			name = "binary string";
+		}
 		return name;
 	}
 
@@ -667,10 +682,11 @@ public class DebugLib extends VarArgFunction {
 
 	static LuaString findupvalue(LuaClosure c, int up) {
 		if (c.upValues != null && up > 0 && up <= c.upValues.length) {
-			if (c.p.upvalues != null && up <= c.p.upvalues.length)
+			if (c.p.upvalues != null && up <= c.p.upvalues.length) {
 				return c.p.upvalues[up - 1];
-			else
+			} else {
 				return LuaString.valueOf("." + up);
+			}
 		}
 		return null;
 	}
@@ -763,8 +779,9 @@ public class DebugLib extends VarArgFunction {
 		DebugInfo di;
 		for (int i = 0, n = ds.debugCalls; i < n; i++) {
 			di = ds.getDebugInfo(i);
-			if (di != null && di.func.isclosure())
+			if (di != null && di.func.isclosure()) {
 				return di.sourceline();
+			}
 		}
 		return fileline(0);
 	}
@@ -796,8 +813,9 @@ public class DebugLib extends VarArgFunction {
 			int pc = di.pc; // currentpc(L, ci);
 			int i;// Instruction i;
 			name = p.getlocalname(stackpos + 1, pc);
-			if (name != null) /* is a local? */
+			if (name != null) /* is a local? */ {
 				return new LuaString[]{name, LOCAL};
+			}
 			i = symbexec(p, pc, stackpos); /* try symbolic execution */
 			lua_assert(pc != -1);
 			switch (Lua.GET_OPCODE(i)) {
@@ -809,8 +827,9 @@ public class DebugLib extends VarArgFunction {
 				case Lua.OP_MOVE: {
 					int a = Lua.GETARG_A(i);
 					int b = Lua.GETARG_B(i); /* move from `b' to `a' */
-					if (b < a)
+					if (b < a) {
 						return getobjname(di, b); /* get name for `b' */
+					}
 					break;
 				}
 				case Lua.OP_GETTABLE: {
@@ -836,10 +855,11 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	static LuaString kname(Prototype p, int c) {
-		if (Lua.ISK(c) && p.k[Lua.INDEXK(c)].isstring())
+		if (Lua.ISK(c) && p.k[Lua.INDEXK(c)].isstring()) {
 			return p.k[Lua.INDEXK(c)].strvalue();
-		else
+		} else {
 			return QMARK;
+		}
 	}
 
 	static boolean checkreg(Prototype pt, int reg) {
@@ -916,8 +936,9 @@ public class DebugLib extends VarArgFunction {
 				}
 				case Lua.iABx: {
 					b = Lua.GETARG_Bx(i);
-					if (Lua.getBMode(op) == Lua.OpArgK)
+					if (Lua.getBMode(op) == Lua.OpArgK) {
 						if (!(b < pt.k.length)) return 0;
+					}
 					break;
 				}
 				case Lua.iAsBx: {
@@ -935,8 +956,9 @@ public class DebugLib extends VarArgFunction {
 				}
 			}
 			if (Lua.testAMode(op)) {
-				if (a == reg)
+				if (a == reg) {
 					last = pc; /* change register `a' */
+				}
 			}
 			if (Lua.testTMode(op)) {
 				if (!(pc + 2 < pt.code.length)) return 0; /* check skip */
@@ -948,8 +970,9 @@ public class DebugLib extends VarArgFunction {
 					break;
 				}
 				case Lua.OP_LOADNIL: {
-					if (a <= reg && reg <= b)
+					if (a <= reg && reg <= b) {
 						last = pc; /* set registers from `a' to `b' */
+					}
 					break;
 				}
 				case Lua.OP_GETUPVAL:
@@ -964,8 +987,9 @@ public class DebugLib extends VarArgFunction {
 				}
 				case Lua.OP_SELF: {
 					if (!checkreg(pt, a + 1)) return 0;
-					if (reg == a + 1)
+					if (reg == a + 1) {
 						last = pc;
+					}
 					break;
 				}
 				case Lua.OP_CONCAT: {
@@ -975,8 +999,9 @@ public class DebugLib extends VarArgFunction {
 				case Lua.OP_TFORLOOP: {
 					if (!(c >= 1)) return 0; /* at least one result (control variable) */
 					if (!checkreg(pt, a + 2 + c)) return 0; /* space for results */
-					if (reg >= a + 2)
+					if (reg >= a + 2) {
 						last = pc; /* affect all regs above its base */
+					}
 					break;
 				}
 				case Lua.OP_FORLOOP:
@@ -986,8 +1011,9 @@ public class DebugLib extends VarArgFunction {
 				case Lua.OP_JMP: {
 					int dest = pc + 1 + b;
 				/* not full check and jump is forward and do not skip `lastpc'? */
-					if (reg != Lua.NO_REG && pc < dest && dest <= lastpc)
+					if (reg != Lua.NO_REG && pc < dest && dest <= lastpc) {
 						pc += b; /* do the jump */
+					}
 					break;
 				}
 				case Lua.OP_CALL:
@@ -998,23 +1024,28 @@ public class DebugLib extends VarArgFunction {
 					c--; /* c = num. returns */
 					if (c == Lua.LUA_MULTRET) {
 						if (!(checkopenop(pt, pc))) return 0;
-					} else if (c != 0)
+					} else if (c != 0) {
 						if (!checkreg(pt, a + c - 1)) return 0;
-					if (reg >= a)
+					}
+					if (reg >= a) {
 						last = pc; /* affect all registers above base */
+					}
 					break;
 				}
 				case Lua.OP_RETURN: {
 					b--; /* b = num. returns */
-					if (b > 0)
+					if (b > 0) {
 						if (!checkreg(pt, a + b - 1)) return 0;
+					}
 					break;
 				}
 				case Lua.OP_SETLIST: {
-					if (b > 0)
+					if (b > 0) {
 						if (!checkreg(pt, a + b)) return 0;
-					if (c == 0)
+					}
+					if (c == 0) {
 						pc++;
+					}
 					break;
 				}
 				case Lua.OP_CLOSURE: {
@@ -1026,16 +1057,20 @@ public class DebugLib extends VarArgFunction {
 						int op1 = Lua.GET_OPCODE(pt.code[pc + j]);
 						if (!(op1 == Lua.OP_GETUPVAL || op1 == Lua.OP_MOVE)) return 0;
 					}
-					if (reg != Lua.NO_REG) /* tracing? */
+					if (reg != Lua.NO_REG) /* tracing? */ {
 						pc += nup; /* do not 'execute' these pseudo-instructions */
+					}
 					break;
 				}
 				case Lua.OP_VARARG: {
 					if (!((pt.is_vararg & Lua.VARARG_ISVARARG) != 0
-						&& (pt.is_vararg & Lua.VARARG_NEEDSARG) == 0)) return 0;
+						&& (pt.is_vararg & Lua.VARARG_NEEDSARG) == 0)) {
+						return 0;
+					}
 					b--;
-					if (b == Lua.LUA_MULTRET)
+					if (b == Lua.LUA_MULTRET) {
 						if (!(checkopenop(pt, pc))) return 0;
+					}
 					if (!checkreg(pt, a + b - 1)) return 0;
 					break;
 				}

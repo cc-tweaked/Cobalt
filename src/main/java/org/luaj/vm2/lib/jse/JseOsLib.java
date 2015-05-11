@@ -112,18 +112,22 @@ public class JseOsLib extends org.luaj.vm2.lib.OsLib {
 
 	protected void remove(String filename) throws IOException {
 		File f = new File(filename);
-		if (!f.exists())
+		if (!f.exists()) {
 			throw new IOException("No such file or directory");
-		if (!f.delete())
+		}
+		if (!f.delete()) {
 			throw new IOException("Failed to delete");
+		}
 	}
 
 	protected void rename(String oldname, String newname) throws IOException {
 		File f = new File(oldname);
-		if (!f.exists())
+		if (!f.exists()) {
 			throw new IOException("No such file or directory");
-		if (!f.renameTo(new File(newname)))
+		}
+		if (!f.renameTo(new File(newname))) {
 			throw new IOException("Failed to delete");
+		}
 	}
 
 	protected String tmpname() {

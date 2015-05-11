@@ -59,8 +59,9 @@ public class ProtoInfo {
 		sb.append("proto '" + name + "'\n");
 
 		// upvalues from outer scopes
-		for (int i = 0, n = (upvals != null ? upvals.length : 0); i < n; i++)
+		for (int i = 0, n = (upvals != null ? upvals.length : 0); i < n; i++) {
 			sb.append(" up[" + i + "]: " + upvals[i] + "\n");
+		}
 
 		// basic blocks
 		for (int i = 0; i < blocklist.length; i++) {
@@ -121,8 +122,9 @@ public class ProtoInfo {
 		int n = prototype.code.length;
 		int m = prototype.maxstacksize;
 		VarInfo[][] v = new VarInfo[m][];
-		for (int i = 0; i < v.length; i++)
+		for (int i = 0; i < v.length; i++) {
 			v[i] = new VarInfo[n];
+		}
 
 		// process instructions
 		for (int bi = 0; bi < blocklist.length; bi++) {
@@ -132,19 +134,21 @@ public class ProtoInfo {
 			int nprev = b0.prev != null ? b0.prev.length : 0;
 			for (int slot = 0; slot < m; slot++) {
 				VarInfo var = null;
-				if (nprev == 0)
+				if (nprev == 0) {
 					var = params[slot];
-				else if (nprev == 1)
+				} else if (nprev == 1) {
 					var = v[slot][b0.prev[0].pc1];
-				else {
+				} else {
 					for (int i = 0; i < nprev; i++) {
 						BasicBlock bp = b0.prev[i];
-						if (v[slot][bp.pc1] == VarInfo.INVALID)
+						if (v[slot][bp.pc1] == VarInfo.INVALID) {
 							var = VarInfo.INVALID;
+						}
 					}
 				}
-				if (var == null)
+				if (var == null) {
 					var = VarInfo.PHI(this, slot, b0.pc0);
+				}
 				v[slot][b0.pc0] = var;
 			}
 
@@ -152,8 +156,9 @@ public class ProtoInfo {
 			for (int pc = b0.pc0; pc <= b0.pc1; pc++) {
 
 				// propogate previous values except at block boundaries
-				if (pc > b0.pc0)
+				if (pc > b0.pc0) {
 					propogateVars(v, pc - 1, pc);
+				}
 
 				int a, b, c, nups;
 				int ins = prototype.code[pc];
@@ -208,8 +213,9 @@ public class ProtoInfo {
 						a = Lua.GETARG_A(ins);
 						b = Lua.GETARG_B(ins);
 						c = Lua.GETARG_C(ins);
-						for (; b <= c; b++)
+						for (; b <= c; b++) {
 							v[b][pc].isreferenced = true;
+						}
 						v[a][pc] = new VarInfo(a, pc);
 						break;
 
@@ -252,18 +258,22 @@ public class ProtoInfo {
 					case Lua.OP_LOADNIL: /*	A B	R(A) := ... := R(B) := nil			*/
 						a = Lua.GETARG_A(ins);
 						b = Lua.GETARG_B(ins);
-						for (; a <= b; a++)
+						for (; a <= b; a++) {
 							v[a][pc] = new VarInfo(a, pc);
+						}
 						break;
 
 					case Lua.OP_VARARG: /*	A B	R(A), R(A+1), ..., R(A+B-1) = vararg		*/
 						a = Lua.GETARG_A(ins);
 						b = Lua.GETARG_B(ins);
-						for (int j = 1; j < b; j++, a++)
+						for (int j = 1; j < b; j++, a++) {
 							v[a][pc] = new VarInfo(a, pc);
-						if (b == 0)
-							for (; a < m; a++)
+						}
+						if (b == 0) {
+							for (; a < m; a++) {
 								v[a][pc] = VarInfo.INVALID;
+							}
+						}
 						break;
 
 					case Lua.OP_CALL: /*	A B C	R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
@@ -272,27 +282,32 @@ public class ProtoInfo {
 						c = Lua.GETARG_C(ins);
 						v[a][pc].isreferenced = true;
 						v[a][pc].isreferenced = true;
-						for (int i = 1; i <= b - 1; i++)
+						for (int i = 1; i <= b - 1; i++) {
 							v[a + i][pc].isreferenced = true;
-						for (int j = 0; j <= c - 2; j++, a++)
+						}
+						for (int j = 0; j <= c - 2; j++, a++) {
 							v[a][pc] = new VarInfo(a, pc);
-						for (; a < m; a++)
+						}
+						for (; a < m; a++) {
 							v[a][pc] = VarInfo.INVALID;
+						}
 						break;
 
 					case Lua.OP_TAILCALL: /*	A B C	return R(A)(R(A+1), ... ,R(A+B-1))		*/
 						a = Lua.GETARG_A(ins);
 						b = Lua.GETARG_B(ins);
 						v[a][pc].isreferenced = true;
-						for (int i = 1; i <= b - 1; i++)
+						for (int i = 1; i <= b - 1; i++) {
 							v[a + i][pc].isreferenced = true;
+						}
 						break;
 
 					case Lua.OP_RETURN: /*	A B	return R(A), ... ,R(A+B-2)	(see note)	*/
 						a = Lua.GETARG_A(ins);
 						b = Lua.GETARG_B(ins);
-						for (int i = 0; i <= b - 2; i++)
+						for (int i = 0; i <= b - 2; i++) {
 							v[a + i][pc].isreferenced = true;
+						}
 						break;
 
 					case Lua.OP_TFORLOOP: /*	A C	R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
@@ -302,10 +317,12 @@ public class ProtoInfo {
 						v[a++][pc].isreferenced = true;
 						v[a++][pc].isreferenced = true;
 						v[a++][pc].isreferenced = true;
-						for (int j = 0; j < c; j++, a++)
+						for (int j = 0; j < c; j++, a++) {
 							v[a][pc] = new VarInfo(a, pc);
-						for (; a < m; a++)
+						}
+						for (; a < m; a++) {
 							v[a][pc] = VarInfo.INVALID;
+						}
 						break;
 
 					case Lua.OP_CLOSURE: /*	A Bx	R(A) := closure(KPROTO[Bx], R(A), ... ,R(A+n))	*/
@@ -320,22 +337,25 @@ public class ProtoInfo {
 							}
 						}
 						v[a][pc] = new VarInfo(a, pc);
-						for (int k = 1; k <= nups; k++)
+						for (int k = 1; k <= nups; k++) {
 							propogateVars(v, pc, pc + k);
+						}
 						pc += nups;
 						break;
 					case Lua.OP_CLOSE: /*	A 	close all variables in the stack up to (>=) R(A)*/
 						a = Lua.GETARG_A(ins);
-						for (; a < m; a++)
+						for (; a < m; a++) {
 							v[a][pc] = VarInfo.INVALID;
+						}
 						break;
 
 					case Lua.OP_SETLIST: /*	A B C	R(A)[(C-1)*FPF+i]:= R(A+i), 1 <= i <= B	*/
 						a = Lua.GETARG_A(ins);
 						b = Lua.GETARG_B(ins);
 						v[a][pc].isreferenced = true;
-						for (int i = 1; i <= b; i++)
+						for (int i = 1; i <= b; i++) {
 							v[a + i][pc].isreferenced = true;
+						}
 						break;
 
 					case Lua.OP_SETGLOBAL: /*	A Bx	Gbl[Kst(Bx)]:= R(A)				*/
@@ -366,8 +386,9 @@ public class ProtoInfo {
 	}
 
 	private static void propogateVars(VarInfo[][] v, int pcfrom, int pcto) {
-		for (int j = 0, m = v.length; j < m; j++)
+		for (int j = 0, m = v.length; j < m; j++) {
 			v[j][pcto] = v[j][pcfrom];
+		}
 	}
 
 	private void replaceTrivialPhiVariables() {
@@ -376,21 +397,25 @@ public class ProtoInfo {
 			for (int slot = 0; slot < prototype.maxstacksize; slot++) {
 				VarInfo vold = vars[slot][b0.pc0];
 				VarInfo vnew = vold.resolvePhiVariableValues();
-				if (vnew != null)
+				if (vnew != null) {
 					substituteVariable(slot, vold, vnew);
+				}
 			}
 		}
 	}
 
 	private void substituteVariable(int slot, VarInfo vold, VarInfo vnew) {
-		for (int i = 0, n = prototype.code.length; i < n; i++)
+		for (int i = 0, n = prototype.code.length; i < n; i++) {
 			replaceAll(vars[slot], vars[slot].length, vold, vnew);
+		}
 	}
 
 	private void replaceAll(VarInfo[] v, int n, VarInfo vold, VarInfo vnew) {
-		for (int i = 0; i < n; i++)
-			if (v[i] == vold)
+		for (int i = 0; i < n; i++) {
+			if (v[i] == vold) {
 				v[i] = vnew;
+			}
+		}
 	}
 
 	private void findUpvalues() {
@@ -415,20 +440,25 @@ public class ProtoInfo {
 
 		// mark all upvalues that are written locally as read/write
 		for (int pc = 0; pc < n; pc++) {
-			if (Lua.GET_OPCODE(code[pc]) == Lua.OP_SETUPVAL)
+			if (Lua.GET_OPCODE(code[pc]) == Lua.OP_SETUPVAL) {
 				upvals[Lua.GETARG_B(code[pc])].rw = true;
+			}
 		}
 	}
 
 	private UpvalInfo findOpenUp(int pc, int slot) {
-		if (openups[slot] == null)
+		if (openups[slot] == null) {
 			openups[slot] = new UpvalInfo[prototype.code.length];
-		if (openups[slot][pc] != null)
+		}
+		if (openups[slot][pc] != null) {
 			return openups[slot][pc];
+		}
 		UpvalInfo u = new UpvalInfo(this, pc, slot);
-		for (int i = 0, n = prototype.code.length; i < n; ++i)
-			if (vars[slot][i] != null && vars[slot][i].upvalue == u)
+		for (int i = 0, n = prototype.code.length; i < n; ++i) {
+			if (vars[slot][i] != null && vars[slot][i].upvalue == u) {
 				openups[slot][i] = u;
+			}
+		}
 		return u;
 	}
 
@@ -444,8 +474,9 @@ public class ProtoInfo {
 
 	public boolean isUpvalueRefer(int pc, int slot) {
 		// special case when both refer and assign in same instruction
-		if (pc > 0 && vars[slot][pc] != null && vars[slot][pc].pc == pc && vars[slot][pc - 1] != null)
+		if (pc > 0 && vars[slot][pc] != null && vars[slot][pc].pc == pc && vars[slot][pc - 1] != null) {
 			pc -= 1;
+		}
 		VarInfo v = pc < 0 ? params[slot] : vars[slot][pc];
 		return v != null && v.upvalue != null && v.upvalue.rw;
 	}

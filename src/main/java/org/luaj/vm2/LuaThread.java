@@ -253,8 +253,9 @@ public class LuaThread extends LuaValue {
 	 */
 	public static Varargs yield(Varargs args) {
 		State s = running_thread.state;
-		if (s.function == null)
+		if (s.function == null) {
 			throw new LuaError("cannot yield main thread");
+		}
 		return s.lua_yield(args);
 	}
 
@@ -265,9 +266,10 @@ public class LuaThread extends LuaValue {
 	 * @return {@link Varargs} provided as arguments to {@link #yield(Varargs)}
 	 */
 	public Varargs resume(Varargs args) {
-		if (this.state.status > STATUS_SUSPENDED)
+		if (this.state.status > STATUS_SUSPENDED) {
 			return LuaValue.varargsOf(LuaValue.FALSE,
 				LuaValue.valueOf("cannot resume " + LuaThread.STATUS_NAMES[this.state.status] + " coroutine"));
+		}
 		return state.lua_resume(this, args);
 	}
 
@@ -359,8 +361,9 @@ public class LuaThread extends LuaValue {
 		 */
 		final void onCall(LuaFunction function) {
 			functions[calls++] = function;
-			if (DebugLib.DEBUG_ENABLED)
+			if (DebugLib.DEBUG_ENABLED) {
 				DebugLib.debugOnCall(running_thread, calls, function);
+			}
 		}
 
 		/**
@@ -370,8 +373,9 @@ public class LuaThread extends LuaValue {
 		 */
 		public final void onReturn() {
 			functions[--calls] = null;
-			if (DebugLib.DEBUG_ENABLED)
+			if (DebugLib.DEBUG_ENABLED) {
 				DebugLib.debugOnReturn(running_thread, calls);
+			}
 		}
 
 		/**

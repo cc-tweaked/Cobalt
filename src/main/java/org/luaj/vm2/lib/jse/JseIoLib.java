@@ -81,8 +81,9 @@ public class JseIoLib extends IoLib {
 		if (appendMode) {
 			f.seek(f.length());
 		} else {
-			if (!readMode)
+			if (!readMode) {
 				f.setLength(0);
+			}
 		}
 		return new FileImpl(f);
 	}
@@ -145,19 +146,22 @@ public class JseIoLib extends IoLib {
 		}
 
 		public void flush() throws IOException {
-			if (os != null)
+			if (os != null) {
 				os.flush();
+			}
 		}
 
 		public void write(LuaString s) throws IOException {
-			if (os != null)
+			if (os != null) {
 				os.write(s.m_bytes, s.m_offset, s.m_length);
-			else if (file != null)
+			} else if (file != null) {
 				file.write(s.m_bytes, s.m_offset, s.m_length);
-			else
+			} else {
 				notimplemented();
-			if (nobuffer)
+			}
+			if (nobuffer) {
 				flush();
+			}
 		}
 
 		public boolean isclosed() {
@@ -207,9 +211,9 @@ public class JseIoLib extends IoLib {
 
 		// return char if read, -1 if eof, throw IOException on other exception
 		public int read() throws IOException {
-			if (is != null)
+			if (is != null) {
 				return is.read();
-			else if (file != null) {
+			} else if (file != null) {
 				return file.read();
 			}
 			notimplemented();

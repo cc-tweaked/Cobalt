@@ -147,8 +147,9 @@ public class PackageLib extends OneArgFunction {
 				case OP_SEEALL: {
 					LuaTable t = arg.checktable();
 					LuaValue m = t.getmetatable();
-					if (m == null)
+					if (m == null) {
 						t.setmetatable(m = tableOf());
+					}
 					m.set(INDEX, LuaThread.getGlobals());
 					return NONE;
 				}
@@ -242,8 +243,9 @@ public class PackageLib extends OneArgFunction {
 		    /* try global variable (and create one if it does not exist) */
 			LuaValue globals = LuaThread.getGlobals();
 			module = findtable(globals, modname);
-			if (module == null)
+			if (module == null) {
 				error("name conflict for module '" + modname + "'");
+			}
 			LOADED.set(modname, module);
 		} else {
 			module = value;
@@ -258,15 +260,18 @@ public class PackageLib extends OneArgFunction {
 
 		// set the environment of the current function
 		LuaFunction f = LuaThread.getCallstackFunction(1);
-		if (f == null)
+		if (f == null) {
 			error("no calling function");
-		if (!f.isclosure())
+		}
+		if (!f.isclosure()) {
 			error("'module' not called from a Lua function");
+		}
 		f.setfenv(module);
 
 		// apply the functions
-		for (int i = 2; i <= n; i++)
+		for (int i = 2; i <= n; i++) {
 			args.arg(i).call(module);
+		}
 
 		// returns no results
 		return NONE;
@@ -281,8 +286,9 @@ public class PackageLib extends OneArgFunction {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
-			if (e < 0)
+			if (e < 0) {
 				e = fname.m_length;
+			}
 			LuaString key = fname.substring(b, e);
 			LuaValue val = table.rawget(key);
 			if (val.isnil()) { /* no such field? */
@@ -339,8 +345,9 @@ public class PackageLib extends OneArgFunction {
 		LuaString name = arg.checkstring();
 		LuaValue loaded = LOADED.get(name);
 		if (loaded.toboolean()) {
-			if (loaded == _SENTINEL)
+			if (loaded == _SENTINEL) {
 				error("loop or previous error loading module '" + name + "'");
+			}
 			return loaded;
 		}
 
@@ -356,19 +363,22 @@ public class PackageLib extends OneArgFunction {
 
 		    /* call loader with module name as argument */
 			chunk = loader.call(name);
-			if (chunk.isfunction())
+			if (chunk.isfunction()) {
 				break;
-			if (chunk.isstring())
+			}
+			if (chunk.isstring()) {
 				sb.append(chunk.tojstring());
+			}
 		}
 
 		// load the module using the loader
 		LOADED.set(name, _SENTINEL);
 		LuaValue result = chunk.call(name);
-		if (!result.isnil())
+		if (!result.isnil()) {
 			LOADED.set(name, result);
-		else if ((result = LOADED.get(name)) == _SENTINEL)
+		} else if ((result = LOADED.get(name)) == _SENTINEL) {
 			LOADED.set(name, result = LuaValue.TRUE);
+		}
 		return result;
 	}
 
@@ -393,8 +403,9 @@ public class PackageLib extends OneArgFunction {
 
 		// get package path
 		LuaValue pp = PACKAGE.get(_PATH);
-		if (!pp.isstring())
+		if (!pp.isstring()) {
 			return valueOf("package.path is not a string");
+		}
 		String path = pp.tojstring();
 
 		// check the path elements
@@ -407,8 +418,9 @@ public class PackageLib extends OneArgFunction {
 			// find next template
 			int b = e + 1;
 			e = path.indexOf(';', b);
-			if (e < 0)
+			if (e < 0) {
 				e = path.length();
+			}
 			String template = path.substring(b, e);
 
 			// create filename
@@ -420,12 +432,14 @@ public class PackageLib extends OneArgFunction {
 
 			// try loading the file
 			Varargs v = BaseLib.loadFile(filename);
-			if (v.arg1().isfunction())
+			if (v.arg1().isfunction()) {
 				return v.arg1();
+			}
 
 			// report error
-			if (sb == null)
+			if (sb == null) {
 				sb = new StringBuffer();
+			}
 			sb.append("\n\t'" + filename + "': " + v.arg(2));
 		}
 		return valueOf(sb.toString());
@@ -457,8 +471,9 @@ public class PackageLib extends OneArgFunction {
 	public static final String toClassname(String filename) {
 		int n = filename.length();
 		int j = n;
-		if (filename.endsWith(".lua"))
+		if (filename.endsWith(".lua")) {
 			j -= 4;
+		}
 		for (int k = 0; k < j; k++) {
 			char c = filename.charAt(k);
 			if ((!isClassnamePart(c)) || (c == '/') || (c == '\\')) {
@@ -476,8 +491,9 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	private static final boolean isClassnamePart(char c) {
-		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
 			return true;
+		}
 		switch (c) {
 			case '.':
 			case '$':

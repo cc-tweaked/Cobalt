@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.vm;
 
 import org.junit.Assert;
@@ -526,8 +528,9 @@ public class UnaryBinaryOperatorsTest {
 			LuaValue.class.getMethod(op, new Class[]{LuaValue.class}).invoke(a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
-			if ((!actual.startsWith("attempt to perform arithmetic")) || actual.indexOf(type) < 0)
+			if ((!actual.startsWith("attempt to perform arithmetic")) || actual.indexOf(type) < 0) {
 				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+			}
 		} catch (Exception e) {
 			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
 		}
@@ -1054,8 +1057,9 @@ public class UnaryBinaryOperatorsTest {
 			LuaValue.class.getMethod(op, new Class[]{LuaValue.class}).invoke(a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
-			if ((!actual.startsWith("attempt to compare")) || !actual.contains(type))
+			if ((!actual.startsWith("attempt to compare")) || !actual.contains(type)) {
 				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+			}
 		} catch (Exception e) {
 			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
 		}
@@ -1510,8 +1514,9 @@ public class UnaryBinaryOperatorsTest {
 			LuaValue.class.getMethod(op, new Class[]{LuaValue.class}).invoke(a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
-			if ((!actual.startsWith("attempt to concatenate")) || !actual.contains(type))
+			if ((!actual.startsWith("attempt to concatenate")) || !actual.contains(type)) {
 				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+			}
 		} catch (Exception e) {
 			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
 		}

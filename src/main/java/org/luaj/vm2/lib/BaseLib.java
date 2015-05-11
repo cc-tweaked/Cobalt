@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
@@ -133,12 +135,14 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		inext = env.get("__inext");
 
 		// inject base lib int vararg instances
-		for (int i = 0; i < LIBV_KEYS.length; i++)
+		for (int i = 0; i < LIBV_KEYS.length; i++) {
 			((BaseLibV) env.get(LIBV_KEYS[i])).baselib = this;
+		}
 
 		// set the default resource finder if not set already
-		if (FINDER == null)
+		if (FINDER == null) {
 			FINDER = this;
+		}
 		return env;
 	}
 
@@ -177,8 +181,9 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				case 2: { // "setfenv", // (f, table) -> void
 					LuaTable t = arg2.checktable();
 					LuaValue f = getfenvobj(arg1);
-					if (!f.isthread() && !f.isclosure())
+					if (!f.isthread() && !f.isclosure()) {
 						error("'setfenv' cannot change environment of given object");
+					}
 					f.setfenv(t);
 					return f.isthread() ? NONE : f;
 				}
@@ -188,12 +193,14 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	}
 
 	private static LuaValue getfenvobj(LuaValue arg) {
-		if (arg.isfunction())
+		if (arg.isfunction()) {
 			return arg;
+		}
 		int level = arg.optint(1);
 		arg.argcheck(level >= 0, 1, "level must be non-negative");
-		if (level == 0)
+		if (level == 0) {
 			return LuaThread.getRunning();
+		}
 		LuaValue f = LuaThread.getCallstackFunction(level);
 		arg.argcheck(f != null, 1, "invalid level");
 		return f;
@@ -205,8 +212,9 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		public Varargs invoke(Varargs args) {
 			switch (opcode) {
 				case 0: // "assert", // ( v [,message] ) -> v, message | ERR
-					if (!args.arg1().toboolean())
+					if (!args.arg1().toboolean()) {
 						error(args.narg() > 1 ? args.optjstring(2, "assertion failed!") : "assertion failed!");
+					}
 					return args;
 				case 1: // "dofile", // ( filename ) -> result1, ...
 				{
@@ -278,11 +286,13 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				case 10: // "select", // (f, ...) -> value1, ...
 				{
 					int n = args.narg() - 1;
-					if (args.arg1().equals(valueOf("#")))
+					if (args.arg1().equals(valueOf("#"))) {
 						return valueOf(n);
+					}
 					int i = args.checkint(1);
-					if (i == 0 || i < -n)
+					if (i == 0 || i < -n) {
 						argerror(1, "index out of range");
+					}
 					return args.subargs(i < 0 ? n + i + 2 : i + 1);
 				}
 				case 11: // "unpack", // (list [,i [,j]]) -> result1, ...
@@ -297,8 +307,9 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 					if (n == 1) return t.get(i);
 					if (n == 2) return varargsOf(t.get(i), t.get(j));
 					LuaValue[] v = new LuaValue[n];
-					for (int k = 0; k < n; k++)
+					for (int k = 0; k < n; k++) {
 						v[k] = t.get(i + k);
+					}
 					return varargsOf(v);
 				}
 				case 12: // "type",  // (v) -> value
@@ -315,19 +326,22 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				case 16: { // "setmetatable", // (table, metatable) -> table
 					final LuaValue t = args.arg1();
 					final LuaValue mt0 = t.getmetatable();
-					if (mt0 != null && !mt0.rawget(METATABLE).isnil())
+					if (mt0 != null && !mt0.rawget(METATABLE).isnil()) {
 						error("cannot change a protected metatable");
+					}
 					final LuaValue mt = args.checkvalue(2);
 					return t.setmetatable(mt.isnil() ? null : mt.checktable());
 				}
 				case 17: { // "tostring", // (e) -> value
 					LuaValue arg = args.checkvalue(1);
 					LuaValue h = arg.metatag(TOSTRING);
-					if (!h.isnil())
+					if (!h.isnil()) {
 						return h.call(arg);
+					}
 					LuaValue v = arg.tostring();
-					if (!v.isnil())
+					if (!v.isnil()) {
 						return v;
+					}
 					return valueOf(arg.tojstring());
 				}
 				case 18: { // "tonumber", // (e [,base]) -> value
@@ -336,8 +350,9 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 					if (base == 10) {  /* standard conversion */
 						return arg1.tonumber();
 					} else {
-						if (base < 2 || base > 36)
+						if (base < 2 || base > 36) {
 							argerror(2, "base out of range");
+						}
 						return arg1.checkstring().tonumber(base);
 					}
 				}
@@ -379,8 +394,9 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	 */
 	public static Varargs loadFile(String filename) {
 		InputStream is = FINDER.findResource(filename);
-		if (is == null)
+		if (is == null) {
 			return varargsOf(NIL, valueOf("cannot open " + filename + ": No such file or directory"));
+		}
 		try {
 			return loadStream(is, "@" + filename);
 		} finally {
@@ -394,8 +410,9 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 
 	public static Varargs loadStream(InputStream is, String chunkname) {
 		try {
-			if (is == null)
+			if (is == null) {
 				return varargsOf(NIL, valueOf("not found: " + chunkname));
+			}
 			return LoadState.load(is, chunkname, LuaThread.getGlobals());
 		} catch (Exception e) {
 			return varargsOf(NIL, valueOf(e.getMessage()));
@@ -415,14 +432,16 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		public int read() throws IOException {
 			if (remaining <= 0) {
 				LuaValue s = func.call();
-				if (s.isnil())
+				if (s.isnil()) {
 					return -1;
+				}
 				LuaString ls = s.strvalue();
 				bytes = ls.m_bytes;
 				offset = ls.m_offset;
 				remaining = ls.m_length;
-				if (remaining <= 0)
+				if (remaining <= 0) {
 					return -1;
+				}
 			}
 			--remaining;
 			return bytes[offset++];

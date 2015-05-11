@@ -86,8 +86,9 @@ public class VarInfo {
 			sb.append(super.toString());
 			sb.append("={");
 			for (int i = 0, n = (values != null ? values.length : 0); i < n; i++) {
-				if (i > 0)
+				if (i > 0) {
 					sb.append(",");
+				}
 				sb.append(String.valueOf(values[i]));
 			}
 			sb.append("}");
@@ -98,8 +99,9 @@ public class VarInfo {
 			Set visitedBlocks = new HashSet();
 			Set vars = new HashSet();
 			this.collectUniqueValues(visitedBlocks, vars);
-			if (vars.contains(INVALID))
+			if (vars.contains(INVALID)) {
 				return INVALID;
+			}
 			int n = vars.size();
 			Iterator it = vars.iterator();
 			if (n == 1) {
@@ -117,15 +119,17 @@ public class VarInfo {
 
 		protected void collectUniqueValues(Set visitedBlocks, Set vars) {
 			BasicBlock b = pi.blocks[pc];
-			if (pc == 0)
+			if (pc == 0) {
 				vars.add(pi.params[slot]);
+			}
 			for (int i = 0, n = b.prev != null ? b.prev.length : 0; i < n; i++) {
 				BasicBlock bp = b.prev[i];
 				if (!visitedBlocks.contains(bp)) {
 					visitedBlocks.add(bp);
 					VarInfo v = pi.vars[slot][bp.pc1];
-					if (v != null)
+					if (v != null) {
 						v.collectUniqueValues(visitedBlocks, vars);
+					}
 				}
 			}
 		}

@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 import org.junit.After;
@@ -123,9 +125,9 @@ public class CompatibilityTest {
 		public static Collection<Object[]> getTests() {
 			return CompatibilityTestHelpers.getTests().stream()
 				.filter(s -> (
-					!s[0].equals("debuglib") &&
-						!s[0].equals("manyupvals") // Issues with setfenv
-					// !s[0].equals("stringlib")
+					!s[0].equals("debuglib")
+						&& !s[0].equals("manyupvals") // Issues with setfenv
+						&& !s[0].equals("stringlib") // PCall and other issues
 				)).collect(Collectors.toList());
 		}
 	}

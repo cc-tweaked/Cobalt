@@ -143,8 +143,9 @@ public class DumpState {
 		final int[] code = f.code;
 		int n = code.length;
 		dumpInt(n);
-		for (int i = 0; i < n; i++)
+		for (int i = 0; i < n; i++) {
 			dumpInt(code[i]);
+		}
 	}
 
 	void dumpConstants(final Prototype f) throws IOException {
@@ -168,8 +169,9 @@ public class DumpState {
 							dumpDouble(o.todouble());
 							break;
 						case NUMBER_FORMAT_INTS_ONLY:
-							if (!ALLOW_INTEGER_CASTING && !o.isint())
+							if (!ALLOW_INTEGER_CASTING && !o.isint()) {
 								throw new java.lang.IllegalArgumentException("not an integer: " + o);
+							}
 							writer.write(LuaValue.TNUMBER);
 							dumpInt(o.toint());
 							break;
@@ -196,16 +198,18 @@ public class DumpState {
 		}
 		n = f.p.length;
 		dumpInt(n);
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; i++) {
 			dumpFunction(f.p[i], f.source);
+		}
 	}
 
 	void dumpDebug(final Prototype f) throws IOException {
 		int i, n;
 		n = (strip) ? 0 : f.lineinfo.length;
 		dumpInt(n);
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; i++) {
 			dumpInt(f.lineinfo[i]);
+		}
 		n = (strip) ? 0 : f.locvars.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
@@ -216,15 +220,17 @@ public class DumpState {
 		}
 		n = (strip) ? 0 : f.upvalues.length;
 		dumpInt(n);
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; i++) {
 			dumpString(f.upvalues[i]);
+		}
 	}
 
 	void dumpFunction(final Prototype f, final LuaString string) throws IOException {
-		if (f.source == null || f.source.equals(string) || strip)
+		if (f.source == null || f.source.equals(string) || strip) {
 			dumpInt(0);
-		else
+		} else {
 			dumpString(f.source);
+		}
 		dumpInt(f.linedefined);
 		dumpInt(f.lastlinedefined);
 		dumpChar(f.nups);

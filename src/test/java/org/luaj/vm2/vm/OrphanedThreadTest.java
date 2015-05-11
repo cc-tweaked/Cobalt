@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2012 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.vm;
 
 import org.junit.After;
@@ -75,12 +77,12 @@ public class OrphanedThreadTest {
 	@Test
 	public void testCollectOrphanedClosureThread() throws Exception {
 		String script =
-				"print('in closure, arg is '..(...))\n" +
-						"arg = coroutine.yield(1)\n" +
-						"print('in closure.2, arg is '..arg)\n" +
-						"arg = coroutine.yield(0)\n" +
-						"print('leakage in closure.3, arg is '..arg)\n" +
-						"return 'done'\n";
+			"print('in closure, arg is '..(...))\n" +
+				"arg = coroutine.yield(1)\n" +
+				"print('in closure.2, arg is '..arg)\n" +
+				"arg = coroutine.yield(0)\n" +
+				"print('leakage in closure.3, arg is '..arg)\n" +
+				"return 'done'\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
@@ -89,15 +91,15 @@ public class OrphanedThreadTest {
 	@Test
 	public void testCollectOrphanedPcallClosureThread() throws Exception {
 		String script =
-				"f = function(x)\n" +
-						"  print('in pcall-closure, arg is '..(x))\n" +
-						"  arg = coroutine.yield(1)\n" +
-						"  print('in pcall-closure.2, arg is '..arg)\n" +
-						"  arg = coroutine.yield(0)\n" +
-						"  print('leakage in pcall-closure.3, arg is '..arg)\n" +
-						"  return 'done'\n" +
-						"end\n" +
-						"print( 'pcall-closre.result:', pcall( f, ... ) )\n";
+			"f = function(x)\n" +
+				"  print('in pcall-closure, arg is '..(x))\n" +
+				"  arg = coroutine.yield(1)\n" +
+				"  print('in pcall-closure.2, arg is '..arg)\n" +
+				"  arg = coroutine.yield(0)\n" +
+				"  print('leakage in pcall-closure.3, arg is '..arg)\n" +
+				"  return 'done'\n" +
+				"end\n" +
+				"print( 'pcall-closre.result:', pcall( f, ... ) )\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(LuaValue.TRUE, LuaValue.ZERO);
@@ -106,16 +108,16 @@ public class OrphanedThreadTest {
 	@Test
 	public void testCollectOrphanedLoadCloasureThread() throws Exception {
 		String script =
-				"t = { \"print \", \"'hello, \", \"world'\", }\n" +
-						"i = 0\n" +
-						"arg = ...\n" +
-						"f = function()\n" +
-						"	i = i + 1\n" +
-						"   print('in load-closure, arg is', arg, 'next is', t[i])\n" +
-						"   arg = coroutine.yield(1)\n" +
-						"	return t[i]\n" +
-						"end\n" +
-						"load(f)()\n";
+			"t = { \"print \", \"'hello, \", \"world'\", }\n" +
+				"i = 0\n" +
+				"arg = ...\n" +
+				"f = function()\n" +
+				"	i = i + 1\n" +
+				"   print('in load-closure, arg is', arg, 'next is', t[i])\n" +
+				"   arg = coroutine.yield(1)\n" +
+				"	return t[i]\n" +
+				"end\n" +
+				"load(f)()\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(LuaValue.TRUE, LuaValue.ONE);

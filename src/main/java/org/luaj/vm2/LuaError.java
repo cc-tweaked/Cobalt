@@ -127,8 +127,9 @@ public class LuaError extends RuntimeException {
 	 */
 	public void printStackTrace() {
 		System.out.println(toString());
-		if (traceback != null)
+		if (traceback != null) {
 			System.out.println(traceback);
+		}
 	}
 
 	/**

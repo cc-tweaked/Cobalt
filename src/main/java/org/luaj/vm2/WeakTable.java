@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 import org.luaj.vm2.lib.TwoArgFunction;
@@ -72,8 +74,9 @@ public class WeakTable extends LuaTable {
 		this(weakkeys, weakvalues, source.getArrayLength(), source.getHashLength());
 		Varargs n;
 		LuaValue k = NIL;
-		while (!(k = ((n = source.next(k)).arg1())).isnil())
+		while (!(k = ((n = source.next(k)).arg1())).isnil()) {
 			rawset(k, n.arg(2));
+		}
 		m_metatable = source.m_metatable;
 	}
 
@@ -103,14 +106,16 @@ public class WeakTable extends LuaTable {
 	}
 
 	public void rawset(int key, LuaValue value) {
-		if (weakvalues)
+		if (weakvalues) {
 			value = weaken(value);
+		}
 		super.rawset(key, value);
 	}
 
 	public void rawset(LuaValue key, LuaValue value) {
-		if (weakvalues)
+		if (weakvalues) {
 			value = weaken(value);
+		}
 		if (weakkeys) {
 			switch (key.type()) {
 				case LuaValue.TFUNCTION:
@@ -142,8 +147,9 @@ public class WeakTable extends LuaTable {
 	protected LuaValue hashget(LuaValue key) {
 		if (hashEntries > 0) {
 			int i = hashFindSlot(key);
-			if (hashEntries == 0)
+			if (hashEntries == 0) {
 				return NIL;
+			}
 			LuaValue v = hashValues[i];
 			return v != null ? v : NIL;
 		}
@@ -158,11 +164,13 @@ public class WeakTable extends LuaTable {
 		while ((k = hashKeys[i]) != null) {
 			if (k.isweaknil()) {
 				hashClearSlot(i);
-				if (hashEntries == 0)
+				if (hashEntries == 0) {
 					return 0;
+				}
 			} else {
-				if (k.raweq(key.strongkey()))
+				if (k.raweq(key.strongkey())) {
 					return i;
+				}
 				i = (i + 1) % hashKeys.length;
 			}
 		}
@@ -183,8 +191,9 @@ public class WeakTable extends LuaTable {
 		while (true) {
 			Varargs n = super.next(key);
 			LuaValue k = n.arg1();
-			if (k.isnil())
+			if (k.isnil()) {
 				return NIL;
+			}
 			LuaValue ks = k.strongkey();
 			LuaValue vs = n.arg(2).strongvalue();
 			if (ks.isnil() || vs.isnil()) {
@@ -262,18 +271,21 @@ public class WeakTable extends LuaTable {
 
 		public LuaValue strongvalue() {
 			Object u = ref.get();
-			if (u != null)
+			if (u != null) {
 				return (LuaValue) u;
+			}
 			Object o = ob.get();
 			return o != null ? userdataOf(o, mt) : NIL;
 		}
 
 		public boolean raweq(LuaValue rhs) {
-			if (!rhs.isuserdata())
+			if (!rhs.isuserdata()) {
 				return false;
+			}
 			LuaValue v = (LuaValue) ref.get();
-			if (v != null && v.raweq(rhs))
+			if (v != null && v.raweq(rhs)) {
 				return true;
+			}
 			return rhs.touserdata() == ob.get();
 		}
 
@@ -305,8 +317,9 @@ public class WeakTable extends LuaTable {
 		// when looking up the value, look in the keys metatable
 		public LuaValue strongvalue() {
 			LuaValue key = weakkey.strongvalue();
-			if (key.isnil())
+			if (key.isnil()) {
 				return weakvalue = NIL;
+			}
 			return weakvalue.strongvalue();
 		}
 

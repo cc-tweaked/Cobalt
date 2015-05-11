@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.vm;
 
 import org.junit.Test;
@@ -569,8 +571,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod(method, argtype).invoke(obj, argument);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);
@@ -870,8 +873,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod("optuserdata", Class.class, Object.class).invoke(obj, arg1, arg2);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);
@@ -941,8 +945,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod(method).invoke(obj);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);
@@ -1233,8 +1238,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod("checkuserdata", Class.class).invoke(obj, arg);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);

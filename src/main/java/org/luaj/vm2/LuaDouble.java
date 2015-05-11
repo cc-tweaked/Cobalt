@@ -443,12 +443,15 @@ public class LuaDouble extends LuaNumber {
 		}
 		*/
 		long l = (long) v;
-		if (l == v)
+		if (l == v) {
 			return Long.toString(l);
-		if (Double.isNaN(v))
+		}
+		if (Double.isNaN(v)) {
 			return JSTR_NAN;
-		if (Double.isInfinite(v))
+		}
+		if (Double.isInfinite(v)) {
 			return (v < 0 ? JSTR_NEGINF : JSTR_POSINF);
+		}
 		return Float.toString((float) v);
 	}
 
@@ -509,8 +512,9 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	public LuaValue checkvalidkey() {
-		if (Double.isNaN(v))
+		if (Double.isNaN(v)) {
 			throw new LuaError("table index expected, got nan");
+		}
 		return this;
 	}
 }

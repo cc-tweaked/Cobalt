@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 
@@ -77,8 +79,9 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	public Object optuserdata(Class c, Object defval) {
-		if (!c.isAssignableFrom(m_instance.getClass()))
+		if (!c.isAssignableFrom(m_instance.getClass())) {
 			typerror(c.getName());
+		}
 		return m_instance;
 	}
 
@@ -96,8 +99,9 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	public Object checkuserdata(Class c) {
-		if (c.isAssignableFrom(m_instance.getClass()))
+		if (c.isAssignableFrom(m_instance.getClass())) {
 			return m_instance;
+		}
 		return typerror(c.getName());
 	}
 
@@ -106,15 +110,18 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	public void set(LuaValue key, LuaValue value) {
-		if (m_metatable == null || !settable(this, key, value))
+		if (m_metatable == null || !settable(this, key, value)) {
 			error("cannot set " + key + " for userdata");
+		}
 	}
 
 	public boolean equals(Object val) {
-		if (this == val)
+		if (this == val) {
 			return true;
-		if (!(val instanceof LuaUserdata))
+		}
+		if (!(val instanceof LuaUserdata)) {
 			return false;
+		}
 		LuaUserdata u = (LuaUserdata) val;
 		return m_instance.equals(u.m_instance);
 	}
