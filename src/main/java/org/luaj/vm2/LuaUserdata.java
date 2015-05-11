@@ -62,7 +62,7 @@ public class LuaUserdata extends LuaValue {
 		return true;
 	}
 
-	public boolean isuserdata(Class c) {
+	public boolean isuserdata(Class<?> c) {
 		return c.isAssignableFrom(m_instance.getClass());
 	}
 
@@ -70,7 +70,7 @@ public class LuaUserdata extends LuaValue {
 		return m_instance;
 	}
 
-	public Object touserdata(Class c) {
+	public Object touserdata(Class<?> c) {
 		return c.isAssignableFrom(m_instance.getClass()) ? m_instance : null;
 	}
 
@@ -78,7 +78,7 @@ public class LuaUserdata extends LuaValue {
 		return m_instance;
 	}
 
-	public Object optuserdata(Class c, Object defval) {
+	public Object optuserdata(Class<?> c, Object defval) {
 		if (!c.isAssignableFrom(m_instance.getClass())) {
 			typerror(c.getName());
 		}
@@ -98,7 +98,7 @@ public class LuaUserdata extends LuaValue {
 		return m_instance;
 	}
 
-	public Object checkuserdata(Class c) {
+	public Object checkuserdata(Class<?> c) {
 		if (c.isAssignableFrom(m_instance.getClass())) {
 			return m_instance;
 		}
@@ -149,6 +149,6 @@ public class LuaUserdata extends LuaValue {
 
 	// __eq metatag processing
 	public boolean eqmt(LuaValue val) {
-		return m_metatable != null && val.isuserdata() ? LuaValue.eqmtcall(this, m_metatable, val, val.getmetatable()) : false;
+		return m_metatable != null && val.isuserdata() && LuaValue.eqmtcall(this, m_metatable, val, val.getmetatable());
 	}
 }

@@ -127,9 +127,7 @@ public class TableArrayTest {
 		int stringKeys = 0;
 
 		assertEquals(20, keys.length);
-		for (int i = 0; i < keys.length; ++i) {
-			LuaValue k = keys[i];
-
+		for (LuaValue k : keys) {
 			if (k instanceof LuaInteger) {
 				final int ik = k.toint();
 				assertTrue(ik >= 0 && ik < 10);
@@ -273,7 +271,7 @@ public class TableArrayTest {
 		}
 	}
 
-	private static void compareLists(LuaTable t, Vector v) {
+	private static void compareLists(LuaTable t, Vector<LuaString> v) {
 		int n = v.size();
 		assertEquals(v.size(), t.length());
 		for (int j = 0; j < n; j++) {
@@ -286,7 +284,7 @@ public class TableArrayTest {
 
 	public void testInsertBeginningOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaString.valueOf("Test Value! " + i);
@@ -298,7 +296,7 @@ public class TableArrayTest {
 
 	public void testInsertEndOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaString.valueOf("Test Value! " + i);
@@ -310,7 +308,7 @@ public class TableArrayTest {
 
 	public void testInsertMiddleOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaString.valueOf("Test Value! " + i);
@@ -321,7 +319,7 @@ public class TableArrayTest {
 		}
 	}
 
-	private static final void prefillLists(LuaTable t, Vector v) {
+	private static void prefillLists(LuaTable t, Vector<LuaString> v) {
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaString.valueOf("Test Value! " + i);
 			t.insert(0, test);
@@ -331,7 +329,7 @@ public class TableArrayTest {
 
 	public void testRemoveBeginningOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
 			t.remove(1);
@@ -342,7 +340,7 @@ public class TableArrayTest {
 
 	public void testRemoveEndOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
 			t.remove(0);
@@ -353,7 +351,7 @@ public class TableArrayTest {
 
 	public void testRemoveMiddleOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
 			int m = v.size() / 2;

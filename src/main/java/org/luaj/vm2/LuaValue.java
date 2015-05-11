@@ -569,7 +569,7 @@ public class LuaValue extends Varargs {
 	 * @see #optuserdata(Class, Object)
 	 * @see #TUSERDATA
 	 */
-	public boolean isuserdata(Class c) {
+	public boolean isuserdata(Class<?> c) {
 		return false;
 	}
 
@@ -735,7 +735,7 @@ public class LuaValue extends Varargs {
 	 * @see #isuserdata(Class)
 	 * @see #TUSERDATA
 	 */
-	public Object touserdata(Class c) {
+	public Object touserdata(Class<?> c) {
 		return null;
 	}
 
@@ -1071,7 +1071,7 @@ public class LuaValue extends Varargs {
 	 * @see #optuserdata(Object)
 	 * @see #TUSERDATA
 	 */
-	public Object optuserdata(Class c, Object defval) {
+	public Object optuserdata(Class<?> c, Object defval) {
 		argerror(c.getName());
 		return null;
 	}
@@ -1353,7 +1353,7 @@ public class LuaValue extends Varargs {
 	 * @see #checkuserdata()
 	 * @see #TUSERDATA
 	 */
-	public Object checkuserdata(Class c) {
+	public Object checkuserdata(Class<?> c) {
 		argerror("userdata");
 		return null;
 	}

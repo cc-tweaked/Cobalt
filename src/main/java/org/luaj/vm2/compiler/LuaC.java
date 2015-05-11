@@ -189,12 +189,12 @@ public class LuaC extends Lua implements LuaCompiler {
 	}
 
 	public int nCcalls;
-	Hashtable strings;
+	Hashtable<LuaString, LuaString> strings;
 
 	protected LuaC() {
 	}
 
-	private LuaC(Hashtable strings) {
+	private LuaC(Hashtable<LuaString, LuaString> strings) {
 		this.strings = strings;
 	}
 
@@ -208,8 +208,9 @@ public class LuaC extends Lua implements LuaCompiler {
 
 	/**
 	 * Compile a prototype or load as a binary chunk
+	 *
 	 * @param stream The stream to read
-	 * @param name Name of the chunk
+	 * @param name   Name of the chunk
 	 * @return The compiled code
 	 * @throws IOException On stream read errors
 	 */

@@ -130,8 +130,8 @@ abstract public class WeakTableTest {
 			assertEquals(val, t.get(key));
 
 			// drop key and value references, replace them with new ones
-			WeakReference origkey = new WeakReference(key);
-			WeakReference origval = new WeakReference(val);
+			WeakReference<LuaValue> origkey = new WeakReference<>(key);
+			WeakReference<LuaValue> origval = new WeakReference<>(val);
 			key = LuaValue.userdataOf(new MyData(111));
 			val = LuaValue.userdataOf(new MyData(222));
 
@@ -139,7 +139,7 @@ abstract public class WeakTableTest {
 			assertEquals(key, origkey.get());
 			assertEquals(val, origval.get());
 			assertEquals(val, t.get(key));
-			assertEquals(val, t.get((LuaValue) origkey.get()));
+			assertEquals(val, t.get(origkey.get()));
 			assertEquals(origval.get(), t.get(key));
 
 			// value should not be reachable after gc

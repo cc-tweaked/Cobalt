@@ -63,7 +63,7 @@ public class luajc {
 	private boolean verbose = false;
 	private boolean loadclasses = false;
 	private String pkgprefix = null;
-	private List files = new ArrayList();
+	private List<InputFile> files = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
 		new luajc(args);
@@ -72,7 +72,7 @@ public class luajc {
 	private luajc(String[] args) throws IOException {
 
 		// process args
-		List seeds = new ArrayList();
+		List<String> seeds = new ArrayList<>();
 
 		// get stateful args
 		for (int i = 0; i < args.length; i++) {
@@ -130,8 +130,8 @@ public class luajc {
 		}
 
 		// collect up files to process
-		for (int i = 0; i < seeds.size(); i++) {
-			collectFiles(srcdir + "/" + seeds.get(i));
+		for (Object seed : seeds) {
+			collectFiles(srcdir + "/" + seed);
 		}
 
 		// check for at least one file
@@ -142,8 +142,8 @@ public class luajc {
 
 		// process input files
 		JsePlatform.standardGlobals();
-		for (int i = 0, n = files.size(); i < n; i++) {
-			processFile((InputFile) files.get(i));
+		for (Object file : files) {
+			processFile((InputFile) file);
 		}
 	}
 
@@ -161,8 +161,8 @@ public class luajc {
 
 	private void scandir(File dir, String javapackage) {
 		File[] f = dir.listFiles();
-		for (int i = 0; i < f.length; i++) {
-			scanfile(dir, f[i], javapackage);
+		for (File aF : f) {
+			scanfile(dir, aF, javapackage);
 		}
 	}
 

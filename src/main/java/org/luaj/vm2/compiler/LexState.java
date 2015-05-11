@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
-
 public class LexState {
 
 	protected static final String RESERVED_LOCAL_VAR_FOR_CONTROL = "(for control)";
@@ -49,11 +48,11 @@ public class LexState {
 		RESERVED_LOCAL_VAR_FOR_STATE,
 		RESERVED_LOCAL_VAR_FOR_STEP
 	};
-	private static final Hashtable RESERVED_LOCAL_VAR_KEYWORDS_TABLE = new Hashtable();
+	private static final Hashtable<String, Boolean> RESERVED_LOCAL_VAR_KEYWORDS_TABLE = new Hashtable<>();
 
 	static {
-		for (int i = 0; i < RESERVED_LOCAL_VAR_KEYWORDS.length; i++) {
-			RESERVED_LOCAL_VAR_KEYWORDS_TABLE.put(RESERVED_LOCAL_VAR_KEYWORDS[i], Boolean.TRUE);
+		for (String RESERVED_LOCAL_VAR_KEYWORD : RESERVED_LOCAL_VAR_KEYWORDS) {
+			RESERVED_LOCAL_VAR_KEYWORDS_TABLE.put(RESERVED_LOCAL_VAR_KEYWORD, Boolean.TRUE);
 		}
 	}
 
@@ -63,11 +62,11 @@ public class LexState {
 	private static final int UCHAR_MAX = 255; // TODO, convert to unicode CHAR_MAX?
 	private static final int LUAI_MAXCCALLS = 200;
 
-	private static final String LUA_QS(String s) {
+	private static String LUA_QS(String s) {
 		return "'" + s + "'";
 	}
 
-	private static final String LUA_QL(Object o) {
+	private static String LUA_QL(Object o) {
 		return LUA_QS(String.valueOf(o));
 	}
 
@@ -122,8 +121,6 @@ public class LexState {
 		LuaString ts;
 	}
 
-	;
-
 	private static class Token {
 		int token;
 		final SemInfo seminfo = new SemInfo();
@@ -134,8 +131,6 @@ public class LexState {
 			this.seminfo.ts = other.seminfo.ts;
 		}
 	}
-
-	;
 
 	int current;  /* current character (charint) */
 	int linenumber;  /* input line counter */
@@ -173,12 +168,12 @@ public class LexState {
 	final static int FIRST_RESERVED = TK_AND;
 	final static int NUM_RESERVED = TK_WHILE + 1 - FIRST_RESERVED;
 
-	final static Hashtable RESERVED = new Hashtable();
+	final static Hashtable<LuaString, Integer> RESERVED = new Hashtable<>();
 
 	static {
 		for (int i = 0; i < NUM_RESERVED; i++) {
-			LuaString ts = (LuaString) LuaValue.valueOf(luaX_tokens[i]);
-			RESERVED.put(ts, new Integer(FIRST_RESERVED + i));
+			LuaString ts = LuaValue.valueOf(luaX_tokens[i]);
+			RESERVED.put(ts, FIRST_RESERVED + i);
 		}
 	}
 
@@ -239,7 +234,7 @@ public class LexState {
 	String token2str(int token) {
 		if (token < FIRST_RESERVED) {
 			return iscntrl(token) ?
-				L.pushfstring("char(" + ((int) token) + ")") :
+				L.pushfstring("char(" + token + ")") :
 				L.pushfstring(String.valueOf((char) token));
 		} else {
 			return luaX_tokens[token - FIRST_RESERVED];
@@ -673,7 +668,6 @@ public class LexState {
 					if (isspace(current)) {
 						LuaC._assert(!currIsNewline());
 						nextChar();
-						continue;
 					} else if (isdigit(current)) {
 						read_numeral(seminfo);
 						return TK_NUMBER;
@@ -685,7 +679,7 @@ public class LexState {
 						} while (isalnum(current) || current == '_');
 						ts = newstring(buff, 0, nbuff);
 						if (RESERVED.containsKey(ts)) {
-							return ((Integer) RESERVED.get(ts)).intValue();
+							return (Integer) RESERVED.get(ts);
 						} else {
 							seminfo.ts = ts;
 							return TK_NAME;
@@ -744,7 +738,6 @@ public class LexState {
 			}
 		}
 
-		;
 		final U u = new U();
 		final IntPtr t = new IntPtr(); /* patch list of `exit when true' */
 		final IntPtr f = new IntPtr(); /* patch list of `exit when false' */
@@ -969,7 +962,7 @@ public class LexState {
 		fs.bl = null;
 		f.maxstacksize = 2;  /* registers 0/1 are always valid */
 		//fs.h = new LTable();
-		fs.htable = new Hashtable();
+		fs.htable = new Hashtable<>();
 	}
 
 	void close_func() {
@@ -1031,8 +1024,6 @@ public class LexState {
 		int na; /* total number of array elements */
 		int tostore; /* number of array elements pending to be stored */
 	}
-
-	;
 
 
 	void recfield(ConsControl cc) {
@@ -1124,7 +1115,7 @@ public class LexState {
 		if (x < 8) {
 			return x;
 		} else {
-			return ((e + 1) << 3) | (((int) x) - 8);
+			return ((e + 1) << 3) | (x - 8);
 		}
 	}
 
@@ -1271,7 +1262,6 @@ public class LexState {
 			}
 			default: {
 				this.syntaxerror("unexpected symbol");
-				return;
 			}
 		}
 	}
@@ -1434,8 +1424,6 @@ public class LexState {
 		}
 	}
 
-	;
-
 	static Priority[] priority = {  /* ORDER OPR */
 		new Priority(6, 6), new Priority(6, 6), new Priority(7, 7), new Priority(7, 7), new Priority(7, 7),  /* `+' `-' `/' `%' */
 		new Priority(10, 9), new Priority(5, 4),                 /* power and concat (right associative) */
@@ -1528,8 +1516,6 @@ public class LexState {
 		/* variable (global, local, upvalue, or indexed) */
 		expdesc v = new expdesc();
 	}
-
-	;
 
 
 	/*

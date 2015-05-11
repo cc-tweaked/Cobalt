@@ -84,13 +84,13 @@ public class LuaString extends LuaValue {
 
 	private static final Hashtable index_java = new Hashtable();
 
-	private final static LuaString index_get(Hashtable indextable, Object key) {
-		WeakReference w = (WeakReference) indextable.get(key);
+	private final static LuaString index_get(Object key) {
+		WeakReference w = (WeakReference) LuaString.index_java.get(key);
 		return w != null ? (LuaString) w.get() : null;
 	}
 
-	private final static void index_set(Hashtable indextable, Object key, LuaString value) {
-		indextable.put(key, new WeakReference(value));
+	private final static void index_set(Object key, LuaString value) {
+		LuaString.index_java.put(key, new WeakReference(value));
 	}
 
 	/**
@@ -101,13 +101,13 @@ public class LuaString extends LuaValue {
 	 * @return {@link LuaString} with UTF8 bytes corresponding to the supplied String
 	 */
 	public static LuaString valueOf(String string) {
-		LuaString s = index_get(index_java, string);
+		LuaString s = index_get(string);
 		if (s != null) return s;
 		char[] c = string.toCharArray();
 		byte[] b = new byte[lengthAsUtf8(c)];
 		encodeToUtf8(c, b, 0);
 		s = valueOf(b, 0, b.length);
-		index_set(index_java, string, s);
+		index_set(string, s);
 		return s;
 	}
 
@@ -170,7 +170,6 @@ public class LuaString extends LuaValue {
 	 * @param bytes  byte buffer
 	 * @param offset offset into the byte buffer
 	 * @param length length of the byte buffer
-	 * @return {@link LuaString} wrapping the byte buffer
 	 */
 	private LuaString(byte[] bytes, int offset, int length) {
 		this.m_bytes = bytes;

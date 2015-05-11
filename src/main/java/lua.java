@@ -63,7 +63,7 @@ public class lua {
 		boolean processing = true;
 		boolean nodebug = false;
 		boolean luajc = false;
-		Vector libs = null;
+		Vector<String> libs = null;
 		try {
 			// stateful argument processing
 			for (int i = 0; i < args.length; i++) {
@@ -88,7 +88,7 @@ public class lua {
 							if (++i >= args.length) {
 								usageExit();
 							}
-							libs = libs != null ? libs : new Vector();
+							libs = libs != null ? libs : new Vector<>();
 							libs.addElement(args[i]);
 							break;
 						case 'i':
@@ -122,7 +122,7 @@ public class lua {
 			_G = nodebug ? JsePlatform.standardGlobals() : JsePlatform.debugGlobals();
 			if (luajc) LuaJC.install();
 			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++) {
-				loadLibrary((String) libs.elementAt(i));
+				loadLibrary(libs.elementAt(i));
 			}
 
 			// input script processing

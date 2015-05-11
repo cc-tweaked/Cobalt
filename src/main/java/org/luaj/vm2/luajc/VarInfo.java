@@ -60,7 +60,7 @@ public class VarInfo {
 		return null;
 	}
 
-	protected void collectUniqueValues(Set visitedBlocks, Set vars) {
+	protected void collectUniqueValues(Set<BasicBlock> visitedBlocks, Set<VarInfo> vars) {
 		vars.add(this);
 	}
 
@@ -82,7 +82,7 @@ public class VarInfo {
 		}
 
 		public String toString() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(super.toString());
 			sb.append("={");
 			for (int i = 0, n = (values != null ? values.length : 0); i < n; i++) {
@@ -96,28 +96,28 @@ public class VarInfo {
 		}
 
 		public VarInfo resolvePhiVariableValues() {
-			Set visitedBlocks = new HashSet();
-			Set vars = new HashSet();
+			Set<BasicBlock> visitedBlocks = new HashSet<BasicBlock>();
+			Set<VarInfo> vars = new HashSet<VarInfo>();
 			this.collectUniqueValues(visitedBlocks, vars);
 			if (vars.contains(INVALID)) {
 				return INVALID;
 			}
 			int n = vars.size();
-			Iterator it = vars.iterator();
+			Iterator<VarInfo> it = vars.iterator();
 			if (n == 1) {
-				VarInfo v = (VarInfo) it.next();
+				VarInfo v = it.next();
 				v.isreferenced |= this.isreferenced;
 				return v;
 			}
 			this.values = new VarInfo[n];
 			for (int i = 0; i < n; i++) {
-				this.values[i] = (VarInfo) it.next();
+				this.values[i] = it.next();
 				this.values[i].isreferenced |= this.isreferenced;
 			}
 			return null;
 		}
 
-		protected void collectUniqueValues(Set visitedBlocks, Set vars) {
+		protected void collectUniqueValues(Set<BasicBlock> visitedBlocks, Set<VarInfo> vars) {
 			BasicBlock b = pi.blocks[pc];
 			if (pc == 0) {
 				vars.add(pi.params[slot]);

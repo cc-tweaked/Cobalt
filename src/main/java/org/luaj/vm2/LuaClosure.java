@@ -566,7 +566,6 @@ public class LuaClosure extends LuaFunction {
 								stack[a + j - 1] = varargs.arg(j);
 							}
 						}
-						continue;
 				}
 			}
 		} catch (LuaError le) {

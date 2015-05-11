@@ -143,8 +143,8 @@ public class DumpState {
 		final int[] code = f.code;
 		int n = code.length;
 		dumpInt(n);
-		for (int i = 0; i < n; i++) {
-			dumpInt(code[i]);
+		for (int aCode : code) {
+			dumpInt(aCode);
 		}
 	}
 

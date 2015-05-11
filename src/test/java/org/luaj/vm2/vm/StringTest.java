@@ -60,11 +60,11 @@ public class StringTest {
 
 
 	private static String userFriendly(String s) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0, n = s.length(); i < n; i++) {
 			int c = s.charAt(i);
 			if (c < ' ' || c >= 0x80) {
-				sb.append("\\u" + Integer.toHexString(0x10000 + c).substring(1));
+				sb.append("\\u").append(Integer.toHexString(0x10000 + c).substring(1));
 			} else {
 				sb.append((char) c);
 			}

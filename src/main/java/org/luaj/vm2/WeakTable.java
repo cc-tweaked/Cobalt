@@ -177,11 +177,6 @@ public class WeakTable extends LuaTable {
 		return i;
 	}
 
-	public int maxn() {
-		return super.maxn();
-	}
-
-
 	/**
 	 * Get the next element after a particular key in the table
 	 *
@@ -219,10 +214,10 @@ public class WeakTable extends LuaTable {
 	 * @see WeakTable
 	 */
 	static class WeakValue extends LuaValue {
-		final WeakReference ref;
+		final WeakReference<LuaValue> ref;
 
 		protected WeakValue(LuaValue value) {
-			ref = new WeakReference(value);
+			ref = new WeakReference<LuaValue>(value);
 		}
 
 		public int type() {
@@ -282,11 +277,8 @@ public class WeakTable extends LuaTable {
 			if (!rhs.isuserdata()) {
 				return false;
 			}
-			LuaValue v = (LuaValue) ref.get();
-			if (v != null && v.raweq(rhs)) {
-				return true;
-			}
-			return rhs.touserdata() == ob.get();
+			LuaValue v = ref.get();
+			return v != null && v.raweq(rhs) || rhs.touserdata() == ob.get();
 		}
 
 		public boolean isweaknil() {

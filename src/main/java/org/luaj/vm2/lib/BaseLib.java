@@ -135,8 +135,8 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		inext = env.get("__inext");
 
 		// inject base lib int vararg instances
-		for (int i = 0; i < LIBV_KEYS.length; i++) {
-			((BaseLibV) env.get(LIBV_KEYS[i])).baselib = this;
+		for (String LIBV_KEY : LIBV_KEYS) {
+			((BaseLibV) env.get(LIBV_KEY)).baselib = this;
 		}
 
 		// set the default resource finder if not set already

@@ -217,7 +217,7 @@ public class LuaThread extends LuaValue {
 	 * @return CallStack which is used to signal the return or a tail-call recursion
 	 * @see DebugLib
 	 */
-	public static final CallStack onCall(LuaFunction function) {
+	public static CallStack onCall(LuaFunction function) {
 		CallStack cs = running_thread.callstack;
 		cs.onCall(function);
 		return cs;
@@ -229,7 +229,7 @@ public class LuaThread extends LuaValue {
 	 * @param level 1 for the function calling this one, 2 for the next one.
 	 * @return LuaFunction on the call stack, or null if outside of range of active stack
 	 */
-	public static final LuaFunction getCallstackFunction(int level) {
+	public static LuaFunction getCallstackFunction(int level) {
 		return running_thread.callstack.getFunction(level);
 	}
 
@@ -274,7 +274,7 @@ public class LuaThread extends LuaValue {
 	}
 
 	static class State implements Runnable {
-		final WeakReference lua_thread;
+		final WeakReference<LuaThread> lua_thread;
 		final LuaValue function;
 		Varargs args = LuaValue.NONE;
 		Varargs result = LuaValue.NONE;
@@ -282,7 +282,7 @@ public class LuaThread extends LuaValue {
 		int status = LuaThread.STATUS_INITIAL;
 
 		State(LuaThread lua_thread, LuaValue function) {
-			this.lua_thread = new WeakReference(lua_thread);
+			this.lua_thread = new WeakReference<LuaThread>(lua_thread);
 			this.function = function;
 		}
 

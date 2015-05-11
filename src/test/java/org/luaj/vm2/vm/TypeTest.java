@@ -674,22 +674,22 @@ public class TypeTest {
 	@Test
 	public void testOptInt() {
 		assertEquals(33, somenil.optint(33));
-		throwsError(sometrue, "optint", int.class, new Integer(33));
-		throwsError(somefalse, "optint", int.class, new Integer(33));
+		throwsError(sometrue, "optint", int.class, 33);
+		throwsError(somefalse, "optint", int.class, 33);
 		assertEquals(0, zero.optint(33));
 		assertEquals(sampleint, intint.optint(33));
 		assertEquals((int) samplelong, longdouble.optint(33));
 		assertEquals((int) sampledouble, doubledouble.optint(33));
-		throwsError(somefunc, "optint", int.class, new Integer(33));
-		throwsError(someclosure, "optint", int.class, new Integer(33));
-		throwsError(stringstring, "optint", int.class, new Integer(33));
+		throwsError(somefunc, "optint", int.class, 33);
+		throwsError(someclosure, "optint", int.class, 33);
+		throwsError(stringstring, "optint", int.class, 33);
 		assertEquals(sampleint, stringint.optint(33));
 		assertEquals((int) samplelong, stringlong.optint(33));
 		assertEquals((int) sampledouble, stringdouble.optint(33));
-		throwsError(thread, "optint", int.class, new Integer(33));
-		throwsError(table, "optint", int.class, new Integer(33));
-		throwsError(userdataobj, "optint", int.class, new Integer(33));
-		throwsError(userdatacls, "optint", int.class, new Integer(33));
+		throwsError(thread, "optint", int.class, 33);
+		throwsError(table, "optint", int.class, 33);
+		throwsError(userdataobj, "optint", int.class, 33);
+		throwsError(userdatacls, "optint", int.class, 33);
 	}
 
 	@Test
@@ -716,22 +716,22 @@ public class TypeTest {
 	@Test
 	public void testOptLong() {
 		assertEquals(33L, somenil.optlong(33));
-		throwsError(sometrue, "optlong", long.class, new Long(33));
-		throwsError(somefalse, "optlong", long.class, new Long(33));
+		throwsError(sometrue, "optlong", long.class, (long) 33);
+		throwsError(somefalse, "optlong", long.class, (long) 33);
 		assertEquals(0L, zero.optlong(33));
 		assertEquals(sampleint, intint.optlong(33));
 		assertEquals(samplelong, longdouble.optlong(33));
 		assertEquals((long) sampledouble, doubledouble.optlong(33));
-		throwsError(somefunc, "optlong", long.class, new Long(33));
-		throwsError(someclosure, "optlong", long.class, new Long(33));
-		throwsError(stringstring, "optlong", long.class, new Long(33));
+		throwsError(somefunc, "optlong", long.class, (long) 33);
+		throwsError(someclosure, "optlong", long.class, (long) 33);
+		throwsError(stringstring, "optlong", long.class, (long) 33);
 		assertEquals(sampleint, stringint.optlong(33));
 		assertEquals(samplelong, stringlong.optlong(33));
 		assertEquals((long) sampledouble, stringdouble.optlong(33));
-		throwsError(thread, "optlong", long.class, new Long(33));
-		throwsError(table, "optlong", long.class, new Long(33));
-		throwsError(userdataobj, "optlong", long.class, new Long(33));
-		throwsError(userdatacls, "optlong", long.class, new Long(33));
+		throwsError(thread, "optlong", long.class, (long) 33);
+		throwsError(table, "optlong", long.class, (long) 33);
+		throwsError(userdataobj, "optlong", long.class, (long) 33);
+		throwsError(userdatacls, "optlong", long.class, (long) 33);
 	}
 
 	@Test
@@ -1303,8 +1303,8 @@ public class TypeTest {
 	/**
 	 * Really bad function to make it easier to compare doubles
 	 *
-	 * @param a
-	 * @param b
+	 * @param a First double
+	 * @param b Second double
 	 */
 	public static void assertDoubleEquals(double a, double b) {
 		assertEquals(a, b, 1e-10);

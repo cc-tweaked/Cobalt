@@ -34,7 +34,7 @@ public class JavaLoader extends ClassLoader {
 
 	private final LuaValue env;
 
-	private Map<String, byte[]> unloaded = new HashMap<String, byte[]>();
+	private Map<String, byte[]> unloaded = new HashMap<>();
 
 	public JavaLoader(LuaValue env) {
 		this.env = env;
@@ -70,7 +70,7 @@ public class JavaLoader extends ClassLoader {
 	}
 
 	public Class findClass(String classname) throws ClassNotFoundException {
-		byte[] bytes = (byte[]) unloaded.get(classname);
+		byte[] bytes = unloaded.get(classname);
 		if (bytes != null) {
 			return defineClass(classname, bytes, 0, bytes.length);
 		}

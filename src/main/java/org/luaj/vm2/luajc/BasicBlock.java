@@ -19,19 +19,14 @@ public class BasicBlock {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append((pc0 + 1) + "-" + (pc1 + 1)
-			+ (prev != null ? "  prv: " + str(prev, 1) : "")
-			+ (next != null ? "  nxt: " + str(next, 0) : "")
-			+ "\n");
-		return sb.toString();
+		return String.valueOf(pc0 + 1) + "-" + (pc1 + 1) + (prev != null ? "  prv: " + str(prev, 1) : "") + (next != null ? "  nxt: " + str(next, 0) : "") + "\n";
 	}
 
 	private String str(BasicBlock[] b, int p) {
 		if (b == null) {
 			return "";
 		}
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("(");
 		for (int i = 0, n = b.length; i < n; i++) {
 			if (i > 0) {
@@ -111,7 +106,7 @@ public class BasicBlock {
 	}
 
 	public static void visitBranches(Prototype p, BranchVisitor visitor) {
-		int sbx, j, c;
+		int sbx, j;
 		int[] code = p.code;
 		int n = code.length;
 		for (int i = 0; i < n; i++) {
@@ -166,10 +161,10 @@ public class BasicBlock {
 
 	public static BasicBlock[] findLiveBlocks(BasicBlock[] blocks) {
 		// add reachable blocks
-		Vector next = new Vector();
+		Vector<BasicBlock> next = new Vector<>();
 		next.addElement(blocks[0]);
 		while (!next.isEmpty()) {
-			BasicBlock b = (BasicBlock) next.elementAt(0);
+			BasicBlock b = next.elementAt(0);
 			next.removeElementAt(0);
 			if (!b.islive) {
 				b.islive = true;
@@ -182,7 +177,7 @@ public class BasicBlock {
 		}
 
 		// create list in natural order
-		Vector list = new Vector();
+		Vector<BasicBlock> list = new Vector<>();
 		for (int i = 0; i < blocks.length; i = blocks[i].pc1 + 1) {
 			if (blocks[i].islive) {
 				list.addElement(blocks[i]);

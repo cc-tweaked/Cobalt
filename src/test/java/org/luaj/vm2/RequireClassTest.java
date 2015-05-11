@@ -75,7 +75,7 @@ public class RequireClassTest {
 			fail("incorrectly loaded class that threw class cast exception");
 		} catch (LuaError le) {
 			String msg = le.getMessage();
-			if (msg.indexOf("not found") < 0) {
+			if (!msg.contains("not found")) {
 				fail("expected 'not found' message but got " + msg);
 			}
 		}
@@ -84,7 +84,7 @@ public class RequireClassTest {
 			fail("incorrectly loaded class that threw class cast exception");
 		} catch (LuaError le) {
 			String msg = le.getMessage();
-			if (msg.indexOf("not found") < 0) {
+			if (!msg.contains("not found")) {
 				fail("expected 'not found' message but got " + msg);
 			}
 		}

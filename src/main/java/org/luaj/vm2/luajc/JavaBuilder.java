@@ -164,7 +164,7 @@ public class JavaBuilder {
 		// create the fields
 		for (int i = 0; i < p.nups; i++) {
 			boolean isrw = pi.isReadWriteUpvalue(pi.upvals[i]);
-			Type uptype = isrw ? (Type) TYPE_LOCALUPVALUE : (Type) TYPE_LUAVALUE;
+			Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 			FieldGen fg = new FieldGen(0, uptype, upvalueName(i), cp);
 			cg.addField(fg.getField());
 		}
@@ -189,7 +189,7 @@ public class JavaBuilder {
 	}
 
 	public void initializeSlots() {
-		int slot = 0;
+		int slot;
 		createUpvalues(-1, 0, p.maxstacksize);
 		if (superclassType == SUPERTYPE_VARARGS) {
 			for (slot = 0; slot < p.numparams; slot++) {
@@ -215,7 +215,7 @@ public class JavaBuilder {
 		} else {
 			// fixed arg function between 0 and 3 arguments
 			for (slot = 0; slot < p.numparams; slot++) {
-				this.plainSlotVars.put(Integer.valueOf(slot), Integer.valueOf(1 + slot));
+				this.plainSlotVars.put(slot, 1 + slot);
 				if (pi.isUpvalueCreate(-1, slot)) {
 					append(new ALOAD(1 + slot));
 					storeLocal(-1, slot);
@@ -285,18 +285,18 @@ public class JavaBuilder {
 		append(factory.createFieldAccess(STR_LUAVALUE, field, TYPE_LUABOOLEAN, Constants.GETSTATIC));
 	}
 
-	private Map<Integer, Integer> plainSlotVars = new HashMap<Integer, Integer>();
-	private Map<Integer, Integer> upvalueSlotVars = new HashMap<Integer, Integer>();
+	private Map<Integer, Integer> plainSlotVars = new HashMap<>();
+	private Map<Integer, Integer> upvalueSlotVars = new HashMap<>();
 
 	private int findSlot(int slot, Map<Integer, Integer> map, String prefix, Type type) {
-		Integer islot = Integer.valueOf(slot);
+		Integer islot = slot;
 		if (map.containsKey(islot)) {
-			return ((Integer) map.get(islot)).intValue();
+			return (Integer) map.get(islot);
 		}
 		String name = prefix + slot;
 		LocalVariableGen local = mg.addLocalVariable(name, type, null, null);
 		int index = local.getIndex();
-		map.put(islot, Integer.valueOf(index));
+		map.put(islot, index);
 		return index;
 	}
 
@@ -630,7 +630,7 @@ public class JavaBuilder {
 
 	public void closureInitUpvalueFromUpvalue(String protoname, int newup, int upindex) {
 		boolean isrw = pi.isReadWriteUpvalue(pi.upvals[upindex]);
-		Type uptype = isrw ? (Type) TYPE_LOCALUPVALUE : (Type) TYPE_LUAVALUE;
+		Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 		String srcname = upvalueName(upindex);
 		String destname = upvalueName(newup);
 		append(InstructionConstants.THIS);
@@ -640,14 +640,14 @@ public class JavaBuilder {
 
 	public void closureInitUpvalueFromLocal(String protoname, int newup, int pc, int srcslot) {
 		boolean isrw = pi.isReadWriteUpvalue(pi.vars[srcslot][pc].upvalue);
-		Type uptype = isrw ? (Type) TYPE_LOCALUPVALUE : (Type) TYPE_LUAVALUE;
+		Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 		String destname = upvalueName(newup);
 		int index = findSlotIndex(srcslot, isrw);
 		append(new ALOAD(index));
 		append(factory.createFieldAccess(protoname, destname, uptype, Constants.PUTFIELD));
 	}
 
-	private Map<LuaValue, String> constants = new HashMap<LuaValue, String>();
+	private Map<LuaValue, String> constants = new HashMap<>();
 
 	public void loadConstant(LuaValue value) {
 		switch (value.type()) {
@@ -659,7 +659,7 @@ public class JavaBuilder {
 				break;
 			case LuaValue.TNUMBER:
 			case LuaValue.TSTRING:
-				String name = (String) constants.get(value);
+				String name = constants.get(value);
 				if (name == null) {
 					name = value.type() == LuaValue.TNUMBER ?
 						value.isinttype() ?

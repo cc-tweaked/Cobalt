@@ -36,8 +36,6 @@ public class FuncState extends LuaC {
 		short info;
 	}
 
-	;
-
 	static class BlockCnt {
 		BlockCnt previous;  /* chain */
 		IntPtr breaklist = new IntPtr();  /* list of jumps out of this loop */
@@ -46,11 +44,9 @@ public class FuncState extends LuaC {
 		boolean isbreakable;  /* true if `block' is a loop */
 	}
 
-	;
-
 	Prototype f;  /* current function header */
 	//	LTable h;  /* table to find (and reuse) elements in `k' */
-	Hashtable htable;  /* table to find (and reuse) elements in `k' */
+	Hashtable<LuaValue, Integer> htable;  /* table to find (and reuse) elements in `k' */
 	FuncState prev;  /* enclosing function */
 	LexState ls;  /* lexical state */
 	LuaC L;  /* compiler being invoked */
@@ -454,10 +450,10 @@ public class FuncState extends LuaC {
 	int addk(LuaValue v) {
 		int idx;
 		if (this.htable.containsKey(v)) {
-			idx = ((Integer) htable.get(v)).intValue();
+			idx = htable.get(v);
 		} else {
 			idx = this.nk;
-			this.htable.put(v, new Integer(idx));
+			this.htable.put(v, idx);
 			final Prototype f = this.f;
 			if (f.k == null || nk + 1 >= f.k.length) {
 				f.k = realloc(f.k, nk * 2 + 1);
@@ -899,7 +895,6 @@ public class FuncState extends LuaC {
 
 	void codearith(int op, expdesc e1, expdesc e2) {
 		if (constfolding(op, e1, e2)) {
-			return;
 		} else {
 			int o2 = (op != OP_UNM && op != OP_LEN) ? this.exp2RK(e2)
 				: 0;

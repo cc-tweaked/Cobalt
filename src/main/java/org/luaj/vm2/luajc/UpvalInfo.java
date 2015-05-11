@@ -117,7 +117,7 @@ public class UpvalInfo {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(pi.name);
 		for (int i = 0; i < nvars; i++) {
 			sb.append(i > 0 ? "," : " ");

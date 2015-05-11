@@ -261,8 +261,8 @@ public class IoLib extends OneArgFunction {
 
 	private void setLibInstance(LuaTable t) {
 		LuaValue[] k = t.keys();
-		for (int i = 0, n = k.length; i < n; i++) {
-			((IoLibV) t.get(k[i])).iolib = this;
+		for (LuaValue aK : k) {
+			((IoLibV) t.get(aK)).iolib = this;
 		}
 	}
 
@@ -522,7 +522,7 @@ public class IoLib extends OneArgFunction {
 			switch ((ai = args.arg(i + 1)).type()) {
 				case LuaValue.TNUMBER:
 					vi = freadbytes(f, ai.toint());
-					break item;
+					break;
 				case LuaValue.TSTRING:
 					fmt = ai.checkstring();
 					if (fmt.m_length == 2 && fmt.m_bytes[fmt.m_offset] == '*') {

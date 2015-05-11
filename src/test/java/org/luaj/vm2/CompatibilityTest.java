@@ -113,7 +113,7 @@ public class CompatibilityTest {
 	@RunWith(Parameterized.class)
 	public static class LuaJCCompatibilityTest extends CompatibilityTestHelpers {
 		public LuaJCCompatibilityTest(String name) {
-			super(name, ScriptDrivenHelpers.PlatformType.JSE);
+			super(name, ScriptDrivenHelpers.PlatformType.LUAJC);
 		}
 
 		@Test

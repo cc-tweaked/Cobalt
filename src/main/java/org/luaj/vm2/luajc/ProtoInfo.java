@@ -56,18 +56,17 @@ public class ProtoInfo {
 		StringBuffer sb = new StringBuffer();
 
 		// prototpye name
-		sb.append("proto '" + name + "'\n");
+		sb.append("proto '").append(name).append("'\n");
 
 		// upvalues from outer scopes
 		for (int i = 0, n = (upvals != null ? upvals.length : 0); i < n; i++) {
-			sb.append(" up[" + i + "]: " + upvals[i] + "\n");
+			sb.append(" up[").append(i).append("]: ").append(upvals[i]).append("\n");
 		}
 
 		// basic blocks
-		for (int i = 0; i < blocklist.length; i++) {
-			BasicBlock b = blocklist[i];
+		for (BasicBlock b : blocklist) {
 			int pc0 = b.pc0;
-			sb.append("  block " + b.toString());
+			sb.append("  block ").append(b.toString());
 			appendOpenUps(sb, -1);
 
 			// instructions
@@ -82,7 +81,7 @@ public class ProtoInfo {
 					VarInfo v = vars[j][pc];
 					String u = (v == null ? "" : v.upvalue != null ? !v.upvalue.rw ? "[C] " : (v.allocupvalue && v.pc == pc ? "[*] " : "[]  ") : "    ");
 					String s = v == null ? "null   " : String.valueOf(v);
-					sb.append(s + u);
+					sb.append(s).append(u);
 				}
 				sb.append("  ");
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -111,7 +110,7 @@ public class ProtoInfo {
 		for (int j = 0; j < prototype.maxstacksize; j++) {
 			VarInfo v = (pc < 0 ? params[j] : vars[j][pc]);
 			if (v != null && v.pc == pc && v.allocupvalue) {
-				sb.append("    open: " + v.upvalue + "\n");
+				sb.append("    open: ").append(v.upvalue).append("\n");
 			}
 		}
 	}
@@ -127,9 +126,7 @@ public class ProtoInfo {
 		}
 
 		// process instructions
-		for (int bi = 0; bi < blocklist.length; bi++) {
-			BasicBlock b0 = blocklist[bi];
-
+		for (BasicBlock b0 : blocklist) {
 			// input from previous blocks
 			int nprev = b0.prev != null ? b0.prev.length : 0;
 			for (int slot = 0; slot < m; slot++) {
@@ -392,8 +389,7 @@ public class ProtoInfo {
 	}
 
 	private void replaceTrivialPhiVariables() {
-		for (int i = 0; i < blocklist.length; i++) {
-			BasicBlock b0 = blocklist[i];
+		for (BasicBlock b0 : blocklist) {
 			for (int slot = 0; slot < prototype.maxstacksize; slot++) {
 				VarInfo vold = vars[slot][b0.pc0];
 				VarInfo vnew = vold.resolvePhiVariableValues();
@@ -405,7 +401,7 @@ public class ProtoInfo {
 	}
 
 	private void substituteVariable(int slot, VarInfo vold, VarInfo vnew) {
-		for (int i = 0, n = prototype.code.length; i < n; i++) {
+		for (int aCode : prototype.code) {
 			replaceAll(vars[slot], vars[slot].length, vold, vnew);
 		}
 	}
@@ -439,9 +435,9 @@ public class ProtoInfo {
 		}
 
 		// mark all upvalues that are written locally as read/write
-		for (int pc = 0; pc < n; pc++) {
-			if (Lua.GET_OPCODE(code[pc]) == Lua.OP_SETUPVAL) {
-				upvals[Lua.GETARG_B(code[pc])].rw = true;
+		for (int aCode : code) {
+			if (Lua.GET_OPCODE(aCode) == Lua.OP_SETUPVAL) {
+				upvals[Lua.GETARG_B(aCode)].rw = true;
 			}
 		}
 	}

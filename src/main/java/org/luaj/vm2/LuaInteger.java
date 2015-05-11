@@ -56,8 +56,6 @@ public class LuaInteger extends LuaNumber {
 		return i <= 255 && i >= -256 ? intValues[i + 256] : new LuaInteger(i);
 	}
 
-	;
-
 	// TODO consider moving this to LuaValue
 
 	/**
@@ -71,8 +69,8 @@ public class LuaInteger extends LuaNumber {
 	public static LuaNumber valueOf(long l) {
 		int i = (int) l;
 		return l == i ? (i <= 255 && i >= -256 ? intValues[i + 256] :
-			(LuaNumber) new LuaInteger(i)) :
-			(LuaNumber) LuaDouble.valueOf(l);
+			new LuaInteger(i)) :
+			LuaDouble.valueOf(l);
 	}
 
 	/**

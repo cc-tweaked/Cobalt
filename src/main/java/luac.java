@@ -127,10 +127,9 @@ public class luac {
 			}
 
 			// open output file
-			OutputStream fos = new FileOutputStream(output);
 
 			// process input files
-			try {
+			try (OutputStream fos = new FileOutputStream(output)) {
 				JsePlatform.standardGlobals();
 				processing = true;
 				for (int i = 0; i < args.length; i++) {
@@ -150,8 +149,6 @@ public class luac {
 						}
 					}
 				}
-			} finally {
-				fos.close();
 			}
 
 		} catch (IOException ioe) {
@@ -163,7 +160,7 @@ public class luac {
 	private void processScript(InputStream script, String chunkname, OutputStream out) throws IOException {
 		try {
 			// create the chunk
-			Prototype chunk = LuaC.instance.compile(script, chunkname);
+			Prototype chunk = LuaC.compile(script, chunkname);
 
 			// list the chunk
 			if (list) {
