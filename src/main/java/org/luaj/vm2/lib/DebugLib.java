@@ -139,6 +139,7 @@ public class DebugLib extends VarArgFunction {
 		return t;
 	}
 
+	@Override
 	public Varargs invoke(Varargs args) {
 		switch (opcode) {
 			case INIT:
@@ -267,7 +268,7 @@ public class DebugLib extends VarArgFunction {
 	 * DebugState is associated with a Thread
 	 */
 	static class DebugState {
-		private final WeakReference thread_ref;
+		private final WeakReference<LuaThread> thread_ref;
 		private int debugCalls = 0;
 		private DebugInfo[] debugInfo = new DebugInfo[LuaThread.MAX_CALLSTACK + 1];
 		private LuaValue hookfunc;
@@ -276,7 +277,7 @@ public class DebugLib extends VarArgFunction {
 		private int line;
 
 		DebugState(LuaThread thread) {
-			this.thread_ref = new WeakReference(thread);
+			this.thread_ref = new WeakReference<>(thread);
 		}
 
 		public DebugInfo nextInfo() {
@@ -355,7 +356,7 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public String tojstring() {
-			LuaThread thread = (LuaThread) thread_ref.get();
+			LuaThread thread = thread_ref.get();
 			return thread != null ? DebugLib.traceback(thread, 0) : "orphaned thread";
 		}
 	}
@@ -748,7 +749,7 @@ public class DebugLib extends VarArgFunction {
 	 * @return String containing the stack trace.
 	 */
 	public static String traceback(LuaThread thread, int level) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		DebugState ds = getDebugState(thread);
 		sb.append("stack traceback:");
 		DebugInfo di = ds.getDebugInfo(level);
@@ -871,9 +872,7 @@ public class DebugLib extends VarArgFunction {
 		lua_assert(pt.numparams + (pt.is_vararg & Lua.VARARG_HASARG) <= pt.maxstacksize);
 		lua_assert((pt.is_vararg & Lua.VARARG_NEEDSARG) == 0
 			|| (pt.is_vararg & Lua.VARARG_HASARG) != 0);
-		if (!(pt.upvalues.length <= pt.nups)) return false;
-		if (!(pt.lineinfo.length == pt.code.length || pt.lineinfo.length == 0)) return false;
-		return Lua.GET_OPCODE(pt.code[pt.code.length - 1]) == Lua.OP_RETURN;
+		return pt.upvalues.length <= pt.nups && (pt.lineinfo.length == pt.code.length || pt.lineinfo.length == 0) && Lua.GET_OPCODE(pt.code[pt.code.length - 1]) == Lua.OP_RETURN;
 	}
 
 	static boolean checkopenop(Prototype pt, int pc) {

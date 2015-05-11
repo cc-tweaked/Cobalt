@@ -107,6 +107,7 @@ public class JseProcess {
 	                         final OutputStream output, final InputStream ownedInput,
 	                         final OutputStream ownedOutput) {
 		Thread t = (new Thread() {
+			@Override
 			public void run() {
 				try {
 					byte[] buf = new byte[1024];

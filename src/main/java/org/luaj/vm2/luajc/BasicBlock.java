@@ -46,11 +46,13 @@ public class BasicBlock {
 		final boolean[] isend = new boolean[n];
 		isbeg[0] = true;
 		BranchVisitor bv = new BranchVisitor(isbeg) {
+			@Override
 			public void visitBranch(int pc0, int pc1) {
 				isend[pc0] = true;
 				isbeg[pc1] = true;
 			}
 
+			@Override
 			public void visitReturn(int pc) {
 				isend[pc] = true;
 			}
@@ -73,6 +75,7 @@ public class BasicBlock {
 		final int[] nnext = new int[n];
 		final int[] nprev = new int[n];
 		visitBranches(p, new BranchVisitor(isbeg) {
+			@Override
 			public void visitBranch(int pc0, int pc1) {
 				nnext[pc0]++;
 				nprev[pc1]++;
@@ -81,6 +84,7 @@ public class BasicBlock {
 
 		// allocate and cross-reference
 		visitBranches(p, new BranchVisitor(isbeg) {
+			@Override
 			public void visitBranch(int pc0, int pc1) {
 				if (blocks[pc0].next == null) blocks[pc0].next = new BasicBlock[nnext[pc0]];
 				if (blocks[pc1].prev == null) blocks[pc1].prev = new BasicBlock[nprev[pc1]];

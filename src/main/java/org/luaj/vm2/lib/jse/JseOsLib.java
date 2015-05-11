@@ -91,6 +91,7 @@ public class JseOsLib extends org.luaj.vm2.lib.OsLib {
 	public JseOsLib() {
 	}
 
+	@Override
 	protected int execute(String command) {
 		Runtime r = Runtime.getRuntime();
 		try {
@@ -110,6 +111,7 @@ public class JseOsLib extends org.luaj.vm2.lib.OsLib {
 		}
 	}
 
+	@Override
 	protected void remove(String filename) throws IOException {
 		File f = new File(filename);
 		if (!f.exists()) {
@@ -120,6 +122,7 @@ public class JseOsLib extends org.luaj.vm2.lib.OsLib {
 		}
 	}
 
+	@Override
 	protected void rename(String oldname, String newname) throws IOException {
 		File f = new File(oldname);
 		if (!f.exists()) {
@@ -130,6 +133,7 @@ public class JseOsLib extends org.luaj.vm2.lib.OsLib {
 		}
 	}
 
+	@Override
 	protected String tmpname() {
 		try {
 			java.io.File f = java.io.File.createTempFile(TMP_PREFIX, TMP_SUFFIX);

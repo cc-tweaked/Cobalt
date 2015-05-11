@@ -52,6 +52,7 @@ import org.luaj.vm2.Varargs;
  */
 abstract public class TwoArgFunction extends LibFunction {
 
+	@Override
 	abstract public LuaValue call(LuaValue arg1, LuaValue arg2);
 
 	/**
@@ -69,18 +70,22 @@ abstract public class TwoArgFunction extends LibFunction {
 		this.env = env;
 	}
 
+	@Override
 	public final LuaValue call() {
 		return call(NIL, NIL);
 	}
 
+	@Override
 	public final LuaValue call(LuaValue arg) {
 		return call(arg, NIL);
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
 		return call(arg1, arg2);
 	}
 
+	@Override
 	public Varargs invoke(Varargs varargs) {
 		return call(varargs.arg1(), varargs.arg(2));
 	}

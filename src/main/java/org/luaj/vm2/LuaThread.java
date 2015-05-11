@@ -134,34 +134,42 @@ public class LuaThread extends LuaValue {
 		state = new State(this, func);
 	}
 
+	@Override
 	public int type() {
 		return LuaValue.TTHREAD;
 	}
 
+	@Override
 	public String typename() {
 		return "thread";
 	}
 
+	@Override
 	public boolean isthread() {
 		return true;
 	}
 
+	@Override
 	public LuaThread optthread(LuaThread defval) {
 		return this;
 	}
 
+	@Override
 	public LuaThread checkthread() {
 		return this;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return s_metatable;
 	}
 
+	@Override
 	public LuaValue getfenv() {
 		return env;
 	}
 
+	@Override
 	public void setfenv(LuaValue env) {
 		this.env = env;
 	}
@@ -282,10 +290,11 @@ public class LuaThread extends LuaValue {
 		int status = LuaThread.STATUS_INITIAL;
 
 		State(LuaThread lua_thread, LuaValue function) {
-			this.lua_thread = new WeakReference<LuaThread>(lua_thread);
+			this.lua_thread = new WeakReference<>(lua_thread);
 			this.function = function;
 		}
 
+		@Override
 		public synchronized void run() {
 			try {
 				Varargs a = this.args;

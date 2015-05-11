@@ -81,6 +81,7 @@ public class CoroutineLib extends VarArgFunction {
 		return t;
 	}
 
+	@Override
 	public Varargs invoke(Varargs args) {
 		switch (opcode) {
 			case INIT: {

@@ -63,6 +63,7 @@ public class StringLib extends OneArgFunction {
 	public StringLib() {
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		LuaTable t = new LuaTable();
 		bind(t, StringLib1.class, new String[]{
@@ -81,6 +82,7 @@ public class StringLib extends OneArgFunction {
 	}
 
 	static final class StringLib1 extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			switch (opcode) {
 				case 0:
@@ -99,6 +101,7 @@ public class StringLib extends OneArgFunction {
 	}
 
 	static final class StringLibV extends VarArgFunction {
+		@Override
 		public Varargs invoke(Varargs args) {
 			switch (opcode) {
 				case 0:
@@ -505,7 +508,7 @@ public class StringLib extends OneArgFunction {
 			buf.append(s);
 		}
 
-		public static final void pad(Buffer buf, char c, int n) {
+		public static void pad(Buffer buf, char c, int n) {
 			byte b = (byte) c;
 			while (n-- > 0) {
 				buf.append(b);
@@ -554,6 +557,7 @@ public class StringLib extends OneArgFunction {
 			this.soffset = 0;
 		}
 
+		@Override
 		public Varargs invoke(Varargs args) {
 			for (; soffset < srclen; soffset++) {
 				ms.reset();

@@ -56,6 +56,7 @@ public class TypeTest {
 	private final LuaValue stringdouble = LuaValue.valueOf(samplestringdouble);
 	private final LuaTable table = LuaValue.tableOf();
 	private final LuaFunction somefunc = new ZeroArgFunction() {
+		@Override
 		public LuaValue call() {
 			return NONE;
 		}

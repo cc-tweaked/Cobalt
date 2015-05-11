@@ -154,6 +154,7 @@ public class OrphanedThreadTest {
 
 
 	private static class NormalFunction extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in normal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
@@ -165,6 +166,7 @@ public class OrphanedThreadTest {
 	}
 
 	private static class EarlyCompletionFunction extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in early.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
@@ -174,6 +176,7 @@ public class OrphanedThreadTest {
 	}
 
 	private static class AbnormalFunction extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
@@ -184,6 +187,7 @@ public class OrphanedThreadTest {
 	}
 
 	private static class ClosureFunction extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();

@@ -679,7 +679,7 @@ public class LexState {
 						} while (isalnum(current) || current == '_');
 						ts = newstring(buff, 0, nbuff);
 						if (RESERVED.containsKey(ts)) {
-							return (Integer) RESERVED.get(ts);
+							return RESERVED.get(ts);
 						} else {
 							seminfo.ts = ts;
 							return TK_NAME;

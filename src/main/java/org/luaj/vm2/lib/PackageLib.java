@@ -112,6 +112,7 @@ public class PackageLib extends OneArgFunction {
 		instance = this;
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		env.set("require", new PkgLib1(env, "require", OP_REQUIRE, this));
 		env.set("module", new PkgLibV(env, "module", OP_MODULE, this));
@@ -140,6 +141,7 @@ public class PackageLib extends OneArgFunction {
 			this.lib = lib;
 		}
 
+		@Override
 		public LuaValue call(LuaValue arg) {
 			switch (opcode) {
 				case OP_REQUIRE:
@@ -168,6 +170,7 @@ public class PackageLib extends OneArgFunction {
 			this.lib = lib;
 		}
 
+		@Override
 		public Varargs invoke(Varargs args) {
 			switch (opcode) {
 				case OP_MODULE:
@@ -202,6 +205,7 @@ public class PackageLib extends OneArgFunction {
 		PACKAGE.set(_PATH, valueOf(newLuaPath));
 	}
 
+	@Override
 	public String tojstring() {
 		return "package";
 	}
@@ -282,7 +286,7 @@ public class PackageLib extends OneArgFunction {
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
 	 */
-	private static final LuaValue findtable(LuaValue table, LuaString fname) {
+	private static LuaValue findtable(LuaValue table, LuaString fname) {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
@@ -304,7 +308,7 @@ public class PackageLib extends OneArgFunction {
 		return table;
 	}
 
-	private static final void modinit(LuaValue module, LuaString modname) {
+	private static void modinit(LuaValue module, LuaString modname) {
 		/* module._M = module */
 		module.set(_M, module);
 		int e = modname.lastIndexOf(_DOT);
@@ -353,7 +357,7 @@ public class PackageLib extends OneArgFunction {
 
 		/* else must load it; iterate over available loaders */
 		LuaTable tbl = PACKAGE.get(_LOADERS).checktable();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		LuaValue chunk = null;
 		for (int i = 1; true; i++) {
 			LuaValue loader = tbl.get(i);
@@ -440,7 +444,7 @@ public class PackageLib extends OneArgFunction {
 			if (sb == null) {
 				sb = new StringBuffer();
 			}
-			sb.append("\n\t'" + filename + "': " + v.arg(2));
+			sb.append("\n\t'").append(filename).append("': ").append(v.arg(2));
 		}
 		return valueOf(sb.toString());
 	}
@@ -468,7 +472,7 @@ public class PackageLib extends OneArgFunction {
 	 * @param filename Name of the file
 	 * @return The appropriate class name
 	 */
-	public static final String toClassname(String filename) {
+	public static String toClassname(String filename) {
 		int n = filename.length();
 		int j = n;
 		if (filename.endsWith(".lua")) {
@@ -477,7 +481,7 @@ public class PackageLib extends OneArgFunction {
 		for (int k = 0; k < j; k++) {
 			char c = filename.charAt(k);
 			if ((!isClassnamePart(c)) || (c == '/') || (c == '\\')) {
-				StringBuffer sb = new StringBuffer(j);
+				StringBuilder sb = new StringBuilder(j);
 				for (int i = 0; i < j; i++) {
 					c = filename.charAt(i);
 					sb.append(
@@ -490,7 +494,7 @@ public class PackageLib extends OneArgFunction {
 		return n == j ? filename : filename.substring(0, j);
 	}
 
-	private static final boolean isClassnamePart(char c) {
+	private static boolean isClassnamePart(char c) {
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
 			return true;
 		}

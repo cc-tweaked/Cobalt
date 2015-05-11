@@ -60,6 +60,7 @@ public class LuaOperationsTest {
 	private final LuaValue stringdouble = LuaValue.valueOf(samplestringdouble);
 	private final LuaTable table = LuaValue.listOf(new LuaValue[]{LuaValue.valueOf("aaa"), LuaValue.valueOf("bbb")});
 	private final LuaValue somefunc = new ZeroArgFunction(table) {
+		@Override
 		public LuaValue call() {
 			return NONE;
 		}
@@ -220,6 +221,7 @@ public class LuaOperationsTest {
 		// function tests
 		{
 			LuaFunction f = new ZeroArgFunction(_G) {
+				@Override
 				public LuaValue call() {
 					return env.get("a");
 				}

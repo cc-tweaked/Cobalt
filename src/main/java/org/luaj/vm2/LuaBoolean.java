@@ -67,18 +67,22 @@ public final class LuaBoolean extends LuaValue {
 		this.v = b;
 	}
 
+	@Override
 	public int type() {
 		return LuaValue.TBOOLEAN;
 	}
 
+	@Override
 	public String typename() {
 		return "boolean";
 	}
 
+	@Override
 	public boolean isboolean() {
 		return true;
 	}
 
+	@Override
 	public LuaValue not() {
 		return v ? FALSE : LuaValue.TRUE;
 	}
@@ -92,22 +96,27 @@ public final class LuaBoolean extends LuaValue {
 		return v;
 	}
 
+	@Override
 	public boolean toboolean() {
 		return v;
 	}
 
+	@Override
 	public String tojstring() {
 		return v ? "true" : "false";
 	}
 
+	@Override
 	public boolean optboolean(boolean defval) {
 		return this.v;
 	}
 
+	@Override
 	public boolean checkboolean() {
 		return v;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return s_metatable;
 	}

@@ -72,6 +72,7 @@ public class ErrorsTest {
 	@Test
 	public void testBaseLibArgs() throws Exception {
 		BaseLib.instance.STDIN = new InputStream() {
+			@Override
 			public int read() throws IOException {
 				return -1;
 			}

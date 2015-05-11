@@ -89,6 +89,7 @@ public class JseBaseLib extends BaseLib {
 	 * @see org.luaj.vm2.lib.BaseLib
 	 * @see org.luaj.vm2.lib.ResourceFinder
 	 */
+	@Override
 	public InputStream findResource(String filename) {
 		File f = new File(filename);
 		if (!f.exists()) {

@@ -26,13 +26,15 @@ package org.luaj.vm2;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import static org.luaj.vm2.Lua.*;
+
 /**
  * Debug helper class to pretty-print lua bytecodes.
  *
  * @see Prototype
  * @see LuaClosure
  */
-public class Print extends Lua {
+public class Print {
 
 	/**
 	 * opcode names
@@ -277,9 +279,9 @@ public class Print extends Lua {
 				break;
 			case OP_SETLIST:
 				if (c == 0) {
-					ps.print("  ; " + ((int) code[++pc]));
+					ps.print("  ; " + code[++pc]);
 				} else {
-					ps.print("  ; " + ((int) c));
+					ps.print("  ; " + c);
 				}
 				break;
 			case OP_VARARG:

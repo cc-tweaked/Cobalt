@@ -77,30 +77,31 @@ public class LuaJC implements LuaCompiler {
 	 * Install the compiler as the main compiler to use.
 	 * Will fall back to the LuaC prototype compiler.
 	 */
-	public static final void install() {
+	public static void install() {
 		LoadState.compiler = getInstance();
 	}
 
 	public LuaJC() {
 	}
 
-	public Hashtable compileAll(InputStream script, String chunkname, String filename) throws IOException {
+	public Hashtable<String, byte[]> compileAll(InputStream script, String chunkname, String filename) throws IOException {
 		String classname = toStandardJavaClassName(chunkname);
 		String luaname = toStandardLuaFileName(filename);
-		Hashtable h = new Hashtable();
+		Hashtable<String, byte[]> h = new Hashtable<>();
 		Prototype p = LuaC.compile(script, classname);
 		JavaGen gen = new JavaGen(p, classname, luaname);
 		insert(h, gen);
 		return h;
 	}
 
-	private void insert(Hashtable h, JavaGen gen) {
+	private void insert(Hashtable<String, byte[]> h, JavaGen gen) {
 		h.put(gen.classname, gen.bytecode);
 		for (int i = 0, n = gen.inners != null ? gen.inners.length : 0; i < n; i++) {
 			insert(h, gen.inners[i]);
 		}
 	}
 
+	@Override
 	public LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
 		Prototype p = LuaC.compile(stream, name);
 		String classname = toStandardJavaClassName(name);

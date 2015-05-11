@@ -58,18 +58,22 @@ abstract public class VarArgFunction extends LibFunction {
 		this.env = env;
 	}
 
+	@Override
 	public LuaValue call() {
 		return invoke(NONE).arg1();
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		return invoke(arg).arg1();
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg1, LuaValue arg2) {
 		return invoke(varargsOf(arg1, arg2)).arg1();
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
 		return invoke(varargsOf(arg1, arg2, arg3)).arg1();
 	}
@@ -83,6 +87,7 @@ abstract public class VarArgFunction extends LibFunction {
 	 *
 	 * @param args the arguments to the function call.
 	 */
+	@Override
 	public Varargs invoke(Varargs args) {
 		LuaThread.CallStack cs = LuaThread.onCall(this);
 		try {
@@ -99,6 +104,7 @@ abstract public class VarArgFunction extends LibFunction {
 	 *
 	 * @param args the arguments to the function call.
 	 */
+	@Override
 	public Varargs onInvoke(Varargs args) {
 		return invoke(args);
 	}

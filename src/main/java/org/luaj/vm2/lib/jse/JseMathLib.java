@@ -63,6 +63,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	public JseMathLib() {
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		LuaValue t = super.call(arg);
 		bind(t, JseMathLib1.class, new String[]{
@@ -75,6 +76,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	}
 
 	public static final class JseMathLib1 extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			switch (opcode) {
 				case 0:
@@ -101,6 +103,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	}
 
 	public static final class JseMathLib2 extends TwoArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
 				case 0:
@@ -115,6 +118,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	/**
 	 * Faster, better version of pow() used by arithmetic operator ^
 	 */
+	@Override
 	public double dpow_lib(double a, double b) {
 		return Math.pow(a, b);
 	}

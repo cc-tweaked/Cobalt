@@ -125,6 +125,7 @@ public class LuaError extends RuntimeException {
 	/**
 	 * Print the message and stack trace
 	 */
+	@Override
 	public void printStackTrace() {
 		System.out.println(toString());
 		if (traceback != null) {
@@ -135,6 +136,7 @@ public class LuaError extends RuntimeException {
 	/**
 	 * Get the cause, if any.
 	 */
+	@Override
 	public Throwable getCause() {
 		return cause;
 	}

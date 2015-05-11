@@ -73,6 +73,7 @@ public class TableLib extends OneArgFunction {
 		return t;
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		switch (opcode) {
 			case 0: // init library
@@ -86,6 +87,7 @@ public class TableLib extends OneArgFunction {
 	}
 
 	static final class TableLibV extends VarArgFunction {
+		@Override
 		public Varargs invoke(Varargs args) {
 			switch (opcode) {
 				case 0: { // "remove" (table [, pos]) -> removed-ele

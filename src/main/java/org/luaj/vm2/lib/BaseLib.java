@@ -124,6 +124,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		instance = this;
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		env.set("_G", env);
 		env.set("_VERSION", Lua._VERSION);
@@ -151,12 +152,14 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	 * <p>
 	 * Tries to open the file as a resource, which can work for .
 	 */
+	@Override
 	public InputStream findResource(String filename) {
 		Class c = getClass();
 		return c.getResourceAsStream(filename.startsWith("/") ? filename : "/" + filename);
 	}
 
 	static final class BaseLib2 extends TwoArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
 				case 0: // "collectgarbage", // ( opt [,arg] ) -> value
@@ -209,6 +212,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	static final class BaseLibV extends VarArgFunction {
 		public BaseLib baselib;
 
+		@Override
 		public Varargs invoke(Varargs args) {
 			switch (opcode) {
 				case 0: // "assert", // ( v [,message] ) -> v, message | ERR
@@ -429,6 +433,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 			this.func = func;
 		}
 
+		@Override
 		public int read() throws IOException {
 			if (remaining <= 0) {
 				LuaValue s = func.call();

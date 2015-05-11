@@ -227,6 +227,7 @@ public class luajc {
 			// try to load the files
 			if (loadclasses) {
 				ClassLoader loader = new ClassLoader() {
+					@Override
 					public Class findClass(String classname) throws ClassNotFoundException {
 						byte[] bytes = (byte[]) t.get(classname);
 						if (bytes != null) {

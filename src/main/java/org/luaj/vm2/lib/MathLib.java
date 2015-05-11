@@ -88,6 +88,7 @@ public class MathLib extends OneArgFunction {
 		MATHLIB = this;
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		LuaTable t = new LuaTable(0, 30);
 		t.set("pi", Math.PI);
@@ -109,6 +110,7 @@ public class MathLib extends OneArgFunction {
 	}
 
 	static final class MathLib1 extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			switch (opcode) {
 				case 0:
@@ -139,6 +141,7 @@ public class MathLib extends OneArgFunction {
 	static final class MathLib2 extends TwoArgFunction {
 		protected MathLib mathlib;
 
+		@Override
 		public LuaValue call(LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
 				case 0: { // fmod
@@ -226,6 +229,7 @@ public class MathLib extends OneArgFunction {
 	static final class MathLibV extends VarArgFunction {
 		protected MathLib mathlib;
 
+		@Override
 		public Varargs invoke(Varargs args) {
 			switch (opcode) {
 				case 0: { // frexp

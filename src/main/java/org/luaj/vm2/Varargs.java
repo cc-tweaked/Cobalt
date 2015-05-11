@@ -767,15 +767,18 @@ public abstract class Varargs {
 			this.end = end;
 		}
 
+		@Override
 		public LuaValue arg(int i) {
 			i += start - 1;
 			return i >= start && i <= end ? v.arg(i) : LuaValue.NIL;
 		}
 
+		@Override
 		public LuaValue arg1() {
 			return v.arg(start);
 		}
 
+		@Override
 		public int narg() {
 			return end + 1 - start;
 		}

@@ -55,34 +55,42 @@ public class LuaFunction extends LuaValue {
 		this.env = env;
 	}
 
+	@Override
 	public int type() {
 		return TFUNCTION;
 	}
 
+	@Override
 	public String typename() {
 		return "function";
 	}
 
+	@Override
 	public boolean isfunction() {
 		return true;
 	}
 
+	@Override
 	public LuaValue checkfunction() {
 		return this;
 	}
 
+	@Override
 	public LuaFunction optfunction(LuaFunction defval) {
 		return this;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return s_metatable;
 	}
 
+	@Override
 	public LuaValue getfenv() {
 		return env;
 	}
 
+	@Override
 	public void setfenv(LuaValue env) {
 		this.env = env != null ? env : NIL;
 	}

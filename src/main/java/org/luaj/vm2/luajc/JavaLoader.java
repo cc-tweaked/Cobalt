@@ -69,6 +69,7 @@ public class JavaLoader extends ClassLoader {
 		}
 	}
 
+	@Override
 	public Class findClass(String classname) throws ClassNotFoundException {
 		byte[] bytes = unloaded.get(classname);
 		if (bytes != null) {

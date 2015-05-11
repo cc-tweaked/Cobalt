@@ -44,6 +44,7 @@ public class MetatableTest {
 	private final LuaValue string = LuaValue.valueOf(samplestring);
 	private final LuaTable table = LuaValue.tableOf();
 	private final LuaFunction function = new ZeroArgFunction() {
+		@Override
 		public LuaValue call() {
 			return NONE;
 		}
@@ -180,6 +181,7 @@ public class MetatableTest {
 
 		// plain metatable
 		mt.set(LuaValue.INDEX, new TwoArgFunction() {
+			@Override
 			public LuaValue call(LuaValue arg1, LuaValue arg2) {
 				return LuaValue.valueOf(arg1.typename() + "[" + arg2.tojstring() + "]=xyz");
 			}
@@ -232,6 +234,7 @@ public class MetatableTest {
 
 		// metatable with function call
 		mt.set(LuaValue.NEWINDEX, new ThreeArgFunction() {
+			@Override
 			public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
 				fallback.rawset(arg2, LuaValue.valueOf("via-func-" + arg3));
 				return NONE;

@@ -146,6 +146,7 @@ abstract public class LibFunction extends LuaFunction {
 	protected LibFunction() {
 	}
 
+	@Override
 	public String tojstring() {
 		return name != null ? name : super.tojstring();
 	}

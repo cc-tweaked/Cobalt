@@ -124,6 +124,7 @@ public class OsLib extends VarArgFunction {
 		return t;
 	}
 
+	@Override
 	public Varargs invoke(Varargs args) {
 		try {
 			switch (opcode) {

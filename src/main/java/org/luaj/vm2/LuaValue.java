@@ -707,6 +707,7 @@ public class LuaValue extends Varargs {
 	 * @see #isstring()
 	 * @see #TSTRING
 	 */
+	@Override
 	public String tojstring() {
 		return typename() + ": " + Integer.toHexString(hashCode());
 	}
@@ -1862,14 +1863,17 @@ public class LuaValue extends Varargs {
 	}
 
 	// varargs references
+	@Override
 	public LuaValue arg(int index) {
 		return index == 1 ? this : NIL;
 	}
 
+	@Override
 	public int narg() {
 		return 1;
 	}
 
+	@Override
 	public LuaValue arg1() {
 		return this;
 	}
@@ -2791,9 +2795,9 @@ public class LuaValue extends Varargs {
 	 * @see #raweq(LuaValue)
 	 * @see #EQ
 	 */
-	public static final boolean eqmtcall(LuaValue lhs, LuaValue lhsmt, LuaValue rhs, LuaValue rhsmt) {
+	public static boolean eqmtcall(LuaValue lhs, LuaValue lhsmt, LuaValue rhs, LuaValue rhsmt) {
 		LuaValue h = lhsmt.rawget(EQ);
-		return h.isnil() || h != rhsmt.rawget(EQ) ? false : h.call(lhs, rhs).toboolean();
+		return !(h.isnil() || h != rhsmt.rawget(EQ)) && h.call(lhs, rhs).toboolean();
 	}
 
 	/**
@@ -4484,18 +4488,22 @@ public class LuaValue extends Varargs {
 	private static final class None extends LuaNil {
 		static None _NONE = new None();
 
+		@Override
 		public LuaValue arg(int i) {
 			return NIL;
 		}
 
+		@Override
 		public int narg() {
 			return 0;
 		}
 
+		@Override
 		public LuaValue arg1() {
 			return NIL;
 		}
 
+		@Override
 		public String tojstring() {
 			return "none";
 		}
@@ -4528,14 +4536,17 @@ public class LuaValue extends Varargs {
 			this.r = r;
 		}
 
+		@Override
 		public LuaValue arg(int i) {
 			return i >= 1 && i <= v.length ? v[i - 1] : r.arg(i - v.length);
 		}
 
+		@Override
 		public int narg() {
 			return v.length + r.narg();
 		}
 
+		@Override
 		public LuaValue arg1() {
 			return v.length > 0 ? v[0] : r.arg1();
 		}
@@ -4586,14 +4597,17 @@ public class LuaValue extends Varargs {
 			this.more = more;
 		}
 
+		@Override
 		public LuaValue arg(int i) {
 			return i >= 1 && i <= length ? v[i + offset - 1] : more.arg(i - length);
 		}
 
+		@Override
 		public int narg() {
 			return length + more.narg();
 		}
 
+		@Override
 		public LuaValue arg1() {
 			return length > 0 ? v[offset] : more.arg1();
 		}
@@ -4626,14 +4640,17 @@ public class LuaValue extends Varargs {
 			this.v2 = v2;
 		}
 
+		@Override
 		public LuaValue arg(int i) {
 			return i == 1 ? v1 : v2.arg(i - 1);
 		}
 
+		@Override
 		public int narg() {
 			return 1 + v2.narg();
 		}
 
+		@Override
 		public LuaValue arg1() {
 			return v1;
 		}

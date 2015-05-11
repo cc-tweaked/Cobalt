@@ -291,7 +291,7 @@ public class JavaBuilder {
 	private int findSlot(int slot, Map<Integer, Integer> map, String prefix, Type type) {
 		Integer islot = slot;
 		if (map.containsKey(islot)) {
-			return (Integer) map.get(islot);
+			return map.get(islot);
 		}
 		String name = prefix + slot;
 		LocalVariableGen local = mg.addLocalVariable(name, type, null, null);

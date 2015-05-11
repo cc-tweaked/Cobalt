@@ -12,6 +12,7 @@ public class RequireSampleLoadLuaError extends ZeroArgFunction {
 	public RequireSampleLoadLuaError() {
 	}
 
+	@Override
 	public LuaValue call() {
 		error("sample-load-lua-error");
 		return LuaValue.valueOf("require-sample-load-lua-error");

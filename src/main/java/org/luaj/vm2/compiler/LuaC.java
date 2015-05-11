@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
+import static org.luaj.vm2.Lua.*;
+
 /**
  * Compiler for Lua.
  * <p>
@@ -62,7 +64,7 @@ import java.util.Hashtable;
  * @see LuaCompiler
  * @see Prototype
  */
-public class LuaC extends Lua implements LuaCompiler {
+public class LuaC implements LuaCompiler {
 
 	public static final LuaC instance = new LuaC();
 
@@ -201,6 +203,7 @@ public class LuaC extends Lua implements LuaCompiler {
 	/**
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
+	@Override
 	public LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
 		Prototype p = compile(stream, name);
 		return new LuaClosure(p, env);
@@ -218,7 +221,7 @@ public class LuaC extends Lua implements LuaCompiler {
 		int firstByte = stream.read();
 		return (firstByte == '\033') ?
 			LoadState.loadBinaryChunk(firstByte, stream, name) :
-			(new LuaC(new Hashtable())).luaY_parser(firstByte, stream, name);
+			(new LuaC(new Hashtable<>())).luaY_parser(firstByte, stream, name);
 	}
 
 	/**
@@ -231,7 +234,7 @@ public class LuaC extends Lua implements LuaCompiler {
 		lexstate.setinput(this, firstByte, z, LuaValue.valueOf(name));
 		lexstate.open_func(funcstate);
 		/* main func. is always vararg */
-		funcstate.f.is_vararg = LuaC.VARARG_ISVARARG;
+		funcstate.f.is_vararg = VARARG_ISVARARG;
 		funcstate.f.source = LuaValue.valueOf(name);
 		lexstate.next(); /* read first token */
 		lexstate.chunk();
@@ -246,7 +249,7 @@ public class LuaC extends Lua implements LuaCompiler {
 	// look up and keep at most one copy of each string
 	public LuaString newTString(byte[] bytes, int offset, int len) {
 		LuaString tmp = LuaString.valueOf(bytes, offset, len);
-		LuaString v = (LuaString) strings.get(tmp);
+		LuaString v = strings.get(tmp);
 		if (v == null) {
 			// must copy bytes, since bytes could be from reusable buffer
 			byte[] copy = new byte[len];

@@ -119,28 +119,29 @@ public class LuaClosure extends LuaFunction {
 		this.upValues = nupvalues > 0 ? new UpValue[nupvalues] : NOUPVALUES;
 	}
 
+	@Override
 	public boolean isclosure() {
 		return true;
 	}
 
+	@Override
 	public LuaClosure optclosure(LuaClosure defval) {
 		return this;
 	}
 
+	@Override
 	public LuaClosure checkclosure() {
 		return this;
 	}
 
-	public LuaValue getmetatable() {
-		return s_metatable;
-	}
-
+	@Override
 	public final LuaValue call() {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
 		return execute(stack, NONE).arg1();
 	}
 
+	@Override
 	public final LuaValue call(LuaValue arg) {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
@@ -153,6 +154,7 @@ public class LuaClosure extends LuaFunction {
 		}
 	}
 
+	@Override
 	public final LuaValue call(LuaValue arg1, LuaValue arg2) {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
@@ -169,6 +171,7 @@ public class LuaClosure extends LuaFunction {
 		}
 	}
 
+	@Override
 	public final LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
@@ -190,10 +193,12 @@ public class LuaClosure extends LuaFunction {
 		}
 	}
 
+	@Override
 	public final Varargs invoke(Varargs varargs) {
 		return onInvoke(varargs).eval();
 	}
 
+	@Override
 	public Varargs onInvoke(Varargs varargs) {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
@@ -351,32 +356,32 @@ public class LuaClosure extends LuaFunction {
 						continue;
 
 					case Lua.OP_EQ: /*	A B C	if ((RK(B) == RK(C)) ~= A) then pc++		*/
-						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).eq_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) != (a != 0)) {
+						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).eq_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
 							++pc;
 						}
 						continue;
 
 					case Lua.OP_LT: /*	A B C	if ((RK(B) <  RK(C)) ~= A) then pc++  		*/
-						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).lt_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) != (a != 0)) {
+						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).lt_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
 							++pc;
 						}
 						continue;
 
 					case Lua.OP_LE: /*	A B C	if ((RK(B) <= RK(C)) ~= A) then pc++  		*/
-						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).lteq_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) != (a != 0)) {
+						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).lteq_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
 							++pc;
 						}
 						continue;
 
 					case Lua.OP_TEST: /*	A C	if not (R(A) <=> C) then pc++			*/
-						if (stack[a].toboolean() != ((i & (0x1ff << 14)) != 0)) {
+						if (stack[a].toboolean() == ((i & (0x1ff << 14)) == 0)) {
 							++pc;
 						}
 						continue;
 
 					case Lua.OP_TESTSET: /*	A B C	if (R(B) <=> C) then R(A):= R(B) else pc++	*/
 					/* note: doc appears to be reversed */
-						if ((o = stack[i >>> 23]).toboolean() != ((i & (0x1ff << 14)) != 0)) {
+						if ((o = stack[i >>> 23]).toboolean() == ((i & (0x1ff << 14)) == 0)) {
 							++pc;
 						} else {
 							stack[a] = o; // TODO: should be sBx?
