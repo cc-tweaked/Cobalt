@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 /**
@@ -26,7 +28,6 @@ package org.luaj.vm2;
  * <p>
  * To construct varargs, use one of the static methods such as
  * {@code LuaValue.varargsOf(LuaValue, LuaValue)}
- * <p>
  * <p>
  * Any LuaValue can be used as a stand-in for Varargs, for both calls and return values.
  * When doing so, nargs() will return 1 and arg1() or arg(1) will return this.
@@ -36,7 +37,6 @@ package org.luaj.vm2;
  * Varargs can also be derived from other varargs by appending to the front with a call
  * such as  {@code LuaValue.varargsOf(LuaValue, Varargs)}
  * or by taking a portion of the args using {@code Varargs.subargs(int start)}
- * <p>
  *
  * @see LuaValue#varargsOf(LuaValue[])
  * @see LuaValue#varargsOf(LuaValue, Varargs)
@@ -101,14 +101,14 @@ public abstract class Varargs {
 	 *
 	 * @param i the index of the argument to convert, 1 is the first argument
 	 * @return int value corresponding to one of the LuaValue integer type values
-	 * @see LuaValue.TNIL
-	 * @see LuaValue.TBOOLEAN
-	 * @see LuaValue.TNUMBER
-	 * @see LuaValue.TSTRING
-	 * @see LuaValue.TTABLE
-	 * @see LuaValue.TFUNCTION
-	 * @see LuaValue.TUSERDATA
-	 * @see LuaValue.TTHREAD
+	 * @see LuaValue#TNIL
+	 * @see LuaValue#TBOOLEAN
+	 * @see LuaValue#TNUMBER
+	 * @see LuaValue#TSTRING
+	 * @see LuaValue#TTABLE
+	 * @see LuaValue#TFUNCTION
+	 * @see LuaValue#TUSERDATA
+	 * @see LuaValue#TTHREAD
 	 */
 	public int type(int i) {
 		return arg(i).type();
@@ -119,7 +119,7 @@ public abstract class Varargs {
 	 *
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument is nil or does not exist, false otherwise
-	 * @see LuaValue.TNIL
+	 * @see LuaValue#TNIL
 	 */
 	public boolean isnil(int i) {
 		return arg(i).isnil();
@@ -130,7 +130,7 @@ public abstract class Varargs {
 	 *
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument exists and is a function or closure, false otherwise
-	 * @see LuaValue.TFUNCTION
+	 * @see LuaValue#TFUNCTION
 	 */
 	public boolean isfunction(int i) {
 		return arg(i).isfunction();
@@ -145,8 +145,8 @@ public abstract class Varargs {
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument exists and is a number or
 	 * string that can be interpreted as a number, false otherwise
-	 * @see LuaValue.TNUMBER
-	 * @see LuaValue.TSTRING
+	 * @see LuaValue#TNUMBER
+	 * @see LuaValue#TSTRING
 	 */
 	public boolean isnumber(int i) {
 		return arg(i).isnumber();
@@ -159,8 +159,8 @@ public abstract class Varargs {
 	 *
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument exists and is a string or number, false otherwise
-	 * @see LuaValue.TNUMBER
-	 * @see LuaValue.TSTRING
+	 * @see LuaValue#TNUMBER
+	 * @see LuaValue#TSTRING
 	 */
 	public boolean isstring(int i) {
 		return arg(i).isstring();
@@ -171,7 +171,7 @@ public abstract class Varargs {
 	 *
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument exists and is a lua table, false otherwise
-	 * @see LuaValue.TTABLE
+	 * @see LuaValue#TTABLE
 	 */
 	public boolean istable(int i) {
 		return arg(i).istable();
@@ -182,7 +182,7 @@ public abstract class Varargs {
 	 *
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument exists and is a lua thread, false otherwise
-	 * @see LuaValue.TTHREAD
+	 * @see LuaValue#TTHREAD
 	 */
 	public boolean isthread(int i) {
 		return arg(i).isthread();
@@ -193,7 +193,7 @@ public abstract class Varargs {
 	 *
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument exists and is a userdata, false otherwise
-	 * @see LuaValue.TUSERDATA
+	 * @see LuaValue#TUSERDATA
 	 */
 	public boolean isuserdata(int i) {
 		return arg(i).isuserdata();
@@ -212,7 +212,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a boolean value, {@code defval} if nil, or throw a LuaError if any other type.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return true if argument i is boolean true, false if it is false, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a lua boolean
 	 */
@@ -223,7 +224,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a closure, {@code defval} if nil, or throw a LuaError if any other type.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return LuaClosure if argument i is a closure, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a lua closure
 	 */
@@ -234,7 +236,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a double, {@code defval} if nil, or throw a LuaError if it cannot be converted to one.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return java double value if argument i is a number or string that converts to a number, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a number
 	 */
@@ -245,7 +248,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a function, {@code defval} if nil, or throw a LuaError  if an incompatible type.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return LuaValue that can be called if argument i is lua function or closure, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a lua function or closure
 	 */
@@ -256,7 +260,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a java int value, discarding any fractional part, {@code defval} if nil, or throw a LuaError  if not a number.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return int value with fraction discarded and truncated if necessary if argument i is number, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a number
 	 */
@@ -267,7 +272,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a java int value, {@code defval} if nil, or throw a LuaError  if not a number or is not representable by a java int.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return LuaInteger value that fits in a java int without rounding, or defval if not supplied or nil
 	 * @throws LuaError if the argument cannot be represented by a java int value
 	 */
@@ -278,7 +284,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a java long value, discarding any fractional part, {@code defval} if nil, or throw a LuaError  if not a number.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return long value with fraction discarded and truncated if necessary if argument i is number, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a number
 	 */
@@ -289,7 +296,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a LuaNumber, {@code defval} if nil, or throw a LuaError  if not a number or string that can be converted to a number.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument, or defval if not supplied or nil
+	 * @param i      the index of the argument to test, 1 is the first argument, or defval if not supplied or nil
+	 * @param defval Default value to use
 	 * @return LuaNumber if argument i is number or can be converted to a number
 	 * @throws LuaError if the argument is not a number
 	 */
@@ -300,7 +308,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a java String if a string or number, {@code defval} if nil, or throw a LuaError  if any other type
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return String value if argument i is a string or number, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a string or number
 	 */
@@ -311,7 +320,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a LuaString if a string or number, {@code defval} if nil, or throw a LuaError  if any other type
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return LuaString value if argument i is a string or number, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a string or number
 	 */
@@ -322,7 +332,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a LuaTable if a lua table, {@code defval} if nil, or throw a LuaError  if any other type.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return LuaTable value if a table, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a lua table
 	 */
@@ -333,7 +344,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a LuaThread if a lua thread, {@code defval} if nil, or throw a LuaError  if any other type.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return LuaThread value if a thread, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a lua thread
 	 */
@@ -344,7 +356,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a java Object if a userdata, {@code defval} if nil, or throw a LuaError  if any other type.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return java Object value if argument i is a userdata, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a userdata
 	 */
@@ -356,8 +369,9 @@ public abstract class Varargs {
 	 * Return argument i as a java Object if it is a userdata whose instance Class c or a subclass,
 	 * {@code defval} if nil, or throw a LuaError  if any other type.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @param c the class to which the userdata instance must be assignable
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param c      the class to which the userdata instance must be assignable
+	 * @param defval Default value to use
 	 * @return java Object value if argument i is a userdata whose instance Class c or a subclass, or defval if not supplied or nil
 	 * @throws LuaError if the argument is not a userdata or from whose instance c is not assignable
 	 */
@@ -368,7 +382,8 @@ public abstract class Varargs {
 	/**
 	 * Return argument i as a LuaValue if it exists, or {@code defval}.
 	 *
-	 * @param i the index of the argument to test, 1 is the first argument
+	 * @param i      the index of the argument to test, 1 is the first argument
+	 * @param defval Default value to use
 	 * @return LuaValue value if the argument exists, defval if not
 	 * @throws LuaError if the argument does not exist.
 	 */
@@ -555,12 +570,11 @@ public abstract class Varargs {
 	}
 
 	/**
-	 * Return argument i as a LuaValue when a user-supplied assertion passes, or throw an error.
+	 * Throw an error if {@code test} fails
 	 *
 	 * @param test user supplied assertion to test against
 	 * @param i    the index to report in any error message
 	 * @param msg  the error message to use when the test fails
-	 * @return LuaValue value if the value of {@code test} is {@code true}
 	 * @throws LuaError if the the value of {@code test} is {@code false}
 	 */
 	public void argcheck(boolean test, int i, String msg) {

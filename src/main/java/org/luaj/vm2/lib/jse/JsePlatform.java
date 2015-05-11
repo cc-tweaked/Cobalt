@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib.jse;
 
 import org.luaj.vm2.LuaTable;
@@ -62,7 +64,6 @@ import org.luaj.vm2.lib.*;
  * <li>{@link JseMathLib}</li>
  * <li>{@link JseIoLib}</li>
  * <li>{@link JseOsLib}</li>
- * <li>{@link LuajavaLib}</li>
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
  * <p>
@@ -70,8 +71,6 @@ import org.luaj.vm2.lib.*;
  * <p>
  * The class ensures that initialization is done in the correct order,
  * and that linkage is made  to {@link LuaThread#setGlobals(LuaValue)}.
- *
- * @see JmePlatform
  */
 public class JsePlatform {
 
@@ -81,7 +80,6 @@ public class JsePlatform {
 	 * @return Table of globals initialized with the standard JSE libraries
 	 * @see #debugGlobals()
 	 * @see JsePlatform
-	 * @see JmePlatform
 	 */
 	public static LuaTable standardGlobals() {
 		LuaTable _G = new LuaTable();
@@ -99,12 +97,11 @@ public class JsePlatform {
 	}
 
 	/**
-	 * Create standard globals including the {@link debug} library.
+	 * Create standard globals including the {@link DebugLib} library.
 	 *
 	 * @return Table of globals initialized with the standard JSE and debug libraries
 	 * @see #standardGlobals()
 	 * @see JsePlatform
-	 * @see JmePlatform
 	 * @see DebugLib
 	 */
 	public static LuaTable debugGlobals() {

@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.compiler;
 
 import org.luaj.vm2.LocVars;
@@ -34,7 +36,7 @@ import java.io.OutputStream;
 public class DumpState {
 
 	/**
-	 * mark for precompiled code (`<esc>Lua')
+	 * mark for precompiled code (\033Lua)
 	 */
 	public static final String LUA_SIGNATURE = "\033Lua";
 
@@ -263,7 +265,7 @@ public class DumpState {
 	 * @param numberFormat one of NUMBER_FORMAT_FLOATS_OR_DOUBLES, NUMBER_FORMAT_INTS_ONLY, NUMBER_FORMAT_NUM_PATCH_INT32
 	 * @param littleendian true to use little endian for numbers, false for big endian
 	 * @return 0 if dump succeeds
-	 * @throws IOException
+	 * @throws IOException              On stream write errors
 	 * @throws IllegalArgumentException if the number format it not supported
 	 */
 	public static int dump(Prototype f, OutputStream w, boolean stripDebug, int numberFormat, boolean littleendian) throws IOException {

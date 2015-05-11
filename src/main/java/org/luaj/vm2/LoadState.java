@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,13 +19,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
+
+import org.luaj.vm2.compiler.LuaC;
+import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 
 /**
  * Class to manage loading of {@link Prototype} instances.
@@ -41,11 +46,9 @@ import java.io.InputStream;
  * This should work regardless of which {@link LuaCompiler}
  * has been installed.
  * <p>
- * <p>
  * Prior to loading code, a compiler should be installed.
  * <p>
- * By default, when using {@link JsePlatform} or {@JmePlatform}
- * to construct globals, the {@link LuaC} compiler is installed.
+ * By default, when using {@link JsePlatform} to construct globals, the {@link LuaC} compiler is installed.
  * <p>
  * To override the default compiler with, say, the {@link LuaJC}
  * lua-to-java bytecode compiler, install it before loading,
@@ -108,9 +111,13 @@ public class LoadState {
 		/**
 		 * Load into a Closure or LuaFunction from a Stream and initializes the environment
 		 *
-		 * @throws IOException
+		 * @param stream   Stream to read
+		 * @param filename Name of chunk
+		 * @param env      Environment to load
+		 * @return The loaded function
+		 * @throws IOException On stream read error
 		 */
-		public LuaFunction load(InputStream stream, String filename, LuaValue env) throws IOException;
+		LuaFunction load(InputStream stream, String filename, LuaValue env) throws IOException;
 	}
 
 	/**
@@ -351,7 +358,7 @@ public class LoadState {
 	 *
 	 * @param p name of the source
 	 * @return {@link Prototype} instance that was loaded
-	 * @throws IOException
+	 * @throws IOException On stream read errors
 	 */
 	public Prototype loadFunction(LuaString p) throws IOException {
 		Prototype f = new Prototype();
@@ -396,9 +403,9 @@ public class LoadState {
 	/**
 	 * Load lua in either binary or text form from an input stream.
 	 *
-	 * @param firstByte the first byte of the input stream
-	 * @param stream    InputStream to read, after having read the first byte already
-	 * @param name      Name to apply to the loaded chunk
+	 * @param stream InputStream to read, after having read the first byte already
+	 * @param name   Name to apply to the loaded chunk
+	 * @param env    Environment to load into
 	 * @return {@link Prototype} that was loaded
 	 * @throws IllegalArgumentException if the signature is bac
 	 * @throws IOException              if an IOException occurs

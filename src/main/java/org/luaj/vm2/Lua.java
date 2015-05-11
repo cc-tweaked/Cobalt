@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 
@@ -30,17 +32,17 @@ package org.luaj.vm2;
  */
 public class Lua {
 	/**
-	 * version is supplied by ant build task
+	 * Version is supplied by ant build task
 	 */
 	public static final String _VERSION = "Luaj 0.0";
 
 	/**
-	 * use return values from previous op
+	 * Use return values from previous op
 	 */
 	public static final int LUA_MULTRET = -1;
 
 	/**
-	 * masks for new-style vararg
+	 * Masks for new-style vararg
 	 */
 	public static final int VARARG_HASARG = 1;
 	public static final int VARARG_ISVARARG = 2;
@@ -72,9 +74,9 @@ public class Lua {
 	public static final int iAsBx = 2;
 
 
-	/*
-	** size and position of opcode arguments.
-	*/
+	/**
+	 * Size and position of opcode arguments.
+	 */
 	public static final int SIZE_C = 9;
 	public static final int SIZE_B = 9;
 	public static final int SIZE_Bx = (SIZE_C + SIZE_B);
@@ -109,7 +111,7 @@ public class Lua {
 	public static final int MASK_NOT_Bx = ~MASK_Bx;
 
 	/*
-	** the following macros help to manipulate instructions
+	 The following macros help to manipulate instructions
 	*/
 	public static int GET_OPCODE(int i) {
 		return (i >> POS_OP) & MAX_OP;
@@ -141,28 +143,37 @@ public class Lua {
 	*/
 
 	/**
-	 * this bit 1 means constant (0 means register)
+	 * This bit 1 means constant (0 means register)
 	 */
 	public static final int BITRK = (1 << (SIZE_B - 1));
 
 	/**
-	 * test whether value is a constant
+	 * Test whether value is a constant
+	 *
+	 * @param x The part of the opcode
+	 * @return If the opcode part is a constant
 	 */
 	public static boolean ISK(int x) {
 		return 0 != ((x) & BITRK);
 	}
 
 	/**
-	 * gets the index of the constant
+	 * Gets the index of the constant
+	 *
+	 * @param r The part of the opcode
+	 * @return The constant index
 	 */
 	public static int INDEXK(int r) {
-		return ((int) (r) & ~BITRK);
+		return (r & ~BITRK);
 	}
 
 	public static final int MAXINDEXRK = (BITRK - 1);
 
 	/**
 	 * code a constant index as a RK value
+	 *
+	 * @param x The constant index
+	 * @return The part of the opcode
 	 */
 	public static int RKASK(int x) {
 		return ((x) | BITRK);
@@ -170,7 +181,7 @@ public class Lua {
 
 
 	/**
-	 * * invalid register that fits in 8 bits
+	 * Invalid register that fits in 8 bits
 	 */
 	public static final int NO_REG = MAXARG_A;
 

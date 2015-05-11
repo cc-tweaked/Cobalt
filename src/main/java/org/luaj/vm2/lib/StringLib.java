@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,11 +19,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.DumpState;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,9 +34,8 @@ import java.io.IOException;
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
  * library.
  * <p>
- * <p>
- * Typically, this library is included as part of a call to either
- * {@link JsePlatform#standardGlobals()} or {@link JmePlatform#standardGlobals()}
+ * Typically, this library is included as part of a call to
+ * {@link JsePlatform#standardGlobals()}
  * <p>
  * To instantiate and use it directly,
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
@@ -52,7 +54,6 @@ import java.io.IOException;
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.4">http://www.lua.org/manual/5.1/manual.html#5.4</a>
  */
 public class StringLib extends OneArgFunction {
@@ -142,7 +143,7 @@ public class StringLib extends OneArgFunction {
 		if (posi <= 0) posi = 1;
 		if (pose > l) pose = l;
 		if (posi > pose) return NONE;  /* empty interval; return no values */
-		n = (int) (pose - posi + 1);
+		n = pose - posi + 1;
 		if (posi + n <= pose)  /* overflow? */
 			error("string slice too long");
 		LuaValue[] v = new LuaValue[n];
@@ -161,6 +162,7 @@ public class StringLib extends OneArgFunction {
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
 	 * @param args the calling VM
+	 * @return The characters for this string
 	 */
 	public static Varargs char_(Varargs args) {
 		int n = args.narg();
@@ -837,8 +839,6 @@ public class StringLib extends OneArgFunction {
 		CHAR_TABLE['\f'] |= MASK_SPACE;
 	}
 
-	;
-
 	static class MatchState {
 		final LuaString s;
 		final LuaString p;
@@ -865,7 +865,7 @@ public class StringLib extends OneArgFunction {
 			for (int i = 0; i < l; ++i) {
 				byte b = (byte) news.luaByte(i);
 				if (b != L_ESC) {
-					lbuf.append((byte) b);
+					lbuf.append(b);
 				} else {
 					++i; // skip ESC
 					b = (byte) news.luaByte(i);

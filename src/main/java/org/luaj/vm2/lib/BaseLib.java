@@ -22,6 +22,8 @@
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
+import org.luaj.vm2.lib.jse.JseBaseLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +44,7 @@ import java.io.PrintStream;
  * directory lookup, use {@link JseBaseLib} instead.
  * <p>
  * Typically, this library is included as part of a call to either
- * {@link JmePlatform#standardGlobals()}
+ * {@link JsePlatform#standardGlobals()}
  * <p>
  * To instantiate and use it directly,
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
@@ -62,7 +64,6 @@ import java.io.PrintStream;
  * @see #FINDER
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.1">http://www.lua.org/manual/5.1/manual.html#5.1</a>
  */
 public class BaseLib extends OneArgFunction implements ResourceFinder {
@@ -168,7 +169,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 						System.gc();
 						return LuaValue.TRUE;
 					} else {
-						this.argerror(1, "gc op");
+						argerror(1, "gc op");
 					}
 					return NIL;
 				case 1: // "error", // ( message [,level] ) -> ERR
@@ -373,6 +374,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	/**
 	 * Load from a named file, returning the chunk or nil,error of can't load
 	 *
+	 * @param filename Name of the file
 	 * @return Varargs containing chunk, or NIL,error-text on error
 	 */
 	public static Varargs loadFile(String filename) {

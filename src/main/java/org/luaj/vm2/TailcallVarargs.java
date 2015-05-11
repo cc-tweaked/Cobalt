@@ -21,6 +21,8 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
+import org.luaj.vm2.luajc.LuaJC;
+
 /**
  * Subclass of {@link Varargs} that represents a lua tail call
  * in a Java library function execution environment.

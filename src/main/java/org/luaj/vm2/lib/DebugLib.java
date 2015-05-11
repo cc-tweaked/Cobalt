@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,10 +19,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
+import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.luajc.LuaJC;
 
 import java.lang.ref.WeakReference;
 
@@ -33,11 +37,11 @@ import java.lang.ref.WeakReference;
  * To do this, it must maintain a separate stack of calls to {@link LuaClosure} and {@link LibFunction}
  * instances.
  * Especially when lua-to-java bytecode compiling is being used
- * via a {@link LuaCompiler} such as {@link LuaJC},
+ * via a {@link LoadState.LuaCompiler} such as {@link LuaJC},
  * this cannot be done in all cases.
  * <p>
- * Typically, this library is included as part of a call to either
- * {@link JsePlatform#debugGlobals()} or {@link JmePlatform#debugGlobals()}
+ * Typically, this library is included as part of a call to
+ * {@link JsePlatform#debugGlobals()}
  * <p>
  * To instantiate and use it directly,
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
@@ -51,7 +55,6 @@ import java.lang.ref.WeakReference;
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.9">http://www.lua.org/manual/5.1/manual.html#5.9</a>
  */
 public class DebugLib extends VarArgFunction {
@@ -364,6 +367,9 @@ public class DebugLib extends VarArgFunction {
 
 	/**
 	 * Called by Closures to set up stack and arguments to next call
+	 *
+	 * @param args  The arguments to use
+	 * @param stack The current function stack
 	 */
 	public static void debugSetupCall(Varargs args, LuaValue[] stack) {
 		DebugState ds = getDebugState();
@@ -411,6 +417,10 @@ public class DebugLib extends VarArgFunction {
 
 	/**
 	 * Called by Closures on bytecode execution
+	 *
+	 * @param pc     Current program counter
+	 * @param extras Extra arguments
+	 * @param top    The top of the callstack
 	 */
 	public static void debugBytecode(int pc, Varargs extras, int top) {
 		DebugState ds = getDebugState();
@@ -706,6 +716,9 @@ public class DebugLib extends VarArgFunction {
 
 	/**
 	 * Get a traceback as a string for the current thread
+	 *
+	 * @param level The level to produce it at
+	 * @return The traceback string
 	 */
 	public static String traceback(int level) {
 		return traceback(LuaThread.getRunning(), level);
@@ -840,8 +853,7 @@ public class DebugLib extends VarArgFunction {
 			|| (pt.is_vararg & Lua.VARARG_HASARG) != 0);
 		if (!(pt.upvalues.length <= pt.nups)) return false;
 		if (!(pt.lineinfo.length == pt.code.length || pt.lineinfo.length == 0)) return false;
-		if (!(Lua.GET_OPCODE(pt.code[pt.code.length - 1]) == Lua.OP_RETURN)) return false;
-		return true;
+		return Lua.GET_OPCODE(pt.code[pt.code.length - 1]) == Lua.OP_RETURN;
 	}
 
 	static boolean checkopenop(Prototype pt, int pc) {
@@ -851,8 +863,7 @@ public class DebugLib extends VarArgFunction {
 			case Lua.OP_TAILCALL:
 			case Lua.OP_RETURN:
 			case Lua.OP_SETLIST: {
-				if (!(Lua.GETARG_B(i) == 0)) return false;
-				return true;
+				return Lua.GETARG_B(i) == 0;
 			}
 			default:
 				return false; /* invalid instruction after an open call */

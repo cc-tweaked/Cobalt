@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,12 +19,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
+import org.luaj.vm2.lib.jse.JseOsLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.IOException;
 
@@ -50,8 +54,8 @@ import java.io.IOException;
  * <li>{@code tmpname()}</li>
  * </ul>
  * <p>
- * Typically, this library is included as part of a call to either
- * {@link JmePlatform#standardGlobals()}
+ * Typically, this library is included as part of a call to
+ * {@link JsePlatform#standardGlobals()}
  * <p>
  * To instantiate and use it directly,
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
@@ -70,7 +74,6 @@ import java.io.IOException;
  * @see LibFunction
  * @see JseOsLib
  * @see JsePlatform
- * @see JmePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.8">http://www.lua.org/manual/5.1/manual.html#5.8</a>
  */
 public class OsLib extends VarArgFunction {
@@ -177,8 +180,8 @@ public class OsLib extends VarArgFunction {
 	 * Returns the number of seconds from time t1 to time t2.
 	 * In POSIX, Windows, and some other systems, this value is exactly t2-t1.
 	 *
-	 * @param t2
-	 * @param t1
+	 * @param t2 Last time
+	 * @param t1 First time
 	 * @return diffeence in time values, in seconds
 	 */
 	protected double difftime(double t2, double t1) {
@@ -204,7 +207,7 @@ public class OsLib extends VarArgFunction {
 	 * time representation that depends on the host system and on the
 	 * current locale (that is, os.date() is equivalent to os.date("%c")).
 	 *
-	 * @param format
+	 * @param format Format string to use
 	 * @param time   time since epoch, or -1 if not supplied
 	 * @return a LString or a LTable containing date and time,
 	 * formatted according to the given string format.
@@ -221,6 +224,7 @@ public class OsLib extends VarArgFunction {
 	 * is available and zero otherwise.
 	 *
 	 * @param command command to pass to the system
+	 * @return The command's exit code
 	 */
 	protected int execute(String command) {
 		return 0;
@@ -229,7 +233,7 @@ public class OsLib extends VarArgFunction {
 	/**
 	 * Calls the C function exit, with an optional code, to terminate the host program.
 	 *
-	 * @param code
+	 * @param code The exit code
 	 */
 	protected void exit(int code) {
 		System.exit(code);
@@ -239,7 +243,7 @@ public class OsLib extends VarArgFunction {
 	 * Returns the value of the process environment variable varname,
 	 * or null if the variable is not defined.
 	 *
-	 * @param varname
+	 * @param varname The environment variable name
 	 * @return String value, or null if not defined
 	 */
 	protected String getenv(String varname) {
@@ -251,7 +255,7 @@ public class OsLib extends VarArgFunction {
 	 * Directories must be empty to be removed.
 	 * If this function fails, it throws and IOException
 	 *
-	 * @param filename
+	 * @param filename The filename to delete
 	 * @throws IOException if it fails
 	 */
 	protected void remove(String filename) throws IOException {
@@ -283,8 +287,8 @@ public class OsLib extends VarArgFunction {
 	 * When called with null as the first argument, this function only returns the
 	 * name of the current locale for the given category.
 	 *
-	 * @param locale
-	 * @param category
+	 * @param locale   New locale
+	 * @param category Category's locale to change
 	 * @return the name of the new locale, or null if the request
 	 * cannot be honored.
 	 */
@@ -299,7 +303,7 @@ public class OsLib extends VarArgFunction {
 	 * and may have fields hour, min, sec, and isdst
 	 * (for a description of these fields, see the os.date function).
 	 *
-	 * @param table
+	 * @param table Table to use
 	 * @return long value for the time
 	 */
 	protected long time(LuaTable table) {

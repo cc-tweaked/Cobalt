@@ -23,6 +23,9 @@ package org.luaj.vm2.compiler;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.LoadState.LuaCompiler;
+import org.luaj.vm2.lib.BaseLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,8 +43,8 @@ import java.util.Hashtable;
  * initialized chunks, which is an interface common to
  * lua bytecode compiling and java bytecode compiling.
  * <p>
- * Teh {@link LuaC} compiler is installed by default by both the
- * {@link JsePlatform} and {@link JmePlatform} classes,
+ * Teh {@link LuaC} compiler is installed by default by the
+ * {@link JsePlatform} class
  * so in the following example, the default {@link LuaC} compiler
  * will be used:
  * <pre> {@code
@@ -52,7 +55,6 @@ import java.util.Hashtable;
  * @see LuaCompiler
  * @see LuaJC
  * @see JsePlatform
- * @see JmePlatform
  * @see BaseLib
  * @see LuaValue
  * @see LuaCompiler
@@ -197,6 +199,10 @@ public class LuaC extends Lua implements LuaCompiler {
 
 	/**
 	 * Compile a prototype or load as a binary chunk
+	 * @param stream The stream to read
+	 * @param name Name of the chunk
+	 * @return The compiled code
+	 * @throws IOException On stream read errors
 	 */
 	public static Prototype compile(InputStream stream, String name) throws IOException {
 		int firstByte = stream.read();
@@ -212,11 +218,11 @@ public class LuaC extends Lua implements LuaCompiler {
 		LexState lexstate = new LexState(this, z);
 		FuncState funcstate = new FuncState();
 		// lexstate.buff = buff;
-		lexstate.setinput(this, firstByte, z, (LuaString) LuaValue.valueOf(name));
+		lexstate.setinput(this, firstByte, z, LuaValue.valueOf(name));
 		lexstate.open_func(funcstate);
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = LuaC.VARARG_ISVARARG;
-		funcstate.f.source = (LuaString) LuaValue.valueOf(name);
+		funcstate.f.source = LuaValue.valueOf(name);
 		lexstate.next(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);

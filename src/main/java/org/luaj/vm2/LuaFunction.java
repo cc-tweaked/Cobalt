@@ -21,6 +21,8 @@
  ******************************************************************************/
 package org.luaj.vm2;
 
+import org.luaj.vm2.lib.LibFunction;
+
 /**
  * Base class for functions implemented in Java.
  * <p>

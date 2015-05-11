@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2007-2012 LuaJ. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,11 +19,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 
+import org.luaj.vm2.lib.BaseLib;
+import org.luaj.vm2.lib.CoroutineLib;
 import org.luaj.vm2.lib.DebugLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
 
@@ -39,8 +44,8 @@ import java.lang.ref.WeakReference;
  * at some point during globals initialization.
  * See {@link BaseLib} for additional documentation and example code.
  * <p>
- * The utility classes {@link JsePlatform} and {@link JmePlatform}
- * see to it that this initialization is done properly.
+ * The utility class {@link JsePlatform}
+ * sees to it that this initialization is done properly.
  * For this reason it is highly recommended to use one of these classes
  * when initializing globals.
  * <p>
@@ -56,7 +61,6 @@ import java.lang.ref.WeakReference;
  *
  * @see LuaValue
  * @see JsePlatform
- * @see JmePlatform
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {
@@ -178,6 +182,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Test if this is the main thread
 	 *
+	 * @param r The thread to test
 	 * @return true if this is the main thread
 	 */
 	public static boolean isMainThread(LuaThread r) {

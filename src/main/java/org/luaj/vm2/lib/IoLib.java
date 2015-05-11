@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,13 +19,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.LuaString;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
+import org.luaj.vm2.lib.jse.JseIoLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -37,15 +41,14 @@ import java.io.IOException;
  * It contains the implementation of the io library support that is common to
  * the JSE and JME platforms.
  * In practice on of the concrete IOLib subclasses is chosen:
- * {@link org.luaj.vm2.lib.jse.JseIoLib} for the JSE platform, and
- * {@link org.luaj.vm2.lib.jme.JmeIoLib} for the JME platform.
+ * {@link org.luaj.vm2.lib.jse.JseIoLib} for the JSE platform
  * <p>
  * The JSE implementation conforms almost completely to the C-based lua library,
  * while the JME implementation follows closely except in the area of random-access files,
  * which are difficult to support properly on JME.
  * <p>
- * Typically, this library is included as part of a call to either
- * {@link JsePlatform#standardGlobals()} or {@link JmePlatform#standardGlobals()}
+ * Typically, this library is included as part of a call to
+ * {@link JsePlatform#standardGlobals()}
  * <p>
  * To instantiate and use it directly,
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
@@ -65,9 +68,7 @@ import java.io.IOException;
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see JseIoLib
- * @see JmeIoLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.7">http://www.lua.org/manual/5.1/manual.html#5.7</a>
  */
 abstract
@@ -94,10 +95,10 @@ public class IoLib extends OneArgFunction {
 		abstract public int remaining() throws IOException;
 
 		// peek ahead one character
-		abstract public int peek() throws IOException, EOFException;
+		abstract public int peek() throws IOException;
 
 		// return char if read, -1 if eof, throw IOException on other exception
-		abstract public int read() throws IOException, EOFException;
+		abstract public int read() throws IOException;
 
 		// return number of bytes read if positive, false if eof, throw IOException on other exception
 		abstract public int read(byte[] bytes, int offset, int length) throws IOException;
@@ -127,7 +128,7 @@ public class IoLib extends OneArgFunction {
 	 * Wrap the standard input.
 	 *
 	 * @return File
-	 * @throws IOException
+	 * @throws IOException On stream exception
 	 */
 	abstract protected File wrapStdin() throws IOException;
 
@@ -135,14 +136,14 @@ public class IoLib extends OneArgFunction {
 	 * Wrap the standard output.
 	 *
 	 * @return File
-	 * @throws IOException
+	 * @throws IOException On stream exception
 	 */
 	abstract protected File wrapStdout() throws IOException;
 
 	/**
 	 * Open a file in a particular mode.
 	 *
-	 * @param filename
+	 * @param filename   Filename to open
 	 * @param readMode   true if opening in read mode
 	 * @param appendMode true if opening in append mode
 	 * @param updateMode true if opening in update mode
@@ -612,8 +613,8 @@ public class IoLib extends OneArgFunction {
 			c = -1;
 		}
 		return (c < 0 && baos.size() == 0) ?
-			(LuaValue) NIL :
-			(LuaValue) LuaString.valueOf(baos.toByteArray());
+			NIL :
+			LuaString.valueOf(baos.toByteArray());
 	}
 
 	public static LuaValue freadline(File f) throws IOException {

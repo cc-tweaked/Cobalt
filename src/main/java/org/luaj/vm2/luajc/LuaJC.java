@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2010 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.luajc;
 
 import org.luaj.vm2.LoadState;
@@ -27,6 +29,8 @@ import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Prototype;
 import org.luaj.vm2.compiler.LuaC;
+import org.luaj.vm2.lib.BaseLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,7 +57,6 @@ import java.util.Hashtable;
  * @see LuaCompiler
  * @see LuaC
  * @see JsePlatform
- * @see JmePlatform
  * @see BaseLib
  * @see LuaValue
  */
@@ -84,7 +87,7 @@ public class LuaJC implements LuaCompiler {
 		String classname = toStandardJavaClassName(chunkname);
 		String luaname = toStandardLuaFileName(filename);
 		Hashtable h = new Hashtable();
-		Prototype p = LuaC.instance.compile(script, classname);
+		Prototype p = LuaC.compile(script, classname);
 		JavaGen gen = new JavaGen(p, classname, luaname);
 		insert(h, gen);
 		return h;
@@ -97,7 +100,7 @@ public class LuaJC implements LuaCompiler {
 	}
 
 	public LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
-		Prototype p = LuaC.instance.compile(stream, name);
+		Prototype p = LuaC.compile(stream, name);
 		String classname = toStandardJavaClassName(name);
 		String luaname = toStandardLuaFileName(name);
 		JavaLoader loader = new JavaLoader(env);

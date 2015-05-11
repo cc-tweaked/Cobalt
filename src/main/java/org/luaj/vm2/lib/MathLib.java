@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,13 +19,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.LuaDouble;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
+import org.luaj.vm2.lib.jse.JseMathLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.util.Random;
 
@@ -51,8 +55,8 @@ import java.util.Random;
  * The implementations of {@code exp()} and {@code pow()} are constructed by
  * hand for JME, so will be slower and less accurate than when executed on the JSE platform.
  * <p>
- * Typically, this library is included as part of a call to either
- * {@link JmePlatform#standardGlobals()}
+ * Typically, this library is included as part of a call to
+ * {@link JsePlatform#standardGlobals()}
  * <p>
  * To instantiate and use it directly,
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
@@ -71,7 +75,6 @@ import java.util.Random;
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see JseMathLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
@@ -161,6 +164,10 @@ public class MathLib extends OneArgFunction {
 
 	/**
 	 * compute power using installed math library, or default if there is no math library installed
+	 *
+	 * @param a Number
+	 * @param b Exponent
+	 * @return Resultant number
 	 */
 	public static LuaValue dpow(double a, double b) {
 		return LuaDouble.valueOf(
@@ -177,6 +184,10 @@ public class MathLib extends OneArgFunction {
 
 	/**
 	 * Hook to override default dpow behavior with faster implementation.
+	 *
+	 * @param a Number
+	 * @param b Exponent
+	 * @return Resultant number
 	 */
 	public double dpow_lib(double a, double b) {
 		return dpow_default(a, b);
@@ -184,6 +195,10 @@ public class MathLib extends OneArgFunction {
 
 	/**
 	 * Default JME version computes using longhand heuristics.
+	 *
+	 * @param a Number
+	 * @param b Exponent
+	 * @return Resultant number
 	 */
 	protected static double dpow_default(double a, double b) {
 		if (b < 0)
