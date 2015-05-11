@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,8 +19,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
+
+import org.luaj.vm2.lib.LibFunction;
 
 /**
  * Base class for functions implemented in Java.
@@ -51,34 +55,42 @@ public class LuaFunction extends LuaValue {
 		this.env = env;
 	}
 
+	@Override
 	public int type() {
 		return TFUNCTION;
 	}
 
+	@Override
 	public String typename() {
 		return "function";
 	}
 
+	@Override
 	public boolean isfunction() {
 		return true;
 	}
 
+	@Override
 	public LuaValue checkfunction() {
 		return this;
 	}
 
+	@Override
 	public LuaFunction optfunction(LuaFunction defval) {
 		return this;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return s_metatable;
 	}
 
+	@Override
 	public LuaValue getfenv() {
 		return env;
 	}
 
+	@Override
 	public void setfenv(LuaValue env) {
 		this.env = env != null ? env : NIL;
 	}

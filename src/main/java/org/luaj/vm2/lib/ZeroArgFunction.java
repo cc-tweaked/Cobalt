@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.LuaValue;
@@ -48,6 +50,7 @@ import org.luaj.vm2.Varargs;
  */
 abstract public class ZeroArgFunction extends LibFunction {
 
+	@Override
 	abstract public LuaValue call();
 
 	/**
@@ -65,18 +68,22 @@ abstract public class ZeroArgFunction extends LibFunction {
 		this.env = env;
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		return call();
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg1, LuaValue arg2) {
 		return call();
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
 		return call();
 	}
 
+	@Override
 	public Varargs invoke(Varargs varargs) {
 		return call();
 	}

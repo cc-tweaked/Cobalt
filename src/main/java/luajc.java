@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 
 import org.luaj.vm2.Lua;
 import org.luaj.vm2.lib.jse.JsePlatform;
@@ -61,7 +63,7 @@ public class luajc {
 	private boolean verbose = false;
 	private boolean loadclasses = false;
 	private String pkgprefix = null;
-	private List files = new ArrayList();
+	private List<InputFile> files = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
 		new luajc(args);
@@ -70,7 +72,7 @@ public class luajc {
 	private luajc(String[] args) throws IOException {
 
 		// process args
-		List seeds = new ArrayList();
+		List<String> seeds = new ArrayList<>();
 
 		// get stateful args
 		for (int i = 0; i < args.length; i++) {
@@ -79,21 +81,24 @@ public class luajc {
 			} else {
 				switch (args[i].charAt(1)) {
 					case 's':
-						if (++i >= args.length)
+						if (++i >= args.length) {
 							usageExit();
+						}
 						srcdir = args[i];
 						break;
 					case 'd':
-						if (++i >= args.length)
+						if (++i >= args.length) {
 							usageExit();
+						}
 						destdir = args[i];
 						break;
 					case 'l':
 						loadclasses = true;
 						break;
 					case 'p':
-						if (++i >= args.length)
+						if (++i >= args.length) {
 							usageExit();
+						}
 						pkgprefix = args[i];
 						break;
 					case 'r':
@@ -125,8 +130,9 @@ public class luajc {
 		}
 
 		// collect up files to process
-		for (int i = 0; i < seeds.size(); i++)
-			collectFiles(srcdir + "/" + seeds.get(i));
+		for (Object seed : seeds) {
+			collectFiles(srcdir + "/" + seed);
+		}
 
 		// check for at least one file
 		if (files.size() <= 0) {
@@ -136,33 +142,37 @@ public class luajc {
 
 		// process input files
 		JsePlatform.standardGlobals();
-		for (int i = 0, n = files.size(); i < n; i++)
-			processFile((InputFile) files.get(i));
+		for (Object file : files) {
+			processFile((InputFile) file);
+		}
 	}
 
 	private void collectFiles(String path) {
 		File f = new File(path);
-		if (f.isDirectory() && recurse)
+		if (f.isDirectory() && recurse) {
 			scandir(f, pkgprefix);
-		else if (f.isFile()) {
+		} else if (f.isFile()) {
 			File dir = f.getAbsoluteFile().getParentFile();
-			if (dir != null)
+			if (dir != null) {
 				scanfile(dir, f, pkgprefix);
+			}
 		}
 	}
 
 	private void scandir(File dir, String javapackage) {
 		File[] f = dir.listFiles();
-		for (int i = 0; i < f.length; i++)
-			scanfile(dir, f[i], javapackage);
+		for (File aF : f) {
+			scanfile(dir, aF, javapackage);
+		}
 	}
 
 	private void scanfile(File dir, File f, String javapackage) {
 		if (f.exists()) {
-			if (f.isDirectory() && recurse)
+			if (f.isDirectory() && recurse) {
 				scandir(f, (javapackage != null ? javapackage + "." + f.getName() : f.getName()));
-			else if (f.isFile() && f.getName().endsWith(".lua"))
+			} else if (f.isFile() && f.getName().endsWith(".lua")) {
 				files.add(new InputFile(dir, f, javapackage));
+			}
 		}
 	}
 
@@ -188,8 +198,9 @@ public class luajc {
 	private void processFile(InputFile inf) {
 		inf.outdir.mkdirs();
 		try {
-			if (verbose)
+			if (verbose) {
 				System.out.println("chunk=" + inf.luachunkname + " srcfile=" + inf.srcfilename);
+			}
 
 			// create the chunk
 			FileInputStream fis = new FileInputStream(inf.infile);
@@ -205,8 +216,9 @@ public class luajc {
 					new File(d).mkdirs();
 				}
 				String destpath = (destdir != null ? destdir + "/" : "") + key + ".class";
-				if (verbose)
+				if (verbose) {
 					System.out.println("  " + destpath + " (" + bytes.length + " bytes)");
+				}
 				FileOutputStream fos = new FileOutputStream(destpath);
 				fos.write(bytes);
 				fos.close();
@@ -215,10 +227,12 @@ public class luajc {
 			// try to load the files
 			if (loadclasses) {
 				ClassLoader loader = new ClassLoader() {
+					@Override
 					public Class findClass(String classname) throws ClassNotFoundException {
 						byte[] bytes = (byte[]) t.get(classname);
-						if (bytes != null)
+						if (bytes != null) {
 							return defineClass(classname, bytes, 0, bytes.length);
+						}
 						return super.findClass(classname);
 					}
 				};
@@ -227,8 +241,9 @@ public class luajc {
 					try {
 						Class c = loader.loadClass(classname);
 						Object o = c.newInstance();
-						if (verbose)
+						if (verbose) {
 							System.out.println("    loaded " + classname + " as " + o);
+						}
 					} catch (Exception ex) {
 						System.out.flush();
 						System.err.println("    failed to load " + classname + ": " + ex);

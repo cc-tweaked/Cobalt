@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,11 +19,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.vm;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.TwoArgFunction;
@@ -35,11 +36,6 @@ import static org.junit.Assert.*;
  * Tests of basic unary and binary operators on main value types.
  */
 public class UnaryBinaryOperatorsTest {
-
-	@Before
-	public void setup() throws Exception {
-	}
-
 	@Test
 	public void testEqualsBool() {
 		Assert.assertEquals(LuaValue.FALSE, LuaValue.FALSE);
@@ -220,12 +216,14 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	private static final TwoArgFunction RETURN_NIL = new TwoArgFunction() {
+		@Override
 		public LuaValue call(LuaValue lhs, LuaValue rhs) {
 			return NIL;
 		}
 	};
 
 	private static final TwoArgFunction RETURN_ONE = new TwoArgFunction() {
+		@Override
 		public LuaValue call(LuaValue lhs, LuaValue rhs) {
 			return ONE;
 		}
@@ -526,20 +524,23 @@ public class UnaryBinaryOperatorsTest {
 			LuaValue.class.getMethod(op, new Class[]{LuaValue.class}).invoke(a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
-			if ((!actual.startsWith("attempt to perform arithmetic")) || actual.indexOf(type) < 0)
+			if ((!actual.startsWith("attempt to perform arithmetic")) || !actual.contains(type)) {
 				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+			}
 		} catch (Exception e) {
 			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
 		}
 	}
 
 	private static final TwoArgFunction RETURN_LHS = new TwoArgFunction() {
+		@Override
 		public LuaValue call(LuaValue lhs, LuaValue rhs) {
 			return lhs;
 		}
 	};
 
 	private static final TwoArgFunction RETURN_RHS = new TwoArgFunction() {
+		@Override
 		public LuaValue call(LuaValue lhs, LuaValue rhs) {
 			return rhs;
 		}
@@ -1054,8 +1055,9 @@ public class UnaryBinaryOperatorsTest {
 			LuaValue.class.getMethod(op, new Class[]{LuaValue.class}).invoke(a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
-			if ((!actual.startsWith("attempt to compare")) || !actual.contains(type))
+			if ((!actual.startsWith("attempt to compare")) || !actual.contains(type)) {
 				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+			}
 		} catch (Exception e) {
 			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
 		}
@@ -1510,8 +1512,9 @@ public class UnaryBinaryOperatorsTest {
 			LuaValue.class.getMethod(op, new Class[]{LuaValue.class}).invoke(a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
-			if ((!actual.startsWith("attempt to concatenate")) || !actual.contains(type))
+			if ((!actual.startsWith("attempt to concatenate")) || !actual.contains(type)) {
 				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+			}
 		} catch (Exception e) {
 			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
 		}

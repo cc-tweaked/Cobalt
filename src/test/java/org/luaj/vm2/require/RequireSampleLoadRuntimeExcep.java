@@ -11,6 +11,7 @@ public class RequireSampleLoadRuntimeExcep extends ZeroArgFunction {
 	public RequireSampleLoadRuntimeExcep() {
 	}
 
+	@Override
 	public LuaValue call() {
 		throw new RuntimeException("sample-load-runtime-exception");
 	}

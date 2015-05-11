@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 import java.util.Vector;
@@ -53,7 +55,6 @@ import java.util.Vector;
  *    LuaValue v = n.arg(2)
  *    process( k, v )
  * }}</pre>
- * <p>
  * <p>
  * As with other types, {@link LuaTable} instances should be constructed via one of the table constructor
  * methods on {@link LuaValue}:
@@ -130,14 +131,19 @@ public class LuaTable extends LuaValue {
 		int nu = (unnamed != null ? unnamed.length : 0);
 		int nl = (lastarg != null ? lastarg.narg() : 0);
 		presize(nu + nl, nn - (nn >> 1));
-		for (int i = 0; i < nu; i++)
+		for (int i = 0; i < nu; i++) {
 			rawset(i + 1, unnamed[i]);
-		if (lastarg != null)
-			for (int i = 1, n = lastarg.narg(); i <= n; ++i)
+		}
+		if (lastarg != null) {
+			for (int i = 1, n = lastarg.narg(); i <= n; ++i) {
 				rawset(nu + i, lastarg.arg(i));
-		for (int i = 0; i < nn; i += 2)
-			if (!named[i + 1].isnil())
+			}
+		}
+		for (int i = 0; i < nn; i += 2) {
+			if (!named[i + 1].isnil()) {
 				rawset(named[i], named[i + 1]);
+			}
+		}
 	}
 
 	/**
@@ -160,38 +166,47 @@ public class LuaTable extends LuaValue {
 		int n = Math.max(varargs.narg() - nskip, 0);
 		presize(n, 1);
 		set(N, valueOf(n));
-		for (int i = 1; i <= n; i++)
+		for (int i = 1; i <= n; i++) {
 			set(i, varargs.arg(i + nskip));
+		}
 	}
 
+	@Override
 	public int type() {
 		return LuaValue.TTABLE;
 	}
 
+	@Override
 	public String typename() {
 		return "table";
 	}
 
+	@Override
 	public boolean istable() {
 		return true;
 	}
 
+	@Override
 	public LuaTable checktable() {
 		return this;
 	}
 
+	@Override
 	public LuaTable opttable(LuaTable defval) {
 		return this;
 	}
 
+	@Override
 	public void presize(int narray) {
-		if (narray > array.length)
+		if (narray > array.length) {
 			array = resize(array, narray);
+		}
 	}
 
 	public void presize(int narray, int nhash) {
-		if (nhash > 0 && nhash < MIN_HASH_CAPACITY)
+		if (nhash > 0 && nhash < MIN_HASH_CAPACITY) {
 			nhash = MIN_HASH_CAPACITY;
+		}
 		array = (narray > 0 ? new LuaValue[narray] : NOVALS);
 		hashKeys = (nhash > 0 ? new LuaValue[nhash] : NOVALS);
 		hashValues = (nhash > 0 ? new LuaValue[nhash] : NOVALS);
@@ -225,10 +240,12 @@ public class LuaTable extends LuaValue {
 		return hashValues.length;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return m_metatable;
 	}
 
+	@Override
 	public LuaValue setmetatable(LuaValue metatable) {
 		m_metatable = metatable;
 		LuaValue mode;
@@ -249,32 +266,39 @@ public class LuaTable extends LuaValue {
 	 * @return {@code this} or a new {@link WeakTable} if the mode change requires copying.
 	 */
 	protected LuaTable changemode(boolean weakkeys, boolean weakvalues) {
-		if (weakkeys || weakvalues)
+		if (weakkeys || weakvalues) {
 			return new WeakTable(weakkeys, weakvalues, this);
+		}
 		return this;
 	}
 
+	@Override
 	public LuaValue get(int key) {
 		LuaValue v = rawget(key);
 		return v.isnil() && m_metatable != null ? gettable(this, valueOf(key)) : v;
 	}
 
+	@Override
 	public LuaValue get(LuaValue key) {
 		LuaValue v = rawget(key);
 		return v.isnil() && m_metatable != null ? gettable(this, key) : v;
 	}
 
+	@Override
 	public LuaValue rawget(int key) {
-		if (key > 0 && key <= array.length)
+		if (key > 0 && key <= array.length) {
 			return array[key - 1] != null ? array[key - 1] : NIL;
+		}
 		return hashget(LuaInteger.valueOf(key));
 	}
 
+	@Override
 	public LuaValue rawget(LuaValue key) {
 		if (key.isinttype()) {
 			int ikey = key.toint();
-			if (ikey > 0 && ikey <= array.length)
+			if (ikey > 0 && ikey <= array.length) {
 				return array[ikey - 1] != null ? array[ikey - 1] : NIL;
+			}
 		}
 		return hashget(key);
 	}
@@ -287,31 +311,39 @@ public class LuaTable extends LuaValue {
 		return NIL;
 	}
 
+	@Override
 	public void set(int key, LuaValue value) {
-		if (m_metatable == null || !rawget(key).isnil() || !settable(this, LuaInteger.valueOf(key), value))
+		if (m_metatable == null || !rawget(key).isnil() || !settable(this, LuaInteger.valueOf(key), value)) {
 			rawset(key, value);
+		}
 	}
 
 	/**
 	 * caller must ensure key is not nil
 	 */
+	@Override
 	public void set(LuaValue key, LuaValue value) {
 		key.checkvalidkey();
-		if (m_metatable == null || !rawget(key).isnil() || !settable(this, key, value))
+		if (m_metatable == null || !rawget(key).isnil() || !settable(this, key, value)) {
 			rawset(key, value);
+		}
 	}
 
+	@Override
 	public void rawset(int key, LuaValue value) {
-		if (!arrayset(key, value))
+		if (!arrayset(key, value)) {
 			hashset(LuaInteger.valueOf(key), value);
+		}
 	}
 
 	/**
 	 * caller must ensure key is not nil
 	 */
+	@Override
 	public void rawset(LuaValue key, LuaValue value) {
-		if (!key.isinttype() || !arrayset(key.toint(), value))
+		if (!key.isinttype() || !arrayset(key.toint(), value)) {
 			hashset(key, value);
+		}
 	}
 
 	/**
@@ -354,10 +386,11 @@ public class LuaTable extends LuaValue {
 	 */
 	public LuaValue remove(int pos) {
 		int n = length();
-		if (pos == 0)
+		if (pos == 0) {
 			pos = n;
-		else if (pos > n)
+		} else if (pos > n) {
 			return NONE;
+		}
 		LuaValue v = rawget(pos);
 		for (LuaValue r = v; !r.isnil(); ) {
 			r = rawget(pos + 1);
@@ -374,8 +407,9 @@ public class LuaTable extends LuaValue {
 	 * @param value The value to insert
 	 */
 	public void insert(int pos, LuaValue value) {
-		if (pos == 0)
+		if (pos == 0) {
 			pos = length() + 1;
+		}
 		while (!value.isnil()) {
 			LuaValue v = rawget(pos);
 			rawset(pos++, value);
@@ -403,13 +437,17 @@ public class LuaTable extends LuaValue {
 		return sb.tostring();
 	}
 
+	@Override
 	public LuaValue getn() {
-		for (int n = getArrayLength(); n > 0; --n)
-			if (!rawget(n).isnil())
+		for (int n = getArrayLength(); n > 0; --n) {
+			if (!rawget(n).isnil()) {
 				return LuaInteger.valueOf(n);
+			}
+		}
 		return ZERO;
 	}
 
+	@Override
 	public int length() {
 		int a = getArrayLength();
 		int n = a + 1, m = 0;
@@ -419,14 +457,16 @@ public class LuaTable extends LuaValue {
 		}
 		while (n > m + 1) {
 			int k = (n + m) / 2;
-			if (!rawget(k).isnil())
+			if (!rawget(k).isnil()) {
 				m = k;
-			else
+			} else {
 				n = k;
+			}
 		}
 		return m;
 	}
 
+	@Override
 	public LuaValue len() {
 		return LuaInteger.valueOf(length());
 	}
@@ -440,15 +480,17 @@ public class LuaTable extends LuaValue {
 	 */
 	public int maxn() {
 		int n = 0;
-		for (int i = 0; i < array.length; i++)
-			if (array[i] != null)
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] != null) {
 				n = i + 1;
-		for (int i = 0; i < hashKeys.length; i++) {
-			LuaValue v = hashKeys[i];
+			}
+		}
+		for (LuaValue v : hashKeys) {
 			if (v != null && v.isinttype()) {
 				int key = v.toint();
-				if (key > n)
+				if (key > n) {
 					n = key;
+				}
 			}
 		}
 		return n;
@@ -459,6 +501,7 @@ public class LuaTable extends LuaValue {
 	 *
 	 * @return key, value or nil
 	 */
+	@Override
 	public Varargs next(LuaValue key) {
 		int i = 0;
 		do {
@@ -467,29 +510,36 @@ public class LuaTable extends LuaValue {
 				if (key.isinttype()) {
 					i = key.toint();
 					if (i > 0 && i <= array.length) {
-						if (array[i - 1] == null)
+						if (array[i - 1] == null) {
 							error("invalid key to 'next'");
+						}
 						break;
 					}
 				}
-				if (hashKeys.length == 0)
+				if (hashKeys.length == 0) {
 					error("invalid key to 'next'");
+				}
 				i = hashFindSlot(key);
-				if (hashKeys[i] == null)
+				if (hashKeys[i] == null) {
 					error("invalid key to 'next'");
+				}
 				i += 1 + array.length;
 			}
 		} while (false);
 
 		// check array part
-		for (; i < array.length; ++i)
-			if (array[i] != null)
+		for (; i < array.length; ++i) {
+			if (array[i] != null) {
 				return varargsOf(LuaInteger.valueOf(i + 1), array[i]);
+			}
+		}
 
 		// check hash part
-		for (i -= array.length; i < hashKeys.length; ++i)
-			if (hashKeys[i] != null)
+		for (i -= array.length; i < hashKeys.length; ++i) {
+			if (hashKeys[i] != null) {
 				return varargsOf(hashKeys[i], hashValues[i]);
+			}
+		}
 
 		// nothing found, push nil, return nil.
 		return NIL;
@@ -501,6 +551,7 @@ public class LuaTable extends LuaValue {
 	 *
 	 * @return key, value or none
 	 */
+	@Override
 	public Varargs inext(LuaValue key) {
 		int k = key.checkint() + 1;
 		LuaValue v = rawget(k);
@@ -510,15 +561,18 @@ public class LuaTable extends LuaValue {
 	/**
 	 * Call the supplied function once for each key-value pair
 	 *
-	 * @param func function to call
+	 * @param func The function to call
+	 * @return {@link #NIL}
 	 */
 	public LuaValue foreach(LuaValue func) {
 		Varargs n;
 		LuaValue k = NIL;
 		LuaValue v;
-		while (!(k = ((n = next(k)).arg1())).isnil())
-			if (!(v = func.call(k, n.arg(2))).isnil())
+		while (!(k = ((n = next(k)).arg1())).isnil()) {
+			if (!(v = func.call(k, n.arg(2))).isnil()) {
 				return v;
+			}
+		}
 		return NIL;
 	}
 
@@ -526,13 +580,16 @@ public class LuaTable extends LuaValue {
 	 * Call the supplied function once for each key-value pair
 	 * in the contiguous array part
 	 *
-	 * @param func
+	 * @param func The function to call
+	 * @return {@link #NIL}
 	 */
 	public LuaValue foreachi(LuaValue func) {
 		LuaValue v, r;
-		for (int k = 0; !(v = rawget(++k)).isnil(); )
-			if (!(r = func.call(valueOf(k), v)).isnil())
+		for (int k = 0; !(v = rawget(++k)).isnil(); ) {
+			if (!(r = func.call(valueOf(k), v)).isnil()) {
 				return r;
+			}
+		}
 		return NIL;
 	}
 
@@ -544,20 +601,22 @@ public class LuaTable extends LuaValue {
 	 * @param value value to set
 	 */
 	public void hashset(LuaValue key, LuaValue value) {
-		if (value.isnil())
+		if (value.isnil()) {
 			hashRemove(key);
-		else {
+		} else {
 			if (hashKeys.length == 0) {
 				hashKeys = new LuaValue[MIN_HASH_CAPACITY];
 				hashValues = new LuaValue[MIN_HASH_CAPACITY];
 			}
 			int slot = hashFindSlot(key);
-			if (hashFillSlot(slot, value))
+			if (hashFillSlot(slot, value)) {
 				return;
+			}
 			hashKeys[slot] = key;
 			hashValues[slot] = value;
-			if (checkLoadFactor())
+			if (checkLoadFactor()) {
 				rehash();
+			}
 		}
 	}
 
@@ -669,10 +728,12 @@ public class LuaTable extends LuaValue {
 	 */
 	public void sort(LuaValue comparator) {
 		int n = array.length;
-		while (n > 0 && array[n - 1] == null)
+		while (n > 0 && array[n - 1] == null) {
 			--n;
-		if (n > 1)
+		}
+		if (n > 1) {
 			heapSort(n, comparator);
+		}
 	}
 
 	private void heapSort(int count, LuaValue cmpfunc) {
@@ -684,28 +745,32 @@ public class LuaTable extends LuaValue {
 	}
 
 	private void heapify(int count, LuaValue cmpfunc) {
-		for (int start = count / 2 - 1; start >= 0; --start)
+		for (int start = count / 2 - 1; start >= 0; --start) {
 			siftDown(start, count - 1, cmpfunc);
+		}
 	}
 
 	private void siftDown(int start, int end, LuaValue cmpfunc) {
 		for (int root = start; root * 2 + 1 <= end; ) {
 			int child = root * 2 + 1;
-			if (child < end && compare(child, child + 1, cmpfunc))
+			if (child < end && compare(child, child + 1, cmpfunc)) {
 				++child;
+			}
 			if (compare(root, child, cmpfunc)) {
 				swap(root, child);
 				root = child;
-			} else
+			} else {
 				return;
+			}
 		}
 	}
 
 	private boolean compare(int i, int j, LuaValue cmpfunc) {
 		LuaValue a = array[i];
 		LuaValue b = array[j];
-		if (a == null || b == null)
+		if (a == null || b == null) {
 			return false;
+		}
 		if (!cmpfunc.isnil()) {
 			return cmpfunc.call(a, b).toboolean();
 		} else {
@@ -729,8 +794,9 @@ public class LuaTable extends LuaValue {
 		LuaValue k = LuaValue.NIL;
 		for (int i = 0; true; i++) {
 			Varargs n = next(k);
-			if ((k = n.arg1()).isnil())
+			if ((k = n.arg1()).isnil()) {
 				return i;
+			}
 		}
 	}
 
@@ -741,12 +807,13 @@ public class LuaTable extends LuaValue {
 	 * @return array of keys in the table
 	 */
 	public LuaValue[] keys() {
-		Vector l = new Vector();
+		Vector<LuaValue> l = new Vector<>();
 		LuaValue k = LuaValue.NIL;
 		while (true) {
 			Varargs n = next(k);
-			if ((k = n.arg1()).isnil())
+			if ((k = n.arg1()).isnil()) {
 				break;
+			}
 			l.addElement(k);
 		}
 		LuaValue[] a = new LuaValue[l.size()];
@@ -755,10 +822,12 @@ public class LuaTable extends LuaValue {
 	}
 
 	// equality w/ metatable processing
+	@Override
 	public LuaValue eq(LuaValue val) {
 		return eq_b(val) ? TRUE : FALSE;
 	}
 
+	@Override
 	public boolean eq_b(LuaValue val) {
 		if (this == val) return true;
 		if (m_metatable == null || !val.istable()) return false;

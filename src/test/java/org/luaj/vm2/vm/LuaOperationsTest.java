@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.vm;
 
 import org.junit.Test;
@@ -58,6 +60,7 @@ public class LuaOperationsTest {
 	private final LuaValue stringdouble = LuaValue.valueOf(samplestringdouble);
 	private final LuaTable table = LuaValue.listOf(new LuaValue[]{LuaValue.valueOf("aaa"), LuaValue.valueOf("bbb")});
 	private final LuaValue somefunc = new ZeroArgFunction(table) {
+		@Override
 		public LuaValue call() {
 			return NONE;
 		}
@@ -218,6 +221,7 @@ public class LuaOperationsTest {
 		// function tests
 		{
 			LuaFunction f = new ZeroArgFunction(_G) {
+				@Override
 				public LuaValue call() {
 					return env.get("a");
 				}

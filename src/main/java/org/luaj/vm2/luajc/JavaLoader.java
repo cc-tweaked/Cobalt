@@ -34,7 +34,7 @@ public class JavaLoader extends ClassLoader {
 
 	private final LuaValue env;
 
-	private Map<String, byte[]> unloaded = new HashMap<String, byte[]>();
+	private Map<String, byte[]> unloaded = new HashMap<>();
 
 	public JavaLoader(LuaValue env) {
 		this.env = env;
@@ -64,14 +64,17 @@ public class JavaLoader extends ClassLoader {
 
 	public void include(JavaGen jg) {
 		unloaded.put(jg.classname, jg.bytecode);
-		for (int i = 0, n = jg.inners != null ? jg.inners.length : 0; i < n; i++)
+		for (int i = 0, n = jg.inners != null ? jg.inners.length : 0; i < n; i++) {
 			include(jg.inners[i]);
+		}
 	}
 
+	@Override
 	public Class findClass(String classname) throws ClassNotFoundException {
-		byte[] bytes = (byte[]) unloaded.get(classname);
-		if (bytes != null)
+		byte[] bytes = unloaded.get(classname);
+		if (bytes != null) {
 			return defineClass(classname, bytes, 0, bytes.length);
+		}
 		return super.findClass(classname);
 	}
 

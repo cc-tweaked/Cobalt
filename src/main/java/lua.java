@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
@@ -61,7 +63,7 @@ public class lua {
 		boolean processing = true;
 		boolean nodebug = false;
 		boolean luajc = false;
-		Vector libs = null;
+		Vector<String> libs = null;
 		try {
 			// stateful argument processing
 			for (int i = 0; i < args.length; i++) {
@@ -74,17 +76,19 @@ public class lua {
 				} else {
 					switch (args[i].charAt(1)) {
 						case 'e':
-							if (++i >= args.length)
+							if (++i >= args.length) {
 								usageExit();
+							}
 							// input script - defer to last stage
 							break;
 						case 'b':
 							luajc = true;
 							break;
 						case 'l':
-							if (++i >= args.length)
+							if (++i >= args.length) {
 								usageExit();
-							libs = libs != null ? libs : new Vector();
+							}
+							if (libs == null) libs = new Vector<>();
 							libs.addElement(args[i]);
 							break;
 						case 'i':
@@ -97,8 +101,9 @@ public class lua {
 							nodebug = true;
 							break;
 						case '-':
-							if (args[i].length() > 2)
+							if (args[i].length() > 2) {
 								usageExit();
+							}
 							processing = false;
 							break;
 						default:
@@ -109,14 +114,16 @@ public class lua {
 			}
 
 			// echo version
-			if (versioninfo)
+			if (versioninfo) {
 				System.out.println(version);
+			}
 
 			// new lua state
 			_G = nodebug ? JsePlatform.standardGlobals() : JsePlatform.debugGlobals();
 			if (luajc) LuaJC.install();
-			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++)
-				loadLibrary((String) libs.elementAt(i));
+			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++) {
+				loadLibrary(libs.elementAt(i));
+			}
 
 			// input script processing
 			processing = true;
@@ -143,8 +150,9 @@ public class lua {
 				}
 			}
 
-			if (interactive)
+			if (interactive) {
 				interactiveMode();
+			}
 
 		} catch (IOException ioe) {
 			System.err.println(ioe.toString());
@@ -186,8 +194,9 @@ public class lua {
 
 	private static Varargs setGlobalArg(String[] args, int i) {
 		LuaTable arg = LuaValue.tableOf();
-		for (int j = 0; j < args.length; j++)
+		for (int j = 0; j < args.length; j++) {
 			arg.set(j - i, LuaValue.valueOf(args[j]));
+		}
 		_G.set("arg", arg);
 		return _G.get("unpack").invoke(arg);
 	}
@@ -198,8 +207,9 @@ public class lua {
 			System.out.print("> ");
 			System.out.flush();
 			String line = reader.readLine();
-			if (line == null)
+			if (line == null) {
 				return;
+			}
 			processScript(new ByteArrayInputStream(line.getBytes()), "=stdin", null, 0);
 		}
 	}

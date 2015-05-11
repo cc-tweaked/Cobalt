@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib.jse;
 
 import org.luaj.vm2.LuaValue;
@@ -31,29 +33,12 @@ import org.luaj.vm2.lib.TwoArgFunction;
  * library.
  * <p>
  * It contains all lua math functions, including those not available on the JME platform.
- * See {@link org.luaj.lib.MathLib} for the exception list.
- * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new JseBaseLib());
- * _G.load(new PackageLib());
- * _G.load(new JseMathLib());
- * System.out.println( _G.get("math").get("sqrt").call( LuaValue.valueOf(2) ) );
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
+ * See {@link org.luaj.vm2.lib.MathLib} for the exception list.
  * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see JseMathLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
@@ -62,6 +47,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	public JseMathLib() {
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		LuaValue t = super.call(arg);
 		bind(t, JseMathLib1.class, new String[]{
@@ -74,6 +60,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	}
 
 	public static final class JseMathLib1 extends OneArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg) {
 			switch (opcode) {
 				case 0:
@@ -100,6 +87,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	}
 
 	public static final class JseMathLib2 extends TwoArgFunction {
+		@Override
 		public LuaValue call(LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
 				case 0:
@@ -114,6 +102,7 @@ public class JseMathLib extends org.luaj.vm2.lib.MathLib {
 	/**
 	 * Faster, better version of pow() used by arithmetic operator ^
 	 */
+	@Override
 	public double dpow_lib(double a, double b) {
 		return Math.pow(a, b);
 	}

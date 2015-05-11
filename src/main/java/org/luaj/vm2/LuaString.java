@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 
@@ -49,9 +51,9 @@ import java.util.Hashtable;
  * <p>
  * When Java Strings are used to initialize {@link LuaString} data, the UTF8 encoding is assumed.
  * The functions
- * {@link LuaString#lengthAsUtf8(char[]),
+ * {@link LuaString#lengthAsUtf8(char[])}
  * {@link LuaString#encodeToUtf8(char[], byte[], int)}, and
- * {@link LuaString#decodeAsUtf8(byte[], int, int)
+ * {@link LuaString#decodeAsUtf8(byte[], int, int)}
  * are used to convert back and forth between UTF8 byte arrays and character arrays.
  *
  * @see LuaValue
@@ -80,15 +82,15 @@ public class LuaString extends LuaValue {
 	 */
 	public final int m_length;
 
-	private static final Hashtable index_java = new Hashtable();
+	private static final Hashtable<Object, WeakReference<LuaString>> index_java = new Hashtable<>();
 
-	private final static LuaString index_get(Hashtable indextable, Object key) {
-		WeakReference w = (WeakReference) indextable.get(key);
-		return w != null ? (LuaString) w.get() : null;
+	private static LuaString index_get(Object key) {
+		WeakReference<LuaString> w = LuaString.index_java.get(key);
+		return w != null ? w.get() : null;
 	}
 
-	private final static void index_set(Hashtable indextable, Object key, LuaString value) {
-		indextable.put(key, new WeakReference(value));
+	private static void index_set(Object key, LuaString value) {
+		LuaString.index_java.put(key, new WeakReference<>(value));
 	}
 
 	/**
@@ -99,13 +101,13 @@ public class LuaString extends LuaValue {
 	 * @return {@link LuaString} with UTF8 bytes corresponding to the supplied String
 	 */
 	public static LuaString valueOf(String string) {
-		LuaString s = index_get(index_java, string);
+		LuaString s = index_get(string);
 		if (s != null) return s;
 		char[] c = string.toCharArray();
 		byte[] b = new byte[lengthAsUtf8(c)];
 		encodeToUtf8(c, b, 0);
 		s = valueOf(b, 0, b.length);
-		index_set(index_java, string, s);
+		index_set(string, s);
 		return s;
 	}
 
@@ -139,8 +141,9 @@ public class LuaString extends LuaValue {
 	public static LuaString valueOf(char[] bytes) {
 		int n = bytes.length;
 		byte[] b = new byte[n];
-		for (int i = 0; i < n; i++)
+		for (int i = 0; i < n; i++) {
 			b[i] = (byte) bytes[i];
+		}
 		return valueOf(b, 0, n);
 	}
 
@@ -167,7 +170,6 @@ public class LuaString extends LuaValue {
 	 * @param bytes  byte buffer
 	 * @param offset offset into the byte buffer
 	 * @param length length of the byte buffer
-	 * @return {@link LuaString} wrapping the byte buffer
 	 */
 	private LuaString(byte[] bytes, int offset, int length) {
 		this.m_bytes = bytes;
@@ -175,222 +177,272 @@ public class LuaString extends LuaValue {
 		this.m_length = length;
 	}
 
+	@Override
 	public boolean isstring() {
 		return true;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return s_metatable;
 	}
 
+	@Override
 	public int type() {
 		return LuaValue.TSTRING;
 	}
 
+	@Override
 	public String typename() {
 		return "string";
 	}
 
+	@Override
 	public String tojstring() {
 		return decodeAsUtf8(m_bytes, m_offset, m_length);
 	}
 
 	// get is delegated to the string library
+	@Override
 	public LuaValue get(LuaValue key) {
 		return s_metatable != null ? gettable(this, key) : StringLib.instance.get(key);
 	}
 
 	// unary operators
+	@Override
 	public LuaValue neg() {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? super.neg() : valueOf(-d);
 	}
 
 	// basic binary arithmetic
+	@Override
 	public LuaValue add(LuaValue rhs) {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? arithmt(ADD, rhs) : rhs.add(d);
 	}
 
+	@Override
 	public LuaValue add(double rhs) {
 		return valueOf(checkarith() + rhs);
 	}
 
+	@Override
 	public LuaValue add(int rhs) {
 		return valueOf(checkarith() + rhs);
 	}
 
+	@Override
 	public LuaValue sub(LuaValue rhs) {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? arithmt(SUB, rhs) : rhs.subFrom(d);
 	}
 
+	@Override
 	public LuaValue sub(double rhs) {
 		return valueOf(checkarith() - rhs);
 	}
 
+	@Override
 	public LuaValue sub(int rhs) {
 		return valueOf(checkarith() - rhs);
 	}
 
+	@Override
 	public LuaValue subFrom(double lhs) {
 		return valueOf(lhs - checkarith());
 	}
 
+	@Override
 	public LuaValue mul(LuaValue rhs) {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? arithmt(MUL, rhs) : rhs.mul(d);
 	}
 
+	@Override
 	public LuaValue mul(double rhs) {
 		return valueOf(checkarith() * rhs);
 	}
 
+	@Override
 	public LuaValue mul(int rhs) {
 		return valueOf(checkarith() * rhs);
 	}
 
+	@Override
 	public LuaValue pow(LuaValue rhs) {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? arithmt(POW, rhs) : rhs.powWith(d);
 	}
 
+	@Override
 	public LuaValue pow(double rhs) {
 		return MathLib.dpow(checkarith(), rhs);
 	}
 
+	@Override
 	public LuaValue pow(int rhs) {
 		return MathLib.dpow(checkarith(), rhs);
 	}
 
+	@Override
 	public LuaValue powWith(double lhs) {
 		return MathLib.dpow(lhs, checkarith());
 	}
 
+	@Override
 	public LuaValue powWith(int lhs) {
 		return MathLib.dpow(lhs, checkarith());
 	}
 
+	@Override
 	public LuaValue div(LuaValue rhs) {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? arithmt(DIV, rhs) : rhs.divInto(d);
 	}
 
+	@Override
 	public LuaValue div(double rhs) {
 		return LuaDouble.ddiv(checkarith(), rhs);
 	}
 
+	@Override
 	public LuaValue div(int rhs) {
 		return LuaDouble.ddiv(checkarith(), rhs);
 	}
 
+	@Override
 	public LuaValue divInto(double lhs) {
 		return LuaDouble.ddiv(lhs, checkarith());
 	}
 
+	@Override
 	public LuaValue mod(LuaValue rhs) {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? arithmt(MOD, rhs) : rhs.modFrom(d);
 	}
 
+	@Override
 	public LuaValue mod(double rhs) {
 		return LuaDouble.dmod(checkarith(), rhs);
 	}
 
+	@Override
 	public LuaValue mod(int rhs) {
 		return LuaDouble.dmod(checkarith(), rhs);
 	}
 
+	@Override
 	public LuaValue modFrom(double lhs) {
 		return LuaDouble.dmod(lhs, checkarith());
 	}
 
 	// relational operators, these only work with other strings
+	@Override
 	public LuaValue lt(LuaValue rhs) {
 		return rhs.strcmp(this) > 0 ? LuaValue.TRUE : FALSE;
 	}
 
+	@Override
 	public boolean lt_b(LuaValue rhs) {
 		return rhs.strcmp(this) > 0;
 	}
 
+	@Override
 	public boolean lt_b(int rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
+	@Override
 	public boolean lt_b(double rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
+	@Override
 	public LuaValue lteq(LuaValue rhs) {
 		return rhs.strcmp(this) >= 0 ? LuaValue.TRUE : FALSE;
 	}
 
+	@Override
 	public boolean lteq_b(LuaValue rhs) {
 		return rhs.strcmp(this) >= 0;
 	}
 
+	@Override
 	public boolean lteq_b(int rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
+	@Override
 	public boolean lteq_b(double rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
+	@Override
 	public LuaValue gt(LuaValue rhs) {
 		return rhs.strcmp(this) < 0 ? LuaValue.TRUE : FALSE;
 	}
 
+	@Override
 	public boolean gt_b(LuaValue rhs) {
 		return rhs.strcmp(this) < 0;
 	}
 
+	@Override
 	public boolean gt_b(int rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
+	@Override
 	public boolean gt_b(double rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
+	@Override
 	public LuaValue gteq(LuaValue rhs) {
 		return rhs.strcmp(this) <= 0 ? LuaValue.TRUE : FALSE;
 	}
 
+	@Override
 	public boolean gteq_b(LuaValue rhs) {
 		return rhs.strcmp(this) <= 0;
 	}
 
+	@Override
 	public boolean gteq_b(int rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
+	@Override
 	public boolean gteq_b(double rhs) {
 		typerror("attempt to compare string with number");
 		return false;
 	}
 
 	// concatenation
+	@Override
 	public LuaValue concat(LuaValue rhs) {
 		return rhs.concatTo(this);
 	}
 
+	@Override
 	public Buffer concat(Buffer rhs) {
 		return rhs.concatTo(this);
 	}
 
+	@Override
 	public LuaValue concatTo(LuaNumber lhs) {
 		return concatTo(lhs.strvalue());
 	}
 
+	@Override
 	public LuaValue concatTo(LuaString lhs) {
 		byte[] b = new byte[lhs.m_length + this.m_length];
 		System.arraycopy(lhs.m_bytes, lhs.m_offset, b, 0, lhs.m_length);
@@ -399,10 +451,12 @@ public class LuaString extends LuaValue {
 	}
 
 	// string comparison
+	@Override
 	public int strcmp(LuaValue lhs) {
 		return -lhs.strcmp(this);
 	}
 
+	@Override
 	public int strcmp(LuaString rhs) {
 		for (int i = 0, j = 0; i < m_length && j < rhs.m_length; ++i, ++j) {
 			if (m_bytes[m_offset + i] != rhs.m_bytes[rhs.m_offset + j]) {
@@ -417,127 +471,158 @@ public class LuaString extends LuaValue {
 	 */
 	private double checkarith() {
 		double d = scannumber(10);
-		if (Double.isNaN(d))
+		if (Double.isNaN(d)) {
 			aritherror();
+		}
 		return d;
 	}
 
+	@Override
 	public int checkint() {
 		return (int) (long) checkdouble();
 	}
 
+	@Override
 	public LuaInteger checkinteger() {
 		return valueOf(checkint());
 	}
 
+	@Override
 	public long checklong() {
 		return (long) checkdouble();
 	}
 
+	@Override
 	public double checkdouble() {
 		double d = scannumber(10);
-		if (Double.isNaN(d))
+		if (Double.isNaN(d)) {
 			argerror("number");
+		}
 		return d;
 	}
 
+	@Override
 	public LuaNumber checknumber() {
 		return valueOf(checkdouble());
 	}
 
+	@Override
 	public LuaNumber checknumber(String msg) {
 		double d = scannumber(10);
-		if (Double.isNaN(d))
+		if (Double.isNaN(d)) {
 			error(msg);
+		}
 		return valueOf(d);
 	}
 
+	@Override
 	public LuaValue tonumber() {
 		return tonumber(10);
 	}
 
+	@Override
 	public boolean isnumber() {
 		double d = scannumber(10);
 		return !Double.isNaN(d);
 	}
 
+	@Override
 	public boolean isint() {
 		double d = scannumber(10);
-		if (Double.isNaN(d))
+		if (Double.isNaN(d)) {
 			return false;
+		}
 		int i = (int) d;
 		return i == d;
 	}
 
+	@Override
 	public boolean islong() {
 		double d = scannumber(10);
-		if (Double.isNaN(d))
+		if (Double.isNaN(d)) {
 			return false;
+		}
 		long l = (long) d;
 		return l == d;
 	}
 
+	@Override
 	public byte tobyte() {
 		return (byte) toint();
 	}
 
+	@Override
 	public char tochar() {
 		return (char) toint();
 	}
 
+	@Override
 	public double todouble() {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? 0 : d;
 	}
 
+	@Override
 	public float tofloat() {
 		return (float) todouble();
 	}
 
+	@Override
 	public int toint() {
 		return (int) tolong();
 	}
 
+	@Override
 	public long tolong() {
 		return (long) todouble();
 	}
 
+	@Override
 	public short toshort() {
 		return (short) toint();
 	}
 
+	@Override
 	public double optdouble(double defval) {
 		return checknumber().checkdouble();
 	}
 
+	@Override
 	public int optint(int defval) {
 		return checknumber().checkint();
 	}
 
+	@Override
 	public LuaInteger optinteger(LuaInteger defval) {
 		return checknumber().checkinteger();
 	}
 
+	@Override
 	public long optlong(long defval) {
 		return checknumber().checklong();
 	}
 
+	@Override
 	public LuaNumber optnumber(LuaNumber defval) {
 		return checknumber().checknumber();
 	}
 
+	@Override
 	public LuaString optstring(LuaString defval) {
 		return this;
 	}
 
+	@Override
 	public LuaValue tostring() {
 		return this;
 	}
 
+	@Override
 	public String optjstring(String defval) {
 		return tojstring();
 	}
 
+	@Override
 	public LuaString strvalue() {
 		return this;
 	}
@@ -549,45 +634,53 @@ public class LuaString extends LuaValue {
 	public int hashCode() {
 		int h = m_length;  /* seed */
 		int step = (m_length >> 5) + 1;  /* if string is too long, don't hash all its chars */
-		for (int l1 = m_length; l1 >= step; l1 -= step)  /* compute hash */
+		for (int l1 = m_length; l1 >= step; l1 -= step)  /* compute hash */ {
 			h = h ^ ((h << 5) + (h >> 2) + (((int) m_bytes[m_offset + l1 - 1]) & 0x0FF));
+		}
 		return h;
 	}
 
 	// object comparison, used in key comparison
 	public boolean equals(Object o) {
-		if (o instanceof LuaString) {
-			return raweq((LuaString) o);
-		}
-		return false;
+		return o instanceof LuaString && raweq((LuaString) o);
 	}
 
 	// equality w/ metatable processing
+	@Override
 	public LuaValue eq(LuaValue val) {
 		return val.raweq(this) ? TRUE : FALSE;
 	}
 
+	@Override
 	public boolean eq_b(LuaValue val) {
 		return val.raweq(this);
 	}
 
 	// equality w/o metatable processing
+	@Override
 	public boolean raweq(LuaValue val) {
 		return val.raweq(this);
 	}
 
+	@Override
 	public boolean raweq(LuaString s) {
-		if (this == s)
+		if (this == s) {
 			return true;
-		if (s.m_length != m_length)
+		}
+		if (s.m_length != m_length) {
 			return false;
-		if (s.m_bytes == m_bytes && s.m_offset == m_offset)
+		}
+		if (s.m_bytes == m_bytes && s.m_offset == m_offset) {
 			return true;
-		if (s.hashCode() != hashCode())
+		}
+		if (s.hashCode() != hashCode()) {
 			return false;
-		for (int i = 0; i < m_length; i++)
-			if (s.m_bytes[s.m_offset + i] != m_bytes[m_offset + i])
+		}
+		for (int i = 0; i < m_length; i++) {
+			if (s.m_bytes[s.m_offset + i] != m_bytes[m_offset + i]) {
 				return false;
+			}
+		}
 		return true;
 	}
 
@@ -596,11 +689,14 @@ public class LuaString extends LuaValue {
 	}
 
 	public static boolean equals(byte[] a, int i, byte[] b, int j, int n) {
-		if (a.length < i + n || b.length < j + n)
+		if (a.length < i + n || b.length < j + n) {
 			return false;
-		while (--n >= 0)
-			if (a[i++] != b[j++])
+		}
+		while (--n >= 0) {
+			if (a[i++] != b[j++]) {
 				return false;
+			}
+		}
 		return true;
 	}
 
@@ -608,10 +704,12 @@ public class LuaString extends LuaValue {
 		writer.write(m_bytes, m_offset + i, len);
 	}
 
+	@Override
 	public LuaValue len() {
 		return LuaInteger.valueOf(m_length);
 	}
 
+	@Override
 	public int length() {
 		return m_length;
 	}
@@ -621,15 +719,18 @@ public class LuaString extends LuaValue {
 	}
 
 	public int charAt(int index) {
-		if (index < 0 || index >= m_length)
+		if (index < 0 || index >= m_length) {
 			throw new IndexOutOfBoundsException();
+		}
 		return luaByte(index);
 	}
 
+	@Override
 	public String checkjstring() {
 		return tojstring();
 	}
 
+	@Override
 	public LuaString checkstring() {
 		return this;
 	}
@@ -683,8 +784,9 @@ public class LuaString extends LuaValue {
 	 */
 	public int indexOf(byte b, int start) {
 		for (int i = 0, j = m_offset + start; i < m_length; ++i) {
-			if (m_bytes[j++] == b)
+			if (m_bytes[j++] == b) {
 				return i;
+			}
 		}
 		return -1;
 	}
@@ -768,9 +870,11 @@ public class LuaString extends LuaValue {
 	public static int lengthAsUtf8(char[] chars) {
 		int i, b;
 		char c;
-		for (i = b = chars.length; --i >= 0; )
-			if ((c = chars[i]) >= 0x80)
+		for (i = b = chars.length; --i >= 0; ) {
+			if ((c = chars[i]) >= 0x80) {
 				b += (c >= 0x800) ? 2 : 1;
+			}
+		}
 		return b;
 	}
 
@@ -820,11 +924,15 @@ public class LuaString extends LuaValue {
 			if (c >= 0) continue;
 			if (((c & 0xE0) == 0xC0)
 				&& i < j
-				&& (m_bytes[i++] & 0xC0) == 0x80) continue;
+				&& (m_bytes[i++] & 0xC0) == 0x80) {
+				continue;
+			}
 			if (((c & 0xF0) == 0xE0)
 				&& i + 1 < j
 				&& (m_bytes[i++] & 0xC0) == 0x80
-				&& (m_bytes[i++] & 0xC0) == 0x80) continue;
+				&& (m_bytes[i++] & 0xC0) == 0x80) {
+				continue;
+			}
 			return false;
 		}
 		return true;
@@ -853,10 +961,15 @@ public class LuaString extends LuaValue {
 	public double scannumber(int base) {
 		if (base >= 2 && base <= 36) {
 			int i = m_offset, j = m_offset + m_length;
-			while (i < j && m_bytes[i] == ' ') ++i;
-			while (i < j && m_bytes[j - 1] == ' ') --j;
-			if (i >= j)
+			while (i < j && m_bytes[i] == ' ') {
+				++i;
+			}
+			while (i < j && m_bytes[j - 1] == ' ') {
+				--j;
+			}
+			if (i >= j) {
 				return Double.NaN;
+			}
 			if ((base == 10 || base == 16) && (m_bytes[i] == '0' && i + 1 < j && (m_bytes[i + 1] == 'x' || m_bytes[i + 1] == 'X'))) {
 				base = 16;
 				i += 2;
@@ -883,8 +996,9 @@ public class LuaString extends LuaValue {
 		for (int i = (neg ? start + 1 : start); i < end; i++) {
 			int digit = m_bytes[i] - (base <= 10 || (m_bytes[i] >= '0' && m_bytes[i] <= '9') ? '0' :
 				m_bytes[i] >= 'A' && m_bytes[i] <= 'Z' ? ('A' - 10) : ('a' - 10));
-			if (digit < 0 || digit >= base)
+			if (digit < 0 || digit >= base) {
 				return Double.NaN;
+			}
 			x = x * base + digit;
 		}
 		return neg ? -x : x;
@@ -923,8 +1037,9 @@ public class LuaString extends LuaValue {
 			}
 		}
 		char[] c = new char[end - start];
-		for (int i = start; i < end; i++)
+		for (int i = start; i < end; i++) {
 			c[i - start] = (char) m_bytes[i];
+		}
 		try {
 			return Double.parseDouble(new String(c));
 		} catch (Exception e) {

@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.vm;
 
 import org.junit.Test;
@@ -54,6 +56,7 @@ public class TypeTest {
 	private final LuaValue stringdouble = LuaValue.valueOf(samplestringdouble);
 	private final LuaTable table = LuaValue.tableOf();
 	private final LuaFunction somefunc = new ZeroArgFunction() {
+		@Override
 		public LuaValue call() {
 			return NONE;
 		}
@@ -569,8 +572,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod(method, argtype).invoke(obj, argument);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);
@@ -671,22 +675,22 @@ public class TypeTest {
 	@Test
 	public void testOptInt() {
 		assertEquals(33, somenil.optint(33));
-		throwsError(sometrue, "optint", int.class, new Integer(33));
-		throwsError(somefalse, "optint", int.class, new Integer(33));
+		throwsError(sometrue, "optint", int.class, 33);
+		throwsError(somefalse, "optint", int.class, 33);
 		assertEquals(0, zero.optint(33));
 		assertEquals(sampleint, intint.optint(33));
 		assertEquals((int) samplelong, longdouble.optint(33));
 		assertEquals((int) sampledouble, doubledouble.optint(33));
-		throwsError(somefunc, "optint", int.class, new Integer(33));
-		throwsError(someclosure, "optint", int.class, new Integer(33));
-		throwsError(stringstring, "optint", int.class, new Integer(33));
+		throwsError(somefunc, "optint", int.class, 33);
+		throwsError(someclosure, "optint", int.class, 33);
+		throwsError(stringstring, "optint", int.class, 33);
 		assertEquals(sampleint, stringint.optint(33));
 		assertEquals((int) samplelong, stringlong.optint(33));
 		assertEquals((int) sampledouble, stringdouble.optint(33));
-		throwsError(thread, "optint", int.class, new Integer(33));
-		throwsError(table, "optint", int.class, new Integer(33));
-		throwsError(userdataobj, "optint", int.class, new Integer(33));
-		throwsError(userdatacls, "optint", int.class, new Integer(33));
+		throwsError(thread, "optint", int.class, 33);
+		throwsError(table, "optint", int.class, 33);
+		throwsError(userdataobj, "optint", int.class, 33);
+		throwsError(userdatacls, "optint", int.class, 33);
 	}
 
 	@Test
@@ -713,22 +717,22 @@ public class TypeTest {
 	@Test
 	public void testOptLong() {
 		assertEquals(33L, somenil.optlong(33));
-		throwsError(sometrue, "optlong", long.class, new Long(33));
-		throwsError(somefalse, "optlong", long.class, new Long(33));
+		throwsError(sometrue, "optlong", long.class, (long) 33);
+		throwsError(somefalse, "optlong", long.class, (long) 33);
 		assertEquals(0L, zero.optlong(33));
 		assertEquals(sampleint, intint.optlong(33));
 		assertEquals(samplelong, longdouble.optlong(33));
 		assertEquals((long) sampledouble, doubledouble.optlong(33));
-		throwsError(somefunc, "optlong", long.class, new Long(33));
-		throwsError(someclosure, "optlong", long.class, new Long(33));
-		throwsError(stringstring, "optlong", long.class, new Long(33));
+		throwsError(somefunc, "optlong", long.class, (long) 33);
+		throwsError(someclosure, "optlong", long.class, (long) 33);
+		throwsError(stringstring, "optlong", long.class, (long) 33);
 		assertEquals(sampleint, stringint.optlong(33));
 		assertEquals(samplelong, stringlong.optlong(33));
 		assertEquals((long) sampledouble, stringdouble.optlong(33));
-		throwsError(thread, "optlong", long.class, new Long(33));
-		throwsError(table, "optlong", long.class, new Long(33));
-		throwsError(userdataobj, "optlong", long.class, new Long(33));
-		throwsError(userdatacls, "optlong", long.class, new Long(33));
+		throwsError(thread, "optlong", long.class, (long) 33);
+		throwsError(table, "optlong", long.class, (long) 33);
+		throwsError(userdataobj, "optlong", long.class, (long) 33);
+		throwsError(userdatacls, "optlong", long.class, (long) 33);
 	}
 
 	@Test
@@ -870,8 +874,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod("optuserdata", Class.class, Object.class).invoke(obj, arg1, arg2);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);
@@ -941,8 +946,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod(method).invoke(obj);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);
@@ -1233,8 +1239,9 @@ public class TypeTest {
 		try {
 			obj.getClass().getMethod("checkuserdata", Class.class).invoke(obj, arg);
 		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError))
+			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
+			}
 			return; // pass
 		} catch (Exception e) {
 			fail("bad exception: " + e);
@@ -1297,8 +1304,8 @@ public class TypeTest {
 	/**
 	 * Really bad function to make it easier to compare doubles
 	 *
-	 * @param a
-	 * @param b
+	 * @param a First double
+	 * @param b Second double
 	 */
 	public static void assertDoubleEquals(double a, double b) {
 		assertEquals(a, b, 1e-10);

@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,13 +19,17 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
+
+import org.luaj.vm2.compiler.LuaC;
+import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 
 /**
  * Class to manage loading of {@link Prototype} instances.
@@ -41,11 +46,9 @@ import java.io.InputStream;
  * This should work regardless of which {@link LuaCompiler}
  * has been installed.
  * <p>
- * <p>
  * Prior to loading code, a compiler should be installed.
  * <p>
- * By default, when using {@link JsePlatform} or {@JmePlatform}
- * to construct globals, the {@link LuaC} compiler is installed.
+ * By default, when using {@link JsePlatform} to construct globals, the {@link LuaC} compiler is installed.
  * <p>
  * To override the default compiler with, say, the {@link LuaJC}
  * lua-to-java bytecode compiler, install it before loading,
@@ -108,9 +111,13 @@ public class LoadState {
 		/**
 		 * Load into a Closure or LuaFunction from a Stream and initializes the environment
 		 *
-		 * @throws IOException
+		 * @param stream   Stream to read
+		 * @param filename Name of chunk
+		 * @param env      Environment to load
+		 * @return The loaded function
+		 * @throws IOException On stream read error
 		 */
-		public LuaFunction load(InputStream stream, String filename, LuaValue env) throws IOException;
+		LuaFunction load(InputStream stream, String filename, LuaValue env) throws IOException;
 	}
 
 	/**
@@ -195,19 +202,22 @@ public class LoadState {
 	 */
 	int[] loadIntArray() throws IOException {
 		int n = loadInt();
-		if (n == 0)
+		if (n == 0) {
 			return NOINTS;
+		}
 
 		// read all data at once
 		int m = n << 2;
-		if (buf.length < m)
+		if (buf.length < m) {
 			buf = new byte[m];
+		}
 		is.readFully(buf, 0, m);
 		int[] array = new int[n];
-		for (int i = 0, j = 0; i < n; ++i, j += 4)
+		for (int i = 0, j = 0; i < n; ++i, j += 4) {
 			array[i] = luacLittleEndian ?
 				(buf[j + 3] << 24) | ((0xff & buf[j + 2]) << 16) | ((0xff & buf[j + 1]) << 8) | (0xff & buf[j + 0]) :
 				(buf[j + 0] << 24) | ((0xff & buf[j + 1]) << 16) | ((0xff & buf[j + 2]) << 8) | (0xff & buf[j + 3]);
+		}
 
 		return array;
 	}
@@ -236,8 +246,9 @@ public class LoadState {
 	 */
 	LuaString loadString() throws IOException {
 		int size = this.luacSizeofSizeT == 8 ? (int) loadInt64() : loadInt();
-		if (size == 0)
+		if (size == 0) {
 			return null;
+		}
 		byte[] bytes = new byte[size];
 		is.readFully(bytes, 0, size);
 		return LuaString.valueOf(bytes, 0, bytes.length - 1);
@@ -317,8 +328,9 @@ public class LoadState {
 
 		n = loadInt();
 		Prototype[] protos = n > 0 ? new Prototype[n] : NOPROTOS;
-		for (int i = 0; i < n; i++)
+		for (int i = 0; i < n; i++) {
 			protos[i] = loadFunction(f.source);
+		}
 		f.p = protos;
 	}
 
@@ -351,14 +363,15 @@ public class LoadState {
 	 *
 	 * @param p name of the source
 	 * @return {@link Prototype} instance that was loaded
-	 * @throws IOException
+	 * @throws IOException On stream read errors
 	 */
 	public Prototype loadFunction(LuaString p) throws IOException {
 		Prototype f = new Prototype();
 //		this.L.push(f);
 		f.source = loadString();
-		if (f.source == null)
+		if (f.source == null) {
 			f.source = p;
+		}
 		f.linedefined = loadInt();
 		f.lastlinedefined = loadInt();
 		f.nups = is.readUnsignedByte();
@@ -396,20 +409,21 @@ public class LoadState {
 	/**
 	 * Load lua in either binary or text form from an input stream.
 	 *
-	 * @param firstByte the first byte of the input stream
-	 * @param stream    InputStream to read, after having read the first byte already
-	 * @param name      Name to apply to the loaded chunk
+	 * @param stream InputStream to read, after having read the first byte already
+	 * @param name   Name to apply to the loaded chunk
+	 * @param env    Environment to load into
 	 * @return {@link Prototype} that was loaded
 	 * @throws IllegalArgumentException if the signature is bac
 	 * @throws IOException              if an IOException occurs
 	 */
 	public static LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
-		if (compiler != null)
+		if (compiler != null) {
 			return compiler.load(stream, name, env);
-		else {
+		} else {
 			int firstByte = stream.read();
-			if (firstByte != LUA_SIGNATURE[0])
+			if (firstByte != LUA_SIGNATURE[0]) {
 				throw new LuaError("no compiler");
+			}
 			Prototype p = loadBinaryChunk(firstByte, stream, name);
 			return new LuaClosure(p, env);
 		}
@@ -431,8 +445,9 @@ public class LoadState {
 		if (firstByte != LUA_SIGNATURE[0]
 			|| stream.read() != LUA_SIGNATURE[1]
 			|| stream.read() != LUA_SIGNATURE[2]
-			|| stream.read() != LUA_SIGNATURE[3])
+			|| stream.read() != LUA_SIGNATURE[3]) {
 			throw new IllegalArgumentException("bad signature");
+		}
 
 		// load file as a compiled chunk
 		String sname = getSourceName(name);
@@ -459,10 +474,11 @@ public class LoadState {
 	 */
 	public static String getSourceName(String name) {
 		String sname = name;
-		if (name.startsWith("@") || name.startsWith("="))
+		if (name.startsWith("@") || name.startsWith("=")) {
 			sname = name.substring(1);
-		else if (name.startsWith("\033"))
+		} else if (name.startsWith("\033")) {
 			sname = SOURCE_BINARY_STRING;
+		}
 		return sname;
 	}
 

@@ -48,7 +48,9 @@ public class CompileTestHelper {
 		byte[] buffer = new byte[2048];
 
 		int n;
-		while ((n = is.read(buffer)) >= 0) outputStream.write(buffer, 0, n);
+		while ((n = is.read(buffer)) >= 0) {
+			outputStream.write(buffer, 0, n);
+		}
 		is.close();
 
 		return outputStream.toByteArray();

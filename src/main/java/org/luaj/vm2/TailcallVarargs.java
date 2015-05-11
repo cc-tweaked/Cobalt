@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2010-2011 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,8 +19,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
+
+import org.luaj.vm2.luajc.LuaJC;
 
 /**
  * Subclass of {@link Varargs} that represents a lua tail call
@@ -57,10 +61,12 @@ public class TailcallVarargs extends Varargs {
 		this.args = LuaValue.varargsOf(object, args);
 	}
 
+	@Override
 	public boolean isTailcall() {
 		return true;
 	}
 
+	@Override
 	public Varargs eval() {
 		while (result == null) {
 			Varargs r = func.onInvoke(args);
@@ -77,21 +83,27 @@ public class TailcallVarargs extends Varargs {
 		return result;
 	}
 
+	@Override
 	public LuaValue arg(int i) {
-		if (result == null)
+		if (result == null) {
 			eval();
+		}
 		return result.arg(i);
 	}
 
+	@Override
 	public LuaValue arg1() {
-		if (result == null)
+		if (result == null) {
 			eval();
+		}
 		return result.arg1();
 	}
 
+	@Override
 	public int narg() {
-		if (result == null)
+		if (result == null) {
 			eval();
+		}
 		return result.narg();
 	}
 }

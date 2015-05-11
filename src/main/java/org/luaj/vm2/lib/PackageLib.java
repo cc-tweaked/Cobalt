@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2010-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,10 +19,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
+import org.luaj.vm2.lib.jse.JseBaseLib;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -30,24 +33,6 @@ import java.io.PrintStream;
  * Subclass of {@link LibFunction} which implements the lua standard package and module
  * library functions.
  * <p>
- * <p>
- * Typically, this library is included as part of a call to either
- * {@link JsePlatform#standardGlobals()} or {@link JmePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new BaseLib());
- * _G.load(new PackageLib());
- * System.out.println( _G.get("require").call(LuaValue.valueOf("hyperbolic")) );
- * } </pre>
- * In practice, the first 4 lines of the above are minimal requirements to get
- * and initialize a globals table capable of basic reqire, print, and other functions,
- * so it is much more convenient to use the {@link JsePlatform} and {@link JmePlatform}
- * utility classes instead.
- * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  * However, the default filesystem search semantics are different and delegated to the bas library
  * as outlined in the {@link BaseLib} and {@link JseBaseLib} documetnation.
@@ -55,8 +40,6 @@ import java.io.PrintStream;
  * @see LibFunction
  * @see BaseLib
  * @see JseBaseLib
- * @see JsePlatform
- * @see JmePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.3">http://www.lua.org/manual/5.1/manual.html#5.3</a>
  */
 public class PackageLib extends OneArgFunction {
@@ -112,6 +95,7 @@ public class PackageLib extends OneArgFunction {
 		instance = this;
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 		env.set("require", new PkgLib1(env, "require", OP_REQUIRE, this));
 		env.set("module", new PkgLibV(env, "module", OP_MODULE, this));
@@ -140,6 +124,7 @@ public class PackageLib extends OneArgFunction {
 			this.lib = lib;
 		}
 
+		@Override
 		public LuaValue call(LuaValue arg) {
 			switch (opcode) {
 				case OP_REQUIRE:
@@ -147,8 +132,9 @@ public class PackageLib extends OneArgFunction {
 				case OP_SEEALL: {
 					LuaTable t = arg.checktable();
 					LuaValue m = t.getmetatable();
-					if (m == null)
+					if (m == null) {
 						t.setmetatable(m = tableOf());
+					}
 					m.set(INDEX, LuaThread.getGlobals());
 					return NONE;
 				}
@@ -167,6 +153,7 @@ public class PackageLib extends OneArgFunction {
 			this.lib = lib;
 		}
 
+		@Override
 		public Varargs invoke(Varargs args) {
 			switch (opcode) {
 				case OP_MODULE:
@@ -189,6 +176,9 @@ public class PackageLib extends OneArgFunction {
 
 	/**
 	 * Allow packages to mark themselves as loaded
+	 *
+	 * @param name  Name of package
+	 * @param value Value of package
 	 */
 	public void setIsLoaded(String name, LuaTable value) {
 		LOADED.set(name, value);
@@ -198,6 +188,7 @@ public class PackageLib extends OneArgFunction {
 		PACKAGE.set(_PATH, valueOf(newLuaPath));
 	}
 
+	@Override
 	public String tojstring() {
 		return "package";
 	}
@@ -225,6 +216,9 @@ public class PackageLib extends OneArgFunction {
 	 * <p>
 	 * This function may receive optional options after the module name, where
 	 * each option is a function to be applied over the module.
+	 *
+	 * @param args The arguments to set it up with
+	 * @return {@link LuaValue#NONE}
 	 */
 	public Varargs module(Varargs args) {
 		LuaString modname = args.checkstring(1);
@@ -236,11 +230,12 @@ public class PackageLib extends OneArgFunction {
 		    /* try global variable (and create one if it does not exist) */
 			LuaValue globals = LuaThread.getGlobals();
 			module = findtable(globals, modname);
-			if (module == null)
+			if (module == null) {
 				error("name conflict for module '" + modname + "'");
+			}
 			LOADED.set(modname, module);
 		} else {
-			module = (LuaTable) value;
+			module = value;
 		}
 
 
@@ -252,15 +247,18 @@ public class PackageLib extends OneArgFunction {
 
 		// set the environment of the current function
 		LuaFunction f = LuaThread.getCallstackFunction(1);
-		if (f == null)
+		if (f == null) {
 			error("no calling function");
-		if (!f.isclosure())
+		}
+		if (!f.isclosure()) {
 			error("'module' not called from a Lua function");
+		}
 		f.setfenv(module);
 
 		// apply the functions
-		for (int i = 2; i <= n; i++)
+		for (int i = 2; i <= n; i++) {
 			args.arg(i).call(module);
+		}
 
 		// returns no results
 		return NONE;
@@ -271,12 +269,13 @@ public class PackageLib extends OneArgFunction {
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
 	 */
-	private static final LuaValue findtable(LuaValue table, LuaString fname) {
+	private static LuaValue findtable(LuaValue table, LuaString fname) {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
-			if (e < 0)
+			if (e < 0) {
 				e = fname.m_length;
+			}
 			LuaString key = fname.substring(b, e);
 			LuaValue val = table.rawget(key);
 			if (val.isnil()) { /* no such field? */
@@ -292,7 +291,7 @@ public class PackageLib extends OneArgFunction {
 		return table;
 	}
 
-	private static final void modinit(LuaValue module, LuaString modname) {
+	private static void modinit(LuaValue module, LuaString modname) {
 		/* module._M = module */
 		module.set(_M, module);
 		int e = modname.lastIndexOf(_DOT);
@@ -325,19 +324,23 @@ public class PackageLib extends OneArgFunction {
 	 * <p>
 	 * If there is any error loading or running the module, or if it cannot find any loader for
 	 * the module, then require signals an error.
+	 *
+	 * @param arg Module name
+	 * @return The loaded value
 	 */
 	public LuaValue require(LuaValue arg) {
 		LuaString name = arg.checkstring();
 		LuaValue loaded = LOADED.get(name);
 		if (loaded.toboolean()) {
-			if (loaded == _SENTINEL)
+			if (loaded == _SENTINEL) {
 				error("loop or previous error loading module '" + name + "'");
+			}
 			return loaded;
 		}
 
 		/* else must load it; iterate over available loaders */
 		LuaTable tbl = PACKAGE.get(_LOADERS).checktable();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		LuaValue chunk = null;
 		for (int i = 1; true; i++) {
 			LuaValue loader = tbl.get(i);
@@ -347,19 +350,22 @@ public class PackageLib extends OneArgFunction {
 
 		    /* call loader with module name as argument */
 			chunk = loader.call(name);
-			if (chunk.isfunction())
+			if (chunk.isfunction()) {
 				break;
-			if (chunk.isstring())
+			}
+			if (chunk.isstring()) {
 				sb.append(chunk.tojstring());
+			}
 		}
 
 		// load the module using the loader
 		LOADED.set(name, _SENTINEL);
 		LuaValue result = chunk.call(name);
-		if (!result.isnil())
+		if (!result.isnil()) {
 			LOADED.set(name, result);
-		else if ((result = LOADED.get(name)) == _SENTINEL)
+		} else if ((result = LOADED.get(name)) == _SENTINEL) {
 			LOADED.set(name, result = LuaValue.TRUE);
+		}
 		return result;
 	}
 
@@ -384,8 +390,9 @@ public class PackageLib extends OneArgFunction {
 
 		// get package path
 		LuaValue pp = PACKAGE.get(_PATH);
-		if (!pp.isstring())
+		if (!pp.isstring()) {
 			return valueOf("package.path is not a string");
+		}
 		String path = pp.tojstring();
 
 		// check the path elements
@@ -398,8 +405,9 @@ public class PackageLib extends OneArgFunction {
 			// find next template
 			int b = e + 1;
 			e = path.indexOf(';', b);
-			if (e < 0)
+			if (e < 0) {
 				e = path.length();
+			}
 			String template = path.substring(b, e);
 
 			// create filename
@@ -411,13 +419,15 @@ public class PackageLib extends OneArgFunction {
 
 			// try loading the file
 			Varargs v = BaseLib.loadFile(filename);
-			if (v.arg1().isfunction())
+			if (v.arg1().isfunction()) {
 				return v.arg1();
+			}
 
 			// report error
-			if (sb == null)
+			if (sb == null) {
 				sb = new StringBuffer();
-			sb.append("\n\t'" + filename + "': " + v.arg(2));
+			}
+			sb.append("\n\t'").append(filename).append("': ").append(v.arg(2));
 		}
 		return valueOf(sb.toString());
 	}
@@ -441,16 +451,20 @@ public class PackageLib extends OneArgFunction {
 
 	/**
 	 * Convert lua filename to valid class name
+	 *
+	 * @param filename Name of the file
+	 * @return The appropriate class name
 	 */
-	public static final String toClassname(String filename) {
+	public static String toClassname(String filename) {
 		int n = filename.length();
 		int j = n;
-		if (filename.endsWith(".lua"))
+		if (filename.endsWith(".lua")) {
 			j -= 4;
+		}
 		for (int k = 0; k < j; k++) {
 			char c = filename.charAt(k);
 			if ((!isClassnamePart(c)) || (c == '/') || (c == '\\')) {
-				StringBuffer sb = new StringBuffer(j);
+				StringBuilder sb = new StringBuilder(j);
 				for (int i = 0; i < j; i++) {
 					c = filename.charAt(i);
 					sb.append(
@@ -463,9 +477,10 @@ public class PackageLib extends OneArgFunction {
 		return n == j ? filename : filename.substring(0, j);
 	}
 
-	private static final boolean isClassnamePart(char c) {
-		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
+	private static boolean isClassnamePart(char c) {
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
 			return true;
+		}
 		switch (c) {
 			case '.':
 			case '$':

@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.table;
 
 import org.junit.Test;
@@ -44,12 +46,13 @@ public class TableTest {
 	}
 
 	private LuaValue[] keys(LuaTable t) {
-		ArrayList<LuaValue> l = new ArrayList<LuaValue>();
+		ArrayList<LuaValue> l = new ArrayList<>();
 		LuaValue k = LuaValue.NIL;
 		while (true) {
 			Varargs n = t.next(k);
-			if ((k = n.arg1()).isnil())
+			if ((k = n.arg1()).isnil()) {
 				break;
+			}
 			l.add(k);
 		}
 		return l.toArray(new LuaValue[t.length()]);
@@ -278,7 +281,7 @@ public class TableTest {
 		}
 	}
 
-	private static void compareLists(LuaTable t, Vector v) {
+	private static void compareLists(LuaTable t, Vector<LuaString> v) {
 		int n = v.size();
 		assertEquals(v.size(), t.length());
 		for (int j = 0; j < n; j++) {
@@ -292,7 +295,7 @@ public class TableTest {
 	@Test
 	public void testInsertBeginningOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaValue.valueOf("Test Value! " + i);
@@ -305,7 +308,7 @@ public class TableTest {
 	@Test
 	public void testInsertEndOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaValue.valueOf("Test Value! " + i);
@@ -318,7 +321,7 @@ public class TableTest {
 	@Test
 	public void testInsertMiddleOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaValue.valueOf("Test Value! " + i);
@@ -329,7 +332,7 @@ public class TableTest {
 		}
 	}
 
-	private static void prefillLists(LuaTable t, Vector v) {
+	private static void prefillLists(LuaTable t, Vector<LuaString> v) {
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaValue.valueOf("Test Value! " + i);
 			t.insert(0, test);
@@ -340,7 +343,7 @@ public class TableTest {
 	@Test
 	public void testRemoveBeginningOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
 			t.remove(1);
@@ -352,7 +355,7 @@ public class TableTest {
 	@Test
 	public void testRemoveEndOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
 			t.remove(0);
@@ -364,7 +367,7 @@ public class TableTest {
 	@Test
 	public void testRemoveMiddleOfList() {
 		LuaTable t = new_Table();
-		Vector v = new Vector();
+		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
 			int m = v.size() / 2;

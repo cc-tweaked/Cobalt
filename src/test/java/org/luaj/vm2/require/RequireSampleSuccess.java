@@ -11,6 +11,7 @@ public class RequireSampleSuccess extends ZeroArgFunction {
 	public RequireSampleSuccess() {
 	}
 
+	@Override
 	public LuaValue call() {
 		return LuaValue.valueOf("require-sample-success");
 	}

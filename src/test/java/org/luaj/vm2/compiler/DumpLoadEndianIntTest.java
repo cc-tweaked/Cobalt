@@ -95,13 +95,15 @@ public class DumpLoadEndianIntTest {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try {
 				DumpState.dump(p, baos, stripDebug, numberFormat, littleEndian);
-				if (!shouldPass)
+				if (!shouldPass) {
 					fail("dump should not have succeeded");
+				}
 			} catch (Exception e) {
-				if (shouldPass)
+				if (shouldPass) {
 					fail("dump threw " + e);
-				else
+				} else {
 					return;
+				}
 			}
 			byte[] dumped = baos.toByteArray();
 

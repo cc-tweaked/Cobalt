@@ -1,43 +1,39 @@
 apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
 
-sourceCompatibility = 1.8
+targetCompatibility = sourceCompatibility = 1.7
+compileTestJava.sourceCompatibility = compileTestJava.targetCompatibility = 1.8
 version = '0.1'
 
 repositories {
 	mavenCentral()
+	maven {
+		name = "squiddev"
+		url = "http://maven.bonzodandd.co.uk"
+	}
 }
 
 dependencies {
-	// Core Libraries
-	compile group: 'org.ow2.asm', name: 'asm-all', version: '5.+'
-	compile group: 'org.apache.bcel', name: 'bcel', version: '5.2'
-	testCompile group: 'junit', name: 'junit', version: '4.+'
-}
+	compile 'org.apache.bcel:bcel:5.2'
+	testCompile 'junit:junit:4.+'
 
-uploadArchives {
-	repositories {
-		flatDir {
-			dirs 'build'
-		}
+	compile('org.squiddev:luaj.api:1.+') {
+		exclude group: '*'
 	}
 }
 
-test {
-	filter {
-		includeTestsMatching "org.luaj.*"
-	}
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
 
-	// --tests org.luaj.vm2.AllTests
-	// include "org.luaj.vm2.AllTests"
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
 
-	beforeTest { descriptor ->
-		logger.lifecycle("Running test: " + descriptor)
-	}
+artifacts {
+	archives jar
 
-	// listen to standard out and standard error of the test JVM(s)
-	/*onOutput { descriptor, event ->
-		logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message)
-	}*/
+	archives sourcesJar
+	archives javadocJar
 }

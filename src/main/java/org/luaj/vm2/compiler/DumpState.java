@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.compiler;
 
 import org.luaj.vm2.LocVars;
@@ -34,7 +36,7 @@ import java.io.OutputStream;
 public class DumpState {
 
 	/**
-	 * mark for precompiled code (`<esc>Lua')
+	 * mark for precompiled code (\033Lua)
 	 */
 	public static final String LUA_SIGNATURE = "\033Lua";
 
@@ -141,8 +143,9 @@ public class DumpState {
 		final int[] code = f.code;
 		int n = code.length;
 		dumpInt(n);
-		for (int i = 0; i < n; i++)
-			dumpInt(code[i]);
+		for (int aCode : code) {
+			dumpInt(aCode);
+		}
 	}
 
 	void dumpConstants(final Prototype f) throws IOException {
@@ -166,8 +169,9 @@ public class DumpState {
 							dumpDouble(o.todouble());
 							break;
 						case NUMBER_FORMAT_INTS_ONLY:
-							if (!ALLOW_INTEGER_CASTING && !o.isint())
+							if (!ALLOW_INTEGER_CASTING && !o.isint()) {
 								throw new java.lang.IllegalArgumentException("not an integer: " + o);
+							}
 							writer.write(LuaValue.TNUMBER);
 							dumpInt(o.toint());
 							break;
@@ -194,16 +198,18 @@ public class DumpState {
 		}
 		n = f.p.length;
 		dumpInt(n);
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; i++) {
 			dumpFunction(f.p[i], f.source);
+		}
 	}
 
 	void dumpDebug(final Prototype f) throws IOException {
 		int i, n;
 		n = (strip) ? 0 : f.lineinfo.length;
 		dumpInt(n);
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; i++) {
 			dumpInt(f.lineinfo[i]);
+		}
 		n = (strip) ? 0 : f.locvars.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
@@ -214,15 +220,17 @@ public class DumpState {
 		}
 		n = (strip) ? 0 : f.upvalues.length;
 		dumpInt(n);
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; i++) {
 			dumpString(f.upvalues[i]);
+		}
 	}
 
 	void dumpFunction(final Prototype f, final LuaString string) throws IOException {
-		if (f.source == null || f.source.equals(string) || strip)
+		if (f.source == null || f.source.equals(string) || strip) {
 			dumpInt(0);
-		else
+		} else {
 			dumpString(f.source);
+		}
 		dumpInt(f.linedefined);
 		dumpInt(f.lastlinedefined);
 		dumpChar(f.nups);
@@ -263,7 +271,7 @@ public class DumpState {
 	 * @param numberFormat one of NUMBER_FORMAT_FLOATS_OR_DOUBLES, NUMBER_FORMAT_INTS_ONLY, NUMBER_FORMAT_NUM_PATCH_INT32
 	 * @param littleendian true to use little endian for numbers, false for big endian
 	 * @return 0 if dump succeeds
-	 * @throws IOException
+	 * @throws IOException              On stream write errors
 	 * @throws IllegalArgumentException if the number format it not supported
 	 */
 	public static int dump(Prototype f, OutputStream w, boolean stripDebug, int numberFormat, boolean littleendian) throws IOException {

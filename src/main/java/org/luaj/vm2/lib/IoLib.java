@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,13 +19,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.LuaString;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
+import org.luaj.vm2.lib.jse.JseIoLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -37,37 +41,17 @@ import java.io.IOException;
  * It contains the implementation of the io library support that is common to
  * the JSE and JME platforms.
  * In practice on of the concrete IOLib subclasses is chosen:
- * {@link org.luaj.vm2.lib.jse.JseIoLib} for the JSE platform, and
- * {@link org.luaj.vm2.lib.jme.JmeIoLib} for the JME platform.
+ * {@link org.luaj.vm2.lib.jse.JseIoLib} for the JSE platform
  * <p>
  * The JSE implementation conforms almost completely to the C-based lua library,
  * while the JME implementation follows closely except in the area of random-access files,
  * which are difficult to support properly on JME.
  * <p>
- * Typically, this library is included as part of a call to either
- * {@link JsePlatform#standardGlobals()} or {@link JmePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * _G.load(new JseIoLib());
- * LuaThread.setGlobals(_G);
- * _G.load(new JseBaseLib());
- * _G.load(new PackageLib());
- * _G.load(new JseIoLib());
- * _G.get("io").get("write").call(LuaValue.valueOf("hello, world\n"));
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see JseIoLib
- * @see JmeIoLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.7">http://www.lua.org/manual/5.1/manual.html#5.7</a>
  */
 abstract
@@ -94,29 +78,33 @@ public class IoLib extends OneArgFunction {
 		abstract public int remaining() throws IOException;
 
 		// peek ahead one character
-		abstract public int peek() throws IOException, EOFException;
+		abstract public int peek() throws IOException;
 
 		// return char if read, -1 if eof, throw IOException on other exception
-		abstract public int read() throws IOException, EOFException;
+		abstract public int read() throws IOException;
 
 		// return number of bytes read if positive, false if eof, throw IOException on other exception
 		abstract public int read(byte[] bytes, int offset, int length) throws IOException;
 
 		// delegate method access to file methods table
+		@Override
 		public LuaValue get(LuaValue key) {
 			return filemethods.get(key);
 		}
 
 		// essentially a userdata instance
+		@Override
 		public int type() {
 			return LuaValue.TUSERDATA;
 		}
 
+		@Override
 		public String typename() {
 			return "userdata";
 		}
 
 		// displays as "file" type
+		@Override
 		public String tojstring() {
 			return "file: " + Integer.toHexString(hashCode());
 		}
@@ -127,7 +115,7 @@ public class IoLib extends OneArgFunction {
 	 * Wrap the standard input.
 	 *
 	 * @return File
-	 * @throws IOException
+	 * @throws IOException On stream exception
 	 */
 	abstract protected File wrapStdin() throws IOException;
 
@@ -135,14 +123,14 @@ public class IoLib extends OneArgFunction {
 	 * Wrap the standard output.
 	 *
 	 * @return File
-	 * @throws IOException
+	 * @throws IOException On stream exception
 	 */
 	abstract protected File wrapStdout() throws IOException;
 
 	/**
 	 * Open a file in a particular mode.
 	 *
-	 * @param filename
+	 * @param filename   Filename to open
 	 * @param readMode   true if opening in read mode
 	 * @param appendMode true if opening in append mode
 	 * @param updateMode true if opening in update mode
@@ -232,6 +220,7 @@ public class IoLib extends OneArgFunction {
 	public IoLib() {
 	}
 
+	@Override
 	public LuaValue call(LuaValue arg) {
 
 		// io lib functions
@@ -260,8 +249,9 @@ public class IoLib extends OneArgFunction {
 
 	private void setLibInstance(LuaTable t) {
 		LuaValue[] k = t.keys();
-		for (int i = 0, n = k.length; i < n; i++)
-			((IoLibV) t.get(k[i])).iolib = this;
+		for (LuaValue aK : k) {
+			((IoLibV) t.get(aK)).iolib = this;
+		}
 	}
 
 	static final class IoLibV extends VarArgFunction {
@@ -278,6 +268,7 @@ public class IoLib extends OneArgFunction {
 			this.iolib = iolib;
 		}
 
+		@Override
 		public Varargs invoke(Varargs args) {
 			try {
 				switch (opcode) {
@@ -474,9 +465,9 @@ public class IoLib extends OneArgFunction {
 	}
 
 	private static Varargs ioclose(File f) throws IOException {
-		if (f.isstdfile())
+		if (f.isstdfile()) {
 			return errorresult("cannot close standard file");
-		else {
+		} else {
 			f.close();
 			return successresult();
 		}
@@ -504,8 +495,9 @@ public class IoLib extends OneArgFunction {
 	}
 
 	private static Varargs iowrite(File f, Varargs args) throws IOException {
-		for (int i = 1, n = args.narg(); i <= n; i++)
+		for (int i = 1, n = args.narg(); i <= n; i++) {
 			f.write(args.checkstring(i));
+		}
 		return LuaValue.TRUE;
 	}
 
@@ -519,7 +511,7 @@ public class IoLib extends OneArgFunction {
 			switch ((ai = args.arg(i + 1)).type()) {
 				case LuaValue.TNUMBER:
 					vi = freadbytes(f, ai.toint());
-					break item;
+					break;
 				case LuaValue.TSTRING:
 					fmt = ai.checkstring();
 					if (fmt.m_length == 2 && fmt.m_bytes[fmt.m_offset] == '*') {
@@ -538,16 +530,18 @@ public class IoLib extends OneArgFunction {
 				default:
 					return argerror(i + 1, "(invalid format)");
 			}
-			if ((v[i++] = vi).isnil())
+			if ((v[i++] = vi).isnil()) {
 				break;
+			}
 		}
 		return i == 0 ? NIL : varargsOf(v, 0, i);
 	}
 
 	private static File checkfile(LuaValue val) {
 		File f = optfile(val);
-		if (f == null)
+		if (f == null) {
 			argerror(1, "file");
+		}
 		checkopen(f);
 		return f;
 	}
@@ -557,8 +551,9 @@ public class IoLib extends OneArgFunction {
 	}
 
 	private static File checkopen(File file) {
-		if (file.isclosed())
+		if (file.isclosed()) {
 			error("attempt to use a closed file");
+		}
 		return file;
 	}
 
@@ -582,8 +577,9 @@ public class IoLib extends OneArgFunction {
 	public static LuaValue freadbytes(File f, int count) throws IOException {
 		byte[] b = new byte[count];
 		int r;
-		if ((r = f.read(b, 0, b.length)) < 0)
+		if ((r = f.read(b, 0, b.length)) < 0) {
 			return NIL;
+		}
 		return LuaString.valueOf(b, 0, r);
 	}
 
@@ -605,15 +601,16 @@ public class IoLib extends OneArgFunction {
 					}
 				}
 			} else {
-				while ((c = f.read()) > 0)
+				while ((c = f.read()) > 0) {
 					baos.write(c);
+				}
 			}
 		} catch (EOFException e) {
 			c = -1;
 		}
 		return (c < 0 && baos.size() == 0) ?
-			(LuaValue) NIL :
-			(LuaValue) LuaString.valueOf(baos.toByteArray());
+			NIL :
+			LuaString.valueOf(baos.toByteArray());
 	}
 
 	public static LuaValue freadline(File f) throws IOException {
@@ -653,8 +650,9 @@ public class IoLib extends OneArgFunction {
 				return;
 			}
 			f.read();
-			if (baos != null)
+			if (baos != null) {
 				baos.write(c);
+			}
 		}
 	}
 

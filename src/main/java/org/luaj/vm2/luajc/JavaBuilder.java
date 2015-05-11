@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2010 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.luajc;
 
 import org.apache.bcel.Constants;
@@ -136,8 +138,9 @@ public class JavaBuilder {
 
 		// what class to inherit from
 		superclassType = p.numparams;
-		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS)
+		if (p.is_vararg != 0 || superclassType >= SUPERTYPE_VARARGS) {
 			superclassType = SUPERTYPE_VARARGS;
+		}
 		for (int i = 0, n = p.code.length; i < n; i++) {
 			int inst = p.code[i];
 			int o = Lua.GET_OPCODE(inst);
@@ -161,7 +164,7 @@ public class JavaBuilder {
 		// create the fields
 		for (int i = 0; i < p.nups; i++) {
 			boolean isrw = pi.isReadWriteUpvalue(pi.upvals[i]);
-			Type uptype = isrw ? (Type) TYPE_LOCALUPVALUE : (Type) TYPE_LUAVALUE;
+			Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 			FieldGen fg = new FieldGen(0, uptype, upvalueName(i), cp);
 			cg.addField(fg.getField());
 		}
@@ -186,7 +189,7 @@ public class JavaBuilder {
 	}
 
 	public void initializeSlots() {
-		int slot = 0;
+		int slot;
 		createUpvalues(-1, 0, p.maxstacksize);
 		if (superclassType == SUPERTYPE_VARARGS) {
 			for (slot = 0; slot < p.numparams; slot++) {
@@ -212,7 +215,7 @@ public class JavaBuilder {
 		} else {
 			// fixed arg function between 0 and 3 arguments
 			for (slot = 0; slot < p.numparams; slot++) {
-				this.plainSlotVars.put(Integer.valueOf(slot), Integer.valueOf(1 + slot));
+				this.plainSlotVars.put(slot, 1 + slot);
 				if (pi.isUpvalueCreate(-1, slot)) {
 					append(new ALOAD(1 + slot));
 					storeLocal(-1, slot);
@@ -282,17 +285,18 @@ public class JavaBuilder {
 		append(factory.createFieldAccess(STR_LUAVALUE, field, TYPE_LUABOOLEAN, Constants.GETSTATIC));
 	}
 
-	private Map<Integer, Integer> plainSlotVars = new HashMap<Integer, Integer>();
-	private Map<Integer, Integer> upvalueSlotVars = new HashMap<Integer, Integer>();
+	private Map<Integer, Integer> plainSlotVars = new HashMap<>();
+	private Map<Integer, Integer> upvalueSlotVars = new HashMap<>();
 
 	private int findSlot(int slot, Map<Integer, Integer> map, String prefix, Type type) {
-		Integer islot = Integer.valueOf(slot);
-		if (map.containsKey(islot))
-			return ((Integer) map.get(islot)).intValue();
+		Integer islot = slot;
+		if (map.containsKey(islot)) {
+			return map.get(islot);
+		}
 		String name = prefix + slot;
 		LocalVariableGen local = mg.addLocalVariable(name, type, null, null);
 		int index = local.getIndex();
-		map.put(islot, Integer.valueOf(index));
+		map.put(islot, index);
 		return index;
 	}
 
@@ -417,8 +421,9 @@ public class JavaBuilder {
 	}
 
 	private int getVarresultIndex() {
-		if (varresult == null)
+		if (varresult == null) {
 			varresult = mg.addLocalVariable(NAME_VARRESULT, TYPE_VARARGS, null, null);
+		}
 		return varresult.getIndex();
 	}
 
@@ -625,7 +630,7 @@ public class JavaBuilder {
 
 	public void closureInitUpvalueFromUpvalue(String protoname, int newup, int upindex) {
 		boolean isrw = pi.isReadWriteUpvalue(pi.upvals[upindex]);
-		Type uptype = isrw ? (Type) TYPE_LOCALUPVALUE : (Type) TYPE_LUAVALUE;
+		Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 		String srcname = upvalueName(upindex);
 		String destname = upvalueName(newup);
 		append(InstructionConstants.THIS);
@@ -635,14 +640,14 @@ public class JavaBuilder {
 
 	public void closureInitUpvalueFromLocal(String protoname, int newup, int pc, int srcslot) {
 		boolean isrw = pi.isReadWriteUpvalue(pi.vars[srcslot][pc].upvalue);
-		Type uptype = isrw ? (Type) TYPE_LOCALUPVALUE : (Type) TYPE_LUAVALUE;
+		Type uptype = isrw ? TYPE_LOCALUPVALUE : TYPE_LUAVALUE;
 		String destname = upvalueName(newup);
 		int index = findSlotIndex(srcslot, isrw);
 		append(new ALOAD(index));
 		append(factory.createFieldAccess(protoname, destname, uptype, Constants.PUTFIELD));
 	}
 
-	private Map<LuaValue, String> constants = new HashMap<LuaValue, String>();
+	private Map<LuaValue, String> constants = new HashMap<>();
 
 	public void loadConstant(LuaValue value) {
 		switch (value.type()) {
@@ -654,7 +659,7 @@ public class JavaBuilder {
 				break;
 			case LuaValue.TNUMBER:
 			case LuaValue.TSTRING:
-				String name = (String) constants.get(value);
+				String name = constants.get(value);
 				if (name == null) {
 					name = value.type() == LuaValue.TNUMBER ?
 						value.isinttype() ?
@@ -706,8 +711,9 @@ public class JavaBuilder {
 				TYPE_LUASTRING, ARG_TYPES_STRING, Constants.INVOKESTATIC));
 		} else {
 			char[] c = new char[ls.m_length];
-			for (int j = 0; j < ls.m_length; j++)
+			for (int j = 0; j < ls.m_length; j++) {
 				c[j] = (char) (0xff & (int) (ls.m_bytes[ls.m_offset + j]));
+			}
 			init.append(new PUSH(cp, new String(c)));
 			init.append(factory.createInvoke(STR_STRING, "toCharArray",
 				TYPE_CHARARRAY, Type.NO_ARGS,
@@ -756,8 +762,9 @@ public class JavaBuilder {
 	}
 
 	private void conditionalSetBeginningOfLua(InstructionHandle ih) {
-		if (beginningOfLuaInstruction == null)
+		if (beginningOfLuaInstruction == null) {
 			beginningOfLuaInstruction = ih;
+		}
 	}
 
 	public void onEndOfLuaInstruction(int pc) {
@@ -770,10 +777,12 @@ public class JavaBuilder {
 		for (int pc = 0; pc < nc; pc++) {
 			if (branches[pc] != null) {
 				int t = targets[pc];
-				while (t < branchDestHandles.length && branchDestHandles[t] == null)
+				while (t < branchDestHandles.length && branchDestHandles[t] == null) {
 					t++;
-				if (t >= branchDestHandles.length)
+				}
+				if (t >= branchDestHandles.length) {
 					throw new IllegalArgumentException("no target at or after " + targets[pc] + " op=" + Lua.GET_OPCODE(p.code[targets[pc]]));
+				}
 				branches[pc].setTarget(branchDestHandles[t]);
 			}
 		}

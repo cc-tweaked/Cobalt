@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,13 +19,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2.lib.jse;
 
 
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaString;
-import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.IoLib;
 import org.luaj.vm2.lib.LibFunction;
@@ -37,29 +38,11 @@ import java.io.*;
  * <p>
  * It uses RandomAccessFile to implement seek on files.
  * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new JseBaseLib());
- * _G.load(new PackageLib());
- * _G.load(new JseIoLib());
- * _G.get("io").get("write").call(LuaValue.valueOf("hello, world\n"));
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JmePlatform
  * @see IoLib
- * @see JmeIoLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.7">http://www.lua.org/manual/5.1/manual.html#5.7</a>
  */
 public class JseIoLib extends IoLib {
@@ -68,25 +51,30 @@ public class JseIoLib extends IoLib {
 		super();
 	}
 
+	@Override
 	protected File wrapStdin() throws IOException {
 		return new FileImpl(BaseLib.instance.STDIN);
 	}
 
+	@Override
 	protected File wrapStdout() throws IOException {
 		return new FileImpl(BaseLib.instance.STDOUT);
 	}
 
+	@Override
 	protected File openFile(String filename, boolean readMode, boolean appendMode, boolean updateMode, boolean binaryMode) throws IOException {
 		RandomAccessFile f = new RandomAccessFile(filename, readMode ? "r" : "rw");
 		if (appendMode) {
 			f.seek(f.length());
 		} else {
-			if (!readMode)
+			if (!readMode) {
 				f.setLength(0);
+			}
 		}
 		return new FileImpl(f);
 	}
 
+	@Override
 	protected File openProgram(String prog, String mode) throws IOException {
 		final Process p = Runtime.getRuntime().exec(prog);
 		return "w".equals(mode) ?
@@ -94,6 +82,7 @@ public class JseIoLib extends IoLib {
 			new FileImpl(p.getInputStream());
 	}
 
+	@Override
 	protected File tmpFile() throws IOException {
 		java.io.File f = java.io.File.createTempFile(".luaj", "bin");
 		f.deleteOnExit();
@@ -129,14 +118,17 @@ public class JseIoLib extends IoLib {
 			this(null, null, o);
 		}
 
+		@Override
 		public String tojstring() {
 			return "file (" + this.hashCode() + ")";
 		}
 
+		@Override
 		public boolean isstdfile() {
 			return file == null;
 		}
 
+		@Override
 		public void close() throws IOException {
 			closed = true;
 			if (file != null) {
@@ -144,26 +136,33 @@ public class JseIoLib extends IoLib {
 			}
 		}
 
+		@Override
 		public void flush() throws IOException {
-			if (os != null)
+			if (os != null) {
 				os.flush();
+			}
 		}
 
+		@Override
 		public void write(LuaString s) throws IOException {
-			if (os != null)
+			if (os != null) {
 				os.write(s.m_bytes, s.m_offset, s.m_length);
-			else if (file != null)
+			} else if (file != null) {
 				file.write(s.m_bytes, s.m_offset, s.m_length);
-			else
+			} else {
 				notimplemented();
-			if (nobuffer)
+			}
+			if (nobuffer) {
 				flush();
+			}
 		}
 
+		@Override
 		public boolean isclosed() {
 			return closed;
 		}
 
+		@Override
 		public int seek(String option, int pos) throws IOException {
 			if (file != null) {
 				if ("set".equals(option)) {
@@ -179,16 +178,19 @@ public class JseIoLib extends IoLib {
 			return 0;
 		}
 
+		@Override
 		public void setvbuf(String mode, int size) {
 			nobuffer = "no".equals(mode);
 		}
 
 		// get length remaining to read
+		@Override
 		public int remaining() throws IOException {
 			return file != null ? (int) (file.length() - file.getFilePointer()) : -1;
 		}
 
 		// peek ahead one character
+		@Override
 		public int peek() throws IOException {
 			if (is != null) {
 				is.mark(1);
@@ -206,10 +208,11 @@ public class JseIoLib extends IoLib {
 		}
 
 		// return char if read, -1 if eof, throw IOException on other exception
+		@Override
 		public int read() throws IOException {
-			if (is != null)
+			if (is != null) {
 				return is.read();
-			else if (file != null) {
+			} else if (file != null) {
 				return file.read();
 			}
 			notimplemented();
@@ -217,6 +220,7 @@ public class JseIoLib extends IoLib {
 		}
 
 		// return number of bytes read if positive, -1 if eof, throws IOException
+		@Override
 		public int read(byte[] bytes, int offset, int length) throws IOException {
 			if (file != null) {
 				return file.read(bytes, offset, length);

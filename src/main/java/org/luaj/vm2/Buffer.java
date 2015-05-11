@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +19,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 
@@ -113,6 +115,7 @@ public final class Buffer {
 	 * Set buffer contents as a {@link LuaValue}
 	 *
 	 * @param value value to set
+	 * @return {@code this}
 	 */
 	public Buffer setvalue(LuaValue value) {
 		bytes = NOBYTES;
@@ -152,6 +155,7 @@ public final class Buffer {
 	/**
 	 * Append a single byte to the buffer.
 	 *
+	 * @param b The byte to append
 	 * @return {@code this} to allow call chaining
 	 */
 	public final Buffer append(byte b) {
@@ -163,6 +167,7 @@ public final class Buffer {
 	/**
 	 * Append a {@link LuaValue} to the buffer.
 	 *
+	 * @param val The value to append. This will be converted to a string
 	 * @return {@code this} to allow call chaining
 	 */
 	public final Buffer append(LuaValue val) {
@@ -173,6 +178,7 @@ public final class Buffer {
 	/**
 	 * Append a {@link LuaString} to the buffer.
 	 *
+	 * @param str The string to append
 	 * @return {@code this} to allow call chaining
 	 */
 	public final Buffer append(LuaString str) {
@@ -187,6 +193,7 @@ public final class Buffer {
 	 * Append a Java String to the buffer.
 	 * The Java string will be converted to bytes using the UTF8 encoding.
 	 *
+	 * @param str The string to append
 	 * @return {@code this} to allow call chaining
 	 * @see LuaString#encodeToUtf8(char[], byte[], int)
 	 */
@@ -274,7 +281,7 @@ public final class Buffer {
 	 * @param newSize   the size of the buffer to use
 	 * @param newOffset the offset to use
 	 */
-	private final void realloc(int newSize, int newOffset) {
+	private void realloc(int newSize, int newOffset) {
 		if (newSize != bytes.length) {
 			byte[] newBytes = new byte[newSize];
 			System.arraycopy(bytes, offset, newBytes, newOffset, length);

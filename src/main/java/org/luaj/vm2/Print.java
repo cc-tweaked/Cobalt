@@ -1,4 +1,5 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2009 Luaj.org. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,11 +19,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+
+import static org.luaj.vm2.Lua.*;
 
 /**
  * Debug helper class to pretty-print lua bytecodes.
@@ -30,7 +34,7 @@ import java.io.PrintStream;
  * @see Prototype
  * @see LuaClosure
  */
-public class Print extends Lua {
+public class Print {
 
 	/**
 	 * opcode names
@@ -86,9 +90,9 @@ public class Print extends Lua {
 		ps.print('"');
 		for (int i = 0, n = s.m_length; i < n; i++) {
 			int c = s.m_bytes[s.m_offset + i];
-			if (c >= ' ' && c <= '~' && c != '\"' && c != '\\')
+			if (c >= ' ' && c <= '~' && c != '\"' && c != '\\') {
 				ps.print((char) c);
-			else {
+			} else {
 				switch (c) {
 					case '"':
 						ps.print("\\\"");
@@ -184,18 +188,21 @@ public class Print extends Lua {
 		int sbx = GETARG_sBx(i);
 		int line = getline(f, pc);
 		ps.print("  " + (pc + 1) + "  ");
-		if (line > 0)
+		if (line > 0) {
 			ps.print("[" + line + "]  ");
-		else
+		} else {
 			ps.print("[-]  ");
+		}
 		ps.print(OPNAMES[o] + "  ");
 		switch (getOpMode(o)) {
 			case iABC:
 				ps.print(a);
-				if (getBMode(o) != OpArgN)
+				if (getBMode(o) != OpArgN) {
 					ps.print(" " + (ISK(b) ? (-1 - INDEXK(b)) : b));
-				if (getCMode(o) != OpArgN)
+				}
+				if (getCMode(o) != OpArgN) {
 					ps.print(" " + (ISK(c) ? (-1 - INDEXK(c)) : c));
+				}
 				break;
 			case iABx:
 				if (getBMode(o) == OpArgK) {
@@ -205,10 +212,11 @@ public class Print extends Lua {
 				}
 				break;
 			case iAsBx:
-				if (o == OP_JMP)
+				if (o == OP_JMP) {
 					ps.print(sbx);
-				else
+				} else {
 					ps.print(a + " " + sbx);
+				}
 				break;
 		}
 		switch (o) {
@@ -219,10 +227,11 @@ public class Print extends Lua {
 			case OP_GETUPVAL:
 			case OP_SETUPVAL:
 				ps.print("  ; ");
-				if (f.upvalues.length > b)
+				if (f.upvalues.length > b) {
 					printValue(ps, f.upvalues[b]);
-				else
+				} else {
 					ps.print("-");
+				}
 				break;
 			case OP_GETGLOBAL:
 			case OP_SETGLOBAL:
@@ -247,15 +256,17 @@ public class Print extends Lua {
 			case OP_LE:
 				if (ISK(b) || ISK(c)) {
 					ps.print("  ; ");
-					if (ISK(b))
+					if (ISK(b)) {
 						printConstant(ps, f, INDEXK(b));
-					else
+					} else {
 						ps.print("-");
+					}
 					ps.print(" ");
-					if (ISK(c))
+					if (ISK(c)) {
 						printConstant(ps, f, INDEXK(c));
-					else
+					} else {
 						ps.print("-");
+					}
 				}
 				break;
 			case OP_JMP:
@@ -267,10 +278,11 @@ public class Print extends Lua {
 				ps.print("  ; " + f.p[bx].getClass().getName());
 				break;
 			case OP_SETLIST:
-				if (c == 0)
-					ps.print("  ; " + ((int) code[++pc]));
-				else
-					ps.print("  ; " + ((int) c));
+				if (c == 0) {
+					ps.print("  ; " + code[++pc]);
+				} else {
+					ps.print("  ; " + c);
+				}
 				break;
 			case OP_VARARG:
 				ps.print("  ; is_vararg=" + f.is_vararg);
@@ -286,12 +298,13 @@ public class Print extends Lua {
 
 	static void printHeader(Prototype f) {
 		String s = String.valueOf(f.source);
-		if (s.startsWith("@") || s.startsWith("="))
+		if (s.startsWith("@") || s.startsWith("=")) {
 			s = s.substring(1);
-		else if ("\033Lua".equals(s))
+		} else if ("\033Lua".equals(s)) {
 			s = "(bstring)";
-		else
+		} else {
 			s = "(string)";
+		}
 		String a = (f.linedefined == 0) ? "main" : "function";
 		ps.print("\n%" + a + " <" + s + ":" + f.linedefined + ","
 			+ f.lastlinedefined + "> (" + f.code.length + " instructions, "
@@ -341,18 +354,20 @@ public class Print extends Lua {
 			printLocals(f);
 			printUpValues(f);
 		}
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; i++) {
 			printFunction(f.p[i], full);
+		}
 	}
 
 	private static void format(String s, int maxcols) {
 		int n = s.length();
-		if (n > maxcols)
+		if (n > maxcols) {
 			ps.print(s.substring(0, maxcols));
-		else {
+		} else {
 			ps.print(s);
-			for (int i = maxcols - n; --i >= 0; )
+			for (int i = maxcols - n; --i >= 0; ) {
 				ps.print(' ');
+			}
 		}
 	}
 
@@ -361,8 +376,9 @@ public class Print extends Lua {
 	}
 
 	private void _assert(boolean b) {
-		if (!b)
+		if (!b) {
 			throw new NullPointerException("_assert failed");
+		}
 	}
 
 	/**
@@ -389,34 +405,37 @@ public class Print extends Lua {
 		ps.print('[');
 		for (int i = 0; i < stack.length; i++) {
 			LuaValue v = stack[i];
-			if (v == null)
+			if (v == null) {
 				ps.print(STRING_FOR_NULL);
-			else switch (v.type()) {
-				case LuaValue.TSTRING:
-					LuaString s = v.checkstring();
-					ps.print(s.length() < 48 ?
-						s.tojstring() :
-						s.substring(0, 32).tojstring() + "...+" + (s.length() - 32) + "b");
-					break;
-				case LuaValue.TFUNCTION:
-					ps.print((v instanceof LuaClosure) ?
-						((LuaClosure) v).p.toString() : v.tojstring());
-					break;
-				case LuaValue.TUSERDATA:
-					Object o = v.touserdata();
-					if (o != null) {
-						String n = o.getClass().getName();
-						n = n.substring(n.lastIndexOf('.') + 1);
-						ps.print(n + ": " + Integer.toHexString(o.hashCode()));
-					} else {
-						ps.print(v.toString());
-					}
-					break;
-				default:
-					ps.print(v.tojstring());
+			} else {
+				switch (v.type()) {
+					case LuaValue.TSTRING:
+						LuaString s = v.checkstring();
+						ps.print(s.length() < 48 ?
+							s.tojstring() :
+							s.substring(0, 32).tojstring() + "...+" + (s.length() - 32) + "b");
+						break;
+					case LuaValue.TFUNCTION:
+						ps.print((v instanceof LuaClosure) ?
+							((LuaClosure) v).p.toString() : v.tojstring());
+						break;
+					case LuaValue.TUSERDATA:
+						Object o = v.touserdata();
+						if (o != null) {
+							String n = o.getClass().getName();
+							n = n.substring(n.lastIndexOf('.') + 1);
+							ps.print(n + ": " + Integer.toHexString(o.hashCode()));
+						} else {
+							ps.print(v.toString());
+						}
+						break;
+					default:
+						ps.print(v.tojstring());
+				}
 			}
-			if (i + 1 == top)
+			if (i + 1 == top) {
 				ps.print(']');
+			}
 			ps.print(" | ");
 		}
 		ps.print(varargs);

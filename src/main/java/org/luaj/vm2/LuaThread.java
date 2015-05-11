@@ -1,16 +1,17 @@
-/*******************************************************************************
+/**
+ * ****************************************************************************
  * Copyright (c) 2007-2012 LuaJ. All rights reserved.
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,11 +19,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package org.luaj.vm2;
 
 
+import org.luaj.vm2.lib.BaseLib;
+import org.luaj.vm2.lib.CoroutineLib;
 import org.luaj.vm2.lib.DebugLib;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
 
@@ -39,8 +44,8 @@ import java.lang.ref.WeakReference;
  * at some point during globals initialization.
  * See {@link BaseLib} for additional documentation and example code.
  * <p>
- * The utility classes {@link JsePlatform} and {@link JmePlatform}
- * see to it that this initialization is done properly.
+ * The utility class {@link JsePlatform}
+ * sees to it that this initialization is done properly.
  * For this reason it is highly recommended to use one of these classes
  * when initializing globals.
  * <p>
@@ -56,7 +61,6 @@ import java.lang.ref.WeakReference;
  *
  * @see LuaValue
  * @see JsePlatform
- * @see JmePlatform
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {
@@ -130,34 +134,42 @@ public class LuaThread extends LuaValue {
 		state = new State(this, func);
 	}
 
+	@Override
 	public int type() {
 		return LuaValue.TTHREAD;
 	}
 
+	@Override
 	public String typename() {
 		return "thread";
 	}
 
+	@Override
 	public boolean isthread() {
 		return true;
 	}
 
+	@Override
 	public LuaThread optthread(LuaThread defval) {
 		return this;
 	}
 
+	@Override
 	public LuaThread checkthread() {
 		return this;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return s_metatable;
 	}
 
+	@Override
 	public LuaValue getfenv() {
 		return env;
 	}
 
+	@Override
 	public void setfenv(LuaValue env) {
 		this.env = env;
 	}
@@ -178,6 +190,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Test if this is the main thread
 	 *
+	 * @param r The thread to test
 	 * @return true if this is the main thread
 	 */
 	public static boolean isMainThread(LuaThread r) {
@@ -212,7 +225,7 @@ public class LuaThread extends LuaValue {
 	 * @return CallStack which is used to signal the return or a tail-call recursion
 	 * @see DebugLib
 	 */
-	public static final CallStack onCall(LuaFunction function) {
+	public static CallStack onCall(LuaFunction function) {
 		CallStack cs = running_thread.callstack;
 		cs.onCall(function);
 		return cs;
@@ -224,7 +237,7 @@ public class LuaThread extends LuaValue {
 	 * @param level 1 for the function calling this one, 2 for the next one.
 	 * @return LuaFunction on the call stack, or null if outside of range of active stack
 	 */
-	public static final LuaFunction getCallstackFunction(int level) {
+	public static LuaFunction getCallstackFunction(int level) {
 		return running_thread.callstack.getFunction(level);
 	}
 
@@ -248,8 +261,9 @@ public class LuaThread extends LuaValue {
 	 */
 	public static Varargs yield(Varargs args) {
 		State s = running_thread.state;
-		if (s.function == null)
+		if (s.function == null) {
 			throw new LuaError("cannot yield main thread");
+		}
 		return s.lua_yield(args);
 	}
 
@@ -260,14 +274,15 @@ public class LuaThread extends LuaValue {
 	 * @return {@link Varargs} provided as arguments to {@link #yield(Varargs)}
 	 */
 	public Varargs resume(Varargs args) {
-		if (this.state.status > STATUS_SUSPENDED)
+		if (this.state.status > STATUS_SUSPENDED) {
 			return LuaValue.varargsOf(LuaValue.FALSE,
 				LuaValue.valueOf("cannot resume " + LuaThread.STATUS_NAMES[this.state.status] + " coroutine"));
+		}
 		return state.lua_resume(this, args);
 	}
 
 	static class State implements Runnable {
-		final WeakReference lua_thread;
+		final WeakReference<LuaThread> lua_thread;
 		final LuaValue function;
 		Varargs args = LuaValue.NONE;
 		Varargs result = LuaValue.NONE;
@@ -275,10 +290,11 @@ public class LuaThread extends LuaValue {
 		int status = LuaThread.STATUS_INITIAL;
 
 		State(LuaThread lua_thread, LuaValue function) {
-			this.lua_thread = new WeakReference(lua_thread);
+			this.lua_thread = new WeakReference<>(lua_thread);
 			this.function = function;
 		}
 
+		@Override
 		public synchronized void run() {
 			try {
 				Varargs a = this.args;
@@ -354,8 +370,9 @@ public class LuaThread extends LuaValue {
 		 */
 		final void onCall(LuaFunction function) {
 			functions[calls++] = function;
-			if (DebugLib.DEBUG_ENABLED)
+			if (DebugLib.DEBUG_ENABLED) {
 				DebugLib.debugOnCall(running_thread, calls, function);
+			}
 		}
 
 		/**
@@ -365,8 +382,9 @@ public class LuaThread extends LuaValue {
 		 */
 		public final void onReturn() {
 			functions[--calls] = null;
-			if (DebugLib.DEBUG_ENABLED)
+			if (DebugLib.DEBUG_ENABLED) {
 				DebugLib.debugOnReturn(running_thread, calls);
+			}
 		}
 
 		/**
