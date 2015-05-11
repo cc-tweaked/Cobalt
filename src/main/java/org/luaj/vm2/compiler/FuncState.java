@@ -29,8 +29,10 @@ import org.luaj.vm2.compiler.LexState.expdesc;
 
 import java.util.Hashtable;
 
+import static org.luaj.vm2.Lua.*;
+import static org.luaj.vm2.compiler.LuaC.*;
 
-public class FuncState extends LuaC {
+public class FuncState {
 	class upvaldesc {
 		short k;
 		short info;

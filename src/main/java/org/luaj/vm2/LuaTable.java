@@ -171,26 +171,32 @@ public class LuaTable extends LuaValue {
 		}
 	}
 
+	@Override
 	public int type() {
 		return LuaValue.TTABLE;
 	}
 
+	@Override
 	public String typename() {
 		return "table";
 	}
 
+	@Override
 	public boolean istable() {
 		return true;
 	}
 
+	@Override
 	public LuaTable checktable() {
 		return this;
 	}
 
+	@Override
 	public LuaTable opttable(LuaTable defval) {
 		return this;
 	}
 
+	@Override
 	public void presize(int narray) {
 		if (narray > array.length) {
 			array = resize(array, narray);
@@ -234,10 +240,12 @@ public class LuaTable extends LuaValue {
 		return hashValues.length;
 	}
 
+	@Override
 	public LuaValue getmetatable() {
 		return m_metatable;
 	}
 
+	@Override
 	public LuaValue setmetatable(LuaValue metatable) {
 		m_metatable = metatable;
 		LuaValue mode;
@@ -264,16 +272,19 @@ public class LuaTable extends LuaValue {
 		return this;
 	}
 
+	@Override
 	public LuaValue get(int key) {
 		LuaValue v = rawget(key);
 		return v.isnil() && m_metatable != null ? gettable(this, valueOf(key)) : v;
 	}
 
+	@Override
 	public LuaValue get(LuaValue key) {
 		LuaValue v = rawget(key);
 		return v.isnil() && m_metatable != null ? gettable(this, key) : v;
 	}
 
+	@Override
 	public LuaValue rawget(int key) {
 		if (key > 0 && key <= array.length) {
 			return array[key - 1] != null ? array[key - 1] : NIL;
@@ -281,6 +292,7 @@ public class LuaTable extends LuaValue {
 		return hashget(LuaInteger.valueOf(key));
 	}
 
+	@Override
 	public LuaValue rawget(LuaValue key) {
 		if (key.isinttype()) {
 			int ikey = key.toint();
@@ -299,6 +311,7 @@ public class LuaTable extends LuaValue {
 		return NIL;
 	}
 
+	@Override
 	public void set(int key, LuaValue value) {
 		if (m_metatable == null || !rawget(key).isnil() || !settable(this, LuaInteger.valueOf(key), value)) {
 			rawset(key, value);
@@ -308,6 +321,7 @@ public class LuaTable extends LuaValue {
 	/**
 	 * caller must ensure key is not nil
 	 */
+	@Override
 	public void set(LuaValue key, LuaValue value) {
 		key.checkvalidkey();
 		if (m_metatable == null || !rawget(key).isnil() || !settable(this, key, value)) {
@@ -315,6 +329,7 @@ public class LuaTable extends LuaValue {
 		}
 	}
 
+	@Override
 	public void rawset(int key, LuaValue value) {
 		if (!arrayset(key, value)) {
 			hashset(LuaInteger.valueOf(key), value);
@@ -324,6 +339,7 @@ public class LuaTable extends LuaValue {
 	/**
 	 * caller must ensure key is not nil
 	 */
+	@Override
 	public void rawset(LuaValue key, LuaValue value) {
 		if (!key.isinttype() || !arrayset(key.toint(), value)) {
 			hashset(key, value);
@@ -421,6 +437,7 @@ public class LuaTable extends LuaValue {
 		return sb.tostring();
 	}
 
+	@Override
 	public LuaValue getn() {
 		for (int n = getArrayLength(); n > 0; --n) {
 			if (!rawget(n).isnil()) {
@@ -430,6 +447,7 @@ public class LuaTable extends LuaValue {
 		return ZERO;
 	}
 
+	@Override
 	public int length() {
 		int a = getArrayLength();
 		int n = a + 1, m = 0;
@@ -448,6 +466,7 @@ public class LuaTable extends LuaValue {
 		return m;
 	}
 
+	@Override
 	public LuaValue len() {
 		return LuaInteger.valueOf(length());
 	}
@@ -466,8 +485,7 @@ public class LuaTable extends LuaValue {
 				n = i + 1;
 			}
 		}
-		for (int i = 0; i < hashKeys.length; i++) {
-			LuaValue v = hashKeys[i];
+		for (LuaValue v : hashKeys) {
 			if (v != null && v.isinttype()) {
 				int key = v.toint();
 				if (key > n) {
@@ -483,6 +501,7 @@ public class LuaTable extends LuaValue {
 	 *
 	 * @return key, value or nil
 	 */
+	@Override
 	public Varargs next(LuaValue key) {
 		int i = 0;
 		do {
@@ -532,6 +551,7 @@ public class LuaTable extends LuaValue {
 	 *
 	 * @return key, value or none
 	 */
+	@Override
 	public Varargs inext(LuaValue key) {
 		int k = key.checkint() + 1;
 		LuaValue v = rawget(k);
@@ -787,7 +807,7 @@ public class LuaTable extends LuaValue {
 	 * @return array of keys in the table
 	 */
 	public LuaValue[] keys() {
-		Vector l = new Vector();
+		Vector<LuaValue> l = new Vector<>();
 		LuaValue k = LuaValue.NIL;
 		while (true) {
 			Varargs n = next(k);
@@ -802,10 +822,12 @@ public class LuaTable extends LuaValue {
 	}
 
 	// equality w/ metatable processing
+	@Override
 	public LuaValue eq(LuaValue val) {
 		return eq_b(val) ? TRUE : FALSE;
 	}
 
+	@Override
 	public boolean eq_b(LuaValue val) {
 		if (this == val) return true;
 		if (m_metatable == null || !val.istable()) return false;

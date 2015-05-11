@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
+import static org.luaj.vm2.compiler.LuaC.LUAI_MAXVARS;
+
 public class LexState {
 
 	protected static final String RESERVED_LOCAL_VAR_FOR_CONTROL = "(for control)";
@@ -861,7 +863,7 @@ public class LexState {
 
 	void new_localvar(LuaString name, int n) {
 		FuncState fs = this.fs;
-		fs.checklimit(fs.nactvar + n + 1, FuncState.LUAI_MAXVARS, "local variables");
+		fs.checklimit(fs.nactvar + n + 1, LUAI_MAXVARS, "local variables");
 		fs.actvar[fs.nactvar + n] = (short) registerlocalvar(name);
 	}
 
@@ -1140,9 +1142,9 @@ public class LexState {
 						if (LUA_COMPAT_VARARG) {
 				  /* use `arg' as default name */
 							this.new_localvarliteral("arg", nparams++);
-							f.is_vararg = LuaC.VARARG_HASARG | LuaC.VARARG_NEEDSARG;
+							f.is_vararg = Lua.VARARG_HASARG | Lua.VARARG_NEEDSARG;
 						}
-						f.is_vararg |= LuaC.VARARG_ISVARARG;
+						f.is_vararg |= Lua.VARARG_ISVARARG;
 						break;
 					}
 					default:
@@ -1151,7 +1153,7 @@ public class LexState {
 			} while ((f.is_vararg == 0) && this.testnext(','));
 		}
 		this.adjustlocalvars(nparams);
-		f.numparams = (fs.nactvar - (f.is_vararg & LuaC.VARARG_HASARG));
+		f.numparams = (fs.nactvar - (f.is_vararg & Lua.VARARG_HASARG));
 		fs.reserveregs(fs.nactvar);  /* reserve register for parameters */
 	}
 
@@ -1340,7 +1342,7 @@ public class LexState {
 				FuncState fs = this.fs;
 				this.check_condition(fs.f.is_vararg != 0, "cannot use " + LUA_QL("...")
 					+ " outside a vararg function");
-				fs.f.is_vararg &= ~LuaC.VARARG_NEEDSARG; /* don't need 'arg' */
+				fs.f.is_vararg &= ~Lua.VARARG_NEEDSARG; /* don't need 'arg' */
 				v.init(VVARARG, fs.codeABC(Lua.OP_VARARG, 0, 1, 0));
 				break;
 			}

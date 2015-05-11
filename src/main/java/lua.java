@@ -88,7 +88,7 @@ public class lua {
 							if (++i >= args.length) {
 								usageExit();
 							}
-							libs = libs != null ? libs : new Vector<>();
+							if (libs == null) libs = new Vector<>();
 							libs.addElement(args[i]);
 							break;
 						case 'i':
