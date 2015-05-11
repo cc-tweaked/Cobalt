@@ -35,22 +35,6 @@ import org.luaj.vm2.lib.TwoArgFunction;
  * It contains all lua math functions, including those not available on the JME platform.
  * See {@link org.luaj.vm2.lib.MathLib} for the exception list.
  * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new JseBaseLib());
- * _G.load(new PackageLib());
- * _G.load(new JseMathLib());
- * System.out.println( _G.get("math").get("sqrt").call( LuaValue.valueOf(2) ) );
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction

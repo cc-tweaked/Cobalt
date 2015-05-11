@@ -39,19 +39,6 @@ import org.luaj.vm2.lib.jse.JsePlatform;
  * similar to the "Coco" yield-from-anywhere patch available for C-based lua.
  * However, coroutines that are yielded but never resumed to complete their execution
  * may not be collected by the garbage collector.
- * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * _G.load(new CoroutineLib());
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  *
  * @see LibFunction
  * @see JsePlatform

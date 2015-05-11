@@ -34,22 +34,6 @@ import java.io.IOException;
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
  * library.
  * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new BaseLib());
- * _G.load(new PackageLib());
- * _G.load(new StringLib());
- * System.out.println( _G.get("string").get("upper").call( LuaValue.valueOf("abcde") ) );
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  * This is a direct port of the corresponding library in C.
  *
  * @see LibFunction
@@ -1171,7 +1155,6 @@ public class StringLib extends OneArgFunction {
 						}
 						soffset++;
 						poffset = ep;
-						continue;
 				}
 			}
 		}

@@ -32,26 +32,6 @@ import org.luaj.vm2.lib.jse.JsePlatform;
  * Subclass of {@link LibFunction} which implements the lua standard {@code table}
  * library.
  * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new BaseLib());
- * _G.load(new PackageLib());
- * _G.load(new TableLib());
- * LuaValue tbl = LuaValue.listOf( new LuaValue[] {
- * 		LuaValue.valueOf( "abc" ),
- * 		LuaValue.valueOf( "def" ) } );
- * LuaValue sep = LuaValue.valueOf( "-" );
- * System.out.println( _G.get("table").get("concat").call( tbl, sep ) );
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction

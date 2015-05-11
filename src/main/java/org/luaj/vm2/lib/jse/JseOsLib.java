@@ -23,7 +23,6 @@
  */
 package org.luaj.vm2.lib.jse;
 
-import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.LibFunction;
 import org.luaj.vm2.lib.OsLib;
 
@@ -45,23 +44,6 @@ import java.io.IOException;
  * Because the nature of the {@code os} library is to encapsulate
  * os-specific features, the behavior of these functions varies considerably
  * from their counterparts in the C platform.
- * <p>
- * Typically, this library is included as part of a call to either
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new JseBaseLib());
- * _G.load(new PackageLib());
- * _G.load(new JseOsLib());
- * System.out.println( _G.get("os").get("time").call() );
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  *
  * @see LibFunction
  * @see OsLib

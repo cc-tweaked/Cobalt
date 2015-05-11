@@ -23,7 +23,6 @@
  */
 package org.luaj.vm2.lib.jse;
 
-import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.LibFunction;
 import org.luaj.vm2.lib.ResourceFinder;
@@ -42,20 +41,6 @@ import java.io.InputStream;
  * The {@link JseBaseLib} implements {@link #FINDER} by scanning the current directory
  * first, then falling back to   {@link Class#getResource(String)} if that fails.
  * Otherwise, the behavior is the same as that of {@link BaseLib}.
- * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new JseBaseLib());
- * _G.get("print").call(LuaValue.valueOf("hello, world"));
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
  * <p>
  * This is a direct port of the corresponding library in C.
  *

@@ -26,7 +26,6 @@ package org.luaj.vm2.lib.jse;
 
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaString;
-import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.IoLib;
 import org.luaj.vm2.lib.LibFunction;
@@ -38,22 +37,6 @@ import java.io.*;
  * library for the JSE platform.
  * <p>
  * It uses RandomAccessFile to implement seek on files.
- * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new JseBaseLib());
- * _G.load(new PackageLib());
- * _G.load(new JseIoLib());
- * _G.get("io").get("write").call(LuaValue.valueOf("hello, world\n"));
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
  * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *

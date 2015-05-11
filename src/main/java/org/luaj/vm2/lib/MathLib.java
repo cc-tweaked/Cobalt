@@ -55,22 +55,6 @@ import java.util.Random;
  * The implementations of {@code exp()} and {@code pow()} are constructed by
  * hand for JME, so will be slower and less accurate than when executed on the JSE platform.
  * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new BaseLib());
- * _G.load(new PackageLib());
- * _G.load(new MathLib());
- * System.out.println( _G.get("math").get("sqrt").call( LuaValue.valueOf(2) ) );
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction

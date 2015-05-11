@@ -54,22 +54,6 @@ import java.io.IOException;
  * <li>{@code tmpname()}</li>
  * </ul>
  * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new BaseLib());
- * _G.load(new PackageLib());
- * _G.load(new OsLib());
- * System.out.println( _G.get("os").get("time").call() );
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  *
  * @see LibFunction
  * @see JseOsLib

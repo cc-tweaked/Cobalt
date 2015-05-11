@@ -25,7 +25,6 @@ package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JseBaseLib;
-import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -33,22 +32,6 @@ import java.io.PrintStream;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard package and module
  * library functions.
- * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new BaseLib());
- * _G.load(new PackageLib());
- * System.out.println( _G.get("require").call(LuaValue.valueOf("hyperbolic")) );
- * } </pre>
- * In practice, the first 4 lines of the above are minimal requirements to get
- * and initialize a globals table capable of basic reqire, print, and other functions,
- * so it is much more convenient to use the {@link JsePlatform} utility class instead.
  * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  * However, the default filesystem search semantics are different and delegated to the bas library

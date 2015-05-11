@@ -45,20 +45,6 @@ import java.io.PrintStream;
  * To use basic library functions that include a {@link ResourceFinder} based on
  * directory lookup, use {@link JseBaseLib} instead.
  * <p>
- * Typically, this library is included as part of a call to either
- * {@link JsePlatform#standardGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * LuaThread.setGlobals(_G);
- * _G.load(new BaseLib());
- * _G.get("print").call(LuaValue.valueOf("hello, world"));
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  * This is a direct port of the corresponding library in C.
  *
  * @see JseBaseLib

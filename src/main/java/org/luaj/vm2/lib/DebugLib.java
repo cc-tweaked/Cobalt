@@ -39,19 +39,6 @@ import java.lang.ref.WeakReference;
  * Especially when lua-to-java bytecode compiling is being used
  * via a {@link LoadState.LuaCompiler} such as {@link LuaJC},
  * this cannot be done in all cases.
- * <p>
- * Typically, this library is included as part of a call to
- * {@link JsePlatform#debugGlobals()}
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
- * <pre> {@code
- * LuaTable _G = new LuaTable();
- * _G.load(new DebugLib());
- * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
  *
  * @see LibFunction
  * @see JsePlatform
