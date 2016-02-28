@@ -129,7 +129,8 @@ public class luac {
 			// open output file
 
 			// process input files
-			try (OutputStream fos = new FileOutputStream(output)) {
+			OutputStream fos = new FileOutputStream(output);
+			try {
 				JsePlatform.standardGlobals();
 				processing = true;
 				for (int i = 0; i < args.length; i++) {
@@ -149,6 +150,8 @@ public class luac {
 						}
 					}
 				}
+			} finally {
+				fos.close();
 			}
 
 		} catch (IOException ioe) {

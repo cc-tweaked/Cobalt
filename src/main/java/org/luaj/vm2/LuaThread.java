@@ -290,7 +290,7 @@ public class LuaThread extends LuaValue {
 		int status = LuaThread.STATUS_INITIAL;
 
 		State(LuaThread lua_thread, LuaValue function) {
-			this.lua_thread = new WeakReference<>(lua_thread);
+			this.lua_thread = new WeakReference<LuaThread>(lua_thread);
 			this.function = function;
 		}
 

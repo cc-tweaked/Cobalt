@@ -227,7 +227,7 @@ public class WeakTable extends LuaTable {
 		final WeakReference<LuaValue> ref;
 
 		protected WeakValue(LuaValue value) {
-			ref = new WeakReference<>(value);
+			ref = new WeakReference<LuaValue>(value);
 		}
 
 		@Override
@@ -275,7 +275,7 @@ public class WeakTable extends LuaTable {
 
 		private WeakUserdata(LuaValue value) {
 			super(value);
-			ob = new WeakReference<>(value.touserdata());
+			ob = new WeakReference<Object>(value.touserdata());
 			mt = value.getmetatable();
 		}
 

@@ -1,6 +1,6 @@
 apply plugin: 'java'
 
-targetCompatibility = sourceCompatibility = 1.7
+targetCompatibility = sourceCompatibility = 1.6
 compileTestJava.sourceCompatibility = compileTestJava.targetCompatibility = 1.8
 version = '0.1'
 
@@ -13,12 +13,7 @@ repositories {
 }
 
 dependencies {
-	compile 'org.apache.bcel:bcel:5.2'
 	testCompile 'junit:junit:4.+'
-
-	compile('org.squiddev:luaj.api:1.+') {
-		exclude group: '*'
-	}
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {

@@ -50,7 +50,7 @@ public class LexState {
 		RESERVED_LOCAL_VAR_FOR_STATE,
 		RESERVED_LOCAL_VAR_FOR_STEP
 	};
-	private static final Hashtable<String, Boolean> RESERVED_LOCAL_VAR_KEYWORDS_TABLE = new Hashtable<>();
+	private static final Hashtable<String, Boolean> RESERVED_LOCAL_VAR_KEYWORDS_TABLE = new Hashtable<String, Boolean>();
 
 	static {
 		for (String RESERVED_LOCAL_VAR_KEYWORD : RESERVED_LOCAL_VAR_KEYWORDS) {
@@ -170,7 +170,7 @@ public class LexState {
 	final static int FIRST_RESERVED = TK_AND;
 	final static int NUM_RESERVED = TK_WHILE + 1 - FIRST_RESERVED;
 
-	final static Hashtable<LuaString, Integer> RESERVED = new Hashtable<>();
+	final static Hashtable<LuaString, Integer> RESERVED = new Hashtable<LuaString, Integer>();
 
 	static {
 		for (int i = 0; i < NUM_RESERVED; i++) {
@@ -964,7 +964,7 @@ public class LexState {
 		fs.bl = null;
 		f.maxstacksize = 2;  /* registers 0/1 are always valid */
 		//fs.h = new LTable();
-		fs.htable = new Hashtable<>();
+		fs.htable = new Hashtable<LuaValue, Integer>();
 	}
 
 	void close_func() {

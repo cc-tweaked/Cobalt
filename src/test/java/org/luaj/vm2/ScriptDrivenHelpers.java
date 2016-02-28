@@ -26,7 +26,6 @@ package org.luaj.vm2;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,23 +36,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ScriptDrivenHelpers implements ResourceFinder {
-	public enum PlatformType {
-		JSE,
-		LUAJC
-	}
-
-	private final PlatformType platform;
 	private final String subdir;
 	protected LuaTable globals;
 
-	protected ScriptDrivenHelpers(PlatformType platform, String subdir) {
-		this.platform = platform;
+	protected ScriptDrivenHelpers(String subdir) {
 		this.subdir = subdir;
 	}
 
 	public void setup() {
 		globals = JsePlatform.debugGlobals();
-		if (platform == PlatformType.LUAJC) LuaJC.install();
 
 		BaseLib.FINDER = this;
 	}
@@ -103,12 +94,7 @@ public class ScriptDrivenHelpers implements ResourceFinder {
 		InputStream script = this.findResource(name + ".lua");
 		if (script == null) fail("Could not load script for test case: " + name);
 		try {
-			switch (this.platform) {
-				case LUAJC:
-					return LuaJC.getInstance().load(script, name, globals);
-				default:
-					return LoadState.load(script, "@" + name + ".lua", globals);
-			}
+			return LoadState.load(script, "@" + name + ".lua", globals);
 		} finally {
 			script.close();
 		}

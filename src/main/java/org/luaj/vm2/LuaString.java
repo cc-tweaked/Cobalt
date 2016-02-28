@@ -82,7 +82,7 @@ public class LuaString extends LuaValue {
 	 */
 	public final int m_length;
 
-	private static final Hashtable<Object, WeakReference<LuaString>> index_java = new Hashtable<>();
+	private static final Hashtable<Object, WeakReference<LuaString>> index_java = new Hashtable<Object, WeakReference<LuaString>>();
 
 	private static LuaString index_get(Object key) {
 		WeakReference<LuaString> w = LuaString.index_java.get(key);
@@ -90,7 +90,7 @@ public class LuaString extends LuaValue {
 	}
 
 	private static void index_set(Object key, LuaString value) {
-		LuaString.index_java.put(key, new WeakReference<>(value));
+		LuaString.index_java.put(key, new WeakReference<LuaString>(value));
 	}
 
 	/**

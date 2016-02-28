@@ -43,7 +43,7 @@ import java.util.Collection;
  */
 @RunWith(Parameterized.class)
 public class ErrorsTest {
-	private ScriptDrivenHelpers helpers = new ScriptDrivenHelpers(ScriptDrivenHelpers.PlatformType.JSE, "/errors/");
+	private ScriptDrivenHelpers helpers = new ScriptDrivenHelpers("/errors/");
 	private String name;
 
 	public ErrorsTest(String name) {

@@ -31,7 +31,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 /**
  * Compatibility tests for the LuaJ VM
@@ -39,96 +38,58 @@ import java.util.stream.Collectors;
  * Results are compared for exact match with
  * the installed C-based lua environment.
  */
+@RunWith(Parameterized.class)
 public class CompatibilityTest {
+	private LuaValue savedStringMetatable;
 
-	/**
-	 * A base class for compatibility tests. This is awful design but meh.
-	 */
-	private static class CompatibilityTestHelpers {
-		private LuaValue savedStringMetatable;
+	protected String name;
+	protected ScriptDrivenHelpers helpers;
 
-		protected String name;
-		protected ScriptDrivenHelpers helpers;
-
-		public CompatibilityTestHelpers(String name, ScriptDrivenHelpers.PlatformType platform) {
-			helpers = new ScriptDrivenHelpers(platform, "/");
-			this.name = name;
-		}
-
-		public static Collection<Object[]> getTests() {
-			Object[][] tests = {
-				{"baselib"},
-				{"coroutinelib"},
-				{"debuglib"},
-				{"iolib"},
-				{"manyupvals"},
-				{"mathlib"},
-				{"metatags"},
-				{"oslib"},
-				{"stringlib"},
-				{"tablelib"},
-				{"tailcalls"},
-				{"upvalues"},
-				{"vm"},
-
-			};
-
-			return Arrays.asList(tests);
-		}
-
-		@Before
-		public void setup() {
-			helpers.setup();
-			savedStringMetatable = LuaString.s_metatable;
-		}
-
-		@After
-		public void tearDown() {
-			LuaNil.s_metatable = null;
-			LuaBoolean.s_metatable = null;
-			LuaNumber.s_metatable = null;
-			LuaFunction.s_metatable = null;
-			LuaThread.s_metatable = null;
-			LuaString.s_metatable = savedStringMetatable;
-		}
+	public CompatibilityTest(String name) {
+		helpers = new ScriptDrivenHelpers("/");
+		this.name = name;
 	}
 
-	@RunWith(Parameterized.class)
-	public static class JseCompatibilityTest extends CompatibilityTestHelpers {
-		public JseCompatibilityTest(String name) {
-			super(name, ScriptDrivenHelpers.PlatformType.JSE);
-		}
+	@Parameterized.Parameters(name = "{0}")
+	public static Collection<Object[]> getTests() {
+		Object[][] tests = {
+			{"baselib"},
+			{"coroutinelib"},
+			{"debuglib"},
+			{"iolib"},
+			{"manyupvals"},
+			{"mathlib"},
+			{"metatags"},
+			{"oslib"},
+			{"stringlib"},
+			{"tablelib"},
+			{"tailcalls"},
+			{"upvalues"},
+			{"vm"},
 
-		@Test
-		public void testOutput() throws Exception {
-			helpers.runTest(name);
-		}
+		};
 
-		@Parameterized.Parameters(name = "{0}")
-		public static Collection<Object[]> getTests() {
-			return CompatibilityTestHelpers.getTests();
-		}
+		return Arrays.asList(tests);
 	}
 
-	@RunWith(Parameterized.class)
-	public static class LuaJCCompatibilityTest extends CompatibilityTestHelpers {
-		public LuaJCCompatibilityTest(String name) {
-			super(name, ScriptDrivenHelpers.PlatformType.LUAJC);
-		}
+	@Before
+	public void setup() {
+		helpers.setup();
+		savedStringMetatable = LuaString.s_metatable;
+	}
 
-		@Test
-		public void testOutput() throws Exception {
-			helpers.runTest(name);
-		}
+	@After
+	public void tearDown() {
+		LuaNil.s_metatable = null;
+		LuaBoolean.s_metatable = null;
+		LuaNumber.s_metatable = null;
+		LuaFunction.s_metatable = null;
+		LuaThread.s_metatable = null;
+		LuaString.s_metatable = savedStringMetatable;
+	}
 
-		@Parameterized.Parameters(name = "{0}")
-		public static Collection<Object[]> getTests() {
-			return CompatibilityTestHelpers.getTests().stream()
-				.filter(s -> (
-					!s[0].equals("debuglib")
-						&& !s[0].equals("manyupvals") // Issues with setfenv
-						&& !s[0].equals("stringlib") // PCall and other issues
-				)).collect(Collectors.toList());
-		}
+	@Test
+	public void testOutput() throws Exception {
+		helpers.runTest(name);
 	}
 }

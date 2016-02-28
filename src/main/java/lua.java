@@ -24,10 +24,10 @@
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.*;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -43,7 +43,6 @@ public class lua {
 			"  -l name  require library 'name'\n" +
 			"  -i       enter interactive mode after executing 'script'\n" +
 			"  -v       show version information\n" +
-			"  -b      	use luajc bytecode-to-bytecode compiler (requires bcel on class path)\n" +
 			"  -n      	nodebug - do not load debug library by default\n" +
 			"  --       stop handling options\n" +
 			"  -        execute stdin and stop handling options";
@@ -62,8 +61,7 @@ public class lua {
 		boolean versioninfo = false;
 		boolean processing = true;
 		boolean nodebug = false;
-		boolean luajc = false;
-		Vector<String> libs = null;
+		List<String> libs = null;
 		try {
 			// stateful argument processing
 			for (int i = 0; i < args.length; i++) {
@@ -81,15 +79,12 @@ public class lua {
 							}
 							// input script - defer to last stage
 							break;
-						case 'b':
-							luajc = true;
-							break;
 						case 'l':
 							if (++i >= args.length) {
 								usageExit();
 							}
-							if (libs == null) libs = new Vector<>();
-							libs.addElement(args[i]);
+							if (libs == null) libs = new ArrayList<String>();
+							libs.add(args[i]);
 							break;
 						case 'i':
 							interactive = true;
@@ -120,9 +115,8 @@ public class lua {
 
 			// new lua state
 			_G = nodebug ? JsePlatform.standardGlobals() : JsePlatform.debugGlobals();
-			if (luajc) LuaJC.install();
 			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++) {
-				loadLibrary(libs.elementAt(i));
+				loadLibrary(libs.get(i));
 			}
 
 			// input script processing

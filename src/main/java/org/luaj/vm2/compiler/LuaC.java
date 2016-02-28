@@ -27,7 +27,6 @@ import org.luaj.vm2.*;
 import org.luaj.vm2.LoadState.LuaCompiler;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,7 +56,6 @@ import static org.luaj.vm2.Lua.*;
  * } </pre>
  *
  * @see LuaCompiler
- * @see LuaJC
  * @see JsePlatform
  * @see BaseLib
  * @see LuaValue

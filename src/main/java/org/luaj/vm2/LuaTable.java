@@ -23,6 +23,8 @@
  */
 package org.luaj.vm2;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 /**
@@ -807,18 +809,17 @@ public class LuaTable extends LuaValue {
 	 * @return array of keys in the table
 	 */
 	public LuaValue[] keys() {
-		Vector<LuaValue> l = new Vector<>();
+		List<LuaValue> l = new ArrayList<LuaValue>();
 		LuaValue k = LuaValue.NIL;
 		while (true) {
 			Varargs n = next(k);
 			if ((k = n.arg1()).isnil()) {
 				break;
 			}
-			l.addElement(k);
+			l.add(k);
 		}
-		LuaValue[] a = new LuaValue[l.size()];
-		l.copyInto(a);
-		return a;
+
+		return l.toArray(new LuaValue[l.size()]);
 	}
 
 	// equality w/ metatable processing

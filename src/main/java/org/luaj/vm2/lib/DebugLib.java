@@ -25,7 +25,6 @@ package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJC;
 
 import java.lang.ref.WeakReference;
 
@@ -36,9 +35,6 @@ import java.lang.ref.WeakReference;
  * The debug library in luaj tries to emulate the behavior of the corresponding C-based lua library.
  * To do this, it must maintain a separate stack of calls to {@link LuaClosure} and {@link LibFunction}
  * instances.
- * Especially when lua-to-java bytecode compiling is being used
- * via a {@link LoadState.LuaCompiler} such as {@link LuaJC},
- * this cannot be done in all cases.
  *
  * @see LibFunction
  * @see JsePlatform
@@ -264,7 +260,7 @@ public class DebugLib extends VarArgFunction {
 		private int line;
 
 		DebugState(LuaThread thread) {
-			this.thread_ref = new WeakReference<>(thread);
+			this.thread_ref = new WeakReference<LuaThread>(thread);
 		}
 
 		public DebugInfo nextInfo() {

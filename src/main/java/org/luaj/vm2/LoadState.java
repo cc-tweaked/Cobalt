@@ -25,7 +25,6 @@ package org.luaj.vm2;
 
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -49,15 +48,6 @@ import java.io.InputStream;
  * Prior to loading code, a compiler should be installed.
  * <p>
  * By default, when using {@link JsePlatform} to construct globals, the {@link LuaC} compiler is installed.
- * <p>
- * To override the default compiler with, say, the {@link LuaJC}
- * lua-to-java bytecode compiler, install it before loading,
- * for example:
- * <pre> {@code
- * LuaValue _G = JsePlatform.standardGlobals();
- * LuaJC.install();
- * LoadState.load( new FileInputStream("main.lua"), "main.lua", _G ).call();
- * } </pre>
  *
  * @see LuaCompiler
  * @see LuaClosure
@@ -65,7 +55,6 @@ import java.io.InputStream;
  * @see LoadState#compiler
  * @see LoadState#load(InputStream, String, LuaValue)
  * @see LuaC
- * @see LuaJC
  */
 public class LoadState {
 

@@ -26,7 +26,6 @@ package org.luaj.vm2;
 import org.luaj.vm2.LoadState.LuaCompiler;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.DebugLib;
-import org.luaj.vm2.luajc.LuaJC;
 
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
@@ -63,7 +62,7 @@ import org.luaj.vm2.luajc.LuaJC;
  * }</pre>
  * <p>
  * In the preceding, the loaded value is typed as {@link LuaFunction}
- * to allow for the possibility of other compilers such as {@link LuaJC}
+ * to allow for the possibility of other compilers such as LuaJC
  * producing {@link LuaFunction} directly without
  * creating a {@link Prototype} or {@link LuaClosure}.
  * <p>
