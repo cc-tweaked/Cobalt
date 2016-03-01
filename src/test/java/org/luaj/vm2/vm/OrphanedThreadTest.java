@@ -38,6 +38,8 @@ import java.io.ByteArrayInputStream;
 import java.lang.ref.WeakReference;
 
 import static org.junit.Assert.*;
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
 
 
 public class OrphanedThreadTest {
@@ -59,19 +61,19 @@ public class OrphanedThreadTest {
 	@Test
 	public void testCollectOrphanedNormalThread() throws Exception {
 		function = new NormalFunction();
-		doTest(LuaValue.TRUE, LuaValue.ZERO);
+		doTest(TRUE, ZERO);
 	}
 
 	@Test
 	public void testCollectOrphanedEarlyCompletionThread() throws Exception {
 		function = new EarlyCompletionFunction();
-		doTest(LuaValue.TRUE, LuaValue.ZERO);
+		doTest(TRUE, ZERO);
 	}
 
 	@Test
 	public void testCollectOrphanedAbnormalThread() throws Exception {
 		function = new AbnormalFunction();
-		doTest(LuaValue.FALSE, LuaValue.valueOf("abnormal condition"));
+		doTest(FALSE, valueOf("abnormal condition"));
 	}
 
 	@Test
@@ -85,7 +87,7 @@ public class OrphanedThreadTest {
 				"return 'done'\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
-		doTest(LuaValue.TRUE, LuaValue.ZERO);
+		doTest(TRUE, ZERO);
 	}
 
 	@Test
@@ -102,7 +104,7 @@ public class OrphanedThreadTest {
 				"print( 'pcall-closre.result:', pcall( f, ... ) )\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
-		doTest(LuaValue.TRUE, LuaValue.ZERO);
+		doTest(TRUE, ZERO);
 	}
 
 	@Test
@@ -120,7 +122,7 @@ public class OrphanedThreadTest {
 				"load(f)()\n";
 		LuaC.install();
 		function = LoadState.load(new ByteArrayInputStream(script.getBytes()), "script", env);
-		doTest(LuaValue.TRUE, LuaValue.ONE);
+		doTest(TRUE, ONE);
 	}
 
 	private void doTest(LuaValue status2, LuaValue value2) throws Exception {
@@ -130,10 +132,10 @@ public class OrphanedThreadTest {
 		assertNotNull(luathr_ref.get());
 
 		// resume two times
-		Varargs a = luathread.resume(LuaValue.valueOf("foo"));
-		assertEquals(LuaValue.ONE, a.arg(2));
-		assertEquals(LuaValue.TRUE, a.arg1());
-		a = luathread.resume(LuaValue.valueOf("bar"));
+		Varargs a = luathread.resume(valueOf("foo"));
+		assertEquals(ONE, a.arg(2));
+		assertEquals(TRUE, a.arg1());
+		a = luathread.resume(valueOf("bar"));
 		assertEquals(value2, a.arg(2));
 		assertEquals(status2, a.arg1());
 
