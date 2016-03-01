@@ -23,7 +23,6 @@
  */
 package org.luaj.vm2.lib;
 
-import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.InputStream;
@@ -34,16 +33,11 @@ import java.io.InputStream;
  * This is used by required to load files that are part of
  * the application, and implemented by BaseLib
  * for both the Jme and Jse platforms.
- * <p>
- * The Jme version of base lib {@link BaseLib}
- * implements {@link BaseLib#FINDER} via {@link Class#getResourceAsStream(String)},
- * while the Jse version {@link JseBaseLib} implements it using {@link java.io.File#File(String)}.
- * <p>
+ *
  * The io library does not use this API for file manipulation.
  *
  * @see BaseLib
  * @see BaseLib#FINDER
- * @see JseBaseLib
  * @see JsePlatform
  */
 public interface ResourceFinder {
@@ -54,7 +48,6 @@ public interface ResourceFinder {
 	 * @param filename Filename to open
 	 * @return InputStream, or null if not found.
 	 * @see org.luaj.vm2.lib.BaseLib
-	 * @see org.luaj.vm2.lib.jse.JseBaseLib
 	 */
 	InputStream findResource(String filename);
 }

@@ -6,10 +6,6 @@ version = '0.1'
 
 repositories {
 	mavenCentral()
-	maven {
-		name = "squiddev"
-		url = "http://maven.bonzodandd.co.uk"
-	}
 }
 
 dependencies {
