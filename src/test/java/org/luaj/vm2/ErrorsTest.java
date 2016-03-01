@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.luaj.vm2.lib.BaseLib;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,7 +70,7 @@ public class ErrorsTest {
 
 	@Test
 	public void testBaseLibArgs() throws Exception {
-		BaseLib.instance.STDIN = new InputStream() {
+		helpers.state.STDIN = new InputStream() {
 			@Override
 			public int read() throws IOException {
 				return -1;

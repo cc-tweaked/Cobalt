@@ -44,16 +44,13 @@ import static org.luaj.vm2.Factory.valueOf;
  */
 public class TableLib extends OneArgFunction {
 
-	public TableLib() {
-	}
-
 	private LuaTable init(LuaState state) {
 		LuaTable t = new LuaTable();
 		bind(state, t, TableLib.class, new String[]{"getn", "maxn",}, 1);
 		bind(state, t, TableLibV.class, new String[]{
 			"remove", "concat", "insert", "sort", "foreach", "foreachi",});
 		env.set(state, "table", t);
-		PackageLib.instance.LOADED.set(state, "table", t);
+		state.loadedPackages.set(state, "table", t);
 		return t;
 	}
 

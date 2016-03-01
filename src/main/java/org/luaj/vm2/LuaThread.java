@@ -27,6 +27,7 @@ import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.CoroutineLib;
 import org.luaj.vm2.lib.DebugLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.lang.ref.WeakReference;
 
@@ -101,7 +102,7 @@ public class LuaThread extends LuaValue {
 
 	public final LuaState luaState;
 
-	private static final LuaThread main_thread = new LuaThread(new LuaState());
+	private static final LuaThread main_thread = new LuaThread(new LuaState(new FileResourceManipulator()));
 
 	// state of running thread including call stack
 	private static LuaThread running_thread = main_thread;

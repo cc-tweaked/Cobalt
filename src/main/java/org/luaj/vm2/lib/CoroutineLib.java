@@ -56,16 +56,13 @@ public class CoroutineLib extends VarArgFunction {
 	private static final int WRAP = 6;
 	private static final int WRAPPED = 7;
 
-	public CoroutineLib() {
-	}
-
 	private LuaTable init(LuaState state) {
 		LuaTable t = new LuaTable();
 		bind(state, t, CoroutineLib.class, new String[]{
 				"create", "resume", "running", "status", "yield", "wrap"},
 			CREATE);
 		env.set(state, "coroutine", t);
-		PackageLib.instance.LOADED.set(state, "coroutine", t);
+		state.loadedPackages.set(state, "coroutine", t);
 		return t;
 	}
 

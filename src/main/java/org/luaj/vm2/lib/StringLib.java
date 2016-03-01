@@ -45,11 +45,6 @@ import static org.luaj.vm2.Factory.*;
  */
 public class StringLib extends OneArgFunction {
 
-	public static LuaTable instance;
-
-	public StringLib() {
-	}
-
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg) {
 		LuaTable t = new LuaTable();
@@ -60,9 +55,9 @@ public class StringLib extends OneArgFunction {
 			"gmatch", "gsub", "match", "rep",
 			"sub"});
 		env.set(state, "string", t);
-		instance = t;
+
 		state.stringMetatable = tableOf(new LuaValue[]{INDEX, t});
-		PackageLib.instance.LOADED.set(state, "string", t);
+		state.loadedPackages.set(state, "string", t);
 		return t;
 	}
 

@@ -23,8 +23,6 @@
  */
 package org.luaj.vm2;
 
-import org.luaj.vm2.lib.StringLib;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -200,7 +198,7 @@ public class LuaString extends LuaValue {
 	// get is delegated to the string library
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
-		return state.stringMetatable != null ? gettable(state, this, key) : StringLib.instance.get(state, key);
+		return gettable(state, this, key);
 	}
 
 	// unary operators

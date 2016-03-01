@@ -33,10 +33,10 @@ import org.luaj.vm2.lib.*;
 /**
  * The {@link JsePlatform} class is a convenience class to standardize
  * how globals tables are initialized for the JSE platform.
- * <p>
+ *
  * It is used to allocate either a set of standard globals using
  * {@link #standardGlobals(LuaState)} or debug globals using {@link #debugGlobals(LuaState)}
- * <p>
+ *
  * A simple example of initializing globals and using them from Java is:
  * <pre> {@code
  * LuaValue _G = JsePlatform.standardGlobals();
@@ -47,14 +47,14 @@ import org.luaj.vm2.lib.*;
  * <pre> {@code
  * LoadState.load(new FileInputStream("main.lua"), "main.lua", _G ).call();
  * } </pre>
- * <p>
+ *
  * although {@code require} could also be used:
  * <pre> {@code
  * _G.get("require").call(LuaValue.valueOf("main"));
  * } </pre>
  * For this to succeed, the file "main.lua" must be in the current directory or a resource.
- * See {@link BaseLib} for details on finding scripts using {@link ResourceFinder}.
- * <p>
+ * See {@link BaseLib} for details on finding scripts using {@link ResourceManipulator}.
+ *
  * The standard globals will contain all standard libraries plus {@code luajava}:
  * <ul>
  * <li>{@link BaseLib}</li>
@@ -64,12 +64,12 @@ import org.luaj.vm2.lib.*;
  * <li>{@link CoroutineLib}</li>
  * <li>{@link MathLib}</li>
  * <li>{@link JseIoLib}</li>
- * <li>{@link JseOsLib}</li>
+ * <li>{@link OsLib}</li>
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
- * <p>
+ *
  * The debug globals are simply the standard globals plus the {@code debug} library {@link DebugLib}.
- * <p>
+ *
  * The class ensures that initialization is done in the correct order,
  * and that linkage is made  to {@link LuaThread#setGlobals(LuaValue)}.
  */
@@ -92,7 +92,7 @@ public class JsePlatform {
 		_G.load(state, new CoroutineLib());
 		_G.load(state, new MathLib());
 		_G.load(state, new JseIoLib());
-		_G.load(state, new JseOsLib());
+		_G.load(state, new OsLib());
 		LuaThread.setGlobals(_G);
 		LuaC.install();
 		return _G;

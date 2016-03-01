@@ -26,7 +26,6 @@ package org.luaj.vm2.lib.jse;
 
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaString;
-import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.IoLib;
 import org.luaj.vm2.lib.LibFunction;
 
@@ -52,13 +51,13 @@ public class JseIoLib extends IoLib {
 	}
 
 	@Override
-	protected File wrapStdin() throws IOException {
-		return new FileImpl(BaseLib.instance.STDIN);
+	protected File wrapStream(InputStream stream) throws IOException {
+		return new FileImpl(stream);
 	}
 
 	@Override
-	protected File wrapStdout() throws IOException {
-		return new FileImpl(BaseLib.instance.STDOUT);
+	protected File wrapStream(OutputStream stream) throws IOException {
+		return new FileImpl(stream);
 	}
 
 	@Override
@@ -87,10 +86,6 @@ public class JseIoLib extends IoLib {
 		java.io.File f = java.io.File.createTempFile(".luaj", "bin");
 		f.deleteOnExit();
 		return new FileImpl(new RandomAccessFile(f, "rw"));
-	}
-
-	private static void notimplemented() {
-		throw new LuaError("not implemented");
 	}
 
 	private final class FileImpl extends File {
@@ -150,7 +145,7 @@ public class JseIoLib extends IoLib {
 			} else if (file != null) {
 				file.write(s.m_bytes, s.m_offset, s.m_length);
 			} else {
-				notimplemented();
+				throw new LuaError("not implemented");
 			}
 			if (nobuffer) {
 				flush();
@@ -174,8 +169,7 @@ public class JseIoLib extends IoLib {
 				}
 				return (int) file.getFilePointer();
 			}
-			notimplemented();
-			return 0;
+			throw new LuaError("not implemented");
 		}
 
 		@Override
@@ -203,8 +197,7 @@ public class JseIoLib extends IoLib {
 				file.seek(fp);
 				return c;
 			}
-			notimplemented();
-			return 0;
+			throw new LuaError("not implemented");
 		}
 
 		// return char if read, -1 if eof, throw IOException on other exception
@@ -215,8 +208,7 @@ public class JseIoLib extends IoLib {
 			} else if (file != null) {
 				return file.read();
 			}
-			notimplemented();
-			return 0;
+			throw new LuaError("not implemented");
 		}
 
 		// return number of bytes read if positive, -1 if eof, throws IOException
@@ -227,9 +219,8 @@ public class JseIoLib extends IoLib {
 			} else if (is != null) {
 				return is.read(bytes, offset, length);
 			} else {
-				notimplemented();
+				throw new LuaError("not implemented");
 			}
-			return length;
 		}
 	}
 }

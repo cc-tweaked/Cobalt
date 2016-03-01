@@ -26,7 +26,8 @@ package org.luaj.vm2.lib;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static org.luaj.vm2.Constants.*;
 import static org.luaj.vm2.Factory.valueOf;
@@ -37,32 +38,17 @@ import static org.luaj.vm2.Factory.varargsOf;
  * <p>
  * This contains all library functions listed as "basic functions" in the lua documentation for JME.
  * The functions dofile and loadfile use the
- * {@link #FINDER} instance to find resource files.
+ * {@link LuaState#resourceManipulator} instance to find resource files.
  * The default loader chain in {@link PackageLib} will use these as well.
  * <p>
  * This is a direct port of the corresponding library in C.
  *
- * @see ResourceFinder
- * @see #FINDER
+ * @see org.luaj.vm2.lib.platform.ResourceManipulator
  * @see LibFunction
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.1">http://www.lua.org/manual/5.1/manual.html#5.1</a>
  */
-public class BaseLib extends OneArgFunction implements ResourceFinder {
-
-	public static BaseLib instance;
-
-	public InputStream STDIN = System.in;
-	public PrintStream STDOUT = System.out;
-	public PrintStream STDERR = System.err;
-
-	/**
-	 * Singleton file opener for this Java ClassLoader realm.
-	 * <p>
-	 * Unless set or changed elsewhere, will be set by the BaseLib that is created.
-	 */
-	public static ResourceFinder FINDER;
-
+public class BaseLib extends OneArgFunction {
 	private LuaValue next;
 	private LuaValue inext;
 
@@ -97,13 +83,6 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		"__inext", // "inext" ( table, [int-index] ) -> next-index, next-value
 	};
 
-	/**
-	 * Construct a base libarary instance.
-	 */
-	public BaseLib() {
-		instance = this;
-	}
-
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg) {
 		env.set(state, "_G", env);
@@ -119,40 +98,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		for (String LIBV_KEY : LIBV_KEYS) {
 			((BaseLibV) env.get(state, LIBV_KEY)).baselib = this;
 		}
-
-		// set the default resource finder if not set already
-		if (FINDER == null) {
-			FINDER = this;
-		}
 		return env;
-	}
-
-	/**
-	 * Try to open a file in the current working directory,
-	 * or fall back to base opener if not found.
-	 * <p>
-	 * This implementation attempts to open the file using new File(filename).
-	 * It falls back to the base implementation that looks it up as a resource
-	 * in the class path if not found as a plain file.
-	 *
-	 * @param filename Filename to find
-	 * @return InputStream, or null if not found.
-	 * @see org.luaj.vm2.lib.BaseLib
-	 * @see org.luaj.vm2.lib.ResourceFinder
-	 */
-	@Override
-	public InputStream findResource(String filename) {
-		File f = new File(filename);
-		if (!f.exists()) {
-			Class c = getClass();
-			return c.getResourceAsStream(filename.startsWith("/") ? filename : "/" + filename);
-		}
-
-		try {
-			return new FileInputStream(f);
-		} catch (IOException ioe) {
-			return null;
-		}
 	}
 
 	private static final class BaseLib2 extends TwoArgFunction {
@@ -161,7 +107,6 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 			switch (opcode) {
 				case 0: // "collectgarbage", // ( opt [,arg] ) -> value
 					String s = arg1.checkjstring();
-					int result = 0;
 					if ("collect".equals(s)) {
 						System.gc();
 						return ZERO;
@@ -220,8 +165,8 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				case 1: // "dofile", // ( filename ) -> result1, ...
 				{
 					Varargs v = args.isnil(1) ?
-						BaseLib.loadStream(baselib.STDIN, "=stdin") :
-						BaseLib.loadFile(args.checkjstring(1));
+						BaseLib.loadStream(state.STDIN, "=stdin") :
+						BaseLib.loadFile(state, args.checkjstring(1));
 					if (v.isnil(1)) {
 						throw new LuaError(v.tojstring(2));
 					} else {
@@ -248,8 +193,8 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				case 5: // "loadfile", // ( [filename] ) -> chunk | nil, msg
 				{
 					return args.isnil(1) ?
-						BaseLib.loadStream(baselib.STDIN, "stdin") :
-						BaseLib.loadFile(args.checkjstring(1));
+						BaseLib.loadStream(state.STDIN, "stdin") :
+						BaseLib.loadFile(state, args.checkjstring(1));
 				}
 				case 6: // "loadstring", // ( string [,chunkname] ) -> chunk | nil, msg
 				{
@@ -280,12 +225,12 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				{
 					LuaValue tostring = LuaThread.getGlobals().get(state, "tostring");
 					for (int i = 1, n = args.narg(); i <= n; i++) {
-						if (i > 1) baselib.STDOUT.write('\t');
+						if (i > 1) state.STDOUT.write('\t');
 						LuaString s = tostring.call(state, args.arg(i)).strvalue();
 						int z = s.indexOf((byte) 0, 0);
-						baselib.STDOUT.write(s.m_bytes, s.m_offset, z >= 0 ? z : s.m_length);
+						state.STDOUT.write(s.m_bytes, s.m_offset, z >= 0 ? z : s.m_length);
 					}
-					baselib.STDOUT.println();
+					state.STDOUT.println();
 					return NONE;
 				}
 				case 10: // "select", // (f, ...) -> value1, ...
@@ -394,11 +339,12 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	/**
 	 * Load from a named file, returning the chunk or nil,error of can't load
 	 *
+	 * @param state
 	 * @param filename Name of the file
 	 * @return Varargs containing chunk, or NIL,error-text on error
 	 */
-	public static Varargs loadFile(String filename) {
-		InputStream is = FINDER.findResource(filename);
+	public static Varargs loadFile(LuaState state, String filename) {
+		InputStream is = state.resourceManipulator.findResource(filename);
 		if (is == null) {
 			return varargsOf(NIL, valueOf("cannot open " + filename + ": No such file or directory"));
 		}

@@ -27,7 +27,6 @@ import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
-import org.luaj.vm2.lib.jse.JseOsLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.IOException;
@@ -38,37 +37,19 @@ import static org.luaj.vm2.Factory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the standard lua {@code os} library.
- * <p>
- * It is a usable base with simplified stub functions
- * for library functions that cannot be implemented uniformly
- * on Jse and Jme.
- * <p>
+ *
  * This can be installed as-is on either platform, or extended
  * and refined to be used in a complete Jse implementation.
- * <p>
+ *
  * Because the nature of the {@code os} library is to encapsulate
  * os-specific features, the behavior of these functions varies considerably
  * from their counterparts in the C platform.
- * <p>
- * The following functions have limited implementations of features
- * that are not supported well on Jme:
- * <ul>
- * <li>{@code execute()}</li>
- * <li>{@code remove()}</li>
- * <li>{@code rename()}</li>
- * <li>{@code tmpname()}</li>
- * </ul>
- * <p>
  *
  * @see LibFunction
- * @see JseOsLib
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.8">http://www.lua.org/manual/5.1/manual.html#5.8</a>
  */
 public class OsLib extends VarArgFunction {
-	public static final String TMP_PREFIX = ".luaj";
-	public static final String TMP_SUFFIX = "tmp";
-
 	private static final int INIT = 0;
 	private static final int CLOCK = 1;
 	private static final int DATE = 2;
@@ -97,19 +78,12 @@ public class OsLib extends VarArgFunction {
 	};
 
 	private static final long t0 = System.currentTimeMillis();
-	private static long tmpnames = t0;
-
-	/**
-	 * Create and OsLib instance.
-	 */
-	public OsLib() {
-	}
 
 	public LuaValue init(LuaState state) {
 		LuaTable t = new LuaTable();
 		bind(state, t, this.getClass(), NAMES, CLOCK);
 		env.set(state, "os", t);
-		PackageLib.instance.LOADED.set(state, "os", t);
+		state.loadedPackages.set(state, "os", t);
 		return t;
 	}
 
@@ -129,7 +103,7 @@ public class OsLib extends VarArgFunction {
 				case DIFFTIME:
 					return valueOf(difftime(args.checkdouble(1), args.checkdouble(2)));
 				case EXECUTE:
-					return valueOf(execute(args.optjstring(1, null)));
+					return valueOf(state.resourceManipulator.execute(args.optjstring(1, null)));
 				case EXIT:
 					exit(args.optint(1, 0));
 					return NONE;
@@ -138,10 +112,10 @@ public class OsLib extends VarArgFunction {
 					return val != null ? valueOf(val) : NIL;
 				}
 				case REMOVE:
-					remove(args.checkjstring(1));
+					state.resourceManipulator.remove(args.checkjstring(1));
 					return TRUE;
 				case RENAME:
-					rename(args.checkjstring(1), args.checkjstring(2));
+					state.resourceManipulator.rename(args.checkjstring(1), args.checkjstring(2));
 					return TRUE;
 				case SETLOCALE: {
 					String s = setlocale(args.optjstring(1, null), args.optjstring(2, "all"));
@@ -150,7 +124,7 @@ public class OsLib extends VarArgFunction {
 				case TIME:
 					return valueOf(time(args.arg1().isnil() ? null : args.checktable(1)));
 				case TMPNAME:
-					return valueOf(tmpname());
+					return valueOf(state.resourceManipulator.tmpName());
 			}
 			return NONE;
 		} catch (IOException e) {
@@ -207,20 +181,6 @@ public class OsLib extends VarArgFunction {
 	}
 
 	/**
-	 * This function is equivalent to the C function system.
-	 * It passes command to be executed by an operating system shell.
-	 * It returns a status code, which is system-dependent.
-	 * If command is absent, then it returns nonzero if a shell
-	 * is available and zero otherwise.
-	 *
-	 * @param command command to pass to the system
-	 * @return The command's exit code
-	 */
-	protected int execute(String command) {
-		return 0;
-	}
-
-	/**
 	 * Calls the C function exit, with an optional code, to terminate the host program.
 	 *
 	 * @param code The exit code
@@ -238,30 +198,6 @@ public class OsLib extends VarArgFunction {
 	 */
 	protected String getenv(String varname) {
 		return System.getProperty(varname);
-	}
-
-	/**
-	 * Deletes the file or directory with the given name.
-	 * Directories must be empty to be removed.
-	 * If this function fails, it throws and IOException
-	 *
-	 * @param filename The filename to delete
-	 * @throws IOException if it fails
-	 */
-	protected void remove(String filename) throws IOException {
-		throw new IOException("not implemented");
-	}
-
-	/**
-	 * Renames file or directory named oldname to newname.
-	 * If this function fails,it throws and IOException
-	 *
-	 * @param oldname old file name
-	 * @param newname new file name
-	 * @throws IOException if it fails
-	 */
-	protected void rename(String oldname, String newname) throws IOException {
-		throw new IOException("not implemented");
 	}
 
 	/**
@@ -298,24 +234,5 @@ public class OsLib extends VarArgFunction {
 	 */
 	protected long time(LuaTable table) {
 		return System.currentTimeMillis();
-	}
-
-	/**
-	 * Returns a string with a file name that can be used for a temporary file.
-	 * The file must be explicitly opened before its use and explicitly removed
-	 * when no longer needed.
-	 * <p>
-	 * On some systems (POSIX), this function also creates a file with that name,
-	 * to avoid security risks. (Someone else might create the file with wrong
-	 * permissions in the time between getting the name and creating the file.)
-	 * You still have to open the file to use it and to remove it (even if you
-	 * do not use it).
-	 *
-	 * @return String filename to use
-	 */
-	protected String tmpname() {
-		synchronized (OsLib.class) {
-			return TMP_PREFIX + (tmpnames++) + TMP_SUFFIX;
-		}
 	}
 }

@@ -122,7 +122,7 @@ public class DebugLib extends VarArgFunction {
 		LuaTable t = new LuaTable();
 		bind(state, t, DebugLib.class, NAMES, DEBUG);
 		env.set(state, "debug", t);
-		PackageLib.instance.LOADED.set(state, "debug", t);
+		state.loadedPackages.set(state, "debug", t);
 		return t;
 	}
 

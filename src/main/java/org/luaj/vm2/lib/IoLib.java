@@ -27,9 +27,7 @@ import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JseIoLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 
 import static org.luaj.vm2.Constants.*;
 import static org.luaj.vm2.Factory.valueOf;
@@ -113,18 +111,20 @@ public abstract class IoLib extends OneArgFunction {
 	/**
 	 * Wrap the standard input.
 	 *
+	 * @param stream The stream to wrap
 	 * @return File
 	 * @throws IOException On stream exception
 	 */
-	protected abstract File wrapStdin() throws IOException;
+	protected abstract File wrapStream(InputStream stream) throws IOException;
 
 	/**
 	 * Wrap the standard output.
 	 *
+	 * @param stream The stream to wrap
 	 * @return File
 	 * @throws IOException On stream exception
 	 */
-	protected abstract File wrapStdout() throws IOException;
+	protected abstract File wrapStream(OutputStream stream) throws IOException;
 
 	/**
 	 * Open a file in a particular mode.
@@ -242,7 +242,7 @@ public abstract class IoLib extends OneArgFunction {
 
 		// return the table
 		env.set(state, "io", t);
-		PackageLib.instance.LOADED.set(state, "io", t);
+		state.loadedPackages.set(state, "io", t);
 		return t;
 	}
 
@@ -272,27 +272,27 @@ public abstract class IoLib extends OneArgFunction {
 			try {
 				switch (opcode) {
 					case IO_FLUSH:
-						return iolib._io_flush();
+						return iolib._io_flush(state);
 					case IO_TMPFILE:
 						return iolib._io_tmpfile();
 					case IO_CLOSE:
-						return iolib._io_close(args.arg1());
+						return iolib._io_close(state, args.arg1());
 					case IO_INPUT:
-						return iolib._io_input(args.arg1());
+						return iolib._io_input(state, args.arg1());
 					case IO_OUTPUT:
-						return iolib._io_output(args.arg1());
+						return iolib._io_output(state, args.arg1());
 					case IO_TYPE:
 						return iolib._io_type(args.arg1());
 					case IO_POPEN:
 						return iolib._io_popen(args.checkjstring(1), args.optjstring(2, "r"));
 					case IO_OPEN:
-						return iolib._io_open(args.checkjstring(1), args.optjstring(2, "r"));
+						return iolib._io_open(state, args.checkjstring(1), args.optjstring(2, "r"));
 					case IO_LINES:
-						return iolib._io_lines(args.isvalue(1) ? args.checkjstring(1) : null);
+						return iolib._io_lines(state, args.isvalue(1) ? args.checkjstring(1) : null);
 					case IO_READ:
-						return iolib._io_read(args);
+						return iolib._io_read(state, args);
 					case IO_WRITE:
-						return iolib._io_write(args);
+						return iolib._io_write(state, args);
 
 					case FILE_CLOSE:
 						return iolib._file_close(args.arg1());
@@ -310,7 +310,7 @@ public abstract class IoLib extends OneArgFunction {
 						return iolib._file_write(args.arg1(), args.subargs(2));
 
 					case IO_INDEX:
-						return iolib._io_index(args.arg(2));
+						return iolib._io_index(state, args.arg(2));
 					case LINES_ITER:
 						return iolib._lines_iter(env);
 				}
@@ -321,13 +321,13 @@ public abstract class IoLib extends OneArgFunction {
 		}
 	}
 
-	private File input() {
-		return infile != null ? infile : (infile = ioopenfile("-", "r"));
+	private File input(LuaState state) {
+		return infile != null ? infile : (infile = ioopenfile(state, "-", "r"));
 	}
 
 	//	io.flush() -> bool
-	public Varargs _io_flush() throws IOException {
-		checkopen(output());
+	public Varargs _io_flush(LuaState state) throws IOException {
+		checkopen(output(state));
 		outfile.flush();
 		return TRUE;
 	}
@@ -338,24 +338,24 @@ public abstract class IoLib extends OneArgFunction {
 	}
 
 	//	io.close([file]) -> void
-	public Varargs _io_close(LuaValue file) throws IOException {
-		File f = file.isnil() ? output() : checkfile(file);
+	public Varargs _io_close(LuaState state, LuaValue file) throws IOException {
+		File f = file.isnil() ? output(state) : checkfile(file);
 		checkopen(f);
 		return ioclose(f);
 	}
 
 	//	io.input([file]) -> file
-	public Varargs _io_input(LuaValue file) {
-		infile = file.isnil() ? input() :
-			file.isstring() ? ioopenfile(file.checkjstring(), "r") :
+	public Varargs _io_input(LuaState state, LuaValue file) {
+		infile = file.isnil() ? input(state) :
+			file.isstring() ? ioopenfile(state, file.checkjstring(), "r") :
 				checkfile(file);
 		return infile;
 	}
 
 	// io.output(filename) -> file
-	public Varargs _io_output(LuaValue filename) {
-		outfile = filename.isnil() ? output() :
-			filename.isstring() ? ioopenfile(filename.checkjstring(), "w") :
+	public Varargs _io_output(LuaState state, LuaValue filename) {
+		outfile = filename.isnil() ? output(state) :
+			filename.isstring() ? ioopenfile(state, filename.checkjstring(), "w") :
 				checkfile(filename);
 		return outfile;
 	}
@@ -374,26 +374,26 @@ public abstract class IoLib extends OneArgFunction {
 	}
 
 	//	io.open(filename, [mode]) -> file | nil,err
-	public Varargs _io_open(String filename, String mode) throws IOException {
-		return rawopenfile(filename, mode);
+	public Varargs _io_open(LuaState state, String filename, String mode) throws IOException {
+		return rawopenfile(state, filename, mode);
 	}
 
 	//	io.lines(filename) -> iterator
-	public Varargs _io_lines(String filename) {
-		infile = filename == null ? input() : ioopenfile(filename, "r");
+	public Varargs _io_lines(LuaState state, String filename) {
+		infile = filename == null ? input(state) : ioopenfile(state, filename, "r");
 		checkopen(infile);
 		return lines(infile);
 	}
 
 	//	io.read(...) -> (...)
-	public Varargs _io_read(Varargs args) throws IOException {
-		checkopen(input());
+	public Varargs _io_read(LuaState state, Varargs args) throws IOException {
+		checkopen(input(state));
 		return ioread(infile, args);
 	}
 
 	//	io.write(...) -> void
-	public Varargs _io_write(Varargs args) throws IOException {
-		checkopen(output());
+	public Varargs _io_write(LuaState state, Varargs args) throws IOException {
+		checkopen(output(state));
 		return iowrite(outfile, args);
 	}
 
@@ -435,10 +435,10 @@ public abstract class IoLib extends OneArgFunction {
 	}
 
 	// __index, returns a field
-	public Varargs _io_index(LuaValue v) {
-		return v.equals(STDOUT) ? output() :
-			v.equals(STDIN) ? input() :
-				v.equals(STDERR) ? errput() : NIL;
+	public Varargs _io_index(LuaState state, LuaValue v) {
+		return v.equals(STDOUT) ? output(state) :
+			v.equals(STDIN) ? input(state) :
+				v.equals(STDERR) ? errput(state) : NIL;
 	}
 
 	//	lines iterator(s,var) -> var'
@@ -446,17 +446,17 @@ public abstract class IoLib extends OneArgFunction {
 		return freadline(checkfile(file));
 	}
 
-	private File output() {
-		return outfile != null ? outfile : (outfile = ioopenfile("-", "w"));
+	private File output(LuaState state) {
+		return outfile != null ? outfile : (outfile = ioopenfile(state, "-", "w"));
 	}
 
-	private File errput() {
-		return errfile != null ? errfile : (errfile = ioopenfile("-", "w"));
+	private File errput(LuaState state) {
+		return errfile != null ? errfile : (errfile = ioopenfile(state, "-", "w"));
 	}
 
-	private File ioopenfile(String filename, String mode) {
+	private File ioopenfile(LuaState state, String filename, String mode) {
 		try {
-			return rawopenfile(filename, mode);
+			return rawopenfile(state, filename, mode);
 		} catch (Exception e) {
 			throw new LuaError("io error: " + e.getMessage());
 		}
@@ -555,13 +555,13 @@ public abstract class IoLib extends OneArgFunction {
 		return file;
 	}
 
-	private File rawopenfile(String filename, String mode) throws IOException {
+	private File rawopenfile(LuaState state, String filename, String mode) throws IOException {
 		boolean isstdfile = "-".equals(filename);
 		boolean isreadmode = mode.startsWith("r");
 		if (isstdfile) {
 			return isreadmode ?
-				wrapStdin() :
-				wrapStdout();
+				wrapStream(state.STDIN) :
+				wrapStream(state.STDOUT);
 		}
 		boolean isappend = mode.startsWith("a");
 		boolean isupdate = mode.indexOf("+") > 0;

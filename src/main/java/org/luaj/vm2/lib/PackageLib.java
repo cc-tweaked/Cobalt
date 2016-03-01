@@ -26,7 +26,6 @@ package org.luaj.vm2.lib;
 import org.luaj.vm2.*;
 
 import java.io.InputStream;
-import java.io.PrintStream;
 
 import static org.luaj.vm2.Constants.*;
 import static org.luaj.vm2.Factory.*;
@@ -44,18 +43,9 @@ import static org.luaj.vm2.Factory.*;
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.3">http://www.lua.org/manual/5.1/manual.html#5.3</a>
  */
 public class PackageLib extends OneArgFunction {
+	public static final String DEFAULT_LUA_PATH = "?.lua";
 
-	public static String DEFAULT_LUA_PATH = "?.lua";
-
-	public InputStream STDIN = null;
-	public PrintStream STDOUT = System.out;
-	public LuaTable LOADED;
 	public LuaTable PACKAGE;
-
-	/**
-	 * Most recent instance of PackageLib
-	 */
-	public static PackageLib instance;
 
 	/**
 	 * Loader that loads from preload table if found there
@@ -92,16 +82,12 @@ public class PackageLib extends OneArgFunction {
 	private static final int OP_LUA_LOADER = 5;
 	private static final int OP_JAVA_LOADER = 6;
 
-	public PackageLib() {
-		instance = this;
-	}
-
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg) {
 		env.set(state, "require", new PkgLib1(env, "require", OP_REQUIRE, this));
 		env.set(state, "module", new PkgLibV(env, "module", OP_MODULE, this));
 		env.set(state, "package", PACKAGE = tableOf(new LuaValue[]{
-			_LOADED, LOADED = tableOf(),
+			_LOADED, state.loadedPackages = tableOf(),
 			_PRELOAD, tableOf(),
 			_PATH, valueOf(DEFAULT_LUA_PATH),
 			_LOADLIB, new PkgLibV(env, "loadlib", OP_LOADLIB, this),
@@ -111,7 +97,7 @@ public class PackageLib extends OneArgFunction {
 			lua_loader = new PkgLibV(env, "lua_loader", OP_LUA_LOADER, this),
 			java_loader = new PkgLibV(env, "java_loader", OP_JAVA_LOADER, this),
 		})}));
-		LOADED.set(state, "package", PACKAGE);
+		state.loadedPackages.set(state, "package", PACKAGE);
 		return env;
 	}
 
@@ -183,7 +169,7 @@ public class PackageLib extends OneArgFunction {
 	 * @param value Value of package
 	 */
 	public void setIsLoaded(LuaState state, String name, LuaTable value) {
-		LOADED.set(state, name, value);
+		state.loadedPackages.set(state, name, value);
 	}
 
 	public void setLuaPath(LuaState state, String newLuaPath) {
@@ -226,7 +212,7 @@ public class PackageLib extends OneArgFunction {
 	public Varargs module(LuaState state, Varargs args) {
 		LuaString modname = args.checkstring(1);
 		int n = args.narg();
-		LuaValue value = LOADED.get(state, modname);
+		LuaValue value = state.loadedPackages.get(state, modname);
 		LuaValue module;
 		if (!value.istable()) { /* not found? */
 
@@ -237,7 +223,7 @@ public class PackageLib extends OneArgFunction {
 				LuaValue result;
 				throw new LuaError("name conflict for module '" + modname + "'");
 			}
-			LOADED.set(state, modname, module);
+			state.loadedPackages.set(state, modname, module);
 		} else {
 			module = value;
 		}
@@ -338,10 +324,9 @@ public class PackageLib extends OneArgFunction {
 	 */
 	public LuaValue require(LuaState state, LuaValue arg) {
 		LuaString name = arg.checkstring();
-		LuaValue loaded = LOADED.get(state, name);
+		LuaValue loaded = state.loadedPackages.get(state, name);
 		if (loaded.toboolean()) {
 			if (loaded == _SENTINEL) {
-				LuaValue result;
 				throw new LuaError("loop or previous error loading module '" + name + "'");
 			}
 			return loaded;
@@ -350,11 +335,10 @@ public class PackageLib extends OneArgFunction {
 		/* else must load it; iterate over available loaders */
 		LuaTable tbl = PACKAGE.get(state, _LOADERS).checktable();
 		StringBuilder sb = new StringBuilder();
-		LuaValue chunk = null;
+		LuaValue chunk;
 		for (int i = 1; true; i++) {
 			LuaValue loader = tbl.get(state, i);
 			if (loader.isnil()) {
-				LuaValue result;
 				throw new LuaError("module '" + name + "' not found: " + name + sb);
 			}
 
@@ -369,12 +353,12 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		// load the module using the loader
-		LOADED.set(state, name, _SENTINEL);
+		state.loadedPackages.set(state, name, _SENTINEL);
 		LuaValue result = chunk.call(state, name);
 		if (!result.isnil()) {
-			LOADED.set(state, name, result);
-		} else if ((result = LOADED.get(state, name)) == _SENTINEL) {
-			LOADED.set(state, name, result = TRUE);
+			state.loadedPackages.set(state, name, result);
+		} else if ((result = state.loadedPackages.get(state, name)) == _SENTINEL) {
+			state.loadedPackages.set(state, name, result = TRUE);
 		}
 		return result;
 	}
@@ -428,7 +412,7 @@ public class PackageLib extends OneArgFunction {
 			}
 
 			// try loading the file
-			Varargs v = BaseLib.loadFile(filename);
+			Varargs v = BaseLib.loadFile(state, filename);
 			if (v.arg1().isfunction()) {
 				return v.arg1();
 			}

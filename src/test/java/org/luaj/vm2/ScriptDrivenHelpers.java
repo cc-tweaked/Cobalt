@@ -23,9 +23,8 @@
  */
 package org.luaj.vm2;
 
-import org.luaj.vm2.lib.BaseLib;
-import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.AbstractResourceManipulator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,8 +34,9 @@ import java.io.PrintStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class ScriptDrivenHelpers implements ResourceFinder {
+public class ScriptDrivenHelpers extends AbstractResourceManipulator {
 	private final String subdir;
+	protected LuaState state;
 	protected LuaTable globals;
 
 	protected ScriptDrivenHelpers(String subdir) {
@@ -44,10 +44,10 @@ public class ScriptDrivenHelpers implements ResourceFinder {
 	}
 
 	public void setup() {
-		LuaState state = LuaThread.getRunning().luaState;
+		state = LuaThread.getRunning().luaState;
 		globals = JsePlatform.debugGlobals(state);
 
-		BaseLib.FINDER = this;
+		state.resourceManipulator = this;
 	}
 
 	@Override
@@ -63,9 +63,9 @@ public class ScriptDrivenHelpers implements ResourceFinder {
 	public void runTest(String testName) throws Exception {
 		// Override print()
 		final ByteArrayOutputStream output = new ByteArrayOutputStream();
-		final PrintStream oldps = BaseLib.instance.STDOUT;
+		final PrintStream oldps = state.STDOUT;
 		final PrintStream ps = new PrintStream(output);
-		BaseLib.instance.STDOUT = ps;
+		state.STDOUT = ps;
 
 		// Run the script
 		try {
@@ -80,7 +80,7 @@ public class ScriptDrivenHelpers implements ResourceFinder {
 
 			assertEquals(expectedOutput.replace("-nan", "<nan>"), actualOutput);
 		} finally {
-			BaseLib.instance.STDOUT = oldps;
+			state.STDOUT = oldps;
 			ps.close();
 		}
 	}

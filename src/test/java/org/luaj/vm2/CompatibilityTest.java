@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -76,6 +77,7 @@ public class CompatibilityTest {
 	public void setup() {
 		helpers.setup();
 		LuaState state = LuaThread.getRunning().luaState;
+		state.resourceManipulator = new FileResourceManipulator();
 		savedStringMetatable = state.stringMetatable;
 	}
 
