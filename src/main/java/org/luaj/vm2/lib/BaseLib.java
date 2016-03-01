@@ -182,7 +182,7 @@ public class BaseLib extends OneArgFunction {
 				case 3: // "getmetatable", // ( object ) -> table
 				{
 					LuaValue mt = args.checkvalue(1).getMetatable(state);
-					return mt != null ? mt.rawget(state, METATABLE).optvalue(mt) : NIL;
+					return mt != null ? mt.rawget(METATABLE).optvalue(mt) : NIL;
 				}
 				case 4: // "load", // ( func [,chunkname] ) -> chunk | nil, msg
 				{
@@ -267,16 +267,16 @@ public class BaseLib extends OneArgFunction {
 				case 13: // "rawequal", // (v1, v2) -> boolean
 					return valueOf(args.checkvalue(1) == args.checkvalue(2));
 				case 14: // "rawget", // (table, index) -> value
-					return args.checktable(1).rawget(state, args.checkvalue(2));
+					return args.checktable(1).rawget(args.checkvalue(2));
 				case 15: { // "rawset", // (table, index, value) -> table
 					LuaTable t = args.checktable(1);
-					t.rawset(state, args.checknotnil(2), args.checkvalue(3));
+					t.rawset(args.checknotnil(2), args.checkvalue(3));
 					return t;
 				}
 				case 16: { // "setmetatable", // (table, metatable) -> table
 					final LuaValue t = args.arg1();
 					final LuaValue mt0 = t.getMetatable(state);
-					if (mt0 != null && !mt0.rawget(state, METATABLE).isnil()) {
+					if (mt0 != null && !mt0.rawget(METATABLE).isnil()) {
 						throw new LuaError("cannot change a protected metatable");
 					}
 					final LuaValue mt = args.checkvalue(2);

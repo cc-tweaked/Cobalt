@@ -65,8 +65,8 @@ public class TableHashTest {
 			LuaValue vi = LuaString.valueOf("Test Value! " + i);
 			assertEquals(vi, t.get(state, keys[i]));
 			assertEquals(vi, t.get(state, LuaString.valueOf(keys[i])));
-			assertEquals(vi, t.rawget(state, keys[i]));
-			assertEquals(vi, t.rawget(state, keys[i]));
+			assertEquals(vi, t.rawget(keys[i]));
+			assertEquals(vi, t.rawget(keys[i]));
 		}
 
 		// replace with new values
@@ -189,16 +189,16 @@ public class TableHashTest {
 		assertEquals("from mt: 456", t.get(state, 456).tojstring());
 
 		// use raw set
-		t.rawset(state, "qqq", valueOf("alt-qqq"));
-		t.rawset(state, 456, valueOf("alt-456"));
+		t.rawset("qqq", valueOf("alt-qqq"));
+		t.rawset(456, valueOf("alt-456"));
 		assertEquals("abc", t.get(state, "ppp").tojstring());
 		assertEquals("def", t.get(state, 123).tojstring());
 		assertEquals("alt-qqq", t.get(state, "qqq").tojstring());
 		assertEquals("alt-456", t.get(state, 456).tojstring());
 
 		// remove using raw set
-		t.rawset(state, "qqq", NIL);
-		t.rawset(state, 456, NIL);
+		t.rawset("qqq", NIL);
+		t.rawset(456, NIL);
 		assertEquals("abc", t.get(state, "ppp").tojstring());
 		assertEquals("def", t.get(state, 123).tojstring());
 		assertEquals("from mt: qqq", t.get(state, "qqq").tojstring());

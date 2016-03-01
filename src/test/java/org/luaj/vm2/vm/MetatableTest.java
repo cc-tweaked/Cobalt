@@ -240,7 +240,7 @@ public class MetatableTest {
 		mt.set(state, NEWINDEX, new ThreeArgFunction() {
 			@Override
 			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-				fallback.rawset(state, arg2, valueOf("via-func-" + arg3));
+				fallback.rawset(arg2, valueOf("via-func-" + arg3));
 				return NONE;
 			}
 
@@ -275,13 +275,13 @@ public class MetatableTest {
 		assertEquals(ee, t.get(state, "ee"));
 		assertEquals(ff, t.get(state, "ff"));
 		assertEquals(gg, t.get(state, "gg"));
-		assertEquals(ra, t.rawget(state, "aa"));
-		assertEquals(rb, t.rawget(state, "bb"));
-		assertEquals(rc, t.rawget(state, "cc"));
-		assertEquals(rd, t.rawget(state, "dd"));
-		assertEquals(re, t.rawget(state, "ee"));
-		assertEquals(rf, t.rawget(state, "ff"));
-		assertEquals(rg, t.rawget(state, "gg"));
+		assertEquals(ra, t.rawget("aa"));
+		assertEquals(rb, t.rawget("bb"));
+		assertEquals(rc, t.rawget("cc"));
+		assertEquals(rd, t.rawget("dd"));
+		assertEquals(re, t.rawget("ee"));
+		assertEquals(rf, t.rawget("ff"));
+		assertEquals(rg, t.rawget("gg"));
 	}
 
 	private LuaValue makeTable(String key1, String val1, String key2, String val2) {
@@ -322,19 +322,19 @@ public class MetatableTest {
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);
 
 		// rawset()
-		s.rawset(state, "aa", www);
+		s.rawset("aa", www);
 		checkTable(s, www, nil, ccc, ddd, nil, nil, nil, www, nil, ccc, ddd, nil, nil, nil);
 		checkTable(t, aaa, bbb, ccc, ddd, nil, nil, nil, nil, nil, ccc, ddd, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);
-		s.rawset(state, "cc", xxx);
+		s.rawset("cc", xxx);
 		checkTable(s, www, nil, xxx, ddd, nil, nil, nil, www, nil, xxx, ddd, nil, nil, nil);
 		checkTable(t, aaa, bbb, ccc, ddd, nil, nil, nil, nil, nil, ccc, ddd, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);
-		t.rawset(state, "bb", yyy);
+		t.rawset("bb", yyy);
 		checkTable(s, www, nil, xxx, ddd, nil, nil, nil, www, nil, xxx, ddd, nil, nil, nil);
 		checkTable(t, aaa, yyy, ccc, ddd, nil, nil, nil, nil, yyy, ccc, ddd, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);
-		t.rawset(state, "dd", zzz);
+		t.rawset("dd", zzz);
 		checkTable(s, www, nil, xxx, ddd, nil, nil, nil, www, nil, xxx, ddd, nil, nil, nil);
 		checkTable(t, aaa, yyy, ccc, zzz, nil, nil, nil, nil, yyy, ccc, zzz, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);

@@ -45,8 +45,8 @@ import static org.luaj.vm2.Factory.varargsOf;
  * <ul>
  * <li>{@link LuaValue#get(LuaState, LuaValue)}</li>
  * <li>{@link LuaValue#set(LuaState, LuaValue, LuaValue)}</li>
- * <li>{@link LuaValue#rawget(LuaState, LuaValue)}</li>
- * <li>{@link LuaValue#rawset(LuaState, LuaValue, LuaValue)}</li>
+ * <li>{@link LuaValue#rawget(LuaValue)}</li>
+ * <li>{@link LuaValue#rawset(LuaValue, LuaValue)}</li>
  * <li>plus overloads such as {@link LuaValue#get(LuaState, String)}, {@link LuaValue#get(LuaState, int)}, and so on</li>
  * </ul>
  * <p>
@@ -254,7 +254,7 @@ public class LuaTable extends LuaValue {
 	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
 		m_metatable = metatable;
 		LuaValue mode;
-		if (m_metatable != null && (mode = m_metatable.rawget(state, MODE)).isstring()) {
+		if (m_metatable != null && (mode = m_metatable.rawget(MODE)).isstring()) {
 			String m = mode.tojstring();
 			boolean k = m.indexOf('k') >= 0;
 			boolean v = m.indexOf('v') >= 0;
@@ -290,10 +290,6 @@ public class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public final LuaValue rawget(LuaState state, int key) {
-		return rawget(key);
-	}
-
 	public LuaValue rawget(int key) {
 		if (key > 0 && key <= array.length) {
 			return array[key - 1] != null ? array[key - 1] : NIL;
@@ -302,10 +298,6 @@ public class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public final LuaValue rawget(LuaState state, LuaValue key) {
-		return rawget(key);
-	}
-
 	public LuaValue rawget(LuaValue key) {
 		if (key.isinttype()) {
 			int ikey = key.toint();
@@ -343,28 +335,17 @@ public class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public final void rawset(LuaState state, int key, LuaValue value) {
-		rawset(key, value);
-	}
-
 	public void rawset(int key, LuaValue value) {
 		if (!arrayset(key, value)) {
 			hashset(LuaInteger.valueOf(key), value);
 		}
 	}
 
+	@Override
 	public void rawset(LuaValue key, LuaValue value) {
 		if (!key.isinttype() || !arrayset(key.toint(), value)) {
 			hashset(key, value);
 		}
-	}
-
-	/**
-	 * caller must ensure key is not nil
-	 */
-	@Override
-	public final void rawset(LuaState state, LuaValue key, LuaValue value) {
-		rawset(key, value);
 	}
 
 	/**

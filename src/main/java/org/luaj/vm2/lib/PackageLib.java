@@ -270,7 +270,7 @@ public class PackageLib extends OneArgFunction {
 				e = fname.m_length;
 			}
 			LuaString key = fname.substring(b, e);
-			LuaValue val = table.rawget(state, key);
+			LuaValue val = table.rawget(key);
 			if (val.isnil()) { /* no such field? */
 				LuaTable field = new LuaTable(); /* new table for field */
 				table.set(state, key, field);

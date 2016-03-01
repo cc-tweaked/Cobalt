@@ -1243,7 +1243,7 @@ public abstract class LuaValue extends Varargs {
 	 *                  or key is {@link Constants#NIL}
 	 * @see #get(LuaState, int)
 	 * @see #get(LuaState, String)
-	 * @see #rawget(LuaState, LuaValue)
+	 * @see #rawget(LuaValue)
 	 */
 	public LuaValue get(LuaState state, LuaValue key) {
 		return gettable(state, this, key);
@@ -1258,7 +1258,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table,
 	 *                  or there is no {@link Constants#INDEX} metatag
 	 * @see #get(LuaState, LuaValue)
-	 * @see #rawget(LuaState, int)
+	 * @see #rawget(int)
 	 */
 	public LuaValue get(LuaState state, int key) {
 		return get(state, LuaInteger.valueOf(key));
@@ -1273,7 +1273,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table,
 	 *                  or there is no {@link Constants#INDEX} metatag
 	 * @see #get(LuaState, LuaValue)
-	 * @see #rawget(LuaState, String)
+	 * @see #rawget(String)
 	 */
 	public LuaValue get(LuaState state, String key) {
 		return get(state, valueOf(key));
@@ -1322,73 +1322,67 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get a value in a table without metatag processing.
 	 *
-	 * @param state The current lua state
-	 * @param key   the key to look up, must not be {@link Constants#NIL} or null
+	 * @param key the key to look up, must not be {@link Constants#NIL} or null
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
 	 */
-	public LuaValue rawget(LuaState state, LuaValue key) {
+	public LuaValue rawget(LuaValue key) {
 		return unimplemented("rawget");
 	}
 
 	/**
 	 * Get a value in a table without metatag processing.
 	 *
-	 * @param state The current lua state
-	 * @param key   the key to look up
+	 * @param key the key to look up
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table
 	 */
-	public LuaValue rawget(LuaState state, int key) {
-		return rawget(state, valueOf(key));
+	public LuaValue rawget(int key) {
+		return rawget(valueOf(key));
 	}
 
 	/**
 	 * Get a value in a table without metatag processing.
 	 *
-	 * @param state The current lua state
-	 * @param key   the key to look up, must not be null
+	 * @param key the key to look up, must not be null
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table
 	 */
-	public LuaValue rawget(LuaState state, String key) {
-		return rawget(state, valueOf(key));
+	public LuaValue rawget(String key) {
+		return rawget(valueOf(key));
 	}
 
 	/**
 	 * Set a value in a table without metatag processing.
 	 *
-	 * @param state The current lua state
 	 * @param key   the key to use, must not be {@link Constants#NIL} or null
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
 	 */
-	public void rawset(LuaState state, LuaValue key, LuaValue value) {
+	public void rawset(LuaValue key, LuaValue value) {
 		unimplemented("rawset");
 	}
 
 	/**
 	 * Set a value in a table without metatag processing.
 	 *
-	 * @param state The current lua state
 	 * @param key   the key to use
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table
 	 */
-	public void rawset(LuaState state, int key, LuaValue value) {
-		rawset(state, valueOf(key), value);
+	public void rawset(int key, LuaValue value) {
+		rawset(valueOf(key), value);
 	}
 
 	/**
 	 * Set a value in a table without metatag processing.
 	 *
-	 * @param state The current lua state
 	 * @param key   the key to use, must not be null
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table
 	 */
-	public void rawset(LuaState state, String key, LuaValue value) {
-		rawset(state, valueOf(key), value);
+	public void rawset(String key, LuaValue value) {
+		rawset(valueOf(key), value);
 	}
 
 	/**
@@ -1962,8 +1956,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#EQ
 	 */
 	public static boolean eqmtcall(LuaState state, LuaValue lhs, LuaValue lhsmt, LuaValue rhs, LuaValue rhsmt) {
-		LuaValue h = lhsmt.rawget(state, EQ);
-		return !(h.isnil() || h != rhsmt.rawget(state, EQ)) && h.call(state, lhs, rhs).toboolean();
+		LuaValue h = lhsmt.rawget(EQ);
+		return !(h.isnil() || h != rhsmt.rawget(EQ)) && h.call(state, lhs, rhs).toboolean();
 	}
 
 	/**
@@ -2200,7 +2194,7 @@ public abstract class LuaValue extends Varargs {
 		int loop = 0;
 		do {
 			if (t.istable()) {
-				LuaValue res = t.rawget(state, key);
+				LuaValue res = t.rawget(key);
 				if ((!res.isnil()) || (tm = t.metatag(state, INDEX)).isnil()) {
 					return res;
 				}
@@ -2231,8 +2225,8 @@ public abstract class LuaValue extends Varargs {
 		int loop = 0;
 		do {
 			if (t.istable()) {
-				if ((!t.rawget(state, key).isnil()) || (tm = t.metatag(state, NEWINDEX)).isnil()) {
-					t.rawset(state, key, value);
+				if ((!t.rawget(key).isnil()) || (tm = t.metatag(state, NEWINDEX)).isnil()) {
+					t.rawset(key, value);
 					return true;
 				}
 			} else if ((tm = t.metatag(state, NEWINDEX)).isnil()) {
@@ -2315,7 +2309,7 @@ public abstract class LuaValue extends Varargs {
 		if (mt == null) {
 			return NIL;
 		}
-		return mt.rawget(state, tag);
+		return mt.rawget(tag);
 	}
 
 	/**
