@@ -124,7 +124,7 @@ public final class LuaError extends RuntimeException {
 	public LuaError fillTraceback(LuaState state) {
 		if (traceback != null) return this;
 
-		LuaThread thread = state.getCurrentThread();
+		LuaThread thread = state.currentThread;
 		if (value.isstring()) {
 			value = valueOf(DebugLib.fileline(thread, level) + ": " + value.toString());
 		}

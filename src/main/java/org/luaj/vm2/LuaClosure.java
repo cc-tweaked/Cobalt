@@ -225,15 +225,15 @@ public class LuaClosure extends LuaFunction {
 
 		// debug wants args to this function
 		if (DebugLib.DEBUG_ENABLED) {
-			DebugLib.debugSetupCall(varargs, stack);
+			DebugLib.debugSetupCall(state, varargs, stack);
 		}
 
 		// process instructions
-		LuaThread.CallStack cs = LuaThread.onCall(this);
+		LuaThread.CallStack cs = LuaThread.onCall(state, this);
 		try {
 			while (true) {
 				if (DebugLib.DEBUG_ENABLED) {
-					DebugLib.debugBytecode(pc, v, top);
+					DebugLib.debugBytecode(state, pc, v, top);
 				}
 
 				// pull out instruction

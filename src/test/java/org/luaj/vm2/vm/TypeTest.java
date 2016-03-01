@@ -26,6 +26,7 @@ package org.luaj.vm2.vm;
 import org.junit.Test;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.ZeroArgFunction;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -63,7 +64,7 @@ public class TypeTest {
 			return NONE;
 		}
 	};
-	private final LuaThread thread = new LuaThread(LuaThread.getRunning().luaState, somefunc, table);
+	private final LuaThread thread = new LuaThread(new LuaState(new FileResourceManipulator()), somefunc, table);
 	private final LuaClosure someclosure = new LuaClosure();
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);

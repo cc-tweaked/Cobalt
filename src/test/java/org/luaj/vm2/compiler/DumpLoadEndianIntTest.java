@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 
@@ -22,10 +23,11 @@ public class DumpLoadEndianIntTest {
 	private static final String withints = "1234-#!-23";
 
 	private LuaTable _G;
+	private LuaState state;
 
 	@Before
 	public void setup() throws Exception {
-		LuaState state = LuaThread.getRunning().luaState;
+		state = new LuaState(new FileResourceManipulator());
 		_G = JsePlatform.standardGlobals(state);
 		DumpState.ALLOW_INTEGER_CASTING = false;
 	}
@@ -88,7 +90,6 @@ public class DumpLoadEndianIntTest {
 
 			// double check script result before dumping
 			LuaFunction f = new LuaClosure(p, _G);
-			LuaState state = LuaThread.getRunning().luaState;
 			LuaValue r = f.call(state);
 			String actual = r.tojstring();
 			assertEquals(expectedPriorDump, actual);

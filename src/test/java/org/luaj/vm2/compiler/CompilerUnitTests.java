@@ -5,8 +5,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.luaj.vm2.LuaState;
-import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,7 +21,7 @@ public class CompilerUnitTests {
 
 	@Before
 	public void setup() throws Exception {
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaState state = new LuaState(new FileResourceManipulator());
 		JsePlatform.standardGlobals(state);
 	}
 

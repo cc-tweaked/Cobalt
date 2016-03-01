@@ -23,7 +23,6 @@
  */
 package org.luaj.vm2;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,12 +40,12 @@ import java.util.Collection;
  */
 @RunWith(Parameterized.class)
 public class CompatibilityTest {
-	private LuaValue savedStringMetatable;
-
 	protected String name;
+	protected LuaState state;
 	protected ScriptDrivenHelpers helpers;
 
 	public CompatibilityTest(String name) {
+		state = new LuaState(new FileResourceManipulator());
 		helpers = new ScriptDrivenHelpers("/");
 		this.name = name;
 	}
@@ -76,20 +75,6 @@ public class CompatibilityTest {
 	@Before
 	public void setup() {
 		helpers.setup();
-		LuaState state = LuaThread.getRunning().luaState;
-		state.resourceManipulator = new FileResourceManipulator();
-		savedStringMetatable = state.stringMetatable;
-	}
-
-	@After
-	public void tearDown() {
-		LuaState state = LuaThread.getRunning().luaState;
-		state.nilMetatable = null;
-		state.booleanMetatable = null;
-		state.numberMetatable = null;
-		state.functionMetatable = null;
-		state.threadMetatable = null;
-		state.stringMetatable = savedStringMetatable;
 	}
 
 	@Test

@@ -122,7 +122,7 @@ public class PackageLib extends OneArgFunction {
 					if (m == null) {
 						t.setMetatable(state, m = tableOf());
 					}
-					m.set(state, INDEX, LuaThread.getGlobals());
+					m.set(state, INDEX, state.currentThread.getfenv());
 					return NONE;
 				}
 			}
@@ -217,7 +217,7 @@ public class PackageLib extends OneArgFunction {
 		if (!value.istable()) { /* not found? */
 
 		    /* try global variable (and create one if it does not exist) */
-			LuaValue globals = LuaThread.getGlobals();
+			LuaValue globals = state.currentThread.getfenv();
 			module = findtable(state, globals, modname);
 			if (module == null) {
 				LuaValue result;
@@ -236,7 +236,7 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		// set the environment of the current function
-		LuaFunction f = LuaThread.getCallstackFunction(1);
+		LuaFunction f = LuaThread.getCallstackFunction(state, 1);
 		if (f == null) {
 			LuaValue result;
 			throw new LuaError("no calling function");

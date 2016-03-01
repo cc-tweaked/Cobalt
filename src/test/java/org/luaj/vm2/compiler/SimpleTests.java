@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -17,7 +18,7 @@ public class SimpleTests {
 
 	@Before
 	public void setup() throws Exception {
-		state = LuaThread.getRunning().luaState;
+		state = new LuaState(new FileResourceManipulator());
 		_G = JsePlatform.standardGlobals(state);
 	}
 

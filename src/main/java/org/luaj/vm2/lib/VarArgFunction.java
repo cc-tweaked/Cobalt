@@ -94,7 +94,7 @@ public abstract class VarArgFunction extends LibFunction {
 	 */
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) {
-		LuaThread.CallStack cs = LuaThread.onCall(this);
+		LuaThread.CallStack cs = LuaThread.onCall(state, this);
 		try {
 			return this.onInvoke(state, args).eval(state);
 		} finally {

@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -48,7 +49,7 @@ public class FragmentsTest {
 
 
 	public void runFragment(Varargs expected, String script) {
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaState state = new LuaState(new FileResourceManipulator());
 		try {
 			String name = this.name.getMethodName();
 			LuaTable _G = JsePlatform.standardGlobals(state);

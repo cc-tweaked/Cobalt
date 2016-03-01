@@ -4,8 +4,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaString;
-import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +19,7 @@ public class StringTest {
 
 	@Before
 	public void setup() throws Exception {
-		state = LuaThread.getRunning().luaState;
+		state = new LuaState(new FileResourceManipulator());
 		JsePlatform.standardGlobals(state);
 	}
 

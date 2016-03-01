@@ -27,15 +27,13 @@ public class LuaState {
 
 	public LuaTable loadedPackages;
 
-	public ResourceManipulator resourceManipulator;
+	public final ResourceManipulator resourceManipulator;
 
 	public LuaThread currentThread;
 
+	public LuaThread mainThread;
+
 	public LuaState(ResourceManipulator resourceManipulator) {
 		this.resourceManipulator = resourceManipulator;
-	}
-
-	public LuaThread getCurrentThread() {
-		return LuaThread.getRunning();
 	}
 }

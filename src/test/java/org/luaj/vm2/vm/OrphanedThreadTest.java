@@ -30,6 +30,7 @@ import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.ByteArrayInputStream;
 import java.lang.ref.WeakReference;
@@ -48,7 +49,7 @@ public class OrphanedThreadTest {
 	@Before
 	public void setup() throws Exception {
 		LuaThread.thread_orphan_check_interval = 5;
-		state = LuaThread.getRunning().luaState;
+		state = new LuaState(new FileResourceManipulator());
 		env = JsePlatform.standardGlobals(state);
 	}
 
@@ -158,9 +159,9 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in normal.1, arg is " + arg);
-			arg = LuaThread.yield(ONE).arg1();
+			arg = LuaThread.yield(state, ONE).arg1();
 			System.out.println("in normal.2, arg is " + arg);
-			arg = LuaThread.yield(ZERO).arg1();
+			arg = LuaThread.yield(state, ZERO).arg1();
 			System.out.println("in normal.3, arg is " + arg);
 			return NONE;
 		}
@@ -170,7 +171,7 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in early.1, arg is " + arg);
-			arg = LuaThread.yield(ONE).arg1();
+			arg = LuaThread.yield(state, ONE).arg1();
 			System.out.println("in early.2, arg is " + arg);
 			return ZERO;
 		}
@@ -180,7 +181,7 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
-			arg = LuaThread.yield(ONE).arg1();
+			arg = LuaThread.yield(state, ONE).arg1();
 			System.out.println("in abnormal.2, arg is " + arg);
 			throw new LuaError("abnormal condition");
 		}
@@ -190,7 +191,7 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
-			arg = LuaThread.yield(ONE).arg1();
+			arg = LuaThread.yield(state, ONE).arg1();
 			System.out.println("in abnormal.2, arg is " + arg);
 			throw new LuaError("abnormal condition");
 		}

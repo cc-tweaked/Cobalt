@@ -23,8 +23,10 @@
  */
 package org.luaj.vm2.table;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.*;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.util.ArrayList;
 import java.util.Vector;
@@ -34,13 +36,11 @@ import static org.luaj.vm2.Constants.NIL;
 import static org.luaj.vm2.Factory.valueOf;
 
 public class TableTest {
+	private LuaState state;
 
-	protected LuaTable new_Table() {
-		return new LuaTable();
-	}
-
-	protected LuaTable new_Table(int n, int m) {
-		return new LuaTable(n, m);
+	@Before
+	public void setup() {
+		state = new LuaState(new FileResourceManipulator());
 	}
 
 	private int keyCount(LuaTable t) {
@@ -63,8 +63,7 @@ public class TableTest {
 
 	@Test
 	public void testInOrderIntegerKeyInsertion() {
-		LuaState state = LuaThread.getRunning().luaState;
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, i, valueOf("Test Value! " + i));
@@ -85,10 +84,9 @@ public class TableTest {
 
 	@Test
 	public void testRekeyCount() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 
 		// NOTE: This order of insertion is important.
-		LuaState state = LuaThread.getRunning().luaState;
 		t.set(state, 3, LuaInteger.valueOf(3));
 		t.set(state, 1, LuaInteger.valueOf(1));
 		t.set(state, 5, LuaInteger.valueOf(5));
@@ -106,8 +104,7 @@ public class TableTest {
 
 	@Test
 	public void testOutOfOrderIntegerKeyInsertion() {
-		LuaTable t = new_Table();
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable();
 
 		for (int i = 32; i > 0; --i) {
 			t.set(state, i, valueOf("Test Value! " + i));
@@ -129,9 +126,8 @@ public class TableTest {
 
 	@Test
 	public void testStringAndIntegerKeys() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 
-		LuaState state = LuaThread.getRunning().luaState;
 		for (int i = 0; i < 10; ++i) {
 			LuaString str = valueOf(String.valueOf(i));
 			t.set(state, i, str);
@@ -174,8 +170,7 @@ public class TableTest {
 
 	@Test
 	public void testBadInitialCapacity() {
-		LuaTable t = new_Table(0, 1);
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable(0, 1);
 
 		t.set(state, "test", valueOf("foo"));
 		t.set(state, "explode", valueOf("explode"));
@@ -184,8 +179,7 @@ public class TableTest {
 
 	@Test
 	public void testRemove0() {
-		LuaTable t = new_Table(2, 0);
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable(2, 0);
 
 		t.set(state, 1, valueOf("foo"));
 		t.set(state, 2, valueOf("bah"));
@@ -203,13 +197,12 @@ public class TableTest {
 
 	@Test
 	public void testRemove1() {
-		LuaTable t = new_Table(0, 1);
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable(0, 1);
 
 		t.set(state, "test", valueOf("foo"));
 		t.set(state, "explode", NIL);
 		t.set(state, 42, NIL);
-		t.set(state, new_Table(), NIL);
+		t.set(state, new LuaTable(), NIL);
 		t.set(state, "test", NIL);
 		assertEquals(0, keyCount(t));
 
@@ -220,9 +213,7 @@ public class TableTest {
 
 	@Test
 	public void testRemove2() {
-		LuaTable t = new_Table(0, 1);
-		LuaState state = LuaThread.getRunning().luaState;
-
+		LuaTable t = new LuaTable(0, 1);
 
 		t.set(state, "test", valueOf("foo"));
 		t.set(state, "string", LuaInteger.valueOf(10));
@@ -247,8 +238,7 @@ public class TableTest {
 
 	@Test
 	public void testInOrderLuaLength() {
-		LuaTable t = new_Table();
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, i, valueOf("Test Value! " + i));
@@ -259,8 +249,7 @@ public class TableTest {
 
 	@Test
 	public void testOutOfOrderLuaLength() {
-		LuaTable t = new_Table();
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable();
 
 		for (int j = 8; j < 32; j += 8) {
 			for (int i = j; i > 0; --i) {
@@ -273,8 +262,7 @@ public class TableTest {
 
 	@Test
 	public void testStringKeysLuaLength() {
-		LuaTable t = new_Table();
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, "str-" + i, valueOf("String Key Test Value! " + i));
@@ -285,8 +273,7 @@ public class TableTest {
 
 	@Test
 	public void testMixedKeysLuaLength() {
-		LuaTable t = new_Table();
-		LuaState state = LuaThread.getRunning().luaState;
+		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, "str-" + i, valueOf("String Key Test Value! " + i));
@@ -296,9 +283,8 @@ public class TableTest {
 		}
 	}
 
-	private static void compareLists(LuaTable t, Vector<LuaString> v) {
+	private void compareLists(LuaTable t, Vector<LuaString> v) {
 		int n = v.size();
-		LuaState state = LuaThread.getRunning().luaState;
 		assertEquals(v.size(), t.length(state));
 		for (int j = 0; j < n; j++) {
 			Object vj = v.elementAt(j);
@@ -310,7 +296,7 @@ public class TableTest {
 
 	@Test
 	public void testInsertBeginningOfList() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -323,7 +309,7 @@ public class TableTest {
 
 	@Test
 	public void testInsertEndOfList() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -336,7 +322,7 @@ public class TableTest {
 
 	@Test
 	public void testInsertMiddleOfList() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -358,7 +344,7 @@ public class TableTest {
 
 	@Test
 	public void testRemoveBeginningOfList() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
@@ -370,7 +356,7 @@ public class TableTest {
 
 	@Test
 	public void testRemoveEndOfList() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
@@ -382,7 +368,7 @@ public class TableTest {
 
 	@Test
 	public void testRemoveMiddleOfList() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {

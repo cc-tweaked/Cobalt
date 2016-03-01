@@ -26,7 +26,6 @@ package org.luaj.vm2.lib.jse;
 import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaThread;
-import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.*;
 import org.luaj.vm2.lib.platform.ResourceManipulator;
@@ -70,9 +69,6 @@ import org.luaj.vm2.lib.platform.ResourceManipulator;
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
  *
  * The debug globals are simply the standard globals plus the {@code debug} library {@link DebugLib}.
- *
- * The class ensures that initialization is done in the correct order,
- * and that linkage is made  to {@link LuaThread#setGlobals(LuaValue)}.
  */
 public class JsePlatform {
 
@@ -86,6 +82,9 @@ public class JsePlatform {
 	 */
 	public static LuaTable standardGlobals(LuaState state) {
 		LuaTable _G = new LuaTable();
+		state.mainThread = new LuaThread(state, _G);
+		state.currentThread = state.mainThread;
+
 		_G.load(state, new BaseLib());
 		_G.load(state, new PackageLib());
 		_G.load(state, new TableLib());
@@ -94,7 +93,6 @@ public class JsePlatform {
 		_G.load(state, new MathLib());
 		_G.load(state, new JseIoLib());
 		_G.load(state, new OsLib());
-		LuaThread.setGlobals(_G);
 		LuaC.install();
 		return _G;
 	}

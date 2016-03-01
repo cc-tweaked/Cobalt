@@ -4,8 +4,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.luaj.vm2.LuaThread;
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,7 +24,7 @@ public class RegressionTests {
 
 	@Before
 	public void setup() throws Exception {
-		JsePlatform.standardGlobals(LuaThread.getRunning().luaState);
+		JsePlatform.standardGlobals(new LuaState(new FileResourceManipulator()));
 	}
 
 	@Test

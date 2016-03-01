@@ -24,6 +24,7 @@
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -117,7 +118,7 @@ public class lua {
 			}
 
 			// new lua state
-			LuaState state = LuaThread.getRunning().luaState;
+			LuaState state = new LuaState(new FileResourceManipulator());
 			_G = nodebug ? JsePlatform.standardGlobals(state) : JsePlatform.debugGlobals(state);
 			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++) {
 				loadLibrary(state, libs.get(i));

@@ -23,12 +23,13 @@
  */
 
 import org.luaj.vm2.Lua;
-import org.luaj.vm2.LuaThread;
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.Print;
 import org.luaj.vm2.Prototype;
 import org.luaj.vm2.compiler.DumpState;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 
@@ -132,7 +133,7 @@ public class luac {
 			// process input files
 			OutputStream fos = new FileOutputStream(output);
 			try {
-				JsePlatform.standardGlobals(LuaThread.getRunning().luaState);
+				JsePlatform.standardGlobals(new LuaState(new FileResourceManipulator()));
 				processing = true;
 				for (int i = 0; i < args.length; i++) {
 					if (!processing || !args[i].startsWith("-")) {

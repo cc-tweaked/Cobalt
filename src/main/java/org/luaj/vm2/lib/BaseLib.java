@@ -125,7 +125,7 @@ public class BaseLib extends OneArgFunction {
 					throw new LuaError(arg1.isnil() ? null : arg1.tojstring(), arg2.optint(1));
 				case 2: { // "setfenv", // (f, table) -> void
 					LuaTable t = arg2.checktable();
-					LuaValue f = getfenvobj(arg1);
+					LuaValue f = getfenvobj(state, arg1);
 					if (!f.isthread() && !f.isclosure()) {
 						throw new LuaError("'setfenv' cannot change environment of given object");
 					}
@@ -137,16 +137,16 @@ public class BaseLib extends OneArgFunction {
 		}
 	}
 
-	private static LuaValue getfenvobj(LuaValue arg) {
+	private static LuaValue getfenvobj(LuaState state, LuaValue arg) {
 		if (arg.isfunction()) {
 			return arg;
 		}
 		int level = arg.optint(1);
 		arg.argcheck(level >= 0, 1, "level must be non-negative");
 		if (level == 0) {
-			return LuaThread.getRunning();
+			return state.currentThread;
 		}
-		LuaValue f = LuaThread.getCallstackFunction(level);
+		LuaValue f = LuaThread.getCallstackFunction(state, level);
 		arg.argcheck(f != null, 1, "invalid level");
 		return f;
 	}
@@ -165,7 +165,7 @@ public class BaseLib extends OneArgFunction {
 				case 1: // "dofile", // ( filename ) -> result1, ...
 				{
 					Varargs v = args.isnil(1) ?
-						BaseLib.loadStream(state.STDIN, "=stdin") :
+						BaseLib.loadStream(state, state.STDIN, "=stdin") :
 						BaseLib.loadFile(state, args.checkjstring(1));
 					if (v.isnil(1)) {
 						throw new LuaError(v.tojstring(2));
@@ -175,7 +175,7 @@ public class BaseLib extends OneArgFunction {
 				}
 				case 2: // "getfenv", // ( [f] ) -> env
 				{
-					LuaValue f = getfenvobj(args.arg1());
+					LuaValue f = getfenvobj(state, args.arg1());
 					LuaValue e = f.getfenv();
 					return e != null ? e : NIL;
 				}
@@ -188,24 +188,24 @@ public class BaseLib extends OneArgFunction {
 				{
 					LuaValue func = args.checkfunction(1);
 					String chunkname = args.optjstring(2, "function");
-					return BaseLib.loadStream(new StringInputStream(state, func), chunkname);
+					return BaseLib.loadStream(state, new StringInputStream(state, func), chunkname);
 				}
 				case 5: // "loadfile", // ( [filename] ) -> chunk | nil, msg
 				{
 					return args.isnil(1) ?
-						BaseLib.loadStream(state.STDIN, "stdin") :
+						BaseLib.loadStream(state, state.STDIN, "stdin") :
 						BaseLib.loadFile(state, args.checkjstring(1));
 				}
 				case 6: // "loadstring", // ( string [,chunkname] ) -> chunk | nil, msg
 				{
 					LuaString script = args.checkstring(1);
 					String chunkname = args.optjstring(2, "string");
-					return BaseLib.loadStream(script.toInputStream(), chunkname);
+					return BaseLib.loadStream(state, script.toInputStream(), chunkname);
 				}
 				case 7: // "pcall", // (f, arg1, ...) -> status, result1, ...
 				{
 					LuaValue func = args.checkvalue(1);
-					LuaThread.CallStack cs = LuaThread.onCall(this);
+					LuaThread.CallStack cs = LuaThread.onCall(state, this);
 					try {
 						return pcall(state, func, args.subargs(2), null);
 					} finally {
@@ -214,7 +214,7 @@ public class BaseLib extends OneArgFunction {
 				}
 				case 8: // "xpcall", // (f, err) -> result1, ...
 				{
-					LuaThread.CallStack cs = LuaThread.onCall(this);
+					LuaThread.CallStack cs = LuaThread.onCall(state, this);
 					try {
 						return pcall(state, args.arg1(), NONE, args.checkvalue(2));
 					} finally {
@@ -223,7 +223,7 @@ public class BaseLib extends OneArgFunction {
 				}
 				case 9: // "print", // (...) -> void
 				{
-					LuaValue tostring = LuaThread.getGlobals().get(state, "tostring");
+					LuaValue tostring = state.currentThread.getfenv().get(state, "tostring");
 					for (int i = 1, n = args.narg(); i <= n; i++) {
 						if (i > 1) state.STDOUT.write('\t');
 						LuaString s = tostring.call(state, args.arg(i)).strvalue();
@@ -320,18 +320,18 @@ public class BaseLib extends OneArgFunction {
 	}
 
 	public static Varargs pcall(LuaState state, LuaValue func, Varargs args, LuaValue errfunc) {
-		LuaValue olderr = LuaThread.setErrorFunc(errfunc);
+		LuaValue olderr = LuaThread.setErrorFunc(state, errfunc);
 		try {
 			Varargs result = varargsOf(TRUE, func.invoke(state, args));
-			LuaThread.setErrorFunc(olderr);
+			LuaThread.setErrorFunc(state, olderr);
 			return result;
 		} catch (LuaError le) {
 			le.fillTraceback(state);
 
-			LuaThread.setErrorFunc(olderr);
+			LuaThread.setErrorFunc(state, olderr);
 			return varargsOf(FALSE, le.value);
 		} catch (Exception e) {
-			LuaThread.setErrorFunc(olderr);
+			LuaThread.setErrorFunc(state, olderr);
 			String m = e.getMessage();
 			return varargsOf(FALSE, valueOf(m != null ? m : e.toString()));
 		}
@@ -350,7 +350,7 @@ public class BaseLib extends OneArgFunction {
 			return varargsOf(NIL, valueOf("cannot open " + filename + ": No such file or directory"));
 		}
 		try {
-			return loadStream(is, "@" + filename);
+			return loadStream(state, is, "@" + filename);
 		} finally {
 			try {
 				is.close();
@@ -360,12 +360,12 @@ public class BaseLib extends OneArgFunction {
 		}
 	}
 
-	public static Varargs loadStream(InputStream is, String chunkname) {
+	public static Varargs loadStream(LuaState state, InputStream is, String chunkname) {
 		try {
 			if (is == null) {
 				return varargsOf(NIL, valueOf("not found: " + chunkname));
 			}
-			return LoadState.load(is, chunkname, LuaThread.getGlobals());
+			return LoadState.load(is, chunkname, state.currentThread.getfenv());
 		} catch (Exception e) {
 			return varargsOf(NIL, valueOf(e.getMessage()));
 		}

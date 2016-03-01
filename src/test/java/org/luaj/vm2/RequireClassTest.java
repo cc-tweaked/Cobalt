@@ -3,6 +3,7 @@ package org.luaj.vm2;
 import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 import org.luaj.vm2.require.RequireSampleClassCastExcep;
 import org.luaj.vm2.require.RequireSampleLoadLuaError;
 import org.luaj.vm2.require.RequireSampleLoadRuntimeExcep;
@@ -18,7 +19,7 @@ public class RequireClassTest {
 
 	@Before
 	public void setup() {
-		state = LuaThread.getRunning().luaState;
+		state = new LuaState(new FileResourceManipulator());
 		LuaTable globals = JsePlatform.standardGlobals(state);
 		require = globals.get(state, "require");
 	}

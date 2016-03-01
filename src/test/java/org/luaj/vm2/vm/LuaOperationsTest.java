@@ -28,6 +28,7 @@ import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.ZeroArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 import org.luaj.vm2.vm.TypeTest.MyData;
 
 import java.io.ByteArrayInputStream;
@@ -67,8 +68,8 @@ public class LuaOperationsTest {
 			return NONE;
 		}
 	};
-	private final LuaState state = LuaThread.getRunning().luaState;
-	private final LuaThread thread = new LuaThread(LuaThread.getRunning().luaState, somefunc, table);
+	private final LuaState state = new LuaState(new FileResourceManipulator());
+	private final LuaThread thread = new LuaThread(state, somefunc, table);
 	private final Prototype proto = new Prototype();
 	private final LuaClosure someclosure = new LuaClosure(proto, table);
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
@@ -110,8 +111,6 @@ public class LuaOperationsTest {
 
 	@Test
 	public void testLen() {
-		LuaState state = LuaThread.getRunning().luaState;
-
 		throwsLuaError("len", somenil);
 		throwsLuaError("len", sometrue);
 		throwsLuaError("len", somefalse);
@@ -133,8 +132,6 @@ public class LuaOperationsTest {
 
 	@Test
 	public void testLength() {
-		LuaState state = LuaThread.getRunning().luaState;
-
 		throwsLuaError("length", somenil);
 		throwsLuaError("length", sometrue);
 		throwsLuaError("length", somefalse);
@@ -206,8 +203,6 @@ public class LuaOperationsTest {
 	}
 
 	public Prototype createPrototype(String script, String name) {
-		LuaState state = LuaThread.getRunning().luaState;
-
 		try {
 			JsePlatform.standardGlobals(state);
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
@@ -222,8 +217,6 @@ public class LuaOperationsTest {
 
 	@Test
 	public void testFunctionClosureThreadEnv() {
-		LuaState state = LuaThread.getRunning().luaState;
-
 		// set up suitable environments for execution
 		LuaValue aaa = valueOf("aaa");
 		LuaValue eee = valueOf("eee");

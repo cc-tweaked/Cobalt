@@ -23,8 +23,10 @@
  */
 package org.luaj.vm2.table;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.luaj.vm2.*;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.lang.ref.WeakReference;
 
@@ -33,6 +35,12 @@ import static org.luaj.vm2.Constants.NIL;
 import static org.luaj.vm2.Factory.userdataOf;
 
 public abstract class WeakTableTest {
+	protected LuaState state;
+
+	@Before
+	public void setup() throws Exception {
+		state = new LuaState(new FileResourceManipulator());
+	}
 
 	public static class MyData {
 		public final int value;
@@ -74,8 +82,6 @@ public abstract class WeakTableTest {
 
 		@Test
 		public void testWeakValuesTable() {
-			LuaState state = LuaThread.getRunning().luaState;
-
 			LuaTable t = new_Table();
 
 			Object obj = new Object();
@@ -120,7 +126,6 @@ public abstract class WeakTableTest {
 		@Test
 		public void testWeakKeysTable() {
 			LuaTable t = new WeakTable(true, false);
-			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -155,7 +160,6 @@ public abstract class WeakTableTest {
 		@Test
 		public void testNext() {
 			LuaTable t = new WeakTable(true, true);
-			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -189,7 +193,6 @@ public abstract class WeakTableTest {
 		@Test
 		public void testWeakKeysValuesTable() {
 			LuaTable t = new WeakTable(true, true);
-			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -244,7 +247,6 @@ public abstract class WeakTableTest {
 		@Test
 		public void testReplace() {
 			LuaTable t = new WeakTable(true, true);
-			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));

@@ -24,7 +24,7 @@
 package org.luaj.vm2;
 
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.lib.platform.AbstractResourceManipulator;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.io.PrintStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class ScriptDrivenHelpers extends AbstractResourceManipulator {
+public class ScriptDrivenHelpers extends FileResourceManipulator {
 	private final String subdir;
 	protected LuaState state;
 	protected LuaTable globals;
@@ -44,10 +44,8 @@ public class ScriptDrivenHelpers extends AbstractResourceManipulator {
 	}
 
 	public void setup() {
-		state = LuaThread.getRunning().luaState;
+		state = new LuaState(this);
 		globals = JsePlatform.debugGlobals(state);
-
-		state.resourceManipulator = this;
 	}
 
 	@Override
@@ -69,7 +67,6 @@ public class ScriptDrivenHelpers extends AbstractResourceManipulator {
 
 		// Run the script
 		try {
-			LuaState state = LuaThread.getRunning().luaState;
 			loadScript(testName).call(state);
 
 			ps.flush();

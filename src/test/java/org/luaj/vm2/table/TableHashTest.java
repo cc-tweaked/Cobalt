@@ -23,9 +23,14 @@
  */
 package org.luaj.vm2.table;
 
+import org.junit.Before;
 import org.junit.Test;
-import org.luaj.vm2.*;
+import org.luaj.vm2.LuaState;
+import org.luaj.vm2.LuaString;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.TwoArgFunction;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -36,15 +41,16 @@ import static org.luaj.vm2.Factory.valueOf;
  * Tests for tables used as lists.
  */
 public class TableHashTest {
-	private LuaState state = LuaThread.getRunning().luaState;
+	private LuaState state;
 
-	protected LuaTable new_Table() {
-		return new LuaTable();
+	@Before
+	public void setup() throws Exception {
+		state = new LuaState(new FileResourceManipulator());
 	}
 
 	@Test
 	public void testSetRemove() {
-		LuaTable t = new_Table();
+		LuaTable t = new LuaTable();
 
 		assertEquals(0, t.getHashLength());
 		assertEquals(0, t.length(state));
@@ -99,9 +105,9 @@ public class TableHashTest {
 
 	@Test
 	public void testIndexMetatag() {
-		LuaTable t = new_Table();
-		LuaTable mt = new_Table();
-		LuaTable fb = new_Table();
+		LuaTable t = new LuaTable();
+		LuaTable mt = new LuaTable();
+		LuaTable fb = new LuaTable();
 
 		// set basic values
 		t.set(state, "ppp", valueOf("abc"));
@@ -157,8 +163,8 @@ public class TableHashTest {
 
 	@Test
 	public void testIndexFunction() {
-		final LuaTable t = new_Table();
-		final LuaTable mt = new_Table();
+		final LuaTable t = new LuaTable();
+		final LuaTable mt = new LuaTable();
 
 		final TwoArgFunction fb = new TwoArgFunction() {
 			@Override
@@ -214,7 +220,7 @@ public class TableHashTest {
 
 	@Test
 	public void testNext() {
-		final LuaTable t = new_Table();
+		final LuaTable t = new LuaTable();
 		assertEquals(NIL, t.next(NIL));
 
 		// insert array elements

@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.TwoArgFunction;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -39,7 +40,7 @@ import static org.luaj.vm2.Factory.valueOf;
  * Tests of basic unary and binary operators on main value types.
  */
 public class UnaryBinaryOperatorsTest {
-	private LuaState state = LuaThread.getRunning().luaState;
+	private LuaState state = new LuaState(new FileResourceManipulator());
 
 	@Test
 	public void testEqualsBool() {

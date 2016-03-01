@@ -31,6 +31,7 @@ import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.ThreeArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 import org.luaj.vm2.lib.ZeroArgFunction;
+import org.luaj.vm2.lib.platform.FileResourceManipulator;
 import org.luaj.vm2.vm.TypeTest.MyData;
 
 import static org.junit.Assert.assertEquals;
@@ -51,8 +52,8 @@ public class MetatableTest {
 			return NONE;
 		}
 	};
-	private final LuaState state = LuaThread.getRunning().luaState;
-	private final LuaThread thread = new LuaThread(LuaThread.getRunning().luaState, function, table);
+	private final LuaState state = new LuaState(new FileResourceManipulator());
+	private final LuaThread thread = new LuaThread(state, function, table);
 	private final LuaClosure closure = new LuaClosure();
 	private final LuaUserdata userdata = userdataOf(sampleobject);
 	private final LuaUserdata userdatamt = userdataOf(sampledata, table);
@@ -65,7 +66,6 @@ public class MetatableTest {
 
 	@After
 	public void tearDown() throws Exception {
-		LuaState state = LuaThread.getRunning().luaState;
 		state.booleanMetatable = null;
 		state.functionMetatable = null;
 		state.nilMetatable = null;

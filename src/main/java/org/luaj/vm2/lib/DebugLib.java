@@ -136,11 +136,11 @@ public class DebugLib extends VarArgFunction {
 			case GETFENV:
 				return _getfenv(args);
 			case GETHOOK:
-				return _gethook(args);
+				return _gethook(state, args);
 			case GETINFO:
 				return _getinfo(state, args, this);
 			case GETLOCAL:
-				return _getlocal(args);
+				return _getlocal(state, args);
 			case GETMETATABLE:
 				return _getmetatable(state, args);
 			case GETREGISTRY:
@@ -150,15 +150,15 @@ public class DebugLib extends VarArgFunction {
 			case SETFENV:
 				return _setfenv(args);
 			case SETHOOK:
-				return _sethook(args);
+				return _sethook(state, args);
 			case SETLOCAL:
-				return _setlocal(args);
+				return _setlocal(state, args);
 			case SETMETATABLE:
 				return _setmetatable(state, args);
 			case SETUPVALUE:
 				return _setupvalue(args);
 			case TRACEBACK:
-				return _traceback(args);
+				return _traceback(state, args);
 			default:
 				return NONE;
 		}
@@ -357,18 +357,19 @@ public class DebugLib extends VarArgFunction {
 		return (DebugState) thread.debugState;
 	}
 
-	static DebugState getDebugState() {
-		return getDebugState(LuaThread.getRunning());
+	static DebugState getDebugState(LuaState state) {
+		return getDebugState(state.currentThread);
 	}
 
 	/**
 	 * Called by Closures to set up stack and arguments to next call
 	 *
+	 * @param state
 	 * @param args  The arguments to use
 	 * @param stack The current function stack
 	 */
-	public static void debugSetupCall(Varargs args, LuaValue[] stack) {
-		DebugState ds = getDebugState();
+	public static void debugSetupCall(LuaState state, Varargs args, LuaValue[] stack) {
+		DebugState ds = getDebugState(state);
 		if (ds.inhook) {
 			return;
 		}
@@ -383,7 +384,7 @@ public class DebugLib extends VarArgFunction {
 	 * @param func   the function called
 	 */
 	public static void debugOnCall(LuaThread thread, int calls, LuaFunction func) {
-		DebugState ds = getDebugState();
+		DebugState ds = getDebugState(thread);
 		if (ds.inhook) {
 			return;
 		}
@@ -412,19 +413,20 @@ public class DebugLib extends VarArgFunction {
 				ds.callHookFunc(ds, RETURN, NIL);
 			}
 		} finally {
-			getDebugState().popInfo(calls);
+			ds.popInfo(calls);
 		}
 	}
 
 	/**
 	 * Called by Closures on bytecode execution
 	 *
+	 * @param state
 	 * @param pc     Current program counter
 	 * @param extras Extra arguments
 	 * @param top    The top of the callstack
 	 */
-	public static void debugBytecode(int pc, Varargs extras, int top) {
-		DebugState ds = getDebugState();
+	public static void debugBytecode(LuaState state, int pc, Varargs extras, int top) {
+		DebugState ds = getDebugState(state);
 		if (ds.inhook) {
 			return;
 		}
@@ -457,9 +459,9 @@ public class DebugLib extends VarArgFunction {
 		return NONE;
 	}
 
-	static Varargs _gethook(Varargs args) {
+	static Varargs _gethook(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : LuaThread.getRunning();
+		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
 		DebugState ds = getDebugState(thread);
 		return varargsOf(
 			ds.hookfunc,
@@ -467,9 +469,9 @@ public class DebugLib extends VarArgFunction {
 			valueOf(ds.hookcount));
 	}
 
-	static Varargs _sethook(Varargs args) {
+	static Varargs _sethook(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : LuaThread.getRunning();
+		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
 		LuaValue func = args.optfunction(a++, null);
 		String str = args.optjstring(a++, "");
 		int count = args.optint(a++, 0);
@@ -506,7 +508,7 @@ public class DebugLib extends VarArgFunction {
 
 	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : LuaThread.getRunning();
+		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
 		LuaValue func = args.arg(a++);
 		String what = args.optjstring(a++, "nSluf");
 
@@ -593,9 +595,9 @@ public class DebugLib extends VarArgFunction {
 		return name;
 	}
 
-	static Varargs _getlocal(Varargs args) {
+	static Varargs _getlocal(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : LuaThread.getRunning();
+		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
 		int level = args.checkint(a++);
 		int local = args.checkint(a++);
 
@@ -610,9 +612,9 @@ public class DebugLib extends VarArgFunction {
 		}
 	}
 
-	static Varargs _setlocal(Varargs args) {
+	static Varargs _setlocal(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : LuaThread.getRunning();
+		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
 		int level = args.checkint(a++);
 		int local = args.checkint(a++);
 		LuaValue value = args.arg(a++);
@@ -709,9 +711,9 @@ public class DebugLib extends VarArgFunction {
 		return NIL;
 	}
 
-	static LuaValue _traceback(Varargs args) {
+	static LuaValue _traceback(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : LuaThread.getRunning();
+		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
 		String message = args.optjstring(a++, null);
 		int level = args.optint(a++, 1);
 		String tb = DebugLib.traceback(thread, level - 1);
@@ -719,16 +721,6 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	// =================== public utilities ====================
-
-	/**
-	 * Get a traceback as a string for the current thread
-	 *
-	 * @param level The level to produce it at
-	 * @return The traceback string
-	 */
-	public static String traceback(int level) {
-		return traceback(LuaThread.getRunning(), level);
-	}
 
 	/**
 	 * Get a traceback for a particular thread.
@@ -764,8 +756,8 @@ public class DebugLib extends VarArgFunction {
 	 * @return String identifying the file and line of the nearest lua closure,
 	 * or the function name of the Java call if no closure is being called.
 	 */
-	public static String fileline() {
-		DebugState ds = getDebugState(LuaThread.getRunning());
+	public static String fileline(LuaThread thread) {
+		DebugState ds = getDebugState(thread);
 		DebugInfo di;
 		for (int i = 0, n = ds.debugCalls; i < n; i++) {
 			di = ds.getDebugInfo(i);
@@ -773,17 +765,7 @@ public class DebugLib extends VarArgFunction {
 				return di.sourceline();
 			}
 		}
-		return fileline(0);
-	}
-
-	/**
-	 * Get file and line for a particular level, even if it is a java function.
-	 *
-	 * @param level 0-based index of level to get
-	 * @return String containing file and line info if available
-	 */
-	public static String fileline(int level) {
-		return fileline(LuaThread.getRunning(), level);
+		return fileline(thread, 0);
 	}
 
 	public static String fileline(LuaThread thread, int level) {
