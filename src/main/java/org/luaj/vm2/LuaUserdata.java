@@ -23,7 +23,8 @@
  */
 package org.luaj.vm2;
 
-import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Constants.NIL;
+import static org.luaj.vm2.Constants.TUSERDATA;
 
 public class LuaUserdata extends LuaValue {
 
@@ -140,20 +141,6 @@ public class LuaUserdata extends LuaValue {
 		}
 		LuaUserdata u = (LuaUserdata) val;
 		return m_instance.equals(u.m_instance);
-	}
-
-	// equality w/ metatable processing
-	@Override
-	public LuaValue eq(LuaValue val) {
-		return eq_b(val) ? TRUE : FALSE;
-	}
-
-	@Override
-	public boolean eq_b(LuaValue val) {
-		if (val.raweq(this)) return true;
-		if (m_metatable == null || !val.isuserdata()) return false;
-		LuaValue valmt = val.getmetatable();
-		return valmt != null && LuaValue.eqmtcall(this, m_metatable, val, valmt);
 	}
 
 	// equality w/o metatable processing

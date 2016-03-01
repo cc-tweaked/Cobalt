@@ -103,6 +103,22 @@ public final class OperationHelper {
 		}
 	}
 
+	public static LuaValue ltValue(LuaValue left, LuaValue right) {
+		int tLeft = left.type();
+		if (tLeft != right.type()) {
+			left.compareerror(right);
+			return FALSE;
+		}
+		switch (tLeft) {
+			case TNUMBER:
+				return left.todouble() < right.todouble() ? TRUE : FALSE;
+			case TSTRING:
+				return left.strcmp(right) < 0 ? TRUE : FALSE;
+			default:
+				return left.comparemt(LT, right);
+		}
+	}
+
 	public static boolean le(LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
@@ -116,6 +132,22 @@ public final class OperationHelper {
 				return left.strcmp(right) <= 0;
 			default:
 				return left.comparemt(LE, right).toboolean();
+		}
+	}
+
+	public static LuaValue leValue(LuaValue left, LuaValue right) {
+		int tLeft = left.type();
+		if (tLeft != right.type()) {
+			left.compareerror(right);
+			return FALSE;
+		}
+		switch (tLeft) {
+			case TNUMBER:
+				return left.todouble() <= right.todouble() ? TRUE : FALSE;
+			case TSTRING:
+				return left.strcmp(right) <= 0 ? TRUE : FALSE;
+			default:
+				return left.comparemt(LE, right);
 		}
 	}
 

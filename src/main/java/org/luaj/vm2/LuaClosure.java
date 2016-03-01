@@ -477,7 +477,7 @@ public class LuaClosure extends LuaFunction {
 						LuaValue limit = stack[a + 1];
 						LuaValue step = stack[a + 2];
 						LuaValue idx = step.add(stack[a]);
-						if (step.gt_b(0) ? idx.lteq_b(limit) : idx.gteq_b(limit)) {
+						if (step.gt_b(ZERO) ? idx.lteq_b(limit) : idx.gteq_b(limit)) {
 							stack[a] = idx;
 							stack[a + 3] = idx;
 							pc += (i >>> 14) - 0x1ffff;

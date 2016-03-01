@@ -779,7 +779,7 @@ public class LuaTable extends LuaValue {
 		if (!cmpfunc.isnil()) {
 			return cmpfunc.call(a, b).toboolean();
 		} else {
-			return a.lt_b(b);
+			return OperationHelper.lt(a, b);
 		}
 	}
 
@@ -823,19 +823,5 @@ public class LuaTable extends LuaValue {
 		}
 
 		return l.toArray(new LuaValue[l.size()]);
-	}
-
-	// equality w/ metatable processing
-	@Override
-	public LuaValue eq(LuaValue val) {
-		return eq_b(val) ? TRUE : FALSE;
-	}
-
-	@Override
-	public boolean eq_b(LuaValue val) {
-		if (this == val) return true;
-		if (m_metatable == null || !val.istable()) return false;
-		LuaValue valmt = val.getmetatable();
-		return valmt != null && LuaValue.eqmtcall(this, m_metatable, val, valmt);
 	}
 }

@@ -861,22 +861,22 @@ public class FuncState {
 		v2 = e2.u.nval();
 		switch (op) {
 			case OP_ADD:
-				r = v1.add(v2);
+				r = OperationHelper.add(v1, v2);
 				break;
 			case OP_SUB:
-				r = v1.sub(v2);
+				r = OperationHelper.sub(v1, v2);
 				break;
 			case OP_MUL:
-				r = v1.mul(v2);
+				r = OperationHelper.mul(v1, v2);
 				break;
 			case OP_DIV:
-				r = v1.div(v2);
+				r = OperationHelper.div(v1, v2);
 				break;
 			case OP_MOD:
-				r = v1.mod(v2);
+				r = OperationHelper.mod(v1, v2);
 				break;
 			case OP_POW:
-				r = v1.pow(v2);
+				r = OperationHelper.pow(v1, v2);
 				break;
 			case OP_UNM:
 				r = v1.neg();

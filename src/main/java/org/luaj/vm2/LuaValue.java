@@ -2412,83 +2412,11 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Equals: Perform equality comparison with another value
-	 * including metatag processing using {@link Constants#EQ}.
-	 *
-	 * @param val The value to compare with.
-	 * @return {@link Constants#TRUE} if values are comparable and {@code (this == rhs)},
-	 * {@link Constants#FALSE} if comparable but not equal,
-	 * {@link LuaValue} if metatag processing occurs.
-	 * @see #eq_b(LuaValue)
-	 * @see #raweq(LuaValue)
-	 * @see #neq(LuaValue)
-	 * @see #eqmtcall(LuaValue, LuaValue, LuaValue, LuaValue)
-	 * @see Constants#EQ
-	 */
-	public LuaValue eq(LuaValue val) {
-		return this == val ? TRUE : FALSE;
-	}
-
-	/**
-	 * Equals: Perform equality comparison with another value
-	 * including metatag processing using {@link Constants#EQ},
-	 * and return java boolean
-	 *
-	 * @param val The value to compare with.
-	 * @return true if values are comparable and {@code (this == rhs)},
-	 * false if comparable but not equal,
-	 * result converted to java boolean if metatag processing occurs.
-	 * @see #eq(LuaValue)
-	 * @see #raweq(LuaValue)
-	 * @see #neq_b(LuaValue)
-	 * @see #eqmtcall(LuaValue, LuaValue, LuaValue, LuaValue)
-	 * @see Constants#EQ
-	 */
-	public boolean eq_b(LuaValue val) {
-		return this == val;
-	}
-
-	/**
-	 * Notquals: Perform inequality comparison with another value
-	 * including metatag processing using {@link Constants#EQ}.
-	 *
-	 * @param val The value to compare with.
-	 * @return {@link Constants#TRUE} if values are comparable and {@code (this != rhs)},
-	 * {@link Constants#FALSE} if comparable but equal,
-	 * inverse of {@link LuaValue} converted to {@link LuaBoolean} if metatag processing occurs.
-	 * @see #eq(LuaValue)
-	 * @see #raweq(LuaValue)
-	 * @see #eqmtcall(LuaValue, LuaValue, LuaValue, LuaValue)
-	 * @see Constants#EQ
-	 */
-	public LuaValue neq(LuaValue val) {
-		return eq_b(val) ? FALSE : TRUE;
-	}
-
-	/**
-	 * Notquals: Perform inequality comparison with another value
-	 * including metatag processing using {@link Constants#EQ}.
-	 *
-	 * @param val The value to compare with.
-	 * @return true if values are comparable and {@code (this != rhs)},
-	 * false if comparable but equal,
-	 * inverse of result converted to boolean if metatag processing occurs.
-	 * @see #eq_b(LuaValue)
-	 * @see #raweq(LuaValue)
-	 * @see #eqmtcall(LuaValue, LuaValue, LuaValue, LuaValue)
-	 * @see Constants#EQ
-	 */
-	public boolean neq_b(LuaValue val) {
-		return !eq_b(val);
-	}
-
-	/**
 	 * Equals: Perform direct equality comparison with another value
 	 * without metatag processing.
 	 *
 	 * @param val The value to compare with.
 	 * @return true if {@code (this == rhs)}, false otherwise
-	 * @see #eq(LuaValue)
 	 * @see #raweq(LuaUserdata)
 	 * @see #raweq(LuaString)
 	 * @see #raweq(double)
@@ -2508,7 +2436,6 @@ public abstract class LuaValue extends Varargs {
 	 * and their metatables are the same using ==
 	 * and their instances are equal using {@link #equals(Object)},
 	 * otherwise false
-	 * @see #eq(LuaValue)
 	 * @see #raweq(LuaValue)
 	 */
 	public boolean raweq(LuaUserdata val) {
@@ -2564,1007 +2491,12 @@ public abstract class LuaValue extends Varargs {
 	 * @return true if metatag processing result is not {@link Constants#NIL} or {@link Constants#FALSE}
 	 * @throws LuaError if metatag was not defined for either operand
 	 * @see #equals(Object)
-	 * @see #eq(LuaValue)
 	 * @see #raweq(LuaValue)
 	 * @see Constants#EQ
 	 */
 	public static boolean eqmtcall(LuaValue lhs, LuaValue lhsmt, LuaValue rhs, LuaValue rhsmt) {
 		LuaValue h = lhsmt.rawget(EQ);
 		return !(h.isnil() || h != rhsmt.rawget(EQ)) && h.call(lhs, rhs).toboolean();
-	}
-
-	/**
-	 * Add: Perform numeric add operation with another value
-	 * including metatag processing.
-	 * <p>
-	 * Each operand must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the add with
-	 * @return value of {@code (this + rhs)} if both are numeric,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either operand is not a number or string convertible to number,
-	 *                  and neither has the {@link Constants#ADD} metatag defined
-	 * @see #arithmt(LuaValue, LuaValue)
-	 */
-	public LuaValue add(LuaValue rhs) {
-		return arithmt(ADD, rhs);
-	}
-
-	/**
-	 * Add: Perform numeric add operation with another value
-	 * of double type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the add with
-	 * @return value of {@code (this + rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #add(LuaValue)
-	 */
-	public LuaValue add(double rhs) {
-		return arithmtwith(ADD, rhs);
-	}
-
-	/**
-	 * Add: Perform numeric add operation with another value
-	 * of int type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the add with
-	 * @return value of {@code (this + rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #add(LuaValue)
-	 */
-	public LuaValue add(int rhs) {
-		return add((double) rhs);
-	}
-
-	/**
-	 * Subtract: Perform numeric subtract operation with another value
-	 * of unknown type,
-	 * including metatag processing.
-	 * <p>
-	 * Each operand must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the subtract with
-	 * @return value of {@code (this - rhs)} if both are numeric,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either operand is not a number or string convertible to number,
-	 *                  and neither has the {@link Constants#SUB} metatag defined
-	 * @see #arithmt(LuaValue, LuaValue)
-	 */
-	public LuaValue sub(LuaValue rhs) {
-		return arithmt(SUB, rhs);
-	}
-
-	/**
-	 * Subtract: Perform numeric subtract operation with another value
-	 * of double type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the subtract with
-	 * @return value of {@code (this - rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #sub(LuaValue)
-	 */
-	public LuaValue sub(double rhs) {
-		return aritherror("sub");
-	}
-
-	/**
-	 * Subtract: Perform numeric subtract operation with another value
-	 * of int type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the subtract with
-	 * @return value of {@code (this - rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #sub(LuaValue)
-	 */
-	public LuaValue sub(int rhs) {
-		return aritherror("sub");
-	}
-
-	/**
-	 * Reverse-subtract: Perform numeric subtract operation from an int value
-	 * with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param lhs The left-hand-side value from which to perform the subtraction
-	 * @return value of {@code (lhs - this)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #sub(LuaValue)
-	 * @see #sub(double)
-	 * @see #sub(int)
-	 */
-	public LuaValue subFrom(double lhs) {
-		return arithmtwith(SUB, lhs);
-	}
-
-	/**
-	 * Reverse-subtract: Perform numeric subtract operation from a double value
-	 * without metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 * <p>
-	 * For metatag processing {@link #sub(LuaValue)} must be used
-	 *
-	 * @param lhs The left-hand-side value from which to perform the subtraction
-	 * @return value of {@code (lhs - this)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #sub(LuaValue)
-	 * @see #sub(double)
-	 * @see #sub(int)
-	 */
-	public LuaValue subFrom(int lhs) {
-		return subFrom((double) lhs);
-	}
-
-	/**
-	 * Multiply: Perform numeric multiply operation with another value
-	 * of unknown type,
-	 * including metatag processing.
-	 * <p>
-	 * Each operand must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the multiply with
-	 * @return value of {@code (this * rhs)} if both are numeric,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either operand is not a number or string convertible to number,
-	 *                  and neither has the {@link Constants#MUL} metatag defined
-	 * @see #arithmt(LuaValue, LuaValue)
-	 */
-	public LuaValue mul(LuaValue rhs) {
-		return arithmt(MUL, rhs);
-	}
-
-	/**
-	 * Multiply: Perform numeric multiply operation with another value
-	 * of double type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the multiply with
-	 * @return value of {@code (this * rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #mul(LuaValue)
-	 */
-	public LuaValue mul(double rhs) {
-		return arithmtwith(MUL, rhs);
-	}
-
-	/**
-	 * Multiply: Perform numeric multiply operation with another value
-	 * of int type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the multiply with
-	 * @return value of {@code (this * rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #mul(LuaValue)
-	 */
-	public LuaValue mul(int rhs) {
-		return mul((double) rhs);
-	}
-
-	/**
-	 * Raise to power: Raise this value to a power
-	 * including metatag processing.
-	 * <p>
-	 * Each operand must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The power to raise this value to
-	 * @return value of {@code (this ^ rhs)} if both are numeric,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either operand is not a number or string convertible to number,
-	 *                  and neither has the {@link Constants#POW} metatag defined
-	 * @see #arithmt(LuaValue, LuaValue)
-	 */
-	public LuaValue pow(LuaValue rhs) {
-		return arithmt(POW, rhs);
-	}
-
-	/**
-	 * Raise to power: Raise this value to a power
-	 * of double type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The power to raise this value to
-	 * @return value of {@code (this ^ rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #pow(LuaValue)
-	 */
-	public LuaValue pow(double rhs) {
-		return aritherror("pow");
-	}
-
-	/**
-	 * Raise to power: Raise this value to a power
-	 * of int type with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The power to raise this value to
-	 * @return value of {@code (this ^ rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #pow(LuaValue)
-	 */
-	public LuaValue pow(int rhs) {
-		return aritherror("pow");
-	}
-
-	/**
-	 * Reverse-raise to power: Raise another value of double type to this power
-	 * with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param lhs The left-hand-side value which will be raised to this power
-	 * @return value of {@code (lhs ^ this)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #pow(LuaValue)
-	 * @see #pow(double)
-	 * @see #pow(int)
-	 */
-	public LuaValue powWith(double lhs) {
-		return arithmtwith(POW, lhs);
-	}
-
-	/**
-	 * Reverse-raise to power: Raise another value of double type to this power
-	 * with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param lhs The left-hand-side value which will be raised to this power
-	 * @return value of {@code (lhs ^ this)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #pow(LuaValue)
-	 * @see #pow(double)
-	 * @see #pow(int)
-	 */
-	public LuaValue powWith(int lhs) {
-		return powWith((double) lhs);
-	}
-
-	/**
-	 * Divide: Perform numeric divide operation by another value
-	 * of unknown type,
-	 * including metatag processing.
-	 * <p>
-	 * Each operand must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the divulo with
-	 * @return value of {@code (this / rhs)} if both are numeric,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either operand is not a number or string convertible to number,
-	 *                  and neither has the {@link Constants#DIV} metatag defined
-	 * @see #arithmt(LuaValue, LuaValue)
-	 */
-	public LuaValue div(LuaValue rhs) {
-		return arithmt(DIV, rhs);
-	}
-
-	/**
-	 * Divide: Perform numeric divide operation by another value
-	 * of double type without metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 * <p>
-	 * For metatag processing {@link #div(LuaValue)} must be used
-	 *
-	 * @param rhs The right-hand-side value to perform the divulo with
-	 * @return value of {@code (this / rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #div(LuaValue)
-	 */
-	public LuaValue div(double rhs) {
-		return aritherror("div");
-	}
-
-	/**
-	 * Divide: Perform numeric divide operation by another value
-	 * of int type without metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 * <p>
-	 * For metatag processing {@link #div(LuaValue)} must be used
-	 *
-	 * @param rhs The right-hand-side value to perform the divulo with
-	 * @return value of {@code (this / rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #div(LuaValue)
-	 */
-	public LuaValue div(int rhs) {
-		return aritherror("div");
-	}
-
-	/**
-	 * Reverse-divide: Perform numeric divide operation into another value
-	 * with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param lhs The left-hand-side value which will be divided by this
-	 * @return value of {@code (lhs / this)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #div(LuaValue)
-	 * @see #div(double)
-	 * @see #div(int)
-	 */
-	public LuaValue divInto(double lhs) {
-		return arithmtwith(DIV, lhs);
-	}
-
-	/**
-	 * Modulo: Perform numeric modulo operation with another value
-	 * of unknown type,
-	 * including metatag processing.
-	 * <p>
-	 * Each operand must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param rhs The right-hand-side value to perform the modulo with
-	 * @return value of {@code (this % rhs)} if both are numeric,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either operand is not a number or string convertible to number,
-	 *                  and neither has the {@link Constants#MOD} metatag defined
-	 * @see #arithmt(LuaValue, LuaValue)
-	 */
-	public LuaValue mod(LuaValue rhs) {
-		return arithmt(MOD, rhs);
-	}
-
-	/**
-	 * Modulo: Perform numeric modulo operation with another value
-	 * of double type without metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 * <p>
-	 * For metatag processing {@link #mod(LuaValue)} must be used
-	 *
-	 * @param rhs The right-hand-side value to perform the modulo with
-	 * @return value of {@code (this % rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #mod(LuaValue)
-	 */
-	public LuaValue mod(double rhs) {
-		return aritherror("mod");
-	}
-
-	/**
-	 * Modulo: Perform numeric modulo operation with another value
-	 * of int type without metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 * <p>
-	 * For metatag processing {@link #mod(LuaValue)} must be used
-	 *
-	 * @param rhs The right-hand-side value to perform the modulo with
-	 * @return value of {@code (this % rhs)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #mod(LuaValue)
-	 */
-	public LuaValue mod(int rhs) {
-		return aritherror("mod");
-	}
-
-	/**
-	 * Reverse-modulo: Perform numeric modulo operation from another value
-	 * with metatag processing
-	 * <p>
-	 * {@code this} must derive from {@link LuaNumber}
-	 * or derive from {@link LuaString} and be convertible to a number
-	 *
-	 * @param lhs The left-hand-side value which will be modulo'ed by this
-	 * @return value of {@code (lhs % this)} if this is numeric
-	 * @throws LuaError if {@code this} is not a number or string convertible to number
-	 * @see #mod(LuaValue)
-	 * @see #mod(double)
-	 * @see #mod(int)
-	 */
-	public LuaValue modFrom(double lhs) {
-		return arithmtwith(MOD, lhs);
-	}
-
-	/**
-	 * Perform metatag processing for arithmetic operations.
-	 * <p>
-	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
-	 * or throws {@link LuaError} if neither is defined.
-	 *
-	 * @param tag The metatag to look up
-	 * @param op2 The other operand value to perform the operation with
-	 * @return {@link LuaValue} resulting from metatag processing
-	 * @throws LuaError if metatag was not defined for either operand
-	 * @see #add(LuaValue)
-	 * @see #sub(LuaValue)
-	 * @see #mul(LuaValue)
-	 * @see #pow(LuaValue)
-	 * @see #div(LuaValue)
-	 * @see #mod(LuaValue)
-	 * @see Constants#ADD
-	 * @see Constants#SUB
-	 * @see Constants#MUL
-	 * @see Constants#POW
-	 * @see Constants#DIV
-	 * @see Constants#MOD
-	 */
-	protected LuaValue arithmt(LuaValue tag, LuaValue op2) {
-		LuaValue h = this.metatag(tag);
-		if (h.isnil()) {
-			h = op2.metatag(tag);
-			if (h.isnil()) {
-				error("attempt to perform arithmetic " + tag + " on " + typename() + " and " + op2.typename());
-			}
-		}
-		return h.call(this, op2);
-	}
-
-	/**
-	 * Perform metatag processing for arithmetic operations when the left-hand-side is a number.
-	 * <p>
-	 * Finds the supplied metatag value for {@code this} and invokes it,
-	 * or throws {@link LuaError} if neither is defined.
-	 *
-	 * @param tag The metatag to look up
-	 * @param op1 The value of the left-hand-side to perform the operation with
-	 * @return {@link LuaValue} resulting from metatag processing
-	 * @throws LuaError if metatag was not defined for either operand
-	 * @see #add(LuaValue)
-	 * @see #sub(LuaValue)
-	 * @see #mul(LuaValue)
-	 * @see #pow(LuaValue)
-	 * @see #div(LuaValue)
-	 * @see #mod(LuaValue)
-	 * @see Constants#ADD
-	 * @see Constants#SUB
-	 * @see Constants#MUL
-	 * @see Constants#POW
-	 * @see Constants#DIV
-	 * @see Constants#MOD
-	 */
-	protected LuaValue arithmtwith(LuaValue tag, double op1) {
-		LuaValue h = metatag(tag);
-		if (h.isnil()) {
-			error("attempt to perform arithmetic " + tag + " on number and " + typename());
-		}
-		return h.call(valueOf(op1), this);
-	}
-
-	/**
-	 * Less than: Perform numeric or string comparison with another value
-	 * of unknown type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this < rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq_b(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue lt(LuaValue rhs) {
-		return comparemt(LT, rhs);
-	}
-
-	/**
-	 * Less than: Perform numeric comparison with another value
-	 * of double type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this < rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq_b(double)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue lt(double rhs) {
-		return compareerror("number");
-	}
-
-	/**
-	 * Less than: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this < rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq_b(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue lt(int rhs) {
-		return compareerror("number");
-	}
-
-	/**
-	 * Less than: Perform numeric or string comparison with another value
-	 * of unknown type, including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this < rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean lt_b(LuaValue rhs) {
-		return comparemt(LT, rhs).toboolean();
-	}
-
-	/**
-	 * Less than: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this < rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean lt_b(int rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Less than: Perform numeric or string comparison with another value
-	 * of unknown type, including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this < rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean lt_b(double rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Less than or equals: Perform numeric or string comparison with another value
-	 * of unknown type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this <= rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq_b(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue lteq(LuaValue rhs) {
-		return comparemt(LE, rhs);
-	}
-
-	/**
-	 * Less than or equals: Perform numeric comparison with another value
-	 * of double type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this <= rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq_b(double)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue lteq(double rhs) {
-		return compareerror("number");
-	}
-
-	/**
-	 * Less than or equals: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this <= rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq_b(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue lteq(int rhs) {
-		return compareerror("number");
-	}
-
-	/**
-	 * Less than or equals: Perform numeric or string comparison with another value
-	 * of unknown type, including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this <= rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean lteq_b(LuaValue rhs) {
-		return comparemt(LE, rhs).toboolean();
-	}
-
-	/**
-	 * Less than or equals: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this <= rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean lteq_b(int rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Less than or equals: Perform numeric comparison with another value
-	 * of double type,
-	 * including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this <= rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq(double)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean lteq_b(double rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Greater than: Perform numeric or string comparison with another value
-	 * of unknown type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this > rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq_b(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue gt(LuaValue rhs) {
-		return rhs.comparemt(LE, this);
-	}
-
-	/**
-	 * Greater than: Perform numeric comparison with another value
-	 * of double type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this > rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq_b(double)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue gt(double rhs) {
-		return compareerror("number");
-	}
-
-	/**
-	 * Greater than: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this > rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq_b(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue gt(int rhs) {
-		return compareerror("number");
-	}
-
-	/**
-	 * Greater than: Perform numeric or string comparison with another value
-	 * of unknown type, including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this > rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean gt_b(LuaValue rhs) {
-		return rhs.comparemt(LE, this).toboolean();
-	}
-
-	/**
-	 * Greater than: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this > rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean gt_b(int rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Greater than: Perform numeric or string comparison with another value
-	 * of unknown type, including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this > rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LE} metatag is defined.
-	 * @see #gteq(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean gt_b(double rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Greater than or equals: Perform numeric or string comparison with another value
-	 * of unknown type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this >= rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq_b(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue gteq(LuaValue rhs) {
-		return rhs.comparemt(LT, this);
-	}
-
-	/**
-	 * Greater than or equals: Perform numeric comparison with another value
-	 * of double type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this >= rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq_b(double)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue gteq(double rhs) {
-		return compareerror("number");
-	}
-
-	/**
-	 * Greater than or equals: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing, and returning {@link LuaValue}.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return {@link Constants#TRUE} if {@code (this >= rhs)}, {@link Constants#FALSE} if not,
-	 * or {@link LuaValue} if metatag processing occurs
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq_b(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public LuaValue gteq(int rhs) {
-		return valueOf(todouble() >= rhs);
-	}
-
-	/**
-	 * Greater than or equals: Perform numeric or string comparison with another value
-	 * of unknown type, including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, both operands must derive from {@link LuaString}
-	 * or both must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this >= rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if either both operands are not a strings or both are not numbers
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq(LuaValue)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean gteq_b(LuaValue rhs) {
-		return rhs.comparemt(LT, this).toboolean();
-	}
-
-	/**
-	 * Greater than or equals: Perform numeric comparison with another value
-	 * of int type,
-	 * including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this >= rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq(int)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean gteq_b(int rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Greater than or equals: Perform numeric comparison with another value
-	 * of double type,
-	 * including metatag processing,
-	 * and returning java boolean.
-	 * <p>
-	 * To be comparable, this must derive from {@link LuaNumber}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return true if {@code (this >= rhs)}, false if not,
-	 * and boolean interpreation of result if metatag processing occurs.
-	 * @throws LuaError if this is not a number
-	 *                  and no {@link Constants#LT} metatag is defined.
-	 * @see #gteq(double)
-	 * @see #comparemt(LuaValue, LuaValue)
-	 */
-	public boolean gteq_b(double rhs) {
-		compareerror("number");
-		return false;
-	}
-
-	/**
-	 * Perform metatag processing for comparison operations.
-	 * <p>
-	 * Finds the supplied metatag value and invokes it,
-	 * or throws {@link LuaError} if none applies.
-	 *
-	 * @param tag The metatag to look up
-	 * @param op1 The right-hand-side value to perform the operation with
-	 * @return {@link LuaValue} resulting from metatag processing
-	 * @throws LuaError if metatag was not defined for either operand,
-	 *                  or if the operands are not the same type,
-	 *                  or the metatag values for the two operands are different.
-	 * @see #gt(LuaValue)
-	 * @see #gteq(LuaValue)
-	 * @see #lt(LuaValue)
-	 * @see #lteq(LuaValue)
-	 */
-	public LuaValue comparemt(LuaValue tag, LuaValue op1) {
-		if (type() == op1.type()) {
-			LuaValue h = metatag(tag);
-			if (!h.isnil() && h == op1.metatag(tag)) {
-				return h.call(this, op1);
-			}
-		}
-		return error("attempt to compare " + tag + " on " + typename() + " and " + op1.typename());
 	}
 
 	/**
@@ -3741,19 +2673,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Perform end-condition test in for-loop processing.
-	 * <p>
-	 * Used in lua-bytecode to Java-bytecode conversion.
-	 *
-	 * @param limit the numerical limit to complete the for loop
-	 * @param step  the numberical step size to use.
-	 * @return true if limit has not been reached, false otherwise.
-	 */
-	public boolean testfor_b(LuaValue limit, LuaValue step) {
-		return step.gt_b(0) ? lteq_b(limit) : gteq_b(limit);
-	}
-
-	/**
 	 * Convert this value to a string if it is a {@link LuaString} or {@link LuaNumber},
 	 * or throw a {@link LuaError} if it is not
 	 *
@@ -3855,6 +2774,57 @@ public abstract class LuaValue extends Varargs {
 		while (++loop < MAXTAGLOOP);
 		error("loop in settable");
 		return false;
+	}
+
+	/**
+	 * Perform metatag processing for comparison operations.
+	 * <p>
+	 * Finds the supplied metatag value and invokes it,
+	 * or throws {@link LuaError} if none applies.
+	 *
+	 * @param tag The metatag to look up
+	 * @param op1 The right-hand-side value to perform the operation with
+	 * @return {@link LuaValue} resulting from metatag processing
+	 * @throws LuaError if metatag was not defined for either operand,
+	 *                  or if the operands are not the same type,
+	 *                  or the metatag values for the two operands are different.
+	 */
+	public LuaValue comparemt(LuaValue tag, LuaValue op1) {
+		if (type() == op1.type()) {
+			LuaValue h = metatag(tag);
+			if (!h.isnil() && h == op1.metatag(tag)) {
+				return h.call(this, op1);
+			}
+		}
+		return error("attempt to compare " + tag + " on " + typename() + " and " + op1.typename());
+	}
+
+	/**
+	 * Perform metatag processing for arithmetic operations.
+	 * <p>
+	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
+	 * or throws {@link LuaError} if neither is defined.
+	 *
+	 * @param tag The metatag to look up
+	 * @param op2 The other operand value to perform the operation with
+	 * @return {@link LuaValue} resulting from metatag processing
+	 * @throws LuaError if metatag was not defined for either operand
+	 * @see Constants#ADD
+	 * @see Constants#SUB
+	 * @see Constants#MUL
+	 * @see Constants#POW
+	 * @see Constants#DIV
+	 * @see Constants#MOD
+	 */
+	protected LuaValue arithmt(LuaValue tag, LuaValue op2) {
+		LuaValue h = this.metatag(tag);
+		if (h.isnil()) {
+			h = op2.metatag(tag);
+			if (h.isnil()) {
+				error("attempt to perform arithmetic " + tag + " on " + typename() + " and " + op2.typename());
+			}
+		}
+		return h.call(this, op2);
 	}
 
 	/**
@@ -4063,4 +3033,77 @@ public abstract class LuaValue extends Varargs {
 		}
 	}
 
+	//region Legacy comparison
+	public final LuaValue eq(LuaValue other) {
+		return OperationHelper.eq(this, other) ? TRUE : FALSE;
+	}
+
+	public final boolean eq_b(LuaValue other) {
+		return OperationHelper.eq(this, other);
+	}
+
+	public final LuaValue lt(LuaValue other) {
+		return OperationHelper.ltValue(this, other);
+	}
+
+	public final boolean lt_b(LuaValue other) {
+		return OperationHelper.lt(this, other);
+	}
+
+	public final LuaValue lteq(LuaValue other) {
+		return OperationHelper.leValue(this, other);
+	}
+
+	public final boolean lteq_b(LuaValue other) {
+		return OperationHelper.le(this, other);
+	}
+
+	public final LuaValue neq(LuaValue other) {
+		return OperationHelper.eq(this, other) ? FALSE : TRUE;
+	}
+
+	public final boolean neq_b(LuaValue other) {
+		return !OperationHelper.eq(this, other);
+	}
+
+	public final LuaValue gt(LuaValue other) {
+		return OperationHelper.ltValue(other, this);
+	}
+
+	public final boolean gt_b(LuaValue other) {
+		return OperationHelper.lt(other, this);
+	}
+
+	public final LuaValue gteq(LuaValue other) {
+		return OperationHelper.leValue(other, this);
+	}
+
+	public final boolean gteq_b(LuaValue other) {
+		return OperationHelper.le(other, this);
+	}
+
+	public final LuaValue add(LuaValue other) {
+		return OperationHelper.add(this, other);
+	}
+
+	public final LuaValue sub(LuaValue other) {
+		return OperationHelper.sub(this, other);
+	}
+
+	public final LuaValue mul(LuaValue other) {
+		return OperationHelper.mul(this, other);
+	}
+
+	public final LuaValue div(LuaValue other) {
+		return OperationHelper.div(this, other);
+	}
+
+	public final LuaValue mod(LuaValue other) {
+		return OperationHelper.mod(this, other);
+	}
+
+	public final LuaValue pow(LuaValue other) {
+		return OperationHelper.pow(this, other);
+	}
+	//endregion
 }
