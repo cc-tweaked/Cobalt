@@ -122,7 +122,7 @@ public class BaseLib extends OneArgFunction {
 					}
 					return NIL;
 				case 1: // "error", // ( message [,level] ) -> ERR
-					throw new LuaError(arg1.isnil() ? null : arg1.tojstring(), arg2.optint(1));
+					throw new LuaError(arg1.isnil() ? NIL : arg1, arg2.optint(1));
 				case 2: { // "setfenv", // (f, table) -> void
 					LuaTable t = arg2.checktable();
 					LuaValue f = getfenvobj(state, arg1);

@@ -343,9 +343,7 @@ public class LuaThread extends LuaValue {
 		 */
 		final void onCall(LuaFunction function) {
 			functions[calls++] = function;
-			if (DebugLib.DEBUG_ENABLED) {
-				DebugLib.debugOnCall(state.currentThread, calls, function);
-			}
+			DebugLib.debugOnCall(state.currentThread, calls, function);
 		}
 
 		/**
@@ -355,19 +353,7 @@ public class LuaThread extends LuaValue {
 		 */
 		public final void onReturn() {
 			functions[--calls] = null;
-			if (DebugLib.DEBUG_ENABLED) {
-				DebugLib.debugOnReturn(state.currentThread, calls);
-			}
-		}
-
-		/**
-		 * Get number of calls in stack
-		 *
-		 * @return number of calls in current call stack
-		 * @see DebugLib
-		 */
-		public final int getCallstackDepth() {
-			return calls;
+			DebugLib.debugOnReturn(state.currentThread, calls);
 		}
 
 		/**

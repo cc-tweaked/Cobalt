@@ -163,19 +163,21 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.dump (function)
-	 * <p>
+	 *
 	 * Returns a string containing a binary representation of the given function,
 	 * so that a later loadstring on this string returns a copy of the function.
 	 * function must be a Lua function without upvalues.
-	 * <p>
-	 * TODO: port dumping code as optional add-on
 	 */
 	static LuaValue dump(LuaValue arg) {
 		LuaValue f = arg.checkfunction();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			DumpState.dump(((LuaClosure) f).p, baos, true);
-			return LuaString.valueOf(baos.toByteArray());
+			if (f instanceof PrototypeStorage) {
+				DumpState.dump(((PrototypeStorage) f).getPrototype(), baos, true);
+				return LuaString.valueOf(baos.toByteArray());
+			}
+
+			throw new LuaError("Unable to dump given function");
 		} catch (IOException e) {
 			throw new LuaError(e.getMessage());
 		}
@@ -385,6 +387,8 @@ public class StringLib extends OneArgFunction {
 						precision = precision * 10 + (c - '0');
 						c = ((p < n) ? strfrmt.luaByte(p++) : 0);
 					}
+				} else {
+					precision = 0;
 				}
 			}
 
@@ -474,9 +478,20 @@ public class StringLib extends OneArgFunction {
 			}
 		}
 
-		public void format(Buffer buf, double x) {
-			// TODO
-			buf.append(String.valueOf(x));
+		public void format(Buffer buf, double number) {
+			StringBuilder format = new StringBuilder("%");
+			if (explicitPlus) format.append("+");
+			if (space) format.append(" ");
+			if (width >= 0) {
+				if (leftAdjust) format.append("-");
+				if (zeroPad) format.append("0");
+				format.append(width);
+			}
+
+			format.append('.').append(precision >= 0 ? precision : 6);
+			format.append((char) conversion);
+
+			buf.append(String.format(format.toString(), number));
 		}
 
 		public void format(Buffer buf, LuaString s) {
@@ -484,7 +499,17 @@ public class StringLib extends OneArgFunction {
 			if (nullindex != -1) {
 				s = s.substring(0, nullindex);
 			}
+			if (precision >= 0 && s.length() > precision) {
+				s = s.substring(0, precision);
+			}
+
+			int minwidth = s.length();
+			int nspaces = width > minwidth ? width - minwidth : 0;
+			if (!leftAdjust) pad(buf, ' ', nspaces);
+
 			buf.append(s);
+
+			if (leftAdjust) pad(buf, ' ', nspaces);
 		}
 
 		public static void pad(Buffer buf, char c, int n) {
@@ -544,6 +569,7 @@ public class StringLib extends OneArgFunction {
 				if (res >= 0) {
 					int soff = soffset;
 					soffset = res;
+					if (res == soff) soffset++;
 					return ms.push_captures(true, soff, res);
 				}
 			}
@@ -835,6 +861,7 @@ public class StringLib extends OneArgFunction {
 		CHAR_TABLE['\r'] |= MASK_SPACE;
 		CHAR_TABLE['\n'] |= MASK_SPACE;
 		CHAR_TABLE['\t'] |= MASK_SPACE;
+		CHAR_TABLE[0x0B] |= MASK_SPACE;
 		CHAR_TABLE[0x0C /* '\v' */] |= MASK_SPACE;
 		CHAR_TABLE['\f'] |= MASK_SPACE;
 	}
@@ -1223,7 +1250,7 @@ public class StringLib extends OneArgFunction {
 			if (poff == plen || poff + 1 == plen) {
 				throw new LuaError("unbalanced pattern");
 			}
-			if (s.luaByte(soff) != p.luaByte(poff)) {
+			if (soff >= s.length() || s.luaByte(soff) != p.luaByte(poff)) {
 				return -1;
 			} else {
 				int b = p.luaByte(poff);

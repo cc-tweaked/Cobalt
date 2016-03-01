@@ -89,8 +89,8 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 	 * @return The loaded LuaFunction
 	 * @throws IOException
 	 */
-	private LuaValue loadScript(String name) throws IOException {
-		InputStream script = this.findResource(name + ".lua");
+	public LuaValue loadScript(String name) throws IOException {
+		InputStream script = findResource(name + ".lua");
 		if (script == null) fail("Could not load script for test case: " + name);
 		try {
 			return LoadState.load(script, "@" + name + ".lua", globals);

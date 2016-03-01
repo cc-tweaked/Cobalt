@@ -88,7 +88,7 @@ import static org.luaj.vm2.Factory.varargsOf;
  * @see LoadState
  * @see LoadState#compiler
  */
-public class LuaClosure extends LuaFunction {
+public class LuaClosure extends LuaFunction implements PrototypeStorage {
 	private static final UpValue[] NOUPVALUES = new UpValue[0];
 
 	public final Prototype p;
@@ -224,17 +224,21 @@ public class LuaClosure extends LuaFunction {
 		}
 
 		// debug wants args to this function
-		if (DebugLib.DEBUG_ENABLED) {
-			DebugLib.debugSetupCall(state, varargs, stack);
+		DebugLib.DebugState ds = DebugLib.getDebugState(state);
+		final boolean enabled = !ds.inHook();
+
+		DebugLib.DebugInfo di = null;
+		if (enabled) {
+			di = ds.nextInfo();
+			di.setargs(varargs, stack);
 		}
 
 		// process instructions
 		LuaThread.CallStack cs = LuaThread.onCall(state, this);
+
 		try {
 			while (true) {
-				if (DebugLib.DEBUG_ENABLED) {
-					DebugLib.debugBytecode(state, pc, v, top);
-				}
+				if (enabled) DebugLib.debugBytecode(ds, di, pc, v, top);
 
 				// pull out instruction
 				i = code[pc++];
@@ -593,5 +597,10 @@ public class LuaClosure extends LuaFunction {
 
 	protected void setUpvalue(int i, LuaValue v) {
 		upValues[i].setValue(v);
+	}
+
+	@Override
+	public Prototype getPrototype() {
+		return p;
 	}
 }

@@ -66,7 +66,6 @@ public class CompatibilityTest {
 			{"tailcalls"},
 			{"upvalues"},
 			{"vm"},
-
 		};
 
 		return Arrays.asList(tests);
