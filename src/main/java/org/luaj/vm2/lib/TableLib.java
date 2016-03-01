@@ -28,6 +28,9 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code table}
  * library.
@@ -78,7 +81,7 @@ public class TableLib extends OneArgFunction {
 				case 1: { // "concat" (table [, sep [, i [, j]]]) -> string
 					LuaTable table = args.checktable(1);
 					return table.concat(
-						args.optstring(2, LuaValue.EMPTYSTRING),
+						args.optstring(2, EMPTYSTRING),
 						args.optint(3, 1),
 						args.isvalue(4) ? args.checkint(4) : table.length());
 				}

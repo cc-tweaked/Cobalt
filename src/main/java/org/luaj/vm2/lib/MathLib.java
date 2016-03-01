@@ -32,6 +32,10 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.util.Random;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+import static org.luaj.vm2.Factory.varargsOf;
+
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code math}
  * library.

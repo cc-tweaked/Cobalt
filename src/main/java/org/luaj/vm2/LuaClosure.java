@@ -27,6 +27,9 @@ import org.luaj.vm2.LoadState.LuaCompiler;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.DebugLib;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.varargsOf;
+
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
  * <p>
@@ -253,7 +256,7 @@ public class LuaClosure extends LuaFunction {
 						continue;
 
 					case Lua.OP_LOADBOOL:/*	A B C	R(A):= (Bool)B: if (C) pc++			*/
-						stack[a] = (i >>> 23 != 0) ? LuaValue.TRUE : LuaValue.FALSE;
+						stack[a] = (i >>> 23 != 0) ? TRUE : FALSE;
 						if ((i & (0x1ff << 14)) != 0) {
 							pc++; /* skip next instruction (if C) */
 						}
@@ -261,7 +264,7 @@ public class LuaClosure extends LuaFunction {
 
 					case Lua.OP_LOADNIL: /*	A B	R(A):= ...:= R(B):= nil			*/
 						for (b = i >>> 23; a <= b; ) {
-							stack[a++] = LuaValue.NIL;
+							stack[a++] = NIL;
 						}
 						continue;
 

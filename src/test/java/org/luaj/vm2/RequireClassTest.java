@@ -9,6 +9,7 @@ import org.luaj.vm2.require.RequireSampleLoadRuntimeExcep;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.luaj.vm2.Factory.valueOf;
 
 public class RequireClassTest {
 
@@ -22,16 +23,16 @@ public class RequireClassTest {
 
 	@Test
 	public void testRequireClassSuccess() {
-		LuaValue result = require.call(LuaValue.valueOf("org.luaj.vm2.require.RequireSampleSuccess"));
+		LuaValue result = require.call(valueOf("org.luaj.vm2.require.RequireSampleSuccess"));
 		assertEquals("require-sample-success", result.tojstring());
-		result = require.call(LuaValue.valueOf("org.luaj.vm2.require.RequireSampleSuccess"));
+		result = require.call(valueOf("org.luaj.vm2.require.RequireSampleSuccess"));
 		assertEquals("require-sample-success", result.tojstring());
 	}
 
 	@Test
 	public void testRequireClassLoadLuaError() {
 		try {
-			LuaValue result = require.call(LuaValue.valueOf(RequireSampleLoadLuaError.class.getName()));
+			LuaValue result = require.call(valueOf(RequireSampleLoadLuaError.class.getName()));
 			fail("incorrectly loaded class that threw lua error");
 		} catch (LuaError le) {
 			assertEquals(
@@ -39,7 +40,7 @@ public class RequireClassTest {
 				le.getMessage());
 		}
 		try {
-			LuaValue result = require.call(LuaValue.valueOf(RequireSampleLoadLuaError.class.getName()));
+			LuaValue result = require.call(valueOf(RequireSampleLoadLuaError.class.getName()));
 			fail("incorrectly loaded class that threw lua error");
 		} catch (LuaError le) {
 			assertEquals(
@@ -51,7 +52,7 @@ public class RequireClassTest {
 	@Test
 	public void testRequireClassLoadRuntimeException() {
 		try {
-			LuaValue result = require.call(LuaValue.valueOf(RequireSampleLoadRuntimeExcep.class.getName()));
+			LuaValue result = require.call(valueOf(RequireSampleLoadRuntimeExcep.class.getName()));
 			fail("incorrectly loaded class that threw runtime exception");
 		} catch (RuntimeException le) {
 			assertEquals(
@@ -59,7 +60,7 @@ public class RequireClassTest {
 				le.getMessage());
 		}
 		try {
-			LuaValue result = require.call(LuaValue.valueOf(RequireSampleLoadRuntimeExcep.class.getName()));
+			LuaValue result = require.call(valueOf(RequireSampleLoadRuntimeExcep.class.getName()));
 			fail("incorrectly loaded class that threw runtime exception");
 		} catch (LuaError le) {
 			assertEquals(
@@ -71,7 +72,7 @@ public class RequireClassTest {
 	@Test
 	public void testRequireClassClassCastException() {
 		try {
-			LuaValue result = require.call(LuaValue.valueOf(RequireSampleClassCastExcep.class.getName()));
+			LuaValue result = require.call(valueOf(RequireSampleClassCastExcep.class.getName()));
 			fail("incorrectly loaded class that threw class cast exception");
 		} catch (LuaError le) {
 			String msg = le.getMessage();
@@ -80,7 +81,7 @@ public class RequireClassTest {
 			}
 		}
 		try {
-			LuaValue result = require.call(LuaValue.valueOf(RequireSampleClassCastExcep.class.getName()));
+			LuaValue result = require.call(valueOf(RequireSampleClassCastExcep.class.getName()));
 			fail("incorrectly loaded class that threw class cast exception");
 		} catch (LuaError le) {
 			String msg = le.getMessage();

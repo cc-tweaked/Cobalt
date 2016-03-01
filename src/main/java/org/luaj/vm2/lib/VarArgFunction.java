@@ -27,6 +27,9 @@ import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
+import static org.luaj.vm2.Constants.NONE;
+import static org.luaj.vm2.Factory.varargsOf;
+
 /**
  * Abstract base class for Java function implementations that takes varaiable arguments and
  * returns multiple return values.
@@ -50,7 +53,7 @@ import org.luaj.vm2.Varargs;
  * @see TwoArgFunction
  * @see ThreeArgFunction
  */
-abstract public class VarArgFunction extends LibFunction {
+public abstract class VarArgFunction extends LibFunction {
 	public VarArgFunction() {
 	}
 

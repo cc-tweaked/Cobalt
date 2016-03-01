@@ -23,7 +23,6 @@
  */
 package org.luaj.vm2;
 
-
 import org.luaj.vm2.lib.MathLib;
 import org.luaj.vm2.lib.StringLib;
 
@@ -33,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.Hashtable;
+
+import static org.luaj.vm2.Constants.*;
 
 /**
  * Subclass of {@link LuaValue} for representing lua strings.
@@ -47,7 +48,7 @@ import java.util.Hashtable;
  * Currently {@link LuaString}s are pooled via a centrally managed weak table.
  * To ensure that as many string values as possible take advantage of this,
  * Constructors are not exposed directly.  As with number, booleans, and nil,
- * instance construction should be via {@link LuaValue#valueOf(byte[])} or similar API.
+ * instance construction should be via {@link Factory#valueOf(byte[])} or similar API.
  * <p>
  * When Java Strings are used to initialize {@link LuaString} data, the UTF8 encoding is assumed.
  * The functions
@@ -57,8 +58,8 @@ import java.util.Hashtable;
  * are used to convert back and forth between UTF8 byte arrays and character arrays.
  *
  * @see LuaValue
- * @see LuaValue#valueOf(String)
- * @see LuaValue#valueOf(byte[])
+ * @see Factory#valueOf(String)
+ * @see Factory#valueOf(byte[])
  */
 public class LuaString extends LuaValue {
 
@@ -189,7 +190,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public int type() {
-		return LuaValue.TSTRING;
+		return TSTRING;
 	}
 
 	@Override
@@ -212,7 +213,7 @@ public class LuaString extends LuaValue {
 	@Override
 	public LuaValue neg() {
 		double d = scannumber(10);
-		return Double.isNaN(d) ? super.neg() : valueOf(-d);
+		return Double.isNaN(d) ? super.neg() : Factory.valueOf(-d);
 	}
 
 	// basic binary arithmetic
@@ -224,12 +225,12 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaValue add(double rhs) {
-		return valueOf(checkarith() + rhs);
+		return Factory.valueOf(checkarith() + rhs);
 	}
 
 	@Override
 	public LuaValue add(int rhs) {
-		return valueOf(checkarith() + rhs);
+		return Factory.valueOf(checkarith() + rhs);
 	}
 
 	@Override
@@ -240,17 +241,17 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaValue sub(double rhs) {
-		return valueOf(checkarith() - rhs);
+		return Factory.valueOf(checkarith() - rhs);
 	}
 
 	@Override
 	public LuaValue sub(int rhs) {
-		return valueOf(checkarith() - rhs);
+		return Factory.valueOf(checkarith() - rhs);
 	}
 
 	@Override
 	public LuaValue subFrom(double lhs) {
-		return valueOf(lhs - checkarith());
+		return Factory.valueOf(lhs - checkarith());
 	}
 
 	@Override
@@ -261,12 +262,12 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaValue mul(double rhs) {
-		return valueOf(checkarith() * rhs);
+		return Factory.valueOf(checkarith() * rhs);
 	}
 
 	@Override
 	public LuaValue mul(int rhs) {
-		return valueOf(checkarith() * rhs);
+		return Factory.valueOf(checkarith() * rhs);
 	}
 
 	@Override
@@ -340,7 +341,7 @@ public class LuaString extends LuaValue {
 	// relational operators, these only work with other strings
 	@Override
 	public LuaValue lt(LuaValue rhs) {
-		return rhs.strcmp(this) > 0 ? LuaValue.TRUE : FALSE;
+		return rhs.strcmp(this) > 0 ? TRUE : FALSE;
 	}
 
 	@Override
@@ -362,7 +363,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaValue lteq(LuaValue rhs) {
-		return rhs.strcmp(this) >= 0 ? LuaValue.TRUE : FALSE;
+		return rhs.strcmp(this) >= 0 ? TRUE : FALSE;
 	}
 
 	@Override
@@ -384,7 +385,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaValue gt(LuaValue rhs) {
-		return rhs.strcmp(this) < 0 ? LuaValue.TRUE : FALSE;
+		return rhs.strcmp(this) < 0 ? TRUE : FALSE;
 	}
 
 	@Override
@@ -406,7 +407,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaValue gteq(LuaValue rhs) {
-		return rhs.strcmp(this) <= 0 ? LuaValue.TRUE : FALSE;
+		return rhs.strcmp(this) <= 0 ? TRUE : FALSE;
 	}
 
 	@Override
@@ -484,7 +485,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaInteger checkinteger() {
-		return valueOf(checkint());
+		return Factory.valueOf(checkint());
 	}
 
 	@Override
@@ -503,7 +504,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaNumber checknumber() {
-		return valueOf(checkdouble());
+		return Factory.valueOf(checkdouble());
 	}
 
 	@Override
@@ -512,7 +513,7 @@ public class LuaString extends LuaValue {
 		if (Double.isNaN(d)) {
 			error(msg);
 		}
-		return valueOf(d);
+		return Factory.valueOf(d);
 	}
 
 	@Override
@@ -949,7 +950,7 @@ public class LuaString extends LuaValue {
 	 */
 	public LuaValue tonumber(int base) {
 		double d = scannumber(base);
-		return Double.isNaN(d) ? NIL : valueOf(d);
+		return Double.isNaN(d) ? NIL : Factory.valueOf(d);
 	}
 
 	/**

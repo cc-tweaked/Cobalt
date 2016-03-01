@@ -23,22 +23,25 @@
  */
 package org.luaj.vm2;
 
+import static org.luaj.vm2.Constants.TNIL;
+import static org.luaj.vm2.Constants.TRUE;
+
 /**
  * Class to encapsulate behavior of the singleton instance {@code nil}
  * <p>
- * There will be one instance of this class, {@link LuaValue#NIL},
+ * There will be one instance of this class, {@link Constants#NIL},
  * per Java virtual machine.
- * However, the {@link Varargs} instance {@link LuaValue#NONE}
+ * However, the {@link Varargs} instance {@link Constants#NONE}
  * which is the empty list,
  * is also considered treated as a nil value by default.
  * <p>
  * Although it is possible to test for nil using Java == operator,
  * the recommended approach is to use the method {@link LuaValue#isnil()}
  * instead.  By using that any ambiguities between
- * {@link LuaValue#NIL} and {@link LuaValue#NONE} are avoided.
+ * {@link Constants#NIL} and {@link Constants#NONE} are avoided.
  *
  * @see LuaValue
- * @see LuaValue#NIL
+ * @see Constants#NIL
  */
 public class LuaNil extends LuaValue {
 
@@ -51,7 +54,7 @@ public class LuaNil extends LuaValue {
 
 	@Override
 	public int type() {
-		return LuaValue.TNIL;
+		return TNIL;
 	}
 
 	@Override
@@ -66,7 +69,7 @@ public class LuaNil extends LuaValue {
 
 	@Override
 	public LuaValue not() {
-		return LuaValue.TRUE;
+		return TRUE;
 	}
 
 	@Override

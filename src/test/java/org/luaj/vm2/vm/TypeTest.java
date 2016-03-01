@@ -30,6 +30,8 @@ import org.luaj.vm2.lib.ZeroArgFunction;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.junit.Assert.*;
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.*;
 
 public class TypeTest {
 
@@ -43,18 +45,18 @@ public class TypeTest {
 	private final Object sampleobject = new Object();
 	private final MyData sampledata = new MyData();
 
-	private final LuaValue somenil = LuaValue.NIL;
-	private final LuaValue sometrue = LuaValue.TRUE;
-	private final LuaValue somefalse = LuaValue.FALSE;
-	private final LuaValue zero = LuaValue.ZERO;
-	private final LuaValue intint = LuaValue.valueOf(sampleint);
-	private final LuaValue longdouble = LuaValue.valueOf(samplelong);
-	private final LuaValue doubledouble = LuaValue.valueOf(sampledouble);
-	private final LuaValue stringstring = LuaValue.valueOf(samplestringstring);
-	private final LuaValue stringint = LuaValue.valueOf(samplestringint);
-	private final LuaValue stringlong = LuaValue.valueOf(samplestringlong);
-	private final LuaValue stringdouble = LuaValue.valueOf(samplestringdouble);
-	private final LuaTable table = LuaValue.tableOf();
+	private final LuaValue somenil = NIL;
+	private final LuaValue sometrue = TRUE;
+	private final LuaValue somefalse = FALSE;
+	private final LuaValue zero = ZERO;
+	private final LuaValue intint = valueOf(sampleint);
+	private final LuaValue longdouble = valueOf(samplelong);
+	private final LuaValue doubledouble = valueOf(sampledouble);
+	private final LuaValue stringstring = valueOf(samplestringstring);
+	private final LuaValue stringint = valueOf(samplestringint);
+	private final LuaValue stringlong = valueOf(samplestringlong);
+	private final LuaValue stringdouble = valueOf(samplestringdouble);
+	private final LuaTable table = tableOf();
 	private final LuaFunction somefunc = new ZeroArgFunction() {
 		@Override
 		public LuaValue call() {
@@ -63,8 +65,8 @@ public class TypeTest {
 	};
 	private final LuaThread thread = new LuaThread(somefunc, table);
 	private final LuaClosure someclosure = new LuaClosure();
-	private final LuaUserdata userdataobj = LuaValue.userdataOf(sampleobject);
-	private final LuaUserdata userdatacls = LuaValue.userdataOf(sampledata);
+	private final LuaUserdata userdataobj = userdataOf(sampleobject);
+	private final LuaUserdata userdatacls = userdataOf(sampledata);
 
 	public static final class MyData {
 		public MyData() {
@@ -695,23 +697,23 @@ public class TypeTest {
 
 	@Test
 	public void testOptInteger() {
-		assertEquals(LuaValue.valueOf(33), somenil.optinteger(LuaValue.valueOf(33)));
-		throwsError(sometrue, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		throwsError(somefalse, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		assertEquals(zero, zero.optinteger(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf(sampleint), intint.optinteger(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf((int) samplelong), longdouble.optinteger(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf((int) sampledouble), doubledouble.optinteger(LuaValue.valueOf(33)));
-		throwsError(somefunc, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		throwsError(someclosure, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		throwsError(stringstring, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		assertEquals(LuaValue.valueOf(sampleint), stringint.optinteger(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf((int) samplelong), stringlong.optinteger(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf((int) sampledouble), stringdouble.optinteger(LuaValue.valueOf(33)));
-		throwsError(thread, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		throwsError(table, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		throwsError(userdataobj, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
-		throwsError(userdatacls, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
+		assertEquals(valueOf(33), somenil.optinteger(valueOf(33)));
+		throwsError(sometrue, "optinteger", LuaInteger.class, valueOf(33));
+		throwsError(somefalse, "optinteger", LuaInteger.class, valueOf(33));
+		assertEquals(zero, zero.optinteger(valueOf(33)));
+		assertEquals(valueOf(sampleint), intint.optinteger(valueOf(33)));
+		assertEquals(valueOf((int) samplelong), longdouble.optinteger(valueOf(33)));
+		assertEquals(valueOf((int) sampledouble), doubledouble.optinteger(valueOf(33)));
+		throwsError(somefunc, "optinteger", LuaInteger.class, valueOf(33));
+		throwsError(someclosure, "optinteger", LuaInteger.class, valueOf(33));
+		throwsError(stringstring, "optinteger", LuaInteger.class, valueOf(33));
+		assertEquals(valueOf(sampleint), stringint.optinteger(valueOf(33)));
+		assertEquals(valueOf((int) samplelong), stringlong.optinteger(valueOf(33)));
+		assertEquals(valueOf((int) sampledouble), stringdouble.optinteger(valueOf(33)));
+		throwsError(thread, "optinteger", LuaInteger.class, valueOf(33));
+		throwsError(table, "optinteger", LuaInteger.class, valueOf(33));
+		throwsError(userdataobj, "optinteger", LuaInteger.class, valueOf(33));
+		throwsError(userdatacls, "optinteger", LuaInteger.class, valueOf(33));
 	}
 
 	@Test
@@ -737,23 +739,23 @@ public class TypeTest {
 
 	@Test
 	public void testOptNumber() {
-		assertEquals(LuaValue.valueOf(33), somenil.optnumber(LuaValue.valueOf(33)));
-		throwsError(sometrue, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		throwsError(somefalse, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		assertEquals(zero, zero.optnumber(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf(sampleint), intint.optnumber(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf(samplelong), longdouble.optnumber(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf(sampledouble), doubledouble.optnumber(LuaValue.valueOf(33)));
-		throwsError(somefunc, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		throwsError(someclosure, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		throwsError(stringstring, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		assertEquals(LuaValue.valueOf(sampleint), stringint.optnumber(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf(samplelong), stringlong.optnumber(LuaValue.valueOf(33)));
-		assertEquals(LuaValue.valueOf(sampledouble), stringdouble.optnumber(LuaValue.valueOf(33)));
-		throwsError(thread, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		throwsError(table, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		throwsError(userdataobj, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
-		throwsError(userdatacls, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
+		assertEquals(valueOf(33), somenil.optnumber(valueOf(33)));
+		throwsError(sometrue, "optnumber", LuaNumber.class, valueOf(33));
+		throwsError(somefalse, "optnumber", LuaNumber.class, valueOf(33));
+		assertEquals(zero, zero.optnumber(valueOf(33)));
+		assertEquals(valueOf(sampleint), intint.optnumber(valueOf(33)));
+		assertEquals(valueOf(samplelong), longdouble.optnumber(valueOf(33)));
+		assertEquals(valueOf(sampledouble), doubledouble.optnumber(valueOf(33)));
+		throwsError(somefunc, "optnumber", LuaNumber.class, valueOf(33));
+		throwsError(someclosure, "optnumber", LuaNumber.class, valueOf(33));
+		throwsError(stringstring, "optnumber", LuaNumber.class, valueOf(33));
+		assertEquals(valueOf(sampleint), stringint.optnumber(valueOf(33)));
+		assertEquals(valueOf(samplelong), stringlong.optnumber(valueOf(33)));
+		assertEquals(valueOf(sampledouble), stringdouble.optnumber(valueOf(33)));
+		throwsError(thread, "optnumber", LuaNumber.class, valueOf(33));
+		throwsError(table, "optnumber", LuaNumber.class, valueOf(33));
+		throwsError(userdataobj, "optnumber", LuaNumber.class, valueOf(33));
+		throwsError(userdatacls, "optnumber", LuaNumber.class, valueOf(33));
 	}
 
 	@Test
@@ -826,24 +828,24 @@ public class TypeTest {
 
 	@Test
 	public void testOptLuaString() {
-		assertEquals(LuaValue.valueOf("xyz"), somenil.optstring(LuaValue.valueOf("xyz")));
+		assertEquals(valueOf("xyz"), somenil.optstring(valueOf("xyz")));
 		assertEquals(null, somenil.optstring(null));
-		throwsError(sometrue, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
-		throwsError(somefalse, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
-		assertEquals(LuaValue.valueOf("0"), zero.optstring(LuaValue.valueOf("xyz")));
-		assertEquals(stringint, intint.optstring(LuaValue.valueOf("xyz")));
-		assertEquals(stringlong, longdouble.optstring(LuaValue.valueOf("xyz")));
-		assertEquals(stringdouble, doubledouble.optstring(LuaValue.valueOf("xyz")));
-		throwsError(somefunc, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
-		throwsError(someclosure, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
-		assertEquals(stringstring, stringstring.optstring(LuaValue.valueOf("xyz")));
-		assertEquals(stringint, stringint.optstring(LuaValue.valueOf("xyz")));
-		assertEquals(stringlong, stringlong.optstring(LuaValue.valueOf("xyz")));
-		assertEquals(stringdouble, stringdouble.optstring(LuaValue.valueOf("xyz")));
-		throwsError(thread, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
-		throwsError(table, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
-		throwsError(userdataobj, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
-		throwsError(userdatacls, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
+		throwsError(sometrue, "optstring", LuaString.class, valueOf("xyz"));
+		throwsError(somefalse, "optstring", LuaString.class, valueOf("xyz"));
+		assertEquals(valueOf("0"), zero.optstring(valueOf("xyz")));
+		assertEquals(stringint, intint.optstring(valueOf("xyz")));
+		assertEquals(stringlong, longdouble.optstring(valueOf("xyz")));
+		assertEquals(stringdouble, doubledouble.optstring(valueOf("xyz")));
+		throwsError(somefunc, "optstring", LuaString.class, valueOf("xyz"));
+		throwsError(someclosure, "optstring", LuaString.class, valueOf("xyz"));
+		assertEquals(stringstring, stringstring.optstring(valueOf("xyz")));
+		assertEquals(stringint, stringint.optstring(valueOf("xyz")));
+		assertEquals(stringlong, stringlong.optstring(valueOf("xyz")));
+		assertEquals(stringdouble, stringdouble.optstring(valueOf("xyz")));
+		throwsError(thread, "optstring", LuaString.class, valueOf("xyz"));
+		throwsError(table, "optstring", LuaString.class, valueOf("xyz"));
+		throwsError(userdataobj, "optstring", LuaString.class, valueOf("xyz"));
+		throwsError(userdatacls, "optstring", LuaString.class, valueOf("xyz"));
 	}
 
 	@Test
@@ -921,21 +923,21 @@ public class TypeTest {
 	public void testOptValue() {
 		assertEquals(zero, somenil.optvalue(zero));
 		assertEquals(stringstring, somenil.optvalue(stringstring));
-		assertEquals(sometrue, sometrue.optvalue(LuaValue.TRUE));
-		assertEquals(somefalse, somefalse.optvalue(LuaValue.TRUE));
-		assertEquals(zero, zero.optvalue(LuaValue.TRUE));
-		assertEquals(intint, intint.optvalue(LuaValue.TRUE));
-		assertEquals(longdouble, longdouble.optvalue(LuaValue.TRUE));
-		assertEquals(somefunc, somefunc.optvalue(LuaValue.TRUE));
-		assertEquals(someclosure, someclosure.optvalue(LuaValue.TRUE));
-		assertEquals(stringstring, stringstring.optvalue(LuaValue.TRUE));
-		assertEquals(stringint, stringint.optvalue(LuaValue.TRUE));
-		assertEquals(stringlong, stringlong.optvalue(LuaValue.TRUE));
-		assertEquals(stringdouble, stringdouble.optvalue(LuaValue.TRUE));
-		assertEquals(thread, thread.optvalue(LuaValue.TRUE));
-		assertEquals(table, table.optvalue(LuaValue.TRUE));
-		assertEquals(userdataobj, userdataobj.optvalue(LuaValue.TRUE));
-		assertEquals(userdatacls, userdatacls.optvalue(LuaValue.TRUE));
+		assertEquals(sometrue, sometrue.optvalue(TRUE));
+		assertEquals(somefalse, somefalse.optvalue(TRUE));
+		assertEquals(zero, zero.optvalue(TRUE));
+		assertEquals(intint, intint.optvalue(TRUE));
+		assertEquals(longdouble, longdouble.optvalue(TRUE));
+		assertEquals(somefunc, somefunc.optvalue(TRUE));
+		assertEquals(someclosure, someclosure.optvalue(TRUE));
+		assertEquals(stringstring, stringstring.optvalue(TRUE));
+		assertEquals(stringint, stringint.optvalue(TRUE));
+		assertEquals(stringlong, stringlong.optvalue(TRUE));
+		assertEquals(stringdouble, stringdouble.optvalue(TRUE));
+		assertEquals(thread, thread.optvalue(TRUE));
+		assertEquals(table, table.optvalue(TRUE));
+		assertEquals(userdataobj, userdataobj.optvalue(TRUE));
+		assertEquals(userdatacls, userdatacls.optvalue(TRUE));
 	}
 
 
@@ -1070,15 +1072,15 @@ public class TypeTest {
 		throwsErrorReq(sometrue, "checkinteger");
 		throwsErrorReq(somefalse, "checkinteger");
 		assertEquals(zero, zero.checkinteger());
-		assertEquals(LuaValue.valueOf(sampleint), intint.checkinteger());
-		assertEquals(LuaValue.valueOf((int) samplelong), longdouble.checkinteger());
-		assertEquals(LuaValue.valueOf((int) sampledouble), doubledouble.checkinteger());
+		assertEquals(valueOf(sampleint), intint.checkinteger());
+		assertEquals(valueOf((int) samplelong), longdouble.checkinteger());
+		assertEquals(valueOf((int) sampledouble), doubledouble.checkinteger());
 		throwsErrorReq(somefunc, "checkinteger");
 		throwsErrorReq(someclosure, "checkinteger");
 		throwsErrorReq(stringstring, "checkinteger");
-		assertEquals(LuaValue.valueOf(sampleint), stringint.checkinteger());
-		assertEquals(LuaValue.valueOf((int) samplelong), stringlong.checkinteger());
-		assertEquals(LuaValue.valueOf((int) sampledouble), stringdouble.checkinteger());
+		assertEquals(valueOf(sampleint), stringint.checkinteger());
+		assertEquals(valueOf((int) samplelong), stringlong.checkinteger());
+		assertEquals(valueOf((int) sampledouble), stringdouble.checkinteger());
 		throwsErrorReq(thread, "checkinteger");
 		throwsErrorReq(table, "checkinteger");
 		throwsErrorReq(userdataobj, "checkinteger");
@@ -1112,15 +1114,15 @@ public class TypeTest {
 		throwsErrorReq(sometrue, "checknumber");
 		throwsErrorReq(somefalse, "checknumber");
 		assertEquals(zero, zero.checknumber());
-		assertEquals(LuaValue.valueOf(sampleint), intint.checknumber());
-		assertEquals(LuaValue.valueOf(samplelong), longdouble.checknumber());
-		assertEquals(LuaValue.valueOf(sampledouble), doubledouble.checknumber());
+		assertEquals(valueOf(sampleint), intint.checknumber());
+		assertEquals(valueOf(samplelong), longdouble.checknumber());
+		assertEquals(valueOf(sampledouble), doubledouble.checknumber());
 		throwsErrorReq(somefunc, "checknumber");
 		throwsErrorReq(someclosure, "checknumber");
 		throwsErrorReq(stringstring, "checknumber");
-		assertEquals(LuaValue.valueOf(sampleint), stringint.checknumber());
-		assertEquals(LuaValue.valueOf(samplelong), stringlong.checknumber());
-		assertEquals(LuaValue.valueOf(sampledouble), stringdouble.checknumber());
+		assertEquals(valueOf(sampleint), stringint.checknumber());
+		assertEquals(valueOf(samplelong), stringlong.checknumber());
+		assertEquals(valueOf(sampledouble), stringdouble.checknumber());
 		throwsErrorReq(thread, "checknumber");
 		throwsErrorReq(table, "checknumber");
 		throwsErrorReq(userdataobj, "checknumber");
@@ -1197,7 +1199,7 @@ public class TypeTest {
 		throwsErrorReq(somenil, "checkstring");
 		throwsErrorReq(sometrue, "checkstring");
 		throwsErrorReq(somefalse, "checkstring");
-		assertEquals(LuaValue.valueOf("0"), zero.checkstring());
+		assertEquals(valueOf("0"), zero.checkstring());
 		assertEquals(stringint, intint.checkstring());
 		assertEquals(stringlong, longdouble.checkstring());
 		assertEquals(stringdouble, doubledouble.checkstring());

@@ -27,6 +27,10 @@ import org.luaj.vm2.lib.TwoArgFunction;
 
 import java.lang.ref.WeakReference;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.userdataOf;
+import static org.luaj.vm2.Factory.varargsOf;
+
 /**
  * Subclass of {@link LuaTable} that provides weak key and weak value semantics.
  * <p>
@@ -95,11 +99,11 @@ public class WeakTable extends LuaTable {
 	 */
 	LuaValue weaken(LuaValue value) {
 		switch (value.type()) {
-			case LuaValue.TFUNCTION:
-			case LuaValue.TTHREAD:
-			case LuaValue.TTABLE:
+			case TFUNCTION:
+			case TTHREAD:
+			case TTABLE:
 				return new WeakValue(value);
-			case LuaValue.TUSERDATA:
+			case TUSERDATA:
 				return new WeakUserdata(value);
 			default:
 				return value;
@@ -121,10 +125,10 @@ public class WeakTable extends LuaTable {
 		}
 		if (weakkeys) {
 			switch (key.type()) {
-				case LuaValue.TFUNCTION:
-				case LuaValue.TTHREAD:
-				case LuaValue.TTABLE:
-				case LuaValue.TUSERDATA:
+				case TFUNCTION:
+				case TTHREAD:
+				case TTABLE:
+				case TUSERDATA:
 					key = value = new WeakEntry(this, key, value);
 					break;
 				default:

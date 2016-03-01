@@ -29,8 +29,10 @@ import org.luaj.vm2.compiler.LexState.expdesc;
 
 import java.util.Hashtable;
 
+import static org.luaj.vm2.Constants.*;
 import static org.luaj.vm2.Lua.*;
 import static org.luaj.vm2.compiler.LuaC.*;
+import static org.luaj.vm2.compiler.LuaC.MAXSTACK;
 
 public class FuncState {
 	class upvaldesc {
@@ -481,11 +483,11 @@ public class FuncState {
 	}
 
 	int boolK(boolean b) {
-		return this.addk((b ? LuaValue.TRUE : LuaValue.FALSE));
+		return this.addk((b ? TRUE : FALSE));
 	}
 
 	int nilK() {
-		return this.addk(LuaValue.NIL);
+		return this.addk(NIL);
 	}
 
 	void setreturns(expdesc e, int nresults) {

@@ -26,6 +26,8 @@ package org.luaj.vm2.lib;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
+import static org.luaj.vm2.Constants.NIL;
+
 /**
  * Abstract base class for Java function implementations that take two arguments and
  * return one value.
@@ -50,7 +52,7 @@ import org.luaj.vm2.Varargs;
  * @see ThreeArgFunction
  * @see VarArgFunction
  */
-abstract public class TwoArgFunction extends LibFunction {
+public abstract class TwoArgFunction extends LibFunction {
 
 	@Override
 	abstract public LuaValue call(LuaValue arg1, LuaValue arg2);

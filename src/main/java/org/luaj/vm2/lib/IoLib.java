@@ -34,6 +34,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+import static org.luaj.vm2.Factory.varargsOf;
+
 /**
  * Abstract base class extending {@link LibFunction} which implements the
  * core of the lua standard {@code io} library.
@@ -95,7 +99,7 @@ public class IoLib extends OneArgFunction {
 		// essentially a userdata instance
 		@Override
 		public int type() {
-			return LuaValue.TUSERDATA;
+			return TUSERDATA;
 		}
 
 		@Override
@@ -330,7 +334,7 @@ public class IoLib extends OneArgFunction {
 	public Varargs _io_flush() throws IOException {
 		checkopen(output());
 		outfile.flush();
-		return LuaValue.TRUE;
+		return TRUE;
 	}
 
 	//	io.tmpfile() -> file
@@ -406,13 +410,13 @@ public class IoLib extends OneArgFunction {
 	// file:flush() -> void
 	public Varargs _file_flush(LuaValue file) throws IOException {
 		checkfile(file).flush();
-		return LuaValue.TRUE;
+		return TRUE;
 	}
 
 	// file:setvbuf(mode,[size]) -> void
 	public Varargs _file_setvbuf(LuaValue file, String mode, int size) {
 		checkfile(file).setvbuf(mode, size);
-		return LuaValue.TRUE;
+		return TRUE;
 	}
 
 	// file:lines() -> iterator
@@ -474,7 +478,7 @@ public class IoLib extends OneArgFunction {
 	}
 
 	private static Varargs successresult() {
-		return LuaValue.TRUE;
+		return TRUE;
 	}
 
 	private static Varargs errorresult(Exception ioe) {
@@ -498,7 +502,7 @@ public class IoLib extends OneArgFunction {
 		for (int i = 1, n = args.narg(); i <= n; i++) {
 			f.write(args.checkstring(i));
 		}
-		return LuaValue.TRUE;
+		return TRUE;
 	}
 
 	private Varargs ioread(File f, Varargs args) throws IOException {
@@ -509,10 +513,10 @@ public class IoLib extends OneArgFunction {
 		for (i = 0; i < n; ) {
 			item:
 			switch ((ai = args.arg(i + 1)).type()) {
-				case LuaValue.TNUMBER:
+				case TNUMBER:
 					vi = freadbytes(f, ai.toint());
 					break;
-				case LuaValue.TSTRING:
+				case TSTRING:
 					fmt = ai.checkstring();
 					if (fmt.m_length == 2 && fmt.m_bytes[fmt.m_offset] == '*') {
 						switch (fmt.m_bytes[fmt.m_offset + 1]) {

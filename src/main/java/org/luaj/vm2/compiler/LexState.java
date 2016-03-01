@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
+import static org.luaj.vm2.Factory.valueOf;
 import static org.luaj.vm2.compiler.LuaC.LUAI_MAXVARS;
 
 public class LexState {
@@ -174,7 +175,7 @@ public class LexState {
 
 	static {
 		for (int i = 0; i < NUM_RESERVED; i++) {
-			LuaString ts = LuaValue.valueOf(luaX_tokens[i]);
+			LuaString ts = valueOf(luaX_tokens[i]);
 			RESERVED.put(ts, FIRST_RESERVED + i);
 		}
 	}
@@ -368,7 +369,7 @@ public class LexState {
 		} else {
 			d = Double.parseDouble(str);
 		}
-		seminfo.r = LuaValue.valueOf(d);
+		seminfo.r = valueOf(d);
 		return true;
 	}
 

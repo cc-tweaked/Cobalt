@@ -25,6 +25,9 @@ package org.luaj.vm2;
 
 import org.luaj.vm2.lib.LibFunction;
 
+import static org.luaj.vm2.Constants.NIL;
+import static org.luaj.vm2.Constants.TFUNCTION;
+
 /**
  * Base class for functions implemented in Java.
  * <p>
@@ -37,8 +40,7 @@ import org.luaj.vm2.lib.LibFunction;
  * @see LibFunction
  * @see LuaClosure
  */
-abstract
-public class LuaFunction extends LuaValue {
+public abstract class LuaFunction extends LuaValue {
 
 	/**
 	 * Shared static metatable for all functions and closures.

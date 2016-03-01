@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
+import static org.luaj.vm2.Factory.valueOf;
 import static org.luaj.vm2.Lua.*;
 
 /**
@@ -214,11 +215,11 @@ public class LuaC implements LuaCompiler {
 		LexState lexstate = new LexState(this, z);
 		FuncState funcstate = new FuncState();
 		// lexstate.buff = buff;
-		lexstate.setinput(this, firstByte, z, LuaValue.valueOf(name));
+		lexstate.setinput(this, firstByte, z, valueOf(name));
 		lexstate.open_func(funcstate);
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = VARARG_ISVARARG;
-		funcstate.f.source = LuaValue.valueOf(name);
+		funcstate.f.source = valueOf(name);
 		lexstate.next(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);

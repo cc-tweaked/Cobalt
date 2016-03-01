@@ -25,11 +25,14 @@ package org.luaj.vm2;
 
 import org.luaj.vm2.lib.MathLib;
 
+import static org.luaj.vm2.Constants.FALSE;
+import static org.luaj.vm2.Constants.TRUE;
+
 /**
  * Extension of {@link LuaNumber} which can hold a Java int as its value.
  * <p>
  * These instance are not instantiated directly by clients, but indirectly
- * via the static functions {@link LuaValue#valueOf(int)} or {@link LuaValue#valueOf(double)}
+ * via the static functions {@link Factory#valueOf(int)} or {@link Factory#valueOf(double)}
  * functions.  This ensures that policies regarding pooling of instances are
  * encapsulated.
  * <p>
@@ -39,8 +42,8 @@ import org.luaj.vm2.lib.MathLib;
  * @see LuaValue
  * @see LuaNumber
  * @see LuaDouble
- * @see LuaValue#valueOf(int)
- * @see LuaValue#valueOf(double)
+ * @see Factory#valueOf(int)
+ * @see Factory#valueOf(double)
  */
 public class LuaInteger extends LuaNumber {
 
@@ -63,8 +66,8 @@ public class LuaInteger extends LuaNumber {
 	 *
 	 * @param l long value to represent.
 	 * @return LuaNumber that is eithe LuaInteger or LuaDouble representing l
-	 * @see LuaValue#valueOf(int)
-	 * @see LuaValue#valueOf(double)
+	 * @see Factory#valueOf(int)
+	 * @see Factory#valueOf(double)
 	 */
 	public static LuaNumber valueOf(long l) {
 		int i = (int) l;
@@ -81,7 +84,7 @@ public class LuaInteger extends LuaNumber {
 	/**
 	 * Package protected constructor.
 	 *
-	 * @see LuaValue#valueOf(int)
+	 * @see Factory#valueOf(int)
 	 */
 	LuaInteger(int i) {
 		this.v = i;
@@ -257,7 +260,7 @@ public class LuaInteger extends LuaNumber {
 
 	@Override
 	public LuaValue sub(int rhs) {
-		return LuaDouble.valueOf(v - rhs);
+		return valueOf(v - rhs);
 	}
 
 	@Override
@@ -500,7 +503,7 @@ public class LuaInteger extends LuaNumber {
 
 	@Override
 	public LuaString checkstring() {
-		return valueOf(String.valueOf(v));
+		return Factory.valueOf(String.valueOf(v));
 	}
 
 }

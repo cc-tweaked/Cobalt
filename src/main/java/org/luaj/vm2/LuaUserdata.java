@@ -23,6 +23,7 @@
  */
 package org.luaj.vm2;
 
+import static org.luaj.vm2.Constants.*;
 
 public class LuaUserdata extends LuaValue {
 
@@ -45,7 +46,7 @@ public class LuaUserdata extends LuaValue {
 
 	@Override
 	public int type() {
-		return LuaValue.TUSERDATA;
+		return TUSERDATA;
 	}
 
 	@Override

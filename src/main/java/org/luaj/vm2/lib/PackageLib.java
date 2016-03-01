@@ -24,10 +24,12 @@
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
-import org.luaj.vm2.lib.jse.JseBaseLib;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.*;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard package and module
@@ -35,11 +37,10 @@ import java.io.PrintStream;
  * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  * However, the default filesystem search semantics are different and delegated to the bas library
- * as outlined in the {@link BaseLib} and {@link JseBaseLib} documetnation.
+ * as outlined in the {@link BaseLib}.
  *
  * @see LibFunction
  * @see BaseLib
- * @see JseBaseLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.3">http://www.lua.org/manual/5.1/manual.html#5.3</a>
  */
 public class PackageLib extends OneArgFunction {
@@ -218,7 +219,7 @@ public class PackageLib extends OneArgFunction {
 	 * each option is a function to be applied over the module.
 	 *
 	 * @param args The arguments to set it up with
-	 * @return {@link LuaValue#NONE}
+	 * @return {@link Constants#NONE}
 	 */
 	public Varargs module(Varargs args) {
 		LuaString modname = args.checkstring(1);
@@ -364,7 +365,7 @@ public class PackageLib extends OneArgFunction {
 		if (!result.isnil()) {
 			LOADED.set(name, result);
 		} else if ((result = LOADED.get(name)) == _SENTINEL) {
-			LOADED.set(name, result = LuaValue.TRUE);
+			LOADED.set(name, result = TRUE);
 		}
 		return result;
 	}

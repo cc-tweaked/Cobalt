@@ -34,6 +34,9 @@ import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+import static org.luaj.vm2.Factory.varargsOf;
 
 /**
  * Test compilation of various fragments that have
@@ -64,9 +67,9 @@ public class FragmentsTest {
 
 	@Test
 	public void testForloopParamUpvalues() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{
-				LuaValue.valueOf(77),
-				LuaValue.valueOf(1)}),
+		runFragment(varargsOf(new LuaValue[]{
+				valueOf(77),
+				valueOf(1)}),
 			"for n,p in ipairs({77}) do\n" +
 				"	print('n,p',n,p)\n" +
 				"	foo = function()\n" +
@@ -79,12 +82,12 @@ public class FragmentsTest {
 
 	@Test
 	public void testVarVarargsUseArg() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{
-				LuaValue.valueOf("a"),
-				LuaValue.valueOf(2),
-				LuaValue.valueOf("b"),
-				LuaValue.valueOf("c"),
-				LuaValue.NIL}),
+		runFragment(varargsOf(new LuaValue[]{
+				valueOf("a"),
+				valueOf(2),
+				valueOf("b"),
+				valueOf("c"),
+				NIL}),
 			"function q(a,...)\n" +
 				"	return a,arg.n,arg[1],arg[2],arg[3]\n" +
 				"end\n" +
@@ -93,11 +96,11 @@ public class FragmentsTest {
 
 	@Test
 	public void testVarVarargsUseBoth() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{
-				LuaValue.valueOf("a"),
-				LuaValue.valueOf("nil"),
-				LuaValue.valueOf("b"),
-				LuaValue.valueOf("c")}),
+		runFragment(varargsOf(new LuaValue[]{
+				valueOf("a"),
+				valueOf("nil"),
+				valueOf("b"),
+				valueOf("c")}),
 			"function r(a,...)\n" +
 				"	return a,type(arg),...\n" +
 				"end\n" +
@@ -106,10 +109,10 @@ public class FragmentsTest {
 
 	@Test
 	public void testArgVarargsUseBoth() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{
-				LuaValue.NIL,
-				LuaValue.valueOf("b"),
-				LuaValue.valueOf("c")}),
+		runFragment(varargsOf(new LuaValue[]{
+				NIL,
+				valueOf("b"),
+				valueOf("c")}),
 			"function v(arg,...)\n" +
 				"	return arg,...\n" +
 				"end\n" +
@@ -119,7 +122,7 @@ public class FragmentsTest {
 	@Test
 	public void testArgParamUseNone() {
 		// the name "arg" is treated specially, and ends up masking the argument value in 5.1
-		runFragment(LuaValue.valueOf("table"),
+		runFragment(valueOf("table"),
 			"function v(arg,...)\n" +
 				"	return type(arg)\n" +
 				"end\n" +
@@ -128,7 +131,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testSetlistVarargs() {
-		runFragment(LuaValue.valueOf("abc"),
+		runFragment(valueOf("abc"),
 			"local f = function() return 'abc' end\n" +
 				"local g = { f() }\n" +
 				"return g[1]\n");
@@ -136,14 +139,14 @@ public class FragmentsTest {
 
 	@Test
 	public void testSelfOp() {
-		runFragment(LuaValue.valueOf("bcd"),
+		runFragment(valueOf("bcd"),
 			"local s = 'abcde'\n" +
 				"return s:sub(2,4)\n");
 	}
 
 	@Test
 	public void testSetListWithOffsetAndVarargs() {
-		runFragment(LuaValue.valueOf(1003),
+		runFragment(valueOf(1003),
 			"local bar = {1000, math.sqrt(9)}\n" +
 				"return bar[1]+bar[2]\n");
 	}
@@ -151,10 +154,10 @@ public class FragmentsTest {
 	@Test
 	public void testMultiAssign() {
 		// arargs evaluations are all done before assignments
-		runFragment(LuaValue.varargsOf(new LuaValue[]{
-				LuaValue.valueOf(111),
-				LuaValue.valueOf(111),
-				LuaValue.valueOf(111)}),
+		runFragment(varargsOf(new LuaValue[]{
+				valueOf(111),
+				valueOf(111),
+				valueOf(111)}),
 			"a,b,c = 1,10,100\n" +
 				"a,b,c = a+b+c, a+b+c, a+b+c\n" +
 				"return a,b,c\n");
@@ -162,7 +165,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testUpvalues() {
-		runFragment(LuaValue.valueOf(999),
+		runFragment(valueOf(999),
 			"local a = function(x)\n" +
 				"  return function(y)\n" +
 				"    return x + y\n" +
@@ -176,7 +179,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testNeedsArgAndHasArg() {
-		runFragment(LuaValue.varargsOf(LuaValue.valueOf(333), LuaValue.NIL, LuaValue.valueOf(222)),
+		runFragment(varargsOf(valueOf(333), NIL, valueOf(222)),
 			"function r(q,...)\n" +
 				"	local a=arg\n" +
 				"	return a and a[2]\n" +
@@ -192,7 +195,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testNonAsciiStringLiterals() {
-		runFragment(LuaValue.valueOf("7,8,12,10,9,11,133,222"),
+		runFragment(valueOf("7,8,12,10,9,11,133,222"),
 			"local a='\\a\\b\\f\\n\\t\\v\\133\\222'\n" +
 				"local t={string.byte(a,1,#a)}\n" +
 				"return table.concat(t,',')\n");
@@ -200,7 +203,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testControlCharStringLiterals() {
-		runFragment(LuaValue.valueOf("97,0,98,18,99,18,100,18,48,101"),
+		runFragment(valueOf("97,0,98,18,99,18,100,18,48,101"),
 			"local a='a\\0b\\18c\\018d\\0180e'\n" +
 				"local t={string.byte(a,1,#a)}\n" +
 				"return table.concat(t,',')\n");
@@ -208,7 +211,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testLoopVarNames() {
-		runFragment(LuaValue.valueOf(" 234,1,aa 234,2,bb"),
+		runFragment(valueOf(" 234,1,aa 234,2,bb"),
 			"local w = ''\n" +
 				"function t()\n" +
 				"	for f,var in ipairs({'aa','bb'}) do\n" +
@@ -223,7 +226,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testForLoops() {
-		runFragment(LuaValue.valueOf("12345 357 963"),
+		runFragment(valueOf("12345 357 963"),
 			"local s,t,u = '','',''\n" +
 				"for m=1,5 do\n" +
 				"	s = s..m\n" +
@@ -239,7 +242,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testLocalFunctionDeclarations() {
-		runFragment(LuaValue.varargsOf(LuaValue.valueOf("function"), LuaValue.valueOf("nil")),
+		runFragment(varargsOf(valueOf("function"), valueOf("nil")),
 			"local function aaa()\n" +
 				"	return type(aaa)\n" +
 				"end\n" +
@@ -251,7 +254,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testNilsInTableConstructor() {
-		runFragment(LuaValue.valueOf("1=111 2=222 3=333 "),
+		runFragment(valueOf("1=111 2=222 3=333 "),
 			"local t = { 111, 222, 333, nil, nil }\n" +
 				"local s = ''\n" +
 				"for i,v in ipairs(t) do \n" +
@@ -263,7 +266,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testUnreachableCode() {
-		runFragment(LuaValue.valueOf(66),
+		runFragment(valueOf(66),
 			"local function foo(x) return x * 2 end\n" +
 				"local function bar(x, y)\n" +
 				"	if x==y then\n" +
@@ -278,7 +281,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testVarargsWithParameters() {
-		runFragment(LuaValue.valueOf(222),
+		runFragment(valueOf(222),
 			"local func = function(t,...)\n" +
 				"	return (...)\n" +
 				"end\n" +
@@ -287,14 +290,14 @@ public class FragmentsTest {
 
 	@Test
 	public void testNoReturnValuesPlainCall() {
-		runFragment(LuaValue.TRUE,
+		runFragment(TRUE,
 			"local testtable = {}\n" +
 				"return pcall( function() testtable[1]=2 end )\n");
 	}
 
 	@Test
 	public void testVarargsInTableConstructor() {
-		runFragment(LuaValue.valueOf(222),
+		runFragment(valueOf(222),
 			"local function foo() return 111,222,333 end\n" +
 				"local t = {'a','b',c='c',foo()}\n" +
 				"return t[4]\n");
@@ -302,7 +305,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testVarargsInFirstArg() {
-		runFragment(LuaValue.valueOf(123),
+		runFragment(valueOf(123),
 			"function aaa(x) return x end\n" +
 				"function bbb(y) return y end\n" +
 				"function ccc(z) return z end\n" +
@@ -311,7 +314,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testSetUpvalueTableInitializer() {
-		runFragment(LuaValue.valueOf("b"),
+		runFragment(valueOf("b"),
 			"local aliases = {a='b'}\n" +
 				"local foo = function()\n" +
 				"	return aliases\n" +
@@ -321,7 +324,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testLoadNilUpvalue() {
-		runFragment(LuaValue.NIL,
+		runFragment(NIL,
 			"tostring = function() end\n" +
 				"local pc \n" +
 				"local pcall = function(...)\n" +
@@ -332,7 +335,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testUpvalueClosure() {
-		runFragment(LuaValue.NIL,
+		runFragment(NIL,
 			"print()\n" +
 				"local function f2() end\n" +
 				"local function f3()\n" +
@@ -343,7 +346,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testUninitializedUpvalue() {
-		runFragment(LuaValue.NIL,
+		runFragment(NIL,
 			"local f\n" +
 				"do\n" +
 				"	function g()\n" +
@@ -355,7 +358,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testTestOpUpvalues() {
-		runFragment(LuaValue.varargsOf(LuaValue.valueOf(1), LuaValue.valueOf(2), LuaValue.valueOf(3)),
+		runFragment(varargsOf(valueOf(1), valueOf(2), valueOf(3)),
 			"print( nil and 'T' or 'F' )\n" +
 				"local a,b,c = 1,2,3\n" +
 				"function foo()\n" +
@@ -366,15 +369,15 @@ public class FragmentsTest {
 
 	@Test
 	public void testTestSimpleBinops() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{
-				LuaValue.FALSE, LuaValue.FALSE, LuaValue.TRUE, LuaValue.TRUE, LuaValue.FALSE}),
+		runFragment(varargsOf(new LuaValue[]{
+				FALSE, FALSE, TRUE, TRUE, FALSE}),
 			"local a,b,c = 2,-2.5,0\n" +
 				"return (a==c), (b==c), (a==a), (a>c), (b>0)\n");
 	}
 
 	@Test
 	public void testNumericForUpvalues() {
-		runFragment(LuaValue.valueOf(8),
+		runFragment(valueOf(8),
 			"for i = 3,4 do\n" +
 				"	i = i + 5\n" +
 				"	local a = function()\n" +
@@ -386,7 +389,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testNumericForUpvalues2() {
-		runFragment(LuaValue.valueOf("222 222"),
+		runFragment(valueOf("222 222"),
 			"local t = {}\n" +
 				"local template = [[123 456]]\n" +
 				"for i = 1,2 do\n" +
@@ -399,7 +402,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testReturnUpvalue() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{LuaValue.ONE, LuaValue.valueOf(5),}),
+		runFragment(varargsOf(new LuaValue[]{ONE, valueOf(5),}),
 			"local a = 1\n" +
 				"local b\n" +
 				"function c()\n" +
@@ -411,7 +414,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testUninitializedAroundBranch() {
-		runFragment(LuaValue.valueOf(333),
+		runFragment(valueOf(333),
 			"local state\n" +
 				"if _G then\n" +
 				"    state = 333\n" +
@@ -421,7 +424,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testLoadedNilUpvalue() {
-		runFragment(LuaValue.NIL,
+		runFragment(NIL,
 			"local a = print()\n" +
 				"local b = c and { d = e }\n" +
 				"local f\n" +
@@ -433,7 +436,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testUpvalueInFirstSlot() {
-		runFragment(LuaValue.valueOf("foo"),
+		runFragment(valueOf("foo"),
 			"local p = {'foo'}\n" +
 				"bar = function()\n" +
 				"	return p \n" +
@@ -446,7 +449,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testReadOnlyAndReadWriteUpvalues() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{LuaValue.valueOf(333), LuaValue.valueOf(222)}),
+		runFragment(varargsOf(new LuaValue[]{valueOf(333), valueOf(222)}),
 			"local a = 111\n" +
 				"local b = 222\n" +
 				"local c = function()\n" +
@@ -458,7 +461,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testNestedUpvalues() {
-		runFragment(LuaValue.varargsOf(new LuaValue[]{LuaValue.valueOf(5), LuaValue.valueOf(8), LuaValue.valueOf(9)}),
+		runFragment(varargsOf(new LuaValue[]{valueOf(5), valueOf(8), valueOf(9)}),
 			"local x = 3\n" +
 				"local y = 5\n" +
 				"local function f()\n" +
@@ -475,7 +478,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testLoadBool() {
-		runFragment(LuaValue.NONE,
+		runFragment(NONE,
 			"print( type(foo)=='string' )\n" +
 				"local a,b\n" +
 				"if print() then\n" +
@@ -487,7 +490,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testBasicForLoop() {
-		runFragment(LuaValue.valueOf(2),
+		runFragment(valueOf(2),
 			"local data\n" +
 				"for i = 1, 2 do\n" +
 				"     data = i\n" +
@@ -500,7 +503,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testGenericForMultipleValues() {
-		runFragment(LuaValue.varargsOf(LuaValue.valueOf(3), LuaValue.valueOf(2), LuaValue.valueOf(1)),
+		runFragment(varargsOf(valueOf(3), valueOf(2), valueOf(1)),
 			"local iter = function() return 1,2,3,4 end\n" +
 				"local foo  = function() return iter,5 end\n" +
 				"for a,b,c in foo() do\n" +
@@ -510,7 +513,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testPhiUpvalue() {
-		runFragment(LuaValue.valueOf(6),
+		runFragment(valueOf(6),
 			"local a = foo or 0\n" +
 				"local function b(c)\n" +
 				"	if c > a then a = c end\n" +
@@ -522,7 +525,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testAssignReferUpvalues() {
-		runFragment(LuaValue.valueOf(123),
+		runFragment(valueOf(123),
 			"local entity = 234\n" +
 				"local function c()\n" +
 				"    return entity\n" +
@@ -535,7 +538,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testSimpleRepeatUntil() {
-		runFragment(LuaValue.valueOf(5),
+		runFragment(valueOf(5),
 			"local a\n" +
 				"local w\n" +
 				"repeat\n" +
@@ -546,7 +549,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testLoopVarUpvalues() {
-		runFragment(LuaValue.valueOf("b"),
+		runFragment(valueOf("b"),
 			"local env = {}\n" +
 				"for a,b in pairs(_G) do\n" +
 				"	c = function()\n" +
@@ -562,7 +565,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testPhiVarUpvalue() {
-		runFragment(LuaValue.valueOf(2),
+		runFragment(valueOf(2),
 			"local a = 1\n" +
 				"local function b()\n" +
 				"    a = a + 1\n" +
@@ -576,7 +579,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testUpvaluesInElseClauses() {
-		runFragment(LuaValue.valueOf(111),
+		runFragment(valueOf(111),
 			"if a then\n" +
 				"   foo(bar)\n" +
 				"elseif _G then\n" +

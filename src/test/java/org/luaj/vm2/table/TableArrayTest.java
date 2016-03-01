@@ -29,6 +29,7 @@ import org.luaj.vm2.*;
 import java.util.Vector;
 
 import static org.junit.Assert.*;
+import static org.luaj.vm2.Constants.NIL;
 
 /**
  * Tests for tables used as lists.
@@ -165,16 +166,16 @@ public class TableArrayTest {
 
 		t.set(1, LuaString.valueOf("foo"));
 		t.set(2, LuaString.valueOf("bah"));
-		assertNotSame(LuaValue.NIL, t.get(1));
-		assertNotSame(LuaValue.NIL, t.get(2));
-		assertEquals(LuaValue.NIL, t.get(3));
+		assertNotSame(NIL, t.get(1));
+		assertNotSame(NIL, t.get(2));
+		assertEquals(NIL, t.get(3));
 
-		t.set(1, LuaValue.NIL);
-		t.set(2, LuaValue.NIL);
-		t.set(3, LuaValue.NIL);
-		assertEquals(LuaValue.NIL, t.get(1));
-		assertEquals(LuaValue.NIL, t.get(2));
-		assertEquals(LuaValue.NIL, t.get(3));
+		t.set(1, NIL);
+		t.set(2, NIL);
+		t.set(3, NIL);
+		assertEquals(NIL, t.get(1));
+		assertEquals(NIL, t.get(2));
+		assertEquals(NIL, t.get(3));
 	}
 
 	@Test
@@ -184,17 +185,17 @@ public class TableArrayTest {
 
 		t.set("test", LuaString.valueOf("foo"));
 		assertEquals(1, t.keyCount());
-		t.set("explode", LuaValue.NIL);
+		t.set("explode", NIL);
 		assertEquals(1, t.keyCount());
-		t.set(42, LuaValue.NIL);
+		t.set(42, NIL);
 		assertEquals(1, t.keyCount());
-		t.set(new_Table(), LuaValue.NIL);
+		t.set(new_Table(), NIL);
 		assertEquals(1, t.keyCount());
-		t.set("test", LuaValue.NIL);
+		t.set("test", NIL);
 		assertEquals(0, t.keyCount());
 
 		t.set(10, LuaInteger.valueOf(5));
-		t.set(10, LuaValue.NIL);
+		t.set(10, NIL);
 		assertEquals(0, t.keyCount());
 	}
 
@@ -206,20 +207,20 @@ public class TableArrayTest {
 		t.set("string", LuaInteger.valueOf(10));
 		assertEquals(2, t.keyCount());
 
-		t.set("string", LuaValue.NIL);
+		t.set("string", NIL);
 		t.set("three", LuaDouble.valueOf(3.14));
 		assertEquals(2, t.keyCount());
 
-		t.set("test", LuaValue.NIL);
+		t.set("test", NIL);
 		assertEquals(1, t.keyCount());
 
 		t.set(10, LuaInteger.valueOf(5));
 		assertEquals(2, t.keyCount());
 
-		t.set(10, LuaValue.NIL);
+		t.set(10, NIL);
 		assertEquals(1, t.keyCount());
 
-		t.set("three", LuaValue.NIL);
+		t.set("three", NIL);
 		assertEquals(0, t.keyCount());
 	}
 

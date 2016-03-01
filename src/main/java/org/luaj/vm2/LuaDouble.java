@@ -25,11 +25,14 @@ package org.luaj.vm2;
 
 import org.luaj.vm2.lib.MathLib;
 
+import static org.luaj.vm2.Constants.FALSE;
+import static org.luaj.vm2.Constants.TRUE;
+
 /**
  * Extension of {@link LuaNumber} which can hold a Java double as its value.
  * <p>
  * These instance are not instantiated directly by clients, but indirectly
- * via the static functions {@link LuaValue#valueOf(int)} or {@link LuaValue#valueOf(double)}
+ * via the static functions {@link Factory#valueOf(int)} or {@link Factory#valueOf(double)}
  * functions.  This ensures that values which can be represented as int
  * are wrapped in {@link LuaInteger} instead of {@link LuaDouble}.
  * <p>
@@ -50,8 +53,8 @@ import org.luaj.vm2.lib.MathLib;
  * @see LuaValue
  * @see LuaNumber
  * @see LuaInteger
- * @see LuaValue#valueOf(int)
- * @see LuaValue#valueOf(double)
+ * @see Factory#valueOf(int)
+ * @see Factory#valueOf(double)
  */
 public class LuaDouble extends LuaNumber {
 
@@ -376,7 +379,7 @@ public class LuaDouble extends LuaNumber {
 	// relational operators
 	@Override
 	public LuaValue lt(LuaValue rhs) {
-		return rhs.gt_b(v) ? LuaValue.TRUE : FALSE;
+		return rhs.gt_b(v) ? TRUE : FALSE;
 	}
 
 	@Override
@@ -406,7 +409,7 @@ public class LuaDouble extends LuaNumber {
 
 	@Override
 	public LuaValue lteq(LuaValue rhs) {
-		return rhs.gteq_b(v) ? LuaValue.TRUE : FALSE;
+		return rhs.gteq_b(v) ? TRUE : FALSE;
 	}
 
 	@Override
@@ -436,7 +439,7 @@ public class LuaDouble extends LuaNumber {
 
 	@Override
 	public LuaValue gt(LuaValue rhs) {
-		return rhs.lt_b(v) ? LuaValue.TRUE : FALSE;
+		return rhs.lt_b(v) ? TRUE : FALSE;
 	}
 
 	@Override
@@ -466,7 +469,7 @@ public class LuaDouble extends LuaNumber {
 
 	@Override
 	public LuaValue gteq(LuaValue rhs) {
-		return rhs.lteq_b(v) ? LuaValue.TRUE : FALSE;
+		return rhs.lteq_b(v) ? TRUE : FALSE;
 	}
 
 	@Override

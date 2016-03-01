@@ -35,6 +35,8 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.junit.Assert.*;
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.*;
 
 public class LuaOperationsTest {
 	private final int sampleint = 77;
@@ -47,18 +49,18 @@ public class LuaOperationsTest {
 	private final Object sampleobject = new Object();
 	private final MyData sampledata = new MyData();
 
-	private final LuaValue somenil = LuaValue.NIL;
-	private final LuaValue sometrue = LuaValue.TRUE;
-	private final LuaValue somefalse = LuaValue.FALSE;
-	private final LuaValue zero = LuaValue.ZERO;
-	private final LuaValue intint = LuaValue.valueOf(sampleint);
-	private final LuaValue longdouble = LuaValue.valueOf(samplelong);
-	private final LuaValue doubledouble = LuaValue.valueOf(sampledouble);
-	private final LuaValue stringstring = LuaValue.valueOf(samplestringstring);
-	private final LuaValue stringint = LuaValue.valueOf(samplestringint);
-	private final LuaValue stringlong = LuaValue.valueOf(samplestringlong);
-	private final LuaValue stringdouble = LuaValue.valueOf(samplestringdouble);
-	private final LuaTable table = LuaValue.listOf(new LuaValue[]{LuaValue.valueOf("aaa"), LuaValue.valueOf("bbb")});
+	private final LuaValue somenil = NIL;
+	private final LuaValue sometrue = TRUE;
+	private final LuaValue somefalse = FALSE;
+	private final LuaValue zero = ZERO;
+	private final LuaValue intint = valueOf(sampleint);
+	private final LuaValue longdouble = valueOf(samplelong);
+	private final LuaValue doubledouble = valueOf(sampledouble);
+	private final LuaValue stringstring = valueOf(samplestringstring);
+	private final LuaValue stringint = valueOf(samplestringint);
+	private final LuaValue stringlong = valueOf(samplestringlong);
+	private final LuaValue stringdouble = valueOf(samplestringdouble);
+	private final LuaTable table = listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
 	private final LuaValue somefunc = new ZeroArgFunction(table) {
 		@Override
 		public LuaValue call() {
@@ -68,8 +70,8 @@ public class LuaOperationsTest {
 	private final LuaThread thread = new LuaThread(somefunc, table);
 	private final Prototype proto = new Prototype();
 	private final LuaClosure someclosure = new LuaClosure(proto, table);
-	private final LuaUserdata userdataobj = LuaValue.userdataOf(sampleobject);
-	private final LuaUserdata userdatacls = LuaValue.userdataOf(sampledata);
+	private final LuaUserdata userdataobj = userdataOf(sampleobject);
+	private final LuaUserdata userdatacls = userdataOf(sampledata);
 
 	private void throwsLuaError(String methodName, Object obj) {
 		try {
@@ -162,9 +164,9 @@ public class LuaOperationsTest {
 
 	@Test
 	public void testSetfenv() {
-		LuaTable table2 = LuaValue.listOf(new LuaValue[]{
-			LuaValue.valueOf("ccc"),
-			LuaValue.valueOf("ddd")});
+		LuaTable table2 = listOf(new LuaValue[]{
+			valueOf("ccc"),
+			valueOf("ddd")});
 		throwsLuaError("setfenv", somenil, table2);
 		throwsLuaError("setfenv", sometrue, table2);
 		throwsLuaError("setfenv", somefalse, table2);
@@ -207,13 +209,13 @@ public class LuaOperationsTest {
 	public void testFunctionClosureThreadEnv() {
 
 		// set up suitable environments for execution
-		LuaValue aaa = LuaValue.valueOf("aaa");
-		LuaValue eee = LuaValue.valueOf("eee");
+		LuaValue aaa = valueOf("aaa");
+		LuaValue eee = valueOf("eee");
 		LuaTable _G = JsePlatform.standardGlobals();
-		LuaTable newenv = LuaValue.tableOf(new LuaValue[]{
-			LuaValue.valueOf("a"), LuaValue.valueOf("aaa"),
-			LuaValue.valueOf("b"), LuaValue.valueOf("bbb"),});
-		LuaTable mt = LuaValue.tableOf(new LuaValue[]{LuaValue.INDEX, _G});
+		LuaTable newenv = tableOf(new LuaValue[]{
+			valueOf("a"), valueOf("aaa"),
+			valueOf("b"), valueOf("bbb"),});
+		LuaTable mt = tableOf(new LuaValue[]{INDEX, _G});
 		newenv.setmetatable(mt);
 		_G.set("a", aaa);
 		newenv.set("a", eee);
@@ -247,10 +249,10 @@ public class LuaOperationsTest {
 		Prototype p2 = createPrototype("return loadstring('return a')", "threadtester");
 		{
 			LuaThread t = new LuaThread(new LuaClosure(p2, _G), _G);
-			Varargs v = t.resume(LuaValue.NONE);
-			assertEquals(LuaValue.TRUE, v.arg(1));
+			Varargs v = t.resume(NONE);
+			assertEquals(TRUE, v.arg(1));
 			LuaValue f = v.arg(2);
-			assertEquals(LuaValue.TFUNCTION, f.type());
+			assertEquals(TFUNCTION, f.type());
 			assertEquals(aaa, f.call());
 			assertEquals(_G, f.getfenv());
 		}
@@ -258,10 +260,10 @@ public class LuaOperationsTest {
 			// change the thread environment after creation!
 			LuaThread t = new LuaThread(new LuaClosure(p2, _G), _G);
 			t.setfenv(newenv);
-			Varargs v = t.resume(LuaValue.NONE);
-			assertEquals(LuaValue.TRUE, v.arg(1));
+			Varargs v = t.resume(NONE);
+			assertEquals(TRUE, v.arg(1));
 			LuaValue f = v.arg(2);
-			assertEquals(LuaValue.TFUNCTION, f.type());
+			assertEquals(TFUNCTION, f.type());
 			assertEquals(eee, f.call());
 			assertEquals(newenv, f.getfenv());
 		}
@@ -269,10 +271,10 @@ public class LuaOperationsTest {
 			// let the closure have a different environment from the thread
 			Prototype p3 = createPrototype("return function() return a end", "envtester");
 			LuaThread t = new LuaThread(new LuaClosure(p3, newenv), _G);
-			Varargs v = t.resume(LuaValue.NONE);
-			assertEquals(LuaValue.TRUE, v.arg(1));
+			Varargs v = t.resume(NONE);
+			assertEquals(TRUE, v.arg(1));
 			LuaValue f = v.arg(2);
-			assertEquals(LuaValue.TFUNCTION, f.type());
+			assertEquals(TFUNCTION, f.type());
 			assertEquals(eee, f.call());
 			assertEquals(newenv, f.getfenv());
 		}

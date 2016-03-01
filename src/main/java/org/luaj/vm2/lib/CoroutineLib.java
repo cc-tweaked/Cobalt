@@ -29,6 +29,10 @@ import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
+import static org.luaj.vm2.Constants.NIL;
+import static org.luaj.vm2.Constants.NONE;
+import static org.luaj.vm2.Factory.valueOf;
+
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code coroutine}
  * library.

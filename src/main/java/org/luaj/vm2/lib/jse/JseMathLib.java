@@ -28,6 +28,9 @@ import org.luaj.vm2.lib.LibFunction;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.TwoArgFunction;
 
+import static org.luaj.vm2.Constants.NIL;
+import static org.luaj.vm2.Factory.valueOf;
+
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code math}
  * library.

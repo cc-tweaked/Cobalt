@@ -32,6 +32,8 @@ import org.luaj.vm2.WeakTable;
 import java.lang.ref.WeakReference;
 
 import static org.junit.Assert.*;
+import static org.luaj.vm2.Constants.NIL;
+import static org.luaj.vm2.Factory.userdataOf;
 
 abstract public class WeakTableTest {
 
@@ -82,7 +84,7 @@ abstract public class WeakTableTest {
 			LuaString stringValue = LuaString.valueOf("this is a test");
 
 			t.set("table", tableValue);
-			t.set("userdata", LuaValue.userdataOf(obj, null));
+			t.set("userdata", userdataOf(obj, null));
 			t.set("string", stringValue);
 			t.set("string2", LuaString.valueOf("another string"));
 			assertTrue("table must have at least 4 elements", t.getHashLength() > 4);
@@ -109,8 +111,8 @@ abstract public class WeakTableTest {
 			collectGarbage();
 
 			// check that they are dropped
-			assertEquals(LuaValue.NIL, t.get("table"));
-			assertEquals(LuaValue.NIL, t.get("userdata"));
+			assertEquals(NIL, t.get("table"));
+			assertEquals(NIL, t.get("userdata"));
 			assertFalse("strings should not be in weak references", t.get("string").isnil());
 		}
 	}
@@ -120,8 +122,8 @@ abstract public class WeakTableTest {
 		public void testWeakKeysTable() {
 			LuaTable t = new WeakTable(true, false);
 
-			LuaValue key = LuaValue.userdataOf(new MyData(111));
-			LuaValue val = LuaValue.userdataOf(new MyData(222));
+			LuaValue key = userdataOf(new MyData(111));
+			LuaValue val = userdataOf(new MyData(222));
 
 			// set up the table
 			t.set(key, val);
@@ -132,8 +134,8 @@ abstract public class WeakTableTest {
 			// drop key and value references, replace them with new ones
 			WeakReference<LuaValue> origkey = new WeakReference<>(key);
 			WeakReference<LuaValue> origval = new WeakReference<>(val);
-			key = LuaValue.userdataOf(new MyData(111));
-			val = LuaValue.userdataOf(new MyData(222));
+			key = userdataOf(new MyData(111));
+			val = userdataOf(new MyData(222));
 
 			// new key and value should be interchangeable (feature of this test class)
 			assertEquals(key, origkey.get());
@@ -145,7 +147,7 @@ abstract public class WeakTableTest {
 			// value should not be reachable after gc
 			collectGarbage();
 			assertEquals(null, origkey.get());
-			assertEquals(LuaValue.NIL, t.get(key));
+			assertEquals(NIL, t.get(key));
 			collectGarbage();
 			assertEquals(null, origval.get());
 		}
@@ -154,12 +156,12 @@ abstract public class WeakTableTest {
 		public void testNext() {
 			LuaTable t = new WeakTable(true, true);
 
-			LuaValue key = LuaValue.userdataOf(new MyData(111));
-			LuaValue val = LuaValue.userdataOf(new MyData(222));
-			LuaValue key2 = LuaValue.userdataOf(new MyData(333));
-			LuaValue val2 = LuaValue.userdataOf(new MyData(444));
-			LuaValue key3 = LuaValue.userdataOf(new MyData(555));
-			LuaValue val3 = LuaValue.userdataOf(new MyData(666));
+			LuaValue key = userdataOf(new MyData(111));
+			LuaValue val = userdataOf(new MyData(222));
+			LuaValue key2 = userdataOf(new MyData(333));
+			LuaValue val2 = userdataOf(new MyData(444));
+			LuaValue key3 = userdataOf(new MyData(555));
+			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
 			t.set(key, val);
@@ -173,7 +175,7 @@ abstract public class WeakTableTest {
 
 			// table should have 2 entries
 			int size = 0;
-			for (LuaValue k = t.next(LuaValue.NIL).arg1(); !k.isnil();
+			for (LuaValue k = t.next(NIL).arg1(); !k.isnil();
 			     k = t.next(k).arg1()) {
 				size++;
 			}
@@ -187,12 +189,12 @@ abstract public class WeakTableTest {
 		public void testWeakKeysValuesTable() {
 			LuaTable t = new WeakTable(true, true);
 
-			LuaValue key = LuaValue.userdataOf(new MyData(111));
-			LuaValue val = LuaValue.userdataOf(new MyData(222));
-			LuaValue key2 = LuaValue.userdataOf(new MyData(333));
-			LuaValue val2 = LuaValue.userdataOf(new MyData(444));
-			LuaValue key3 = LuaValue.userdataOf(new MyData(555));
-			LuaValue val3 = LuaValue.userdataOf(new MyData(666));
+			LuaValue key = userdataOf(new MyData(111));
+			LuaValue val = userdataOf(new MyData(222));
+			LuaValue key2 = userdataOf(new MyData(333));
+			LuaValue val2 = userdataOf(new MyData(444));
+			LuaValue key3 = userdataOf(new MyData(555));
+			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
 			t.set(key, val);
@@ -213,11 +215,11 @@ abstract public class WeakTableTest {
 			WeakReference<LuaValue> origval2 = new WeakReference<>(val2);
 			WeakReference<LuaValue> origkey3 = new WeakReference<>(key3);
 			WeakReference<LuaValue> origval3 = new WeakReference<>(val3);
-			key = LuaValue.userdataOf(new MyData(111));
-			val = LuaValue.userdataOf(new MyData(222));
-			key2 = LuaValue.userdataOf(new MyData(333));
+			key = userdataOf(new MyData(111));
+			val = userdataOf(new MyData(222));
+			key2 = userdataOf(new MyData(333));
 			// don't drop val2, or key3
-			val3 = LuaValue.userdataOf(new MyData(666));
+			val3 = userdataOf(new MyData(666));
 
 			// no values should be reachable after gc
 			collectGarbage();
@@ -225,9 +227,9 @@ abstract public class WeakTableTest {
 			assertEquals(null, origval.get());
 			assertEquals(null, origkey2.get());
 			assertEquals(null, origval3.get());
-			assertEquals(LuaValue.NIL, t.get(key));
-			assertEquals(LuaValue.NIL, t.get(key2));
-			assertEquals(LuaValue.NIL, t.get(key3));
+			assertEquals(NIL, t.get(key));
+			assertEquals(NIL, t.get(key2));
+			assertEquals(NIL, t.get(key3));
 
 			// all originals should be gone after gc, then access
 			val2 = null;
@@ -241,24 +243,24 @@ abstract public class WeakTableTest {
 		public void testReplace() {
 			LuaTable t = new WeakTable(true, true);
 
-			LuaValue key = LuaValue.userdataOf(new MyData(111));
-			LuaValue val = LuaValue.userdataOf(new MyData(222));
-			LuaValue key2 = LuaValue.userdataOf(new MyData(333));
-			LuaValue val2 = LuaValue.userdataOf(new MyData(444));
-			LuaValue key3 = LuaValue.userdataOf(new MyData(555));
-			LuaValue val3 = LuaValue.userdataOf(new MyData(666));
+			LuaValue key = userdataOf(new MyData(111));
+			LuaValue val = userdataOf(new MyData(222));
+			LuaValue key2 = userdataOf(new MyData(333));
+			LuaValue val2 = userdataOf(new MyData(444));
+			LuaValue key3 = userdataOf(new MyData(555));
+			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
 			t.set(key, val);
 			t.set(key2, val2);
 			t.set(key3, val3);
 
-			LuaValue val4 = LuaValue.userdataOf(new MyData(777));
+			LuaValue val4 = userdataOf(new MyData(777));
 			t.set(key2, val4);
 
 			// table should have 3 entries
 			int size = 0;
-			for (LuaValue k = t.next(LuaValue.NIL).arg1();
+			for (LuaValue k = t.next(NIL).arg1();
 			     !k.isnil() && size < 1000;
 			     k = t.next(k).arg1()) {
 				size++;

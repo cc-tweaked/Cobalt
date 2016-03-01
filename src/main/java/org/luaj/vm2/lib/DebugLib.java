@@ -28,6 +28,10 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+import static org.luaj.vm2.Factory.varargsOf;
+
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code debug}
  * library.
@@ -385,7 +389,7 @@ public class DebugLib extends VarArgFunction {
 		di.setfunction(func);
 		if (CALLS) System.out.println("calling " + func);
 		if (ds.hookcall) {
-			ds.callHookFunc(ds, CALL, LuaValue.NIL);
+			ds.callHookFunc(ds, CALL, NIL);
 		}
 	}
 
@@ -403,7 +407,7 @@ public class DebugLib extends VarArgFunction {
 		if (CALLS) System.out.println("returning");
 		try {
 			if (ds.hookrtrn) {
-				ds.callHookFunc(ds, RETURN, LuaValue.NIL);
+				ds.callHookFunc(ds, RETURN, NIL);
 			}
 		} finally {
 			getDebugState().popInfo(calls);
@@ -428,7 +432,7 @@ public class DebugLib extends VarArgFunction {
 		if (ds.hookcount > 0) {
 			if (++ds.hookcodes >= ds.hookcount) {
 				ds.hookcodes = 0;
-				ds.callHookFunc(ds, COUNT, LuaValue.NIL);
+				ds.callHookFunc(ds, COUNT, NIL);
 			}
 		}
 		if (ds.hookline) {
@@ -437,7 +441,7 @@ public class DebugLib extends VarArgFunction {
 				int c = di.closure.p.code[pc];
 				if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
 					ds.line = newline;
-					ds.callHookFunc(ds, LINE, LuaValue.valueOf(newline));
+					ds.callHookFunc(ds, LINE, valueOf(newline));
 				}
 			}
 		}
@@ -488,7 +492,7 @@ public class DebugLib extends VarArgFunction {
 	static Varargs _getfenv(Varargs args) {
 		LuaValue object = args.arg1();
 		LuaValue env = object.getfenv();
-		return env != null ? env : LuaValue.NIL;
+		return env != null ? env : NIL;
 	}
 
 	static Varargs _setfenv(Varargs args) {
@@ -538,8 +542,8 @@ public class DebugLib extends VarArgFunction {
 						info.set(WHAT, JAVA);
 						info.set(SOURCE, name);
 						info.set(SHORT_SRC, valueOf(shortName));
-						info.set(LINEDEFINED, LuaValue.MINUSONE);
-						info.set(LASTLINEDEFINED, LuaValue.MINUSONE);
+						info.set(LINEDEFINED, MINUSONE);
+						info.set(LASTLINEDEFINED, MINUSONE);
 					}
 					break;
 				}
@@ -654,7 +658,7 @@ public class DebugLib extends VarArgFunction {
 				default:
 					object.setmetatable(mt);
 			}
-			return LuaValue.TRUE;
+			return TRUE;
 		} catch (LuaError e) {
 			return varargsOf(FALSE, valueOf(e.toString()));
 		}

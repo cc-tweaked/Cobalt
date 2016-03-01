@@ -32,6 +32,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import static org.luaj.vm2.Constants.*;
 
 public class DumpState {
 
@@ -155,32 +156,32 @@ public class DumpState {
 		for (i = 0; i < n; i++) {
 			final LuaValue o = k[i];
 			switch (o.type()) {
-				case LuaValue.TNIL:
-					writer.write(LuaValue.TNIL);
+				case TNIL:
+					writer.write(TNIL);
 					break;
-				case LuaValue.TBOOLEAN:
-					writer.write(LuaValue.TBOOLEAN);
+				case TBOOLEAN:
+					writer.write(TBOOLEAN);
 					dumpChar(o.toboolean() ? 1 : 0);
 					break;
-				case LuaValue.TNUMBER:
+				case TNUMBER:
 					switch (NUMBER_FORMAT) {
 						case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
-							writer.write(LuaValue.TNUMBER);
+							writer.write(TNUMBER);
 							dumpDouble(o.todouble());
 							break;
 						case NUMBER_FORMAT_INTS_ONLY:
 							if (!ALLOW_INTEGER_CASTING && !o.isint()) {
 								throw new java.lang.IllegalArgumentException("not an integer: " + o);
 							}
-							writer.write(LuaValue.TNUMBER);
+							writer.write(TNUMBER);
 							dumpInt(o.toint());
 							break;
 						case NUMBER_FORMAT_NUM_PATCH_INT32:
 							if (o.isint()) {
-								writer.write(LuaValue.TINT);
+								writer.write(TINT);
 								dumpInt(o.toint());
 							} else {
-								writer.write(LuaValue.TNUMBER);
+								writer.write(TNUMBER);
 								dumpDouble(o.todouble());
 							}
 							break;
@@ -188,8 +189,8 @@ public class DumpState {
 							throw new IllegalArgumentException("number format not supported: " + NUMBER_FORMAT);
 					}
 					break;
-				case LuaValue.TSTRING:
-					writer.write(LuaValue.TSTRING);
+				case TSTRING:
+					writer.write(TSTRING);
 					dumpString((LuaString) o);
 					break;
 				default:

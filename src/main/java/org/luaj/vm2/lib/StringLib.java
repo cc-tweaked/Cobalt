@@ -30,6 +30,9 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.*;
+
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
  * library.
@@ -887,16 +890,16 @@ public class StringLib extends OneArgFunction {
 
 		public void add_value(Buffer lbuf, int soffset, int end, LuaValue repl) {
 			switch (repl.type()) {
-				case LuaValue.TSTRING:
-				case LuaValue.TNUMBER:
+				case TSTRING:
+				case TNUMBER:
 					add_s(lbuf, repl.strvalue(), soffset, end);
 					return;
 
-				case LuaValue.TFUNCTION:
+				case TFUNCTION:
 					repl = repl.invoke(push_captures(true, soffset, end)).arg1();
 					break;
 
-				case LuaValue.TTABLE:
+				case TTABLE:
 					// Need to call push_onecapture here for the error checking
 					repl = repl.get(push_onecapture(0, soffset, end));
 					break;

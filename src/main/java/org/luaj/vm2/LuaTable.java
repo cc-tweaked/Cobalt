@@ -25,7 +25,10 @@ package org.luaj.vm2;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+import static org.luaj.vm2.Factory.varargsOf;
 
 /**
  * Subclass of {@link LuaValue} for representing lua tables.
@@ -61,14 +64,14 @@ import java.util.Vector;
  * As with other types, {@link LuaTable} instances should be constructed via one of the table constructor
  * methods on {@link LuaValue}:
  * <ul>
- * <li>{@link LuaValue#tableOf()} empty table</li>
- * <li>{@link LuaValue#tableOf(int, int)} table with capacity</li>
- * <li>{@link LuaValue#listOf(LuaValue[])} initialize array part</li>
- * <li>{@link LuaValue#listOf(LuaValue[], Varargs)} initialize array part</li>
- * <li>{@link LuaValue#tableOf(LuaValue[])} initialize named hash part</li>
- * <li>{@link LuaValue#tableOf(Varargs, int)} initialize named hash part</li>
- * <li>{@link LuaValue#tableOf(LuaValue[], LuaValue[])} initialize array and named parts</li>
- * <li>{@link LuaValue#tableOf(LuaValue[], LuaValue[], Varargs)} initialize array and named parts</li>
+ * <li>{@link Factory#tableOf()} empty table</li>
+ * <li>{@link Factory#tableOf(int, int)} table with capacity</li>
+ * <li>{@link Factory#listOf(LuaValue[])} initialize array part</li>
+ * <li>{@link Factory#listOf(LuaValue[], Varargs)} initialize array part</li>
+ * <li>{@link Factory#tableOf(LuaValue[])} initialize named hash part</li>
+ * <li>{@link Factory#tableOf(Varargs, int)} initialize named hash part</li>
+ * <li>{@link Factory#tableOf(LuaValue[], LuaValue[])} initialize array and named parts</li>
+ * <li>{@link Factory#tableOf(LuaValue[], LuaValue[], Varargs)} initialize array and named parts</li>
  * </ul>
  *
  * @see LuaValue
@@ -175,7 +178,7 @@ public class LuaTable extends LuaValue {
 
 	@Override
 	public int type() {
-		return LuaValue.TTABLE;
+		return TTABLE;
 	}
 
 	@Override
@@ -384,7 +387,7 @@ public class LuaTable extends LuaValue {
 	 * Remove the element at a position in a list-table
 	 *
 	 * @param pos the position to remove
-	 * @return The removed item, or {@link #NONE} if not removed
+	 * @return The removed item, or {@link Constants#NONE} if not removed
 	 */
 	public LuaValue remove(int pos) {
 		int n = length();
@@ -564,7 +567,7 @@ public class LuaTable extends LuaValue {
 	 * Call the supplied function once for each key-value pair
 	 *
 	 * @param func The function to call
-	 * @return {@link #NIL}
+	 * @return {@link Constants#NIL}
 	 */
 	public LuaValue foreach(LuaValue func) {
 		Varargs n;
@@ -583,7 +586,7 @@ public class LuaTable extends LuaValue {
 	 * in the contiguous array part
 	 *
 	 * @param func The function to call
-	 * @return {@link #NIL}
+	 * @return {@link Constants#NIL}
 	 */
 	public LuaValue foreachi(LuaValue func) {
 		LuaValue v, r;
@@ -793,7 +796,7 @@ public class LuaTable extends LuaValue {
 	 * @return count of keys in the table
 	 */
 	public int keyCount() {
-		LuaValue k = LuaValue.NIL;
+		LuaValue k = NIL;
 		for (int i = 0; true; i++) {
 			Varargs n = next(k);
 			if ((k = n.arg1()).isnil()) {
@@ -810,7 +813,7 @@ public class LuaTable extends LuaValue {
 	 */
 	public LuaValue[] keys() {
 		List<LuaValue> l = new ArrayList<LuaValue>();
-		LuaValue k = LuaValue.NIL;
+		LuaValue k = NIL;
 		while (true) {
 			Varargs n = next(k);
 			if ((k = n.arg1()).isnil()) {

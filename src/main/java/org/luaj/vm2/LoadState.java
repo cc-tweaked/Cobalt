@@ -30,6 +30,9 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+
 /**
  * Class to manage loading of {@link Prototype} instances.
  * <p>
@@ -251,7 +254,7 @@ public class LoadState {
 	 */
 	public static LuaValue longBitsToLuaNumber(long bits) {
 		if ((bits & ((1L << 63) - 1)) == 0L) {
-			return LuaValue.ZERO;
+			return ZERO;
 		}
 
 		int e = (int) ((bits >> 52) & 0x7ffL) - 1023;
@@ -266,7 +269,7 @@ public class LoadState {
 			}
 		}
 
-		return LuaValue.valueOf(Double.longBitsToDouble(bits));
+		return valueOf(Double.longBitsToDouble(bits));
 	}
 
 	/**
@@ -295,10 +298,10 @@ public class LoadState {
 		for (int i = 0; i < n; i++) {
 			switch (is.readByte()) {
 				case LUA_TNIL:
-					values[i] = LuaValue.NIL;
+					values[i] = NIL;
 					break;
 				case LUA_TBOOLEAN:
-					values[i] = (0 != is.readUnsignedByte() ? LuaValue.TRUE : LuaValue.FALSE);
+					values[i] = (0 != is.readUnsignedByte() ? TRUE : FALSE);
 					break;
 				case LUA_TINT:
 					values[i] = LuaInteger.valueOf(loadInt());

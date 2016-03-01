@@ -2,13 +2,17 @@ package org.luaj.vm2.compiler;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.luaj.vm2.*;
+import org.luaj.vm2.LuaFunction;
+import org.luaj.vm2.LuaInteger;
+import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import static org.junit.Assert.*;
+import static org.luaj.vm2.Factory.valueOf;
 
 public class SimpleTests {
 
@@ -91,14 +95,14 @@ public class SimpleTests {
 	public void testDoubleHashCode() {
 		for (int aSamehash : samehash) {
 			LuaValue j = LuaInteger.valueOf(aSamehash);
-			LuaValue d = LuaDouble.valueOf(aSamehash);
+			LuaValue d = valueOf(aSamehash);
 			int hj = j.hashCode();
 			int hd = d.hashCode();
 			assertEquals(hj, hd);
 		}
 		for (int i = 0; i < diffhash.length; i += 2) {
-			LuaValue c = LuaValue.valueOf(diffhash[i]);
-			LuaValue d = LuaValue.valueOf(diffhash[i + 1]);
+			LuaValue c = valueOf(diffhash[i]);
+			LuaValue d = valueOf(diffhash[i + 1]);
 			int hc = c.hashCode();
 			int hd = d.hashCode();
 			assertTrue("hash codes are same: " + hc, hc != hd);

@@ -7,6 +7,7 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.luaj.vm2.Factory.valueOf;
 
 public class MathLibTest {
 	private LuaValue j2se;
@@ -50,7 +51,7 @@ public class MathLibTest {
 	}
 
 	private double j2mepow(double x, double y) {
-		return j2me.get("pow").call(LuaValue.valueOf(x), LuaValue.valueOf(y)).todouble();
+		return j2me.get("pow").call(valueOf(x), valueOf(y)).todouble();
 	}
 
 	@Test
@@ -242,8 +243,8 @@ public class MathLibTest {
 
 	private void tryMathOp(String op, double x) {
 		try {
-			double expected = j2se.get(op).call(LuaValue.valueOf(x)).todouble();
-			double actual = j2me.get(op).call(LuaValue.valueOf(x)).todouble();
+			double expected = j2se.get(op).call(valueOf(x)).todouble();
+			double actual = j2me.get(op).call(valueOf(x)).todouble();
 			if (supportedOnJ2me) {
 				assertEquals(expected, actual, 1.e-4);
 			} else {
@@ -259,8 +260,8 @@ public class MathLibTest {
 
 	private void tryMathOp(String op, double a, double b) {
 		try {
-			double expected = j2se.get(op).call(LuaValue.valueOf(a), LuaValue.valueOf(b)).todouble();
-			double actual = j2me.get(op).call(LuaValue.valueOf(a), LuaValue.valueOf(b)).todouble();
+			double expected = j2se.get(op).call(valueOf(a), valueOf(b)).todouble();
+			double actual = j2me.get(op).call(valueOf(a), valueOf(b)).todouble();
 			if (supportedOnJ2me) {
 				assertEquals(expected, actual, 1.e-5);
 			} else {

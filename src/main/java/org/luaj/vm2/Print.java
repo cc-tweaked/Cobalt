@@ -26,6 +26,7 @@ package org.luaj.vm2;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import static org.luaj.vm2.Constants.*;
 import static org.luaj.vm2.Lua.*;
 
 /**
@@ -133,7 +134,7 @@ public class Print {
 
 	static void printValue(PrintStream ps, LuaValue v) {
 		switch (v.type()) {
-			case LuaValue.TSTRING:
+			case TSTRING:
 				printString(ps, (LuaString) v);
 				break;
 			default:
@@ -409,17 +410,17 @@ public class Print {
 				ps.print(STRING_FOR_NULL);
 			} else {
 				switch (v.type()) {
-					case LuaValue.TSTRING:
+					case TSTRING:
 						LuaString s = v.checkstring();
 						ps.print(s.length() < 48 ?
 							s.tojstring() :
 							s.substring(0, 32).tojstring() + "...+" + (s.length() - 32) + "b");
 						break;
-					case LuaValue.TFUNCTION:
+					case TFUNCTION:
 						ps.print((v instanceof LuaClosure) ?
 							((LuaClosure) v).p.toString() : v.tojstring());
 						break;
-					case LuaValue.TUSERDATA:
+					case TUSERDATA:
 						Object o = v.touserdata();
 						if (o != null) {
 							String n = o.getClass().getName();

@@ -23,6 +23,8 @@
  */
 package org.luaj.vm2;
 
+import static org.luaj.vm2.Constants.TNUMBER;
+
 /**
  * Base class for representing numbers as lua values directly.
  * <p>

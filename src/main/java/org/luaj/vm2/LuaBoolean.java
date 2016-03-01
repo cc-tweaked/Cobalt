@@ -23,23 +23,25 @@
  */
 package org.luaj.vm2;
 
+import static org.luaj.vm2.Constants.*;
+
 /**
  * Extension of {@link LuaValue} which can hold a Java boolean as its value.
  * <p>
  * These instance are not instantiated directly by clients.
  * Instead, there are exactly two instances of this class,
- * {@link LuaValue#TRUE} and {@link LuaValue#FALSE}
+ * {@link Constants#TRUE} and {@link Constants#FALSE}
  * representing the lua values {@code true} and {@code false}.
- * The function {@link LuaValue#valueOf(boolean)} will always
+ * The function {@link Factory#valueOf(boolean)} will always
  * return one of these two values.
  * <p>
  * Any {@link LuaValue} can be converted to its equivalent
  * boolean representation using {@link LuaValue#toboolean()}
  *
  * @see LuaValue
- * @see LuaValue#valueOf(boolean)
- * @see LuaValue#TRUE
- * @see LuaValue#FALSE
+ * @see Factory#valueOf(boolean)
+ * @see Constants#TRUE
+ * @see Constants#FALSE
  */
 public final class LuaBoolean extends LuaValue {
 
@@ -69,7 +71,7 @@ public final class LuaBoolean extends LuaValue {
 
 	@Override
 	public int type() {
-		return LuaValue.TBOOLEAN;
+		return TBOOLEAN;
 	}
 
 	@Override
@@ -84,7 +86,7 @@ public final class LuaBoolean extends LuaValue {
 
 	@Override
 	public LuaValue not() {
-		return v ? FALSE : LuaValue.TRUE;
+		return v ? FALSE : TRUE;
 	}
 
 	/**

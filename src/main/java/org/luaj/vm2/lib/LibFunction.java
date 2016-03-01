@@ -27,6 +27,8 @@ import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaValue;
 
+import static org.luaj.vm2.Constants.NIL;
+
 /**
  * Subclass of {@link LuaFunction} common to Java functions exposed to lua.
  * <p>

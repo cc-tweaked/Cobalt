@@ -52,11 +52,11 @@ import org.luaj.vm2.lib.*;
  * _G.get("require").call(LuaValue.valueOf("main"));
  * } </pre>
  * For this to succeed, the file "main.lua" must be in the current directory or a resource.
- * See {@link JseBaseLib} for details on finding scripts using {@link ResourceFinder}.
+ * See {@link BaseLib} for details on finding scripts using {@link ResourceFinder}.
  * <p>
  * The standard globals will contain all standard libraries plus {@code luajava}:
  * <ul>
- * <li>{@link JseBaseLib}</li>
+ * <li>{@link BaseLib}</li>
  * <li>{@link PackageLib}</li>
  * <li>{@link TableLib}</li>
  * <li>{@link StringLib}</li>
@@ -83,7 +83,7 @@ public class JsePlatform {
 	 */
 	public static LuaTable standardGlobals() {
 		LuaTable _G = new LuaTable();
-		_G.load(new JseBaseLib());
+		_G.load(new BaseLib());
 		_G.load(new PackageLib());
 		_G.load(new TableLib());
 		_G.load(new StringLib());

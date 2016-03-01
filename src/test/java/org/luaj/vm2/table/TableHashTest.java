@@ -31,6 +31,8 @@ import org.luaj.vm2.lib.TwoArgFunction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
 
 /**
  * Tests for tables used as lists.
@@ -81,7 +83,7 @@ public class TableHashTest {
 
 		// remove
 		for (int i = 0; i < keys.length; ++i) {
-			t.set(keys[i], LuaValue.NIL);
+			t.set(keys[i], NIL);
 			assertEquals(0, t.length());
 			assertEquals(keys.length - i - 1, t.keyCount());
 			if (i < keys.length - 1) {
@@ -91,7 +93,7 @@ public class TableHashTest {
 			}
 		}
 		for (String key : keys) {
-			assertEquals(LuaValue.NIL, t.get(key));
+			assertEquals(NIL, t.get(key));
 		}
 	}
 
@@ -104,7 +106,7 @@ public class TableHashTest {
 		// set basic values
 		t.set("ppp", "abc");
 		t.set(123, "def");
-		mt.set(LuaValue.INDEX, fb);
+		mt.set(INDEX, fb);
 		fb.set("qqq", "ghi");
 		fb.set(456, "jkl");
 
@@ -169,7 +171,7 @@ public class TableHashTest {
 		// set basic values
 		t.set("ppp", "abc");
 		t.set(123, "def");
-		mt.set(LuaValue.INDEX, fb);
+		mt.set(INDEX, fb);
 
 		// check before setting metatable
 		assertEquals("abc", t.get("ppp").tojstring());
@@ -195,8 +197,8 @@ public class TableHashTest {
 		assertEquals("alt-456", t.get(456).tojstring());
 
 		// remove using raw set
-		t.rawset("qqq", LuaValue.NIL);
-		t.rawset(456, LuaValue.NIL);
+		t.rawset("qqq", NIL);
+		t.rawset(456, NIL);
 		assertEquals("abc", t.get("ppp").tojstring());
 		assertEquals("def", t.get(123).tojstring());
 		assertEquals("from mt: qqq", t.get("qqq").tojstring());
@@ -213,38 +215,38 @@ public class TableHashTest {
 	@Test
 	public void testNext() {
 		final LuaTable t = new_Table();
-		assertEquals(LuaValue.NIL, t.next(LuaValue.NIL));
+		assertEquals(NIL, t.next(NIL));
 
 		// insert array elements
 		t.set(1, "one");
-		assertEquals(LuaValue.valueOf(1), t.next(LuaValue.NIL).arg(1));
-		assertEquals(LuaValue.valueOf("one"), t.next(LuaValue.NIL).arg(2));
-		assertEquals(LuaValue.NIL, t.next(LuaValue.ONE));
+		assertEquals(valueOf(1), t.next(NIL).arg(1));
+		assertEquals(valueOf("one"), t.next(NIL).arg(2));
+		assertEquals(NIL, t.next(ONE));
 		t.set(2, "two");
-		assertEquals(LuaValue.valueOf(1), t.next(LuaValue.NIL).arg(1));
-		assertEquals(LuaValue.valueOf("one"), t.next(LuaValue.NIL).arg(2));
-		assertEquals(LuaValue.valueOf(2), t.next(LuaValue.ONE).arg(1));
-		assertEquals(LuaValue.valueOf("two"), t.next(LuaValue.ONE).arg(2));
-		assertEquals(LuaValue.NIL, t.next(LuaValue.valueOf(2)));
+		assertEquals(valueOf(1), t.next(NIL).arg(1));
+		assertEquals(valueOf("one"), t.next(NIL).arg(2));
+		assertEquals(valueOf(2), t.next(ONE).arg(1));
+		assertEquals(valueOf("two"), t.next(ONE).arg(2));
+		assertEquals(NIL, t.next(valueOf(2)));
 
 		// insert hash elements
 		t.set("aa", "aaa");
-		assertEquals(LuaValue.valueOf(1), t.next(LuaValue.NIL).arg(1));
-		assertEquals(LuaValue.valueOf("one"), t.next(LuaValue.NIL).arg(2));
-		assertEquals(LuaValue.valueOf(2), t.next(LuaValue.ONE).arg(1));
-		assertEquals(LuaValue.valueOf("two"), t.next(LuaValue.ONE).arg(2));
-		assertEquals(LuaValue.valueOf("aa"), t.next(LuaValue.valueOf(2)).arg(1));
-		assertEquals(LuaValue.valueOf("aaa"), t.next(LuaValue.valueOf(2)).arg(2));
-		assertEquals(LuaValue.NIL, t.next(LuaValue.valueOf("aa")));
+		assertEquals(valueOf(1), t.next(NIL).arg(1));
+		assertEquals(valueOf("one"), t.next(NIL).arg(2));
+		assertEquals(valueOf(2), t.next(ONE).arg(1));
+		assertEquals(valueOf("two"), t.next(ONE).arg(2));
+		assertEquals(valueOf("aa"), t.next(valueOf(2)).arg(1));
+		assertEquals(valueOf("aaa"), t.next(valueOf(2)).arg(2));
+		assertEquals(NIL, t.next(valueOf("aa")));
 		t.set("bb", "bbb");
-		assertEquals(LuaValue.valueOf(1), t.next(LuaValue.NIL).arg(1));
-		assertEquals(LuaValue.valueOf("one"), t.next(LuaValue.NIL).arg(2));
-		assertEquals(LuaValue.valueOf(2), t.next(LuaValue.ONE).arg(1));
-		assertEquals(LuaValue.valueOf("two"), t.next(LuaValue.ONE).arg(2));
-		assertEquals(LuaValue.valueOf("aa"), t.next(LuaValue.valueOf(2)).arg(1));
-		assertEquals(LuaValue.valueOf("aaa"), t.next(LuaValue.valueOf(2)).arg(2));
-		assertEquals(LuaValue.valueOf("bb"), t.next(LuaValue.valueOf("aa")).arg(1));
-		assertEquals(LuaValue.valueOf("bbb"), t.next(LuaValue.valueOf("aa")).arg(2));
-		assertEquals(LuaValue.NIL, t.next(LuaValue.valueOf("bb")));
+		assertEquals(valueOf(1), t.next(NIL).arg(1));
+		assertEquals(valueOf("one"), t.next(NIL).arg(2));
+		assertEquals(valueOf(2), t.next(ONE).arg(1));
+		assertEquals(valueOf("two"), t.next(ONE).arg(2));
+		assertEquals(valueOf("aa"), t.next(valueOf(2)).arg(1));
+		assertEquals(valueOf("aaa"), t.next(valueOf(2)).arg(2));
+		assertEquals(valueOf("bb"), t.next(valueOf("aa")).arg(1));
+		assertEquals(valueOf("bbb"), t.next(valueOf("aa")).arg(2));
+		assertEquals(NIL, t.next(valueOf("bb")));
 	}
 }

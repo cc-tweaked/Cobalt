@@ -23,6 +23,8 @@
  */
 package org.luaj.vm2;
 
+import static org.luaj.vm2.Factory.varargsOf;
+
 /**
  * Subclass of {@link Varargs} that represents a lua tail call
  * in a Java library function execution environment.
@@ -55,7 +57,7 @@ public class TailcallVarargs extends Varargs {
 
 	public TailcallVarargs(LuaValue object, LuaValue methodname, Varargs args) {
 		this.func = object.get(methodname);
-		this.args = LuaValue.varargsOf(object, args);
+		this.args = varargsOf(object, args);
 	}
 
 	@Override

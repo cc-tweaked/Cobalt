@@ -24,12 +24,13 @@
 package org.luaj.vm2.lib;
 
 import org.luaj.vm2.*;
-import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
+
+import static org.luaj.vm2.Constants.*;
+import static org.luaj.vm2.Factory.valueOf;
+import static org.luaj.vm2.Factory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua basic library functions.
@@ -37,17 +38,10 @@ import java.io.PrintStream;
  * This contains all library functions listed as "basic functions" in the lua documentation for JME.
  * The functions dofile and loadfile use the
  * {@link #FINDER} instance to find resource files.
- * Since JME has no file system by default, {@link BaseLib} implements
- * {@link ResourceFinder} using {@link Class#getResource(String)},
- * which is the closest equivalent on JME.
  * The default loader chain in {@link PackageLib} will use these as well.
- * <p>
- * To use basic library functions that include a {@link ResourceFinder} based on
- * directory lookup, use {@link JseBaseLib} instead.
  * <p>
  * This is a direct port of the corresponding library in C.
  *
- * @see JseBaseLib
  * @see ResourceFinder
  * @see #FINDER
  * @see LibFunction
@@ -58,7 +52,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 
 	public static BaseLib instance;
 
-	public InputStream STDIN = null;
+	public InputStream STDIN = System.in;
 	public PrintStream STDOUT = System.out;
 	public PrintStream STDERR = System.err;
 
@@ -134,14 +128,31 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	}
 
 	/**
-	 * ResourceFinder implementation
+	 * Try to open a file in the current working directory,
+	 * or fall back to base opener if not found.
 	 * <p>
-	 * Tries to open the file as a resource, which can work for .
+	 * This implementation attempts to open the file using new File(filename).
+	 * It falls back to the base implementation that looks it up as a resource
+	 * in the class path if not found as a plain file.
+	 *
+	 * @param filename Filename to find
+	 * @return InputStream, or null if not found.
+	 * @see org.luaj.vm2.lib.BaseLib
+	 * @see org.luaj.vm2.lib.ResourceFinder
 	 */
 	@Override
 	public InputStream findResource(String filename) {
-		Class c = getClass();
-		return c.getResourceAsStream(filename.startsWith("/") ? filename : "/" + filename);
+		File f = new File(filename);
+		if (!f.exists()) {
+			Class c = getClass();
+			return c.getResourceAsStream(filename.startsWith("/") ? filename : "/" + filename);
+		}
+
+		try {
+			return new FileInputStream(f);
+		} catch (IOException ioe) {
+			return null;
+		}
 	}
 
 	static final class BaseLib2 extends TwoArgFunction {
@@ -160,7 +171,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 						return valueOf(used / 1024.);
 					} else if ("step".equals(s)) {
 						System.gc();
-						return LuaValue.TRUE;
+						return TRUE;
 					} else {
 						argerror(1, "gc op");
 					}
@@ -362,7 +373,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	public static Varargs pcall(LuaValue func, Varargs args, LuaValue errfunc) {
 		LuaValue olderr = LuaThread.setErrorFunc(errfunc);
 		try {
-			Varargs result = varargsOf(LuaValue.TRUE, func.invoke(args));
+			Varargs result = varargsOf(TRUE, func.invoke(args));
 			LuaThread.setErrorFunc(olderr);
 			return result;
 		} catch (LuaError le) {

@@ -25,6 +25,8 @@ package org.luaj.vm2;
 
 import org.luaj.vm2.lib.DebugLib;
 
+import static org.luaj.vm2.Factory.valueOf;
+
 /**
  * RuntimeException that is thrown and caught in response to a lua error.
  * <p>
@@ -52,7 +54,7 @@ public class LuaError extends RuntimeException {
 			LuaValue errfunc = thread.err;
 			thread.err = null;
 			try {
-				return errfunc.call(LuaValue.valueOf(msg)).tojstring();
+				return errfunc.call(valueOf(msg)).tojstring();
 			} catch (Throwable t) {
 				return "error in error handling";
 			} finally {

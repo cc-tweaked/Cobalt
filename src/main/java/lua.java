@@ -29,7 +29,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-
+import static org.luaj.vm2.Constants.NONE;
+import static org.luaj.vm2.Factory.tableOf;
+import static org.luaj.vm2.Factory.valueOf;
 /**
  * lua command for use in java se environments.
  */
@@ -155,7 +157,7 @@ public class lua {
 	}
 
 	private static void loadLibrary(String libname) throws IOException {
-		LuaValue slibname = LuaValue.valueOf(libname);
+		LuaValue slibname = valueOf(libname);
 		try {
 			// load via plain require
 			_G.get("require").call(slibname);
@@ -179,7 +181,7 @@ public class lua {
 			} finally {
 				script.close();
 			}
-			Varargs scriptargs = (args != null ? setGlobalArg(args, firstarg) : LuaValue.NONE);
+			Varargs scriptargs = (args != null ? setGlobalArg(args, firstarg) : NONE);
 			c.invoke(scriptargs);
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
@@ -187,9 +189,9 @@ public class lua {
 	}
 
 	private static Varargs setGlobalArg(String[] args, int i) {
-		LuaTable arg = LuaValue.tableOf();
+		LuaTable arg = tableOf();
 		for (int j = 0; j < args.length; j++) {
-			arg.set(j - i, LuaValue.valueOf(args[j]));
+			arg.set(j - i, valueOf(args[j]));
 		}
 		_G.set("arg", arg);
 		return _G.get("unpack").invoke(arg);
