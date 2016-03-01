@@ -47,8 +47,6 @@ public class LuaNil extends LuaValue {
 
 	static final LuaNil _NIL = new LuaNil();
 
-	public static LuaValue s_metatable;
-
 	LuaNil() {
 	}
 
@@ -83,8 +81,8 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable() {
-		return s_metatable;
+	public LuaValue getMetatable(LuaState state) {
+		return state.nilMetatable;
 	}
 
 	public boolean equals(Object o) {

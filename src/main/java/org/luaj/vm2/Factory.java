@@ -315,7 +315,7 @@ public class Factory {
 	 * Construct a {@link TailcallVarargs} around a function and arguments.
 	 * <p>
 	 * The tail call is not yet called or processing until the client invokes
-	 * {@link TailcallVarargs#eval()} which performs the tail call processing.
+	 * {@link Varargs#eval(LuaState)} which performs the tail call processing.
 	 * <p>
 	 * This method is typically not used directly by client code.
 	 * Instead use one of the function invocation methods.
@@ -323,10 +323,10 @@ public class Factory {
 	 * @param func {@link LuaValue} to be called as a tail call
 	 * @param args {@link Varargs} containing the arguments to the call
 	 * @return {@link TailcallVarargs} to be used in tailcall oprocessing.
-	 * @see LuaValue#call()
-	 * @see LuaValue#invoke()
-	 * @see LuaValue#method(LuaValue)
-	 * @see LuaValue#invokeMethod(LuaValue)
+	 * @see LuaValue#call(LuaState)
+	 * @see LuaValue#invoke(LuaState, Varargs)
+	 * @see LuaValue#method(LuaState, LuaValue)
+	 * @see LuaValue#invokeMethod(LuaState, LuaValue, Varargs)
 	 */
 	public static Varargs tailcallOf(LuaValue func, Varargs args) {
 		return new TailcallVarargs(func, args);

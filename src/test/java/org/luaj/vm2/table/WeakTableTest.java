@@ -24,10 +24,7 @@
 package org.luaj.vm2.table;
 
 import org.junit.Test;
-import org.luaj.vm2.LuaString;
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.WeakTable;
+import org.luaj.vm2.*;
 
 import java.lang.ref.WeakReference;
 
@@ -77,30 +74,32 @@ public abstract class WeakTableTest {
 
 		@Test
 		public void testWeakValuesTable() {
+			LuaState state = LuaThread.getRunning().luaState;
+
 			LuaTable t = new_Table();
 
 			Object obj = new Object();
 			LuaTable tableValue = new LuaTable();
 			LuaString stringValue = LuaString.valueOf("this is a test");
 
-			t.set("table", tableValue);
-			t.set("userdata", userdataOf(obj, null));
-			t.set("string", stringValue);
-			t.set("string2", LuaString.valueOf("another string"));
+			t.set(state, "table", tableValue);
+			t.set(state, "userdata", userdataOf(obj, null));
+			t.set(state, "string", stringValue);
+			t.set(state, "string2", LuaString.valueOf("another string"));
 			assertTrue("table must have at least 4 elements", t.getHashLength() > 4);
 
 			// check that table can be used to get elements
-			assertEquals(tableValue, t.get("table"));
-			assertEquals(stringValue, t.get("string"));
-			assertEquals(obj, t.get("userdata").checkuserdata());
+			assertEquals(tableValue, t.get(state, "table"));
+			assertEquals(stringValue, t.get(state, "string"));
+			assertEquals(obj, t.get(state, "userdata").checkuserdata());
 
 			// nothing should be collected, since we have strong references here
 			collectGarbage();
 
 			// check that elements are still there
-			assertEquals(tableValue, t.get("table"));
-			assertEquals(stringValue, t.get("string"));
-			assertEquals(obj, t.get("userdata").checkuserdata());
+			assertEquals(tableValue, t.get(state, "table"));
+			assertEquals(stringValue, t.get(state, "string"));
+			assertEquals(obj, t.get(state, "userdata").checkuserdata());
 
 			// drop our strong references
 			obj = null;
@@ -111,9 +110,9 @@ public abstract class WeakTableTest {
 			collectGarbage();
 
 			// check that they are dropped
-			assertEquals(NIL, t.get("table"));
-			assertEquals(NIL, t.get("userdata"));
-			assertFalse("strings should not be in weak references", t.get("string").isnil());
+			assertEquals(NIL, t.get(state, "table"));
+			assertEquals(NIL, t.get(state, "userdata"));
+			assertFalse("strings should not be in weak references", t.get(state, "string").isnil());
 		}
 	}
 
@@ -121,15 +120,16 @@ public abstract class WeakTableTest {
 		@Test
 		public void testWeakKeysTable() {
 			LuaTable t = new WeakTable(true, false);
+			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
 
 			// set up the table
-			t.set(key, val);
-			assertEquals(val, t.get(key));
+			t.set(state, key, val);
+			assertEquals(val, t.get(state, key));
 			System.gc();
-			assertEquals(val, t.get(key));
+			assertEquals(val, t.get(state, key));
 
 			// drop key and value references, replace them with new ones
 			WeakReference<LuaValue> origkey = new WeakReference<>(key);
@@ -140,14 +140,14 @@ public abstract class WeakTableTest {
 			// new key and value should be interchangeable (feature of this test class)
 			assertEquals(key, origkey.get());
 			assertEquals(val, origval.get());
-			assertEquals(val, t.get(key));
-			assertEquals(val, t.get(origkey.get()));
-			assertEquals(origval.get(), t.get(key));
+			assertEquals(val, t.get(state, key));
+			assertEquals(val, t.get(state, origkey.get()));
+			assertEquals(origval.get(), t.get(state, key));
 
 			// value should not be reachable after gc
 			collectGarbage();
 			assertEquals(null, origkey.get());
-			assertEquals(NIL, t.get(key));
+			assertEquals(NIL, t.get(state, key));
 			collectGarbage();
 			assertEquals(null, origval.get());
 		}
@@ -155,6 +155,7 @@ public abstract class WeakTableTest {
 		@Test
 		public void testNext() {
 			LuaTable t = new WeakTable(true, true);
+			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -164,9 +165,9 @@ public abstract class WeakTableTest {
 			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
-			t.set(key, val);
-			t.set(key2, val2);
-			t.set(key3, val3);
+			t.set(state, key, val);
+			t.set(state, key2, val2);
+			t.set(state, key3, val3);
 
 			// forget one of the keys
 			key2 = null;
@@ -188,6 +189,7 @@ public abstract class WeakTableTest {
 		@Test
 		public void testWeakKeysValuesTable() {
 			LuaTable t = new WeakTable(true, true);
+			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -197,16 +199,16 @@ public abstract class WeakTableTest {
 			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
-			t.set(key, val);
-			t.set(key2, val2);
-			t.set(key3, val3);
-			assertEquals(val, t.get(key));
-			assertEquals(val2, t.get(key2));
-			assertEquals(val3, t.get(key3));
+			t.set(state, key, val);
+			t.set(state, key2, val2);
+			t.set(state, key3, val3);
+			assertEquals(val, t.get(state, key));
+			assertEquals(val2, t.get(state, key2));
+			assertEquals(val3, t.get(state, key3));
 			System.gc();
-			assertEquals(val, t.get(key));
-			assertEquals(val2, t.get(key2));
-			assertEquals(val3, t.get(key3));
+			assertEquals(val, t.get(state, key));
+			assertEquals(val2, t.get(state, key2));
+			assertEquals(val3, t.get(state, key3));
 
 			// drop key and value references, replace them with new ones
 			WeakReference<LuaValue> origkey = new WeakReference<>(key);
@@ -227,9 +229,9 @@ public abstract class WeakTableTest {
 			assertEquals(null, origval.get());
 			assertEquals(null, origkey2.get());
 			assertEquals(null, origval3.get());
-			assertEquals(NIL, t.get(key));
-			assertEquals(NIL, t.get(key2));
-			assertEquals(NIL, t.get(key3));
+			assertEquals(NIL, t.get(state, key));
+			assertEquals(NIL, t.get(state, key2));
+			assertEquals(NIL, t.get(state, key3));
 
 			// all originals should be gone after gc, then access
 			val2 = null;
@@ -242,6 +244,7 @@ public abstract class WeakTableTest {
 		@Test
 		public void testReplace() {
 			LuaTable t = new WeakTable(true, true);
+			LuaState state = LuaThread.getRunning().luaState;
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -251,12 +254,12 @@ public abstract class WeakTableTest {
 			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
-			t.set(key, val);
-			t.set(key2, val2);
-			t.set(key3, val3);
+			t.set(state, key, val);
+			t.set(state, key2, val2);
+			t.set(state, key3, val3);
 
 			LuaValue val4 = userdataOf(new MyData(777));
-			t.set(key2, val4);
+			t.set(state, key2, val4);
 
 			// table should have 3 entries
 			int size = 0;

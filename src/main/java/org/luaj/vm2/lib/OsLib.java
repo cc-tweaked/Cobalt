@@ -23,6 +23,7 @@
  */
 package org.luaj.vm2.lib;
 
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
@@ -104,20 +105,20 @@ public class OsLib extends VarArgFunction {
 	public OsLib() {
 	}
 
-	public LuaValue init() {
+	public LuaValue init(LuaState state) {
 		LuaTable t = new LuaTable();
-		bind(t, this.getClass(), NAMES, CLOCK);
-		env.set("os", t);
-		PackageLib.instance.LOADED.set("os", t);
+		bind(state, t, this.getClass(), NAMES, CLOCK);
+		env.set(state, "os", t);
+		PackageLib.instance.LOADED.set(state, "os", t);
 		return t;
 	}
 
 	@Override
-	public Varargs invoke(Varargs args) {
+	public Varargs invoke(LuaState state, Varargs args) {
 		try {
 			switch (opcode) {
 				case INIT:
-					return init();
+					return init(state);
 				case CLOCK:
 					return valueOf(clock());
 				case DATE: {

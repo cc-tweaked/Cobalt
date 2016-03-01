@@ -164,7 +164,7 @@ public class LuaDouble extends LuaNumber {
 
 	// unary operators
 	@Override
-	public LuaValue neg() {
+	public LuaValue neg(LuaState state) {
 		return valueOf(-v);
 	}
 

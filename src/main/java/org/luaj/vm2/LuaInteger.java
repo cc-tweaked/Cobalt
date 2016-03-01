@@ -191,7 +191,7 @@ public class LuaInteger extends LuaNumber {
 
 	// unary operators
 	@Override
-	public LuaValue neg() {
+	public LuaValue neg(LuaState state) {
 		return valueOf(-(long) v);
 	}
 

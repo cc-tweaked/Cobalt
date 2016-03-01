@@ -25,6 +25,7 @@ package org.luaj.vm2.lib;
 
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaFunction;
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaValue;
 
 import java.lang.reflect.Constructor;
@@ -40,7 +41,7 @@ import static org.luaj.vm2.Constants.NIL;
  * to the correct function within the library.
  * <p>
  * Since lua functions can be called with too few or too many arguments,
- * and there are overloaded {@link LuaValue#call()} functions with varying
+ * and there are overloaded {@link LuaValue#call(org.luaj.vm2.LuaState)} functions with varying
  * number of arguments, a Java function exposed in lua needs to handle  the
  * argument fixup when a function is called with a number of arguments
  * differs from that expected.
@@ -161,13 +162,14 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = 0, second with 1, etc.
 	 *
+	 * @param state
 	 * @param env     The environment to apply to each bound function
 	 * @param factory the Class to instantiate for each bound function
 	 * @param names   array of String names, one for each function.
-	 * @see #bind(LuaValue, Class, String[], int)
+	 * @see #bind(LuaState, LuaValue, Class, String[], int)
 	 */
-	protected void bind(LuaValue env, Class factory, String[] names) {
-		bind(env, factory, names, 0);
+	protected void bind(LuaState state, LuaValue env, Class factory, String[] names) {
+		bind(state, env, factory, names, 0);
 	}
 
 	/**
@@ -176,13 +178,14 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = {@code firstopcode}, second with {@code firstopcode+1}, etc.
 	 *
+	 * @param state
 	 * @param env         The environment to apply to each bound function
 	 * @param factory     the Class to instantiate for each bound function
 	 * @param names       array of String names, one for each function.
 	 * @param firstopcode the first opcode to use
-	 * @see #bind(LuaValue, Class, String[])
+	 * @see #bind(LuaState, LuaValue, Class, String[])
 	 */
-	protected void bind(LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode) {
+	protected void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode) {
 		try {
 			Constructor<? extends LibFunction> constructor = factory.getDeclaredConstructor();
 			constructor.setAccessible(true);
@@ -192,7 +195,7 @@ public abstract class LibFunction extends LuaFunction {
 				f.opcode = firstopcode + i;
 				f.name = names[i];
 				f.env = env;
-				env.set(f.name, f);
+				env.set(state, f.name, f);
 			}
 		} catch (Exception e) {
 			throw new LuaError("bind failed: " + e);

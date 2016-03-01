@@ -97,10 +97,10 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg) {
-		env.set("require", new PkgLib1(env, "require", OP_REQUIRE, this));
-		env.set("module", new PkgLibV(env, "module", OP_MODULE, this));
-		env.set("package", PACKAGE = tableOf(new LuaValue[]{
+	public LuaValue call(LuaState state, LuaValue arg) {
+		env.set(state, "require", new PkgLib1(env, "require", OP_REQUIRE, this));
+		env.set(state, "module", new PkgLibV(env, "module", OP_MODULE, this));
+		env.set(state, "package", PACKAGE = tableOf(new LuaValue[]{
 			_LOADED, LOADED = tableOf(),
 			_PRELOAD, tableOf(),
 			_PATH, valueOf(DEFAULT_LUA_PATH),
@@ -111,7 +111,7 @@ public class PackageLib extends OneArgFunction {
 			lua_loader = new PkgLibV(env, "lua_loader", OP_LUA_LOADER, this),
 			java_loader = new PkgLibV(env, "java_loader", OP_JAVA_LOADER, this),
 		})}));
-		LOADED.set("package", PACKAGE);
+		LOADED.set(state, "package", PACKAGE);
 		return env;
 	}
 
@@ -126,17 +126,17 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		@Override
-		public LuaValue call(LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) {
 			switch (opcode) {
 				case OP_REQUIRE:
-					return lib.require(arg);
+					return lib.require(state, arg);
 				case OP_SEEALL: {
 					LuaTable t = arg.checktable();
-					LuaValue m = t.getMetatable();
+					LuaValue m = t.getMetatable(state);
 					if (m == null) {
-						t.setMetatable(m = tableOf());
+						t.setMetatable(state, m = tableOf());
 					}
-					m.set(INDEX, LuaThread.getGlobals());
+					m.set(state, INDEX, LuaThread.getGlobals());
 					return NONE;
 				}
 			}
@@ -155,17 +155,17 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		@Override
-		public Varargs invoke(Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) {
 			switch (opcode) {
 				case OP_MODULE:
-					return lib.module(args);
+					return lib.module(state, args);
 				case OP_LOADLIB:
 					return loadlib(args);
 				case OP_PRELOAD_LOADER: {
-					return lib.loader_preload(args);
+					return lib.loader_preload(state, args);
 				}
 				case OP_LUA_LOADER: {
-					return lib.loader_Lua(args);
+					return lib.loader_Lua(state, args);
 				}
 				case OP_JAVA_LOADER: {
 					return lib.loader_Java(args);
@@ -178,15 +178,16 @@ public class PackageLib extends OneArgFunction {
 	/**
 	 * Allow packages to mark themselves as loaded
 	 *
+	 * @param state
 	 * @param name  Name of package
 	 * @param value Value of package
 	 */
-	public void setIsLoaded(String name, LuaTable value) {
-		LOADED.set(name, value);
+	public void setIsLoaded(LuaState state, String name, LuaTable value) {
+		LOADED.set(state, name, value);
 	}
 
-	public void setLuaPath(String newLuaPath) {
-		PACKAGE.set(_PATH, valueOf(newLuaPath));
+	public void setLuaPath(LuaState state, String newLuaPath) {
+		PACKAGE.set(state, _PATH, valueOf(newLuaPath));
 	}
 
 	@Override
@@ -218,33 +219,34 @@ public class PackageLib extends OneArgFunction {
 	 * This function may receive optional options after the module name, where
 	 * each option is a function to be applied over the module.
 	 *
-	 * @param args The arguments to set it up with
+	 * @param state
+	 * @param args  The arguments to set it up with
 	 * @return {@link Constants#NONE}
 	 */
-	public Varargs module(Varargs args) {
+	public Varargs module(LuaState state, Varargs args) {
 		LuaString modname = args.checkstring(1);
 		int n = args.narg();
-		LuaValue value = LOADED.get(modname);
+		LuaValue value = LOADED.get(state, modname);
 		LuaValue module;
 		if (!value.istable()) { /* not found? */
 
 		    /* try global variable (and create one if it does not exist) */
 			LuaValue globals = LuaThread.getGlobals();
-			module = findtable(globals, modname);
+			module = findtable(state, globals, modname);
 			if (module == null) {
 				LuaValue result;
 				throw new LuaError("name conflict for module '" + modname + "'");
 			}
-			LOADED.set(modname, module);
+			LOADED.set(state, modname, module);
 		} else {
 			module = value;
 		}
 
 
 		/* check whether table already has a _NAME field */
-		LuaValue name = module.get(_NAME);
+		LuaValue name = module.get(state, _NAME);
 		if (name.isnil()) {
-			modinit(module, modname);
+			modinit(state, module, modname);
 		}
 
 		// set the environment of the current function
@@ -261,7 +263,7 @@ public class PackageLib extends OneArgFunction {
 
 		// apply the functions
 		for (int i = 2; i <= n; i++) {
-			args.arg(i).call(module);
+			args.arg(i).call(state, module);
 		}
 
 		// returns no results
@@ -269,11 +271,12 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	/**
+	 * @param state
 	 * @param table the table at which to start the search
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
 	 */
-	private static LuaValue findtable(LuaValue table, LuaString fname) {
+	private static LuaValue findtable(LuaState state, LuaValue table, LuaString fname) {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
@@ -281,10 +284,10 @@ public class PackageLib extends OneArgFunction {
 				e = fname.m_length;
 			}
 			LuaString key = fname.substring(b, e);
-			LuaValue val = table.rawget(key);
+			LuaValue val = table.rawget(state, key);
 			if (val.isnil()) { /* no such field? */
 				LuaTable field = new LuaTable(); /* new table for field */
-				table.set(key, field);
+				table.set(state, key, field);
 				table = field;
 			} else if (!val.istable()) {  /* field has a non-table value? */
 				return null;
@@ -295,12 +298,12 @@ public class PackageLib extends OneArgFunction {
 		return table;
 	}
 
-	private static void modinit(LuaValue module, LuaString modname) {
+	private static void modinit(LuaState state, LuaValue module, LuaString modname) {
 		/* module._M = module */
-		module.set(_M, module);
+		module.set(state, _M, module);
 		int e = modname.lastIndexOf(_DOT);
-		module.set(_NAME, modname);
-		module.set(_PACKAGE, (e < 0 ? EMPTYSTRING : modname.substring(0, e + 1)));
+		module.set(state, _NAME, modname);
+		module.set(state, _PACKAGE, (e < 0 ? EMPTYSTRING : modname.substring(0, e + 1)));
 	}
 
 	/**
@@ -329,12 +332,13 @@ public class PackageLib extends OneArgFunction {
 	 * If there is any error loading or running the module, or if it cannot find any loader for
 	 * the module, then require signals an error.
 	 *
-	 * @param arg Module name
+	 * @param state
+	 * @param arg   Module name
 	 * @return The loaded value
 	 */
-	public LuaValue require(LuaValue arg) {
+	public LuaValue require(LuaState state, LuaValue arg) {
 		LuaString name = arg.checkstring();
-		LuaValue loaded = LOADED.get(name);
+		LuaValue loaded = LOADED.get(state, name);
 		if (loaded.toboolean()) {
 			if (loaded == _SENTINEL) {
 				LuaValue result;
@@ -344,18 +348,18 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		/* else must load it; iterate over available loaders */
-		LuaTable tbl = PACKAGE.get(_LOADERS).checktable();
+		LuaTable tbl = PACKAGE.get(state, _LOADERS).checktable();
 		StringBuilder sb = new StringBuilder();
 		LuaValue chunk = null;
 		for (int i = 1; true; i++) {
-			LuaValue loader = tbl.get(i);
+			LuaValue loader = tbl.get(state, i);
 			if (loader.isnil()) {
 				LuaValue result;
 				throw new LuaError("module '" + name + "' not found: " + name + sb);
 			}
 
 		    /* call loader with module name as argument */
-			chunk = loader.call(name);
+			chunk = loader.call(state, name);
 			if (chunk.isfunction()) {
 				break;
 			}
@@ -365,12 +369,12 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		// load the module using the loader
-		LOADED.set(name, _SENTINEL);
-		LuaValue result = chunk.call(name);
+		LOADED.set(state, name, _SENTINEL);
+		LuaValue result = chunk.call(state, name);
 		if (!result.isnil()) {
-			LOADED.set(name, result);
-		} else if ((result = LOADED.get(name)) == _SENTINEL) {
-			LOADED.set(name, result = TRUE);
+			LOADED.set(state, name, result);
+		} else if ((result = LOADED.get(state, name)) == _SENTINEL) {
+			LOADED.set(state, name, result = TRUE);
 		}
 		return result;
 	}
@@ -380,22 +384,22 @@ public class PackageLib extends OneArgFunction {
 		return varargsOf(NIL, valueOf("dynamic libraries not enabled"), valueOf("absent"));
 	}
 
-	LuaValue loader_preload(Varargs args) {
+	LuaValue loader_preload(LuaState state, Varargs args) {
 		LuaString name = args.checkstring(1);
-		LuaValue preload = PACKAGE.get(_PRELOAD).checktable();
-		LuaValue val = preload.get(name);
+		LuaValue preload = PACKAGE.get(state, _PRELOAD).checktable();
+		LuaValue val = preload.get(state, name);
 		return val.isnil() ?
 			valueOf("\n\tno field package.preload['" + name + "']") :
 			val;
 	}
 
-	LuaValue loader_Lua(Varargs args) {
+	LuaValue loader_Lua(LuaState state, Varargs args) {
 		String name = args.checkjstring(1);
 		InputStream is = null;
 
 
 		// get package path
-		LuaValue pp = PACKAGE.get(_PATH);
+		LuaValue pp = PACKAGE.get(state, _PATH);
 		if (!pp.isstring()) {
 			return valueOf("package.path is not a string");
 		}

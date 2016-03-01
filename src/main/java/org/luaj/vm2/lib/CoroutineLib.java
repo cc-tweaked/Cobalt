@@ -59,25 +59,25 @@ public class CoroutineLib extends VarArgFunction {
 	public CoroutineLib() {
 	}
 
-	private LuaTable init() {
+	private LuaTable init(LuaState state) {
 		LuaTable t = new LuaTable();
-		bind(t, CoroutineLib.class, new String[]{
+		bind(state, t, CoroutineLib.class, new String[]{
 				"create", "resume", "running", "status", "yield", "wrap"},
 			CREATE);
-		env.set("coroutine", t);
-		PackageLib.instance.LOADED.set("coroutine", t);
+		env.set(state, "coroutine", t);
+		PackageLib.instance.LOADED.set(state, "coroutine", t);
 		return t;
 	}
 
 	@Override
-	public Varargs invoke(Varargs args) {
+	public Varargs invoke(LuaState state, Varargs args) {
 		switch (opcode) {
 			case INIT: {
-				return init();
+				return init(state);
 			}
 			case CREATE: {
 				final LuaValue func = args.checkfunction(1);
-				return new LuaThread(func, LuaThread.getGlobals());
+				return new LuaThread(state, func, LuaThread.getGlobals());
 			}
 			case RESUME: {
 				final LuaThread t = args.checkthread(1);
@@ -95,7 +95,7 @@ public class CoroutineLib extends VarArgFunction {
 			}
 			case WRAP: {
 				final LuaValue func = args.checkfunction(1);
-				final LuaThread thread = new LuaThread(func, func.getfenv());
+				final LuaThread thread = new LuaThread(state, func, func.getfenv());
 				CoroutineLib cl = new CoroutineLib();
 				cl.setfenv(thread);
 				cl.name = "wrapped";

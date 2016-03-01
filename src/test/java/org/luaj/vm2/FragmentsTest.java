@@ -48,12 +48,13 @@ public class FragmentsTest {
 
 
 	public void runFragment(Varargs expected, String script) {
+		LuaState state = LuaThread.getRunning().luaState;
 		try {
 			String name = this.name.getMethodName();
-			LuaTable _G = JsePlatform.standardGlobals();
+			LuaTable _G = JsePlatform.standardGlobals(state);
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
 			LuaValue chunk = LuaC.instance.load(is, name, _G);
-			Varargs actual = chunk.invoke();
+			Varargs actual = chunk.invoke(state, NONE);
 			assertEquals(expected.narg(), actual.narg());
 			for (int i = 1; i <= actual.narg(); i++) {
 				assertEquals(expected.arg(i), actual.arg(i));

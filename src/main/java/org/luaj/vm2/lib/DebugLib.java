@@ -117,20 +117,20 @@ public class DebugLib extends VarArgFunction {
 	public DebugLib() {
 	}
 
-	private LuaTable init() {
+	private LuaTable init(LuaState state) {
 		DEBUG_ENABLED = true;
 		LuaTable t = new LuaTable();
-		bind(t, DebugLib.class, NAMES, DEBUG);
-		env.set("debug", t);
-		PackageLib.instance.LOADED.set("debug", t);
+		bind(state, t, DebugLib.class, NAMES, DEBUG);
+		env.set(state, "debug", t);
+		PackageLib.instance.LOADED.set(state, "debug", t);
 		return t;
 	}
 
 	@Override
-	public Varargs invoke(Varargs args) {
+	public Varargs invoke(LuaState state, Varargs args) {
 		switch (opcode) {
 			case INIT:
-				return init();
+				return init(state);
 			case DEBUG:
 				return _debug(args);
 			case GETFENV:
@@ -138,11 +138,11 @@ public class DebugLib extends VarArgFunction {
 			case GETHOOK:
 				return _gethook(args);
 			case GETINFO:
-				return _getinfo(args, this);
+				return _getinfo(state, args, this);
 			case GETLOCAL:
 				return _getlocal(args);
 			case GETMETATABLE:
-				return _getmetatable(args);
+				return _getmetatable(state, args);
 			case GETREGISTRY:
 				return _getregistry(args);
 			case GETUPVALUE:
@@ -154,7 +154,7 @@ public class DebugLib extends VarArgFunction {
 			case SETLOCAL:
 				return _setlocal(args);
 			case SETMETATABLE:
-				return _setmetatable(args);
+				return _setmetatable(state, args);
 			case SETUPVALUE:
 				return _setupvalue(args);
 			case TRACEBACK:
@@ -256,6 +256,7 @@ public class DebugLib extends VarArgFunction {
 	 */
 	static class DebugState {
 		private final WeakReference<LuaThread> thread_ref;
+		private final LuaState state;
 		private int debugCalls = 0;
 		private DebugInfo[] debugInfo = new DebugInfo[LuaThread.MAX_CALLSTACK + 1];
 		private LuaValue hookfunc;
@@ -265,6 +266,7 @@ public class DebugLib extends VarArgFunction {
 
 		DebugState(LuaThread thread) {
 			this.thread_ref = new WeakReference<LuaThread>(thread);
+			this.state = thread.luaState;
 		}
 
 		public DebugInfo nextInfo() {
@@ -299,7 +301,7 @@ public class DebugLib extends VarArgFunction {
 				ds.nextInfo().setargs(arg, null);
 				ds.pushInfo(n + 1).setfunction(hookfunc);
 				try {
-					hookfunc.call(type, arg);
+					hookfunc.call(ds.state, type, arg);
 				} finally {
 					ds.popInfo(n);
 				}
@@ -376,6 +378,7 @@ public class DebugLib extends VarArgFunction {
 	/**
 	 * Called by Closures and recursing java functions on entry
 	 *
+	 * @param state
 	 * @param thread the thread for the call
 	 * @param calls  the number of calls in the call stack
 	 * @param func   the function called
@@ -502,7 +505,7 @@ public class DebugLib extends VarArgFunction {
 		return object;
 	}
 
-	protected static Varargs _getinfo(Varargs args, LuaValue level0func) {
+	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) {
 		int a = 1;
 		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : LuaThread.getRunning();
 		LuaValue func = args.arg(a++);
@@ -531,44 +534,44 @@ public class DebugLib extends VarArgFunction {
 				case 'S': {
 					if (c != null) {
 						Prototype p = c.p;
-						info.set(WHAT, LUA);
-						info.set(SOURCE, p.source);
-						info.set(SHORT_SRC, valueOf(sourceshort(p)));
-						info.set(LINEDEFINED, valueOf(p.linedefined));
-						info.set(LASTLINEDEFINED, valueOf(p.lastlinedefined));
+						info.set(state, WHAT, LUA);
+						info.set(state, SOURCE, p.source);
+						info.set(state, SHORT_SRC, valueOf(sourceshort(p)));
+						info.set(state, LINEDEFINED, valueOf(p.linedefined));
+						info.set(state, LASTLINEDEFINED, valueOf(p.lastlinedefined));
 					} else {
 						String shortName = di.func.tojstring();
 						LuaString name = LuaString.valueOf("[Java] " + shortName);
-						info.set(WHAT, JAVA);
-						info.set(SOURCE, name);
-						info.set(SHORT_SRC, valueOf(shortName));
-						info.set(LINEDEFINED, MINUSONE);
-						info.set(LASTLINEDEFINED, MINUSONE);
+						info.set(state, WHAT, JAVA);
+						info.set(state, SOURCE, name);
+						info.set(state, SHORT_SRC, valueOf(shortName));
+						info.set(state, LINEDEFINED, MINUSONE);
+						info.set(state, LASTLINEDEFINED, MINUSONE);
 					}
 					break;
 				}
 				case 'l': {
 					int line = di.currentline();
-					info.set(CURRENTLINE, valueOf(line));
+					info.set(state, CURRENTLINE, valueOf(line));
 					break;
 				}
 				case 'u': {
-					info.set(NUPS, valueOf(c != null ? c.p.nups : 0));
+					info.set(state, NUPS, valueOf(c != null ? c.p.nups : 0));
 					break;
 				}
 				case 'n': {
 					LuaString[] kind = di.getfunckind();
-					info.set(NAME, kind != null ? kind[0] : QMARK);
-					info.set(NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
+					info.set(state, NAME, kind != null ? kind[0] : QMARK);
+					info.set(state, NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
 					break;
 				}
 				case 'f': {
-					info.set(FUNC, di.func);
+					info.set(state, FUNC, di.func);
 					break;
 				}
 				case 'L': {
 					LuaTable lines = new LuaTable();
-					info.set(ACTIVELINES, lines);
+					info.set(state, ACTIVELINES, lines);
 //					if ( di.luainfo != null ) {
 //						int line = di.luainfo.currentline();
 //						if ( line >= 0 )
@@ -626,37 +629,37 @@ public class DebugLib extends VarArgFunction {
 		}
 	}
 
-	static LuaValue _getmetatable(Varargs args) {
+	static LuaValue _getmetatable(LuaState state, Varargs args) {
 		LuaValue object = args.arg(1);
-		LuaValue mt = object.getMetatable();
+		LuaValue mt = object.getMetatable(state);
 		return mt != null ? mt : NIL;
 	}
 
-	static Varargs _setmetatable(Varargs args) {
+	static Varargs _setmetatable(LuaState state, Varargs args) {
 		LuaValue object = args.arg(1);
 		try {
 			LuaValue mt = args.opttable(2, null);
 			switch (object.type()) {
 				case TNIL:
-					LuaNil.s_metatable = mt;
+					state.nilMetatable = mt;
 					break;
 				case TNUMBER:
-					LuaNumber.s_metatable = mt;
+					state.numberMetatable = mt;
 					break;
 				case TBOOLEAN:
-					LuaBoolean.s_metatable = mt;
+					state.booleanMetatable = mt;
 					break;
 				case TSTRING:
-					LuaString.s_metatable = mt;
+					state.stringMetatable = mt;
 					break;
 				case TFUNCTION:
-					LuaFunction.s_metatable = mt;
+					state.functionMetatable = mt;
 					break;
 				case TTHREAD:
-					LuaThread.s_metatable = mt;
+					state.threadMetatable = mt;
 					break;
 				default:
-					object.setMetatable(mt);
+					object.setMetatable(state, mt);
 			}
 			return TRUE;
 		} catch (LuaError e) {

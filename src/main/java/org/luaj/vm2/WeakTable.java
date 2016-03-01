@@ -104,7 +104,7 @@ public class WeakTable extends LuaTable {
 			case TTABLE:
 				return new WeakValue(value);
 			case TUSERDATA:
-				return new WeakUserdata(value);
+				return new WeakUserdata((LuaUserdata) value);
 			default:
 				return value;
 		}
@@ -213,11 +213,11 @@ public class WeakTable extends LuaTable {
 
 	// ----------------- sort support -----------------------------
 	@Override
-	public void sort(final LuaValue comparator) {
-		super.sort(new TwoArgFunction() {
+	public void sort(LuaState luaState, final LuaValue comparator) {
+		super.sort(luaState, new TwoArgFunction() {
 			@Override
-			public LuaValue call(LuaValue arg1, LuaValue arg2) {
-				return comparator.call(arg1.strongvalue(), arg2.strongvalue());
+			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+				return comparator.call(state, arg1.strongvalue(), arg2.strongvalue());
 			}
 		});
 	}
@@ -277,10 +277,10 @@ public class WeakTable extends LuaTable {
 		private final WeakReference<Object> ob;
 		private final LuaValue mt;
 
-		private WeakUserdata(LuaValue value) {
+		private WeakUserdata(LuaUserdata value) {
 			super(value);
 			ob = new WeakReference<Object>(value.touserdata());
-			mt = value.getMetatable();
+			mt = value.m_metatable;
 		}
 
 		@Override

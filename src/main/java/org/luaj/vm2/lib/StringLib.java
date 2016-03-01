@@ -51,26 +51,24 @@ public class StringLib extends OneArgFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg) {
+	public LuaValue call(LuaState state, LuaValue arg) {
 		LuaTable t = new LuaTable();
-		bind(t, StringLib1.class, new String[]{
+		bind(state, t, StringLib1.class, new String[]{
 			"dump", "len", "lower", "reverse", "upper",});
-		bind(t, StringLibV.class, new String[]{
+		bind(state, t, StringLibV.class, new String[]{
 			"byte", "char", "find", "format",
 			"gmatch", "gsub", "match", "rep",
 			"sub"});
-		env.set("string", t);
+		env.set(state, "string", t);
 		instance = t;
-		if (LuaString.s_metatable == null) {
-			LuaString.s_metatable = tableOf(new LuaValue[]{INDEX, t});
-		}
-		PackageLib.instance.LOADED.set("string", t);
+		state.stringMetatable = tableOf(new LuaValue[]{INDEX, t});
+		PackageLib.instance.LOADED.set(state, "string", t);
 		return t;
 	}
 
 	static final class StringLib1 extends OneArgFunction {
 		@Override
-		public LuaValue call(LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) {
 			switch (opcode) {
 				case 0:
 					return dump(arg); // dump (function)
@@ -89,7 +87,7 @@ public class StringLib extends OneArgFunction {
 
 	static final class StringLibV extends VarArgFunction {
 		@Override
-		public Varargs invoke(Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) {
 			switch (opcode) {
 				case 0:
 					return StringLib.byte_(args);
@@ -102,7 +100,7 @@ public class StringLib extends OneArgFunction {
 				case 4:
 					return StringLib.gmatch(args);
 				case 5:
-					return StringLib.gsub(args);
+					return StringLib.gsub(state, args);
 				case 6:
 					return StringLib.match(args);
 				case 7:
@@ -544,7 +542,7 @@ public class StringLib extends OneArgFunction {
 		}
 
 		@Override
-		public Varargs invoke(Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) {
 			for (; soffset < srclen; soffset++) {
 				ms.reset();
 				int res = ms.match(soffset, 0);
@@ -604,7 +602,7 @@ public class StringLib extends OneArgFunction {
 	 * x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
 	 * --> x="lua-5.1.tar.gz"
 	 */
-	static Varargs gsub(Varargs args) {
+	static Varargs gsub(LuaState state, Varargs args) {
 		LuaString src = args.checkstring(1);
 		final int srclen = src.length();
 		LuaString p = args.checkstring(2);
@@ -622,7 +620,7 @@ public class StringLib extends OneArgFunction {
 			int res = ms.match(soffset, anchor ? 1 : 0);
 			if (res != -1) {
 				n++;
-				ms.add_value(lbuf, soffset, res, repl);
+				ms.add_value(state, lbuf, soffset, res, repl);
 			}
 			if (res != -1 && res > soffset) {
 				soffset = res;
@@ -646,7 +644,7 @@ public class StringLib extends OneArgFunction {
 	 * Embedded zeros are counted, so "a\000bc\000" has length 5.
 	 */
 	static LuaValue len(LuaValue arg) {
-		return arg.checkstring().len();
+		return valueOf(arg.checkstring().length());
 	}
 
 	/**
@@ -887,7 +885,7 @@ public class StringLib extends OneArgFunction {
 			}
 		}
 
-		public void add_value(Buffer lbuf, int soffset, int end, LuaValue repl) {
+		public void add_value(LuaState state, Buffer lbuf, int soffset, int end, LuaValue repl) {
 			switch (repl.type()) {
 				case TSTRING:
 				case TNUMBER:
@@ -895,12 +893,12 @@ public class StringLib extends OneArgFunction {
 					return;
 
 				case TFUNCTION:
-					repl = repl.invoke(push_captures(true, soffset, end)).arg1();
+					repl = repl.invoke(state, push_captures(true, soffset, end)).arg1();
 					break;
 
 				case TTABLE:
 					// Need to call push_onecapture here for the error checking
-					repl = repl.get(push_onecapture(0, soffset, end));
+					repl = repl.get(state, push_onecapture(0, soffset, end));
 					break;
 
 				default:

@@ -81,8 +81,9 @@ public abstract class Varargs {
 	 * Evaluate any pending tail call and return result.
 	 *
 	 * @return the evaluated tail call result
+	 * @param state
 	 */
-	public Varargs eval() {
+	public Varargs eval(LuaState state) {
 		return this;
 	}
 

@@ -59,11 +59,11 @@ public class TypeTest {
 	private final LuaTable table = tableOf();
 	private final LuaFunction somefunc = new ZeroArgFunction() {
 		@Override
-		public LuaValue call() {
+		public LuaValue call(LuaState state) {
 			return NONE;
 		}
 	};
-	private final LuaThread thread = new LuaThread(somefunc, table);
+	private final LuaThread thread = new LuaThread(LuaThread.getRunning().luaState, somefunc, table);
 	private final LuaClosure someclosure = new LuaClosure();
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);

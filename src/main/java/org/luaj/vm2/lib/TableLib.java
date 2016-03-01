@@ -23,6 +23,7 @@
  */
 package org.luaj.vm2.lib;
 
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
@@ -46,21 +47,21 @@ public class TableLib extends OneArgFunction {
 	public TableLib() {
 	}
 
-	private LuaTable init() {
+	private LuaTable init(LuaState state) {
 		LuaTable t = new LuaTable();
-		bind(t, TableLib.class, new String[]{"getn", "maxn",}, 1);
-		bind(t, TableLibV.class, new String[]{
+		bind(state, t, TableLib.class, new String[]{"getn", "maxn",}, 1);
+		bind(state, t, TableLibV.class, new String[]{
 			"remove", "concat", "insert", "sort", "foreach", "foreachi",});
-		env.set("table", t);
-		PackageLib.instance.LOADED.set("table", t);
+		env.set(state, "table", t);
+		PackageLib.instance.LOADED.set(state, "table", t);
 		return t;
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg) {
+	public LuaValue call(LuaState state, LuaValue arg) {
 		switch (opcode) {
 			case 0: // init library
-				return init();
+				return init(state);
 			case 1:  // "getn" (table) -> number
 				return arg.checktable().getn();
 			case 2: // "maxn"  (table) -> number
@@ -71,7 +72,7 @@ public class TableLib extends OneArgFunction {
 
 	static final class TableLibV extends VarArgFunction {
 		@Override
-		public Varargs invoke(Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) {
 			switch (opcode) {
 				case 0: { // "remove" (table [, pos]) -> removed-ele
 					LuaTable table = args.checktable(1);
@@ -81,9 +82,9 @@ public class TableLib extends OneArgFunction {
 				case 1: { // "concat" (table [, sep [, i [, j]]]) -> string
 					LuaTable table = args.checktable(1);
 					return table.concat(
-						args.optstring(2, EMPTYSTRING),
+						state, args.optstring(2, EMPTYSTRING),
 						args.optint(3, 1),
-						args.isvalue(4) ? args.checkint(4) : table.length());
+						args.isvalue(4) ? args.checkint(4) : table.length(state));
 				}
 				case 2: { // "insert" (table, [pos,] value) -> prev-ele
 					final LuaTable table = args.checktable(1);
@@ -95,14 +96,14 @@ public class TableLib extends OneArgFunction {
 				case 3: { // "sort" (table [, comp]) -> void
 					LuaTable table = args.checktable(1);
 					LuaValue compare = (args.isnoneornil(2) ? NIL : args.checkfunction(2));
-					table.sort(compare);
+					table.sort(state, compare);
 					return NONE;
 				}
 				case 4: { // (table, func) -> void
-					return args.checktable(1).foreach(args.checkfunction(2));
+					return args.checktable(1).foreach(state, args.checkfunction(2));
 				}
 				case 5: { // "foreachi" (table, func) -> void
-					return args.checktable(1).foreachi(args.checkfunction(2));
+					return args.checktable(1).foreachi(state, args.checkfunction(2));
 				}
 			}
 			return NONE;

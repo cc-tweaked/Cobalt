@@ -2,10 +2,7 @@ package org.luaj.vm2.compiler;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.luaj.vm2.LuaFunction;
-import org.luaj.vm2.LuaInteger;
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.ByteArrayInputStream;
@@ -15,19 +12,20 @@ import static org.junit.Assert.*;
 import static org.luaj.vm2.Factory.valueOf;
 
 public class SimpleTests {
-
+	private LuaState state;
 	private LuaTable _G;
 
 	@Before
 	public void setup() throws Exception {
-		_G = JsePlatform.standardGlobals();
+		state = LuaThread.getRunning().luaState;
+		_G = JsePlatform.standardGlobals(state);
 	}
 
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF8"));
 			LuaFunction c = LuaC.instance.load(is, "script", _G);
-			c.call();
+			c.call(state);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);
 		}

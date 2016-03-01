@@ -23,8 +23,6 @@
  */
 package org.luaj.vm2;
 
-import static org.luaj.vm2.Factory.varargsOf;
-
 /**
  * Subclass of {@link Varargs} that represents a lua tail call
  * in a Java library function execution environment.
@@ -35,7 +33,7 @@ import static org.luaj.vm2.Factory.varargsOf;
  * for tail calls when converting lua-bytecode to java-bytecode.
  * <p>
  * The tail call holds the next function and arguments,
- * and the client a call to {@link #eval()} executes the function
+ * and the client a call to {@link Varargs#eval(LuaState)} executes the function
  * repeatedly until the tail calls are completed.
  * <p>
  * Normally, users of luaj need not concern themselves with the
@@ -55,20 +53,15 @@ public class TailcallVarargs extends Varargs {
 		this.args = args;
 	}
 
-	public TailcallVarargs(LuaValue object, LuaValue methodname, Varargs args) {
-		this.func = object.get(methodname);
-		this.args = varargsOf(object, args);
-	}
-
 	@Override
 	public boolean isTailcall() {
 		return true;
 	}
 
 	@Override
-	public Varargs eval() {
+	public Varargs eval(LuaState state) {
 		while (result == null) {
-			Varargs r = func.onInvoke(args);
+			Varargs r = func.onInvoke(state, args);
 			if (r.isTailcall()) {
 				TailcallVarargs t = (TailcallVarargs) r;
 				func = t.func;
@@ -85,7 +78,7 @@ public class TailcallVarargs extends Varargs {
 	@Override
 	public LuaValue arg(int i) {
 		if (result == null) {
-			eval();
+			throw new IllegalStateException("Hasn't been evaluated");
 		}
 		return result.arg(i);
 	}
@@ -93,7 +86,7 @@ public class TailcallVarargs extends Varargs {
 	@Override
 	public LuaValue arg1() {
 		if (result == null) {
-			eval();
+			throw new IllegalStateException("Hasn't been evaluated");
 		}
 		return result.arg1();
 	}
@@ -101,7 +94,7 @@ public class TailcallVarargs extends Varargs {
 	@Override
 	public int narg() {
 		if (result == null) {
-			eval();
+			throw new IllegalStateException("Hasn't been evaluated");
 		}
 		return result.narg();
 	}

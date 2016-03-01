@@ -67,9 +67,6 @@ import static org.luaj.vm2.Factory.varargsOf;
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {
-
-	public static LuaValue s_metatable;
-
 	public static int coroutine_count = 0;
 
 	/**
@@ -102,7 +99,9 @@ public class LuaThread extends LuaValue {
 
 	public static final int MAX_CALLSTACK = 256;
 
-	private static final LuaThread main_thread = new LuaThread();
+	public final LuaState luaState;
+
+	private static final LuaThread main_thread = new LuaThread(new LuaState());
 
 	// state of running thread including call stack
 	private static LuaThread running_thread = main_thread;
@@ -119,21 +118,26 @@ public class LuaThread extends LuaValue {
 
 	/**
 	 * Private constructor for main thread only
+	 *
+	 * @param luaState
 	 */
-	private LuaThread() {
+	private LuaThread(LuaState luaState) {
 		state = new State(this, null);
+		this.luaState = luaState;
 		state.status = STATUS_RUNNING;
 	}
 
 	/**
 	 * Create a LuaThread around a function and environment
 	 *
-	 * @param func The function to execute
-	 * @param env  The environment to apply to the thread
+	 * @param luaState
+	 * @param func     The function to execute
+	 * @param env      The environment to apply to the thread
 	 */
-	public LuaThread(LuaValue func, LuaValue env) {
+	public LuaThread(LuaState luaState, LuaValue func, LuaValue env) {
 		LuaValue.assert_(func != null, "function cannot be null");
 		this.env = env;
+		this.luaState = luaState;
 		state = new State(this, func);
 	}
 
@@ -163,8 +167,8 @@ public class LuaThread extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable() {
-		return s_metatable;
+	public LuaValue getMetatable(LuaState state) {
+		return state.threadMetatable;
 	}
 
 	@Override
@@ -289,6 +293,7 @@ public class LuaThread extends LuaValue {
 	}
 
 	static class State implements Runnable {
+		private final LuaState state;
 		final WeakReference<LuaThread> lua_thread;
 		final LuaValue function;
 		Varargs args = NONE;
@@ -297,6 +302,7 @@ public class LuaThread extends LuaValue {
 		int status = LuaThread.STATUS_INITIAL;
 
 		State(LuaThread lua_thread, LuaValue function) {
+			this.state = lua_thread.luaState;
 			this.lua_thread = new WeakReference<LuaThread>(lua_thread);
 			this.function = function;
 		}
@@ -306,7 +312,7 @@ public class LuaThread extends LuaValue {
 			try {
 				Varargs a = this.args;
 				this.args = NONE;
-				this.result = function.invoke(a);
+				this.result = function.invoke(state, a);
 			} catch (Throwable t) {
 				this.error = t.getMessage();
 			} finally {

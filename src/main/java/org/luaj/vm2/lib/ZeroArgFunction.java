@@ -23,6 +23,7 @@
  */
 package org.luaj.vm2.lib;
 
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 
@@ -30,9 +31,9 @@ import org.luaj.vm2.Varargs;
  * Abstract base class for Java function implementations that take no arguments and
  * return one value.
  * <p>
- * Subclasses need only implement {@link LuaValue#call()} to complete this class,
+ * Subclasses need only implement {@link LuaValue#call(LuaState)} to complete this class,
  * simplifying development.
- * All other uses of {@link #call(LuaValue)}, {@link #invoke(Varargs)},etc,
+ * All other uses of {@link LuaValue#call(LuaState, LuaValue)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class.
  * <p>
  * If one or more arguments are required, or variable argument or variable return values,
@@ -41,7 +42,7 @@ import org.luaj.vm2.Varargs;
  * <p>
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
- * @see #call()
+ * @see LuaValue#call(LuaState)
  * @see LibFunction
  * @see OneArgFunction
  * @see TwoArgFunction
@@ -51,7 +52,7 @@ import org.luaj.vm2.Varargs;
 public abstract class ZeroArgFunction extends LibFunction {
 
 	@Override
-	public abstract LuaValue call();
+	public abstract LuaValue call(LuaState state);
 
 	/**
 	 * Default constructor
@@ -69,22 +70,22 @@ public abstract class ZeroArgFunction extends LibFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg) {
-		return call();
+	public LuaValue call(LuaState state, LuaValue arg) {
+		return call(state);
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg1, LuaValue arg2) {
-		return call();
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+		return call(state);
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-		return call();
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+		return call(state);
 	}
 
 	@Override
-	public Varargs invoke(Varargs varargs) {
-		return call();
+	public Varargs invoke(LuaState state, Varargs varargs) {
+		return call(state);
 	}
 }

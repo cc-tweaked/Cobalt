@@ -56,11 +56,6 @@ public final class LuaBoolean extends LuaValue {
 	static final LuaBoolean _FALSE = new LuaBoolean(false);
 
 	/**
-	 * Shared static metatable for boolean values represented in lua.
-	 */
-	public static LuaValue s_metatable;
-
-	/**
 	 * The value of the boolean
 	 */
 	public final boolean v;
@@ -119,7 +114,7 @@ public final class LuaBoolean extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable() {
-		return s_metatable;
+	public LuaValue getMetatable(LuaState state) {
+		return state.booleanMetatable;
 	}
 }

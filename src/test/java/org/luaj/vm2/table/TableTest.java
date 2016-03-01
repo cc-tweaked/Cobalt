@@ -63,15 +63,16 @@ public class TableTest {
 
 	@Test
 	public void testInOrderIntegerKeyInsertion() {
+		LuaState state = LuaThread.getRunning().luaState;
 		LuaTable t = new_Table();
 
 		for (int i = 1; i <= 32; ++i) {
-			t.set(i, valueOf("Test Value! " + i));
+			t.set(state, i, valueOf("Test Value! " + i));
 		}
 
 		// Ensure all keys are still there.
 		for (int i = 1; i <= 32; ++i) {
-			assertEquals("Test Value! " + i, t.get(i).tojstring());
+			assertEquals("Test Value! " + i, t.get(state, i).tojstring());
 		}
 
 		// Ensure capacities make sense
@@ -87,15 +88,16 @@ public class TableTest {
 		LuaTable t = new_Table();
 
 		// NOTE: This order of insertion is important.
-		t.set(3, LuaInteger.valueOf(3));
-		t.set(1, LuaInteger.valueOf(1));
-		t.set(5, LuaInteger.valueOf(5));
-		t.set(4, LuaInteger.valueOf(4));
-		t.set(6, LuaInteger.valueOf(6));
-		t.set(2, LuaInteger.valueOf(2));
+		LuaState state = LuaThread.getRunning().luaState;
+		t.set(state, 3, LuaInteger.valueOf(3));
+		t.set(state, 1, LuaInteger.valueOf(1));
+		t.set(state, 5, LuaInteger.valueOf(5));
+		t.set(state, 4, LuaInteger.valueOf(4));
+		t.set(state, 6, LuaInteger.valueOf(6));
+		t.set(state, 2, LuaInteger.valueOf(2));
 
 		for (int i = 1; i < 6; ++i) {
-			assertEquals(LuaInteger.valueOf(i), t.get(i));
+			assertEquals(LuaInteger.valueOf(i), t.get(state, i));
 		}
 
 		assertTrue(t.getArrayLength() >= 0 && t.getArrayLength() <= 2);
@@ -105,14 +107,15 @@ public class TableTest {
 	@Test
 	public void testOutOfOrderIntegerKeyInsertion() {
 		LuaTable t = new_Table();
+		LuaState state = LuaThread.getRunning().luaState;
 
 		for (int i = 32; i > 0; --i) {
-			t.set(i, valueOf("Test Value! " + i));
+			t.set(state, i, valueOf("Test Value! " + i));
 		}
 
 		// Ensure all keys are still there.
 		for (int i = 1; i <= 32; ++i) {
-			assertEquals("Test Value! " + i, t.get(i).tojstring());
+			assertEquals("Test Value! " + i, t.get(state, i).tojstring());
 		}
 
 		// Ensure capacities make sense
@@ -128,10 +131,11 @@ public class TableTest {
 	public void testStringAndIntegerKeys() {
 		LuaTable t = new_Table();
 
+		LuaState state = LuaThread.getRunning().luaState;
 		for (int i = 0; i < 10; ++i) {
 			LuaString str = valueOf(String.valueOf(i));
-			t.set(i, str);
-			t.set(str, LuaInteger.valueOf(i));
+			t.set(state, i, str);
+			t.set(state, str, LuaInteger.valueOf(i));
 		}
 
 		assertTrue(t.getArrayLength() >= 9); // 1, 2, ..., 9
@@ -171,78 +175,84 @@ public class TableTest {
 	@Test
 	public void testBadInitialCapacity() {
 		LuaTable t = new_Table(0, 1);
+		LuaState state = LuaThread.getRunning().luaState;
 
-		t.set("test", valueOf("foo"));
-		t.set("explode", valueOf("explode"));
+		t.set(state, "test", valueOf("foo"));
+		t.set(state, "explode", valueOf("explode"));
 		assertEquals(2, keyCount(t));
 	}
 
 	@Test
 	public void testRemove0() {
 		LuaTable t = new_Table(2, 0);
+		LuaState state = LuaThread.getRunning().luaState;
 
-		t.set(1, valueOf("foo"));
-		t.set(2, valueOf("bah"));
-		assertNotSame(NIL, t.get(1));
-		assertNotSame(NIL, t.get(2));
-		assertEquals(NIL, t.get(3));
+		t.set(state, 1, valueOf("foo"));
+		t.set(state, 2, valueOf("bah"));
+		assertNotSame(NIL, t.get(state, 1));
+		assertNotSame(NIL, t.get(state, 2));
+		assertEquals(NIL, t.get(state, 3));
 
-		t.set(1, NIL);
-		t.set(2, NIL);
-		t.set(3, NIL);
-		assertEquals(NIL, t.get(1));
-		assertEquals(NIL, t.get(2));
-		assertEquals(NIL, t.get(3));
+		t.set(state, 1, NIL);
+		t.set(state, 2, NIL);
+		t.set(state, 3, NIL);
+		assertEquals(NIL, t.get(state, 1));
+		assertEquals(NIL, t.get(state, 2));
+		assertEquals(NIL, t.get(state, 3));
 	}
 
 	@Test
 	public void testRemove1() {
 		LuaTable t = new_Table(0, 1);
+		LuaState state = LuaThread.getRunning().luaState;
 
-		t.set("test", valueOf("foo"));
-		t.set("explode", NIL);
-		t.set(42, NIL);
-		t.set(new_Table(), NIL);
-		t.set("test", NIL);
+		t.set(state, "test", valueOf("foo"));
+		t.set(state, "explode", NIL);
+		t.set(state, 42, NIL);
+		t.set(state, new_Table(), NIL);
+		t.set(state, "test", NIL);
 		assertEquals(0, keyCount(t));
 
-		t.set(10, LuaInteger.valueOf(5));
-		t.set(10, NIL);
+		t.set(state, 10, LuaInteger.valueOf(5));
+		t.set(state, 10, NIL);
 		assertEquals(0, keyCount(t));
 	}
 
 	@Test
 	public void testRemove2() {
 		LuaTable t = new_Table(0, 1);
+		LuaState state = LuaThread.getRunning().luaState;
 
-		t.set("test", valueOf("foo"));
-		t.set("string", LuaInteger.valueOf(10));
+
+		t.set(state, "test", valueOf("foo"));
+		t.set(state, "string", LuaInteger.valueOf(10));
 		assertEquals(2, keyCount(t));
 
-		t.set("string", NIL);
-		t.set("three", valueOf(3.14));
+		t.set(state, "string", NIL);
+		t.set(state, "three", valueOf(3.14));
 		assertEquals(2, keyCount(t));
 
-		t.set("test", NIL);
+		t.set(state, "test", NIL);
 		assertEquals(1, keyCount(t));
 
-		t.set(10, LuaInteger.valueOf(5));
+		t.set(state, 10, LuaInteger.valueOf(5));
 		assertEquals(2, keyCount(t));
 
-		t.set(10, NIL);
+		t.set(state, 10, NIL);
 		assertEquals(1, keyCount(t));
 
-		t.set("three", NIL);
+		t.set(state, "three", NIL);
 		assertEquals(0, keyCount(t));
 	}
 
 	@Test
 	public void testInOrderLuaLength() {
 		LuaTable t = new_Table();
+		LuaState state = LuaThread.getRunning().luaState;
 
 		for (int i = 1; i <= 32; ++i) {
-			t.set(i, valueOf("Test Value! " + i));
-			assertEquals(i, t.length());
+			t.set(state, i, valueOf("Test Value! " + i));
+			assertEquals(i, t.length(state));
 			assertEquals(i, t.maxn());
 		}
 	}
@@ -250,12 +260,13 @@ public class TableTest {
 	@Test
 	public void testOutOfOrderLuaLength() {
 		LuaTable t = new_Table();
+		LuaState state = LuaThread.getRunning().luaState;
 
 		for (int j = 8; j < 32; j += 8) {
 			for (int i = j; i > 0; --i) {
-				t.set(i, valueOf("Test Value! " + i));
+				t.set(state, i, valueOf("Test Value! " + i));
 			}
-			assertEquals(j, t.length());
+			assertEquals(j, t.length(state));
 			assertEquals(j, t.maxn());
 		}
 	}
@@ -263,10 +274,11 @@ public class TableTest {
 	@Test
 	public void testStringKeysLuaLength() {
 		LuaTable t = new_Table();
+		LuaState state = LuaThread.getRunning().luaState;
 
 		for (int i = 1; i <= 32; ++i) {
-			t.set("str-" + i, valueOf("String Key Test Value! " + i));
-			assertEquals(0, t.length());
+			t.set(state, "str-" + i, valueOf("String Key Test Value! " + i));
+			assertEquals(0, t.length(state));
 			assertEquals(0, t.maxn());
 		}
 	}
@@ -274,21 +286,23 @@ public class TableTest {
 	@Test
 	public void testMixedKeysLuaLength() {
 		LuaTable t = new_Table();
+		LuaState state = LuaThread.getRunning().luaState;
 
 		for (int i = 1; i <= 32; ++i) {
-			t.set("str-" + i, valueOf("String Key Test Value! " + i));
-			t.set(i, valueOf("Int Key Test Value! " + i));
-			assertEquals(i, t.length());
+			t.set(state, "str-" + i, valueOf("String Key Test Value! " + i));
+			t.set(state, i, valueOf("Int Key Test Value! " + i));
+			assertEquals(i, t.length(state));
 			assertEquals(i, t.maxn());
 		}
 	}
 
 	private static void compareLists(LuaTable t, Vector<LuaString> v) {
 		int n = v.size();
-		assertEquals(v.size(), t.length());
+		LuaState state = LuaThread.getRunning().luaState;
+		assertEquals(v.size(), t.length(state));
 		for (int j = 0; j < n; j++) {
 			Object vj = v.elementAt(j);
-			Object tj = t.get(j + 1).tojstring();
+			Object tj = t.get(state, j + 1).tojstring();
 			vj = ((LuaString) vj).tojstring();
 			assertEquals(vj, tj);
 		}

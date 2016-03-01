@@ -209,21 +209,25 @@ public final class Buffer {
 	/**
 	 * Concatenate this buffer onto a {@link LuaValue}
 	 *
+	 *
+	 * @param state
 	 * @param lhs the left-hand-side value onto which we are concatenating {@code this}
 	 * @return {@link Buffer} for use in call chaining.
 	 */
-	public Buffer concatTo(LuaValue lhs) {
-		return setvalue(lhs.concat(value()));
+	public Buffer concatTo(LuaState state, LuaValue lhs) {
+		return setvalue(lhs.concat(state, value()));
 	}
 
 	/**
 	 * Concatenate this buffer onto a {@link LuaString}
 	 *
+	 *
+	 * @param state
 	 * @param lhs the left-hand-side value onto which we are concatenating {@code this}
 	 * @return {@link Buffer} for use in call chaining.
 	 */
-	public Buffer concatTo(LuaString lhs) {
-		return value != null && !value.isstring() ? setvalue(lhs.concat(value)) : prepend(lhs);
+	public Buffer concatTo(LuaState state, LuaString lhs) {
+		return value != null && !value.isstring() ? setvalue(lhs.concat(state, value)) : prepend(lhs);
 	}
 
 	/**
@@ -231,11 +235,13 @@ public final class Buffer {
 	 * <p>
 	 * The {@link LuaNumber} will be converted to a string before concatenating.
 	 *
+	 *
+	 * @param state
 	 * @param lhs the left-hand-side value onto which we are concatenating {@code this}
 	 * @return {@link Buffer} for use in call chaining.
 	 */
-	public Buffer concatTo(LuaNumber lhs) {
-		return value != null && !value.isstring() ? setvalue(lhs.concat(value)) : prepend(lhs.strvalue());
+	public Buffer concatTo(LuaState state, LuaNumber lhs) {
+		return value != null && !value.isstring() ? setvalue(lhs.concat(state, value)) : prepend(lhs.strvalue());
 	}
 
 	/**

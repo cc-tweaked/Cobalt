@@ -97,12 +97,12 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable() {
+	public LuaValue getMetatable(LuaState state) {
 		return m_metatable;
 	}
 
 	@Override
-	public LuaValue setMetatable(LuaValue metatable) {
+	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
 		this.m_metatable = metatable;
 		return this;
 	}
@@ -121,13 +121,13 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public LuaValue get(LuaValue key) {
-		return m_metatable != null ? gettable(this, key) : NIL;
+	public LuaValue get(LuaState state, LuaValue key) {
+		return m_metatable != null ? gettable(state, this, key) : NIL;
 	}
 
 	@Override
-	public void set(LuaValue key, LuaValue value) {
-		if (m_metatable == null || !settable(this, key, value)) {
+	public void set(LuaState state, LuaValue key, LuaValue value) {
+		if (m_metatable == null || !settable(state, this, key, value)) {
 			throw new LuaError("cannot set " + key + " for userdata");
 		}
 	}
@@ -155,7 +155,7 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	// __eq metatag processing
-	public boolean eqmt(LuaValue val) {
-		return m_metatable != null && val.isuserdata() && LuaValue.eqmtcall(this, m_metatable, val, val.getMetatable());
+	public boolean eqmt(LuaState state, LuaValue val) {
+		return m_metatable != null && val.isuserdata() && LuaValue.eqmtcall(state, this, m_metatable, val, val.getMetatable(state));
 	}
 }

@@ -124,7 +124,7 @@ public class DumpState {
 	}
 
 	void dumpString(LuaString s) throws IOException {
-		final int len = s.len().toint();
+		final int len = s.length();
 		dumpInt(len + 1);
 		s.write(writer, 0, len);
 		writer.write(0);

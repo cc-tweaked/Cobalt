@@ -24,9 +24,7 @@
 package org.luaj.vm2.table;
 
 import org.junit.Test;
-import org.luaj.vm2.LuaString;
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.TwoArgFunction;
 
 import static org.junit.Assert.assertEquals;
@@ -38,6 +36,8 @@ import static org.luaj.vm2.Factory.valueOf;
  * Tests for tables used as lists.
  */
 public class TableHashTest {
+	private LuaState state = LuaThread.getRunning().luaState;
+
 	protected LuaTable new_Table() {
 		return new LuaTable();
 	}
@@ -47,7 +47,7 @@ public class TableHashTest {
 		LuaTable t = new_Table();
 
 		assertEquals(0, t.getHashLength());
-		assertEquals(0, t.length());
+		assertEquals(0, t.length(state));
 		assertEquals(0, t.keyCount());
 
 		String[] keys = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "wxy", "z01",
@@ -56,35 +56,35 @@ public class TableHashTest {
 		for (int i = 0; i < keys.length; ++i) {
 			assertEquals(capacities[i], t.getHashLength());
 			String si = "Test Value! " + i;
-			t.set(keys[i], valueOf(si));
-			assertEquals(0, t.length());
+			t.set(state, keys[i], valueOf(si));
+			assertEquals(0, t.length(state));
 			assertEquals(i + 1, t.keyCount());
 		}
 		assertEquals(capacities[keys.length], t.getHashLength());
 		for (int i = 0; i < keys.length; ++i) {
 			LuaValue vi = LuaString.valueOf("Test Value! " + i);
-			assertEquals(vi, t.get(keys[i]));
-			assertEquals(vi, t.get(LuaString.valueOf(keys[i])));
-			assertEquals(vi, t.rawget(keys[i]));
-			assertEquals(vi, t.rawget(keys[i]));
+			assertEquals(vi, t.get(state, keys[i]));
+			assertEquals(vi, t.get(state, LuaString.valueOf(keys[i])));
+			assertEquals(vi, t.rawget(state, keys[i]));
+			assertEquals(vi, t.rawget(state, keys[i]));
 		}
 
 		// replace with new values
 		for (int i = 0; i < keys.length; ++i) {
-			t.set(keys[i], LuaString.valueOf("Replacement Value! " + i));
-			assertEquals(0, t.length());
+			t.set(state, keys[i], LuaString.valueOf("Replacement Value! " + i));
+			assertEquals(0, t.length(state));
 			assertEquals(keys.length, t.keyCount());
 			assertEquals(capacities[keys.length], t.getHashLength());
 		}
 		for (int i = 0; i < keys.length; ++i) {
 			LuaValue vi = LuaString.valueOf("Replacement Value! " + i);
-			assertEquals(vi, t.get(keys[i]));
+			assertEquals(vi, t.get(state, keys[i]));
 		}
 
 		// remove
 		for (int i = 0; i < keys.length; ++i) {
-			t.set(keys[i], NIL);
-			assertEquals(0, t.length());
+			t.set(state, keys[i], NIL);
+			assertEquals(0, t.length(state));
 			assertEquals(keys.length - i - 1, t.keyCount());
 			if (i < keys.length - 1) {
 				assertEquals(capacities[keys.length], t.getHashLength());
@@ -93,7 +93,7 @@ public class TableHashTest {
 			}
 		}
 		for (String key : keys) {
-			assertEquals(NIL, t.get(key));
+			assertEquals(NIL, t.get(state, key));
 		}
 	}
 
@@ -104,55 +104,55 @@ public class TableHashTest {
 		LuaTable fb = new_Table();
 
 		// set basic values
-		t.set("ppp", valueOf("abc"));
-		t.set(123, valueOf("def"));
-		mt.set(INDEX, fb);
-		fb.set("qqq", valueOf("ghi"));
-		fb.set(456, valueOf("jkl"));
+		t.set(state, "ppp", valueOf("abc"));
+		t.set(state, 123, valueOf("def"));
+		mt.set(state, INDEX, fb);
+		fb.set(state, "qqq", valueOf("ghi"));
+		fb.set(state, 456, valueOf("jkl"));
 
 		// check before setting metatable
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("nil", t.get("qqq").tojstring());
-		assertEquals("nil", t.get(456).tojstring());
-		assertEquals("nil", fb.get("ppp").tojstring());
-		assertEquals("nil", fb.get(123).tojstring());
-		assertEquals("ghi", fb.get("qqq").tojstring());
-		assertEquals("jkl", fb.get(456).tojstring());
-		assertEquals("nil", mt.get("ppp").tojstring());
-		assertEquals("nil", mt.get(123).tojstring());
-		assertEquals("nil", mt.get("qqq").tojstring());
-		assertEquals("nil", mt.get(456).tojstring());
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("nil", t.get(state, "qqq").tojstring());
+		assertEquals("nil", t.get(state, 456).tojstring());
+		assertEquals("nil", fb.get(state, "ppp").tojstring());
+		assertEquals("nil", fb.get(state, 123).tojstring());
+		assertEquals("ghi", fb.get(state, "qqq").tojstring());
+		assertEquals("jkl", fb.get(state, 456).tojstring());
+		assertEquals("nil", mt.get(state, "ppp").tojstring());
+		assertEquals("nil", mt.get(state, 123).tojstring());
+		assertEquals("nil", mt.get(state, "qqq").tojstring());
+		assertEquals("nil", mt.get(state, 456).tojstring());
 
 		// check before setting metatable
-		t.setMetatable(mt);
-		assertEquals(mt, t.getMetatable());
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("ghi", t.get("qqq").tojstring());
-		assertEquals("jkl", t.get(456).tojstring());
-		assertEquals("nil", fb.get("ppp").tojstring());
-		assertEquals("nil", fb.get(123).tojstring());
-		assertEquals("ghi", fb.get("qqq").tojstring());
-		assertEquals("jkl", fb.get(456).tojstring());
-		assertEquals("nil", mt.get("ppp").tojstring());
-		assertEquals("nil", mt.get(123).tojstring());
-		assertEquals("nil", mt.get("qqq").tojstring());
-		assertEquals("nil", mt.get(456).tojstring());
+		t.setMetatable(state, mt);
+		assertEquals(mt, t.getMetatable(state));
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("ghi", t.get(state, "qqq").tojstring());
+		assertEquals("jkl", t.get(state, 456).tojstring());
+		assertEquals("nil", fb.get(state, "ppp").tojstring());
+		assertEquals("nil", fb.get(state, 123).tojstring());
+		assertEquals("ghi", fb.get(state, "qqq").tojstring());
+		assertEquals("jkl", fb.get(state, 456).tojstring());
+		assertEquals("nil", mt.get(state, "ppp").tojstring());
+		assertEquals("nil", mt.get(state, 123).tojstring());
+		assertEquals("nil", mt.get(state, "qqq").tojstring());
+		assertEquals("nil", mt.get(state, 456).tojstring());
 
 		// set metatable to metatable without values
-		t.setMetatable(fb);
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("nil", t.get("qqq").tojstring());
-		assertEquals("nil", t.get(456).tojstring());
+		t.setMetatable(state, fb);
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("nil", t.get(state, "qqq").tojstring());
+		assertEquals("nil", t.get(state, 456).tojstring());
 
 		// set metatable to null
-		t.setMetatable(null);
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("nil", t.get("qqq").tojstring());
-		assertEquals("nil", t.get(456).tojstring());
+		t.setMetatable(state, null);
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("nil", t.get(state, "qqq").tojstring());
+		assertEquals("nil", t.get(state, 456).tojstring());
 	}
 
 	@Test
@@ -162,54 +162,54 @@ public class TableHashTest {
 
 		final TwoArgFunction fb = new TwoArgFunction() {
 			@Override
-			public LuaValue call(LuaValue tbl, LuaValue key) {
+			public LuaValue call(LuaState state, LuaValue tbl, LuaValue key) {
 				assertEquals(tbl, t);
 				return valueOf("from mt: " + key);
 			}
 		};
 
 		// set basic values
-		t.set("ppp", valueOf("abc"));
-		t.set(123, valueOf("def"));
-		mt.set(INDEX, fb);
+		t.set(state, "ppp", valueOf("abc"));
+		t.set(state, 123, valueOf("def"));
+		mt.set(state, INDEX, fb);
 
 		// check before setting metatable
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("nil", t.get("qqq").tojstring());
-		assertEquals("nil", t.get(456).tojstring());
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("nil", t.get(state, "qqq").tojstring());
+		assertEquals("nil", t.get(state, 456).tojstring());
 
 
 		// check before setting metatable
-		t.setMetatable(mt);
-		assertEquals(mt, t.getMetatable());
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("from mt: qqq", t.get("qqq").tojstring());
-		assertEquals("from mt: 456", t.get(456).tojstring());
+		t.setMetatable(state, mt);
+		assertEquals(mt, t.getMetatable(state));
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("from mt: qqq", t.get(state, "qqq").tojstring());
+		assertEquals("from mt: 456", t.get(state, 456).tojstring());
 
 		// use raw set
-		t.rawset("qqq", valueOf("alt-qqq"));
-		t.rawset(456, valueOf("alt-456"));
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("alt-qqq", t.get("qqq").tojstring());
-		assertEquals("alt-456", t.get(456).tojstring());
+		t.rawset(state, "qqq", valueOf("alt-qqq"));
+		t.rawset(state, 456, valueOf("alt-456"));
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("alt-qqq", t.get(state, "qqq").tojstring());
+		assertEquals("alt-456", t.get(state, 456).tojstring());
 
 		// remove using raw set
-		t.rawset("qqq", NIL);
-		t.rawset(456, NIL);
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("from mt: qqq", t.get("qqq").tojstring());
-		assertEquals("from mt: 456", t.get(456).tojstring());
+		t.rawset(state, "qqq", NIL);
+		t.rawset(state, 456, NIL);
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("from mt: qqq", t.get(state, "qqq").tojstring());
+		assertEquals("from mt: 456", t.get(state, 456).tojstring());
 
 		// set metatable to null
-		t.setMetatable(null);
-		assertEquals("abc", t.get("ppp").tojstring());
-		assertEquals("def", t.get(123).tojstring());
-		assertEquals("nil", t.get("qqq").tojstring());
-		assertEquals("nil", t.get(456).tojstring());
+		t.setMetatable(state, null);
+		assertEquals("abc", t.get(state, "ppp").tojstring());
+		assertEquals("def", t.get(state, 123).tojstring());
+		assertEquals("nil", t.get(state, "qqq").tojstring());
+		assertEquals("nil", t.get(state, 456).tojstring());
 	}
 
 	@Test
@@ -218,11 +218,11 @@ public class TableHashTest {
 		assertEquals(NIL, t.next(NIL));
 
 		// insert array elements
-		t.set(1, valueOf("one"));
+		t.set(state, 1, valueOf("one"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(NIL, t.next(ONE));
-		t.set(2, valueOf("two"));
+		t.set(state, 2, valueOf("two"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(valueOf(2), t.next(ONE).arg(1));
@@ -230,7 +230,7 @@ public class TableHashTest {
 		assertEquals(NIL, t.next(valueOf(2)));
 
 		// insert hash elements
-		t.set("aa", valueOf("aaa"));
+		t.set(state, "aa", valueOf("aaa"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(valueOf(2), t.next(ONE).arg(1));
@@ -238,7 +238,7 @@ public class TableHashTest {
 		assertEquals(valueOf("aa"), t.next(valueOf(2)).arg(1));
 		assertEquals(valueOf("aaa"), t.next(valueOf(2)).arg(2));
 		assertEquals(NIL, t.next(valueOf("aa")));
-		t.set("bb", valueOf("bbb"));
+		t.set(state, "bb", valueOf("bbb"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(valueOf(2), t.next(ONE).arg(1));

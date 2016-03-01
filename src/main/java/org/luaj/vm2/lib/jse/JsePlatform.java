@@ -23,6 +23,7 @@
  */
 package org.luaj.vm2.lib.jse;
 
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.LuaValue;
@@ -34,7 +35,7 @@ import org.luaj.vm2.lib.*;
  * how globals tables are initialized for the JSE platform.
  * <p>
  * It is used to allocate either a set of standard globals using
- * {@link #standardGlobals()} or debug globals using {@link #debugGlobals()}
+ * {@link #standardGlobals(LuaState)} or debug globals using {@link #debugGlobals(LuaState)}
  * <p>
  * A simple example of initializing globals and using them from Java is:
  * <pre> {@code
@@ -77,20 +78,21 @@ public class JsePlatform {
 	/**
 	 * Create a standard set of globals for JSE including all the libraries.
 	 *
+	 * @param state
 	 * @return Table of globals initialized with the standard JSE libraries
-	 * @see #debugGlobals()
+	 * @see #debugGlobals(LuaState)
 	 * @see JsePlatform
 	 */
-	public static LuaTable standardGlobals() {
+	public static LuaTable standardGlobals(LuaState state) {
 		LuaTable _G = new LuaTable();
-		_G.load(new BaseLib());
-		_G.load(new PackageLib());
-		_G.load(new TableLib());
-		_G.load(new StringLib());
-		_G.load(new CoroutineLib());
-		_G.load(new MathLib());
-		_G.load(new JseIoLib());
-		_G.load(new JseOsLib());
+		_G.load(state, new BaseLib());
+		_G.load(state, new PackageLib());
+		_G.load(state, new TableLib());
+		_G.load(state, new StringLib());
+		_G.load(state, new CoroutineLib());
+		_G.load(state, new MathLib());
+		_G.load(state, new JseIoLib());
+		_G.load(state, new JseOsLib());
 		LuaThread.setGlobals(_G);
 		LuaC.install();
 		return _G;
@@ -99,14 +101,15 @@ public class JsePlatform {
 	/**
 	 * Create standard globals including the {@link DebugLib} library.
 	 *
+	 * @param state
 	 * @return Table of globals initialized with the standard JSE and debug libraries
-	 * @see #standardGlobals()
+	 * @see #standardGlobals(LuaState)
 	 * @see JsePlatform
 	 * @see DebugLib
 	 */
-	public static LuaTable debugGlobals() {
-		LuaTable _G = standardGlobals();
-		_G.load(new DebugLib());
+	public static LuaTable debugGlobals(LuaState state) {
+		LuaTable _G = standardGlobals(state);
+		_G.load(state, new DebugLib());
 		return _G;
 	}
 }

@@ -1,6 +1,7 @@
 package org.luaj.vm2.require;
 
 import org.luaj.vm2.LuaError;
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.ZeroArgFunction;
 
@@ -14,7 +15,7 @@ public class RequireSampleLoadLuaError extends ZeroArgFunction {
 	}
 
 	@Override
-	public LuaValue call() {
+	public LuaValue call(LuaState state) {
 		throw new LuaError("sample-load-lua-error");
 	}
 }

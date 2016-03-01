@@ -41,12 +41,6 @@ import static org.luaj.vm2.Constants.TFUNCTION;
  * @see LuaClosure
  */
 public abstract class LuaFunction extends LuaValue {
-
-	/**
-	 * Shared static metatable for all functions and closures.
-	 */
-	public static LuaValue s_metatable;
-
 	protected LuaValue env;
 
 	public LuaFunction() {
@@ -83,8 +77,8 @@ public abstract class LuaFunction extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable() {
-		return s_metatable;
+	public LuaValue getMetatable(LuaState state) {
+		return state.functionMetatable;
 	}
 
 	@Override

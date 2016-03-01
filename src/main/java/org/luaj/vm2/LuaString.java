@@ -62,12 +62,6 @@ import static org.luaj.vm2.Constants.TSTRING;
  * @see Factory#valueOf(byte[])
  */
 public class LuaString extends LuaValue {
-
-	/**
-	 * The singleton instance representing lua {@code true}
-	 */
-	public static LuaValue s_metatable;
-
 	/**
 	 * The bytes for the string
 	 */
@@ -184,8 +178,8 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable() {
-		return s_metatable;
+	public LuaValue getMetatable(LuaState state) {
+		return state.stringMetatable;
 	}
 
 	@Override
@@ -205,35 +199,35 @@ public class LuaString extends LuaValue {
 
 	// get is delegated to the string library
 	@Override
-	public LuaValue get(LuaValue key) {
-		return s_metatable != null ? gettable(this, key) : StringLib.instance.get(key);
+	public LuaValue get(LuaState state, LuaValue key) {
+		return state.stringMetatable != null ? gettable(state, this, key) : StringLib.instance.get(state, key);
 	}
 
 	// unary operators
 	@Override
-	public LuaValue neg() {
+	public LuaValue neg(LuaState state) {
 		double d = scannumber(10);
-		return Double.isNaN(d) ? super.neg() : Factory.valueOf(-d);
+		return Double.isNaN(d) ? super.neg(state) : Factory.valueOf(-d);
 	}
 
 	// concatenation
 	@Override
-	public LuaValue concat(LuaValue rhs) {
-		return rhs.concatTo(this);
+	public LuaValue concat(LuaState state, LuaValue rhs) {
+		return rhs.concatTo(state, this);
 	}
 
 	@Override
-	public Buffer concat(Buffer rhs) {
-		return rhs.concatTo(this);
+	public Buffer concat(LuaState state, Buffer rhs) {
+		return rhs.concatTo(state, this);
 	}
 
 	@Override
-	public LuaValue concatTo(LuaNumber lhs) {
-		return concatTo(lhs.strvalue());
+	public LuaValue concatTo(LuaState state, LuaNumber lhs) {
+		return concatTo(state, lhs.strvalue());
 	}
 
 	@Override
-	public LuaValue concatTo(LuaString lhs) {
+	public LuaValue concatTo(LuaState state, LuaString lhs) {
 		byte[] b = new byte[lhs.m_length + this.m_length];
 		System.arraycopy(lhs.m_bytes, lhs.m_offset, b, 0, lhs.m_length);
 		System.arraycopy(this.m_bytes, this.m_offset, b, lhs.m_length, this.m_length);
@@ -484,11 +478,15 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public LuaValue len() {
+	public LuaValue len(LuaState state) {
 		return LuaInteger.valueOf(m_length);
 	}
 
 	@Override
+	public int length(LuaState state) {
+		return m_length;
+	}
+
 	public int length() {
 		return m_length;
 	}
@@ -582,7 +580,7 @@ public class LuaString extends LuaValue {
 		final int limit = m_offset + m_length - slen;
 		for (int i = m_offset + start; i <= limit; ++i) {
 			if (equals(m_bytes, i, s.m_bytes, s.m_offset, slen)) {
-				return i;
+				return i - m_offset;
 			}
 		}
 		return -1;

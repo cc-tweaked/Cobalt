@@ -23,6 +23,7 @@
  */
 package org.luaj.vm2.lib;
 
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
@@ -34,9 +35,9 @@ import static org.luaj.vm2.Factory.varargsOf;
  * Abstract base class for Java function implementations that takes varaiable arguments and
  * returns multiple return values.
  * <p>
- * Subclasses need only implement {@link LuaValue#invoke(Varargs)} to complete this class,
+ * Subclasses need only implement {@link LuaValue#invoke(LuaState, Varargs)} to complete this class,
  * simplifying development.
- * All other uses of {@link #call(LuaValue)}, {@link #invoke()},etc,
+ * All other uses of {@link LuaValue#call(LuaState, LuaValue)}, {@link LuaValue#invoke(LuaState)},etc,
  * are routed through this method by this class,
  * converting arguments to {@link Varargs} and
  * dropping or extending return values with {@code nil} values as required.
@@ -46,7 +47,7 @@ import static org.luaj.vm2.Factory.varargsOf;
  * <p>
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
- * @see #invoke(Varargs)
+ * @see LuaValue#invoke(LuaState, Varargs)
  * @see LibFunction
  * @see ZeroArgFunction
  * @see OneArgFunction
@@ -62,23 +63,23 @@ public abstract class VarArgFunction extends LibFunction {
 	}
 
 	@Override
-	public LuaValue call() {
-		return invoke(NONE).arg1();
+	public LuaValue call(LuaState state) {
+		return invoke(state, NONE).arg1();
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg) {
-		return invoke(arg).arg1();
+	public LuaValue call(LuaState state, LuaValue arg) {
+		return invoke(state, arg).arg1();
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg1, LuaValue arg2) {
-		return invoke(varargsOf(arg1, arg2)).arg1();
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+		return invoke(state, varargsOf(arg1, arg2)).arg1();
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-		return invoke(varargsOf(arg1, arg2, arg3)).arg1();
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+		return invoke(state, varargsOf(arg1, arg2, arg3)).arg1();
 	}
 
 	/**
@@ -88,13 +89,14 @@ public abstract class VarArgFunction extends LibFunction {
 	 * - function needs to be used as a module
 	 * - function has a possibility of returning a TailcallVarargs
 	 *
+	 * @param state
 	 * @param args the arguments to the function call.
 	 */
 	@Override
-	public Varargs invoke(Varargs args) {
+	public Varargs invoke(LuaState state, Varargs args) {
 		LuaThread.CallStack cs = LuaThread.onCall(this);
 		try {
-			return this.onInvoke(args).eval();
+			return this.onInvoke(state, args).eval(state);
 		} finally {
 			cs.onReturn();
 		}
@@ -105,11 +107,12 @@ public abstract class VarArgFunction extends LibFunction {
 	 * that can participate in setfenv, and behaves as expected
 	 * when returning TailcallVarargs.
 	 *
+	 * @param state
 	 * @param args the arguments to the function call.
 	 */
 	@Override
-	public Varargs onInvoke(Varargs args) {
-		return invoke(args);
+	public Varargs onInvoke(LuaState state, Varargs args) {
+		return invoke(state, args);
 	}
 
 }

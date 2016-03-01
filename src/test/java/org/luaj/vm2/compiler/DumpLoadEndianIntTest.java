@@ -25,7 +25,8 @@ public class DumpLoadEndianIntTest {
 
 	@Before
 	public void setup() throws Exception {
-		_G = JsePlatform.standardGlobals();
+		LuaState state = LuaThread.getRunning().luaState;
+		_G = JsePlatform.standardGlobals(state);
 		DumpState.ALLOW_INTEGER_CASTING = false;
 	}
 
@@ -87,7 +88,8 @@ public class DumpLoadEndianIntTest {
 
 			// double check script result before dumping
 			LuaFunction f = new LuaClosure(p, _G);
-			LuaValue r = f.call();
+			LuaState state = LuaThread.getRunning().luaState;
+			LuaValue r = f.call(state);
 			String actual = r.tojstring();
 			assertEquals(expectedPriorDump, actual);
 
@@ -110,7 +112,7 @@ public class DumpLoadEndianIntTest {
 			// load again using compiler
 			is = new ByteArrayInputStream(dumped);
 			f = LoadState.load(is, "dumped", _G);
-			r = f.call();
+			r = f.call(state);
 			actual = r.tojstring();
 			assertEquals(expectedPostDump, actual);
 

@@ -4,6 +4,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.luaj.vm2.LuaState;
+import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.util.Arrays;
@@ -19,7 +21,8 @@ public class CompilerUnitTests {
 
 	@Before
 	public void setup() throws Exception {
-		JsePlatform.standardGlobals();
+		LuaState state = LuaThread.getRunning().luaState;
+		JsePlatform.standardGlobals(state);
 	}
 
 	@Test

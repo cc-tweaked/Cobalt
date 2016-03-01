@@ -23,10 +23,7 @@
  */
 package org.luaj.vm2.lib;
 
-import org.luaj.vm2.LuaDouble;
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.util.Random;
@@ -48,11 +45,11 @@ public class MathLib extends OneArgFunction {
 	private Random random;
 
 	@Override
-	public LuaValue call(LuaValue arg) {
+	public LuaValue call(LuaState state, LuaValue arg) {
 		LuaTable t = new LuaTable(0, 30);
-		t.set("pi", valueOf(Math.PI));
-		t.set("huge", LuaDouble.POSINF);
-		bind(t, MathLib1.class, new String[]{
+		t.set(state, "pi", valueOf(Math.PI));
+		t.set(state, "huge", LuaDouble.POSINF);
+		bind(state, t, MathLib1.class, new String[]{
 			"abs", "ceil", "cos", "deg",
 			"exp", "floor", "rad", "sin",
 			"sqrt", "tan",
@@ -60,22 +57,22 @@ public class MathLib extends OneArgFunction {
 			"exp", "log", "log10", "sinh",
 			"tanh"
 		});
-		bind(t, MathLib2.class, new String[]{
+		bind(state, t, MathLib2.class, new String[]{
 			"fmod", "ldexp", "pow", "atan2"
 		});
-		bind(t, MathLibV.class, new String[]{
+		bind(state, t, MathLibV.class, new String[]{
 			"frexp", "max", "min", "modf",
 			"randomseed", "random",});
-		((MathLibV) t.get("randomseed")).mathlib = this;
-		((MathLibV) t.get("random")).mathlib = this;
-		env.set("math", t);
-		PackageLib.instance.LOADED.set("math", t);
+		((MathLibV) t.get(state, "randomseed")).mathlib = this;
+		((MathLibV) t.get(state, "random")).mathlib = this;
+		env.set(state, "math", t);
+		PackageLib.instance.LOADED.set(state, "math", t);
 		return t;
 	}
 
 	private static final class MathLib1 extends OneArgFunction {
 		@Override
-		public LuaValue call(LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) {
 			switch (opcode) {
 				case 0:
 					return valueOf(Math.abs(arg.checkdouble()));
@@ -122,7 +119,7 @@ public class MathLib extends OneArgFunction {
 
 	private static final class MathLib2 extends TwoArgFunction {
 		@Override
-		public LuaValue call(LuaValue arg1, LuaValue arg2) {
+		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
 				case 0: { // fmod
 					double x = arg1.checkdouble();
@@ -150,7 +147,7 @@ public class MathLib extends OneArgFunction {
 		private MathLib mathlib;
 
 		@Override
-		public Varargs invoke(Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) {
 			switch (opcode) {
 				case 0: { // frexp
 					double x = args.checkdouble(1);

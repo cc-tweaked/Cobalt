@@ -44,7 +44,8 @@ public class ScriptDrivenHelpers implements ResourceFinder {
 	}
 
 	public void setup() {
-		globals = JsePlatform.debugGlobals();
+		LuaState state = LuaThread.getRunning().luaState;
+		globals = JsePlatform.debugGlobals(state);
 
 		BaseLib.FINDER = this;
 	}
@@ -68,7 +69,8 @@ public class ScriptDrivenHelpers implements ResourceFinder {
 
 		// Run the script
 		try {
-			loadScript(testName).call();
+			LuaState state = LuaThread.getRunning().luaState;
+			loadScript(testName).call(state);
 
 			ps.flush();
 			String actualOutput = new String(output.toByteArray());

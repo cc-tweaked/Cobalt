@@ -10,58 +10,58 @@ public final class OperationHelper {
 	private OperationHelper() {
 	}
 
-	public static LuaValue add(LuaValue left, LuaValue right) {
+	public static LuaValue add(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
 			return valueOf(left.checkarith() + right.checkarith());
 		}
 
-		return left.arithmt(ADD, right);
+		return left.arithmt(state, ADD, right);
 	}
 
-	public static LuaValue sub(LuaValue left, LuaValue right) {
+	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
 			return valueOf(left.checkarith() - right.checkarith());
 		}
 
-		return left.arithmt(SUB, right);
+		return left.arithmt(state, SUB, right);
 	}
 
-	public static LuaValue mul(LuaValue left, LuaValue right) {
+	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
 			return valueOf(left.checkarith() * right.checkarith());
 		}
 
-		return left.arithmt(MUL, right);
+		return left.arithmt(state, MUL, right);
 	}
 
-	public static LuaValue div(LuaValue left, LuaValue right) {
+	public static LuaValue div(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
 			return valueOf(div(left.checkarith(), right.checkarith()));
 		}
 
-		return left.arithmt(DIV, right);
+		return left.arithmt(state, DIV, right);
 	}
 
-	public static LuaValue mod(LuaValue left, LuaValue right) {
+	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
 			return valueOf(mod(left.checkarith(), right.checkarith()));
 		}
 
-		return left.arithmt(MOD, right);
+		return left.arithmt(state, MOD, right);
 	}
 
-	public static LuaValue pow(LuaValue left, LuaValue right) {
+	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
 			return valueOf(Math.pow(left.checkarith(), right.checkarith()));
 		}
 
-		return left.arithmt(POW, right);
+		return left.arithmt(state, POW, right);
 	}
 
 	/**
@@ -87,7 +87,7 @@ public final class OperationHelper {
 		return rhs != 0 ? lhs - rhs * Math.floor(lhs / rhs) : Double.NaN;
 	}
 
-	public static boolean lt(LuaValue left, LuaValue right) {
+	public static boolean lt(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
 			left.compareError(right);
@@ -99,11 +99,11 @@ public final class OperationHelper {
 			case TSTRING:
 				return left.strcmp(right) < 0;
 			default:
-				return left.comparemt(LT, right).toboolean();
+				return left.comparemt(state, LT, right).toboolean();
 		}
 	}
 
-	public static LuaValue ltValue(LuaValue left, LuaValue right) {
+	public static LuaValue ltValue(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
 			left.compareError(right);
@@ -115,11 +115,11 @@ public final class OperationHelper {
 			case TSTRING:
 				return left.strcmp(right) < 0 ? TRUE : FALSE;
 			default:
-				return left.comparemt(LT, right);
+				return left.comparemt(state, LT, right);
 		}
 	}
 
-	public static boolean le(LuaValue left, LuaValue right) {
+	public static boolean le(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
 			left.compareError(right);
@@ -131,11 +131,11 @@ public final class OperationHelper {
 			case TSTRING:
 				return left.strcmp(right) <= 0;
 			default:
-				return left.comparemt(LE, right).toboolean();
+				return left.comparemt(state, LE, right).toboolean();
 		}
 	}
 
-	public static LuaValue leValue(LuaValue left, LuaValue right) {
+	public static LuaValue leValue(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
 			left.compareError(right);
@@ -147,11 +147,11 @@ public final class OperationHelper {
 			case TSTRING:
 				return left.strcmp(right) <= 0 ? TRUE : FALSE;
 			default:
-				return left.comparemt(LE, right);
+				return left.comparemt(state, LE, right);
 		}
 	}
 
-	public static boolean eq(LuaValue left, LuaValue right) {
+	public static boolean eq(LuaState state, LuaValue left, LuaValue right) {
 		if (left == right) return true;
 
 		int tLeft = left.type();
@@ -170,11 +170,11 @@ public final class OperationHelper {
 			case TTABLE: {
 				if (left.raweq(right)) return true;
 
-				LuaValue leftMeta = left.getMetatable();
+				LuaValue leftMeta = left.getMetatable(state);
 				if (leftMeta == null) return false;
 
-				LuaValue rightMeta = right.getMetatable();
-				return rightMeta != null && LuaValue.eqmtcall(left, leftMeta, right, rightMeta);
+				LuaValue rightMeta = right.getMetatable(state);
+				return rightMeta != null && LuaValue.eqmtcall(state, left, leftMeta, right, rightMeta);
 			}
 			default:
 				return left.raweq(right);

@@ -87,8 +87,8 @@ public abstract class IoLib extends OneArgFunction {
 
 		// delegate method access to file methods table
 		@Override
-		public LuaValue get(LuaValue key) {
-			return filemethods.get(key);
+		public LuaValue get(LuaState state, LuaValue key) {
+			return filemethods.get(state, key);
 		}
 
 		// essentially a userdata instance
@@ -220,36 +220,36 @@ public abstract class IoLib extends OneArgFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaValue arg) {
+	public LuaValue call(LuaState state, LuaValue arg) {
 
 		// io lib functions
 		LuaTable t = new LuaTable();
-		bind(t, IoLibV.class, IO_NAMES);
+		bind(state, t, IoLibV.class, IO_NAMES);
 
 		// create file methods table
 		filemethods = new LuaTable();
-		bind(filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
+		bind(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
 
 		// set up file metatable
 		LuaTable mt = new LuaTable();
-		bind(mt, IoLibV.class, new String[]{"__index"}, IO_INDEX);
-		t.setMetatable(mt);
+		bind(state, mt, IoLibV.class, new String[]{"__index"}, IO_INDEX);
+		t.setMetatable(state, mt);
 
 		// all functions link to library instance
-		setLibInstance(t);
-		setLibInstance(filemethods);
-		setLibInstance(mt);
+		setLibInstance(state, t);
+		setLibInstance(state, filemethods);
+		setLibInstance(state, mt);
 
 		// return the table
-		env.set("io", t);
-		PackageLib.instance.LOADED.set("io", t);
+		env.set(state, "io", t);
+		PackageLib.instance.LOADED.set(state, "io", t);
 		return t;
 	}
 
-	private void setLibInstance(LuaTable t) {
+	private void setLibInstance(LuaState state, LuaTable t) {
 		LuaValue[] k = t.keys();
 		for (LuaValue aK : k) {
-			((IoLibV) t.get(aK)).iolib = this;
+			((IoLibV) t.get(state, aK)).iolib = this;
 		}
 	}
 
@@ -268,7 +268,7 @@ public abstract class IoLib extends OneArgFunction {
 		}
 
 		@Override
-		public Varargs invoke(Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) {
 			try {
 				switch (opcode) {
 					case IO_FLUSH:

@@ -2,7 +2,9 @@ package org.luaj.vm2.vm;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaString;
+import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.io.IOException;
@@ -13,9 +15,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class StringTest {
+	private LuaState state;
+
 	@Before
 	public void setup() throws Exception {
-		JsePlatform.standardGlobals();
+		state = LuaThread.getRunning().luaState;
+		JsePlatform.standardGlobals(state);
 	}
 
 	@Test
@@ -42,7 +47,7 @@ public class StringTest {
 		assertEquals('e', is.read());
 
 		LuaString substr = str.substring(1, 4);
-		assertEquals(3, substr.length());
+		assertEquals(3, substr.length(state));
 
 		is.close();
 		is = substr.toInputStream();

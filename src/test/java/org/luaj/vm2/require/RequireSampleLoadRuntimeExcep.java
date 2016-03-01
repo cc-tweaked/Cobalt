@@ -1,5 +1,6 @@
 package org.luaj.vm2.require;
 
+import org.luaj.vm2.LuaState;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.ZeroArgFunction;
 
@@ -12,7 +13,7 @@ public class RequireSampleLoadRuntimeExcep extends ZeroArgFunction {
 	}
 
 	@Override
-	public LuaValue call() {
+	public LuaValue call(LuaState state) {
 		throw new RuntimeException("sample-load-runtime-exception");
 	}
 }

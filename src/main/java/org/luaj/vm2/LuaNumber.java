@@ -37,11 +37,6 @@ import static org.luaj.vm2.Constants.TNUMBER;
  */
 public abstract class LuaNumber extends LuaValue {
 
-	/**
-	 * Shared static metatable for all number values represented in lua.
-	 */
-	public static LuaValue s_metatable;
-
 	@Override
 	public int type() {
 		return TNUMBER;
@@ -83,28 +78,28 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable() {
-		return s_metatable;
+	public LuaValue getMetatable(LuaState state) {
+		return state.numberMetatable;
 	}
 
 	@Override
-	public LuaValue concat(LuaValue rhs) {
-		return rhs.concatTo(this);
+	public LuaValue concat(LuaState state, LuaValue rhs) {
+		return rhs.concatTo(state, this);
 	}
 
 	@Override
-	public Buffer concat(Buffer rhs) {
-		return rhs.concatTo(this);
+	public Buffer concat(LuaState state, Buffer rhs) {
+		return rhs.concatTo(state, this);
 	}
 
 	@Override
-	public LuaValue concatTo(LuaNumber lhs) {
-		return strvalue().concatTo(lhs.strvalue());
+	public LuaValue concatTo(LuaState state, LuaNumber lhs) {
+		return strvalue().concatTo(state, lhs.strvalue());
 	}
 
 	@Override
-	public LuaValue concatTo(LuaString lhs) {
-		return strvalue().concatTo(lhs);
+	public LuaValue concatTo(LuaState state, LuaString lhs) {
+		return strvalue().concatTo(state, lhs);
 	}
 
 	public double checkarith() {

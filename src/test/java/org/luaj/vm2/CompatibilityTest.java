@@ -75,17 +75,19 @@ public class CompatibilityTest {
 	@Before
 	public void setup() {
 		helpers.setup();
-		savedStringMetatable = LuaString.s_metatable;
+		LuaState state = LuaThread.getRunning().luaState;
+		savedStringMetatable = state.stringMetatable;
 	}
 
 	@After
 	public void tearDown() {
-		LuaNil.s_metatable = null;
-		LuaBoolean.s_metatable = null;
-		LuaNumber.s_metatable = null;
-		LuaFunction.s_metatable = null;
-		LuaThread.s_metatable = null;
-		LuaString.s_metatable = savedStringMetatable;
+		LuaState state = LuaThread.getRunning().luaState;
+		state.nilMetatable = null;
+		state.booleanMetatable = null;
+		state.numberMetatable = null;
+		state.functionMetatable = null;
+		state.threadMetatable = null;
+		state.stringMetatable = savedStringMetatable;
 	}
 
 	@Test
