@@ -1,0 +1,2580 @@
+/**
+ * ****************************************************************************
+ * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * <p>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p>
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * <p>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * ****************************************************************************
+ */
+package org.squiddev.cobalt;
+
+import org.squiddev.cobalt.lib.jse.JsePlatform;
+
+import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.Factory.varargsOf;
+
+/**
+ * Base class for all concrete lua type values.
+ * <p>
+ * Establishes base implementations for all the operations on lua types.
+ * This allows Java clients to deal essentially with one type for all Java values, namely {@link LuaValue}.
+ * <p>
+ * Constructors are provided as static methods for common Java types, such as
+ * {@link Factory#valueOf(int)} or {@link Factory#valueOf(String)}
+ * to allow for instance pooling.
+ * <p>
+ * Constants are defined for the lua values
+ * {@link Constants#NIL}, {@link Constants#TRUE}, and {@link Constants#FALSE}.
+ * A constant {@link Constants#NONE} is defined which is a {@link Varargs} list having no values.
+ * <p>
+ * Operations are performed on values directly via their Java methods.
+ * For example, the following code divides two numbers:
+ * <pre> {@code
+ * LuaValue a = LuaValue.valueOf( 5 );
+ * LuaValue b = LuaValue.valueOf( 4 );
+ * LuaValue c = a.div(b);
+ * } </pre>
+ * Note that in this example, c will be a {@link LuaDouble}, but would be a {@link LuaInteger}
+ * if the value of a were changed to 8, say.
+ * In general the value of c in practice will vary depending on both the types and values of a and b
+ * as well as any metatable/metatag processing that occurs.
+ * <p>
+ * Field access and function calls are similar, with common overloads to simplify Java usage:
+ * <pre> {@code
+ * LuaValue globals = JsePlatform.standardGlobals();
+ * LuaValue sqrt = globals.get("math").get("sqrt");
+ * LuaValue print = globals.get("print");
+ * LuaValue d = sqrt.call( a );
+ * print.call( LuaValue.valueOf("sqrt(5):"), a );
+ * } </pre>
+ * <p>
+ * To supply variable arguments or get multiple return values, use
+ * {@link #invoke(LuaState, Varargs)} or {@link #invokeMethod(LuaState, LuaValue, Varargs)} methods:
+ * <pre> {@code
+ * LuaValue modf = globals.get("math").get("modf");
+ * Varargs r = modf.invoke( d );
+ * print.call( r.arg(1), r.arg(2) );
+ * } </pre>
+ * <p>
+ * To load and run a script, {@link LoadState} is used:
+ * <pre> {@code
+ * LoadState.load(new FileInputStream("main.lua"), "main.lua", globals ).call();
+ * } </pre>
+ * <p>
+ * although {@code require} could also be used:
+ * <pre> {@code
+ * globals.get("require").call(LuaValue.valueOf("main"));
+ * } </pre>
+ * For this to work the file must be in the current directory, or in the class path,
+ * depending on the platform.
+ * See {@link JsePlatform} for details.
+ * <p>
+ * In general a {@link LuaError} may be thrown on any operation when the
+ * types supplied to any operation are illegal from a lua perspective.
+ * Examples could be attempting to concatenate a NIL value, or attempting arithmetic
+ * on values that are not number.
+ *
+ * @see JsePlatform
+ * @see LoadState
+ * @see Varargs
+ */
+public abstract class LuaValue extends Varargs {
+	//region Type checking
+
+	/**
+	 * Get the enumeration value for the type of this value.
+	 *
+	 * @return value for this type, one of
+	 * {@link Constants#TNIL},
+	 * {@link Constants#TBOOLEAN},
+	 * {@link Constants#TNUMBER},
+	 * {@link Constants#TSTRING},
+	 * {@link Constants#TTABLE},
+	 * {@link Constants#TFUNCTION},
+	 * {@link Constants#TUSERDATA},
+	 * {@link Constants#TTHREAD}
+	 * @see #typeName()
+	 */
+	public abstract int type();
+
+	/**
+	 * Get the String name of the type of this value.
+	 * <p>
+	 *
+	 * @return name from type name list {@link Constants#TYPE_NAMES}
+	 * corresponding to the type of this value:
+	 * "nil", "boolean", "number", "string",
+	 * "table", "function", "userdata", "thread"
+	 * @see #type()
+	 */
+	public abstract String typeName();
+
+	/**
+	 * Check if {@code this} is a {@code boolean}
+	 *
+	 * @return true if this is a {@code boolean}, otherwise false
+	 * @see #isboolean()
+	 * @see #toboolean()
+	 * @see #checkboolean()
+	 * @see #optboolean(boolean)
+	 * @see Constants#TBOOLEAN
+	 */
+	public boolean isboolean() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code function} that is a closure,
+	 * meaning interprets lua bytecode for its execution
+	 *
+	 * @return true if this is a {@code closure}, otherwise false
+	 * @see #isfunction()
+	 * @see #checkclosure()
+	 * @see #optclosure(LuaClosure)
+	 * @see Constants#TFUNCTION
+	 */
+	public boolean isclosure() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code function}
+	 *
+	 * @return true if this is a {@code function}, otherwise false
+	 * @see #isclosure()
+	 * @see #checkfunction()
+	 * @see #optfunction(LuaFunction)
+	 * @see Constants#TFUNCTION
+	 */
+	public boolean isfunction() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code number} and is representable by java int
+	 * without rounding or truncation
+	 *
+	 * @return true if this is a {@code number}
+	 * meaning derives from {@link LuaNumber}
+	 * or derives from {@link LuaString} and is convertible to a number,
+	 * and can be represented by int,
+	 * otherwise false
+	 * @see #isinttype()
+	 * @see #islong()
+	 * @see #tonumber()
+	 * @see #checkint()
+	 * @see #optint(int)
+	 * @see Constants#TNUMBER
+	 */
+	public boolean isint() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@link LuaInteger}
+	 * <p>
+	 * No attempt to convert from string will be made by this call.
+	 *
+	 * @return true if this is a {@code LuaInteger},
+	 * otherwise false
+	 * @see #isint()
+	 * @see #isnumber()
+	 * @see #tonumber()
+	 * @see Constants#TNUMBER
+	 */
+	public boolean isinttype() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code number} and is representable by java long
+	 * without rounding or truncation
+	 *
+	 * @return true if this is a {@code number}
+	 * meaning derives from {@link LuaNumber}
+	 * or derives from {@link LuaString} and is convertible to a number,
+	 * and can be represented by long,
+	 * otherwise false
+	 * @see #tonumber()
+	 * @see #checklong()
+	 * @see #optlong(long)
+	 * @see Constants#TNUMBER
+	 */
+	public boolean islong() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is {@code nil}
+	 *
+	 * @return true if this is {@code nil}, otherwise false
+	 * @see Constants#NIL
+	 * @see Constants#NONE
+	 * @see #checknotnil()
+	 * @see #optvalue(LuaValue)
+	 * @see Varargs#isnoneornil(int)
+	 * @see Constants#TNIL
+	 * @see Constants#TNONE
+	 */
+	public boolean isnil() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code number}
+	 *
+	 * @return true if this is a {@code number},
+	 * meaning derives from {@link LuaNumber}
+	 * or derives from {@link LuaString} and is convertible to a number,
+	 * otherwise false
+	 * @see #tonumber()
+	 * @see #checknumber()
+	 * @see #optnumber(LuaNumber)
+	 * @see Constants#TNUMBER
+	 */
+	public boolean isnumber() {
+		return false;
+	} // may convert from string
+
+	/**
+	 * Check if {@code this} is a {@code string}
+	 *
+	 * @return true if this is a {@code string},
+	 * meaning derives from {@link LuaString} or {@link LuaNumber},
+	 * otherwise false
+	 * @see #tostring()
+	 * @see #checkstring()
+	 * @see #optstring(LuaString)
+	 * @see Constants#TSTRING
+	 */
+	public boolean isstring() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code thread}
+	 *
+	 * @return true if this is a {@code thread}, otherwise false
+	 * @see #checkthread()
+	 * @see #optthread(LuaThread)
+	 * @see Constants#TTHREAD
+	 */
+	public boolean isthread() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code table}
+	 *
+	 * @return true if this is a {@code table}, otherwise false
+	 * @see #checktable()
+	 * @see #opttable(LuaTable)
+	 * @see Constants#TTABLE
+	 */
+	public boolean istable() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code userdata}
+	 *
+	 * @return true if this is a {@code userdata}, otherwise false
+	 * @see #isuserdata(Class)
+	 * @see #touserdata()
+	 * @see #checkuserdata()
+	 * @see #optuserdata(Object)
+	 * @see Constants#TUSERDATA
+	 */
+	public boolean isuserdata() {
+		return false;
+	}
+
+	/**
+	 * Check if {@code this} is a {@code userdata} of type {@code c}
+	 *
+	 * @param c Class to test instance against
+	 * @return true if this is a {@code userdata}
+	 * and the instance is assignable to {@code c},
+	 * otherwise false
+	 * @see #isuserdata()
+	 * @see #touserdata(Class)
+	 * @see #checkuserdata(Class)
+	 * @see #optuserdata(Class, Object)
+	 * @see Constants#TUSERDATA
+	 */
+	public boolean isuserdata(Class<?> c) {
+		return false;
+	}
+
+	/**
+	 * Convert to boolean false if {@link Constants#NIL} or {@link Constants#FALSE}, true if anything else
+	 *
+	 * @return Value cast to byte if number or string convertible to number, otherwise 0
+	 * @see #optboolean(boolean)
+	 * @see #checkboolean()
+	 * @see #isboolean()
+	 * @see Constants#TBOOLEAN
+	 */
+	public boolean toboolean() {
+		return true;
+	}
+
+	/**
+	 * Convert to byte if numeric, or 0 if not.
+	 *
+	 * @return Value cast to byte if number or string convertible to number, otherwise 0
+	 * @see #toint()
+	 * @see #todouble()
+	 * @see #checknumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public byte tobyte() {
+		return 0;
+	}
+
+	/**
+	 * Convert to char if numeric, or 0 if not.
+	 *
+	 * @return Value cast to char if number or string convertible to number, otherwise 0
+	 * @see #toint()
+	 * @see #todouble()
+	 * @see #checknumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public char tochar() {
+		return 0;
+	}
+
+	/**
+	 * Convert to double if numeric, or 0 if not.
+	 *
+	 * @return Value cast to double if number or string convertible to number, otherwise 0
+	 * @see #toint()
+	 * @see #tobyte()
+	 * @see #tochar()
+	 * @see #toshort()
+	 * @see #tolong()
+	 * @see #tofloat()
+	 * @see #optdouble(double)
+	 * @see #checknumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public double todouble() {
+		return 0;
+	}
+
+	/**
+	 * Convert to float if numeric, or 0 if not.
+	 *
+	 * @return Value cast to float if number or string convertible to number, otherwise 0
+	 * @see #toint()
+	 * @see #todouble()
+	 * @see #checknumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public float tofloat() {
+		return 0;
+	}
+
+	/**
+	 * Convert to int if numeric, or 0 if not.
+	 *
+	 * @return Value cast to int if number or string convertible to number, otherwise 0
+	 * @see #tobyte()
+	 * @see #tochar()
+	 * @see #toshort()
+	 * @see #tolong()
+	 * @see #tofloat()
+	 * @see #todouble()
+	 * @see #optint(int)
+	 * @see #checknumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public int toint() {
+		return 0;
+	}
+
+	/**
+	 * Convert to long if numeric, or 0 if not.
+	 *
+	 * @return Value cast to long if number or string convertible to number, otherwise 0
+	 * @see #isint()
+	 * @see #isinttype()
+	 * @see #toint()
+	 * @see #todouble()
+	 * @see #optlong(long)
+	 * @see #checknumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public long tolong() {
+		return 0;
+	}
+
+	/**
+	 * Convert to short if numeric, or 0 if not.
+	 *
+	 * @return Value cast to short if number or string convertible to number, otherwise 0
+	 * @see #toint()
+	 * @see #todouble()
+	 * @see #checknumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public short toshort() {
+		return 0;
+	}
+
+	/**
+	 * Convert to human readable String for any type.
+	 *
+	 * @return String for use by human readers based on type.
+	 * @see #tostring()
+	 * @see #optjstring(String)
+	 * @see #checkjstring()
+	 * @see #isstring()
+	 * @see Constants#TSTRING
+	 */
+	@Override
+	public String tojstring() {
+		return typeName() + ": " + Integer.toHexString(hashCode());
+	}
+
+	/**
+	 * Convert to userdata instance, or null.
+	 *
+	 * @return userdata instance if userdata, or null if not {@link LuaUserdata}
+	 * @see #optuserdata(Object)
+	 * @see #checkuserdata()
+	 * @see #isuserdata()
+	 * @see Constants#TUSERDATA
+	 */
+	public Object touserdata() {
+		return null;
+	}
+
+	/**
+	 * Convert to userdata instance if specific type, or null.
+	 *
+	 * @param c Use this class to create userdata
+	 * @return userdata instance if is a userdata whose instance derives from {@code c},
+	 * or null if not {@link LuaUserdata}
+	 * @see #optuserdata(Class, Object)
+	 * @see #checkuserdata(Class)
+	 * @see #isuserdata(Class)
+	 * @see Constants#TUSERDATA
+	 */
+	public Object touserdata(Class<?> c) {
+		return null;
+	}
+
+	/**
+	 * Convert the value to a human readable string using {@link #tojstring()}
+	 *
+	 * @return String value intended to be human readible.
+	 * @see #tostring()
+	 * @see #tojstring()
+	 * @see #optstring(LuaString)
+	 * @see #checkstring()
+	 * @see #toString()
+	 */
+	public String toString() {
+		return tojstring();
+	}
+
+	/**
+	 * Conditionally convert to lua number without throwing errors.
+	 * <p>
+	 * In lua all numbers are strings, but not all strings are numbers.
+	 * This function will return
+	 * the {@link LuaValue} {@code this} if it is a number
+	 * or a string convertible to a number,
+	 * and {@link Constants#NIL} for all other cases.
+	 * <p>
+	 * This allows values to be tested for their "numeric-ness" without
+	 * the penalty of throwing exceptions,
+	 * nor the cost of converting the type and creating storage for it.
+	 *
+	 * @return {@code this} if it is a {@link LuaNumber}
+	 * or {@link LuaString} that can be converted to a number,
+	 * otherwise {@link Constants#NIL}
+	 * @see #tostring()
+	 * @see #optnumber(LuaNumber)
+	 * @see #checknumber()
+	 * @see #toint()
+	 * @see #todouble()
+	 */
+	public LuaValue tonumber() {
+		return Constants.NIL;
+	}
+
+	/**
+	 * Conditionally convert to lua string without throwing errors.
+	 * <p>
+	 * In lua all numbers are strings, so this function will return
+	 * the {@link LuaValue} {@code this} if it is a string or number,
+	 * and {@link Constants#NIL} for all other cases.
+	 * <p>
+	 * This allows values to be tested for their "string-ness" without
+	 * the penalty of throwing exceptions.
+	 *
+	 * @return {@code this} if it is a {@link LuaString} or {@link LuaNumber},
+	 * otherwise {@link Constants#NIL}
+	 * @see #tonumber()
+	 * @see #tojstring()
+	 * @see #optstring(LuaString)
+	 * @see #checkstring()
+	 * @see #toString()
+	 */
+	public LuaValue tostring() {
+		return Constants.NIL;
+	}
+
+	/**
+	 * Check that optional argument is a boolean and return its boolean value
+	 *
+	 * @param defval boolean value to return if {@code this} is nil or none
+	 * @return {@code this} cast to boolean if a {@link LuaBoolean},
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not a boolean or nil or none.
+	 * @see #checkboolean()
+	 * @see #isboolean()
+	 * @see Constants#TBOOLEAN
+	 */
+	public boolean optboolean(boolean defval) {
+		argError("boolean");
+		return false;
+	}
+
+	/**
+	 * Check that optional argument is a closure and return as {@link LuaClosure}
+	 * <p>
+	 * A {@link LuaClosure} is a {@link LuaFunction} that executes lua byteccode.
+	 *
+	 * @param defval {@link LuaClosure} to return if {@code this} is nil or none
+	 * @return {@code this} cast to {@link LuaClosure} if a function,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not a closure or nil or none.
+	 * @see #checkclosure()
+	 * @see #isclosure()
+	 * @see Constants#TFUNCTION
+	 */
+	public LuaClosure optclosure(LuaClosure defval) {
+		argError("closure");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a number or string convertible to number and return as double
+	 *
+	 * @param defval double to return if {@code this} is nil or none
+	 * @return {@code this} cast to double if numeric,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not numeric or nil or none.
+	 * @see #optint(int)
+	 * @see #optinteger(LuaInteger)
+	 * @see #checkdouble()
+	 * @see #todouble()
+	 * @see #tonumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public double optdouble(double defval) {
+		argError("double");
+		return 0;
+	}
+
+	/**
+	 * Check that optional argument is a function and return as {@link LuaFunction}
+	 * <p>
+	 * A {@link LuaFunction} may either be a Java function that implements
+	 * functionality directly in Java,
+	 * or a {@link LuaClosure}
+	 * which is a {@link LuaFunction} that executes lua bytecode.
+	 *
+	 * @param defval {@link LuaFunction} to return if {@code this} is nil or none
+	 * @return {@code this} cast to {@link LuaFunction} if a function,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not a function or nil or none.
+	 * @see #checkfunction()
+	 * @see #isfunction()
+	 * @see Constants#TFUNCTION
+	 */
+	public LuaFunction optfunction(LuaFunction defval) {
+		argError("function");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a number or string convertible to number and return as int
+	 *
+	 * @param defval int to return if {@code this} is nil or none
+	 * @return {@code this} cast to int if numeric,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not numeric or nil or none.
+	 * @see #optdouble(double)
+	 * @see #optlong(long)
+	 * @see #optinteger(LuaInteger)
+	 * @see #checkint()
+	 * @see #toint()
+	 * @see #tonumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public int optint(int defval) {
+		argError("int");
+		return 0;
+	}
+
+	/**
+	 * Check that optional argument is a number or string convertible to number and return as {@link LuaInteger}
+	 *
+	 * @param defval {@link LuaInteger} to return if {@code this} is nil or none
+	 * @return {@code this} converted and wrapped in {@link LuaInteger} if numeric,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not numeric or nil or none.
+	 * @see #optdouble(double)
+	 * @see #optint(int)
+	 * @see #checkint()
+	 * @see #toint()
+	 * @see #tonumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public LuaInteger optinteger(LuaInteger defval) {
+		argError("integer");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a number or string convertible to number and return as long
+	 *
+	 * @param defval long to return if {@code this} is nil or none
+	 * @return {@code this} cast to long if numeric,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not numeric or nil or none.
+	 * @see #optdouble(double)
+	 * @see #optint(int)
+	 * @see #checkint()
+	 * @see #toint()
+	 * @see #tonumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public long optlong(long defval) {
+		argError("long");
+		return 0;
+	}
+
+	/**
+	 * Check that optional argument is a number or string convertible to number and return as {@link LuaNumber}
+	 *
+	 * @param defval {@link LuaNumber} to return if {@code this} is nil or none
+	 * @return {@code this} cast to {@link LuaNumber} if numeric,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} otherwise
+	 * @throws LuaError if was not numeric or nil or none.
+	 * @see #optdouble(double)
+	 * @see #optlong(long)
+	 * @see #optint(int)
+	 * @see #checkint()
+	 * @see #toint()
+	 * @see #tonumber()
+	 * @see #isnumber()
+	 * @see Constants#TNUMBER
+	 */
+	public LuaNumber optnumber(LuaNumber defval) {
+		argError("number");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a string or number and return as Java String
+	 *
+	 * @param defval {@link LuaString} to return if {@code this} is nil or none
+	 * @return {@code this} converted to String if a string or number,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} if some other type
+	 * @throws LuaError if was not a string or number or nil or none.
+	 * @see #tojstring()
+	 * @see #optstring(LuaString)
+	 * @see #checkjstring()
+	 * @see #toString()
+	 * @see Constants#TSTRING
+	 */
+	public String optjstring(String defval) {
+		argError("string");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a string or number and return as {@link LuaString}
+	 *
+	 * @param defval {@link LuaString} to return if {@code this} is nil or none
+	 * @return {@code this} converted to {@link LuaString} if a string or number,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} if some other type
+	 * @throws LuaError if was not a string or number or nil or none.
+	 * @see #tojstring()
+	 * @see #optjstring(String)
+	 * @see #checkstring()
+	 * @see #toString()
+	 * @see Constants#TSTRING
+	 */
+	public LuaString optstring(LuaString defval) {
+		argError("string");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a table and return as {@link LuaTable}
+	 *
+	 * @param defval {@link LuaTable} to return if {@code this} is nil or none
+	 * @return {@code this} cast to {@link LuaTable} if a table,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} if some other type
+	 * @throws LuaError if was not a table or nil or none.
+	 * @see #checktable()
+	 * @see #istable()
+	 * @see Constants#TTABLE
+	 */
+	public LuaTable opttable(LuaTable defval) {
+		argError("table");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a thread and return as {@link LuaThread}
+	 *
+	 * @param defval {@link LuaThread} to return if {@code this} is nil or none
+	 * @return {@code this} cast to {@link LuaTable} if a thread,
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} if some other type
+	 * @throws LuaError if was not a thread or nil or none.
+	 * @see #checkthread()
+	 * @see #isthread()
+	 * @see Constants#TTHREAD
+	 */
+	public LuaThread optthread(LuaThread defval) {
+		argError("thread");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a userdata and return the Object instance
+	 *
+	 * @param defval Object to return if {@code this} is nil or none
+	 * @return Object instance of the userdata if a {@link LuaUserdata},
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} if some other type
+	 * @throws LuaError if was not a userdata or nil or none.
+	 * @see #checkuserdata()
+	 * @see #isuserdata()
+	 * @see #optuserdata(Class, Object)
+	 * @see Constants#TUSERDATA
+	 */
+	public Object optuserdata(Object defval) {
+		argError("object");
+		return null;
+	}
+
+	/**
+	 * Check that optional argument is a userdata whose instance is of a type
+	 * and return the Object instance
+	 *
+	 * @param c      Class to test userdata instance against
+	 * @param defval Object to return if {@code this} is nil or none
+	 * @return Object instance of the userdata if a {@link LuaUserdata} and instance is assignable to {@code c},
+	 * {@code defval} if nil or none,
+	 * throws {@link LuaError} if some other type
+	 * @throws LuaError if was not a userdata whose instance is assignable to {@code c} or nil or none.
+	 * @see #checkuserdata(Class)
+	 * @see #isuserdata(Class)
+	 * @see #optuserdata(Object)
+	 * @see Constants#TUSERDATA
+	 */
+	public Object optuserdata(Class<?> c, Object defval) {
+		argError(c.getName());
+		return null;
+	}
+
+	/**
+	 * Perform argument check that this is not nil or none.
+	 *
+	 * @param defval {@link LuaValue} to return if {@code this} is nil or none
+	 * @return {@code this} if not nil or none, else {@code defval}
+	 * @see Constants#NIL
+	 * @see Constants#NONE
+	 * @see #isnil()
+	 * @see Varargs#isnoneornil(int)
+	 * @see Constants#TNIL
+	 * @see Constants#TNONE
+	 */
+	public LuaValue optvalue(LuaValue defval) {
+		return this;
+	}
+
+
+	/**
+	 * Check that the value is a {@link LuaBoolean},
+	 * or throw {@link LuaError} if not
+	 *
+	 * @return boolean value for {@code this} if it is a {@link LuaBoolean}
+	 * @throws LuaError if not a {@link LuaBoolean}
+	 * @see #optboolean(boolean)
+	 * @see Constants#TBOOLEAN
+	 */
+	public boolean checkboolean() {
+		argError("boolean");
+		return false;
+	}
+
+	/**
+	 * Check that the value is a {@link LuaClosure} ,
+	 * or throw {@link LuaError} if not
+	 * <p>
+	 * {@link LuaClosure} is a subclass of {@link LuaFunction} that interprets lua bytecode.
+	 *
+	 * @return {@code this} cast as {@link LuaClosure}
+	 * @throws LuaError if not a {@link LuaClosure}
+	 * @see #checkfunction()
+	 * @see #optclosure(LuaClosure)
+	 * @see #isclosure()
+	 * @see Constants#TFUNCTION
+	 */
+	public LuaClosure checkclosure() {
+		argError("closure");
+		return null;
+	}
+
+	public double checkarith() {
+		arithError();
+		return Double.NaN;
+	}
+
+	/**
+	 * Check that the value is numeric and return the value as a double,
+	 * or throw {@link LuaError} if not numeric
+	 * <p>
+	 * Values that are {@link LuaNumber} and values that are {@link LuaString}
+	 * that can be converted to a number will be converted to double.
+	 *
+	 * @return value cast to a double if numeric
+	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
+	 * @see #checkint()
+	 * @see #checkinteger()
+	 * @see #checklong()
+	 * @see #optdouble(double)
+	 * @see Constants#TNUMBER
+	 */
+	public double checkdouble() {
+		argError("double");
+		return 0;
+	}
+
+	/**
+	 * Check that the value is a function , or throw {@link LuaError} if not
+	 * <p>
+	 * A function is considered anything whose {@link #type()} returns {@link Constants#TFUNCTION}.
+	 * In practice it will be either a built-in Java function, typically deriving from
+	 * {@link LuaFunction} or a {@link LuaClosure} which represents lua source compiled
+	 * into lua bytecode.
+	 *
+	 * @return {@code this} if if a lua function or closure
+	 * @throws LuaError if not a function
+	 * @see #checkclosure()
+	 */
+	public LuaValue checkfunction() {
+		argError("function");
+		return null;
+	}
+
+	/**
+	 * Check that the value is numeric, and convert and cast value to int, or throw {@link LuaError} if not numeric
+	 * <p>
+	 * Values that are {@link LuaNumber} will be cast to int and may lose precision.
+	 * Values that are {@link LuaString} that can be converted to a number will be converted,
+	 * then cast to int, so may also lose precision.
+	 *
+	 * @return value cast to a int if numeric
+	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
+	 * @see #checkinteger()
+	 * @see #checklong()
+	 * @see #checkdouble()
+	 * @see #optint(int)
+	 * @see Constants#TNUMBER
+	 */
+	public int checkint() {
+		argError("int");
+		return 0;
+	}
+
+	/**
+	 * Check that the value is numeric, and convert and cast value to int, or throw {@link LuaError} if not numeric
+	 * <p>
+	 * Values that are {@link LuaNumber} will be cast to int and may lose precision.
+	 * Values that are {@link LuaString} that can be converted to a number will be converted,
+	 * then cast to int, so may also lose precision.
+	 *
+	 * @return value cast to a int and wrapped in {@link LuaInteger} if numeric
+	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
+	 * @see #checkint()
+	 * @see #checklong()
+	 * @see #checkdouble()
+	 * @see #optinteger(LuaInteger)
+	 * @see Constants#TNUMBER
+	 */
+	public LuaInteger checkinteger() {
+		argError("integer");
+		return null;
+	}
+
+	/**
+	 * Check that the value is numeric, and convert and cast value to long, or throw {@link LuaError} if not numeric
+	 * <p>
+	 * Values that are {@link LuaNumber} will be cast to long and may lose precision.
+	 * Values that are {@link LuaString} that can be converted to a number will be converted,
+	 * then cast to long, so may also lose precision.
+	 *
+	 * @return value cast to a long if numeric
+	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
+	 * @see #checkint()
+	 * @see #checkinteger()
+	 * @see #checkdouble()
+	 * @see #optlong(long)
+	 * @see Constants#TNUMBER
+	 */
+	public long checklong() {
+		argError("long");
+		return 0;
+	}
+
+	/**
+	 * Check that the value is numeric, and return as a LuaNumber if so, or throw {@link LuaError}
+	 * <p>
+	 * Values that are {@link LuaString} that can be converted to a number will be converted and returned.
+	 *
+	 * @return value as a {@link LuaNumber} if numeric
+	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
+	 * @see #checkint()
+	 * @see #checkinteger()
+	 * @see #checkdouble()
+	 * @see #checklong()
+	 * @see #optnumber(LuaNumber)
+	 * @see Constants#TNUMBER
+	 */
+	public LuaNumber checknumber() {
+		argError("number");
+		return null;
+	}
+
+	/**
+	 * Check that the value is numeric, and return as a LuaNumber if so, or throw {@link LuaError}
+	 * <p>
+	 * Values that are {@link LuaString} that can be converted to a number will be converted and returned.
+	 *
+	 * @param msg String message to supply if conversion fails
+	 * @return value as a {@link LuaNumber} if numeric
+	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
+	 * @see #checkint()
+	 * @see #checkinteger()
+	 * @see #checkdouble()
+	 * @see #checklong()
+	 * @see #optnumber(LuaNumber)
+	 * @see Constants#TNUMBER
+	 */
+	public LuaNumber checknumber(String msg) {
+		throw new LuaError(msg);
+	}
+
+	/**
+	 * Convert this value to a Java String.
+	 * <p>
+	 * The string representations here will roughly match what is produced by the
+	 * C lua distribution, however hash codes have no relationship,
+	 * and there may be differences in number formatting.
+	 *
+	 * @return String representation of the value
+	 * @see #checkstring()
+	 * @see #optjstring(String)
+	 * @see #tojstring()
+	 * @see #isstring
+	 * @see Constants#TSTRING
+	 */
+	public String checkjstring() {
+		argError("string");
+		return null;
+	}
+
+	/**
+	 * Check that this is a lua string, or throw {@link LuaError} if it is not.
+	 * <p>
+	 * In lua all numbers are strings, so this will succeed for
+	 * anything that derives from {@link LuaString} or {@link LuaNumber}.
+	 * Numbers will be converted to {@link LuaString}.
+	 *
+	 * @return {@link LuaString} representation of the value if it is a {@link LuaString} or {@link LuaNumber}
+	 * @throws LuaError if {@code this} is not a {@link LuaTable}
+	 * @see #checkjstring()
+	 * @see #optstring(LuaString)
+	 * @see #tostring()
+	 * @see #isstring()
+	 * @see Constants#TSTRING
+	 */
+	public LuaString checkstring() {
+		argError("string");
+		return null;
+	}
+
+	/**
+	 * Check that this is a {@link LuaTable}, or throw {@link LuaError} if it is not
+	 *
+	 * @return {@code this} if it is a {@link LuaTable}
+	 * @throws LuaError if {@code this} is not a {@link LuaTable}
+	 * @see #istable()
+	 * @see #opttable(LuaTable)
+	 * @see Constants#TTABLE
+	 */
+	public LuaTable checktable() {
+		argError("table");
+		return null;
+	}
+
+	/**
+	 * Check that this is a {@link LuaThread}, or throw {@link LuaError} if it is not
+	 *
+	 * @return {@code this} if it is a {@link LuaThread}
+	 * @throws LuaError if {@code this} is not a {@link LuaThread}
+	 * @see #isthread()
+	 * @see #optthread(LuaThread)
+	 * @see Constants#TTHREAD
+	 */
+	public LuaThread checkthread() {
+		argError("thread");
+		return null;
+	}
+
+	/**
+	 * Check that this is a {@link LuaUserdata}, or throw {@link LuaError} if it is not
+	 *
+	 * @return {@code this} if it is a {@link LuaUserdata}
+	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
+	 * @see #isuserdata()
+	 * @see #optuserdata(Object)
+	 * @see #checkuserdata(Class)
+	 * @see Constants#TUSERDATA
+	 */
+	public Object checkuserdata() {
+		argError("userdata");
+		return null;
+	}
+
+	/**
+	 * Check that this is a {@link LuaUserdata}, or throw {@link LuaError} if it is not
+	 *
+	 * @param c The class of userdata to convert to
+	 * @return {@code this} if it is a {@link LuaUserdata}
+	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
+	 * @see #isuserdata(Class)
+	 * @see #optuserdata(Class, Object)
+	 * @see #checkuserdata()
+	 * @see Constants#TUSERDATA
+	 */
+	public Object checkuserdata(Class<?> c) {
+		argError("userdata");
+		return null;
+	}
+
+	/**
+	 * Check that this is not the value {@link Constants#NIL}, or throw {@link LuaError} if it is
+	 *
+	 * @return {@code this} if it is not {@link Constants#NIL}
+	 * @throws LuaError if {@code this} is {@link Constants#NIL}
+	 * @see #optvalue(LuaValue)
+	 */
+	public LuaValue checknotnil() {
+		return this;
+	}
+
+	/**
+	 * Check that this is a valid key in a table index operation, or throw {@link LuaError} if not
+	 *
+	 * @return {@code this} if valid as a table key
+	 * @throws LuaError if not valid as a table key
+	 * @see #isnil()
+	 * @see #isinttype()
+	 */
+	public LuaValue checkvalidkey() {
+		return this;
+	}
+	//endregion
+
+	//region Errors
+
+	/**
+	 * Assert a condition is true, or throw a {@link LuaError} if not
+	 *
+	 * @param b   condition to test
+	 * @param msg Error message
+	 * @throws LuaError if b is not true
+	 */
+	public static void assert_(boolean b, String msg) {
+		if (!b) throw new LuaError(msg);
+	}
+
+	/**
+	 * Throw a {@link LuaError} indicating an invalid argument was supplied to a function
+	 *
+	 * @param expected String naming the type that was expected
+	 * @return Nothing
+	 * @throws LuaError in all cases
+	 */
+	protected LuaValue argError(String expected) {
+		throw new LuaError("bad argument: " + expected + " expected, got " + typeName());
+	}
+
+	/**
+	 * Throw a {@link LuaError} indicating an invalid argument was supplied to a function
+	 *
+	 * @param iarg index of the argument that was invalid, first index is 1
+	 * @param msg  String providing information about the invalid argument
+	 * @return Nothing
+	 * @throws LuaError in all cases
+	 */
+	public static LuaValue argError(int iarg, String msg) {
+		throw new LuaError("bad argument #" + iarg + ": " + msg);
+	}
+
+	/**
+	 * Throw a {@link LuaError} indicating an invalid type was supplied to a function
+	 *
+	 * @param expected String naming the type that was expected
+	 * @return Nothing
+	 * @throws LuaError in all cases
+	 */
+	protected LuaValue typeError(String expected) {
+		throw new LuaError(expected + " expected, got " + typeName());
+	}
+
+	/**
+	 * Throw a {@link LuaError} indicating an operation is not implemented
+	 *
+	 * @param fun Function that hasn't been implemented
+	 * @return Nothing
+	 * @throws LuaError in all cases
+	 */
+	protected LuaValue unimplemented(String fun) {
+		throw new LuaError("'" + fun + "' not implemented for " + typeName());
+	}
+
+	/**
+	 * Throw a {@link LuaError} indicating an illegal operation occurred,
+	 * typically involved in managing weak references
+	 *
+	 * @param op       Operation
+	 * @param typename Current type
+	 * @return Nothing
+	 * @throws LuaError in all cases
+	 */
+	protected LuaValue illegal(String op, String typename) {
+		throw new LuaError("illegal operation '" + op + "' for " + typename);
+	}
+
+	/**
+	 * Throw a {@link LuaError} based on an arithmetic error such as add, or pow,
+	 * typically due to an invalid operand type
+	 *
+	 * @return Nothing
+	 * @throws LuaError in all cases
+	 */
+	protected LuaValue arithError() {
+		throw new LuaError("attempt to perform arithmetic on " + typeName());
+	}
+
+	/**
+	 * Throw a {@link LuaError} based on a comparison error such as greater-than or less-than,
+	 * typically due to an invalid operand type
+	 *
+	 * @param rhs Right-hand-side of the comparison that resulted in the error.
+	 * @return Nothing
+	 * @throws LuaError in all cases
+	 */
+	protected LuaValue compareError(LuaValue rhs) {
+		throw new LuaError("attempt to compare " + typeName() + " with " + rhs.typeName());
+	}
+	//endregion
+
+	/**
+	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
+	 *
+	 * @param state The current lua state
+	 * @param key   the key to look up, must not be {@link Constants#NIL} or null
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found and no metatag
+	 * @throws LuaError if {@code this} is not a table,
+	 *                  or there is no {@link Constants#INDEX} metatag,
+	 *                  or key is {@link Constants#NIL}
+	 * @see #get(LuaState, int)
+	 * @see #get(LuaState, String)
+	 * @see #rawget(LuaValue)
+	 */
+	public LuaValue get(LuaState state, LuaValue key) {
+		return gettable(state, this, key);
+	}
+
+	/**
+	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
+	 *
+	 * @param state The current lua state
+	 * @param key   the key to look up
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table,
+	 *                  or there is no {@link Constants#INDEX} metatag
+	 * @see #get(LuaState, LuaValue)
+	 * @see #rawget(int)
+	 */
+	public LuaValue get(LuaState state, int key) {
+		return get(state, LuaInteger.valueOf(key));
+	}
+
+	/**
+	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
+	 *
+	 * @param state The current lua state
+	 * @param key   the key to look up, must not be null
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table,
+	 *                  or there is no {@link Constants#INDEX} metatag
+	 * @see #get(LuaState, LuaValue)
+	 * @see #rawget(String)
+	 */
+	public LuaValue get(LuaState state, String key) {
+		return get(state, Factory.valueOf(key));
+	}
+
+	/**
+	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
+	 *
+	 * @param state The current lua state
+	 * @param key   the key to use, must not be {@link Constants#NIL} or null
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table,
+	 *                  or key is {@link Constants#NIL},
+	 *                  or there is no {@link Constants#NEWINDEX} metatag
+	 */
+	public void set(LuaState state, LuaValue key, LuaValue value) {
+		settable(state, this, key, value);
+	}
+
+	/**
+	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
+	 *
+	 * @param state The current lua state
+	 * @param key   the key to use
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table,
+	 *                  or there is no {@link Constants#NEWINDEX} metatag
+	 */
+	public void set(LuaState state, int key, LuaValue value) {
+		set(state, LuaInteger.valueOf(key), value);
+	}
+
+	/**
+	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
+	 *
+	 * @param state The current lua state
+	 * @param key   the key to use, must not be {@link Constants#NIL} or null
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table,
+	 *                  or there is no {@link Constants#NEWINDEX} metatag
+	 */
+	public void set(LuaState state, String key, LuaValue value) {
+		set(state, Factory.valueOf(key), value);
+	}
+
+	/**
+	 * Get a value in a table without metatag processing.
+	 *
+	 * @param key the key to look up, must not be {@link Constants#NIL} or null
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
+	 */
+	public LuaValue rawget(LuaValue key) {
+		return unimplemented("rawget");
+	}
+
+	/**
+	 * Get a value in a table without metatag processing.
+	 *
+	 * @param key the key to look up
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table
+	 */
+	public LuaValue rawget(int key) {
+		return rawget(Factory.valueOf(key));
+	}
+
+	/**
+	 * Get a value in a table without metatag processing.
+	 *
+	 * @param key the key to look up, must not be null
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table
+	 */
+	public LuaValue rawget(String key) {
+		return rawget(Factory.valueOf(key));
+	}
+
+	/**
+	 * Set a value in a table without metatag processing.
+	 *
+	 * @param key   the key to use, must not be {@link Constants#NIL} or null
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
+	 */
+	public void rawset(LuaValue key, LuaValue value) {
+		unimplemented("rawset");
+	}
+
+	/**
+	 * Set a value in a table without metatag processing.
+	 *
+	 * @param key   the key to use
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table
+	 */
+	public void rawset(int key, LuaValue value) {
+		rawset(Factory.valueOf(key), value);
+	}
+
+	/**
+	 * Set a value in a table without metatag processing.
+	 *
+	 * @param key   the key to use, must not be null
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table
+	 */
+	public void rawset(String key, LuaValue value) {
+		rawset(Factory.valueOf(key), value);
+	}
+
+	/**
+	 * Preallocate the array part of a table to be a certain size,
+	 * <p>
+	 * Primarily used internally in response to a SETLIST bytecode.
+	 *
+	 * @param i the number of array slots to preallocate in the table.
+	 * @throws LuaError if this is not a table.
+	 */
+	public void presize(int i) {
+		typeError("table");
+	}
+
+	/**
+	 * Find the next key,value pair if {@code this} is a table,
+	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
+	 * <p>
+	 * To iterate over all key-value pairs in a table you can use
+	 * <pre> {@code
+	 * LuaValue k = LuaValue.NIL;
+	 * while ( true ) {
+	 *    Varargs n = table.next(k);
+	 *    if ( (k = n.arg1()).isnil() )
+	 *       break;
+	 *    LuaValue v = n.arg(2)
+	 *    process( k, v )
+	 * }}</pre>
+	 *
+	 * @param index {@link LuaInteger} value identifying a key to start from,
+	 *              or {@link Constants#NIL} to start at the beginning
+	 * @return {@link Varargs} containing {key,value} for the next entry,
+	 * or {@link Constants#NIL} if there are no more.
+	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
+	 * @see LuaTable
+	 * @see #inext(LuaValue)
+	 * @see Factory#valueOf(int)
+	 * @see Varargs#arg1()
+	 * @see Varargs#arg(int)
+	 * @see #isnil()
+	 */
+	public Varargs next(LuaValue index) {
+		return typeError("table");
+	}
+
+	/**
+	 * Find the next integer-key,value pair if {@code this} is a table,
+	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
+	 * <p>
+	 * To iterate over integer keys in a table you can use
+	 * <pre> {@code
+	 *   LuaValue k = LuaValue.NIL;
+	 *   while ( true ) {
+	 *      Varargs n = table.inext(k);
+	 *      if ( (k = n.arg1()).isnil() )
+	 *         break;
+	 *      LuaValue v = n.arg(2)
+	 *      process( k, v )
+	 *   }
+	 * } </pre>
+	 *
+	 * @param index {@link LuaInteger} value identifying a key to start from,
+	 *              or {@link Constants#NIL} to start at the beginning
+	 * @return {@link Varargs} containing {@code (key, value)} for the next entry,
+	 * or {@link Constants#NONE} if there are no more.
+	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
+	 * @see LuaTable
+	 * @see #next(LuaValue)
+	 * @see Factory#valueOf(int)
+	 * @see Varargs#arg1()
+	 * @see Varargs#arg(int)
+	 * @see #isnil()
+	 */
+	public Varargs inext(LuaValue index) {
+		return typeError("table");
+	}
+
+	/**
+	 * Load a library instance by setting its environment to {@code this}
+	 * and calling it, which should iniitalize the library instance and
+	 * install itself into this instance.
+	 *
+	 * @param state   The current lua state
+	 * @param library The callable {@link LuaValue} to load into {@code this}
+	 * @return {@link LuaValue} containing the result of the initialization call.
+	 */
+	public LuaValue load(LuaState state, LuaValue library) {
+		library.setfenv(this);
+		return library.call(state);
+	}
+
+	// varargs references
+	@Override
+	public LuaValue arg(int index) {
+		return index == 1 ? this : Constants.NIL;
+	}
+
+	@Override
+	public int narg() {
+		return 1;
+	}
+
+	@Override
+	public LuaValue arg1() {
+		return this;
+	}
+
+	/**
+	 * Get the metatable for this {@link LuaValue}
+	 * <p>
+	 * For {@link LuaTable} and {@link LuaUserdata} instances,
+	 * the metatable returned is this instance metatable.
+	 * For all other types, the class metatable value will be returned.
+	 *
+	 * @param state The current lua state
+	 * @return metatable, or null if it there is none
+	 */
+	public LuaValue getMetatable(LuaState state) {
+		return null;
+	}
+
+	/**
+	 * Set the metatable for this {@link LuaValue}
+	 * <p>
+	 * For {@link LuaTable} and {@link LuaUserdata} instances, the metatable is per instance.
+	 * For all other types, there is one metatable per type that can be set directly from java
+	 *
+	 * @param state     The current lua state
+	 * @param metatable {@link LuaValue} instance to serve as the metatable, or null to reset it.
+	 * @return {@code this} to allow chaining of Java function calls
+	 */
+	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
+		return argError("table");
+	}
+
+	/**
+	 * Get the environemnt for an instance.
+	 *
+	 * @return {@link LuaValue} currently set as the instances environent.
+	 */
+	public LuaValue getfenv() {
+		typeError("function or thread");
+		return null;
+	}
+
+	/**
+	 * Set the environment on an object.
+	 * <p>
+	 * Typically the environment is created once per application via a platform
+	 * helper method such as {@link JsePlatform#standardGlobals(LuaState)}
+	 * However, any object can serve as an environment if it contains suitable metatag
+	 * values to implement {@link #get(LuaState, LuaValue)} to provide the environment values.
+	 *
+	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
+	 * @see JsePlatform
+	 */
+	public void setfenv(LuaValue env) {
+		typeError("function or thread");
+	}
+
+	/**
+	 * Call {@code this} with 0 arguments, including metatag processing,
+	 * and return only the first return value.
+	 * <p>
+	 * If {@code this} is a {@link LuaFunction}, call it,
+	 * and return only its first return value, dropping any others.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
+	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
+	 * <p>
+	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
+	 *
+	 * @param state The current lua state
+	 * @return First return value {@code (this())}, or {@link Constants#NIL} if there were none.
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState, LuaValue)
+	 * @see #call(LuaState, LuaValue, LuaValue)
+	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
+	 * @see #invoke(LuaState, Varargs)
+	 * @see #method(LuaState, LuaValue)
+	 */
+	public LuaValue call(LuaState state) {
+		return callmt(state).call(state, this);
+	}
+
+	/**
+	 * Call {@code this} with 1 argument, including metatag processing,
+	 * and return only the first return value.
+	 * <p>
+	 * If {@code this} is a {@link LuaFunction}, call it,
+	 * and return only its first return value, dropping any others.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
+	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
+	 * <p>
+	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param arg   First argument to supply to the called function
+	 * @return First return value {@code (this(arg))}, or {@link Constants#NIL} if there were none.
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState)
+	 * @see #call(LuaState, LuaValue, LuaValue)
+	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
+	 * @see #invoke(LuaState, Varargs)
+	 * @see #method(LuaState, LuaValue, LuaValue)
+	 */
+	public LuaValue call(LuaState state, LuaValue arg) {
+		return callmt(state).call(state, this, arg);
+	}
+
+	/**
+	 * Call {@code this} with 2 arguments, including metatag processing,
+	 * and return only the first return value.
+	 * <p>
+	 * If {@code this} is a {@link LuaFunction}, call it,
+	 * and return only its first return value, dropping any others.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
+	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
+	 * <p>
+	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param arg1  First argument to supply to the called function
+	 * @param arg2  Second argument to supply to the called function
+	 * @return First return value {@code (this(arg1, arg2))}, or {@link Constants#NIL} if there were none.
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState)
+	 * @see #call(LuaState, LuaValue)
+	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
+	 * @see #method(LuaState, LuaValue, LuaValue, LuaValue)
+	 */
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+		return callmt(state).call(state, this, arg1, arg2);
+	}
+
+	/**
+	 * Call {@code this} with 3 arguments, including metatag processing,
+	 * and return only the first return value.
+	 * <p>
+	 * If {@code this} is a {@link LuaFunction}, call it,
+	 * and return only its first return value, dropping any others.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
+	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
+	 * <p>
+	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param arg1  First argument to supply to the called function
+	 * @param arg2  Second argument to supply to the called function
+	 * @param arg3  Second argument to supply to the called function
+	 * @return First return value {@code (this(arg1, arg2, arg3))}, or {@link Constants#NIL} if there were none.
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState)
+	 * @see #call(LuaState, LuaValue)
+	 * @see #call(LuaState, LuaValue, LuaValue)
+	 * @see #invokeMethod(LuaState, LuaValue, Varargs)
+	 */
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+		return callmt(state).invoke(state, Factory.varargsOf(this, arg1, arg2, arg3)).arg1();
+	}
+
+	/**
+	 * Call named method on {@code this} with 0 arguments, including metatag processing,
+	 * and return only the first return value.
+	 * <p>
+	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
+	 * call it inserting {@code this} as an additional first argument,
+	 * and return only its first return value, dropping any others.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
+	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
+	 * <p>
+	 * To call {@code this} as a plain call, use {@link #call(LuaState)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param name  Name of the method to look up for invocation
+	 * @return All values returned from {@code this:name()} as a {@link Varargs} instance
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState)
+	 * @see #invoke(LuaState, Varargs)
+	 * @see #method(LuaState, LuaValue, LuaValue)
+	 * @see #method(LuaState, LuaValue, LuaValue, LuaValue)
+	 */
+	public LuaValue method(LuaState state, LuaValue name) {
+		return this.get(state, name).call(state, this);
+	}
+
+	/**
+	 * Call named method on {@code this} with 1 argument, including metatag processing,
+	 * and return only the first return value.
+	 * <p>
+	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
+	 * call it inserting {@code this} as an additional first argument,
+	 * and return only its first return value, dropping any others.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
+	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
+	 * <p>
+	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param name  Name of the method to look up for invocation
+	 * @param arg   Argument to supply to the method
+	 * @return All values returned from {@code this:name(arg)} as a {@link Varargs} instance
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState, LuaValue)
+	 * @see #invoke(LuaState, Varargs)
+	 * @see #method(LuaState, LuaValue)
+	 * @see #method(LuaState, LuaValue, LuaValue, LuaValue)
+	 */
+	public LuaValue method(LuaState state, LuaValue name, LuaValue arg) {
+		return this.get(state, name).call(state, this, arg);
+	}
+
+	/**
+	 * Call named method on {@code this} with 2 arguments, including metatag processing,
+	 * and return only the first return value.
+	 * <p>
+	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
+	 * call it inserting {@code this} as an additional first argument,
+	 * and return only its first return value, dropping any others.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
+	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
+	 * <p>
+	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue, LuaValue)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param name  Name of the method to look up for invocation
+	 * @param arg1  First argument to supply to the method
+	 * @param arg2  Second argument to supply to the method
+	 * @return All values returned from {@code this:name(arg1,arg2)} as a {@link Varargs} instance
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState, LuaValue, LuaValue)
+	 * @see #method(LuaState, LuaValue, LuaValue)
+	 */
+	public LuaValue method(LuaState state, LuaValue name, LuaValue arg1, LuaValue arg2) {
+		return this.get(state, name).call(state, this, arg1, arg2);
+	}
+
+	/**
+	 * Call {@code this} with variable arguments, including metatag processing,
+	 * and retain all return values in a {@link Varargs}.
+	 * <p>
+	 * If {@code this} is a {@link LuaFunction}, call it, and return all values.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * To get a particular return value, us {@link Varargs#arg(int)}
+	 * <p>
+	 * To call {@code this} as a method call, use {@link #invokeMethod(LuaState, LuaValue, Varargs)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param args  Varargs containing the arguments to supply to the called function
+	 * @return All return values as a {@link Varargs} instance.
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see Factory#varargsOf(LuaValue[])
+	 * @see #call(LuaState, LuaValue)
+	 * @see #invokeMethod(LuaState, LuaValue, Varargs)
+	 */
+	public Varargs invoke(LuaState state, Varargs args) {
+		return callmt(state).invoke(state, Factory.varargsOf(this, args));
+	}
+
+	/**
+	 * Call named method on {@code this} with variable arguments, including metatag processing,
+	 * and retain all return values in a {@link Varargs}.
+	 * <p>
+	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
+	 * call it inserting {@code this} as an additional first argument,
+	 * and return all return values as a {@link Varargs} instance.
+	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
+	 * <p>
+	 * To get a particular return value, us {@link Varargs#arg(int)}
+	 * <p>
+	 * To call {@code this} as a plain call, use {@link #invoke(LuaState, Varargs)} instead.
+	 *
+	 * @param state The current lua state
+	 * @param name  Name of the method to look up for invocation
+	 * @param args  {@link Varargs} containing arguments to supply to the called function after {@code this}
+	 * @return All values returned from {@code this:name(args)} as a {@link Varargs} instance
+	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
+	 *                  or the invoked function throws a {@link LuaError}
+	 *                  or the invoked closure throw a lua {@code error}
+	 * @see #call(LuaState)
+	 * @see #invoke(LuaState, Varargs)
+	 */
+	public Varargs invokeMethod(LuaState state, LuaValue name, Varargs args) {
+		return get(state, name).invoke(state, Factory.varargsOf(this, args));
+	}
+
+	/**
+	 * Get the metatag value for the {@link Constants#CALL} metatag, if it exists.
+	 *
+	 * @param state The current lua state
+	 * @return {@link LuaValue} value if metatag is defined
+	 * @throws LuaError if {@link Constants#CALL} metatag is not defined.
+	 */
+	protected LuaValue callmt(LuaState state) {
+		return checkmetatag(state, Constants.CALL, "attempt to call ");
+	}
+
+	/**
+	 * Unary not: return inverse boolean value {@code (~this)} as defined by lua not operator
+	 *
+	 * @return {@link Constants#TRUE} if {@link Constants#NIL} or {@link Constants#FALSE}, otherwise {@link Constants#FALSE}
+	 */
+	public LuaValue not() {
+		return Constants.FALSE;
+	}
+
+	/**
+	 * Unary minus: return negative value {@code (-this)} as defined by lua unary minus operator
+	 *
+	 * @param state The current lua state
+	 * @return boolean inverse as {@link LuaBoolean} if boolean or nil,
+	 * numeric inverse as {@link LuaNumber} if numeric,
+	 * or metatag processing result if {@link Constants#UNM} metatag is defined
+	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#UNM} metatag
+	 */
+	public LuaValue neg(LuaState state) {
+		return checkmetatag(state, Constants.UNM, "attempt to perform arithmetic on ").call(state, this);
+	}
+
+	/**
+	 * Length operator: return lua length of object {@code (#this)} including metatag processing as java int
+	 *
+	 * @param state The current lua state
+	 * @return length as defined by the lua # operator
+	 * or metatag processing result
+	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#LEN} metatag
+	 */
+	public LuaValue len(LuaState state) {
+		return checkmetatag(state, Constants.LEN, "attempt to get length of ").call(state, this);
+	}
+
+	/**
+	 * Length operator: return lua length of object {@code (#this)} including metatag processing as java int
+	 *
+	 * @param state The current lua state
+	 * @return length as defined by the lua # operator
+	 * or metatag processing result converted to java int using {@link #toint()}
+	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#LEN} metatag
+	 */
+	public int length(LuaState state) {
+		return len(state).toint();
+	}
+
+	/**
+	 * Implementation of lua 5.0 getn() function.
+	 *
+	 * @return value of getn() as defined in lua 5.0 spec if {@code this} is a {@link LuaTable}
+	 * @throws LuaError if  {@code this} is not a {@link LuaTable}
+	 */
+	public LuaValue getn() {
+		return typeError("getn");
+	}
+
+	// object equality, used for key comparison
+	public boolean equals(Object obj) {
+		return this == obj;
+	}
+
+	/**
+	 * Equals: Perform direct equality comparison with another value
+	 * without metatag processing.
+	 *
+	 * @param val The value to compare with.
+	 * @return true if {@code (this == rhs)}, false otherwise
+	 * @see #raweq(LuaUserdata)
+	 * @see #raweq(LuaString)
+	 * @see #raweq(double)
+	 * @see #raweq(int)
+	 * @see Constants#EQ
+	 */
+	public boolean raweq(LuaValue val) {
+		return this == val;
+	}
+
+	/**
+	 * Equals: Perform direct equality comparison with a {@link LuaUserdata} value
+	 * without metatag processing.
+	 *
+	 * @param val The {@link LuaUserdata} to compare with.
+	 * @return true if {@code this} is userdata
+	 * and their metatables are the same using ==
+	 * and their instances are equal using {@link #equals(Object)},
+	 * otherwise false
+	 * @see #raweq(LuaValue)
+	 */
+	public boolean raweq(LuaUserdata val) {
+		return false;
+	}
+
+	/**
+	 * Equals: Perform direct equality comparison with a {@link LuaString} value
+	 * without metatag processing.
+	 *
+	 * @param val The {@link LuaString} to compare with.
+	 * @return true if {@code this} is a {@link LuaString}
+	 * and their byte sequences match,
+	 * otherwise false
+	 */
+	public boolean raweq(LuaString val) {
+		return false;
+	}
+
+	/**
+	 * Equals: Perform direct equality comparison with a double value
+	 * without metatag processing.
+	 *
+	 * @param val The double value to compare with.
+	 * @return true if {@code this} is a {@link LuaNumber}
+	 * whose value equals val,
+	 * otherwise false
+	 */
+	public boolean raweq(double val) {
+		return false;
+	}
+
+	/**
+	 * Equals: Perform direct equality comparison with a int value
+	 * without metatag processing.
+	 *
+	 * @param val The double value to compare with.
+	 * @return true if {@code this} is a {@link LuaNumber}
+	 * whose value equals val,
+	 * otherwise false
+	 */
+	public boolean raweq(int val) {
+		return false;
+	}
+
+	/**
+	 * Perform equality testing metatag processing
+	 *
+	 * @param state The current lua state
+	 * @param lhs   left-hand-side of equality expression
+	 * @param lhsmt metatag value for left-hand-side
+	 * @param rhs   right-hand-side of equality expression
+	 * @param rhsmt metatag value for right-hand-side
+	 * @return true if metatag processing result is not {@link Constants#NIL} or {@link Constants#FALSE}
+	 * @throws LuaError if metatag was not defined for either operand
+	 * @see #equals(Object)
+	 * @see #raweq(LuaValue)
+	 * @see Constants#EQ
+	 */
+	public static boolean eqmtcall(LuaState state, LuaValue lhs, LuaValue lhsmt, LuaValue rhs, LuaValue rhsmt) {
+		LuaValue h = lhsmt.rawget(Constants.EQ);
+		return !(h.isnil() || h != rhsmt.rawget(Constants.EQ)) && h.call(state, lhs, rhs).toboolean();
+	}
+
+	/**
+	 * Perform string comparison with another value
+	 * of any type
+	 * using string comparison based on byte values.
+	 * <p>
+	 * Only strings can be compared, meaning
+	 * each operand must derive from {@link LuaString}.
+	 *
+	 * @param rhs The right-hand-side value to perform the comparison with
+	 * @return int &lt; 0 for {@code (this &lt; rhs)}, int &gt; 0 for {@code (this &gt; rhs)}, or 0 when same string.
+	 * @throws LuaError if either operand is not a string
+	 */
+	public int strcmp(LuaValue rhs) {
+		throw new LuaError("attempt to compare " + typeName());
+	}
+
+	/**
+	 * Perform string comparison with another value
+	 * known to be a {@link LuaString}
+	 * using string comparison based on byte values.
+	 * <p>
+	 * Only strings can be compared, meaning
+	 * each operand must derive from {@link LuaString}.
+	 *
+	 * @param rhs The right-hand-side value to perform the comparison with
+	 * @return int &lt; 0 for {@code (this &lt; rhs)}, int &gt; 0 for {@code (this &gt; rhs)}, or 0 when same string.
+	 * @throws LuaError if this is not a string
+	 */
+	public int strcmp(LuaString rhs) {
+		throw new LuaError("attempt to compare " + typeName());
+	}
+
+	/**
+	 * Concatenate another value onto this value and return the result
+	 * using rules of lua string concatenation including metatag processing.
+	 * <p>
+	 * Only strings and numbers as represented can be concatenated, meaning
+	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
+	 *
+	 * @param state The current lua state
+	 * @param rhs   The right-hand-side value to perform the operation with
+	 * @return {@link LuaValue} resulting from concatenation of {@code (this .. rhs)}
+	 * @throws LuaError if either operand is not of an appropriate type,
+	 *                  such as nil or a table
+	 */
+	public LuaValue concat(LuaState state, LuaValue rhs) {
+		return this.concatmt(state, rhs);
+	}
+
+	/**
+	 * Reverse-concatenation: concatenate this value onto another value
+	 * whose type is unknwon
+	 * and return the result using rules of lua string concatenation including
+	 * metatag processing.
+	 * <p>
+	 * Only strings and numbers as represented can be concatenated, meaning
+	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
+	 *
+	 * @param state The current lua state
+	 * @param lhs   The left-hand-side value onto which this will be concatenated
+	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
+	 * @throws LuaError if either operand is not of an appropriate type,
+	 *                  such as nil or a table
+	 * @see #concat(LuaState, LuaValue)
+	 */
+	public LuaValue concatTo(LuaState state, LuaValue lhs) {
+		return lhs.concatmt(state, this);
+	}
+
+	/**
+	 * Reverse-concatenation: concatenate this value onto another value
+	 * known to be a {@link  LuaNumber}
+	 * and return the result using rules of lua string concatenation including
+	 * metatag processing.
+	 * <p>
+	 * Only strings and numbers as represented can be concatenated, meaning
+	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
+	 *
+	 * @param state The current lua state
+	 * @param lhs   The left-hand-side value onto which this will be concatenated
+	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
+	 * @throws LuaError if either operand is not of an appropriate type,
+	 *                  such as nil or a table
+	 * @see #concat(LuaState, LuaValue)
+	 */
+	public LuaValue concatTo(LuaState state, LuaNumber lhs) {
+		return lhs.concatmt(state, this);
+	}
+
+	/**
+	 * Reverse-concatenation: concatenate this value onto another value
+	 * known to be a {@link  LuaString}
+	 * and return the result using rules of lua string concatenation including
+	 * metatag processing.
+	 * <p>
+	 * Only strings and numbers as represented can be concatenated, meaning
+	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
+	 *
+	 * @param state The current lua state
+	 * @param lhs   The left-hand-side value onto which this will be concatenated
+	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
+	 * @throws LuaError if either operand is not of an appropriate type,
+	 *                  such as nil or a table
+	 * @see #concat(LuaState, LuaValue)
+	 */
+	public LuaValue concatTo(LuaState state, LuaString lhs) {
+		return lhs.concatmt(state, this);
+	}
+
+	/**
+	 * Convert the value to a {@link Buffer} for more efficient concatenation of
+	 * multiple strings.
+	 *
+	 * @return Buffer instance containing the string or number
+	 */
+	public Buffer buffer() {
+		return new Buffer(this);
+	}
+
+	/**
+	 * Concatenate a {@link Buffer} onto this value and return the result
+	 * using rules of lua string concatenation including metatag processing.
+	 * <p>
+	 * Only strings and numbers as represented can be concatenated, meaning
+	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
+	 *
+	 * @param state The current lua state
+	 * @param rhs   The right-hand-side {@link Buffer} to perform the operation with
+	 * @return LuaString resulting from concatenation of {@code (this .. rhs)}
+	 * @throws LuaError if either operand is not of an appropriate type,
+	 *                  such as nil or a table
+	 */
+	public Buffer concat(LuaState state, Buffer rhs) {
+		return rhs.concatTo(state, this);
+	}
+
+	/**
+	 * Perform metatag processing for concatenation operations.
+	 * <p>
+	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
+	 * or throws {@link LuaError} if it doesn't exist.
+	 *
+	 * @param state The current lua state
+	 * @param rhs   The right-hand-side value to perform the operation with
+	 * @return {@link LuaValue} resulting from metatag processing for {@link Constants#CONCAT} metatag.
+	 * @throws LuaError if metatag was not defined for either operand
+	 */
+	public LuaValue concatmt(LuaState state, LuaValue rhs) {
+		LuaValue h = metatag(state, Constants.CONCAT);
+		if (h.isnil() && (h = rhs.metatag(state, Constants.CONCAT)).isnil()) {
+			LuaValue result;
+			throw new LuaError("attempt to concatenate " + typeName() + " and " + rhs.typeName());
+		}
+		return h.call(state, this, rhs);
+	}
+
+	/**
+	 * Perform boolean {@code and} with another operand, based on lua rules for boolean evaluation.
+	 * This returns either {@code this} or {@code rhs} depending on the boolean value for {@code this}.
+	 *
+	 * @param rhs The right-hand-side value to perform the operation with
+	 * @return {@code this} if {@code this.toboolean()} is false, {@code rhs} otherwise.
+	 */
+	public LuaValue and(LuaValue rhs) {
+		return this.toboolean() ? rhs : this;
+	}
+
+	/**
+	 * Perform boolean {@code or} with another operand, based on lua rules for boolean evaluation.
+	 * This returns either {@code this} or {@code rhs} depending on the boolean value for {@code this}.
+	 *
+	 * @param rhs The right-hand-side value to perform the operation with
+	 * @return {@code this} if {@code this.toboolean()} is true, {@code rhs} otherwise.
+	 */
+	public LuaValue or(LuaValue rhs) {
+		return this.toboolean() ? this : rhs;
+	}
+
+	/**
+	 * Convert this value to a string if it is a {@link LuaString} or {@link LuaNumber},
+	 * or throw a {@link LuaError} if it is not
+	 *
+	 * @return {@link LuaString} corresponding to the value if a string or number
+	 * @throws LuaError if not a string or number
+	 */
+	public LuaString strvalue() {
+		typeError("strValue");
+		return null;
+	}
+
+	/**
+	 * Return the key part of this value if it is a weak table entry, or {@link Constants#NIL} if it was weak and is no longer referenced.
+	 *
+	 * @return {@link LuaValue} key, or {@link Constants#NIL} if it was weak and is no longer referenced.
+	 * @see WeakTable
+	 */
+	public LuaValue strongkey() {
+		return strongvalue();
+	}
+
+	/**
+	 * Return this value as a strong reference, or {@link Constants#NIL} if it was weak and is no longer referenced.
+	 *
+	 * @return {@link LuaValue} referred to, or {@link Constants#NIL} if it was weak and is no longer referenced.
+	 * @see WeakTable
+	 */
+	public LuaValue strongvalue() {
+		return this;
+	}
+
+	/**
+	 * Test if this is a weak reference and its value no longer is referenced.
+	 *
+	 * @return true if this is a weak reference whose value no longer is referenced
+	 * @see WeakTable
+	 */
+	public boolean isweaknil() {
+		return false;
+	}
+
+	/**
+	 * Return value for field reference including metatag processing, or {@link Constants#NIL} if it doesn't exist.
+	 *
+	 * @param state The current lua state
+	 * @param t     {@link LuaValue} on which field is being referenced, typically a table or something with the metatag {@link Constants#INDEX} defined
+	 * @param key   {@link LuaValue} naming the field to reference
+	 * @return {@link LuaValue} for the {@code key} if it exists, or {@link Constants#NIL}
+	 * @throws LuaError if there is a loop in metatag processing
+	 */
+	protected static LuaValue gettable(LuaState state, LuaValue t, LuaValue key) {
+		LuaValue tm;
+		int loop = 0;
+		do {
+			if (t.istable()) {
+				LuaValue res = t.rawget(key);
+				if ((!res.isnil()) || (tm = t.metatag(state, Constants.INDEX)).isnil()) {
+					return res;
+				}
+			} else if ((tm = t.metatag(state, Constants.INDEX)).isnil()) {
+				t.indexerror();
+			}
+			if (tm.isfunction()) {
+				return tm.call(state, t, key);
+			}
+			t = tm;
+		}
+		while (++loop < Constants.MAXTAGLOOP);
+		throw new LuaError("loop in gettable");
+	}
+
+	/**
+	 * Perform field assignment including metatag processing.
+	 *
+	 * @param state The current lua state
+	 * @param t     {@link LuaValue} on which value is being set, typically a table or something with the metatag {@link Constants#NEWINDEX} defined
+	 * @param key   {@link LuaValue} naming the field to assign
+	 * @param value {@link LuaValue} the new value to assign to {@code key}
+	 * @return true if assignment or metatag processing succeeded, false otherwise
+	 * @throws LuaError if there is a loop in metatag processing
+	 */
+	protected static boolean settable(LuaState state, LuaValue t, LuaValue key, LuaValue value) {
+		LuaValue tm;
+		int loop = 0;
+		do {
+			if (t.istable()) {
+				if ((!t.rawget(key).isnil()) || (tm = t.metatag(state, Constants.NEWINDEX)).isnil()) {
+					t.rawset(key, value);
+					return true;
+				}
+			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isnil()) {
+				t.typeError("index");
+			}
+			if (tm.isfunction()) {
+				tm.call(state, t, key, value);
+				return true;
+			}
+			t = tm;
+		}
+		while (++loop < Constants.MAXTAGLOOP);
+		throw new LuaError("loop in settable");
+	}
+
+	/**
+	 * Perform metatag processing for comparison operations.
+	 * <p>
+	 * Finds the supplied metatag value and invokes it,
+	 * or throws {@link LuaError} if none applies.
+	 *
+	 * @param state The current lua state
+	 * @param tag   The metatag to look up
+	 * @param op1   The right-hand-side value to perform the operation with
+	 * @return {@link LuaValue} resulting from metatag processing
+	 * @throws LuaError if metatag was not defined for either operand,
+	 *                  or if the operands are not the same type,
+	 *                  or the metatag values for the two operands are different.
+	 */
+	public LuaValue comparemt(LuaState state, LuaValue tag, LuaValue op1) {
+		if (type() == op1.type()) {
+			LuaValue h = metatag(state, tag);
+			if (!h.isnil() && h == op1.metatag(state, tag)) {
+				return h.call(state, this, op1);
+			}
+		}
+		throw new LuaError("attempt to compare " + tag + " on " + typeName() + " and " + op1.typeName());
+	}
+
+	/**
+	 * Perform metatag processing for arithmetic operations.
+	 * <p>
+	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
+	 * or throws {@link LuaError} if neither is defined.
+	 *
+	 * @param state The current lua state
+	 * @param tag   The metatag to look up
+	 * @param op2   The other operand value to perform the operation with
+	 * @return {@link LuaValue} resulting from metatag processing
+	 * @throws LuaError if metatag was not defined for either operand
+	 * @see Constants#ADD
+	 * @see Constants#SUB
+	 * @see Constants#MUL
+	 * @see Constants#POW
+	 * @see Constants#DIV
+	 * @see Constants#MOD
+	 */
+	protected LuaValue arithmt(LuaState state, LuaValue tag, LuaValue op2) {
+		LuaValue h = this.metatag(state, tag);
+		if (h.isnil()) {
+			h = op2.metatag(state, tag);
+			if (h.isnil()) {
+				LuaValue result;
+				throw new LuaError("attempt to perform arithmetic " + tag + " on " + typeName() + " and " + op2.typeName());
+			}
+		}
+		return h.call(state, this, op2);
+	}
+
+	/**
+	 * Get particular metatag, or return {@link Constants#NIL} if it doesn't exist
+	 *
+	 * @param state The current lua state
+	 * @param tag   Metatag name to look up, typically a string such as
+	 *              {@link Constants#INDEX} or {@link Constants#NEWINDEX}
+	 * @return {@link LuaValue} for tag {@code reason}, or  {@link Constants#NIL}
+	 */
+	public LuaValue metatag(LuaState state, LuaValue tag) {
+		LuaValue mt = getMetatable(state);
+		if (mt == null) {
+			return Constants.NIL;
+		}
+		return mt.rawget(tag);
+	}
+
+	/**
+	 * Get particular metatag, or throw {@link LuaError} if it doesn't exist
+	 *
+	 * @param state  The current lua state
+	 * @param tag    Metatag name to look up, typically a string such as
+	 *               {@link Constants#INDEX} or {@link Constants#NEWINDEX}
+	 * @param reason Description of error when tag lookup fails.
+	 * @return {@link LuaValue} that can be called
+	 * @throws LuaError when the lookup fails.
+	 */
+	protected LuaValue checkmetatag(LuaState state, LuaValue tag, String reason) {
+		LuaValue h = this.metatag(state, tag);
+		if (h.isnil()) {
+			throw new LuaError(reason + typeName());
+		}
+		return h;
+	}
+
+	/**
+	 * Throw {@link LuaError} indicating index was attempted on illegal type
+	 *
+	 * @throws LuaError when called.
+	 */
+	private void indexerror() {
+		throw new LuaError("attempt to index ? (a " + typeName() + " value)");
+	}
+
+	/**
+	 * Callback used during tail call processing to invoke the function once.
+	 * <p>
+	 * This may return a {@link TailcallVarargs} to be evaluated by the client.
+	 * <p>
+	 * This should not be called directly, instead use on of the call invocation functions.
+	 *
+	 * @param state The current lua state
+	 * @param args  the arguments to the call invocation.
+	 * @return Varargs the return values, possible a TailcallVarargs.
+	 * @see LuaValue#call(LuaState)
+	 * @see LuaValue#invoke(LuaState, Varargs)
+	 * @see LuaValue#method(LuaState, LuaValue)
+	 * @see LuaValue#invokeMethod(LuaState, LuaValue, Varargs)
+	 */
+	public Varargs onInvoke(LuaState state, Varargs args) {
+		return invoke(state, args);
+	}
+
+	/**
+	 * Varargs implemenation backed by an array of LuaValues
+	 * <p>
+	 * This is an internal class not intended to be used directly.
+	 * Instead use the corresponding static methods on LuaValue.
+	 *
+	 * @see Factory#varargsOf(LuaValue[])
+	 * @see Factory#varargsOf(LuaValue[], Varargs)
+	 */
+	static final class ArrayVarargs extends Varargs {
+		private final LuaValue[] v;
+		private final Varargs r;
+
+		/**
+		 * Construct a Varargs from an array of LuaValue.
+		 * <p>
+		 * This is an internal class not intended to be used directly.
+		 * Instead use the corresponding static methods on LuaValue.
+		 *
+		 * @see Factory#varargsOf(LuaValue[])
+		 * @see Factory#varargsOf(LuaValue[], Varargs)
+		 */
+		ArrayVarargs(LuaValue[] v, Varargs r) {
+			this.v = v;
+			this.r = r;
+		}
+
+		@Override
+		public LuaValue arg(int i) {
+			return i >= 1 && i <= v.length ? v[i - 1] : r.arg(i - v.length);
+		}
+
+		@Override
+		public int narg() {
+			return v.length + r.narg();
+		}
+
+		@Override
+		public LuaValue arg1() {
+			return v.length > 0 ? v[0] : r.arg1();
+		}
+	}
+
+	/**
+	 * Varargs implemenation backed by an array of LuaValues
+	 * <p>
+	 * This is an internal class not intended to be used directly.
+	 * Instead use the corresponding static methods on LuaValue.
+	 *
+	 * @see Factory#varargsOf(LuaValue[], int, int)
+	 * @see Factory#varargsOf(LuaValue[], int, int, Varargs)
+	 */
+	static final class ArrayPartVarargs extends Varargs {
+		private final int offset;
+		private final LuaValue[] v;
+		private final int length;
+		private final Varargs more;
+
+		/**
+		 * Construct a Varargs from an array of LuaValue.
+		 * <p>
+		 * This is an internal class not intended to be used directly.
+		 * Instead use the corresponding static methods on LuaValue.
+		 *
+		 * @see Factory#varargsOf(LuaValue[], int, int)
+		 */
+		ArrayPartVarargs(LuaValue[] v, int offset, int length) {
+			this.v = v;
+			this.offset = offset;
+			this.length = length;
+			this.more = Constants.NONE;
+		}
+
+		/**
+		 * Construct a Varargs from an array of LuaValue and additional arguments.
+		 * <p>
+		 * This is an internal class not intended to be used directly.
+		 * Instead use the corresponding static method on LuaValue.
+		 *
+		 * @see Factory#varargsOf(LuaValue[], int, int, Varargs)
+		 */
+		public ArrayPartVarargs(LuaValue[] v, int offset, int length, Varargs more) {
+			this.v = v;
+			this.offset = offset;
+			this.length = length;
+			this.more = more;
+		}
+
+		@Override
+		public LuaValue arg(int i) {
+			return i >= 1 && i <= length ? v[i + offset - 1] : more.arg(i - length);
+		}
+
+		@Override
+		public int narg() {
+			return length + more.narg();
+		}
+
+		@Override
+		public LuaValue arg1() {
+			return length > 0 ? v[offset] : more.arg1();
+		}
+	}
+
+	/**
+	 * Varargs implemenation backed by two values.
+	 * <p>
+	 * This is an internal class not intended to be used directly.
+	 * Instead use the corresponding static method on LuaValue.
+	 *
+	 * @see Factory#varargsOf(LuaValue, Varargs)
+	 */
+	static final class PairVarargs extends Varargs {
+		private final LuaValue v1;
+		private final Varargs v2;
+
+		/**
+		 * Construct a Varargs from an two LuaValue.
+		 * <p>
+		 * This is an internal class not intended to be used directly.
+		 * Instead use the corresponding static method on LuaValue.
+		 *
+		 * @param v1 First argument
+		 * @param v2 Remaining arguments
+		 * @see Factory#varargsOf(LuaValue, Varargs)
+		 */
+		PairVarargs(LuaValue v1, Varargs v2) {
+			this.v1 = v1;
+			this.v2 = v2;
+		}
+
+		@Override
+		public LuaValue arg(int i) {
+			return i == 1 ? v1 : v2.arg(i - 1);
+		}
+
+		@Override
+		public int narg() {
+			return 1 + v2.narg();
+		}
+
+		@Override
+		public LuaValue arg1() {
+			return v1;
+		}
+	}
+
+	//region Legacy comparison
+	public final LuaValue eq(LuaState state, LuaValue other) {
+		return OperationHelper.eq(state, this, other) ? Constants.TRUE : Constants.FALSE;
+	}
+
+	public final boolean eq_b(LuaState state, LuaValue other) {
+		return OperationHelper.eq(state, this, other);
+	}
+
+	public final LuaValue lt(LuaState state, LuaValue other) {
+		return OperationHelper.ltValue(state, this, other);
+	}
+
+	public final boolean lt_b(LuaState state, LuaValue other) {
+		return OperationHelper.lt(state, this, other);
+	}
+
+	public final LuaValue lteq(LuaState state, LuaValue other) {
+		return OperationHelper.leValue(state, this, other);
+	}
+
+	public final boolean lteq_b(LuaState state, LuaValue other) {
+		return OperationHelper.le(state, this, other);
+	}
+
+	public final LuaValue neq(LuaState state, LuaValue other) {
+		return OperationHelper.eq(state, this, other) ? Constants.FALSE : Constants.TRUE;
+	}
+
+	public final boolean neq_b(LuaState state, LuaValue other) {
+		return !OperationHelper.eq(state, this, other);
+	}
+
+	public final LuaValue gt(LuaState state, LuaValue other) {
+		return OperationHelper.ltValue(state, other, this);
+	}
+
+	public final boolean gt_b(LuaState state, LuaValue other) {
+		return OperationHelper.lt(state, other, this);
+	}
+
+	public final LuaValue gteq(LuaState state, LuaValue other) {
+		return OperationHelper.leValue(state, other, this);
+	}
+
+	public final boolean gteq_b(LuaState state, LuaValue other) {
+		return OperationHelper.le(state, other, this);
+	}
+
+	public final LuaValue add(LuaState state, LuaValue other) {
+		return OperationHelper.add(state, this, other);
+	}
+
+	public final LuaValue sub(LuaState state, LuaValue other) {
+		return OperationHelper.sub(state, this, other);
+	}
+
+	public final LuaValue mul(LuaState state, LuaValue other) {
+		return OperationHelper.mul(state, this, other);
+	}
+
+	public final LuaValue div(LuaState state, LuaValue other) {
+		return OperationHelper.div(state, this, other);
+	}
+
+	public final LuaValue mod(LuaState state, LuaValue other) {
+		return OperationHelper.mod(state, this, other);
+	}
+
+	public final LuaValue pow(LuaState state, LuaValue other) {
+		return OperationHelper.pow(state, this, other);
+	}
+	//endregion
+}

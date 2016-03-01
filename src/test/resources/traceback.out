@@ -1,0 +1,9 @@
+false	traceback.lua:3: assertion failed!
+stack traceback:
+	traceback.lua:3: in function ?
+	xpcall: in function 'xpcall'
+	traceback.lua:2: in main chunk
+msg
+pcall: msg
+traceback.lua:8: msg
+msg

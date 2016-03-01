@@ -22,17 +22,18 @@
  * ****************************************************************************
  */
 
-import org.luaj.vm2.*;
-import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.lib.platform.FileResourceManipulator;
+
+import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.luaj.vm2.Constants.NONE;
-import static org.luaj.vm2.Factory.tableOf;
-import static org.luaj.vm2.Factory.valueOf;
+import static org.squiddev.cobalt.Constants.NONE;
+import static org.squiddev.cobalt.Factory.tableOf;
+import static org.squiddev.cobalt.Factory.valueOf;
 
 /**
  * lua command for use in java se environments.
@@ -180,7 +181,7 @@ public class lua {
 		try {
 			LuaFunction c;
 			try {
-				c = LoadState.load(script, chunkname, _G);
+				c = LoadState.load(state, script, chunkname, _G);
 			} finally {
 				script.close();
 			}

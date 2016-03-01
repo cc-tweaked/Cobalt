@@ -22,14 +22,14 @@
  * ****************************************************************************
  */
 
-import org.luaj.vm2.Lua;
-import org.luaj.vm2.LuaState;
-import org.luaj.vm2.Print;
-import org.luaj.vm2.Prototype;
-import org.luaj.vm2.compiler.DumpState;
-import org.luaj.vm2.compiler.LuaC;
-import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.lib.platform.FileResourceManipulator;
+import org.squiddev.cobalt.Lua;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.Print;
+import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.compiler.DumpState;
+import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 
