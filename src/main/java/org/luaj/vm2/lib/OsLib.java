@@ -65,8 +65,8 @@ import static org.luaj.vm2.Factory.varargsOf;
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.8">http://www.lua.org/manual/5.1/manual.html#5.8</a>
  */
 public class OsLib extends VarArgFunction {
-	public static String TMP_PREFIX = ".luaj";
-	public static String TMP_SUFFIX = "tmp";
+	public static final String TMP_PREFIX = ".luaj";
+	public static final String TMP_SUFFIX = "tmp";
 
 	private static final int INIT = 0;
 	private static final int CLOCK = 1;

@@ -575,4 +575,8 @@ public class LuaDouble extends LuaNumber {
 		}
 		return this;
 	}
+
+	public double checkarith() {
+		return v;
+	}
 }

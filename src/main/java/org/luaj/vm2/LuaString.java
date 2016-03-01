@@ -469,7 +469,7 @@ public class LuaString extends LuaValue {
 	/**
 	 * Check for number in arithmetic, or throw aritherror
 	 */
-	private double checkarith() {
+	public double checkarith() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			aritherror();

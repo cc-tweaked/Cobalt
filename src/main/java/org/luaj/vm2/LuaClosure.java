@@ -302,27 +302,27 @@ public class LuaClosure extends LuaFunction {
 						continue;
 
 					case Lua.OP_ADD: /*	A B C	R(A):= RK(B) + RK(C)				*/
-						stack[a] = ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).add((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.add((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
 						continue;
 
 					case Lua.OP_SUB: /*	A B C	R(A):= RK(B) - RK(C)				*/
-						stack[a] = ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).sub((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.sub((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
 						continue;
 
 					case Lua.OP_MUL: /*	A B C	R(A):= RK(B) * RK(C)				*/
-						stack[a] = ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).mul((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.mul((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
 						continue;
 
 					case Lua.OP_DIV: /*	A B C	R(A):= RK(B) / RK(C)				*/
-						stack[a] = ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).div((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.div((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
 						continue;
 
 					case Lua.OP_MOD: /*	A B C	R(A):= RK(B) % RK(C)				*/
-						stack[a] = ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).mod((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.mod((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
 						continue;
 
 					case Lua.OP_POW: /*	A B C	R(A):= RK(B) ^ RK(C)				*/
-						stack[a] = ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).pow((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.pow((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
 						continue;
 
 					case Lua.OP_UNM: /*	A B	R(A):= -R(B)					*/
@@ -358,19 +358,19 @@ public class LuaClosure extends LuaFunction {
 						continue;
 
 					case Lua.OP_EQ: /*	A B C	if ((RK(B) == RK(C)) ~= A) then pc++		*/
-						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).eq_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
+						if (OperationHelper.eq((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
 							++pc;
 						}
 						continue;
 
 					case Lua.OP_LT: /*	A B C	if ((RK(B) <  RK(C)) ~= A) then pc++  		*/
-						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).lt_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
+						if (OperationHelper.lt((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
 							++pc;
 						}
 						continue;
 
 					case Lua.OP_LE: /*	A B C	if ((RK(B) <= RK(C)) ~= A) then pc++  		*/
-						if (((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]).lteq_b((c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
+						if (OperationHelper.le((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
 							++pc;
 						}
 						continue;

@@ -504,4 +504,7 @@ public class LuaInteger extends LuaNumber {
 		return Factory.valueOf(String.valueOf(v));
 	}
 
+	public double checkarith() {
+		return v;
+	}
 }

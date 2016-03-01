@@ -894,6 +894,11 @@ public abstract class LuaValue extends Varargs {
 		return null;
 	}
 
+	public double checkarith() {
+		aritherror();
+		return Double.NaN;
+	}
+
 	/**
 	 * Check that the value is numeric and return the value as a double,
 	 * or throw {@link LuaError} if not numeric
