@@ -86,7 +86,8 @@ public class LuaThread extends LuaValue {
 		"suspended",
 		"running",
 		"normal",
-		"dead",};
+		"dead",
+	};
 
 	private LuaValue env;
 	private final State state;
@@ -108,11 +109,6 @@ public class LuaThread extends LuaValue {
 	private static LuaThread running_thread = main_thread;
 
 	/**
-	 * Interval to check for LuaThread dereferencing.
-	 */
-	public static int GC_INTERVAL = 30000;
-
-	/**
 	 * Thread-local used by DebugLib to store debugging state.
 	 */
 	public Object debugState;
@@ -120,7 +116,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Private constructor for main thread only
 	 *
-	 * @param luaState
+	 * @param luaState The current lua state
 	 */
 	private LuaThread(LuaState luaState) {
 		state = new State(this, null);
@@ -131,7 +127,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Create a LuaThread around a function and environment
 	 *
-	 * @param luaState
+	 * @param luaState The current lua state
 	 * @param func     The function to execute
 	 * @param env      The environment to apply to the thread
 	 */

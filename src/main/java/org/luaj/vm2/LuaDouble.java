@@ -269,6 +269,7 @@ public class LuaDouble extends LuaNumber {
 		return this;
 	}
 
+	@Override
 	public double checkarith() {
 		return v;
 	}

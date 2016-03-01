@@ -209,9 +209,8 @@ public final class Buffer {
 	/**
 	 * Concatenate this buffer onto a {@link LuaValue}
 	 *
-	 *
-	 * @param state
-	 * @param lhs the left-hand-side value onto which we are concatenating {@code this}
+	 * @param state The current lua state
+	 * @param lhs   the left-hand-side value onto which we are concatenating {@code this}
 	 * @return {@link Buffer} for use in call chaining.
 	 */
 	public Buffer concatTo(LuaState state, LuaValue lhs) {
@@ -221,9 +220,8 @@ public final class Buffer {
 	/**
 	 * Concatenate this buffer onto a {@link LuaString}
 	 *
-	 *
-	 * @param state
-	 * @param lhs the left-hand-side value onto which we are concatenating {@code this}
+	 * @param state The current lua state
+	 * @param lhs   the left-hand-side value onto which we are concatenating {@code this}
 	 * @return {@link Buffer} for use in call chaining.
 	 */
 	public Buffer concatTo(LuaState state, LuaString lhs) {
@@ -235,9 +233,8 @@ public final class Buffer {
 	 * <p>
 	 * The {@link LuaNumber} will be converted to a string before concatenating.
 	 *
-	 *
-	 * @param state
-	 * @param lhs the left-hand-side value onto which we are concatenating {@code this}
+	 * @param state The current lua state
+	 * @param lhs   the left-hand-side value onto which we are concatenating {@code this}
 	 * @return {@link Buffer} for use in call chaining.
 	 */
 	public Buffer concatTo(LuaState state, LuaNumber lhs) {

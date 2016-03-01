@@ -339,7 +339,7 @@ public class BaseLib extends OneArgFunction {
 	/**
 	 * Load from a named file, returning the chunk or nil,error of can't load
 	 *
-	 * @param state
+	 * @param state    The current lua state
 	 * @param filename Name of the file
 	 * @return Varargs containing chunk, or NIL,error-text on error
 	 */

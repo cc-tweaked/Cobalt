@@ -102,6 +102,7 @@ public abstract class LuaNumber extends LuaValue {
 		return strvalue().concatTo(state, lhs);
 	}
 
+	@Override
 	public double checkarith() {
 		return todouble();
 	}

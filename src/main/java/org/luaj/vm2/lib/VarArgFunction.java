@@ -37,7 +37,7 @@ import static org.luaj.vm2.Factory.varargsOf;
  * <p>
  * Subclasses need only implement {@link LuaValue#invoke(LuaState, Varargs)} to complete this class,
  * simplifying development.
- * All other uses of {@link LuaValue#call(LuaState, LuaValue)}, {@link LuaValue#invoke(LuaState)},etc,
+ * All other uses of {@link LuaValue#call(LuaState, LuaValue)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * converting arguments to {@link Varargs} and
  * dropping or extending return values with {@code nil} values as required.
@@ -89,8 +89,8 @@ public abstract class VarArgFunction extends LibFunction {
 	 * - function needs to be used as a module
 	 * - function has a possibility of returning a TailcallVarargs
 	 *
-	 * @param state
-	 * @param args the arguments to the function call.
+	 * @param state The current lua state
+	 * @param args  the arguments to the function call.
 	 */
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) {
@@ -107,8 +107,8 @@ public abstract class VarArgFunction extends LibFunction {
 	 * that can participate in setfenv, and behaves as expected
 	 * when returning TailcallVarargs.
 	 *
-	 * @param state
-	 * @param args the arguments to the function call.
+	 * @param state The current lua state
+	 * @param args  the arguments to the function call.
 	 */
 	@Override
 	public Varargs onInvoke(LuaState state, Varargs args) {

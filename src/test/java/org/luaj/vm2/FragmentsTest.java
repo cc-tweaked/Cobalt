@@ -83,12 +83,11 @@ public class FragmentsTest {
 
 	@Test
 	public void testVarVarargsUseArg() {
-		runFragment(varargsOf(new LuaValue[]{
-				valueOf("a"),
-				valueOf(2),
-				valueOf("b"),
-				valueOf("c"),
-				NIL}),
+		runFragment(varargsOf(valueOf("a"),
+			valueOf(2),
+			valueOf("b"),
+			valueOf("c"),
+			NIL),
 			"function q(a,...)\n" +
 				"	return a,arg.n,arg[1],arg[2],arg[3]\n" +
 				"end\n" +
@@ -97,11 +96,10 @@ public class FragmentsTest {
 
 	@Test
 	public void testVarVarargsUseBoth() {
-		runFragment(varargsOf(new LuaValue[]{
-				valueOf("a"),
-				valueOf("nil"),
-				valueOf("b"),
-				valueOf("c")}),
+		runFragment(varargsOf(valueOf("a"),
+			valueOf("nil"),
+			valueOf("b"),
+			valueOf("c")),
 			"function r(a,...)\n" +
 				"	return a,type(arg),...\n" +
 				"end\n" +
@@ -370,8 +368,7 @@ public class FragmentsTest {
 
 	@Test
 	public void testTestSimpleBinops() {
-		runFragment(varargsOf(new LuaValue[]{
-				FALSE, FALSE, TRUE, TRUE, FALSE}),
+		runFragment(varargsOf(FALSE, FALSE, TRUE, TRUE, FALSE),
 			"local a,b,c = 2,-2.5,0\n" +
 				"return (a==c), (b==c), (a==a), (a>c), (b>0)\n");
 	}

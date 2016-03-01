@@ -29,6 +29,7 @@ import org.luaj.vm2.LuaThread;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.*;
+import org.luaj.vm2.lib.platform.ResourceManipulator;
 
 /**
  * The {@link JsePlatform} class is a convenience class to standardize
@@ -78,7 +79,7 @@ public class JsePlatform {
 	/**
 	 * Create a standard set of globals for JSE including all the libraries.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return Table of globals initialized with the standard JSE libraries
 	 * @see #debugGlobals(LuaState)
 	 * @see JsePlatform
@@ -101,7 +102,7 @@ public class JsePlatform {
 	/**
 	 * Create standard globals including the {@link DebugLib} library.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return Table of globals initialized with the standard JSE and debug libraries
 	 * @see #standardGlobals(LuaState)
 	 * @see JsePlatform

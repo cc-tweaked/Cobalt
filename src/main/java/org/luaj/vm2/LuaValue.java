@@ -1209,17 +1209,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Throw a {@link LuaError} based on the len operator,
-	 * typically due to an invalid operand type
-	 *
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	protected LuaValue lenerror() {
-		throw new LuaError("attempt to get length of " + typeName());
-	}
-
-	/**
 	 * Throw a {@link LuaError} based on an arithmetic error such as add, or pow,
 	 * typically due to an invalid operand type
 	 *
@@ -1246,7 +1235,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to look up, must not be {@link Constants#NIL} or null
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found and no metatag
 	 * @throws LuaError if {@code this} is not a table,
@@ -1263,7 +1252,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to look up
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table,
@@ -1278,7 +1267,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to look up, must not be null
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table,
@@ -1293,7 +1282,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to use, must not be {@link Constants#NIL} or null
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table,
@@ -1307,7 +1296,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to use
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table,
@@ -1320,7 +1309,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to use, must not be {@link Constants#NIL} or null
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table,
@@ -1333,7 +1322,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get a value in a table without metatag processing.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to look up, must not be {@link Constants#NIL} or null
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
@@ -1345,7 +1334,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get a value in a table without metatag processing.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to look up
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table
@@ -1357,7 +1346,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get a value in a table without metatag processing.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to look up, must not be null
 	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
 	 * @throws LuaError if {@code this} is not a table
@@ -1369,7 +1358,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Set a value in a table without metatag processing.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to use, must not be {@link Constants#NIL} or null
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
@@ -1381,7 +1370,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Set a value in a table without metatag processing.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to use
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table
@@ -1393,7 +1382,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Set a value in a table without metatag processing.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param key   the key to use, must not be null
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 * @throws LuaError if {@code this} is not a table
@@ -1482,7 +1471,7 @@ public abstract class LuaValue extends Varargs {
 	 * and calling it, which should iniitalize the library instance and
 	 * install itself into this instance.
 	 *
-	 * @param state
+	 * @param state   The current lua state
 	 * @param library The callable {@link LuaValue} to load into {@code this}
 	 * @return {@link LuaValue} containing the result of the initialization call.
 	 */
@@ -1514,7 +1503,7 @@ public abstract class LuaValue extends Varargs {
 	 * the metatable returned is this instance metatable.
 	 * For all other types, the class metatable value will be returned.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return metatable, or null if it there is none
 	 */
 	public LuaValue getMetatable(LuaState state) {
@@ -1527,7 +1516,7 @@ public abstract class LuaValue extends Varargs {
 	 * For {@link LuaTable} and {@link LuaUserdata} instances, the metatable is per instance.
 	 * For all other types, there is one metatable per type that can be set directly from java
 	 *
-	 * @param state
+	 * @param state     The current lua state
 	 * @param metatable {@link LuaValue} instance to serve as the metatable, or null to reset it.
 	 * @return {@code this} to allow chaining of Java function calls
 	 */
@@ -1573,7 +1562,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return First return value {@code (this())}, or {@link Constants#NIL} if there were none.
 	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
 	 *                  or the invoked function throws a {@link LuaError}
@@ -1601,7 +1590,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param arg   First argument to supply to the called function
 	 * @return First return value {@code (this(arg))}, or {@link Constants#NIL} if there were none.
 	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
@@ -1630,7 +1619,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param arg1  First argument to supply to the called function
 	 * @param arg2  Second argument to supply to the called function
 	 * @return First return value {@code (this(arg1, arg2))}, or {@link Constants#NIL} if there were none.
@@ -1659,7 +1648,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param arg1  First argument to supply to the called function
 	 * @param arg2  Second argument to supply to the called function
 	 * @param arg3  Second argument to supply to the called function
@@ -1690,7 +1679,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a plain call, use {@link #call(LuaState)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param name  Name of the method to look up for invocation
 	 * @return All values returned from {@code this:name()} as a {@link Varargs} instance
 	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
@@ -1719,7 +1708,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param name  Name of the method to look up for invocation
 	 * @param arg   Argument to supply to the method
 	 * @return All values returned from {@code this:name(arg)} as a {@link Varargs} instance
@@ -1749,7 +1738,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue, LuaValue)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param name  Name of the method to look up for invocation
 	 * @param arg1  First argument to supply to the method
 	 * @param arg2  Second argument to supply to the method
@@ -1775,7 +1764,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a method call, use {@link #invokeMethod(LuaState, LuaValue, Varargs)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param args  Varargs containing the arguments to supply to the called function
 	 * @return All return values as a {@link Varargs} instance.
 	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
@@ -1802,7 +1791,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * To call {@code this} as a plain call, use {@link #invoke(LuaState, Varargs)} instead.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param name  Name of the method to look up for invocation
 	 * @param args  {@link Varargs} containing arguments to supply to the called function after {@code this}
 	 * @return All values returned from {@code this:name(args)} as a {@link Varargs} instance
@@ -1819,7 +1808,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get the metatag value for the {@link Constants#CALL} metatag, if it exists.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return {@link LuaValue} value if metatag is defined
 	 * @throws LuaError if {@link Constants#CALL} metatag is not defined.
 	 */
@@ -1839,7 +1828,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Unary minus: return negative value {@code (-this)} as defined by lua unary minus operator
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return boolean inverse as {@link LuaBoolean} if boolean or nil,
 	 * numeric inverse as {@link LuaNumber} if numeric,
 	 * or metatag processing result if {@link Constants#UNM} metatag is defined
@@ -1852,7 +1841,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Length operator: return lua length of object {@code (#this)} including metatag processing as java int
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return length as defined by the lua # operator
 	 * or metatag processing result
 	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#LEN} metatag
@@ -1864,7 +1853,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Length operator: return lua length of object {@code (#this)} including metatag processing as java int
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @return length as defined by the lua # operator
 	 * or metatag processing result converted to java int using {@link #toint()}
 	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#LEN} metatag
@@ -1961,7 +1950,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Perform equality testing metatag processing
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param lhs   left-hand-side of equality expression
 	 * @param lhsmt metatag value for left-hand-side
 	 * @param rhs   right-hand-side of equality expression
@@ -2016,7 +2005,7 @@ public abstract class LuaValue extends Varargs {
 	 * Only strings and numbers as represented can be concatenated, meaning
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param rhs   The right-hand-side value to perform the operation with
 	 * @return {@link LuaValue} resulting from concatenation of {@code (this .. rhs)}
 	 * @throws LuaError if either operand is not of an appropriate type,
@@ -2035,7 +2024,7 @@ public abstract class LuaValue extends Varargs {
 	 * Only strings and numbers as represented can be concatenated, meaning
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param lhs   The left-hand-side value onto which this will be concatenated
 	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @throws LuaError if either operand is not of an appropriate type,
@@ -2055,7 +2044,7 @@ public abstract class LuaValue extends Varargs {
 	 * Only strings and numbers as represented can be concatenated, meaning
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param lhs   The left-hand-side value onto which this will be concatenated
 	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @throws LuaError if either operand is not of an appropriate type,
@@ -2075,7 +2064,7 @@ public abstract class LuaValue extends Varargs {
 	 * Only strings and numbers as represented can be concatenated, meaning
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param lhs   The left-hand-side value onto which this will be concatenated
 	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
 	 * @throws LuaError if either operand is not of an appropriate type,
@@ -2103,7 +2092,7 @@ public abstract class LuaValue extends Varargs {
 	 * Only strings and numbers as represented can be concatenated, meaning
 	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param rhs   The right-hand-side {@link Buffer} to perform the operation with
 	 * @return LuaString resulting from concatenation of {@code (this .. rhs)}
 	 * @throws LuaError if either operand is not of an appropriate type,
@@ -2119,7 +2108,7 @@ public abstract class LuaValue extends Varargs {
 	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
 	 * or throws {@link LuaError} if it doesn't exist.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param rhs   The right-hand-side value to perform the operation with
 	 * @return {@link LuaValue} resulting from metatag processing for {@link Constants#CONCAT} metatag.
 	 * @throws LuaError if metatag was not defined for either operand
@@ -2200,7 +2189,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Return value for field reference including metatag processing, or {@link Constants#NIL} if it doesn't exist.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param t     {@link LuaValue} on which field is being referenced, typically a table or something with the metatag {@link Constants#INDEX} defined
 	 * @param key   {@link LuaValue} naming the field to reference
 	 * @return {@link LuaValue} for the {@code key} if it exists, or {@link Constants#NIL}
@@ -2230,7 +2219,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Perform field assignment including metatag processing.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param t     {@link LuaValue} on which value is being set, typically a table or something with the metatag {@link Constants#NEWINDEX} defined
 	 * @param key   {@link LuaValue} naming the field to assign
 	 * @param value {@link LuaValue} the new value to assign to {@code key}
@@ -2265,7 +2254,7 @@ public abstract class LuaValue extends Varargs {
 	 * Finds the supplied metatag value and invokes it,
 	 * or throws {@link LuaError} if none applies.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param tag   The metatag to look up
 	 * @param op1   The right-hand-side value to perform the operation with
 	 * @return {@link LuaValue} resulting from metatag processing
@@ -2289,7 +2278,7 @@ public abstract class LuaValue extends Varargs {
 	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
 	 * or throws {@link LuaError} if neither is defined.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param tag   The metatag to look up
 	 * @param op2   The other operand value to perform the operation with
 	 * @return {@link LuaValue} resulting from metatag processing
@@ -2316,7 +2305,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get particular metatag, or return {@link Constants#NIL} if it doesn't exist
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param tag   Metatag name to look up, typically a string such as
 	 *              {@link Constants#INDEX} or {@link Constants#NEWINDEX}
 	 * @return {@link LuaValue} for tag {@code reason}, or  {@link Constants#NIL}
@@ -2332,7 +2321,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get particular metatag, or throw {@link LuaError} if it doesn't exist
 	 *
-	 * @param state
+	 * @param state  The current lua state
 	 * @param tag    Metatag name to look up, typically a string such as
 	 *               {@link Constants#INDEX} or {@link Constants#NEWINDEX}
 	 * @param reason Description of error when tag lookup fails.
@@ -2363,7 +2352,7 @@ public abstract class LuaValue extends Varargs {
 	 * <p>
 	 * This should not be called directly, instead use on of the call invocation functions.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param args  the arguments to the call invocation.
 	 * @return Varargs the return values, possible a TailcallVarargs.
 	 * @see LuaValue#call(LuaState)

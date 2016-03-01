@@ -441,7 +441,7 @@ public class LuaTable extends LuaValue {
 	/**
 	 * Concatenate the contents of a table efficiently, using {@link Buffer}
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param sep   {@link LuaString} separater to apply between elements
 	 * @param i     the first element index
 	 * @param j     the last element index, inclusive
@@ -587,7 +587,7 @@ public class LuaTable extends LuaValue {
 	/**
 	 * Call the supplied function once for each key-value pair
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param func  The function to call
 	 * @return {@link Constants#NIL}
 	 */
@@ -607,7 +607,7 @@ public class LuaTable extends LuaValue {
 	 * Call the supplied function once for each key-value pair
 	 * in the contiguous array part
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param func  The function to call
 	 * @return {@link Constants#NIL}
 	 */
@@ -752,7 +752,7 @@ public class LuaTable extends LuaValue {
 	/**
 	 * Sort the table using a comparator.
 	 *
-	 * @param luaState
+	 * @param luaState   The current lua state
 	 * @param comparator {@link LuaValue} to be called to compare elements.
 	 */
 	public void sort(LuaState luaState, LuaValue comparator) {

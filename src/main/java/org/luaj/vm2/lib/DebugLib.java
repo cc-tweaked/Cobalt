@@ -378,7 +378,6 @@ public class DebugLib extends VarArgFunction {
 	/**
 	 * Called by Closures and recursing java functions on entry
 	 *
-	 * @param state
 	 * @param thread the thread for the call
 	 * @param calls  the number of calls in the call stack
 	 * @param func   the function called

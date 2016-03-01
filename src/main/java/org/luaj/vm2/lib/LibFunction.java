@@ -30,8 +30,6 @@ import org.luaj.vm2.LuaValue;
 
 import java.lang.reflect.Constructor;
 
-import static org.luaj.vm2.Constants.NIL;
-
 /**
  * Subclass of {@link LuaFunction} common to Java functions exposed to lua.
  * <p>
@@ -162,13 +160,13 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = 0, second with 1, etc.
 	 *
-	 * @param state
+	 * @param state   The current lua state
 	 * @param env     The environment to apply to each bound function
 	 * @param factory the Class to instantiate for each bound function
 	 * @param names   array of String names, one for each function.
 	 * @see #bind(LuaState, LuaValue, Class, String[], int)
 	 */
-	protected void bind(LuaState state, LuaValue env, Class factory, String[] names) {
+	protected void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names) {
 		bind(state, env, factory, names, 0);
 	}
 
@@ -178,7 +176,7 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = {@code firstopcode}, second with {@code firstopcode+1}, etc.
 	 *
-	 * @param state
+	 * @param state       The current lua state
 	 * @param env         The environment to apply to each bound function
 	 * @param factory     the Class to instantiate for each bound function
 	 * @param names       array of String names, one for each function.
@@ -200,33 +198,5 @@ public abstract class LibFunction extends LuaFunction {
 		} catch (Exception e) {
 			throw new LuaError("bind failed: " + e);
 		}
-	}
-
-	/**
-	 * Java code generation utility to allocate storage for upvalue, leave it empty
-	 *
-	 * @return The upvalue created
-	 */
-	protected static LuaValue[] newupe() {
-		return new LuaValue[1];
-	}
-
-	/**
-	 * Java code generation utility to allocate storage for upvalue, initialize with nil
-	 *
-	 * @return The upvalue created
-	 */
-	protected static LuaValue[] newupn() {
-		return new LuaValue[]{NIL};
-	}
-
-	/**
-	 * Java code generation utility to allocate storage for upvalue, initialize with value
-	 *
-	 * @param v The value to create it from
-	 * @return The upvalue created
-	 */
-	protected static LuaValue[] newupl(LuaValue v) {
-		return new LuaValue[]{v};
 	}
 }

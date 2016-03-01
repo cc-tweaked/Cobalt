@@ -164,7 +164,7 @@ public class PackageLib extends OneArgFunction {
 	/**
 	 * Allow packages to mark themselves as loaded
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param name  Name of package
 	 * @param value Value of package
 	 */
@@ -205,7 +205,7 @@ public class PackageLib extends OneArgFunction {
 	 * This function may receive optional options after the module name, where
 	 * each option is a function to be applied over the module.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param args  The arguments to set it up with
 	 * @return {@link Constants#NONE}
 	 */
@@ -257,7 +257,7 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	/**
-	 * @param state
+	 * @param state The current lua state
 	 * @param table the table at which to start the search
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
@@ -318,7 +318,7 @@ public class PackageLib extends OneArgFunction {
 	 * If there is any error loading or running the module, or if it cannot find any loader for
 	 * the module, then require signals an error.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param arg   Module name
 	 * @return The loaded value
 	 */
