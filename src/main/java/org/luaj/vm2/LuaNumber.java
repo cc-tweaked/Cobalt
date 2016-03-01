@@ -35,8 +35,7 @@ import static org.luaj.vm2.Constants.TNUMBER;
  * @see LuaDouble
  * @see LuaValue
  */
-abstract
-public class LuaNumber extends LuaValue {
+public abstract class LuaNumber extends LuaValue {
 
 	/**
 	 * Shared static metatable for all number values represented in lua.

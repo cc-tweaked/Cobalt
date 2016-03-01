@@ -155,7 +155,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		}
 	}
 
-	static final class BaseLib2 extends TwoArgFunction {
+	private static final class BaseLib2 extends TwoArgFunction {
 		@Override
 		public LuaValue call(LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
@@ -206,7 +206,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 		return f;
 	}
 
-	static final class BaseLibV extends VarArgFunction {
+	private static final class BaseLibV extends VarArgFunction {
 		public BaseLib baselib;
 
 		@Override

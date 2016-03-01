@@ -59,14 +59,14 @@ public abstract class Varargs {
 	 * @see Varargs#arg1()
 	 * @see Constants#NIL
 	 */
-	abstract public LuaValue arg(int i);
+	public abstract LuaValue arg(int i);
 
 	/**
 	 * Get the number of arguments, or 0 if there are none.
 	 *
 	 * @return number of arguments.
 	 */
-	abstract public int narg();
+	public abstract int narg();
 
 	/**
 	 * Get the first argument in the list.
@@ -75,7 +75,7 @@ public abstract class Varargs {
 	 * @see Varargs#arg(int)
 	 * @see Constants#NIL
 	 */
-	abstract public LuaValue arg1();
+	public abstract LuaValue arg1();
 
 	/**
 	 * Evaluate any pending tail call and return result.

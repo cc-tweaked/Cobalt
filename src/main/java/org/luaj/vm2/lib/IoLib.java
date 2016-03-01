@@ -58,37 +58,35 @@ import static org.luaj.vm2.Factory.varargsOf;
  * @see JseIoLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.7">http://www.lua.org/manual/5.1/manual.html#5.7</a>
  */
-abstract
-public class IoLib extends OneArgFunction {
+public abstract class IoLib extends OneArgFunction {
 
-	abstract
-	protected class File extends LuaValue {
-		abstract public void write(LuaString string) throws IOException;
+	protected abstract class File extends LuaValue {
+		public abstract void write(LuaString string) throws IOException;
 
-		abstract public void flush() throws IOException;
+		public abstract void flush() throws IOException;
 
-		abstract public boolean isstdfile();
+		public abstract boolean isstdfile();
 
-		abstract public void close() throws IOException;
+		public abstract void close() throws IOException;
 
-		abstract public boolean isclosed();
+		public abstract boolean isclosed();
 
 		// returns new position
-		abstract public int seek(String option, int bytecount) throws IOException;
+		public abstract int seek(String option, int bytecount) throws IOException;
 
-		abstract public void setvbuf(String mode, int size);
+		public abstract void setvbuf(String mode, int size);
 
 		// get length remaining to read
-		abstract public int remaining() throws IOException;
+		public abstract int remaining() throws IOException;
 
 		// peek ahead one character
-		abstract public int peek() throws IOException;
+		public abstract int peek() throws IOException;
 
 		// return char if read, -1 if eof, throw IOException on other exception
-		abstract public int read() throws IOException;
+		public abstract int read() throws IOException;
 
 		// return number of bytes read if positive, false if eof, throw IOException on other exception
-		abstract public int read(byte[] bytes, int offset, int length) throws IOException;
+		public abstract int read(byte[] bytes, int offset, int length) throws IOException;
 
 		// delegate method access to file methods table
 		@Override
@@ -121,7 +119,7 @@ public class IoLib extends OneArgFunction {
 	 * @return File
 	 * @throws IOException On stream exception
 	 */
-	abstract protected File wrapStdin() throws IOException;
+	protected abstract File wrapStdin() throws IOException;
 
 	/**
 	 * Wrap the standard output.
@@ -129,7 +127,7 @@ public class IoLib extends OneArgFunction {
 	 * @return File
 	 * @throws IOException On stream exception
 	 */
-	abstract protected File wrapStdout() throws IOException;
+	protected abstract File wrapStdout() throws IOException;
 
 	/**
 	 * Open a file in a particular mode.
@@ -142,7 +140,7 @@ public class IoLib extends OneArgFunction {
 	 * @return File object if successful
 	 * @throws IOException if could not be opened
 	 */
-	abstract protected File openFile(String filename, boolean readMode, boolean appendMode, boolean updateMode, boolean binaryMode) throws IOException;
+	protected abstract File openFile(String filename, boolean readMode, boolean appendMode, boolean updateMode, boolean binaryMode) throws IOException;
 
 	/**
 	 * Open a temporary file.
@@ -150,7 +148,7 @@ public class IoLib extends OneArgFunction {
 	 * @return File object if successful
 	 * @throws IOException if could not be opened
 	 */
-	abstract protected File tmpFile() throws IOException;
+	protected abstract File tmpFile() throws IOException;
 
 	/**
 	 * Start a new process and return a file for input or output
@@ -160,7 +158,7 @@ public class IoLib extends OneArgFunction {
 	 * @return File to read to or write from
 	 * @throws IOException if an i/o exception occurs
 	 */
-	abstract protected File openProgram(String prog, String mode) throws IOException;
+	protected abstract File openProgram(String prog, String mode) throws IOException;
 
 	private File infile = null;
 	private File outfile = null;

@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
 import static org.luaj.vm2.Constants.NIL;
 import static org.luaj.vm2.Factory.userdataOf;
 
-abstract public class WeakTableTest {
+public abstract class WeakTableTest {
 
 	public static class MyData {
 		public final int value;

@@ -27,7 +27,6 @@ import org.luaj.vm2.LuaDouble;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
-import org.luaj.vm2.lib.jse.JseMathLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import java.util.Random;
@@ -39,42 +38,14 @@ import static org.luaj.vm2.Factory.varargsOf;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code math}
  * library.
- * <p>
- * It contains only the math library support that is possible on JME.
- * For a more complete implementation based on math functions specific to JSE
- * use {@link org.luaj.vm2.lib.jse.JseMathLib}.
- * In Particular the following math functions are <b>not</b> implemented by this library:
- * <ul>
- * <li>acos</li>
- * <li>asin</li>
- * <li>atan</li>
- * <li>cosh</li>
- * <li>log</li>
- * <li>log10</li>
- * <li>sinh</li>
- * <li>tanh</li>
- * <li>atan2</li>
- * </ul>
- * <p>
- * The implementations of {@code exp()} and {@code pow()} are constructed by
- * hand for JME, so will be slower and less accurate than when executed on the JSE platform.
- * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction
  * @see JsePlatform
- * @see JseMathLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
 public class MathLib extends OneArgFunction {
-
-	public static MathLib MATHLIB = null;
-
 	private Random random;
-
-	public MathLib() {
-		MATHLIB = this;
-	}
 
 	@Override
 	public LuaValue call(LuaValue arg) {
@@ -84,9 +55,14 @@ public class MathLib extends OneArgFunction {
 		bind(t, MathLib1.class, new String[]{
 			"abs", "ceil", "cos", "deg",
 			"exp", "floor", "rad", "sin",
-			"sqrt", "tan"});
+			"sqrt", "tan",
+			"acos", "asin", "atan", "cosh",
+			"exp", "log", "log10", "sinh",
+			"tanh"
+		});
 		bind(t, MathLib2.class, new String[]{
-			"fmod", "ldexp", "pow",});
+			"fmod", "ldexp", "pow", "atan2"
+		});
 		bind(t, MathLibV.class, new String[]{
 			"frexp", "max", "min", "modf",
 			"randomseed", "random",});
@@ -97,7 +73,7 @@ public class MathLib extends OneArgFunction {
 		return t;
 	}
 
-	static final class MathLib1 extends OneArgFunction {
+	private static final class MathLib1 extends OneArgFunction {
 		@Override
 		public LuaValue call(LuaValue arg) {
 			switch (opcode) {
@@ -110,7 +86,7 @@ public class MathLib extends OneArgFunction {
 				case 3:
 					return valueOf(Math.toDegrees(arg.checkdouble()));
 				case 4:
-					return dpow(Math.E, arg.checkdouble());
+					return valueOf(Math.exp(arg.checkdouble()));
 				case 5:
 					return valueOf(Math.floor(arg.checkdouble()));
 				case 6:
@@ -121,14 +97,30 @@ public class MathLib extends OneArgFunction {
 					return valueOf(Math.sqrt(arg.checkdouble()));
 				case 9:
 					return valueOf(Math.tan(arg.checkdouble()));
+				case 10:
+					return valueOf(Math.acos(arg.checkdouble()));
+				case 11:
+					return valueOf(Math.asin(arg.checkdouble()));
+				case 12:
+					return valueOf(Math.atan(arg.checkdouble()));
+				case 13:
+					return valueOf(Math.cosh(arg.checkdouble()));
+				case 14:
+					return valueOf(Math.exp(arg.checkdouble()));
+				case 15:
+					return valueOf(Math.log(arg.checkdouble()));
+				case 16:
+					return valueOf(Math.log10(arg.checkdouble()));
+				case 17:
+					return valueOf(Math.sinh(arg.checkdouble()));
+				case 18:
+					return valueOf(Math.tanh(arg.checkdouble()));
 			}
 			return NIL;
 		}
 	}
 
-	static final class MathLib2 extends TwoArgFunction {
-		protected MathLib mathlib;
-
+	private static final class MathLib2 extends TwoArgFunction {
 		@Override
 		public LuaValue call(LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
@@ -145,77 +137,17 @@ public class MathLib extends OneArgFunction {
 					long e = (long) ((0 != (1 & ((int) y))) ? Math.floor(y) : Math.ceil(y - 1));
 					return valueOf(x * Double.longBitsToDouble(e << 52));
 				}
-				case 2: { // pow
-					return dpow(arg1.checkdouble(), arg2.checkdouble());
-				}
+				case 2:
+					return valueOf(Math.pow(arg1.checkdouble(), arg2.checkdouble()));
+				case 3:
+					return valueOf(Math.atan2(arg1.checkdouble(), arg2.checkdouble()));
 			}
 			return NIL;
 		}
 	}
 
-	/**
-	 * compute power using installed math library, or default if there is no math library installed
-	 *
-	 * @param a Number
-	 * @param b Exponent
-	 * @return Resultant number
-	 */
-	public static LuaValue dpow(double a, double b) {
-		return LuaDouble.valueOf(
-			MATHLIB != null ?
-				MATHLIB.dpow_lib(a, b) :
-				dpow_default(a, b));
-	}
-
-	public static double dpow_d(double a, double b) {
-		return MATHLIB != null ?
-			MATHLIB.dpow_lib(a, b) :
-			dpow_default(a, b);
-	}
-
-	/**
-	 * Hook to override default dpow behavior with faster implementation.
-	 *
-	 * @param a Number
-	 * @param b Exponent
-	 * @return Resultant number
-	 */
-	public double dpow_lib(double a, double b) {
-		return dpow_default(a, b);
-	}
-
-	/**
-	 * Default JME version computes using longhand heuristics.
-	 *
-	 * @param a Number
-	 * @param b Exponent
-	 * @return Resultant number
-	 */
-	protected static double dpow_default(double a, double b) {
-		if (b < 0) {
-			return 1 / dpow_default(a, -b);
-		}
-		double p = 1;
-		int whole = (int) b;
-		for (double v = a; whole > 0; whole >>= 1, v *= v) {
-			if ((whole & 1) != 0) {
-				p *= v;
-			}
-		}
-		if ((b -= whole) > 0) {
-			int frac = (int) (0x10000 * b);
-			for (; (frac & 0xffff) != 0; frac <<= 1) {
-				a = Math.sqrt(a);
-				if ((frac & 0x8000) != 0) {
-					p *= a;
-				}
-			}
-		}
-		return p;
-	}
-
-	static final class MathLibV extends VarArgFunction {
-		protected MathLib mathlib;
+	private static final class MathLibV extends VarArgFunction {
+		private MathLib mathlib;
 
 		@Override
 		public Varargs invoke(Varargs args) {

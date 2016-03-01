@@ -55,7 +55,7 @@ import static org.luaj.vm2.Constants.NIL;
 public abstract class OneArgFunction extends LibFunction {
 
 	@Override
-	abstract public LuaValue call(LuaValue arg);
+	public abstract LuaValue call(LuaValue arg);
 
 	/**
 	 * Default constructor

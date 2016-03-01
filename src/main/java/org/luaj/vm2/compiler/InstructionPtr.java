@@ -23,20 +23,20 @@
  */
 package org.luaj.vm2.compiler;
 
-class InstructionPtr {
-	final int[] code;
-	final int idx;
+public class InstructionPtr {
+	public final int[] code;
+	public final int idx;
 
-	InstructionPtr(int[] code, int idx) {
+	public InstructionPtr(int[] code, int idx) {
 		this.code = code;
 		this.idx = idx;
 	}
 
-	int get() {
+	public int get() {
 		return code[idx];
 	}
 
-	void set(int value) {
+	public void set(int value) {
 		code[idx] = value;
 	}
 }

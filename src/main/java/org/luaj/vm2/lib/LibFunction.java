@@ -27,6 +27,8 @@ import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaValue;
 
+import java.lang.reflect.Constructor;
+
 import static org.luaj.vm2.Constants.NIL;
 
 /**
@@ -126,7 +128,7 @@ import static org.luaj.vm2.Constants.NIL;
  * See the source code in any of the library functions
  * such as {@link BaseLib} or {@link TableLib} for other examples.
  */
-abstract public class LibFunction extends LuaFunction {
+public abstract class LibFunction extends LuaFunction {
 
 	/**
 	 * User-defined opcode to differentiate between instances of the library function class.
@@ -180,10 +182,13 @@ abstract public class LibFunction extends LuaFunction {
 	 * @param firstopcode the first opcode to use
 	 * @see #bind(LuaValue, Class, String[])
 	 */
-	protected void bind(LuaValue env, Class factory, String[] names, int firstopcode) {
+	protected void bind(LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode) {
 		try {
+			Constructor<? extends LibFunction> constructor = factory.getDeclaredConstructor();
+			constructor.setAccessible(true);
+
 			for (int i = 0, n = names.length; i < n; i++) {
-				LibFunction f = (LibFunction) factory.newInstance();
+				LibFunction f = constructor.newInstance();
 				f.opcode = firstopcode + i;
 				f.name = names[i];
 				f.env = env;

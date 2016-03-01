@@ -23,7 +23,6 @@
  */
 package org.luaj.vm2;
 
-import org.luaj.vm2.lib.MathLib;
 import org.luaj.vm2.lib.StringLib;
 
 import java.io.ByteArrayInputStream;
@@ -278,22 +277,22 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaValue pow(double rhs) {
-		return MathLib.dpow(checkarith(), rhs);
+		return Factory.valueOf(Math.pow(checkarith(), rhs));
 	}
 
 	@Override
 	public LuaValue pow(int rhs) {
-		return MathLib.dpow(checkarith(), rhs);
+		return Factory.valueOf(Math.pow(checkarith(), rhs));
 	}
 
 	@Override
 	public LuaValue powWith(double lhs) {
-		return MathLib.dpow(lhs, checkarith());
+		return Factory.valueOf(Math.pow(lhs, checkarith()));
 	}
 
 	@Override
 	public LuaValue powWith(int lhs) {
-		return MathLib.dpow(lhs, checkarith());
+		return Factory.valueOf(Math.pow(lhs, checkarith()));
 	}
 
 	@Override

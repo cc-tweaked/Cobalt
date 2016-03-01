@@ -61,7 +61,7 @@ import org.luaj.vm2.lib.*;
  * <li>{@link TableLib}</li>
  * <li>{@link StringLib}</li>
  * <li>{@link CoroutineLib}</li>
- * <li>{@link JseMathLib}</li>
+ * <li>{@link MathLib}</li>
  * <li>{@link JseIoLib}</li>
  * <li>{@link JseOsLib}</li>
  * </ul>
@@ -88,7 +88,7 @@ public class JsePlatform {
 		_G.load(new TableLib());
 		_G.load(new StringLib());
 		_G.load(new CoroutineLib());
-		_G.load(new JseMathLib());
+		_G.load(new MathLib());
 		_G.load(new JseIoLib());
 		_G.load(new JseOsLib());
 		LuaThread.setGlobals(_G);

@@ -194,6 +194,12 @@ public class Constants {
 	 */
 	public static final LuaValue[] NILS = new LuaValue[MAXSTACK];
 
+	static {
+		for (int i = 0; i < MAXSTACK; i++) {
+			NILS[i] = NIL;
+		}
+	}
+
 	/**
 	 * Varargs implemenation with no values.
 	 * <p>

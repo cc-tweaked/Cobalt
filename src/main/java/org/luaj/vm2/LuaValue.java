@@ -113,16 +113,7 @@ import static org.luaj.vm2.Factory.varargsOf;
  * @see LoadState
  * @see Varargs
  */
-abstract
-public class LuaValue extends Varargs {
-
-
-	static {
-		for (int i = 0; i < MAXSTACK; i++) {
-			NILS[i] = NIL;
-		}
-	}
-
+public abstract class LuaValue extends Varargs {
 	// type
 
 	/**
@@ -139,7 +130,7 @@ public class LuaValue extends Varargs {
 	 * {@link Constants#TTHREAD}
 	 * @see #typename()
 	 */
-	abstract public int type();
+	public abstract int type();
 
 	/**
 	 * Get the String name of the type of this value.
@@ -151,7 +142,7 @@ public class LuaValue extends Varargs {
 	 * "table", "function", "userdata", "thread"
 	 * @see #type()
 	 */
-	abstract public String typename();
+	public abstract String typename();
 
 	/**
 	 * Check if {@code this} is a {@code boolean}

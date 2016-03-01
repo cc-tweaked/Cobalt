@@ -23,8 +23,6 @@
  */
 package org.luaj.vm2;
 
-import org.luaj.vm2.lib.MathLib;
-
 import static org.luaj.vm2.Constants.FALSE;
 import static org.luaj.vm2.Constants.TRUE;
 
@@ -295,22 +293,22 @@ public class LuaInteger extends LuaNumber {
 
 	@Override
 	public LuaValue pow(double rhs) {
-		return MathLib.dpow(v, rhs);
+		return Factory.valueOf(Math.pow(v, rhs));
 	}
 
 	@Override
 	public LuaValue pow(int rhs) {
-		return MathLib.dpow(v, rhs);
+		return Factory.valueOf(Math.pow(v, rhs));
 	}
 
 	@Override
 	public LuaValue powWith(double lhs) {
-		return MathLib.dpow(lhs, v);
+		return Factory.valueOf(Math.pow(lhs, v));
 	}
 
 	@Override
 	public LuaValue powWith(int lhs) {
-		return MathLib.dpow(lhs, v);
+		return Factory.valueOf(Math.pow(lhs, v));
 	}
 
 	@Override
