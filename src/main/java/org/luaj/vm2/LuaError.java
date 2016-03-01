@@ -25,6 +25,7 @@ package org.luaj.vm2;
 
 import org.luaj.vm2.lib.DebugLib;
 
+import static org.luaj.vm2.Constants.*;
 import static org.luaj.vm2.Factory.valueOf;
 
 /**
@@ -38,46 +39,35 @@ import static org.luaj.vm2.Factory.valueOf;
  * be thrown on almost any luaj Java operation.
  * This is analagous to the fact that any lua script can throw a lua error at any time.
  */
-public class LuaError extends RuntimeException {
-	private static final long serialVersionUID = 1L;
-
-	private String traceback;
+public final class LuaError extends RuntimeException {
+	private static final long serialVersionUID = 3065540200206862088L;
 
 	/**
-	 * Run the error hook if there is one
-	 *
-	 * @param msg the message to use in error hook processing.
+	 * The value for this error
 	 */
-	private static String errorHook(String msg) {
-		LuaThread thread = LuaThread.getRunning();
-		if (thread.err != null) {
-			LuaValue errfunc = thread.err;
-			thread.err = null;
-			try {
-				//  TODO: pass state!
-				return errfunc.call(LuaThread.getRunning().luaState, valueOf(msg)).tojstring();
-			} catch (Throwable t) {
-				return "error in error handling";
-			} finally {
-				thread.err = errfunc;
-			}
-		}
-		return msg;
-	}
+	public LuaValue value;
 
-	private Throwable cause;
+	/**
+	 * The traceback for this error message
+	 */
+	public String traceback;
+
+	/**
+	 * The error to raise at
+	 */
+	private final int level;
 
 	/**
 	 * Construct LuaError when a program exception occurs.
-	 * <p>
+	 *
 	 * All errors generated from lua code should throw LuaError(String) instead.
 	 *
 	 * @param cause the Throwable that caused the error, if known.
 	 */
 	public LuaError(Throwable cause) {
-		super(errorHook(addFileLine("vm error: " + cause)));
-		this.cause = cause;
-		this.traceback = DebugLib.traceback(1);
+		super(cause);
+		level = 1;
+		value = valueOf("vm error: " + cause.toString());
 	}
 
 	/**
@@ -86,8 +76,9 @@ public class LuaError extends RuntimeException {
 	 * @param message message to supply
 	 */
 	public LuaError(String message) {
-		super(errorHook(addFileLine(message)));
-		this.traceback = DebugLib.traceback(1);
+		super(message);
+		level = 1;
+		value = valueOf(message);
 	}
 
 	/**
@@ -97,52 +88,72 @@ public class LuaError extends RuntimeException {
 	 * @param level   where to supply line info from in call stack
 	 */
 	public LuaError(String message, int level) {
-		super(errorHook(addFileLine(message, level)));
-		this.traceback = DebugLib.traceback(1);
+		super(message);
+		this.level = level;
+		value = valueOf(message);
 	}
 
 	/**
-	 * Add file and line info to a message at a particular level
+	 * Construct a LuaError with a specific message.
 	 *
-	 * @param message the String message to use
+	 * @param message message to supply
+	 */
+	public LuaError(LuaValue message) {
+		super(rawToString(message));
+		level = 1;
+		value = message;
+	}
+
+	/**
+	 * Construct a LuaError with a message, and level to draw line number information from.
+	 *
+	 * @param message message to supply
 	 * @param level   where to supply line info from in call stack
 	 */
-	private static String addFileLine(String message, int level) {
-		if (message == null) return null;
-		if (level == 0) return message;
-		String fileline = DebugLib.fileline(level - 1);
-		return fileline != null ? fileline + ": " + message : message;
+	public LuaError(LuaValue message, int level) {
+		super(rawToString(message));
+		this.level = level;
+		value = message;
 	}
 
-	/**
-	 * Add file and line info for the nearest enclosing closure
-	 *
-	 * @param message the String message to use
-	 */
-	private static String addFileLine(String message) {
-		if (message == null) return null;
-		String fileline = DebugLib.fileline();
-		return fileline != null ? fileline + ": " + message : message;
-	}
-
-	/**
-	 * Print the message and stack trace
-	 */
 	@Override
-	public void printStackTrace() {
-		System.out.println(toString());
-		if (traceback != null) {
-			System.out.println(traceback);
+	public String getMessage() {
+		return traceback != null ? traceback : rawToString(value);
+	}
+
+	public LuaError fillTraceback(LuaState state) {
+		if (traceback != null) return this;
+
+		LuaThread thread = state.getCurrentThread();
+		if (value.isstring()) {
+			value = valueOf(DebugLib.fileline(thread, level) + ": " + value.toString());
+		}
+
+		traceback = getMessage() + "\n" + DebugLib.traceback(thread, level);
+
+		if (thread.err != null) {
+			LuaValue errfunc = thread.err;
+			thread.err = null;
+			try {
+				value = errfunc.call(state, value);
+			} catch (Throwable t) {
+				value = valueOf("error in error handling");
+			} finally {
+				thread.err = errfunc;
+			}
+		}
+
+		return this;
+	}
+
+	private static String rawToString(LuaValue value) {
+		switch (value.type()) {
+			case TTABLE:
+			case TUSERDATA:
+			case TLIGHTUSERDATA:
+				return value.typeName() + ": " + Integer.toHexString(value.hashCode());
+			default:
+				return value.toString();
 		}
 	}
-
-	/**
-	 * Get the cause, if any.
-	 */
-	@Override
-	public Throwable getCause() {
-		return cause;
-	}
-
-
 }

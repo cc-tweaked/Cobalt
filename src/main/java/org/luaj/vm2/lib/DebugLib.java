@@ -783,7 +783,11 @@ public class DebugLib extends VarArgFunction {
 	 * @return String containing file and line info if available
 	 */
 	public static String fileline(int level) {
-		DebugState ds = getDebugState(LuaThread.getRunning());
+		return fileline(LuaThread.getRunning(), level);
+	}
+
+	public static String fileline(LuaThread thread, int level) {
+		DebugState ds = getDebugState(thread);
 		DebugInfo di = ds.getDebugInfo(level);
 		return di != null ? di.sourceline() : null;
 	}

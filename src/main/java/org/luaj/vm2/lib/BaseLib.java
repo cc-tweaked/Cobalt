@@ -326,9 +326,10 @@ public class BaseLib extends OneArgFunction {
 			LuaThread.setErrorFunc(olderr);
 			return result;
 		} catch (LuaError le) {
+			le.fillTraceback(state);
+
 			LuaThread.setErrorFunc(olderr);
-			String m = le.getMessage();
-			return varargsOf(FALSE, m != null ? valueOf(m) : NIL);
+			return varargsOf(FALSE, le.value);
 		} catch (Exception e) {
 			LuaThread.setErrorFunc(olderr);
 			String m = e.getMessage();

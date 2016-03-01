@@ -572,9 +572,9 @@ public class LuaClosure extends LuaFunction {
 				}
 			}
 		} catch (LuaError le) {
-			throw le;
+			throw le.fillTraceback(state);
 		} catch (Exception e) {
-			throw new LuaError(e);
+			throw new LuaError(e).fillTraceback(state);
 		} finally {
 			cs.onReturn();
 			if (openups != null) {
