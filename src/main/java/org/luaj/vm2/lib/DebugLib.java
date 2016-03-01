@@ -231,7 +231,7 @@ public class DebugLib extends VarArgFunction {
 			if (kind == null) {
 				return "function ?";
 			}
-			return "function " + kind[0].tojstring();
+			return "function '" + kind[0].tojstring() + "'";
 		}
 
 		public LuaString getlocalname(int index) {
@@ -715,12 +715,12 @@ public class DebugLib extends VarArgFunction {
 		if (di != null) {
 			sb.append("\n\t");
 			sb.append(di.sourceline());
-			sb.append(" in ");
+			sb.append(": in ");
 			while ((di = ds.getDebugInfo(++level)) != null) {
 				sb.append(di.tracename());
 				sb.append("\n\t");
 				sb.append(di.sourceline());
-				sb.append(" in ");
+				sb.append(": in ");
 			}
 			sb.append("main chunk");
 		}

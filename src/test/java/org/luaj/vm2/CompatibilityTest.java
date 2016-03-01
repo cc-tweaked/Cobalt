@@ -64,6 +64,7 @@ public class CompatibilityTest {
 			{"stringlib"},
 			{"tablelib"},
 			{"tailcalls"},
+			{"traceback"},
 			{"upvalues"},
 			{"vm"},
 		};

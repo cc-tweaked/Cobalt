@@ -106,7 +106,7 @@ public class BaseLib extends OneArgFunction {
 		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
 				case 0: // "collectgarbage", // ( opt [,arg] ) -> value
-					String s = arg1.checkjstring();
+					String s = arg1.optjstring("collect");
 					if ("collect".equals(s)) {
 						System.gc();
 						return ZERO;
