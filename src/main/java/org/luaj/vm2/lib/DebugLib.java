@@ -628,7 +628,7 @@ public class DebugLib extends VarArgFunction {
 
 	static LuaValue _getmetatable(Varargs args) {
 		LuaValue object = args.arg(1);
-		LuaValue mt = object.getmetatable();
+		LuaValue mt = object.getMetatable();
 		return mt != null ? mt : NIL;
 	}
 
@@ -656,7 +656,7 @@ public class DebugLib extends VarArgFunction {
 					LuaThread.s_metatable = mt;
 					break;
 				default:
-					object.setmetatable(mt);
+					object.setMetatable(mt);
 			}
 			return TRUE;
 		} catch (LuaError e) {

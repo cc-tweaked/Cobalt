@@ -216,7 +216,7 @@ public class LuaOperationsTest {
 			valueOf("a"), valueOf("aaa"),
 			valueOf("b"), valueOf("bbb"),});
 		LuaTable mt = tableOf(new LuaValue[]{INDEX, _G});
-		newenv.setmetatable(mt);
+		newenv.setMetatable(mt);
 		_G.set("a", aaa);
 		newenv.set("a", eee);
 

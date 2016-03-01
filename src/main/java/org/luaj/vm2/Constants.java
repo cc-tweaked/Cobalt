@@ -58,7 +58,7 @@ public class Constants {
 	 * String array constant containing names of each of the lua value types
 	 *
 	 * @see LuaValue#type()
-	 * @see LuaValue#typename()
+	 * @see LuaValue#typeName()
 	 */
 	public static final String[] TYPE_NAMES = {
 		"nil",

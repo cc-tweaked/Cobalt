@@ -558,7 +558,7 @@ public abstract class Varargs {
 	 * @throws LuaError if the argument does not exist.
 	 */
 	public LuaValue checkvalue(int i) {
-		return i <= narg() ? arg(i) : LuaValue.argerror(i, "value expected");
+		return i <= narg() ? arg(i) : LuaValue.argError(i, "value expected");
 	}
 
 	/**
@@ -581,7 +581,7 @@ public abstract class Varargs {
 	 * @throws LuaError if the the value of {@code test} is {@code false}
 	 */
 	public void argcheck(boolean test, int i, String msg) {
-		if (!test) LuaValue.argerror(i, msg);
+		if (!test) LuaValue.argError(i, msg);
 	}
 
 	/**

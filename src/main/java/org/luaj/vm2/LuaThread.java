@@ -143,7 +143,7 @@ public class LuaThread extends LuaValue {
 	}
 
 	@Override
-	public String typename() {
+	public String typeName() {
 		return "thread";
 	}
 
@@ -163,7 +163,7 @@ public class LuaThread extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getmetatable() {
+	public LuaValue getMetatable() {
 		return s_metatable;
 	}
 
@@ -218,7 +218,11 @@ public class LuaThread extends LuaValue {
 	 */
 	public static LuaValue getGlobals() {
 		LuaValue e = running_thread.env;
-		return e != null ? e : LuaValue.error("LuaThread.setGlobals() not initialized");
+		if (e != null) {
+			return e;
+		} else {
+			throw new LuaError("LuaThread.setGlobals() not initialized");
+		}
 	}
 
 	/**

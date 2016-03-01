@@ -23,10 +23,7 @@
  */
 package org.luaj.vm2.lib;
 
-import org.luaj.vm2.LuaString;
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JseIoLib;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
@@ -101,7 +98,7 @@ public abstract class IoLib extends OneArgFunction {
 		}
 
 		@Override
-		public String typename() {
+		public String typeName() {
 			return "userdata";
 		}
 
@@ -236,7 +233,7 @@ public abstract class IoLib extends OneArgFunction {
 		// set up file metatable
 		LuaTable mt = new LuaTable();
 		bind(mt, IoLibV.class, new String[]{"__index"}, IO_INDEX);
-		t.setmetatable(mt);
+		t.setMetatable(mt);
 
 		// all functions link to library instance
 		setLibInstance(t);
@@ -461,8 +458,7 @@ public abstract class IoLib extends OneArgFunction {
 		try {
 			return rawopenfile(filename, mode);
 		} catch (Exception e) {
-			error("io error: " + e.getMessage());
-			return null;
+			throw new LuaError("io error: " + e.getMessage());
 		}
 	}
 
@@ -492,7 +488,7 @@ public abstract class IoLib extends OneArgFunction {
 		try {
 			return new IoLibV(f, "lnext", LINES_ITER, this);
 		} catch (Exception e) {
-			return error("lines: " + e);
+			throw new LuaError("lines: " + e);
 		}
 	}
 
@@ -530,7 +526,7 @@ public abstract class IoLib extends OneArgFunction {
 						}
 					}
 				default:
-					return argerror(i + 1, "(invalid format)");
+					return argError(i + 1, "(invalid format)");
 			}
 			if ((v[i++] = vi).isnil()) {
 				break;
@@ -542,7 +538,7 @@ public abstract class IoLib extends OneArgFunction {
 	private static File checkfile(LuaValue val) {
 		File f = optfile(val);
 		if (f == null) {
-			argerror(1, "file");
+			argError(1, "file");
 		}
 		checkopen(f);
 		return f;
@@ -554,7 +550,7 @@ public abstract class IoLib extends OneArgFunction {
 
 	private static File checkopen(File file) {
 		if (file.isclosed()) {
-			error("attempt to use a closed file");
+			throw new LuaError("attempt to use a closed file");
 		}
 		return file;
 	}

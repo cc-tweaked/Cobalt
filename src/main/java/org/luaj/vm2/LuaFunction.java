@@ -63,7 +63,7 @@ public abstract class LuaFunction extends LuaValue {
 	}
 
 	@Override
-	public String typename() {
+	public String typeName() {
 		return "function";
 	}
 
@@ -83,7 +83,7 @@ public abstract class LuaFunction extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getmetatable() {
+	public LuaValue getMetatable() {
 		return s_metatable;
 	}
 

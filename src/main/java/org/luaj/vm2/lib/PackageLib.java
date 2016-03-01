@@ -132,9 +132,9 @@ public class PackageLib extends OneArgFunction {
 					return lib.require(arg);
 				case OP_SEEALL: {
 					LuaTable t = arg.checktable();
-					LuaValue m = t.getmetatable();
+					LuaValue m = t.getMetatable();
 					if (m == null) {
-						t.setmetatable(m = tableOf());
+						t.setMetatable(m = tableOf());
 					}
 					m.set(INDEX, LuaThread.getGlobals());
 					return NONE;
@@ -232,7 +232,8 @@ public class PackageLib extends OneArgFunction {
 			LuaValue globals = LuaThread.getGlobals();
 			module = findtable(globals, modname);
 			if (module == null) {
-				error("name conflict for module '" + modname + "'");
+				LuaValue result;
+				throw new LuaError("name conflict for module '" + modname + "'");
 			}
 			LOADED.set(modname, module);
 		} else {
@@ -249,10 +250,12 @@ public class PackageLib extends OneArgFunction {
 		// set the environment of the current function
 		LuaFunction f = LuaThread.getCallstackFunction(1);
 		if (f == null) {
-			error("no calling function");
+			LuaValue result;
+			throw new LuaError("no calling function");
 		}
 		if (!f.isclosure()) {
-			error("'module' not called from a Lua function");
+			LuaValue result;
+			throw new LuaError("'module' not called from a Lua function");
 		}
 		f.setfenv(module);
 
@@ -334,7 +337,8 @@ public class PackageLib extends OneArgFunction {
 		LuaValue loaded = LOADED.get(name);
 		if (loaded.toboolean()) {
 			if (loaded == _SENTINEL) {
-				error("loop or previous error loading module '" + name + "'");
+				LuaValue result;
+				throw new LuaError("loop or previous error loading module '" + name + "'");
 			}
 			return loaded;
 		}
@@ -346,7 +350,8 @@ public class PackageLib extends OneArgFunction {
 		for (int i = 1; true; i++) {
 			LuaValue loader = tbl.get(i);
 			if (loader.isnil()) {
-				error("module '" + name + "' not found: " + name + sb);
+				LuaValue result;
+				throw new LuaError("module '" + name + "' not found: " + name + sb);
 			}
 
 		    /* call loader with module name as argument */

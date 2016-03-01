@@ -107,7 +107,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 	@Override
 	public LuaValue call(LuaValue arg) {
 		env.set("_G", env);
-		env.set("_VERSION", Lua._VERSION);
+		env.set("_VERSION", valueOf(Lua._VERSION));
 		bind(env, BaseLib2.class, LIB2_KEYS);
 		bind(env, BaseLibV.class, LIBV_KEYS);
 
@@ -173,7 +173,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 						System.gc();
 						return TRUE;
 					} else {
-						argerror(1, "gc op");
+						argError(1, "gc op");
 					}
 					return NIL;
 				case 1: // "error", // ( message [,level] ) -> ERR
@@ -182,7 +182,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 					LuaTable t = arg2.checktable();
 					LuaValue f = getfenvobj(arg1);
 					if (!f.isthread() && !f.isclosure()) {
-						error("'setfenv' cannot change environment of given object");
+						throw new LuaError("'setfenv' cannot change environment of given object");
 					}
 					f.setfenv(t);
 					return f.isthread() ? NONE : f;
@@ -214,7 +214,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 			switch (opcode) {
 				case 0: // "assert", // ( v [,message] ) -> v, message | ERR
 					if (!args.arg1().toboolean()) {
-						error(args.narg() > 1 ? args.optjstring(2, "assertion failed!") : "assertion failed!");
+						throw new LuaError(args.narg() > 1 ? args.optjstring(2, "assertion failed!") : "assertion failed!");
 					}
 					return args;
 				case 1: // "dofile", // ( filename ) -> result1, ...
@@ -222,7 +222,11 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 					Varargs v = args.isnil(1) ?
 						BaseLib.loadStream(baselib.STDIN, "=stdin") :
 						BaseLib.loadFile(args.checkjstring(1));
-					return v.isnil(1) ? error(v.tojstring(2)) : v.arg1().invoke();
+					if (v.isnil(1)) {
+						throw new LuaError(v.tojstring(2));
+					} else {
+						return v.arg1().invoke();
+					}
 				}
 				case 2: // "getfenv", // ( [f] ) -> env
 				{
@@ -232,7 +236,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				}
 				case 3: // "getmetatable", // ( object ) -> table
 				{
-					LuaValue mt = args.checkvalue(1).getmetatable();
+					LuaValue mt = args.checkvalue(1).getMetatable();
 					return mt != null ? mt.rawget(METATABLE).optvalue(mt) : NIL;
 				}
 				case 4: // "load", // ( func [,chunkname] ) -> chunk | nil, msg
@@ -292,7 +296,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 					}
 					int i = args.checkint(1);
 					if (i == 0 || i < -n) {
-						argerror(1, "index out of range");
+						argError(1, "index out of range");
 					}
 					return args.subargs(i < 0 ? n + i + 2 : i + 1);
 				}
@@ -314,7 +318,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 					return varargsOf(v);
 				}
 				case 12: // "type",  // (v) -> value
-					return valueOf(args.checkvalue(1).typename());
+					return valueOf(args.checkvalue(1).typeName());
 				case 13: // "rawequal", // (v1, v2) -> boolean
 					return valueOf(args.checkvalue(1) == args.checkvalue(2));
 				case 14: // "rawget", // (table, index) -> value
@@ -326,12 +330,12 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 				}
 				case 16: { // "setmetatable", // (table, metatable) -> table
 					final LuaValue t = args.arg1();
-					final LuaValue mt0 = t.getmetatable();
+					final LuaValue mt0 = t.getMetatable();
 					if (mt0 != null && !mt0.rawget(METATABLE).isnil()) {
-						error("cannot change a protected metatable");
+						throw new LuaError("cannot change a protected metatable");
 					}
 					final LuaValue mt = args.checkvalue(2);
-					return t.setmetatable(mt.isnil() ? null : mt.checktable());
+					return t.setMetatable(mt.isnil() ? null : mt.checktable());
 				}
 				case 17: { // "tostring", // (e) -> value
 					LuaValue arg = args.checkvalue(1);
@@ -352,7 +356,7 @@ public class BaseLib extends OneArgFunction implements ResourceFinder {
 						return arg1.tonumber();
 					} else {
 						if (base < 2 || base > 36) {
-							argerror(2, "base out of range");
+							argError(2, "base out of range");
 						}
 						return arg1.checkstring().tonumber(base);
 					}

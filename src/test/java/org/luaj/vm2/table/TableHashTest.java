@@ -56,7 +56,7 @@ public class TableHashTest {
 		for (int i = 0; i < keys.length; ++i) {
 			assertEquals(capacities[i], t.getHashLength());
 			String si = "Test Value! " + i;
-			t.set(keys[i], si);
+			t.set(keys[i], valueOf(si));
 			assertEquals(0, t.length());
 			assertEquals(i + 1, t.keyCount());
 		}
@@ -104,11 +104,11 @@ public class TableHashTest {
 		LuaTable fb = new_Table();
 
 		// set basic values
-		t.set("ppp", "abc");
-		t.set(123, "def");
+		t.set("ppp", valueOf("abc"));
+		t.set(123, valueOf("def"));
 		mt.set(INDEX, fb);
-		fb.set("qqq", "ghi");
-		fb.set(456, "jkl");
+		fb.set("qqq", valueOf("ghi"));
+		fb.set(456, valueOf("jkl"));
 
 		// check before setting metatable
 		assertEquals("abc", t.get("ppp").tojstring());
@@ -125,8 +125,8 @@ public class TableHashTest {
 		assertEquals("nil", mt.get(456).tojstring());
 
 		// check before setting metatable
-		t.setmetatable(mt);
-		assertEquals(mt, t.getmetatable());
+		t.setMetatable(mt);
+		assertEquals(mt, t.getMetatable());
 		assertEquals("abc", t.get("ppp").tojstring());
 		assertEquals("def", t.get(123).tojstring());
 		assertEquals("ghi", t.get("qqq").tojstring());
@@ -141,14 +141,14 @@ public class TableHashTest {
 		assertEquals("nil", mt.get(456).tojstring());
 
 		// set metatable to metatable without values
-		t.setmetatable(fb);
+		t.setMetatable(fb);
 		assertEquals("abc", t.get("ppp").tojstring());
 		assertEquals("def", t.get(123).tojstring());
 		assertEquals("nil", t.get("qqq").tojstring());
 		assertEquals("nil", t.get(456).tojstring());
 
 		// set metatable to null
-		t.setmetatable(null);
+		t.setMetatable(null);
 		assertEquals("abc", t.get("ppp").tojstring());
 		assertEquals("def", t.get(123).tojstring());
 		assertEquals("nil", t.get("qqq").tojstring());
@@ -169,8 +169,8 @@ public class TableHashTest {
 		};
 
 		// set basic values
-		t.set("ppp", "abc");
-		t.set(123, "def");
+		t.set("ppp", valueOf("abc"));
+		t.set(123, valueOf("def"));
 		mt.set(INDEX, fb);
 
 		// check before setting metatable
@@ -181,16 +181,16 @@ public class TableHashTest {
 
 
 		// check before setting metatable
-		t.setmetatable(mt);
-		assertEquals(mt, t.getmetatable());
+		t.setMetatable(mt);
+		assertEquals(mt, t.getMetatable());
 		assertEquals("abc", t.get("ppp").tojstring());
 		assertEquals("def", t.get(123).tojstring());
 		assertEquals("from mt: qqq", t.get("qqq").tojstring());
 		assertEquals("from mt: 456", t.get(456).tojstring());
 
 		// use raw set
-		t.rawset("qqq", "alt-qqq");
-		t.rawset(456, "alt-456");
+		t.rawset("qqq", valueOf("alt-qqq"));
+		t.rawset(456, valueOf("alt-456"));
 		assertEquals("abc", t.get("ppp").tojstring());
 		assertEquals("def", t.get(123).tojstring());
 		assertEquals("alt-qqq", t.get("qqq").tojstring());
@@ -205,7 +205,7 @@ public class TableHashTest {
 		assertEquals("from mt: 456", t.get(456).tojstring());
 
 		// set metatable to null
-		t.setmetatable(null);
+		t.setMetatable(null);
 		assertEquals("abc", t.get("ppp").tojstring());
 		assertEquals("def", t.get(123).tojstring());
 		assertEquals("nil", t.get("qqq").tojstring());
@@ -218,11 +218,11 @@ public class TableHashTest {
 		assertEquals(NIL, t.next(NIL));
 
 		// insert array elements
-		t.set(1, "one");
+		t.set(1, valueOf("one"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(NIL, t.next(ONE));
-		t.set(2, "two");
+		t.set(2, valueOf("two"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(valueOf(2), t.next(ONE).arg(1));
@@ -230,7 +230,7 @@ public class TableHashTest {
 		assertEquals(NIL, t.next(valueOf(2)));
 
 		// insert hash elements
-		t.set("aa", "aaa");
+		t.set("aa", valueOf("aaa"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(valueOf(2), t.next(ONE).arg(1));
@@ -238,7 +238,7 @@ public class TableHashTest {
 		assertEquals(valueOf("aa"), t.next(valueOf(2)).arg(1));
 		assertEquals(valueOf("aaa"), t.next(valueOf(2)).arg(2));
 		assertEquals(NIL, t.next(valueOf("aa")));
-		t.set("bb", "bbb");
+		t.set("bb", valueOf("bbb"));
 		assertEquals(valueOf(1), t.next(NIL).arg(1));
 		assertEquals(valueOf("one"), t.next(NIL).arg(2));
 		assertEquals(valueOf(2), t.next(ONE).arg(1));

@@ -58,7 +58,7 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public String typename() {
+	public String typeName() {
 		return "nil";
 	}
 
@@ -83,7 +83,7 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getmetatable() {
+	public LuaValue getMetatable() {
 		return s_metatable;
 	}
 
@@ -93,12 +93,12 @@ public class LuaNil extends LuaValue {
 
 	@Override
 	public LuaValue checknotnil() {
-		return argerror("value");
+		return argError("value");
 	}
 
 	@Override
 	public LuaValue checkvalidkey() {
-		return typerror("table index");
+		return typeError("table index");
 	}
 
 	// optional argument conversions - nil alwas falls badk to default value

@@ -182,7 +182,7 @@ public class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public String typename() {
+	public String typeName() {
 		return "table";
 	}
 
@@ -246,12 +246,12 @@ public class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getmetatable() {
+	public LuaValue getMetatable() {
 		return m_metatable;
 	}
 
 	@Override
-	public LuaValue setmetatable(LuaValue metatable) {
+	public LuaValue setMetatable(LuaValue metatable) {
 		m_metatable = metatable;
 		LuaValue mode;
 		if (m_metatable != null && (mode = m_metatable.rawget(MODE)).isstring()) {
@@ -516,17 +516,17 @@ public class LuaTable extends LuaValue {
 					i = key.toint();
 					if (i > 0 && i <= array.length) {
 						if (array[i - 1] == null) {
-							error("invalid key to 'next'");
+							throw new LuaError("invalid key to 'next'");
 						}
 						break;
 					}
 				}
 				if (hashKeys.length == 0) {
-					error("invalid key to 'next'");
+					throw new LuaError("invalid key to 'next'");
 				}
 				i = hashFindSlot(key);
 				if (hashKeys[i] == null) {
-					error("invalid key to 'next'");
+					throw new LuaError("invalid key to 'next'");
 				}
 				i += 1 + array.length;
 			}

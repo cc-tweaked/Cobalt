@@ -48,7 +48,7 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public String typename() {
+	public String typeName() {
 		return "number";
 	}
 
@@ -83,7 +83,7 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getmetatable() {
+	public LuaValue getMetatable() {
 		return s_metatable;
 	}
 

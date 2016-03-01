@@ -192,7 +192,7 @@ public class Factory {
 	 * @see Factory#varargsOf(LuaValue, Varargs)
 	 * @see Factory#varargsOf(LuaValue[], int, int)
 	 */
-	public static Varargs varargsOf(final LuaValue[] v) {
+	public static Varargs varargsOf(final LuaValue... v) {
 		switch (v.length) {
 			case 0:
 				return NONE;
@@ -326,7 +326,7 @@ public class Factory {
 	 * @see LuaValue#call()
 	 * @see LuaValue#invoke()
 	 * @see LuaValue#method(LuaValue)
-	 * @see LuaValue#invokemethod(LuaValue)
+	 * @see LuaValue#invokeMethod(LuaValue)
 	 */
 	public static Varargs tailcallOf(LuaValue func, Varargs args) {
 		return new TailcallVarargs(func, args);

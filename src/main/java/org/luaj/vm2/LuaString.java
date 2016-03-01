@@ -184,7 +184,7 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getmetatable() {
+	public LuaValue getMetatable() {
 		return s_metatable;
 	}
 
@@ -194,7 +194,7 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public String typename() {
+	public String typeName() {
 		return "string";
 	}
 
@@ -262,7 +262,7 @@ public class LuaString extends LuaValue {
 	public double checkarith() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
-			aritherror();
+			arithError();
 		}
 		return d;
 	}
@@ -286,7 +286,7 @@ public class LuaString extends LuaValue {
 	public double checkdouble() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
-			argerror("number");
+			argError("number");
 		}
 		return d;
 	}
@@ -300,7 +300,7 @@ public class LuaString extends LuaValue {
 	public LuaNumber checknumber(String msg) {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
-			error(msg);
+			throw new LuaError(msg);
 		}
 		return Factory.valueOf(d);
 	}

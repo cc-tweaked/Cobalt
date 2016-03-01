@@ -50,7 +50,7 @@ public class MathLib extends OneArgFunction {
 	@Override
 	public LuaValue call(LuaValue arg) {
 		LuaTable t = new LuaTable(0, 30);
-		t.set("pi", Math.PI);
+		t.set("pi", valueOf(Math.PI));
 		t.set("huge", LuaDouble.POSINF);
 		bind(t, MathLib1.class, new String[]{
 			"abs", "ceil", "cos", "deg",
@@ -195,13 +195,13 @@ public class MathLib extends OneArgFunction {
 							return valueOf(mathlib.random.nextDouble());
 						case 1: {
 							int m = args.checkint(1);
-							if (m < 1) argerror(1, "interval is empty");
+							if (m < 1) argError(1, "interval is empty");
 							return valueOf(1 + mathlib.random.nextInt(m));
 						}
 						default: {
 							int m = args.checkint(1);
 							int n = args.checkint(2);
-							if (n < m) argerror(2, "interval is empty");
+							if (n < m) argError(2, "interval is empty");
 							return valueOf(m + mathlib.random.nextInt(n + 1 - m));
 						}
 					}

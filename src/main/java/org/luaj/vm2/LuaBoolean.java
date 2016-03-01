@@ -75,7 +75,7 @@ public final class LuaBoolean extends LuaValue {
 	}
 
 	@Override
-	public String typename() {
+	public String typeName() {
 		return "boolean";
 	}
 
@@ -119,7 +119,7 @@ public final class LuaBoolean extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getmetatable() {
+	public LuaValue getMetatable() {
 		return s_metatable;
 	}
 }

@@ -26,10 +26,7 @@ package org.luaj.vm2.vm;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.luaj.vm2.LoadState;
-import org.luaj.vm2.LuaThread;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.jse.JsePlatform;
@@ -183,8 +180,7 @@ public class OrphanedThreadTest {
 			System.out.println("in abnormal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
 			System.out.println("in abnormal.2, arg is " + arg);
-			error("abnormal condition");
-			return ZERO;
+			throw new LuaError("abnormal condition");
 		}
 	}
 
@@ -194,8 +190,7 @@ public class OrphanedThreadTest {
 			System.out.println("in abnormal.1, arg is " + arg);
 			arg = LuaThread.yield(ONE).arg1();
 			System.out.println("in abnormal.2, arg is " + arg);
-			error("abnormal condition");
-			return ZERO;
+			throw new LuaError("abnormal condition");
 		}
 	}
 }

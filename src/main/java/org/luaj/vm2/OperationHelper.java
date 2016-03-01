@@ -90,7 +90,7 @@ public final class OperationHelper {
 	public static boolean lt(LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareerror(right);
+			left.compareError(right);
 			return false;
 		}
 		switch (tLeft) {
@@ -106,7 +106,7 @@ public final class OperationHelper {
 	public static LuaValue ltValue(LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareerror(right);
+			left.compareError(right);
 			return FALSE;
 		}
 		switch (tLeft) {
@@ -122,7 +122,7 @@ public final class OperationHelper {
 	public static boolean le(LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareerror(right);
+			left.compareError(right);
 			return false;
 		}
 		switch (tLeft) {
@@ -138,7 +138,7 @@ public final class OperationHelper {
 	public static LuaValue leValue(LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareerror(right);
+			left.compareError(right);
 			return FALSE;
 		}
 		switch (tLeft) {
@@ -170,10 +170,10 @@ public final class OperationHelper {
 			case TTABLE: {
 				if (left.raweq(right)) return true;
 
-				LuaValue leftMeta = left.getmetatable();
+				LuaValue leftMeta = left.getMetatable();
 				if (leftMeta == null) return false;
 
-				LuaValue rightMeta = right.getmetatable();
+				LuaValue rightMeta = right.getMetatable();
 				return rightMeta != null && LuaValue.eqmtcall(left, leftMeta, right, rightMeta);
 			}
 			default:

@@ -136,7 +136,7 @@ public class StringLib extends OneArgFunction {
 		if (posi > pose) return NONE;  /* empty interval; return no values */
 		n = pose - posi + 1;
 		if (posi + n <= pose)  /* overflow? */ {
-			error("string slice too long");
+			throw new LuaError("string slice too long");
 		}
 		LuaValue[] v = new LuaValue[n];
 		for (i = 0; i < n; i++) {
@@ -162,7 +162,7 @@ public class StringLib extends OneArgFunction {
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
 			int c = args.checkint(a);
-			if (c < 0 || c >= 256) argerror(a, "invalid value");
+			if (c < 0 || c >= 256) argError(a, "invalid value");
 			bytes[i] = (byte) c;
 		}
 		return LuaString.valueOf(bytes);
@@ -184,7 +184,7 @@ public class StringLib extends OneArgFunction {
 			DumpState.dump(((LuaClosure) f).p, baos, true);
 			return LuaString.valueOf(baos.toByteArray());
 		} catch (IOException e) {
-			return error(e.getMessage());
+			throw new LuaError(e.getMessage());
 		}
 	}
 
@@ -289,8 +289,7 @@ public class StringLib extends OneArgFunction {
 								}
 								break;
 								default:
-									error("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
-									break;
+									throw new LuaError("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
 							}
 						}
 					}
@@ -370,7 +369,7 @@ public class StringLib extends OneArgFunction {
 				}
 			}
 			if (p - start > MAX_FLAGS) {
-				error("invalid format (repeated flags)");
+				throw new LuaError("invalid format (repeated flags)");
 			}
 
 			width = -1;
@@ -397,7 +396,7 @@ public class StringLib extends OneArgFunction {
 			}
 
 			if (Character.isDigit((char) c)) {
-				error("invalid format (width or precision too long)");
+				throw new LuaError("invalid format (width or precision too long)");
 			}
 
 			zeroPad &= !leftAdjust; // '-' overrides '0'
@@ -905,14 +904,14 @@ public class StringLib extends OneArgFunction {
 					break;
 
 				default:
-					error("bad argument: string/function/table expected");
-					return;
+					throw new LuaError("bad argument: string/function/table expected");
 			}
 
 			if (!repl.toboolean()) {
 				repl = s.substring(soffset, end);
 			} else if (!repl.isstring()) {
-				error("invalid replacement value (a " + repl.typename() + ")");
+				LuaValue result;
+				throw new LuaError("invalid replacement value (a " + repl.typeName() + ")");
 			}
 			lbuf.append(repl.strvalue());
 		}
@@ -937,12 +936,12 @@ public class StringLib extends OneArgFunction {
 				if (i == 0) {
 					return s.substring(soff, end);
 				} else {
-					return error("invalid capture index");
+					throw new LuaError("invalid capture index");
 				}
 			} else {
 				int l = clen[i];
 				if (l == CAP_UNFINISHED) {
-					return error("unfinished capture");
+					throw new LuaError("unfinished capture");
 				}
 				if (l == CAP_POSITION) {
 					return valueOf(cinit[i] + 1);
@@ -956,7 +955,7 @@ public class StringLib extends OneArgFunction {
 		private int check_capture(int l) {
 			l -= '1';
 			if (l < 0 || l >= level || this.clen[l] == CAP_UNFINISHED) {
-				error("invalid capture index");
+				throw new LuaError("invalid capture index");
 			}
 			return l;
 		}
@@ -968,15 +967,14 @@ public class StringLib extends OneArgFunction {
 					return level;
 				}
 			}
-			error("invalid pattern capture");
-			return 0;
+			throw new LuaError("invalid pattern capture");
 		}
 
 		int classend(int poffset) {
 			switch (p.luaByte(poffset++)) {
 				case L_ESC:
 					if (poffset == p.length()) {
-						error("malformed pattern (ends with %)");
+						throw new LuaError("malformed pattern (ends with %)");
 					}
 					return poffset + 1;
 
@@ -984,7 +982,7 @@ public class StringLib extends OneArgFunction {
 					if (p.luaByte(poffset) == '^') poffset++;
 					do {
 						if (poffset == p.length()) {
-							error("malformed pattern (missing ])");
+							throw new LuaError("malformed pattern (missing ])");
 						}
 						if (p.luaByte(poffset++) == L_ESC && poffset != p.length()) {
 							poffset++;
@@ -1096,7 +1094,7 @@ public class StringLib extends OneArgFunction {
 						return end_capture(soffset, poffset + 1);
 					case L_ESC:
 						if (poffset + 1 == p.length()) {
-							error("malformed pattern (ends with '%')");
+							throw new LuaError("malformed pattern (ends with '%')");
 						}
 						switch (p.luaByte(poffset + 1)) {
 							case 'b':
@@ -1107,7 +1105,7 @@ public class StringLib extends OneArgFunction {
 							case 'f': {
 								poffset += 2;
 								if (p.luaByte(poffset) != '[') {
-									error("Missing [ after %f in pattern");
+									throw new LuaError("Missing [ after %f in pattern");
 								}
 								int ep = classend(poffset);
 								int previous = (soffset == 0) ? -1 : s.luaByte(soffset - 1);
@@ -1195,7 +1193,7 @@ public class StringLib extends OneArgFunction {
 			int res;
 			int level = this.level;
 			if (level >= MAX_CAPTURES) {
-				error("too many captures");
+				throw new LuaError("too many captures");
 			}
 			cinit[level] = soff;
 			clen[level] = what;
@@ -1230,7 +1228,7 @@ public class StringLib extends OneArgFunction {
 		int matchbalance(int soff, int poff) {
 			final int plen = p.length();
 			if (poff == plen || poff + 1 == plen) {
-				error("unbalanced pattern");
+				throw new LuaError("unbalanced pattern");
 			}
 			if (s.luaByte(soff) != p.luaByte(poff)) {
 				return -1;

@@ -260,14 +260,14 @@ public class UnaryBinaryOperatorsTest {
 			LuaBoolean.s_metatable = tableOf(new LuaValue[]{EQ, RETURN_NIL,});
 			LuaNumber.s_metatable = tableOf(new LuaValue[]{EQ, RETURN_NIL,});
 			LuaString.s_metatable = tableOf(new LuaValue[]{EQ, RETURN_NIL,});
-			tbl.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
-			tbl2.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
-			uda.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
-			udb.setmetatable(uda.getmetatable());
-			uda2.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
+			tbl.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
+			tbl2.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
+			uda.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
+			udb.setMetatable(uda.getMetatable());
+			uda2.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
 			// diff metatag function
-			tbl3.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
-			uda3.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
+			tbl3.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
+			uda3.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
 
 			// primitive types or same valu do not invoke metatag as per C implementation
 			assertEquals(tru, tru.eq(tru));
@@ -314,14 +314,14 @@ public class UnaryBinaryOperatorsTest {
 			LuaBoolean.s_metatable = tableOf(new LuaValue[]{EQ, RETURN_ONE,});
 			LuaNumber.s_metatable = tableOf(new LuaValue[]{EQ, RETURN_ONE,});
 			LuaString.s_metatable = tableOf(new LuaValue[]{EQ, RETURN_ONE,});
-			tbl.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
-			tbl2.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
-			uda.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
-			udb.setmetatable(uda.getmetatable());
-			uda2.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
+			tbl.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
+			tbl2.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
+			uda.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
+			udb.setMetatable(uda.getMetatable());
+			uda2.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_ONE,}));
 			// diff metatag function
-			tbl3.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
-			uda3.setmetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
+			tbl3.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
+			uda3.setMetatable(tableOf(new LuaValue[]{EQ, RETURN_NIL,}));
 
 			// primitive types or same value do not invoke metatag as per C implementation
 			assertEquals(tru, tru.eq(tru));
@@ -515,8 +515,8 @@ public class UnaryBinaryOperatorsTest {
 		for (String op : ops) {
 			for (LuaValue val : vals) {
 				for (LuaValue numeric : numerics) {
-					checkArithError(val, numeric, op, val.typename());
-					checkArithError(numeric, val, op, val.typename());
+					checkArithError(val, numeric, op, val.typeName());
+					checkArithError(numeric, val, op, val.typeName());
 				}
 			}
 		}
@@ -528,10 +528,10 @@ public class UnaryBinaryOperatorsTest {
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to perform arithmetic")) || !actual.contains(type)) {
-				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+				fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") reported '" + actual + "'");
 			}
 		} catch (Exception e) {
-			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
+			fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") threw " + e);
 		}
 	}
 
@@ -822,7 +822,7 @@ public class UnaryBinaryOperatorsTest {
 		} catch (LuaError ignored) {
 		}
 
-		tbl.setmetatable(tableOf(new LuaValue[]{ADD, RETURN_ONE,}));
+		tbl.setMetatable(tableOf(new LuaValue[]{ADD, RETURN_ONE,}));
 		assertEquals(one, tbl.add(zero));
 		assertEquals(one, zero.add(tbl));
 
@@ -838,7 +838,7 @@ public class UnaryBinaryOperatorsTest {
 		} catch (LuaError ignored) {
 		}
 
-		tbl.setmetatable(tableOf(new LuaValue[]{SUB, RETURN_ONE,}));
+		tbl.setMetatable(tableOf(new LuaValue[]{SUB, RETURN_ONE,}));
 		assertEquals(one, tbl.sub(zero));
 		assertEquals(one, zero.sub(tbl));
 
@@ -854,7 +854,7 @@ public class UnaryBinaryOperatorsTest {
 		} catch (LuaError ignored) {
 		}
 
-		tbl.setmetatable(tableOf(new LuaValue[]{MUL, RETURN_ONE,}));
+		tbl.setMetatable(tableOf(new LuaValue[]{MUL, RETURN_ONE,}));
 		assertEquals(one, tbl.mul(zero));
 		assertEquals(one, zero.mul(tbl));
 
@@ -870,7 +870,7 @@ public class UnaryBinaryOperatorsTest {
 		} catch (LuaError ignored) {
 		}
 
-		tbl.setmetatable(tableOf(new LuaValue[]{DIV, RETURN_ONE,}));
+		tbl.setMetatable(tableOf(new LuaValue[]{DIV, RETURN_ONE,}));
 		assertEquals(one, tbl.div(zero));
 		assertEquals(one, zero.div(tbl));
 
@@ -886,7 +886,7 @@ public class UnaryBinaryOperatorsTest {
 		} catch (LuaError ignored) {
 		}
 
-		tbl.setmetatable(tableOf(new LuaValue[]{POW, RETURN_ONE,}));
+		tbl.setMetatable(tableOf(new LuaValue[]{POW, RETURN_ONE,}));
 		assertEquals(one, tbl.pow(zero));
 		assertEquals(one, zero.pow(tbl));
 
@@ -902,7 +902,7 @@ public class UnaryBinaryOperatorsTest {
 		} catch (LuaError ignored) {
 		}
 
-		tbl.setmetatable(tableOf(new LuaValue[]{MOD, RETURN_ONE,}));
+		tbl.setMetatable(tableOf(new LuaValue[]{MOD, RETURN_ONE,}));
 		assertEquals(one, tbl.mod(zero));
 		assertEquals(one, zero.mod(tbl));
 	}
@@ -1046,8 +1046,8 @@ public class UnaryBinaryOperatorsTest {
 		for (String op : ops) {
 			for (LuaValue val : vals) {
 				for (LuaValue numeric : numerics) {
-					checkCompareError(val, numeric, op, val.typename());
-					checkCompareError(numeric, val, op, val.typename());
+					checkCompareError(val, numeric, op, val.typeName());
+					checkCompareError(numeric, val, op, val.typeName());
 				}
 			}
 		}
@@ -1059,10 +1059,10 @@ public class UnaryBinaryOperatorsTest {
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to compare")) || !actual.contains(type)) {
-				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+				fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") reported '" + actual + "'");
 			}
 		} catch (Exception e) {
-			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
+			fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") threw " + e);
 		}
 	}
 
@@ -1080,8 +1080,8 @@ public class UnaryBinaryOperatorsTest {
 				LE, RETURN_RHS,
 			});
 			LuaBoolean.s_metatable = mt;
-			tbl.setmetatable(mt);
-			tbl2.setmetatable(mt);
+			tbl.setMetatable(mt);
+			tbl2.setMetatable(mt);
 			assertEquals(tru, tru.lt(fal));
 			assertEquals(fal, fal.lt(tru));
 			assertEquals(tbl, tbl.lt(tbl2));
@@ -1120,8 +1120,8 @@ public class UnaryBinaryOperatorsTest {
 				LT, RETURN_RHS,
 				LE, RETURN_LHS});
 			LuaBoolean.s_metatable = mt;
-			tbl.setmetatable(mt);
-			tbl2.setmetatable(mt);
+			tbl.setMetatable(mt);
+			tbl2.setMetatable(mt);
 			assertEquals(fal, tru.lt(fal));
 			assertEquals(tru, fal.lt(tru));
 			assertEquals(tbl2, tbl.lt(tbl2));
@@ -1503,8 +1503,8 @@ public class UnaryBinaryOperatorsTest {
 		for (String op : ops) {
 			for (LuaValue val : vals) {
 				for (LuaValue numeric : numerics) {
-					checkConcatError(val, numeric, op, val.typename());
-					checkConcatError(numeric, val, op, val.typename());
+					checkConcatError(val, numeric, op, val.typeName());
+					checkConcatError(numeric, val, op, val.typeName());
 				}
 			}
 		}
@@ -1516,10 +1516,10 @@ public class UnaryBinaryOperatorsTest {
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to concatenate")) || !actual.contains(type)) {
-				fail("(" + a.typename() + "," + op + "," + b.typename() + ") reported '" + actual + "'");
+				fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") reported '" + actual + "'");
 			}
 		} catch (Exception e) {
-			fail("(" + a.typename() + "," + op + "," + b.typename() + ") threw " + e);
+			fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") threw " + e);
 		}
 	}
 

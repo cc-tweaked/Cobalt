@@ -241,7 +241,7 @@ public class WeakTable extends LuaTable {
 		}
 
 		@Override
-		public String typename() {
+		public String typeName() {
 			illegal("typename", "weak value");
 			return null;
 		}
@@ -280,7 +280,7 @@ public class WeakTable extends LuaTable {
 		private WeakUserdata(LuaValue value) {
 			super(value);
 			ob = new WeakReference<Object>(value.touserdata());
-			mt = value.getmetatable();
+			mt = value.getMetatable();
 		}
 
 		@Override
@@ -345,7 +345,7 @@ public class WeakTable extends LuaTable {
 		}
 
 		@Override
-		public String typename() {
+		public String typeName() {
 			illegal("typename", "weak entry");
 			return null;
 		}

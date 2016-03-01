@@ -23,10 +23,7 @@
  */
 package org.luaj.vm2.lib;
 
-import org.luaj.vm2.LuaTable;
-import org.luaj.vm2.LuaThread;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
+import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
 import static org.luaj.vm2.Constants.NIL;
@@ -111,7 +108,7 @@ public class CoroutineLib extends VarArgFunction {
 				if (result.arg1().toboolean()) {
 					return result.subargs(2);
 				} else {
-					error(result.arg(2).tojstring());
+					throw new LuaError(result.arg(2).tojstring());
 				}
 			}
 			default:
