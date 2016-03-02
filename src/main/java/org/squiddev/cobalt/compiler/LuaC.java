@@ -72,7 +72,7 @@ public class LuaC implements LuaCompiler {
 	 * try to use it when handed bytes that are
 	 * not already a compiled lua chunk.
 	 *
-	 * @param state
+	 * @param state The lua state to install into
 	 */
 	public static void install(LuaState state) {
 		state.compiler = instance;

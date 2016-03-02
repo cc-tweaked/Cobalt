@@ -352,7 +352,7 @@ public class DebugLib extends VarArgFunction {
 		if (thread.debugState == null) {
 			thread.debugState = new DebugState(thread);
 		}
-		return (DebugState) thread.debugState;
+		return thread.debugState;
 	}
 
 	public static DebugState getDebugState(LuaState state) {
@@ -732,6 +732,7 @@ public class DebugLib extends VarArgFunction {
 	/**
 	 * Get file and line for the nearest calling closure.
 	 *
+	 * @param thread The current thread
 	 * @return String identifying the file and line of the nearest lua closure,
 	 * or the function name of the Java call if no closure is being called.
 	 */

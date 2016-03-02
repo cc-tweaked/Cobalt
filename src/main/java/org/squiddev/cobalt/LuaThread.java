@@ -88,7 +88,7 @@ public class LuaThread extends LuaValue {
 	 */
 	public LuaValue err;
 
-	final CallStack callstack;
+	private final CallStack callstack;
 
 	public static final int MAX_CALLSTACK = 256;
 
@@ -97,12 +97,13 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Thread-local used by DebugLib to store debugging state.
 	 */
-	public Object debugState;
+	public DebugLib.DebugState debugState;
 
 	/**
 	 * Private constructor for main thread only
 	 *
 	 * @param luaState The current lua state
+	 * @param env      The thread's environment
 	 */
 	public LuaThread(LuaState luaState, LuaValue env) {
 		state = new State(this, null);
@@ -183,7 +184,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Callback used at the beginning of a call to prepare for possible getfenv/setfenv calls
 	 *
-	 * @param state
+	 * @param state    The current lua state
 	 * @param function Function being called
 	 * @return CallStack which is used to signal the return or a tail-call recursion
 	 * @see DebugLib
@@ -197,7 +198,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Get the function called as a specific location on the stack.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param level 1 for the function calling this one, 2 for the next one.
 	 * @return LuaFunction on the call stack, or null if outside of range of active stack
 	 */
@@ -208,7 +209,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Replace the error function of the currently running thread.
 	 *
-	 * @param state
+	 * @param state   The current lua state
 	 * @param errfunc the new error function to use.
 	 * @return the previous error function.
 	 */
@@ -221,7 +222,8 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Yield the current thread with arguments
 	 *
-	 * @param args The arguments to send as return values to {@link #resume(Varargs)}
+	 * @param state The current lua state
+	 * @param args  The arguments to send as return values to {@link #resume(Varargs)}
 	 * @return {@link Varargs} provided as arguments to {@link #resume(Varargs)}
 	 */
 	public static Varargs yield(LuaState state, Varargs args) {

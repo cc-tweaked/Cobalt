@@ -84,7 +84,6 @@ import static org.squiddev.cobalt.Factory.varargsOf;
  * @see LuaValue#checkclosure()
  * @see LuaValue#optclosure(LuaClosure)
  * @see LoadState
- * @see LoadState#compiler
  */
 public class LuaClosure extends LuaFunction implements PrototypeStorage {
 	private static final UpValue[] NOUPVALUES = new UpValue[0];

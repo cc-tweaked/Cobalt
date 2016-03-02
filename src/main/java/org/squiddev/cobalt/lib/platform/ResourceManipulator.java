@@ -102,7 +102,7 @@ public interface ResourceManipulator {
 	 * Returns a string with a file name that can be used for a temporary file.
 	 * The file must be explicitly opened before its use and explicitly removed
 	 * when no longer needed.
-	 * <p>
+	 *
 	 * On some systems (POSIX), this function also creates a file with that name,
 	 * to avoid security risks. (Someone else might create the file with wrong
 	 * permissions in the time between getting the name and creating the file.)
@@ -110,6 +110,7 @@ public interface ResourceManipulator {
 	 * do not use it).
 	 *
 	 * @return String filename to use
+	 * @throws IOException If the file name cannot be generated
 	 */
 	String tmpName() throws IOException;
 }

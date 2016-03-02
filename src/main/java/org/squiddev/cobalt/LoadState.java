@@ -54,7 +54,6 @@ import static org.squiddev.cobalt.Factory.valueOf;
  * @see LuaCompiler
  * @see LuaClosure
  * @see LuaFunction
- * @see LoadState#compiler
  * @see LoadState#load(LuaState, InputStream, String, LuaValue)
  * @see LuaC
  */
@@ -395,7 +394,7 @@ public class LoadState {
 	/**
 	 * Load lua in either binary or text form from an input stream.
 	 *
-	 * @param state
+	 * @param state The current lua state
 	 * @param stream InputStream to read, after having read the first byte already
 	 * @param name   Name to apply to the loaded chunk
 	 * @param env    Environment to load into
