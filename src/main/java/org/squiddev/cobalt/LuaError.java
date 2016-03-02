@@ -25,7 +25,7 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.lib.DebugLib;
 
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * RuntimeException that is thrown and caught in response to a lua error.
@@ -72,7 +72,7 @@ public final class LuaError extends RuntimeException {
 		super(cause);
 		level = 1;
 		calculateLevel = true;
-		value = Factory.valueOf("vm error: " + cause.toString());
+		value = ValueFactory.valueOf("vm error: " + cause.toString());
 	}
 
 	/**
@@ -84,7 +84,7 @@ public final class LuaError extends RuntimeException {
 		super(message);
 		level = 1;
 		calculateLevel = true;
-		value = Factory.valueOf(message);
+		value = ValueFactory.valueOf(message);
 	}
 
 	/**
@@ -97,7 +97,7 @@ public final class LuaError extends RuntimeException {
 		super(message);
 		this.level = level;
 		calculateLevel = false;
-		value = Factory.valueOf(message);
+		value = ValueFactory.valueOf(message);
 	}
 
 	/**
@@ -141,7 +141,7 @@ public final class LuaError extends RuntimeException {
 			} else {
 				fileLine = DebugLib.fileline(thread, level - 1);
 			}
-			if (fileLine != null) value = Factory.valueOf(fileLine + ": " + value.toString());
+			if (fileLine != null) value = ValueFactory.valueOf(fileLine + ": " + value.toString());
 		}
 
 		traceback = getMessage() + "\n" + DebugLib.traceback(thread, level);
@@ -152,7 +152,7 @@ public final class LuaError extends RuntimeException {
 			try {
 				value = errfunc.call(state, value);
 			} catch (Throwable t) {
-				value = Factory.valueOf("error in error handling");
+				value = ValueFactory.valueOf("error in error handling");
 			} finally {
 				thread.err = errfunc;
 			}

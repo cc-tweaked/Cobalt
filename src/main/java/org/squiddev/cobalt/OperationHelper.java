@@ -1,6 +1,6 @@
 package org.squiddev.cobalt;
 
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Handles arithmetic operations
@@ -39,7 +39,7 @@ public final class OperationHelper {
 	public static LuaValue div(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return Factory.valueOf(div(left.checkarith(), right.checkarith()));
+			return ValueFactory.valueOf(div(left.checkarith(), right.checkarith()));
 		}
 
 		return left.arithmt(state, Constants.DIV, right);
@@ -48,7 +48,7 @@ public final class OperationHelper {
 	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return Factory.valueOf(mod(left.checkarith(), right.checkarith()));
+			return ValueFactory.valueOf(mod(left.checkarith(), right.checkarith()));
 		}
 
 		return left.arithmt(state, Constants.MOD, right);
@@ -57,7 +57,7 @@ public final class OperationHelper {
 	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return Factory.valueOf(Math.pow(left.checkarith(), right.checkarith()));
+			return ValueFactory.valueOf(Math.pow(left.checkarith(), right.checkarith()));
 		}
 
 		return left.arithmt(state, Constants.POW, right);
@@ -89,8 +89,7 @@ public final class OperationHelper {
 	public static boolean lt(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareError(right);
-			return false;
+			throw ErrorFactory.compareError(left, right);
 		}
 		switch (tLeft) {
 			case Constants.TNUMBER:
@@ -105,8 +104,7 @@ public final class OperationHelper {
 	public static LuaValue ltValue(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareError(right);
-			return Constants.FALSE;
+			throw ErrorFactory.compareError(left, right);
 		}
 		switch (tLeft) {
 			case Constants.TNUMBER:
@@ -121,8 +119,7 @@ public final class OperationHelper {
 	public static boolean le(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareError(right);
-			return false;
+			throw ErrorFactory.compareError(left, right);
 		}
 		switch (tLeft) {
 			case Constants.TNUMBER:
@@ -137,8 +134,7 @@ public final class OperationHelper {
 	public static LuaValue leValue(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
-			left.compareError(right);
-			return Constants.FALSE;
+			throw ErrorFactory.compareError(left, right);
 		}
 		switch (tLeft) {
 			case Constants.TNUMBER:
@@ -173,7 +169,10 @@ public final class OperationHelper {
 				if (leftMeta == null) return false;
 
 				LuaValue rightMeta = right.getMetatable(state);
-				return rightMeta != null && LuaValue.eqmtcall(state, left, leftMeta, right, rightMeta);
+				if (rightMeta == null) return false;
+
+				LuaValue h = leftMeta.rawget(Constants.EQ);
+				return !(h.isnil() || h != rightMeta.rawget(Constants.EQ)) && h.call(state, left, right).toboolean();
 			}
 			default:
 				return left.raweq(right);

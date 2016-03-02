@@ -31,8 +31,8 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 import java.io.*;
 
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Factory.valueOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Abstract base class extending {@link LibFunction} which implements the
@@ -527,7 +527,7 @@ public abstract class IoLib extends OneArgFunction {
 						}
 					}
 				default:
-					return argError(i + 1, "(invalid format)");
+					throw ErrorFactory.argError(i + 1, "(invalid format)");
 			}
 			if ((v[i++] = vi).isnil()) {
 				break;
@@ -539,7 +539,8 @@ public abstract class IoLib extends OneArgFunction {
 	private static File checkfile(LuaValue val) {
 		File f = optfile(val);
 		if (f == null) {
-			argError(1, "file");
+			LuaValue result;
+			throw ErrorFactory.argError(1, "file");
 		}
 		checkopen(f);
 		return f;

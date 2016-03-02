@@ -52,14 +52,14 @@ public class LuaOperationsTest {
 	private final LuaValue sometrue = Constants.TRUE;
 	private final LuaValue somefalse = Constants.FALSE;
 	private final LuaValue zero = Constants.ZERO;
-	private final LuaValue intint = Factory.valueOf(sampleint);
-	private final LuaValue longdouble = Factory.valueOf(samplelong);
-	private final LuaValue doubledouble = Factory.valueOf(sampledouble);
-	private final LuaValue stringstring = Factory.valueOf(samplestringstring);
-	private final LuaValue stringint = Factory.valueOf(samplestringint);
-	private final LuaValue stringlong = Factory.valueOf(samplestringlong);
-	private final LuaValue stringdouble = Factory.valueOf(samplestringdouble);
-	private final LuaTable table = Factory.listOf(new LuaValue[]{Factory.valueOf("aaa"), Factory.valueOf("bbb")});
+	private final LuaValue intint = ValueFactory.valueOf(sampleint);
+	private final LuaValue longdouble = ValueFactory.valueOf(samplelong);
+	private final LuaValue doubledouble = ValueFactory.valueOf(sampledouble);
+	private final LuaValue stringstring = ValueFactory.valueOf(samplestringstring);
+	private final LuaValue stringint = ValueFactory.valueOf(samplestringint);
+	private final LuaValue stringlong = ValueFactory.valueOf(samplestringlong);
+	private final LuaValue stringdouble = ValueFactory.valueOf(samplestringdouble);
+	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{ValueFactory.valueOf("aaa"), ValueFactory.valueOf("bbb")});
 	private final LuaValue somefunc = new ZeroArgFunction(table) {
 		@Override
 		public LuaValue call(LuaState state) {
@@ -70,8 +70,8 @@ public class LuaOperationsTest {
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
 	private final Prototype proto = new Prototype();
 	private final LuaClosure someclosure = new LuaClosure(proto, table);
-	private final LuaUserdata userdataobj = Factory.userdataOf(sampleobject);
-	private final LuaUserdata userdatacls = Factory.userdataOf(sampledata);
+	private final LuaUserdata userdataobj = ValueFactory.userdataOf(sampleobject);
+	private final LuaUserdata userdatacls = ValueFactory.userdataOf(sampledata);
 
 	private void throwsLuaError(String methodName, Object obj) {
 		try {
@@ -172,9 +172,9 @@ public class LuaOperationsTest {
 
 	@Test
 	public void testSetfenv() {
-		LuaTable table2 = Factory.listOf(new LuaValue[]{
-			Factory.valueOf("ccc"),
-			Factory.valueOf("ddd")});
+		LuaTable table2 = ValueFactory.listOf(new LuaValue[]{
+			ValueFactory.valueOf("ccc"),
+			ValueFactory.valueOf("ddd")});
 		throwsLuaError("setfenv", somenil, table2);
 		throwsLuaError("setfenv", sometrue, table2);
 		throwsLuaError("setfenv", somefalse, table2);
@@ -216,13 +216,13 @@ public class LuaOperationsTest {
 	@Test
 	public void testFunctionClosureThreadEnv() {
 		// set up suitable environments for execution
-		LuaValue aaa = Factory.valueOf("aaa");
-		LuaValue eee = Factory.valueOf("eee");
+		LuaValue aaa = ValueFactory.valueOf("aaa");
+		LuaValue eee = ValueFactory.valueOf("eee");
 		LuaTable _G = JsePlatform.standardGlobals(state);
-		LuaTable newenv = Factory.tableOf(new LuaValue[]{
-			Factory.valueOf("a"), Factory.valueOf("aaa"),
-			Factory.valueOf("b"), Factory.valueOf("bbb"),});
-		LuaTable mt = Factory.tableOf(new LuaValue[]{Constants.INDEX, _G});
+		LuaTable newenv = ValueFactory.tableOf(new LuaValue[]{
+			ValueFactory.valueOf("a"), ValueFactory.valueOf("aaa"),
+			ValueFactory.valueOf("b"), ValueFactory.valueOf("bbb"),});
+		LuaTable mt = ValueFactory.tableOf(new LuaValue[]{Constants.INDEX, _G});
 		newenv.setMetatable(state, mt);
 		_G.set(state, "a", aaa);
 		newenv.set(state, "a", eee);

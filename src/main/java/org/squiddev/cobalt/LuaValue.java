@@ -32,7 +32,7 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
  * This allows Java clients to deal essentially with one type for all Java values, namely {@link LuaValue}.
  * <p>
  * Constructors are provided as static methods for common Java types, such as
- * {@link Factory#valueOf(int)} or {@link Factory#valueOf(String)}
+ * {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(String)}
  * to allow for instance pooling.
  * <p>
  * Constants are defined for the lua values
@@ -560,8 +560,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TBOOLEAN
 	 */
 	public boolean optboolean(boolean defval) {
-		argError("boolean");
-		return false;
+		throw ErrorFactory.argError(this, "boolean");
 	}
 
 	/**
@@ -579,8 +578,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TFUNCTION
 	 */
 	public LuaClosure optclosure(LuaClosure defval) {
-		argError("closure");
-		return null;
+		throw ErrorFactory.argError(this, "closure");
 	}
 
 	/**
@@ -600,8 +598,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public double optdouble(double defval) {
-		argError("double");
-		return 0;
+		throw ErrorFactory.argError(this, "double");
 	}
 
 	/**
@@ -622,8 +619,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TFUNCTION
 	 */
 	public LuaFunction optfunction(LuaFunction defval) {
-		argError("function");
-		return null;
+		throw ErrorFactory.argError(this, "function");
 	}
 
 	/**
@@ -644,8 +640,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public int optint(int defval) {
-		argError("int");
-		return 0;
+		throw ErrorFactory.argError(this, "int");
 	}
 
 	/**
@@ -665,8 +660,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public LuaInteger optinteger(LuaInteger defval) {
-		argError("integer");
-		return null;
+		throw ErrorFactory.argError(this, "integer");
 	}
 
 	/**
@@ -686,8 +680,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public long optlong(long defval) {
-		argError("long");
-		return 0;
+		throw ErrorFactory.argError(this, "long");
 	}
 
 	/**
@@ -708,8 +701,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public LuaNumber optnumber(LuaNumber defval) {
-		argError("number");
-		return null;
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
@@ -727,8 +719,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TSTRING
 	 */
 	public String optjstring(String defval) {
-		argError("string");
-		return null;
+		throw ErrorFactory.argError(this, "string");
 	}
 
 	/**
@@ -746,8 +737,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TSTRING
 	 */
 	public LuaString optstring(LuaString defval) {
-		argError("string");
-		return null;
+		throw ErrorFactory.argError(this, "string");
 	}
 
 	/**
@@ -763,8 +753,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TTABLE
 	 */
 	public LuaTable opttable(LuaTable defval) {
-		argError("table");
-		return null;
+		throw ErrorFactory.argError(this, "table");
 	}
 
 	/**
@@ -780,8 +769,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TTHREAD
 	 */
 	public LuaThread optthread(LuaThread defval) {
-		argError("thread");
-		return null;
+		throw ErrorFactory.argError(this, "thread");
 	}
 
 	/**
@@ -798,8 +786,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TUSERDATA
 	 */
 	public Object optuserdata(Object defval) {
-		argError("object");
-		return null;
+		throw ErrorFactory.argError(this, "object");
 	}
 
 	/**
@@ -818,8 +805,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TUSERDATA
 	 */
 	public Object optuserdata(Class<?> c, Object defval) {
-		argError(c.getName());
-		return null;
+		throw ErrorFactory.argError(this, c.getName());
 	}
 
 	/**
@@ -849,8 +835,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TBOOLEAN
 	 */
 	public boolean checkboolean() {
-		argError("boolean");
-		return false;
+		throw ErrorFactory.argError(this, "boolean");
 	}
 
 	/**
@@ -867,13 +852,11 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TFUNCTION
 	 */
 	public LuaClosure checkclosure() {
-		argError("closure");
-		return null;
+		throw ErrorFactory.argError(this, "closure");
 	}
 
 	public double checkarith() {
-		arithError();
-		return Double.NaN;
+		throw ErrorFactory.arithError(this);
 	}
 
 	/**
@@ -892,8 +875,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public double checkdouble() {
-		argError("double");
-		return 0;
+		throw ErrorFactory.argError(this, "double");
 	}
 
 	/**
@@ -909,8 +891,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #checkclosure()
 	 */
 	public LuaValue checkfunction() {
-		argError("function");
-		return null;
+		throw ErrorFactory.argError(this, "function");
 	}
 
 	/**
@@ -929,8 +910,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public int checkint() {
-		argError("int");
-		return 0;
+		throw ErrorFactory.argError(this, "int");
 	}
 
 	/**
@@ -949,8 +929,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public LuaInteger checkinteger() {
-		argError("integer");
-		return null;
+		throw ErrorFactory.argError(this, "integer");
 	}
 
 	/**
@@ -969,8 +948,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public long checklong() {
-		argError("long");
-		return 0;
+		throw ErrorFactory.argError(this, "long");
 	}
 
 	/**
@@ -988,8 +966,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public LuaNumber checknumber() {
-		argError("number");
-		return null;
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
@@ -1026,8 +1003,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TSTRING
 	 */
 	public String checkjstring() {
-		argError("string");
-		return null;
+		throw ErrorFactory.argError(this, "string");
 	}
 
 	/**
@@ -1046,8 +1022,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TSTRING
 	 */
 	public LuaString checkstring() {
-		argError("string");
-		return null;
+		throw ErrorFactory.argError(this, "string");
 	}
 
 	/**
@@ -1060,8 +1035,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TTABLE
 	 */
 	public LuaTable checktable() {
-		argError("table");
-		return null;
+		throw ErrorFactory.argError(this, "table");
 	}
 
 	/**
@@ -1074,8 +1048,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TTHREAD
 	 */
 	public LuaThread checkthread() {
-		argError("thread");
-		return null;
+		throw ErrorFactory.argError(this, "thread");
 	}
 
 	/**
@@ -1089,8 +1062,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TUSERDATA
 	 */
 	public Object checkuserdata() {
-		argError("userdata");
-		return null;
+		throw ErrorFactory.argError(this, "userdata");
 	}
 
 	/**
@@ -1105,8 +1077,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TUSERDATA
 	 */
 	public Object checkuserdata(Class<?> c) {
-		argError("userdata");
-		return null;
+		throw ErrorFactory.argError(this, "userdata");
 	}
 
 	/**
@@ -1133,101 +1104,6 @@ public abstract class LuaValue extends Varargs {
 	}
 	//endregion
 
-	//region Errors
-
-	/**
-	 * Assert a condition is true, or throw a {@link LuaError} if not
-	 *
-	 * @param b   condition to test
-	 * @param msg Error message
-	 * @throws LuaError if b is not true
-	 */
-	public static void assert_(boolean b, String msg) {
-		if (!b) throw new LuaError(msg);
-	}
-
-	/**
-	 * Throw a {@link LuaError} indicating an invalid argument was supplied to a function
-	 *
-	 * @param expected String naming the type that was expected
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	protected LuaValue argError(String expected) {
-		throw new LuaError("bad argument: " + expected + " expected, got " + typeName());
-	}
-
-	/**
-	 * Throw a {@link LuaError} indicating an invalid argument was supplied to a function
-	 *
-	 * @param iarg index of the argument that was invalid, first index is 1
-	 * @param msg  String providing information about the invalid argument
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	public static LuaValue argError(int iarg, String msg) {
-		throw new LuaError("bad argument #" + iarg + ": " + msg);
-	}
-
-	/**
-	 * Throw a {@link LuaError} indicating an invalid type was supplied to a function
-	 *
-	 * @param expected String naming the type that was expected
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	protected LuaValue typeError(String expected) {
-		throw new LuaError(expected + " expected, got " + typeName());
-	}
-
-	/**
-	 * Throw a {@link LuaError} indicating an operation is not implemented
-	 *
-	 * @param fun Function that hasn't been implemented
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	protected LuaValue unimplemented(String fun) {
-		throw new LuaError("'" + fun + "' not implemented for " + typeName());
-	}
-
-	/**
-	 * Throw a {@link LuaError} indicating an illegal operation occurred,
-	 * typically involved in managing weak references
-	 *
-	 * @param op       Operation
-	 * @param typename Current type
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	protected LuaValue illegal(String op, String typename) {
-		throw new LuaError("illegal operation '" + op + "' for " + typename);
-	}
-
-	/**
-	 * Throw a {@link LuaError} based on an arithmetic error such as add, or pow,
-	 * typically due to an invalid operand type
-	 *
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	protected LuaValue arithError() {
-		throw new LuaError("attempt to perform arithmetic on " + typeName());
-	}
-
-	/**
-	 * Throw a {@link LuaError} based on a comparison error such as greater-than or less-than,
-	 * typically due to an invalid operand type
-	 *
-	 * @param rhs Right-hand-side of the comparison that resulted in the error.
-	 * @return Nothing
-	 * @throws LuaError in all cases
-	 */
-	protected LuaValue compareError(LuaValue rhs) {
-		throw new LuaError("attempt to compare " + typeName() + " with " + rhs.typeName());
-	}
-	//endregion
-
 	/**
 	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
 	 *
@@ -1242,7 +1118,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #rawget(LuaValue)
 	 */
 	public LuaValue get(LuaState state, LuaValue key) {
-		return gettable(state, this, key);
+		return getTable(state, this, key);
 	}
 
 	/**
@@ -1272,7 +1148,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #rawget(String)
 	 */
 	public LuaValue get(LuaState state, String key) {
-		return get(state, Factory.valueOf(key));
+		return get(state, ValueFactory.valueOf(key));
 	}
 
 	/**
@@ -1286,7 +1162,7 @@ public abstract class LuaValue extends Varargs {
 	 *                  or there is no {@link Constants#NEWINDEX} metatag
 	 */
 	public void set(LuaState state, LuaValue key, LuaValue value) {
-		settable(state, this, key, value);
+		setTable(state, this, key, value);
 	}
 
 	/**
@@ -1312,7 +1188,7 @@ public abstract class LuaValue extends Varargs {
 	 *                  or there is no {@link Constants#NEWINDEX} metatag
 	 */
 	public void set(LuaState state, String key, LuaValue value) {
-		set(state, Factory.valueOf(key), value);
+		set(state, ValueFactory.valueOf(key), value);
 	}
 
 	/**
@@ -1323,7 +1199,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
 	 */
 	public LuaValue rawget(LuaValue key) {
-		return unimplemented("rawget");
+		throw ErrorFactory.unimplemented(this, "rawget");
 	}
 
 	/**
@@ -1334,7 +1210,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table
 	 */
 	public LuaValue rawget(int key) {
-		return rawget(Factory.valueOf(key));
+		return rawget(ValueFactory.valueOf(key));
 	}
 
 	/**
@@ -1345,7 +1221,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table
 	 */
 	public LuaValue rawget(String key) {
-		return rawget(Factory.valueOf(key));
+		return rawget(ValueFactory.valueOf(key));
 	}
 
 	/**
@@ -1356,7 +1232,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
 	 */
 	public void rawset(LuaValue key, LuaValue value) {
-		unimplemented("rawset");
+		throw ErrorFactory.unimplemented(this, "rawset");
 	}
 
 	/**
@@ -1367,7 +1243,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table
 	 */
 	public void rawset(int key, LuaValue value) {
-		rawset(Factory.valueOf(key), value);
+		rawset(ValueFactory.valueOf(key), value);
 	}
 
 	/**
@@ -1378,7 +1254,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table
 	 */
 	public void rawset(String key, LuaValue value) {
-		rawset(Factory.valueOf(key), value);
+		rawset(ValueFactory.valueOf(key), value);
 	}
 
 	/**
@@ -1390,7 +1266,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if this is not a table.
 	 */
 	public void presize(int i) {
-		typeError("table");
+		throw ErrorFactory.typeError(this, "table");
 	}
 
 	/**
@@ -1415,13 +1291,13 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
 	 * @see LuaTable
 	 * @see #inext(LuaValue)
-	 * @see Factory#valueOf(int)
+	 * @see ValueFactory#valueOf(int)
 	 * @see Varargs#arg1()
 	 * @see Varargs#arg(int)
 	 * @see #isnil()
 	 */
 	public Varargs next(LuaValue index) {
-		return typeError("table");
+		throw ErrorFactory.typeError(this, "table");
 	}
 
 	/**
@@ -1447,13 +1323,13 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
 	 * @see LuaTable
 	 * @see #next(LuaValue)
-	 * @see Factory#valueOf(int)
+	 * @see ValueFactory#valueOf(int)
 	 * @see Varargs#arg1()
 	 * @see Varargs#arg(int)
 	 * @see #isnil()
 	 */
 	public Varargs inext(LuaValue index) {
-		return typeError("table");
+		throw ErrorFactory.typeError(this, "table");
 	}
 
 	/**
@@ -1511,7 +1387,7 @@ public abstract class LuaValue extends Varargs {
 	 * @return {@code this} to allow chaining of Java function calls
 	 */
 	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
-		return argError("table");
+		throw ErrorFactory.argError(this, "table");
 	}
 
 	/**
@@ -1520,8 +1396,7 @@ public abstract class LuaValue extends Varargs {
 	 * @return {@link LuaValue} currently set as the instances environent.
 	 */
 	public LuaValue getfenv() {
-		typeError("function or thread");
-		return null;
+		throw ErrorFactory.typeError(this, "function or thread");
 	}
 
 	/**
@@ -1536,7 +1411,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see JsePlatform
 	 */
 	public void setfenv(LuaValue env) {
-		typeError("function or thread");
+		throw ErrorFactory.typeError(this, "function or thread");
 	}
 
 	/**
@@ -1652,7 +1527,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #invokeMethod(LuaState, LuaValue, Varargs)
 	 */
 	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-		return callmt(state).invoke(state, Factory.varargsOf(this, arg1, arg2, arg3)).arg1();
+		return callmt(state).invoke(state, ValueFactory.varargsOf(this, arg1, arg2, arg3)).arg1();
 	}
 
 	/**
@@ -1760,12 +1635,12 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
 	 *                  or the invoked function throws a {@link LuaError}
 	 *                  or the invoked closure throw a lua {@code error}
-	 * @see Factory#varargsOf(LuaValue[])
+	 * @see ValueFactory#varargsOf(LuaValue[])
 	 * @see #call(LuaState, LuaValue)
 	 * @see #invokeMethod(LuaState, LuaValue, Varargs)
 	 */
 	public Varargs invoke(LuaState state, Varargs args) {
-		return callmt(state).invoke(state, Factory.varargsOf(this, args));
+		return callmt(state).invoke(state, ValueFactory.varargsOf(this, args));
 	}
 
 	/**
@@ -1792,7 +1667,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #invoke(LuaState, Varargs)
 	 */
 	public Varargs invokeMethod(LuaState state, LuaValue name, Varargs args) {
-		return get(state, name).invoke(state, Factory.varargsOf(this, args));
+		return get(state, name).invoke(state, ValueFactory.varargsOf(this, args));
 	}
 
 	/**
@@ -1850,7 +1725,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if  {@code this} is not a {@link LuaTable}
 	 */
 	public LuaValue getn() {
-		return typeError("getn");
+		throw ErrorFactory.typeError(this, "getn");
 	}
 
 	// object equality, used for key comparison
@@ -1926,25 +1801,6 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public boolean raweq(int val) {
 		return false;
-	}
-
-	/**
-	 * Perform equality testing metatag processing
-	 *
-	 * @param state The current lua state
-	 * @param lhs   left-hand-side of equality expression
-	 * @param lhsmt metatag value for left-hand-side
-	 * @param rhs   right-hand-side of equality expression
-	 * @param rhsmt metatag value for right-hand-side
-	 * @return true if metatag processing result is not {@link Constants#NIL} or {@link Constants#FALSE}
-	 * @throws LuaError if metatag was not defined for either operand
-	 * @see #equals(Object)
-	 * @see #raweq(LuaValue)
-	 * @see Constants#EQ
-	 */
-	public static boolean eqmtcall(LuaState state, LuaValue lhs, LuaValue lhsmt, LuaValue rhs, LuaValue rhsmt) {
-		LuaValue h = lhsmt.rawget(Constants.EQ);
-		return !(h.isnil() || h != rhsmt.rawget(Constants.EQ)) && h.call(state, lhs, rhs).toboolean();
 	}
 
 	/**
@@ -2132,8 +1988,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if not a string or number
 	 */
 	public LuaString strvalue() {
-		typeError("strValue");
-		return null;
+		throw ErrorFactory.typeError(this, "strValue");
 	}
 
 	/**
@@ -2175,7 +2030,7 @@ public abstract class LuaValue extends Varargs {
 	 * @return {@link LuaValue} for the {@code key} if it exists, or {@link Constants#NIL}
 	 * @throws LuaError if there is a loop in metatag processing
 	 */
-	protected static LuaValue gettable(LuaState state, LuaValue t, LuaValue key) {
+	protected static LuaValue getTable(LuaState state, LuaValue t, LuaValue key) {
 		LuaValue tm;
 		int loop = 0;
 		do {
@@ -2185,7 +2040,7 @@ public abstract class LuaValue extends Varargs {
 					return res;
 				}
 			} else if ((tm = t.metatag(state, Constants.INDEX)).isnil()) {
-				t.indexerror();
+				throw ErrorFactory.indexError(t);
 			}
 			if (tm.isfunction()) {
 				return tm.call(state, t, key);
@@ -2206,7 +2061,7 @@ public abstract class LuaValue extends Varargs {
 	 * @return true if assignment or metatag processing succeeded, false otherwise
 	 * @throws LuaError if there is a loop in metatag processing
 	 */
-	protected static boolean settable(LuaState state, LuaValue t, LuaValue key, LuaValue value) {
+	protected static boolean setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value) {
 		LuaValue tm;
 		int loop = 0;
 		do {
@@ -2216,7 +2071,8 @@ public abstract class LuaValue extends Varargs {
 					return true;
 				}
 			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isnil()) {
-				t.typeError("index");
+				LuaValue result;
+				throw ErrorFactory.typeError(t, "index");
 			}
 			if (tm.isfunction()) {
 				tm.call(state, t, key, value);
@@ -2316,15 +2172,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Throw {@link LuaError} indicating index was attempted on illegal type
-	 *
-	 * @throws LuaError when called.
-	 */
-	private void indexerror() {
-		throw new LuaError("attempt to index ? (a " + typeName() + " value)");
-	}
-
-	/**
 	 * Callback used during tail call processing to invoke the function once.
 	 * <p>
 	 * This may return a {@link TailcallVarargs} to be evaluated by the client.
@@ -2349,10 +2196,10 @@ public abstract class LuaValue extends Varargs {
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static methods on LuaValue.
 	 *
-	 * @see Factory#varargsOf(LuaValue[])
-	 * @see Factory#varargsOf(LuaValue[], Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue[])
+	 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 	 */
-	static final class ArrayVarargs extends Varargs {
+	protected static final class ArrayVarargs extends Varargs {
 		private final LuaValue[] v;
 		private final Varargs r;
 
@@ -2362,10 +2209,10 @@ public abstract class LuaValue extends Varargs {
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
-		 * @see Factory#varargsOf(LuaValue[])
-		 * @see Factory#varargsOf(LuaValue[], Varargs)
+		 * @see ValueFactory#varargsOf(LuaValue[])
+		 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 		 */
-		ArrayVarargs(LuaValue[] v, Varargs r) {
+		public ArrayVarargs(LuaValue[] v, Varargs r) {
 			this.v = v;
 			this.r = r;
 		}
@@ -2392,10 +2239,10 @@ public abstract class LuaValue extends Varargs {
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static methods on LuaValue.
 	 *
-	 * @see Factory#varargsOf(LuaValue[], int, int)
-	 * @see Factory#varargsOf(LuaValue[], int, int, Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
+	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
-	static final class ArrayPartVarargs extends Varargs {
+	protected static final class ArrayPartVarargs extends Varargs {
 		private final int offset;
 		private final LuaValue[] v;
 		private final int length;
@@ -2407,9 +2254,9 @@ public abstract class LuaValue extends Varargs {
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
-		 * @see Factory#varargsOf(LuaValue[], int, int)
+		 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 		 */
-		ArrayPartVarargs(LuaValue[] v, int offset, int length) {
+		public ArrayPartVarargs(LuaValue[] v, int offset, int length) {
 			this.v = v;
 			this.offset = offset;
 			this.length = length;
@@ -2422,7 +2269,7 @@ public abstract class LuaValue extends Varargs {
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static method on LuaValue.
 		 *
-		 * @see Factory#varargsOf(LuaValue[], int, int, Varargs)
+		 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 		 */
 		public ArrayPartVarargs(LuaValue[] v, int offset, int length, Varargs more) {
 			this.v = v;
@@ -2453,9 +2300,9 @@ public abstract class LuaValue extends Varargs {
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static method on LuaValue.
 	 *
-	 * @see Factory#varargsOf(LuaValue, Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue, Varargs)
 	 */
-	static final class PairVarargs extends Varargs {
+	protected static final class PairVarargs extends Varargs {
 		private final LuaValue v1;
 		private final Varargs v2;
 
@@ -2467,9 +2314,9 @@ public abstract class LuaValue extends Varargs {
 		 *
 		 * @param v1 First argument
 		 * @param v2 Remaining arguments
-		 * @see Factory#varargsOf(LuaValue, Varargs)
+		 * @see ValueFactory#varargsOf(LuaValue, Varargs)
 		 */
-		PairVarargs(LuaValue v1, Varargs v2) {
+		public PairVarargs(LuaValue v1, Varargs v2) {
 			this.v1 = v1;
 			this.v2 = v2;
 		}

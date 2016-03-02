@@ -88,7 +88,8 @@ public class LuaUserdata extends LuaValue {
 	@Override
 	public Object optuserdata(Class<?> c, Object defval) {
 		if (!c.isAssignableFrom(m_instance.getClass())) {
-			typeError(c.getName());
+			LuaValue result;
+			throw ErrorFactory.typeError(this, c.getName());
 		}
 		return m_instance;
 	}
@@ -114,17 +115,17 @@ public class LuaUserdata extends LuaValue {
 		if (c.isAssignableFrom(m_instance.getClass())) {
 			return m_instance;
 		}
-		return typeError(c.getName());
+		throw ErrorFactory.typeError(this, c.getName());
 	}
 
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
-		return m_metatable != null ? gettable(state, this, key) : Constants.NIL;
+		return m_metatable != null ? getTable(state, this, key) : Constants.NIL;
 	}
 
 	@Override
 	public void set(LuaState state, LuaValue key, LuaValue value) {
-		if (m_metatable == null || !settable(state, this, key, value)) {
+		if (m_metatable == null || !setTable(state, this, key, value)) {
 			throw new LuaError("cannot set " + key + " for userdata");
 		}
 	}
@@ -149,10 +150,5 @@ public class LuaUserdata extends LuaValue {
 	@Override
 	public boolean raweq(LuaUserdata val) {
 		return this == val || (m_metatable == val.m_metatable && m_instance.equals(val.m_instance));
-	}
-
-	// __eq metatag processing
-	public boolean eqmt(LuaState state, LuaValue val) {
-		return m_metatable != null && val.isuserdata() && eqmtcall(state, this, m_metatable, val, val.getMetatable(state));
 	}
 }

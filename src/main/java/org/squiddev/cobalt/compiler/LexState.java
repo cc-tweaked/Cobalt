@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class LexState {
 
@@ -174,7 +174,7 @@ public class LexState {
 
 	static {
 		for (int i = 0; i < NUM_RESERVED; i++) {
-			LuaString ts = Factory.valueOf(luaX_tokens[i]);
+			LuaString ts = ValueFactory.valueOf(luaX_tokens[i]);
 			RESERVED.put(ts, FIRST_RESERVED + i);
 		}
 	}
@@ -368,7 +368,7 @@ public class LexState {
 		} else {
 			d = Double.parseDouble(str);
 		}
-		seminfo.r = Factory.valueOf(d);
+		seminfo.r = ValueFactory.valueOf(d);
 		return true;
 	}
 

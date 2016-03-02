@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import static org.junit.Assert.*;
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class TableTest {
 	private LuaState state;

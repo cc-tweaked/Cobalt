@@ -38,7 +38,7 @@ import java.lang.ref.WeakReference;
 
 import static org.junit.Assert.*;
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 
 public class OrphanedThreadTest {

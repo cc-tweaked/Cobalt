@@ -30,8 +30,8 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.squiddev.cobalt.Factory.valueOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua basic library functions.
@@ -118,9 +118,8 @@ public class BaseLib extends OneArgFunction {
 						System.gc();
 						return Constants.TRUE;
 					} else {
-						argError(1, "gc op");
+						throw ErrorFactory.argError(1, "gc op");
 					}
-					return Constants.NIL;
 				case 1: // "error", // ( message [,level] ) -> ERR
 					throw new LuaError(arg1.isnil() ? Constants.NIL : arg1, arg2.optint(1));
 				case 2: { // "setfenv", // (f, table) -> void
@@ -241,7 +240,8 @@ public class BaseLib extends OneArgFunction {
 					}
 					int i = args.checkint(1);
 					if (i == 0 || i < -n) {
-						argError(1, "index out of range");
+						LuaValue result;
+						throw ErrorFactory.argError(1, "index out of range");
 					}
 					return args.subargs(i < 0 ? n + i + 2 : i + 1);
 				}
@@ -301,7 +301,8 @@ public class BaseLib extends OneArgFunction {
 						return arg1.tonumber();
 					} else {
 						if (base < 2 || base > 36) {
-							argError(2, "base out of range");
+							LuaValue result;
+							throw ErrorFactory.argError(2, "base out of range");
 						}
 						return arg1.checkstring().tonumber(base);
 					}

@@ -33,7 +33,7 @@ import java.lang.ref.WeakReference;
 
 import static org.junit.Assert.*;
 import static org.squiddev.cobalt.Constants.NIL;
-import static org.squiddev.cobalt.Factory.userdataOf;
+import static org.squiddev.cobalt.ValueFactory.userdataOf;
 
 public abstract class WeakTableTest {
 	protected LuaState state;

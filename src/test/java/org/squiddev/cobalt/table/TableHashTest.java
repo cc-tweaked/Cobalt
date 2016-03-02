@@ -35,7 +35,7 @@ import org.squiddev.cobalt.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Tests for tables used as lists.
@@ -62,7 +62,7 @@ public class TableHashTest {
 		for (int i = 0; i < keys.length; ++i) {
 			assertEquals(capacities[i], t.getHashLength());
 			String si = "Test Value! " + i;
-			t.set(state, keys[i], Factory.valueOf(si));
+			t.set(state, keys[i], ValueFactory.valueOf(si));
 			assertEquals(0, t.length(state));
 			assertEquals(i + 1, t.keyCount());
 		}
@@ -110,11 +110,11 @@ public class TableHashTest {
 		LuaTable fb = new LuaTable();
 
 		// set basic values
-		t.set(state, "ppp", Factory.valueOf("abc"));
-		t.set(state, 123, Factory.valueOf("def"));
+		t.set(state, "ppp", ValueFactory.valueOf("abc"));
+		t.set(state, 123, ValueFactory.valueOf("def"));
 		mt.set(state, Constants.INDEX, fb);
-		fb.set(state, "qqq", Factory.valueOf("ghi"));
-		fb.set(state, 456, Factory.valueOf("jkl"));
+		fb.set(state, "qqq", ValueFactory.valueOf("ghi"));
+		fb.set(state, 456, ValueFactory.valueOf("jkl"));
 
 		// check before setting metatable
 		assertEquals("abc", t.get(state, "ppp").tojstring());
@@ -170,13 +170,13 @@ public class TableHashTest {
 			@Override
 			public LuaValue call(LuaState state, LuaValue tbl, LuaValue key) {
 				assertEquals(tbl, t);
-				return Factory.valueOf("from mt: " + key);
+				return ValueFactory.valueOf("from mt: " + key);
 			}
 		};
 
 		// set basic values
-		t.set(state, "ppp", Factory.valueOf("abc"));
-		t.set(state, 123, Factory.valueOf("def"));
+		t.set(state, "ppp", ValueFactory.valueOf("abc"));
+		t.set(state, 123, ValueFactory.valueOf("def"));
 		mt.set(state, Constants.INDEX, fb);
 
 		// check before setting metatable
@@ -195,8 +195,8 @@ public class TableHashTest {
 		assertEquals("from mt: 456", t.get(state, 456).tojstring());
 
 		// use raw set
-		t.rawset("qqq", Factory.valueOf("alt-qqq"));
-		t.rawset(456, Factory.valueOf("alt-456"));
+		t.rawset("qqq", ValueFactory.valueOf("alt-qqq"));
+		t.rawset(456, ValueFactory.valueOf("alt-456"));
 		assertEquals("abc", t.get(state, "ppp").tojstring());
 		assertEquals("def", t.get(state, 123).tojstring());
 		assertEquals("alt-qqq", t.get(state, "qqq").tojstring());
@@ -224,35 +224,35 @@ public class TableHashTest {
 		assertEquals(Constants.NIL, t.next(Constants.NIL));
 
 		// insert array elements
-		t.set(state, 1, Factory.valueOf("one"));
-		assertEquals(Factory.valueOf(1), t.next(Constants.NIL).arg(1));
-		assertEquals(Factory.valueOf("one"), t.next(Constants.NIL).arg(2));
+		t.set(state, 1, ValueFactory.valueOf("one"));
+		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
+		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
 		assertEquals(Constants.NIL, t.next(Constants.ONE));
-		t.set(state, 2, Factory.valueOf("two"));
-		assertEquals(Factory.valueOf(1), t.next(Constants.NIL).arg(1));
-		assertEquals(Factory.valueOf("one"), t.next(Constants.NIL).arg(2));
-		assertEquals(Factory.valueOf(2), t.next(Constants.ONE).arg(1));
-		assertEquals(Factory.valueOf("two"), t.next(Constants.ONE).arg(2));
-		assertEquals(Constants.NIL, t.next(Factory.valueOf(2)));
+		t.set(state, 2, ValueFactory.valueOf("two"));
+		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
+		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
+		assertEquals(ValueFactory.valueOf(2), t.next(Constants.ONE).arg(1));
+		assertEquals(ValueFactory.valueOf("two"), t.next(Constants.ONE).arg(2));
+		assertEquals(Constants.NIL, t.next(ValueFactory.valueOf(2)));
 
 		// insert hash elements
-		t.set(state, "aa", Factory.valueOf("aaa"));
-		assertEquals(Factory.valueOf(1), t.next(Constants.NIL).arg(1));
-		assertEquals(Factory.valueOf("one"), t.next(Constants.NIL).arg(2));
-		assertEquals(Factory.valueOf(2), t.next(Constants.ONE).arg(1));
-		assertEquals(Factory.valueOf("two"), t.next(Constants.ONE).arg(2));
-		assertEquals(Factory.valueOf("aa"), t.next(Factory.valueOf(2)).arg(1));
-		assertEquals(Factory.valueOf("aaa"), t.next(Factory.valueOf(2)).arg(2));
-		assertEquals(Constants.NIL, t.next(Factory.valueOf("aa")));
-		t.set(state, "bb", Factory.valueOf("bbb"));
-		assertEquals(Factory.valueOf(1), t.next(Constants.NIL).arg(1));
-		assertEquals(Factory.valueOf("one"), t.next(Constants.NIL).arg(2));
-		assertEquals(Factory.valueOf(2), t.next(Constants.ONE).arg(1));
-		assertEquals(Factory.valueOf("two"), t.next(Constants.ONE).arg(2));
-		assertEquals(Factory.valueOf("aa"), t.next(Factory.valueOf(2)).arg(1));
-		assertEquals(Factory.valueOf("aaa"), t.next(Factory.valueOf(2)).arg(2));
-		assertEquals(Factory.valueOf("bb"), t.next(Factory.valueOf("aa")).arg(1));
-		assertEquals(Factory.valueOf("bbb"), t.next(Factory.valueOf("aa")).arg(2));
-		assertEquals(Constants.NIL, t.next(Factory.valueOf("bb")));
+		t.set(state, "aa", ValueFactory.valueOf("aaa"));
+		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
+		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
+		assertEquals(ValueFactory.valueOf(2), t.next(Constants.ONE).arg(1));
+		assertEquals(ValueFactory.valueOf("two"), t.next(Constants.ONE).arg(2));
+		assertEquals(ValueFactory.valueOf("aa"), t.next(ValueFactory.valueOf(2)).arg(1));
+		assertEquals(ValueFactory.valueOf("aaa"), t.next(ValueFactory.valueOf(2)).arg(2));
+		assertEquals(Constants.NIL, t.next(ValueFactory.valueOf("aa")));
+		t.set(state, "bb", ValueFactory.valueOf("bbb"));
+		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
+		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
+		assertEquals(ValueFactory.valueOf(2), t.next(Constants.ONE).arg(1));
+		assertEquals(ValueFactory.valueOf("two"), t.next(Constants.ONE).arg(2));
+		assertEquals(ValueFactory.valueOf("aa"), t.next(ValueFactory.valueOf(2)).arg(1));
+		assertEquals(ValueFactory.valueOf("aaa"), t.next(ValueFactory.valueOf(2)).arg(2));
+		assertEquals(ValueFactory.valueOf("bb"), t.next(ValueFactory.valueOf("aa")).arg(1));
+		assertEquals(ValueFactory.valueOf("bbb"), t.next(ValueFactory.valueOf("aa")).arg(2));
+		assertEquals(Constants.NIL, t.next(ValueFactory.valueOf("bb")));
 	}
 }

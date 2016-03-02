@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.squiddev.cobalt.Constants.NONE;
-import static org.squiddev.cobalt.Factory.tableOf;
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.tableOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * lua command for use in java se environments.

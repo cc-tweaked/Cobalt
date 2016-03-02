@@ -27,8 +27,8 @@ import org.squiddev.cobalt.lib.TwoArgFunction;
 
 import java.lang.ref.WeakReference;
 
-import static org.squiddev.cobalt.Factory.userdataOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.ValueFactory.userdataOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LuaTable} that provides weak key and weak value semantics.
@@ -205,7 +205,7 @@ public class WeakTable extends LuaTable {
 			if (ks.isnil() || vs.isnil()) {
 				super.rawset(k, Constants.NIL);
 			} else {
-				return Factory.varargsOf(ks, vs);
+				return ValueFactory.varargsOf(ks, vs);
 			}
 		}
 	}
@@ -235,14 +235,12 @@ public class WeakTable extends LuaTable {
 
 		@Override
 		public int type() {
-			illegal("type", "weak value");
-			return 0;
+			throw ErrorFactory.illegal("type", "weak value");
 		}
 
 		@Override
 		public String typeName() {
-			illegal("typename", "weak value");
-			return null;
+			throw ErrorFactory.illegal("typename", "weak value");
 		}
 
 		public String toString() {
@@ -289,7 +287,7 @@ public class WeakTable extends LuaTable {
 				return (LuaValue) u;
 			}
 			Object o = ob.get();
-			return o != null ? Factory.userdataOf(o, mt) : Constants.NIL;
+			return o != null ? ValueFactory.userdataOf(o, mt) : Constants.NIL;
 		}
 
 		@Override
@@ -345,8 +343,7 @@ public class WeakTable extends LuaTable {
 
 		@Override
 		public String typeName() {
-			illegal("typename", "weak entry");
-			return null;
+			throw ErrorFactory.illegal("typename", "weak entry");
 		}
 
 		public String toString() {

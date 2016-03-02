@@ -163,7 +163,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 				stack[0] = arg1;
 				return execute(state, stack, arg2).eval(state).arg1();
 			case 0:
-				return execute(state, stack, p.is_vararg != 0 ? Factory.varargsOf(arg1, arg2) : Constants.NONE).eval(state).arg1();
+				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2) : Constants.NONE).eval(state).arg1();
 		}
 	}
 
@@ -183,9 +183,9 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 				return execute(state, stack, arg3).eval(state).arg1();
 			case 1:
 				stack[0] = arg1;
-				return execute(state, stack, p.is_vararg != 0 ? Factory.varargsOf(arg2, arg3) : Constants.NONE).eval(state).arg1();
+				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg2, arg3) : Constants.NONE).eval(state).arg1();
 			case 0:
-				return execute(state, stack, p.is_vararg != 0 ? Factory.varargsOf(arg1, arg2, arg3) : Constants.NONE).eval(state).arg1();
+				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : Constants.NONE).eval(state).arg1();
 		}
 	}
 
@@ -426,8 +426,8 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 								b = i >>> 23;
 								c = (i >> 14) & 0x1ff;
 								v = b > 0 ?
-									Factory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-									Factory.varargsOf(stack, a + 1, top - v.narg() - (a + 1), v); // from prev top
+									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
+									ValueFactory.varargsOf(stack, a + 1, top - v.narg() - (a + 1), v); // from prev top
 								v = stack[a].invoke(state, v);
 								if (c > 0) {
 									while (--c > 0) {
@@ -447,14 +447,14 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 							case (2 << Lua.POS_B):
 								return new TailcallVarargs(stack[a], stack[a + 1]);
 							case (3 << Lua.POS_B):
-								return new TailcallVarargs(stack[a], Factory.varargsOf(stack[a + 1], stack[a + 2]));
+								return new TailcallVarargs(stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]));
 							case (4 << Lua.POS_B):
-								return new TailcallVarargs(stack[a], Factory.varargsOf(stack[a + 1], stack[a + 2], stack[a + 3]));
+								return new TailcallVarargs(stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2], stack[a + 3]));
 							default:
 								b = i >>> 23;
 								v = b > 0 ?
-									Factory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-									Factory.varargsOf(stack, a + 1, top - v.narg() - (a + 1), v); // from prev top
+									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
+									ValueFactory.varargsOf(stack, a + 1, top - v.narg() - (a + 1), v); // from prev top
 								return new TailcallVarargs(stack[a], v);
 						}
 
@@ -462,13 +462,13 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						b = i >>> 23;
 						switch (b) {
 							case 0:
-								return Factory.varargsOf(stack, a, top - v.narg() - a, v);
+								return ValueFactory.varargsOf(stack, a, top - v.narg() - a, v);
 							case 1:
 								return Constants.NONE;
 							case 2:
 								return stack[a];
 							default:
-								return Factory.varargsOf(stack, a, b - 1);
+								return ValueFactory.varargsOf(stack, a, b - 1);
 						}
 
 					case Lua.OP_FORLOOP: /*	A sBx	R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }*/ {
@@ -500,7 +500,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 									 * else pc++
 									 */
 						// TODO: stack call on for loop body, such as:   stack[a].call(ci);
-						v = stack[a].invoke(state, Factory.varargsOf(stack[a + 1], stack[a + 2]));
+						v = stack[a].invoke(state, ValueFactory.varargsOf(stack[a + 1], stack[a + 2]));
 						if ((o = v.arg1()).isnil()) {
 							++pc;
 						} else {

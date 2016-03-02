@@ -29,8 +29,8 @@ import org.squiddev.cobalt.*;
 
 import java.util.Random;
 
-import static org.squiddev.cobalt.Factory.valueOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code math}
@@ -47,7 +47,7 @@ public class MathLib extends OneArgFunction {
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg) {
 		LuaTable t = new LuaTable(0, 30);
-		t.set(state, "pi", Factory.valueOf(Math.PI));
+		t.set(state, "pi", ValueFactory.valueOf(Math.PI));
 		t.set(state, "huge", LuaDouble.POSINF);
 		bind(state, t, MathLib1.class, new String[]{
 			"abs", "ceil", "cos", "deg",
@@ -77,41 +77,41 @@ public class MathLib extends OneArgFunction {
 				case 0:
 					return valueOf(Math.abs(arg.checkdouble()));
 				case 1:
-					return Factory.valueOf(Math.ceil(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.ceil(arg.checkdouble()));
 				case 2:
-					return Factory.valueOf(Math.cos(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.cos(arg.checkdouble()));
 				case 3:
-					return Factory.valueOf(Math.toDegrees(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.toDegrees(arg.checkdouble()));
 				case 4:
-					return Factory.valueOf(Math.exp(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.exp(arg.checkdouble()));
 				case 5:
-					return Factory.valueOf(Math.floor(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.floor(arg.checkdouble()));
 				case 6:
-					return Factory.valueOf(Math.toRadians(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.toRadians(arg.checkdouble()));
 				case 7:
-					return Factory.valueOf(Math.sin(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.sin(arg.checkdouble()));
 				case 8:
-					return Factory.valueOf(Math.sqrt(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.sqrt(arg.checkdouble()));
 				case 9:
-					return Factory.valueOf(Math.tan(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.tan(arg.checkdouble()));
 				case 10:
-					return Factory.valueOf(Math.acos(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.acos(arg.checkdouble()));
 				case 11:
-					return Factory.valueOf(Math.asin(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.asin(arg.checkdouble()));
 				case 12:
-					return Factory.valueOf(Math.atan(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.atan(arg.checkdouble()));
 				case 13:
-					return Factory.valueOf(Math.cosh(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.cosh(arg.checkdouble()));
 				case 14:
-					return Factory.valueOf(Math.exp(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.exp(arg.checkdouble()));
 				case 15:
-					return Factory.valueOf(Math.log(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.log(arg.checkdouble()));
 				case 16:
-					return Factory.valueOf(Math.log10(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.log10(arg.checkdouble()));
 				case 17:
-					return Factory.valueOf(Math.sinh(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.sinh(arg.checkdouble()));
 				case 18:
-					return Factory.valueOf(Math.tanh(arg.checkdouble()));
+					return ValueFactory.valueOf(Math.tanh(arg.checkdouble()));
 			}
 			return Constants.NIL;
 		}
@@ -126,18 +126,18 @@ public class MathLib extends OneArgFunction {
 					double y = arg2.checkdouble();
 					double q = x / y;
 					double f = x - y * (q >= 0 ? Math.floor(q) : Math.ceil(q));
-					return Factory.valueOf(f);
+					return ValueFactory.valueOf(f);
 				}
 				case 1: { // ldexp
 					double x = arg1.checkdouble();
 					double y = arg2.checkdouble() + 1023.5;
 					long e = (long) ((0 != (1 & ((int) y))) ? Math.floor(y) : Math.ceil(y - 1));
-					return Factory.valueOf(x * Double.longBitsToDouble(e << 52));
+					return ValueFactory.valueOf(x * Double.longBitsToDouble(e << 52));
 				}
 				case 2:
-					return Factory.valueOf(Math.pow(arg1.checkdouble(), arg2.checkdouble()));
+					return ValueFactory.valueOf(Math.pow(arg1.checkdouble(), arg2.checkdouble()));
 				case 3:
-					return Factory.valueOf(Math.atan2(arg1.checkdouble(), arg2.checkdouble()));
+					return ValueFactory.valueOf(Math.atan2(arg1.checkdouble(), arg2.checkdouble()));
 			}
 			return Constants.NIL;
 		}
@@ -155,27 +155,27 @@ public class MathLib extends OneArgFunction {
 					long bits = Double.doubleToLongBits(x);
 					double m = ((bits & (~(-1L << 52))) + (1L << 52)) * ((bits >= 0) ? (.5 / (1L << 52)) : (-.5 / (1L << 52)));
 					double e = (((int) (bits >> 52)) & 0x7ff) - 1022;
-					return varargsOf(Factory.valueOf(m), Factory.valueOf(e));
+					return varargsOf(ValueFactory.valueOf(m), ValueFactory.valueOf(e));
 				}
 				case 1: { // max
 					double m = args.checkdouble(1);
 					for (int i = 2, n = args.narg(); i <= n; ++i) {
 						m = Math.max(m, args.checkdouble(i));
 					}
-					return Factory.valueOf(m);
+					return ValueFactory.valueOf(m);
 				}
 				case 2: { // min
 					double m = args.checkdouble(1);
 					for (int i = 2, n = args.narg(); i <= n; ++i) {
 						m = Math.min(m, args.checkdouble(i));
 					}
-					return Factory.valueOf(m);
+					return ValueFactory.valueOf(m);
 				}
 				case 3: { // modf
 					double x = args.checkdouble(1);
 					double intPart = (x > 0) ? Math.floor(x) : Math.ceil(x);
 					double fracPart = x - intPart;
-					return varargsOf(Factory.valueOf(intPart), Factory.valueOf(fracPart));
+					return varargsOf(ValueFactory.valueOf(intPart), ValueFactory.valueOf(fracPart));
 				}
 				case 4: { // randomseed
 					long seed = args.checklong(1);
@@ -189,17 +189,23 @@ public class MathLib extends OneArgFunction {
 
 					switch (args.narg()) {
 						case 0:
-							return Factory.valueOf(mathlib.random.nextDouble());
+							return ValueFactory.valueOf(mathlib.random.nextDouble());
 						case 1: {
 							int m = args.checkint(1);
-							if (m < 1) argError(1, "interval is empty");
-							return Factory.valueOf(1 + mathlib.random.nextInt(m));
+							if (m < 1) {
+								LuaValue result;
+								throw ErrorFactory.argError(1, "interval is empty");
+							}
+							return ValueFactory.valueOf(1 + mathlib.random.nextInt(m));
 						}
 						default: {
 							int m = args.checkint(1);
 							int n = args.checkint(2);
-							if (n < m) argError(2, "interval is empty");
-							return Factory.valueOf(m + mathlib.random.nextInt(n + 1 - m));
+							if (n < m) {
+								LuaValue result;
+								throw ErrorFactory.argError(2, "interval is empty");
+							}
+							return ValueFactory.valueOf(m + mathlib.random.nextInt(n + 1 - m));
 						}
 					}
 				}

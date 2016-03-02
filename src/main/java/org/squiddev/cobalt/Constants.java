@@ -1,6 +1,6 @@
 package org.squiddev.cobalt;
 
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * List of constants
@@ -183,11 +183,13 @@ public class Constants {
 	/**
 	 * Constant limiting metatag loop processing
 	 */
-	static final int MAXTAGLOOP = 100;
+	public static final int MAXTAGLOOP = 100;
+
 	/**
 	 * Limit on lua stack size
 	 */
-	static int MAXSTACK = 250;
+	public static final int MAXSTACK = 250;
+
 	/**
 	 * Array of {@link #NIL} values to optimize filling stacks using System.arraycopy().
 	 * Must not be modified.

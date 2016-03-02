@@ -46,7 +46,7 @@ import static org.squiddev.cobalt.Constants.TSTRING;
  * Currently {@link LuaString}s are pooled via a centrally managed weak table.
  * To ensure that as many string values as possible take advantage of this,
  * Constructors are not exposed directly.  As with number, booleans, and nil,
- * instance construction should be via {@link Factory#valueOf(byte[])} or similar API.
+ * instance construction should be via {@link ValueFactory#valueOf(byte[])} or similar API.
  * <p>
  * When Java Strings are used to initialize {@link LuaString} data, the UTF8 encoding is assumed.
  * The functions
@@ -56,8 +56,8 @@ import static org.squiddev.cobalt.Constants.TSTRING;
  * are used to convert back and forth between UTF8 byte arrays and character arrays.
  *
  * @see LuaValue
- * @see Factory#valueOf(String)
- * @see Factory#valueOf(byte[])
+ * @see ValueFactory#valueOf(String)
+ * @see ValueFactory#valueOf(byte[])
  */
 public class LuaString extends LuaValue {
 	/**
@@ -198,14 +198,14 @@ public class LuaString extends LuaValue {
 	// get is delegated to the string library
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
-		return gettable(state, this, key);
+		return getTable(state, this, key);
 	}
 
 	// unary operators
 	@Override
 	public LuaValue neg(LuaState state) {
 		double d = scannumber(10);
-		return Double.isNaN(d) ? super.neg(state) : Factory.valueOf(-d);
+		return Double.isNaN(d) ? super.neg(state) : ValueFactory.valueOf(-d);
 	}
 
 	// concatenation
@@ -255,7 +255,7 @@ public class LuaString extends LuaValue {
 	public double checkarith() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
-			arithError();
+			throw ErrorFactory.arithError(this);
 		}
 		return d;
 	}
@@ -267,7 +267,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public LuaInteger checkinteger() {
-		return Factory.valueOf(checkint());
+		return ValueFactory.valueOf(checkint());
 	}
 
 	@Override
@@ -279,14 +279,14 @@ public class LuaString extends LuaValue {
 	public double checkdouble() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
-			argError("number");
+			throw ErrorFactory.argError(this, "number");
 		}
 		return d;
 	}
 
 	@Override
 	public LuaNumber checknumber() {
-		return Factory.valueOf(checkdouble());
+		return ValueFactory.valueOf(checkdouble());
 	}
 
 	@Override
@@ -295,7 +295,7 @@ public class LuaString extends LuaValue {
 		if (Double.isNaN(d)) {
 			throw new LuaError(msg);
 		}
-		return Factory.valueOf(d);
+		return ValueFactory.valueOf(d);
 	}
 
 	@Override
@@ -725,7 +725,7 @@ public class LuaString extends LuaValue {
 	 */
 	public LuaValue tonumber(int base) {
 		double d = scannumber(base);
-		return Double.isNaN(d) ? NIL : Factory.valueOf(d);
+		return Double.isNaN(d) ? NIL : ValueFactory.valueOf(d);
 	}
 
 	/**

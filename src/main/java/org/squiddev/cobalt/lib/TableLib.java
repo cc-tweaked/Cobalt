@@ -30,7 +30,7 @@ import org.squiddev.cobalt.Varargs;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code table}

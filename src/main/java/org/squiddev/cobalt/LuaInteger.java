@@ -27,7 +27,7 @@ package org.squiddev.cobalt;
  * Extension of {@link LuaNumber} which can hold a Java int as its value.
  * <p>
  * These instance are not instantiated directly by clients, but indirectly
- * via the static functions {@link Factory#valueOf(int)} or {@link Factory#valueOf(double)}
+ * via the static functions {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(double)}
  * functions.  This ensures that policies regarding pooling of instances are
  * encapsulated.
  * <p>
@@ -37,8 +37,8 @@ package org.squiddev.cobalt;
  * @see LuaValue
  * @see LuaNumber
  * @see LuaDouble
- * @see Factory#valueOf(int)
- * @see Factory#valueOf(double)
+ * @see ValueFactory#valueOf(int)
+ * @see ValueFactory#valueOf(double)
  */
 public class LuaInteger extends LuaNumber {
 
@@ -61,8 +61,8 @@ public class LuaInteger extends LuaNumber {
 	 *
 	 * @param l long value to represent.
 	 * @return LuaNumber that is eithe LuaInteger or LuaDouble representing l
-	 * @see Factory#valueOf(int)
-	 * @see Factory#valueOf(double)
+	 * @see ValueFactory#valueOf(int)
+	 * @see ValueFactory#valueOf(double)
 	 */
 	public static LuaNumber valueOf(long l) {
 		int i = (int) l;
@@ -79,7 +79,7 @@ public class LuaInteger extends LuaNumber {
 	/**
 	 * Package protected constructor.
 	 *
-	 * @see Factory#valueOf(int)
+	 * @see ValueFactory#valueOf(int)
 	 */
 	LuaInteger(int i) {
 		this.v = i;
@@ -218,8 +218,7 @@ public class LuaInteger extends LuaNumber {
 	// string comparison
 	@Override
 	public int strcmp(LuaString rhs) {
-		typeError("attempt to compare number with string");
-		return 0;
+		throw ErrorFactory.typeError(this, "attempt to compare number with string");
 	}
 
 	@Override
@@ -244,7 +243,7 @@ public class LuaInteger extends LuaNumber {
 
 	@Override
 	public LuaString checkstring() {
-		return Factory.valueOf(String.valueOf(v));
+		return ValueFactory.valueOf(String.valueOf(v));
 	}
 
 	@Override

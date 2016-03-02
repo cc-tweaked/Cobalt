@@ -38,12 +38,12 @@ package org.squiddev.cobalt;
  * such as  {@code LuaValue.varargsOf(LuaValue, Varargs)}
  * or by taking a portion of the args using {@code Varargs.subargs(int start)}
  *
- * @see Factory#varargsOf(LuaValue[])
- * @see Factory#varargsOf(LuaValue, Varargs)
- * @see Factory#varargsOf(LuaValue[], Varargs)
- * @see Factory#varargsOf(LuaValue, LuaValue, Varargs)
- * @see Factory#varargsOf(LuaValue[], int, int)
- * @see Factory#varargsOf(LuaValue[], int, int, Varargs)
+ * @see ValueFactory#varargsOf(LuaValue[])
+ * @see ValueFactory#varargsOf(LuaValue, Varargs)
+ * @see ValueFactory#varargsOf(LuaValue[], Varargs)
+ * @see ValueFactory#varargsOf(LuaValue, LuaValue, Varargs)
+ * @see ValueFactory#varargsOf(LuaValue[], int, int)
+ * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
  * @see LuaValue#subargs(int)
  */
 public abstract class Varargs {
@@ -556,7 +556,11 @@ public abstract class Varargs {
 	 * @throws LuaError if the argument does not exist.
 	 */
 	public LuaValue checkvalue(int i) {
-		return i <= narg() ? arg(i) : LuaValue.argError(i, "value expected");
+		if (i <= narg()) {
+			return arg(i);
+		} else {
+			throw ErrorFactory.argError(i, "value expected");
+		}
 	}
 
 	/**
@@ -579,7 +583,10 @@ public abstract class Varargs {
 	 * @throws LuaError if the the value of {@code test} is {@code false}
 	 */
 	public void argcheck(boolean test, int i, String msg) {
-		if (!test) LuaValue.argError(i, msg);
+		if (!test) {
+			LuaValue result;
+			throw ErrorFactory.argError(i, msg);
+		}
 	}
 
 	/**

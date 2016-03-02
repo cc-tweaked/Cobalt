@@ -32,8 +32,8 @@ import org.squiddev.cobalt.*;
 
 import java.io.IOException;
 
-import static org.squiddev.cobalt.Factory.valueOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the standard lua {@code os} library.
@@ -94,14 +94,14 @@ public class OsLib extends VarArgFunction {
 				case INIT:
 					return init(state);
 				case CLOCK:
-					return Factory.valueOf(clock());
+					return ValueFactory.valueOf(clock());
 				case DATE: {
 					String s = args.optjstring(1, null);
 					double t = args.optdouble(2, -1);
-					return Factory.valueOf(date(s, t == -1 ? System.currentTimeMillis() / 1000. : t));
+					return ValueFactory.valueOf(date(s, t == -1 ? System.currentTimeMillis() / 1000. : t));
 				}
 				case DIFFTIME:
-					return Factory.valueOf(difftime(args.checkdouble(1), args.checkdouble(2)));
+					return ValueFactory.valueOf(difftime(args.checkdouble(1), args.checkdouble(2)));
 				case EXECUTE:
 					return valueOf(state.resourceManipulator.execute(args.optjstring(1, null)));
 				case EXIT:
@@ -109,7 +109,7 @@ public class OsLib extends VarArgFunction {
 					return Constants.NONE;
 				case GETENV: {
 					final String val = getenv(args.checkjstring(1));
-					return val != null ? Factory.valueOf(val) : Constants.NIL;
+					return val != null ? ValueFactory.valueOf(val) : Constants.NIL;
 				}
 				case REMOVE:
 					state.resourceManipulator.remove(args.checkjstring(1));
@@ -119,16 +119,16 @@ public class OsLib extends VarArgFunction {
 					return Constants.TRUE;
 				case SETLOCALE: {
 					String s = setlocale(args.optjstring(1, null), args.optjstring(2, "all"));
-					return s != null ? Factory.valueOf(s) : Constants.NIL;
+					return s != null ? ValueFactory.valueOf(s) : Constants.NIL;
 				}
 				case TIME:
-					return Factory.valueOf(time(args.arg1().isnil() ? null : args.checktable(1)));
+					return ValueFactory.valueOf(time(args.arg1().isnil() ? null : args.checktable(1)));
 				case TMPNAME:
 					return valueOf(state.resourceManipulator.tmpName());
 			}
 			return Constants.NONE;
 		} catch (IOException e) {
-			return varargsOf(Constants.NIL, Factory.valueOf(e.getMessage()));
+			return varargsOf(Constants.NIL, ValueFactory.valueOf(e.getMessage()));
 		}
 	}
 

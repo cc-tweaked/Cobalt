@@ -1,6 +1,6 @@
 package org.squiddev.cobalt;
 
-public class Factory {
+public class ValueFactory {
 	/**
 	 * Convert java boolean to a {@link LuaValue}.
 	 *
@@ -187,8 +187,8 @@ public class Factory {
 	 *
 	 * @param v The array of {@link LuaValue}s
 	 * @return {@link Varargs} wrapping the supplied values.
-	 * @see Factory#varargsOf(LuaValue, Varargs)
-	 * @see Factory#varargsOf(LuaValue[], int, int)
+	 * @see ValueFactory#varargsOf(LuaValue, Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOf(final LuaValue... v) {
 		switch (v.length) {
@@ -209,8 +209,8 @@ public class Factory {
 	 * @param v The array of {@link LuaValue}s
 	 * @param r {@link Varargs} contain values to include at the end
 	 * @return {@link Varargs} wrapping the supplied values.
-	 * @see Factory#varargsOf(LuaValue[])
-	 * @see Factory#varargsOf(LuaValue[], int, int, Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue[])
+	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
 	public static Varargs varargsOf(final LuaValue[] v, Varargs r) {
 		switch (v.length) {
@@ -230,8 +230,8 @@ public class Factory {
 	 * @param offset number of initial values to skip in the array
 	 * @param length number of values to include from the array
 	 * @return {@link Varargs} wrapping the supplied values.
-	 * @see Factory#varargsOf(LuaValue[])
-	 * @see Factory#varargsOf(LuaValue[], int, int, Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue[])
+	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
 	public static Varargs varargsOf(final LuaValue[] v, final int offset, final int length) {
 		switch (length) {
@@ -254,8 +254,8 @@ public class Factory {
 	 * @param length number of values to include from the array
 	 * @param more   {@link Varargs} contain values to include at the end
 	 * @return {@link Varargs} wrapping the supplied values.
-	 * @see Factory#varargsOf(LuaValue[], Varargs)
-	 * @see Factory#varargsOf(LuaValue[], int, int)
+	 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOf(final LuaValue[] v, final int offset, final int length, Varargs more) {
 		switch (length) {

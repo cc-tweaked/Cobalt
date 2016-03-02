@@ -32,8 +32,8 @@ import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.junit.Assert.*;
-import static org.squiddev.cobalt.Factory.tableOf;
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.tableOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Tests of basic unary and binary operators on main value types.

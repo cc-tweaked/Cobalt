@@ -28,7 +28,7 @@ import org.squiddev.cobalt.*;
 
 import java.io.InputStream;
 
-import static org.squiddev.cobalt.Factory.*;
+import static org.squiddev.cobalt.ValueFactory.*;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard package and module
@@ -62,17 +62,17 @@ public class PackageLib extends OneArgFunction {
 	 */
 	public LuaValue java_loader;
 
-	private static final LuaString _M = Factory.valueOf("_M");
-	private static final LuaString _NAME = Factory.valueOf("_NAME");
-	private static final LuaString _PACKAGE = Factory.valueOf("_PACKAGE");
-	private static final LuaString _DOT = Factory.valueOf(".");
-	private static final LuaString _LOADERS = Factory.valueOf("loaders");
-	private static final LuaString _LOADED = Factory.valueOf("loaded");
-	private static final LuaString _LOADLIB = Factory.valueOf("loadlib");
-	private static final LuaString _PRELOAD = Factory.valueOf("preload");
-	private static final LuaString _PATH = Factory.valueOf("path");
-	private static final LuaString _SEEALL = Factory.valueOf("seeall");
-	private static final LuaString _SENTINEL = Factory.valueOf("\u0001");
+	private static final LuaString _M = ValueFactory.valueOf("_M");
+	private static final LuaString _NAME = ValueFactory.valueOf("_NAME");
+	private static final LuaString _PACKAGE = ValueFactory.valueOf("_PACKAGE");
+	private static final LuaString _DOT = ValueFactory.valueOf(".");
+	private static final LuaString _LOADERS = ValueFactory.valueOf("loaders");
+	private static final LuaString _LOADED = ValueFactory.valueOf("loaded");
+	private static final LuaString _LOADLIB = ValueFactory.valueOf("loadlib");
+	private static final LuaString _PRELOAD = ValueFactory.valueOf("preload");
+	private static final LuaString _PATH = ValueFactory.valueOf("path");
+	private static final LuaString _SEEALL = ValueFactory.valueOf("seeall");
+	private static final LuaString _SENTINEL = ValueFactory.valueOf("\u0001");
 
 	private static final int OP_MODULE = 0;
 	private static final int OP_REQUIRE = 1;
@@ -86,13 +86,13 @@ public class PackageLib extends OneArgFunction {
 	public LuaValue call(LuaState state, LuaValue arg) {
 		env.set(state, "require", new PkgLib1(env, "require", OP_REQUIRE, this));
 		env.set(state, "module", new PkgLibV(env, "module", OP_MODULE, this));
-		env.set(state, "package", PACKAGE = Factory.tableOf(new LuaValue[]{
-			_LOADED, state.loadedPackages = Factory.tableOf(),
-			_PRELOAD, Factory.tableOf(),
-			_PATH, Factory.valueOf(DEFAULT_LUA_PATH),
+		env.set(state, "package", PACKAGE = ValueFactory.tableOf(new LuaValue[]{
+			_LOADED, state.loadedPackages = ValueFactory.tableOf(),
+			_PRELOAD, ValueFactory.tableOf(),
+			_PATH, ValueFactory.valueOf(DEFAULT_LUA_PATH),
 			_LOADLIB, new PkgLibV(env, "loadlib", OP_LOADLIB, this),
 			_SEEALL, new PkgLib1(env, "seeall", OP_SEEALL, this),
-			_LOADERS, Factory.listOf(new LuaValue[]{
+			_LOADERS, ValueFactory.listOf(new LuaValue[]{
 			preload_loader = new PkgLibV(env, "preload_loader", OP_PRELOAD_LOADER, this),
 			lua_loader = new PkgLibV(env, "lua_loader", OP_LUA_LOADER, this),
 			java_loader = new PkgLibV(env, "java_loader", OP_JAVA_LOADER, this),
@@ -120,7 +120,7 @@ public class PackageLib extends OneArgFunction {
 					LuaTable t = arg.checktable();
 					LuaValue m = t.getMetatable(state);
 					if (m == null) {
-						t.setMetatable(state, m = Factory.tableOf());
+						t.setMetatable(state, m = ValueFactory.tableOf());
 					}
 					m.set(state, Constants.INDEX, state.currentThread.getfenv());
 					return Constants.NONE;
@@ -173,7 +173,7 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	public void setLuaPath(LuaState state, String newLuaPath) {
-		PACKAGE.set(state, _PATH, Factory.valueOf(newLuaPath));
+		PACKAGE.set(state, _PATH, ValueFactory.valueOf(newLuaPath));
 	}
 
 	@Override
@@ -365,7 +365,7 @@ public class PackageLib extends OneArgFunction {
 
 	public static Varargs loadlib(Varargs args) {
 		args.checkstring(1);
-		return varargsOf(Constants.NIL, Factory.valueOf("dynamic libraries not enabled"), Factory.valueOf("absent"));
+		return varargsOf(Constants.NIL, ValueFactory.valueOf("dynamic libraries not enabled"), ValueFactory.valueOf("absent"));
 	}
 
 	LuaValue loader_preload(LuaState state, Varargs args) {
@@ -373,7 +373,7 @@ public class PackageLib extends OneArgFunction {
 		LuaValue preload = PACKAGE.get(state, _PRELOAD).checktable();
 		LuaValue val = preload.get(state, name);
 		return val.isnil() ?
-			Factory.valueOf("\n\tno field package.preload['" + name + "']") :
+			ValueFactory.valueOf("\n\tno field package.preload['" + name + "']") :
 			val;
 	}
 
@@ -385,7 +385,7 @@ public class PackageLib extends OneArgFunction {
 		// get package path
 		LuaValue pp = PACKAGE.get(state, _PATH);
 		if (!pp.isstring()) {
-			return Factory.valueOf("package.path is not a string");
+			return ValueFactory.valueOf("package.path is not a string");
 		}
 		String path = pp.tojstring();
 
@@ -423,7 +423,7 @@ public class PackageLib extends OneArgFunction {
 			}
 			sb.append("\n\t'").append(filename).append("': ").append(v.arg(2));
 		}
-		return Factory.valueOf(sb.toString());
+		return ValueFactory.valueOf(sb.toString());
 	}
 
 	LuaValue loader_Java(Varargs args) {
@@ -437,9 +437,9 @@ public class PackageLib extends OneArgFunction {
 			v.setfenv(env);
 			return v;
 		} catch (ClassNotFoundException cnfe) {
-			return Factory.valueOf("\n\tno class '" + classname + "'");
+			return ValueFactory.valueOf("\n\tno class '" + classname + "'");
 		} catch (Exception e) {
-			return Factory.valueOf("\n\tjava load failed on '" + classname + "', " + e);
+			return ValueFactory.valueOf("\n\tjava load failed on '" + classname + "', " + e);
 		}
 	}
 

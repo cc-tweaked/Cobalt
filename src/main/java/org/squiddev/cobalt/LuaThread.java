@@ -29,8 +29,8 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
 
-import static org.squiddev.cobalt.Factory.valueOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LuaValue} that implements
@@ -121,7 +121,7 @@ public class LuaThread extends LuaValue {
 	 * @param env      The environment to apply to the thread
 	 */
 	public LuaThread(LuaState luaState, LuaValue func, LuaValue env) {
-		assert_(func != null, "function cannot be null");
+		if (!(func != null)) throw new LuaError("function cannot be null");
 		this.env = env;
 		this.luaState = luaState;
 		callstack = new CallStack(luaState);

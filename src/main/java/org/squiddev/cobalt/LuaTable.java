@@ -26,8 +26,8 @@ package org.squiddev.cobalt;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.squiddev.cobalt.Factory.valueOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LuaValue} for representing lua tables.
@@ -63,21 +63,21 @@ import static org.squiddev.cobalt.Factory.varargsOf;
  * As with other types, {@link LuaTable} instances should be constructed via one of the table constructor
  * methods on {@link LuaValue}:
  * <ul>
- * <li>{@link Factory#tableOf()} empty table</li>
- * <li>{@link Factory#tableOf(int, int)} table with capacity</li>
- * <li>{@link Factory#listOf(LuaValue[])} initialize array part</li>
- * <li>{@link Factory#listOf(LuaValue[], Varargs)} initialize array part</li>
- * <li>{@link Factory#tableOf(LuaValue[])} initialize named hash part</li>
- * <li>{@link Factory#tableOf(Varargs, int)} initialize named hash part</li>
- * <li>{@link Factory#tableOf(LuaValue[], LuaValue[])} initialize array and named parts</li>
- * <li>{@link Factory#tableOf(LuaValue[], LuaValue[], Varargs)} initialize array and named parts</li>
+ * <li>{@link ValueFactory#tableOf()} empty table</li>
+ * <li>{@link ValueFactory#tableOf(int, int)} table with capacity</li>
+ * <li>{@link ValueFactory#listOf(LuaValue[])} initialize array part</li>
+ * <li>{@link ValueFactory#listOf(LuaValue[], Varargs)} initialize array part</li>
+ * <li>{@link ValueFactory#tableOf(LuaValue[])} initialize named hash part</li>
+ * <li>{@link ValueFactory#tableOf(Varargs, int)} initialize named hash part</li>
+ * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[])} initialize array and named parts</li>
+ * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[], Varargs)} initialize array and named parts</li>
  * </ul>
  *
  * @see LuaValue
  */
 public class LuaTable extends LuaValue {
 	private static final int MIN_HASH_CAPACITY = 2;
-	private static final LuaString N = Factory.valueOf("n");
+	private static final LuaString N = ValueFactory.valueOf("n");
 
 	/**
 	 * the array values
@@ -169,7 +169,7 @@ public class LuaTable extends LuaValue {
 		int nskip = firstarg - 1;
 		int n = Math.max(varargs.narg() - nskip, 0);
 		presize(n, 1);
-		rawset(N, Factory.valueOf(n));
+		rawset(N, ValueFactory.valueOf(n));
 		for (int i = 1; i <= n; i++) {
 			rawset(i, varargs.arg(i + nskip));
 		}
@@ -279,13 +279,13 @@ public class LuaTable extends LuaValue {
 	@Override
 	public LuaValue get(LuaState state, int key) {
 		LuaValue v = rawget(key);
-		return v.isnil() && m_metatable != null ? gettable(state, this, Factory.valueOf(key)) : v;
+		return v.isnil() && m_metatable != null ? getTable(state, this, ValueFactory.valueOf(key)) : v;
 	}
 
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
 		LuaValue v = rawget(key);
-		return v.isnil() && m_metatable != null ? gettable(state, this, key) : v;
+		return v.isnil() && m_metatable != null ? getTable(state, this, key) : v;
 	}
 
 	@Override
@@ -317,7 +317,7 @@ public class LuaTable extends LuaValue {
 
 	@Override
 	public void set(LuaState state, int key, LuaValue value) {
-		if (m_metatable == null || !rawget(key).isnil() || !settable(state, this, LuaInteger.valueOf(key), value)) {
+		if (m_metatable == null || !rawget(key).isnil() || !setTable(state, this, LuaInteger.valueOf(key), value)) {
 			rawset(key, value);
 		}
 	}
@@ -328,7 +328,7 @@ public class LuaTable extends LuaValue {
 	@Override
 	public void set(LuaState state, LuaValue key, LuaValue value) {
 		key.checkvalidkey();
-		if (m_metatable == null || !rawget(key).isnil() || !settable(state, this, key, value)) {
+		if (m_metatable == null || !rawget(key).isnil() || !setTable(state, this, key, value)) {
 			rawset(key, value);
 		}
 	}
@@ -543,7 +543,7 @@ public class LuaTable extends LuaValue {
 		// check hash part
 		for (i -= array.length; i < hashKeys.length; ++i) {
 			if (hashKeys[i] != null) {
-				return Factory.varargsOf(hashKeys[i], hashValues[i]);
+				return ValueFactory.varargsOf(hashKeys[i], hashValues[i]);
 			}
 		}
 
@@ -594,7 +594,7 @@ public class LuaTable extends LuaValue {
 	public LuaValue foreachi(LuaState state, LuaValue func) {
 		LuaValue v, r;
 		for (int k = 0; !(v = rawget(++k)).isnil(); ) {
-			if (!(r = func.call(state, Factory.valueOf(k), v)).isnil()) {
+			if (!(r = func.call(state, ValueFactory.valueOf(k), v)).isnil()) {
 				return r;
 			}
 		}

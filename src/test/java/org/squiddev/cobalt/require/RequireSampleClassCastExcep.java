@@ -1,9 +1,9 @@
 package org.squiddev.cobalt.require;
 
 import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Factory;
+import org.squiddev.cobalt.ValueFactory;
 
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * This should fail while trying to load via "require() because it is not a LibFunction"
@@ -14,6 +14,6 @@ public class RequireSampleClassCastExcep {
 	}
 
 	public LuaValue call() {
-		return Factory.valueOf("require-sample-class-cast-excep");
+		return ValueFactory.valueOf("require-sample-class-cast-excep");
 	}
 }

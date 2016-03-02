@@ -33,7 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import static org.junit.Assert.*;
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Factory.*;
+import static org.squiddev.cobalt.ValueFactory.*;
 
 public class TypeTest {
 

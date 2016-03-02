@@ -32,14 +32,14 @@ import static org.squiddev.cobalt.Constants.TBOOLEAN;
  * Instead, there are exactly two instances of this class,
  * {@link Constants#TRUE} and {@link Constants#FALSE}
  * representing the lua values {@code true} and {@code false}.
- * The function {@link Factory#valueOf(boolean)} will always
+ * The function {@link ValueFactory#valueOf(boolean)} will always
  * return one of these two values.
  * <p>
  * Any {@link LuaValue} can be converted to its equivalent
  * boolean representation using {@link LuaValue#toboolean()}
  *
  * @see LuaValue
- * @see Factory#valueOf(boolean)
+ * @see ValueFactory#valueOf(boolean)
  * @see Constants#TRUE
  * @see Constants#FALSE
  */

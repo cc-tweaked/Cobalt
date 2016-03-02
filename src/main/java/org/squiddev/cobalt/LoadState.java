@@ -30,7 +30,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.squiddev.cobalt.Factory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Class to manage loading of {@link Prototype} instances.
@@ -262,7 +262,7 @@ public class LoadState {
 			}
 		}
 
-		return Factory.valueOf(Double.longBitsToDouble(bits));
+		return ValueFactory.valueOf(Double.longBitsToDouble(bits));
 	}
 
 	/**

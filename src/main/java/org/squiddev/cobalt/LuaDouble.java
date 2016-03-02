@@ -27,7 +27,7 @@ package org.squiddev.cobalt;
  * Extension of {@link LuaNumber} which can hold a Java double as its value.
  *
  * These instance are not instantiated directly by clients, but indirectly
- * via the static functions {@link Factory#valueOf(int)} or {@link Factory#valueOf(double)}
+ * via the static functions {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(double)}
  * functions.  This ensures that values which can be represented as int
  * are wrapped in {@link LuaInteger} instead of {@link LuaDouble}.
  *
@@ -40,8 +40,8 @@ package org.squiddev.cobalt;
  * @see LuaValue
  * @see LuaNumber
  * @see LuaInteger
- * @see Factory#valueOf(int)
- * @see Factory#valueOf(double)
+ * @see ValueFactory#valueOf(int)
+ * @see ValueFactory#valueOf(double)
  */
 public class LuaDouble extends LuaNumber {
 
@@ -191,8 +191,7 @@ public class LuaDouble extends LuaNumber {
 	// string comparison
 	@Override
 	public int strcmp(LuaString rhs) {
-		typeError("attempt to compare number with string");
-		return 0;
+		throw ErrorFactory.typeError(this, "attempt to compare number with string");
 	}
 
 	@Override

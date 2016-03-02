@@ -42,8 +42,8 @@ public class MetatableTest {
 	private final Object sampleobject = new Object();
 	private final TypeTest.MyData sampledata = new TypeTest.MyData();
 
-	private final LuaValue string = Factory.valueOf(samplestring);
-	private final LuaTable table = Factory.tableOf();
+	private final LuaValue string = ValueFactory.valueOf(samplestring);
+	private final LuaTable table = ValueFactory.tableOf();
 	private final LuaFunction function = new ZeroArgFunction() {
 		@Override
 		public LuaValue call(LuaState state) {
@@ -53,8 +53,8 @@ public class MetatableTest {
 	private final LuaState state = new LuaState(new FileResourceManipulator());
 	private final LuaThread thread = new LuaThread(state, function, table);
 	private final LuaClosure closure = new LuaClosure();
-	private final LuaUserdata userdata = Factory.userdataOf(sampleobject);
-	private final LuaUserdata userdatamt = Factory.userdataOf(sampledata, table);
+	private final LuaUserdata userdata = ValueFactory.userdataOf(sampleobject);
+	private final LuaUserdata userdatamt = ValueFactory.userdataOf(sampledata, table);
 
 	@Before
 	public void setup() throws Exception {
@@ -88,7 +88,7 @@ public class MetatableTest {
 
 	@Test
 	public void testSetMetatable() {
-		LuaValue mt = Factory.tableOf();
+		LuaValue mt = ValueFactory.tableOf();
 		assertEquals(null, table.getMetatable(state));
 		assertEquals(null, userdata.getMetatable(state));
 		assertEquals(table, userdatamt.getMetatable(state));
@@ -124,7 +124,7 @@ public class MetatableTest {
 		assertEquals(null, closure.getMetatable(state));
 		state.numberMetatable = mt;
 		assertEquals(mt, Constants.ONE.getMetatable(state));
-		assertEquals(mt, Factory.valueOf(1.25).getMetatable(state));
+		assertEquals(mt, ValueFactory.valueOf(1.25).getMetatable(state));
 //		assertEquals( null, string.getmetatable() );
 		assertEquals(null, function.getMetatable(state));
 		assertEquals(null, thread.getMetatable(state));
@@ -151,7 +151,7 @@ public class MetatableTest {
 		assertEquals(Constants.NIL, userdatamt.get(state, 1));
 
 		// empty metatable
-		LuaValue mt = Factory.tableOf();
+		LuaValue mt = ValueFactory.tableOf();
 		assertEquals(table, table.setMetatable(state, mt));
 		assertEquals(userdata, userdata.setMetatable(state, mt));
 		state.booleanMetatable = mt;
@@ -170,8 +170,8 @@ public class MetatableTest {
 		assertEquals(mt, thread.getMetatable(state));
 
 		// plain metatable
-		LuaValue abc = Factory.valueOf("abc");
-		mt.set(state, Constants.INDEX, Factory.listOf(new LuaValue[]{abc}));
+		LuaValue abc = ValueFactory.valueOf("abc");
+		mt.set(state, Constants.INDEX, ValueFactory.listOf(new LuaValue[]{abc}));
 		assertEquals(abc, table.get(state, 1));
 		assertEquals(abc, userdata.get(state, 1));
 		assertEquals(abc, Constants.NIL.get(state, 1));
@@ -185,7 +185,7 @@ public class MetatableTest {
 		mt.set(state, Constants.INDEX, new TwoArgFunction() {
 			@Override
 			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
-				return Factory.valueOf(arg1.typeName() + "[" + arg2.tojstring() + "]=xyz");
+				return ValueFactory.valueOf(arg1.typeName() + "[" + arg2.tojstring() + "]=xyz");
 			}
 
 		});
@@ -203,7 +203,7 @@ public class MetatableTest {
 	@Test
 	public void testMetatableNewIndex() {
 		// empty metatable
-		LuaValue mt = Factory.tableOf();
+		LuaValue mt = ValueFactory.tableOf();
 		assertEquals(table, table.setMetatable(state, mt));
 		assertEquals(userdata, userdata.setMetatable(state, mt));
 		state.booleanMetatable = mt;
@@ -214,8 +214,8 @@ public class MetatableTest {
 		state.threadMetatable = mt;
 
 		// plain metatable
-		final LuaValue fallback = Factory.tableOf();
-		LuaValue abc = Factory.valueOf("abc");
+		final LuaValue fallback = ValueFactory.tableOf();
+		LuaValue abc = ValueFactory.valueOf("abc");
 		mt.set(state, Constants.NEWINDEX, fallback);
 		table.set(state, 2, abc);
 		userdata.set(state, 3, abc);
@@ -238,7 +238,7 @@ public class MetatableTest {
 		mt.set(state, Constants.NEWINDEX, new ThreeArgFunction() {
 			@Override
 			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-				fallback.rawset(arg2, Factory.valueOf("via-func-" + arg3));
+				fallback.rawset(arg2, ValueFactory.valueOf("via-func-" + arg3));
 				return Constants.NONE;
 			}
 
@@ -251,7 +251,7 @@ public class MetatableTest {
 // 		string.set(17,abc);
 		function.set(state, 18, abc);
 		thread.set(state, 19, abc);
-		LuaValue via = Factory.valueOf("via-func-abc");
+		LuaValue via = ValueFactory.valueOf("via-func-abc");
 		assertEquals(via, fallback.get(state, 12));
 		assertEquals(via, fallback.get(state, 13));
 		assertEquals(via, fallback.get(state, 14));
@@ -283,9 +283,9 @@ public class MetatableTest {
 	}
 
 	private LuaValue makeTable(String key1, String val1, String key2, String val2) {
-		return Factory.tableOf(new LuaValue[]{
-			Factory.valueOf(key1), Factory.valueOf(val1),
-			Factory.valueOf(key2), Factory.valueOf(val2),
+		return ValueFactory.tableOf(new LuaValue[]{
+			ValueFactory.valueOf(key1), ValueFactory.valueOf(val1),
+			ValueFactory.valueOf(key2), ValueFactory.valueOf(val2),
 		});
 	}
 
@@ -298,19 +298,19 @@ public class MetatableTest {
 		LuaValue s = makeTable("cc", "ccc", "dd", "ddd");
 		LuaValue t = makeTable("cc", "ccc", "dd", "ddd");
 		t.setMetatable(state, m);
-		LuaValue aaa = Factory.valueOf("aaa");
-		LuaValue bbb = Factory.valueOf("bbb");
-		LuaValue ccc = Factory.valueOf("ccc");
-		LuaValue ddd = Factory.valueOf("ddd");
-		LuaValue ppp = Factory.valueOf("ppp");
-		LuaValue qqq = Factory.valueOf("qqq");
-		LuaValue rrr = Factory.valueOf("rrr");
-		LuaValue sss = Factory.valueOf("sss");
-		LuaValue ttt = Factory.valueOf("ttt");
-		LuaValue www = Factory.valueOf("www");
-		LuaValue xxx = Factory.valueOf("xxx");
-		LuaValue yyy = Factory.valueOf("yyy");
-		LuaValue zzz = Factory.valueOf("zzz");
+		LuaValue aaa = ValueFactory.valueOf("aaa");
+		LuaValue bbb = ValueFactory.valueOf("bbb");
+		LuaValue ccc = ValueFactory.valueOf("ccc");
+		LuaValue ddd = ValueFactory.valueOf("ddd");
+		LuaValue ppp = ValueFactory.valueOf("ppp");
+		LuaValue qqq = ValueFactory.valueOf("qqq");
+		LuaValue rrr = ValueFactory.valueOf("rrr");
+		LuaValue sss = ValueFactory.valueOf("sss");
+		LuaValue ttt = ValueFactory.valueOf("ttt");
+		LuaValue www = ValueFactory.valueOf("www");
+		LuaValue xxx = ValueFactory.valueOf("xxx");
+		LuaValue yyy = ValueFactory.valueOf("yyy");
+		LuaValue zzz = ValueFactory.valueOf("zzz");
 		LuaValue nil = Constants.NIL;
 
 		// check initial values
@@ -360,7 +360,7 @@ public class MetatableTest {
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, ttt, aaa, bbb, nil, nil, nil, rrr, ttt);
 
 		// make s fall back to t
-		s.setMetatable(state, Factory.tableOf(new LuaValue[]{Constants.INDEX, t, Constants.NEWINDEX, t}));
+		s.setMetatable(state, ValueFactory.tableOf(new LuaValue[]{Constants.INDEX, t, Constants.NEWINDEX, t}));
 		checkTable(s, www, yyy, qqq, ddd, ppp, rrr, ttt, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, sss, nil, rrr, ttt, nil, yyy, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, ttt, aaa, bbb, nil, nil, nil, rrr, ttt);

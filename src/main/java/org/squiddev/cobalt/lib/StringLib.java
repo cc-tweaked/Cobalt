@@ -32,7 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Factory.*;
+import static org.squiddev.cobalt.ValueFactory.*;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
@@ -156,7 +156,10 @@ public class StringLib extends OneArgFunction {
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
 			int c = args.checkint(a);
-			if (c < 0 || c >= 256) argError(a, "invalid value");
+			if (c < 0 || c >= 256) {
+				LuaValue result;
+				throw ErrorFactory.argError(a, "invalid value");
+			}
 			bytes[i] = (byte) c;
 		}
 		return LuaString.valueOf(bytes);
