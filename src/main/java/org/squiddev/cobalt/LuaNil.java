@@ -41,10 +41,9 @@ package org.squiddev.cobalt;
  * @see Constants#NIL
  */
 public class LuaNil extends LuaValue {
+	protected static final LuaNil _NIL = new LuaNil();
 
-	static final LuaNil _NIL = new LuaNil();
-
-	LuaNil() {
+	protected LuaNil() {
 	}
 
 	@Override
@@ -60,11 +59,6 @@ public class LuaNil extends LuaValue {
 	@Override
 	public String tojstring() {
 		return "nil";
-	}
-
-	@Override
-	public LuaValue not() {
-		return Constants.TRUE;
 	}
 
 	@Override

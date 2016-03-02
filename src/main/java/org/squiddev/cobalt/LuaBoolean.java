@@ -23,7 +23,7 @@
  */
 package org.squiddev.cobalt;
 
-import static org.squiddev.cobalt.Constants.*;
+import static org.squiddev.cobalt.Constants.TBOOLEAN;
 
 /**
  * Extension of {@link LuaValue} which can hold a Java boolean as its value.
@@ -77,20 +77,6 @@ public final class LuaBoolean extends LuaValue {
 	@Override
 	public boolean isboolean() {
 		return true;
-	}
-
-	@Override
-	public LuaValue not() {
-		return v ? FALSE : TRUE;
-	}
-
-	/**
-	 * Return the boolean value for this boolean
-	 *
-	 * @return value as a Java boolean
-	 */
-	public boolean booleanValue() {
-		return v;
 	}
 
 	@Override

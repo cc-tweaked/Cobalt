@@ -25,9 +25,6 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
-import static org.squiddev.cobalt.Factory.valueOf;
-import static org.squiddev.cobalt.Factory.varargsOf;
-
 /**
  * Base class for all concrete lua type values.
  * <p>
@@ -1810,15 +1807,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Unary not: return inverse boolean value {@code (~this)} as defined by lua not operator
-	 *
-	 * @return {@link Constants#TRUE} if {@link Constants#NIL} or {@link Constants#FALSE}, otherwise {@link Constants#FALSE}
-	 */
-	public LuaValue not() {
-		return Constants.FALSE;
-	}
-
-	/**
 	 * Unary minus: return negative value {@code (-this)} as defined by lua unary minus operator
 	 *
 	 * @param state The current lua state
@@ -2109,7 +2097,6 @@ public abstract class LuaValue extends Varargs {
 	public LuaValue concatmt(LuaState state, LuaValue rhs) {
 		LuaValue h = metatag(state, Constants.CONCAT);
 		if (h.isnil() && (h = rhs.metatag(state, Constants.CONCAT)).isnil()) {
-			LuaValue result;
 			throw new LuaError("attempt to concatenate " + typeName() + " and " + rhs.typeName());
 		}
 		return h.call(state, this, rhs);
@@ -2288,7 +2275,6 @@ public abstract class LuaValue extends Varargs {
 		if (h.isnil()) {
 			h = op2.metatag(state, tag);
 			if (h.isnil()) {
-				LuaValue result;
 				throw new LuaError("attempt to perform arithmetic " + tag + " on " + typeName() + " and " + op2.typeName());
 			}
 		}
@@ -2358,8 +2344,8 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Varargs implemenation backed by an array of LuaValues
-	 * <p>
+	 * Varargs implementation backed by an array of LuaValues
+	 *
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static methods on LuaValue.
 	 *
@@ -2372,7 +2358,7 @@ public abstract class LuaValue extends Varargs {
 
 		/**
 		 * Construct a Varargs from an array of LuaValue.
-		 * <p>
+		 *
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
@@ -2401,8 +2387,8 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Varargs implemenation backed by an array of LuaValues
-	 * <p>
+	 * Varargs implementation backed by an array of LuaValues
+	 *
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static methods on LuaValue.
 	 *
@@ -2417,7 +2403,7 @@ public abstract class LuaValue extends Varargs {
 
 		/**
 		 * Construct a Varargs from an array of LuaValue.
-		 * <p>
+		 *
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
@@ -2432,7 +2418,7 @@ public abstract class LuaValue extends Varargs {
 
 		/**
 		 * Construct a Varargs from an array of LuaValue and additional arguments.
-		 * <p>
+		 *
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static method on LuaValue.
 		 *
@@ -2462,8 +2448,8 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Varargs implemenation backed by two values.
-	 * <p>
+	 * Varargs implementation backed by two values.
+	 *
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static method on LuaValue.
 	 *
@@ -2474,8 +2460,8 @@ public abstract class LuaValue extends Varargs {
 		private final Varargs v2;
 
 		/**
-		 * Construct a Varargs from an two LuaValue.
-		 * <p>
+		 * Construct a Varargs from an two LuaValues.
+		 *
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static method on LuaValue.
 		 *
@@ -2503,78 +2489,4 @@ public abstract class LuaValue extends Varargs {
 			return v1;
 		}
 	}
-
-	//region Legacy comparison
-	public final LuaValue eq(LuaState state, LuaValue other) {
-		return OperationHelper.eq(state, this, other) ? Constants.TRUE : Constants.FALSE;
-	}
-
-	public final boolean eq_b(LuaState state, LuaValue other) {
-		return OperationHelper.eq(state, this, other);
-	}
-
-	public final LuaValue lt(LuaState state, LuaValue other) {
-		return OperationHelper.ltValue(state, this, other);
-	}
-
-	public final boolean lt_b(LuaState state, LuaValue other) {
-		return OperationHelper.lt(state, this, other);
-	}
-
-	public final LuaValue lteq(LuaState state, LuaValue other) {
-		return OperationHelper.leValue(state, this, other);
-	}
-
-	public final boolean lteq_b(LuaState state, LuaValue other) {
-		return OperationHelper.le(state, this, other);
-	}
-
-	public final LuaValue neq(LuaState state, LuaValue other) {
-		return OperationHelper.eq(state, this, other) ? Constants.FALSE : Constants.TRUE;
-	}
-
-	public final boolean neq_b(LuaState state, LuaValue other) {
-		return !OperationHelper.eq(state, this, other);
-	}
-
-	public final LuaValue gt(LuaState state, LuaValue other) {
-		return OperationHelper.ltValue(state, other, this);
-	}
-
-	public final boolean gt_b(LuaState state, LuaValue other) {
-		return OperationHelper.lt(state, other, this);
-	}
-
-	public final LuaValue gteq(LuaState state, LuaValue other) {
-		return OperationHelper.leValue(state, other, this);
-	}
-
-	public final boolean gteq_b(LuaState state, LuaValue other) {
-		return OperationHelper.le(state, other, this);
-	}
-
-	public final LuaValue add(LuaState state, LuaValue other) {
-		return OperationHelper.add(state, this, other);
-	}
-
-	public final LuaValue sub(LuaState state, LuaValue other) {
-		return OperationHelper.sub(state, this, other);
-	}
-
-	public final LuaValue mul(LuaState state, LuaValue other) {
-		return OperationHelper.mul(state, this, other);
-	}
-
-	public final LuaValue div(LuaState state, LuaValue other) {
-		return OperationHelper.div(state, this, other);
-	}
-
-	public final LuaValue mod(LuaState state, LuaValue other) {
-		return OperationHelper.mod(state, this, other);
-	}
-
-	public final LuaValue pow(LuaState state, LuaValue other) {
-		return OperationHelper.pow(state, this, other);
-	}
-	//endregion
 }

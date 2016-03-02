@@ -26,7 +26,8 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.DebugLib;
 
-import static org.squiddev.cobalt.Factory.varargsOf;
+import static org.squiddev.cobalt.Constants.FALSE;
+import static org.squiddev.cobalt.Constants.TRUE;
 
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
@@ -327,7 +328,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						continue;
 
 					case Lua.OP_NOT: /*	A B	R(A):= not R(B)				*/
-						stack[a] = stack[i >>> 23].not();
+						stack[a] = stack[i >>> 23].toboolean() ? FALSE : TRUE;
 						continue;
 
 					case Lua.OP_LEN: /*	A B	R(A):= length of R(B)				*/
@@ -473,8 +474,8 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 					case Lua.OP_FORLOOP: /*	A sBx	R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }*/ {
 						LuaValue limit = stack[a + 1];
 						LuaValue step = stack[a + 2];
-						LuaValue idx = step.add(state, stack[a]);
-						if (step.gt_b(state, Constants.ZERO) ? idx.lteq_b(state, limit) : idx.gteq_b(state, limit)) {
+						LuaValue idx = OperationHelper.add(state, step, stack[a]);
+						if (OperationHelper.lt(state, Constants.ZERO, step) ? OperationHelper.le(state, idx, limit) : OperationHelper.le(state, limit, idx)) {
 							stack[a] = idx;
 							stack[a + 3] = idx;
 							pc += (i >>> 14) - 0x1ffff;
@@ -486,7 +487,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						LuaValue init = stack[a].checknumber("'for' initial value must be a number");
 						LuaValue limit = stack[a + 1].checknumber("'for' limit must be a number");
 						LuaValue step = stack[a + 2].checknumber("'for' step must be a number");
-						stack[a] = init.sub(state, step);
+						stack[a] = OperationHelper.sub(state, init, step);
 						stack[a + 1] = limit;
 						stack[a + 2] = step;
 						pc += (i >>> 14) - 0x1ffff;

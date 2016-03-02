@@ -25,7 +25,6 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.Assert;
 import org.junit.Test;
-
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.TwoArgFunction;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -50,39 +49,24 @@ public class UnaryBinaryOperatorsTest {
 		assertTrue(Constants.TRUE.equals(Constants.TRUE));
 		assertTrue(!Constants.FALSE.equals(Constants.TRUE));
 		assertTrue(!Constants.TRUE.equals(Constants.FALSE));
-		assertTrue(Constants.FALSE.eq_b(state, Constants.FALSE));
-		assertTrue(Constants.TRUE.eq_b(state, Constants.TRUE));
-		assertFalse(Constants.FALSE.eq_b(state, Constants.TRUE));
-		assertFalse(Constants.TRUE.eq_b(state, Constants.FALSE));
-		assertEquals(Constants.TRUE, Constants.FALSE.eq(state, Constants.FALSE));
-		assertEquals(Constants.TRUE, Constants.TRUE.eq(state, Constants.TRUE));
-		assertEquals(Constants.FALSE, Constants.FALSE.eq(state, Constants.TRUE));
-		assertEquals(Constants.FALSE, Constants.TRUE.eq(state, Constants.FALSE));
-		assertFalse(Constants.FALSE.neq_b(state, Constants.FALSE));
-		assertFalse(Constants.TRUE.neq_b(state, Constants.TRUE));
-		assertTrue(Constants.FALSE.neq_b(state, Constants.TRUE));
-		assertTrue(Constants.TRUE.neq_b(state, Constants.FALSE));
-		assertEquals(Constants.FALSE, Constants.FALSE.neq(state, Constants.FALSE));
-		assertEquals(Constants.FALSE, Constants.TRUE.neq(state, Constants.TRUE));
-		assertEquals(Constants.TRUE, Constants.FALSE.neq(state, Constants.TRUE));
-		assertEquals(Constants.TRUE, Constants.TRUE.neq(state, Constants.FALSE));
+		assertTrue(OperationHelper.eq(state, Constants.FALSE, Constants.FALSE));
+		assertTrue(OperationHelper.eq(state, Constants.TRUE, Constants.TRUE));
+		assertFalse(OperationHelper.eq(state, Constants.FALSE, Constants.TRUE));
+		assertFalse(OperationHelper.eq(state, Constants.TRUE, Constants.FALSE));
+		assertEquals(Constants.TRUE, OperationHelper.eq(state, Constants.FALSE, Constants.FALSE) ? Constants.TRUE : Constants.FALSE);
+		assertEquals(Constants.TRUE, OperationHelper.eq(state, Constants.TRUE, Constants.TRUE) ? Constants.TRUE : Constants.FALSE);
+		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.FALSE, Constants.TRUE) ? Constants.TRUE : Constants.FALSE);
+		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.TRUE, Constants.FALSE) ? Constants.TRUE : Constants.FALSE);
+		assertFalse(!OperationHelper.eq(state, Constants.FALSE, Constants.FALSE));
+		assertFalse(!OperationHelper.eq(state, Constants.TRUE, Constants.TRUE));
+		assertTrue(!OperationHelper.eq(state, Constants.FALSE, Constants.TRUE));
+		assertTrue(!OperationHelper.eq(state, Constants.TRUE, Constants.FALSE));
+		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.FALSE, Constants.FALSE) ? Constants.FALSE : Constants.TRUE);
+		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.TRUE, Constants.TRUE) ? Constants.FALSE : Constants.TRUE);
+		assertEquals(Constants.TRUE, OperationHelper.eq(state, Constants.FALSE, Constants.TRUE) ? Constants.FALSE : Constants.TRUE);
+		assertEquals(Constants.TRUE, OperationHelper.eq(state, Constants.TRUE, Constants.FALSE) ? Constants.FALSE : Constants.TRUE);
 		assertTrue(Constants.TRUE.toboolean());
 		assertFalse(Constants.FALSE.toboolean());
-	}
-
-	@Test
-	public void testNot() {
-		LuaValue ia = valueOf(3);
-		LuaValue da = valueOf(.25);
-		LuaValue sa = valueOf("1.5");
-		LuaValue ba = Constants.TRUE, bb = Constants.FALSE;
-
-		// like kinds
-		assertEquals(Constants.FALSE, ia.not());
-		assertEquals(Constants.FALSE, da.not());
-		assertEquals(Constants.FALSE, sa.not());
-		assertEquals(Constants.FALSE, ba.not());
-		assertEquals(Constants.TRUE, bb.not());
 	}
 
 	@Test
@@ -177,23 +161,23 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = LuaString.valueOf("345"), sb = LuaString.valueOf("345"), sc = LuaString.valueOf("-345");
 
 		// check arithmetic equality among same types
-		assertEquals(ia.eq(state, ib), Constants.TRUE);
-		assertEquals(sa.eq(state, sb), Constants.TRUE);
-		assertEquals(ia.eq(state, ic), Constants.FALSE);
-		assertEquals(sa.eq(state, sc), Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, ia, ib) ? Constants.TRUE : Constants.FALSE, Constants.TRUE);
+		assertEquals(OperationHelper.eq(state, sa, sb) ? Constants.TRUE : Constants.FALSE, Constants.TRUE);
+		assertEquals(OperationHelper.eq(state, ia, ic) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, sa, sc) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 
 		// check arithmetic equality among different types
-		assertEquals(ia.eq(state, sa), Constants.FALSE);
-		assertEquals(sa.eq(state, ia), Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, ia, sa) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, sa, ia) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 
 		// equals with mismatched types
 		LuaValue t = new LuaTable();
-		assertEquals(ia.eq(state, t), Constants.FALSE);
-		assertEquals(t.eq(state, ia), Constants.FALSE);
-		assertEquals(ia.eq(state, Constants.FALSE), Constants.FALSE);
-		assertEquals(Constants.FALSE.eq(state, ia), Constants.FALSE);
-		assertEquals(ia.eq(state, Constants.NIL), Constants.FALSE);
-		assertEquals(Constants.NIL.eq(state, ia), Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, ia, t) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, t, ia) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, ia, Constants.FALSE) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, Constants.FALSE, ia) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, ia, Constants.NIL) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, Constants.NIL, ia) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 	}
 
 	@Test
@@ -202,23 +186,23 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = LuaString.valueOf("345.5"), sb = LuaString.valueOf("345.5"), sc = LuaString.valueOf("-345.5");
 
 		// check arithmetic equality among same types
-		assertEquals(da.eq(state, db), Constants.TRUE);
-		assertEquals(sa.eq(state, sb), Constants.TRUE);
-		assertEquals(da.eq(state, dc), Constants.FALSE);
-		assertEquals(sa.eq(state, sc), Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, da, db) ? Constants.TRUE : Constants.FALSE, Constants.TRUE);
+		assertEquals(OperationHelper.eq(state, sa, sb) ? Constants.TRUE : Constants.FALSE, Constants.TRUE);
+		assertEquals(OperationHelper.eq(state, da, dc) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, sa, sc) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 
 		// check arithmetic equality among different types
-		assertEquals(da.eq(state, sa), Constants.FALSE);
-		assertEquals(sa.eq(state, da), Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, da, sa) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, sa, da) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 
 		// equals with mismatched types
 		LuaValue t = new LuaTable();
-		assertEquals(da.eq(state, t), Constants.FALSE);
-		assertEquals(t.eq(state, da), Constants.FALSE);
-		assertEquals(da.eq(state, Constants.FALSE), Constants.FALSE);
-		assertEquals(Constants.FALSE.eq(state, da), Constants.FALSE);
-		assertEquals(da.eq(state, Constants.NIL), Constants.FALSE);
-		assertEquals(Constants.NIL.eq(state, da), Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, da, t) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, t, da) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, da, Constants.FALSE) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, Constants.FALSE, da) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, da, Constants.NIL) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
+		assertEquals(OperationHelper.eq(state, Constants.NIL, da) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 	}
 
 	private static final TwoArgFunction RETURN_NIL = new TwoArgFunction() {
@@ -273,45 +257,45 @@ public class UnaryBinaryOperatorsTest {
 			uda3.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,}));
 
 			// primitive types or same valu do not invoke metatag as per C implementation
-			assertEquals(tru, tru.eq(state, tru));
-			assertEquals(tru, one.eq(state, one));
-			assertEquals(tru, abc.eq(state, abc));
-			assertEquals(tru, tbl.eq(state, tbl));
-			assertEquals(tru, uda.eq(state, uda));
-			assertEquals(tru, uda.eq(state, udb));
-			assertEquals(fal, tru.eq(state, fal));
-			assertEquals(fal, fal.eq(state, tru));
-			assertEquals(fal, zer.eq(state, one));
-			assertEquals(fal, one.eq(state, zer));
-			assertEquals(fal, pi.eq(state, ee));
-			assertEquals(fal, ee.eq(state, pi));
-			assertEquals(fal, pi.eq(state, one));
-			assertEquals(fal, one.eq(state, pi));
-			assertEquals(fal, abc.eq(state, def));
-			assertEquals(fal, def.eq(state, abc));
+			assertEquals(tru, OperationHelper.eq(state, tru, tru) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, one, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, abc, abc) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, tbl, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, uda, uda) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, uda, udb) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tru, fal) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, fal, tru) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, zer, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, zer) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, pi, ee) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, ee, pi) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, pi, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, pi) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, abc, def) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, def, abc) ? Constants.TRUE : Constants.FALSE);
 			// different types.  not comparable
-			assertEquals(fal, fal.eq(state, tbl));
-			assertEquals(fal, tbl.eq(state, fal));
-			assertEquals(fal, tbl.eq(state, one));
-			assertEquals(fal, one.eq(state, tbl));
-			assertEquals(fal, fal.eq(state, one));
-			assertEquals(fal, one.eq(state, fal));
-			assertEquals(fal, abc.eq(state, one));
-			assertEquals(fal, one.eq(state, abc));
-			assertEquals(fal, tbl.eq(state, uda));
-			assertEquals(fal, uda.eq(state, tbl));
+			assertEquals(fal, OperationHelper.eq(state, fal, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl, fal) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, fal, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, fal) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, abc, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, abc) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl, uda) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, uda, tbl) ? Constants.TRUE : Constants.FALSE);
 			// same type, same value, does not invoke metatag op
-			assertEquals(tru, tbl.eq(state, tbl));
+			assertEquals(tru, OperationHelper.eq(state, tbl, tbl) ? Constants.TRUE : Constants.FALSE);
 			// same type, different value, same metatag op.  comparabile via metatag op
-			assertEquals(nilb, tbl.eq(state, tbl2));
-			assertEquals(nilb, tbl2.eq(state, tbl));
-			assertEquals(nilb, uda.eq(state, uda2));
-			assertEquals(nilb, uda2.eq(state, uda));
+			assertEquals(nilb, OperationHelper.eq(state, tbl, tbl2) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(nilb, OperationHelper.eq(state, tbl2, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(nilb, OperationHelper.eq(state, uda, uda2) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(nilb, OperationHelper.eq(state, uda2, uda) ? Constants.TRUE : Constants.FALSE);
 			// same type, different metatag ops.  not comparable
-			assertEquals(fal, tbl.eq(state, tbl3));
-			assertEquals(fal, tbl3.eq(state, tbl));
-			assertEquals(fal, uda.eq(state, uda3));
-			assertEquals(fal, uda3.eq(state, uda));
+			assertEquals(fal, OperationHelper.eq(state, tbl, tbl3) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl3, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, uda, uda3) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, uda3, uda) ? Constants.TRUE : Constants.FALSE);
 
 			// always use right argument
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,});
@@ -327,45 +311,45 @@ public class UnaryBinaryOperatorsTest {
 			uda3.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,}));
 
 			// primitive types or same value do not invoke metatag as per C implementation
-			assertEquals(tru, tru.eq(state, tru));
-			assertEquals(tru, one.eq(state, one));
-			assertEquals(tru, abc.eq(state, abc));
-			assertEquals(tru, tbl.eq(state, tbl));
-			assertEquals(tru, uda.eq(state, uda));
-			assertEquals(tru, uda.eq(state, udb));
-			assertEquals(fal, tru.eq(state, fal));
-			assertEquals(fal, fal.eq(state, tru));
-			assertEquals(fal, zer.eq(state, one));
-			assertEquals(fal, one.eq(state, zer));
-			assertEquals(fal, pi.eq(state, ee));
-			assertEquals(fal, ee.eq(state, pi));
-			assertEquals(fal, pi.eq(state, one));
-			assertEquals(fal, one.eq(state, pi));
-			assertEquals(fal, abc.eq(state, def));
-			assertEquals(fal, def.eq(state, abc));
+			assertEquals(tru, OperationHelper.eq(state, tru, tru) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, one, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, abc, abc) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, tbl, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, uda, uda) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(tru, OperationHelper.eq(state, uda, udb) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tru, fal) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, fal, tru) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, zer, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, zer) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, pi, ee) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, ee, pi) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, pi, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, pi) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, abc, def) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, def, abc) ? Constants.TRUE : Constants.FALSE);
 			// different types.  not comparable
-			assertEquals(fal, fal.eq(state, tbl));
-			assertEquals(fal, tbl.eq(state, fal));
-			assertEquals(fal, tbl.eq(state, one));
-			assertEquals(fal, one.eq(state, tbl));
-			assertEquals(fal, fal.eq(state, one));
-			assertEquals(fal, one.eq(state, fal));
-			assertEquals(fal, abc.eq(state, one));
-			assertEquals(fal, one.eq(state, abc));
-			assertEquals(fal, tbl.eq(state, uda));
-			assertEquals(fal, uda.eq(state, tbl));
+			assertEquals(fal, OperationHelper.eq(state, fal, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl, fal) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, fal, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, fal) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, abc, one) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, one, abc) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl, uda) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, uda, tbl) ? Constants.TRUE : Constants.FALSE);
 			// same type, same value, does not invoke metatag op
-			assertEquals(tru, tbl.eq(state, tbl));
+			assertEquals(tru, OperationHelper.eq(state, tbl, tbl) ? Constants.TRUE : Constants.FALSE);
 			// same type, different value, same metatag op.  comparabile via metatag op
-			assertEquals(oneb, tbl.eq(state, tbl2));
-			assertEquals(oneb, tbl2.eq(state, tbl));
-			assertEquals(oneb, uda.eq(state, uda2));
-			assertEquals(oneb, uda2.eq(state, uda));
+			assertEquals(oneb, OperationHelper.eq(state, tbl, tbl2) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(oneb, OperationHelper.eq(state, tbl2, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(oneb, OperationHelper.eq(state, uda, uda2) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(oneb, OperationHelper.eq(state, uda2, uda) ? Constants.TRUE : Constants.FALSE);
 			// same type, different metatag ops.  not comparable
-			assertEquals(fal, tbl.eq(state, tbl3));
-			assertEquals(fal, tbl3.eq(state, tbl));
-			assertEquals(fal, uda.eq(state, uda3));
-			assertEquals(fal, uda3.eq(state, uda));
+			assertEquals(fal, OperationHelper.eq(state, tbl, tbl3) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, tbl3, tbl) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, uda, uda3) ? Constants.TRUE : Constants.FALSE);
+			assertEquals(fal, OperationHelper.eq(state, uda3, uda) ? Constants.TRUE : Constants.FALSE);
 
 		} finally {
 			state.booleanMetatable = null;
@@ -389,17 +373,17 @@ public class UnaryBinaryOperatorsTest {
 		assertTrue(sb instanceof LuaString);
 
 		// like kinds
-		assertDoubleEquals(155.0, ia.add(state, ib).todouble());
-		assertDoubleEquals(58.75, da.add(state, db).todouble());
-		assertDoubleEquals(29.375, sa.add(state, sb).todouble());
+		assertDoubleEquals(155.0, OperationHelper.add(state, ia, ib).todouble());
+		assertDoubleEquals(58.75, OperationHelper.add(state, da, db).todouble());
+		assertDoubleEquals(29.375, OperationHelper.add(state, sa, sb).todouble());
 
 		// unlike kinds
-		assertDoubleEquals(166.25, ia.add(state, da).todouble());
-		assertDoubleEquals(166.25, da.add(state, ia).todouble());
-		assertDoubleEquals(133.125, ia.add(state, sa).todouble());
-		assertDoubleEquals(133.125, sa.add(state, ia).todouble());
-		assertDoubleEquals(77.375, da.add(state, sa).todouble());
-		assertDoubleEquals(77.375, sa.add(state, da).todouble());
+		assertDoubleEquals(166.25, OperationHelper.add(state, ia, da).todouble());
+		assertDoubleEquals(166.25, OperationHelper.add(state, da, ia).todouble());
+		assertDoubleEquals(133.125, OperationHelper.add(state, ia, sa).todouble());
+		assertDoubleEquals(133.125, OperationHelper.add(state, sa, ia).todouble());
+		assertDoubleEquals(77.375, OperationHelper.add(state, da, sa).todouble());
+		assertDoubleEquals(77.375, OperationHelper.add(state, sa, da).todouble());
 	}
 
 	@Test
@@ -409,17 +393,17 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = valueOf("22.125"), sb = valueOf("7.25");
 
 		// like kinds
-		assertDoubleEquals(67.0, ia.sub(state, ib).todouble());
-		assertDoubleEquals(51.75, da.sub(state, db).todouble());
-		assertDoubleEquals(14.875, sa.sub(state, sb).todouble());
+		assertDoubleEquals(67.0, OperationHelper.sub(state, ia, ib).todouble());
+		assertDoubleEquals(51.75, OperationHelper.sub(state, da, db).todouble());
+		assertDoubleEquals(14.875, OperationHelper.sub(state, sa, sb).todouble());
 
 		// unlike kinds
-		assertDoubleEquals(55.75, ia.sub(state, da).todouble());
-		assertDoubleEquals(-55.75, da.sub(state, ia).todouble());
-		assertDoubleEquals(88.875, ia.sub(state, sa).todouble());
-		assertDoubleEquals(-88.875, sa.sub(state, ia).todouble());
-		assertDoubleEquals(33.125, da.sub(state, sa).todouble());
-		assertDoubleEquals(-33.125, sa.sub(state, da).todouble());
+		assertDoubleEquals(55.75, OperationHelper.sub(state, ia, da).todouble());
+		assertDoubleEquals(-55.75, OperationHelper.sub(state, da, ia).todouble());
+		assertDoubleEquals(88.875, OperationHelper.sub(state, ia, sa).todouble());
+		assertDoubleEquals(-88.875, OperationHelper.sub(state, sa, ia).todouble());
+		assertDoubleEquals(33.125, OperationHelper.sub(state, da, sa).todouble());
+		assertDoubleEquals(-33.125, OperationHelper.sub(state, sa, da).todouble());
 	}
 
 	@Test
@@ -429,17 +413,17 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
 
 		// like kinds
-		assertDoubleEquals(12.0, ia.mul(state, ib).todouble());
-		assertDoubleEquals(.125, da.mul(state, db).todouble());
-		assertDoubleEquals(3.0, sa.mul(state, sb).todouble());
+		assertDoubleEquals(12.0, OperationHelper.mul(state, ia, ib).todouble());
+		assertDoubleEquals(.125, OperationHelper.mul(state, da, db).todouble());
+		assertDoubleEquals(3.0, OperationHelper.mul(state, sa, sb).todouble());
 
 		// unlike kinds
-		assertDoubleEquals(.75, ia.mul(state, da).todouble());
-		assertDoubleEquals(.75, da.mul(state, ia).todouble());
-		assertDoubleEquals(4.5, ia.mul(state, sa).todouble());
-		assertDoubleEquals(4.5, sa.mul(state, ia).todouble());
-		assertDoubleEquals(.375, da.mul(state, sa).todouble());
-		assertDoubleEquals(.375, sa.mul(state, da).todouble());
+		assertDoubleEquals(.75, OperationHelper.mul(state, ia, da).todouble());
+		assertDoubleEquals(.75, OperationHelper.mul(state, da, ia).todouble());
+		assertDoubleEquals(4.5, OperationHelper.mul(state, ia, sa).todouble());
+		assertDoubleEquals(4.5, OperationHelper.mul(state, sa, ia).todouble());
+		assertDoubleEquals(.375, OperationHelper.mul(state, da, sa).todouble());
+		assertDoubleEquals(.375, OperationHelper.mul(state, sa, da).todouble());
 	}
 
 	@Test
@@ -449,17 +433,17 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
 
 		// like kinds
-		assertDoubleEquals(3. / 4., ia.div(state, ib).todouble());
-		assertDoubleEquals(.25 / .5, da.div(state, db).todouble());
-		assertDoubleEquals(1.5 / 2., sa.div(state, sb).todouble());
+		assertDoubleEquals(3. / 4., OperationHelper.div(state, ia, ib).todouble());
+		assertDoubleEquals(.25 / .5, OperationHelper.div(state, da, db).todouble());
+		assertDoubleEquals(1.5 / 2., OperationHelper.div(state, sa, sb).todouble());
 
 		// unlike kinds
-		assertDoubleEquals(3. / .25, ia.div(state, da).todouble());
-		assertDoubleEquals(.25 / 3., da.div(state, ia).todouble());
-		assertDoubleEquals(3. / 1.5, ia.div(state, sa).todouble());
-		assertDoubleEquals(1.5 / 3., sa.div(state, ia).todouble());
-		assertDoubleEquals(.25 / 1.5, da.div(state, sa).todouble());
-		assertDoubleEquals(1.5 / .25, sa.div(state, da).todouble());
+		assertDoubleEquals(3. / .25, OperationHelper.div(state, ia, da).todouble());
+		assertDoubleEquals(.25 / 3., OperationHelper.div(state, da, ia).todouble());
+		assertDoubleEquals(3. / 1.5, OperationHelper.div(state, ia, sa).todouble());
+		assertDoubleEquals(1.5 / 3., OperationHelper.div(state, sa, ia).todouble());
+		assertDoubleEquals(.25 / 1.5, OperationHelper.div(state, da, sa).todouble());
+		assertDoubleEquals(1.5 / .25, OperationHelper.div(state, sa, da).todouble());
 	}
 
 	@Test
@@ -469,17 +453,17 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
 
 		// like kinds
-		assertDoubleEquals(Math.pow(3., 4.), ia.pow(state, ib).todouble());
-		assertDoubleEquals(Math.pow(4., .5), da.pow(state, db).todouble());
-		assertDoubleEquals(Math.pow(1.5, 2.), sa.pow(state, sb).todouble());
+		assertDoubleEquals(Math.pow(3., 4.), OperationHelper.pow(state, ia, ib).todouble());
+		assertDoubleEquals(Math.pow(4., .5), OperationHelper.pow(state, da, db).todouble());
+		assertDoubleEquals(Math.pow(1.5, 2.), OperationHelper.pow(state, sa, sb).todouble());
 
 		// unlike kinds
-		assertDoubleEquals(Math.pow(3., 4.), ia.pow(state, da).todouble());
-		assertDoubleEquals(Math.pow(4., 3.), da.pow(state, ia).todouble());
-		assertDoubleEquals(Math.pow(3., 1.5), ia.pow(state, sa).todouble());
-		assertDoubleEquals(Math.pow(1.5, 3.), sa.pow(state, ia).todouble());
-		assertDoubleEquals(Math.pow(4., 1.5), da.pow(state, sa).todouble());
-		assertDoubleEquals(Math.pow(1.5, 4.), sa.pow(state, da).todouble());
+		assertDoubleEquals(Math.pow(3., 4.), OperationHelper.pow(state, ia, da).todouble());
+		assertDoubleEquals(Math.pow(4., 3.), OperationHelper.pow(state, da, ia).todouble());
+		assertDoubleEquals(Math.pow(3., 1.5), OperationHelper.pow(state, ia, sa).todouble());
+		assertDoubleEquals(Math.pow(1.5, 3.), OperationHelper.pow(state, sa, ia).todouble());
+		assertDoubleEquals(Math.pow(4., 1.5), OperationHelper.pow(state, da, sa).todouble());
+		assertDoubleEquals(Math.pow(1.5, 4.), OperationHelper.pow(state, sa, da).todouble());
 	}
 
 	private static double luaMod(double x, double y) {
@@ -493,17 +477,17 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = valueOf("1.5"), sb = valueOf("-2.0");
 
 		// like kinds
-		assertDoubleEquals(luaMod(3., -4.), ia.mod(state, ib).todouble());
-		assertDoubleEquals(luaMod(.25, -.5), da.mod(state, db).todouble());
-		assertDoubleEquals(luaMod(1.5, -2.), sa.mod(state, sb).todouble());
+		assertDoubleEquals(luaMod(3., -4.), OperationHelper.mod(state, ia, ib).todouble());
+		assertDoubleEquals(luaMod(.25, -.5), OperationHelper.mod(state, da, db).todouble());
+		assertDoubleEquals(luaMod(1.5, -2.), OperationHelper.mod(state, sa, sb).todouble());
 
 		// unlike kinds
-		assertDoubleEquals(luaMod(3., .25), ia.mod(state, da).todouble());
-		assertDoubleEquals(luaMod(.25, 3.), da.mod(state, ia).todouble());
-		assertDoubleEquals(luaMod(3., 1.5), ia.mod(state, sa).todouble());
-		assertDoubleEquals(luaMod(1.5, 3.), sa.mod(state, ia).todouble());
-		assertDoubleEquals(luaMod(.25, 1.5), da.mod(state, sa).todouble());
-		assertDoubleEquals(luaMod(1.5, .25), sa.mod(state, da).todouble());
+		assertDoubleEquals(luaMod(3., .25), OperationHelper.mod(state, ia, da).todouble());
+		assertDoubleEquals(luaMod(.25, 3.), OperationHelper.mod(state, da, ia).todouble());
+		assertDoubleEquals(luaMod(3., 1.5), OperationHelper.mod(state, ia, sa).todouble());
+		assertDoubleEquals(luaMod(1.5, 3.), OperationHelper.mod(state, sa, ia).todouble());
+		assertDoubleEquals(luaMod(.25, 1.5), OperationHelper.mod(state, da, sa).todouble());
+		assertDoubleEquals(luaMod(1.5, .25), OperationHelper.mod(state, sa, da).todouble());
 	}
 
 	@Test
@@ -527,14 +511,14 @@ public class UnaryBinaryOperatorsTest {
 
 	private void checkArithError(LuaValue a, LuaValue b, String op, String type) {
 		try {
-			LuaValue.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class}).invoke(a, state, b);
+			OperationHelper.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to perform arithmetic")) || !actual.contains(type)) {
-				fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") reported '" + actual + "'");
+				fail(op + "op(" + a.typeName() + "," + b.typeName() + ") reported '" + actual + "'");
 			}
 		} catch (Exception e) {
-			fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") threw " + e);
+			fail(op + "(" + a.typeName() + "," + b.typeName() + ") threw " + e);
 		}
 	}
 
@@ -560,37 +544,37 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue tbl2 = new LuaTable();
 		try {
 			try {
-				tru.add(state, tbl);
+				OperationHelper.add(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.mul(state, tbl);
+				OperationHelper.mul(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.div(state, tbl);
+				OperationHelper.div(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.pow(state, tbl);
+				OperationHelper.pow(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.mod(state, tbl);
+				OperationHelper.mod(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
@@ -598,102 +582,102 @@ public class UnaryBinaryOperatorsTest {
 
 			// always use left argument
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.ADD, RETURN_LHS,});
-			assertEquals(tru, tru.add(state, fal));
-			assertEquals(tru, tru.add(state, tbl));
-			assertEquals(tbl, tbl.add(state, tru));
+			assertEquals(tru, OperationHelper.add(state, tru, fal));
+			assertEquals(tru, OperationHelper.add(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.add(state, tbl, tru));
 			try {
-				tbl.add(state, tbl2);
+				OperationHelper.add(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.SUB, RETURN_LHS,});
-			assertEquals(tru, tru.sub(state, fal));
-			assertEquals(tru, tru.sub(state, tbl));
-			assertEquals(tbl, tbl.sub(state, tru));
+			assertEquals(tru, OperationHelper.sub(state, tru, fal));
+			assertEquals(tru, OperationHelper.sub(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.sub(state, tbl, tru));
 			try {
-				tbl.sub(state, tbl2);
+				OperationHelper.sub(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.add(state, tbl);
+				OperationHelper.add(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MUL, RETURN_LHS,});
-			assertEquals(tru, tru.mul(state, fal));
-			assertEquals(tru, tru.mul(state, tbl));
-			assertEquals(tbl, tbl.mul(state, tru));
+			assertEquals(tru, OperationHelper.mul(state, tru, fal));
+			assertEquals(tru, OperationHelper.mul(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.mul(state, tbl, tru));
 			try {
-				tbl.mul(state, tbl2);
+				OperationHelper.mul(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.DIV, RETURN_LHS,});
-			assertEquals(tru, tru.div(state, fal));
-			assertEquals(tru, tru.div(state, tbl));
-			assertEquals(tbl, tbl.div(state, tru));
+			assertEquals(tru, OperationHelper.div(state, tru, fal));
+			assertEquals(tru, OperationHelper.div(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.div(state, tbl, tru));
 			try {
-				tbl.div(state, tbl2);
+				OperationHelper.div(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.POW, RETURN_LHS,});
-			assertEquals(tru, tru.pow(state, fal));
-			assertEquals(tru, tru.pow(state, tbl));
-			assertEquals(tbl, tbl.pow(state, tru));
+			assertEquals(tru, OperationHelper.pow(state, tru, fal));
+			assertEquals(tru, OperationHelper.pow(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.pow(state, tbl, tru));
 			try {
-				tbl.pow(state, tbl2);
+				OperationHelper.pow(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MOD, RETURN_LHS,});
-			assertEquals(tru, tru.mod(state, fal));
-			assertEquals(tru, tru.mod(state, tbl));
-			assertEquals(tbl, tbl.mod(state, tru));
+			assertEquals(tru, OperationHelper.mod(state, tru, fal));
+			assertEquals(tru, OperationHelper.mod(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.mod(state, tbl, tru));
 			try {
-				tbl.mod(state, tbl2);
+				OperationHelper.mod(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
@@ -701,102 +685,102 @@ public class UnaryBinaryOperatorsTest {
 
 			// always use right argument
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.ADD, RETURN_RHS,});
-			assertEquals(fal, tru.add(state, fal));
-			assertEquals(tbl, tru.add(state, tbl));
-			assertEquals(tru, tbl.add(state, tru));
+			assertEquals(fal, OperationHelper.add(state, tru, fal));
+			assertEquals(tbl, OperationHelper.add(state, tru, tbl));
+			assertEquals(tru, OperationHelper.add(state, tbl, tru));
 			try {
-				tbl.add(state, tbl2);
+				OperationHelper.add(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.SUB, RETURN_RHS,});
-			assertEquals(fal, tru.sub(state, fal));
-			assertEquals(tbl, tru.sub(state, tbl));
-			assertEquals(tru, tbl.sub(state, tru));
+			assertEquals(fal, OperationHelper.sub(state, tru, fal));
+			assertEquals(tbl, OperationHelper.sub(state, tru, tbl));
+			assertEquals(tru, OperationHelper.sub(state, tbl, tru));
 			try {
-				tbl.sub(state, tbl2);
+				OperationHelper.sub(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.add(state, tbl);
+				OperationHelper.add(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MUL, RETURN_RHS,});
-			assertEquals(fal, tru.mul(state, fal));
-			assertEquals(tbl, tru.mul(state, tbl));
-			assertEquals(tru, tbl.mul(state, tru));
+			assertEquals(fal, OperationHelper.mul(state, tru, fal));
+			assertEquals(tbl, OperationHelper.mul(state, tru, tbl));
+			assertEquals(tru, OperationHelper.mul(state, tbl, tru));
 			try {
-				tbl.mul(state, tbl2);
+				OperationHelper.mul(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.DIV, RETURN_RHS,});
-			assertEquals(fal, tru.div(state, fal));
-			assertEquals(tbl, tru.div(state, tbl));
-			assertEquals(tru, tbl.div(state, tru));
+			assertEquals(fal, OperationHelper.div(state, tru, fal));
+			assertEquals(tbl, OperationHelper.div(state, tru, tbl));
+			assertEquals(tru, OperationHelper.div(state, tbl, tru));
 			try {
-				tbl.div(state, tbl2);
+				OperationHelper.div(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.POW, RETURN_RHS,});
-			assertEquals(fal, tru.pow(state, fal));
-			assertEquals(tbl, tru.pow(state, tbl));
-			assertEquals(tru, tbl.pow(state, tru));
+			assertEquals(fal, OperationHelper.pow(state, tru, fal));
+			assertEquals(tbl, OperationHelper.pow(state, tru, tbl));
+			assertEquals(tru, OperationHelper.pow(state, tbl, tru));
 			try {
-				tbl.pow(state, tbl2);
+				OperationHelper.pow(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MOD, RETURN_RHS,});
-			assertEquals(fal, tru.mod(state, fal));
-			assertEquals(tbl, tru.mod(state, tbl));
-			assertEquals(tru, tbl.mod(state, tru));
+			assertEquals(fal, OperationHelper.mod(state, tru, fal));
+			assertEquals(tbl, OperationHelper.mod(state, tru, tbl));
+			assertEquals(tru, OperationHelper.mod(state, tbl, tru));
 			try {
-				tbl.mod(state, tbl2);
+				OperationHelper.mod(state, tbl, tbl2);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tru.sub(state, tbl);
+				OperationHelper.sub(state, tru, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
@@ -814,100 +798,100 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue tbl = new LuaTable();
 
 		try {
-			tbl.add(state, zero);
+			OperationHelper.add(state, tbl, zero);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		try {
-			zero.add(state, tbl);
+			OperationHelper.add(state, zero, tbl);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.ADD, RETURN_ONE,}));
-		assertEquals(one, tbl.add(state, zero));
-		assertEquals(one, zero.add(state, tbl));
+		assertEquals(one, OperationHelper.add(state, tbl, zero));
+		assertEquals(one, OperationHelper.add(state, zero, tbl));
 
 		try {
-			tbl.sub(state, zero);
+			OperationHelper.sub(state, tbl, zero);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		try {
-			zero.sub(state, tbl);
+			OperationHelper.sub(state, zero, tbl);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.SUB, RETURN_ONE,}));
-		assertEquals(one, tbl.sub(state, zero));
-		assertEquals(one, zero.sub(state, tbl));
+		assertEquals(one, OperationHelper.sub(state, tbl, zero));
+		assertEquals(one, OperationHelper.sub(state, zero, tbl));
 
 		try {
-			tbl.mul(state, zero);
+			OperationHelper.mul(state, tbl, zero);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		try {
-			zero.mul(state, tbl);
+			OperationHelper.mul(state, zero, tbl);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.MUL, RETURN_ONE,}));
-		assertEquals(one, tbl.mul(state, zero));
-		assertEquals(one, zero.mul(state, tbl));
+		assertEquals(one, OperationHelper.mul(state, tbl, zero));
+		assertEquals(one, OperationHelper.mul(state, zero, tbl));
 
 		try {
-			tbl.div(state, zero);
+			OperationHelper.div(state, tbl, zero);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		try {
-			zero.div(state, tbl);
+			OperationHelper.div(state, zero, tbl);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.DIV, RETURN_ONE,}));
-		assertEquals(one, tbl.div(state, zero));
-		assertEquals(one, zero.div(state, tbl));
+		assertEquals(one, OperationHelper.div(state, tbl, zero));
+		assertEquals(one, OperationHelper.div(state, zero, tbl));
 
 		try {
-			tbl.pow(state, zero);
+			OperationHelper.pow(state, tbl, zero);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		try {
-			zero.pow(state, tbl);
+			OperationHelper.pow(state, zero, tbl);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.POW, RETURN_ONE,}));
-		assertEquals(one, tbl.pow(state, zero));
-		assertEquals(one, zero.pow(state, tbl));
+		assertEquals(one, OperationHelper.pow(state, tbl, zero));
+		assertEquals(one, OperationHelper.pow(state, zero, tbl));
 
 		try {
-			tbl.mod(state, zero);
+			OperationHelper.mod(state, tbl, zero);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		try {
-			zero.mod(state, tbl);
+			OperationHelper.mod(state, zero, tbl);
 			fail("did not throw error");
 		} catch (LuaError ignored) {
 		}
 
 		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.MOD, RETURN_ONE,}));
-		assertEquals(one, tbl.mod(state, zero));
-		assertEquals(one, zero.mod(state, tbl));
+		assertEquals(one, OperationHelper.mod(state, tbl, zero));
+		assertEquals(one, OperationHelper.mod(state, zero, tbl));
 	}
 
 	@Test
@@ -918,22 +902,22 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sc = valueOf("1.5");
 		LuaValue sd = valueOf("2.0");
 
-		assertEquals(Constants.FALSE, sa.lt(state, sa));
-		assertEquals(Constants.TRUE, sa.lt(state, sb));
-		assertEquals(Constants.TRUE, sa.lt(state, sc));
-		assertEquals(Constants.TRUE, sa.lt(state, sd));
-		assertEquals(Constants.FALSE, sb.lt(state, sa));
-		assertEquals(Constants.FALSE, sb.lt(state, sb));
-		assertEquals(Constants.TRUE, sb.lt(state, sc));
-		assertEquals(Constants.TRUE, sb.lt(state, sd));
-		assertEquals(Constants.FALSE, sc.lt(state, sa));
-		assertEquals(Constants.FALSE, sc.lt(state, sb));
-		assertEquals(Constants.FALSE, sc.lt(state, sc));
-		assertEquals(Constants.TRUE, sc.lt(state, sd));
-		assertEquals(Constants.FALSE, sd.lt(state, sa));
-		assertEquals(Constants.FALSE, sd.lt(state, sb));
-		assertEquals(Constants.FALSE, sd.lt(state, sc));
-		assertEquals(Constants.FALSE, sd.lt(state, sd));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sa, sa));
+		assertEquals(Constants.TRUE, OperationHelper.ltValue(state, sa, sb));
+		assertEquals(Constants.TRUE, OperationHelper.ltValue(state, sa, sc));
+		assertEquals(Constants.TRUE, OperationHelper.ltValue(state, sa, sd));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sb, sa));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sb, sb));
+		assertEquals(Constants.TRUE, OperationHelper.ltValue(state, sb, sc));
+		assertEquals(Constants.TRUE, OperationHelper.ltValue(state, sb, sd));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sc, sa));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sc, sb));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sc, sc));
+		assertEquals(Constants.TRUE, OperationHelper.ltValue(state, sc, sd));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sd, sa));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sd, sb));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sd, sc));
+		assertEquals(Constants.FALSE, OperationHelper.ltValue(state, sd, sd));
 	}
 
 	@Test
@@ -942,16 +926,16 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
 		// like kinds
-		assertEquals(3. < 4., ia.lt(state, ib).toboolean());
-		assertEquals(.25 < .5, da.lt(state, db).toboolean());
-		assertEquals(3. < 4., ia.lt_b(state, ib));
-		assertEquals(.25 < .5, da.lt_b(state, db));
+		assertEquals(3. < 4., OperationHelper.ltValue(state, ia, ib).toboolean());
+		assertEquals(.25 < .5, OperationHelper.ltValue(state, da, db).toboolean());
+		assertEquals(3. < 4., OperationHelper.lt(state, ia, ib));
+		assertEquals(.25 < .5, OperationHelper.lt(state, da, db));
 
 		// unlike kinds
-		assertEquals(3. < .25, ia.lt(state, da).toboolean());
-		assertEquals(.25 < 3., da.lt(state, ia).toboolean());
-		assertEquals(3. < .25, ia.lt_b(state, da));
-		assertEquals(.25 < 3., da.lt_b(state, ia));
+		assertEquals(3. < .25, OperationHelper.ltValue(state, ia, da).toboolean());
+		assertEquals(.25 < 3., OperationHelper.ltValue(state, da, ia).toboolean());
+		assertEquals(3. < .25, OperationHelper.lt(state, ia, da));
+		assertEquals(.25 < 3., OperationHelper.lt(state, da, ia));
 	}
 
 	@Test
@@ -960,16 +944,16 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
 		// like kinds
-		assertEquals(3. <= 4., ia.lteq(state, ib).toboolean());
-		assertEquals(.25 <= .5, da.lteq(state, db).toboolean());
-		assertEquals(3. <= 4., ia.lteq_b(state, ib));
-		assertEquals(.25 <= .5, da.lteq_b(state, db));
+		assertEquals(3. <= 4., OperationHelper.leValue(state, ia, ib).toboolean());
+		assertEquals(.25 <= .5, OperationHelper.leValue(state, da, db).toboolean());
+		assertEquals(3. <= 4., OperationHelper.le(state, ia, ib));
+		assertEquals(.25 <= .5, OperationHelper.le(state, da, db));
 
 		// unlike kinds
-		assertEquals(3. <= .25, ia.lteq(state, da).toboolean());
-		assertEquals(.25 <= 3., da.lteq(state, ia).toboolean());
-		assertEquals(3. <= .25, ia.lteq_b(state, da));
-		assertEquals(.25 <= 3., da.lteq_b(state, ia));
+		assertEquals(3. <= .25, OperationHelper.leValue(state, ia, da).toboolean());
+		assertEquals(.25 <= 3., OperationHelper.leValue(state, da, ia).toboolean());
+		assertEquals(3. <= .25, OperationHelper.le(state, ia, da));
+		assertEquals(.25 <= 3., OperationHelper.le(state, da, ia));
 	}
 
 	@Test
@@ -978,16 +962,16 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
 		// like kinds
-		assertEquals(3. > 4., ia.gt(state, ib).toboolean());
-		assertEquals(.25 > .5, da.gt(state, db).toboolean());
-		assertEquals(3. > 4., ia.gt_b(state, ib));
-		assertEquals(.25 > .5, da.gt_b(state, db));
+		assertEquals(3. > 4., OperationHelper.ltValue(state, ib, ia).toboolean());
+		assertEquals(.25 > .5, OperationHelper.ltValue(state, db, da).toboolean());
+		assertEquals(3. > 4., OperationHelper.lt(state, ib, ia));
+		assertEquals(.25 > .5, OperationHelper.lt(state, db, da));
 
 		// unlike kinds
-		assertEquals(3. > .25, ia.gt(state, da).toboolean());
-		assertEquals(.25 > 3., da.gt(state, ia).toboolean());
-		assertEquals(3. > .25, ia.gt_b(state, da));
-		assertEquals(.25 > 3., da.gt_b(state, ia));
+		assertEquals(3. > .25, OperationHelper.ltValue(state, da, ia).toboolean());
+		assertEquals(.25 > 3., OperationHelper.ltValue(state, ia, da).toboolean());
+		assertEquals(3. > .25, OperationHelper.lt(state, da, ia));
+		assertEquals(.25 > 3., OperationHelper.lt(state, ia, da));
 	}
 
 	@Test
@@ -996,16 +980,16 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
 		// like kinds
-		assertEquals(3. >= 4., ia.gteq(state, ib).toboolean());
-		assertEquals(.25 >= .5, da.gteq(state, db).toboolean());
-		assertEquals(3. >= 4., ia.gteq_b(state, ib));
-		assertEquals(.25 >= .5, da.gteq_b(state, db));
+		assertEquals(3. >= 4., OperationHelper.leValue(state, ib, ia).toboolean());
+		assertEquals(.25 >= .5, OperationHelper.leValue(state, db, da).toboolean());
+		assertEquals(3. >= 4., OperationHelper.le(state, ib, ia));
+		assertEquals(.25 >= .5, OperationHelper.le(state, db, da));
 
 		// unlike kinds
-		assertEquals(3. >= .25, ia.gteq(state, da).toboolean());
-		assertEquals(.25 >= 3., da.gteq(state, ia).toboolean());
-		assertEquals(3. >= .25, ia.gteq_b(state, da));
-		assertEquals(.25 >= 3., da.gteq_b(state, ia));
+		assertEquals(3. >= .25, OperationHelper.leValue(state, da, ia).toboolean());
+		assertEquals(.25 >= 3., OperationHelper.leValue(state, ia, da).toboolean());
+		assertEquals(3. >= .25, OperationHelper.le(state, da, ia));
+		assertEquals(.25 >= 3., OperationHelper.le(state, ia, da));
 	}
 
 	@Test
@@ -1015,26 +999,26 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
 
 		// like kinds
-		assertEquals(3. != 4., ia.neq(state, ib).toboolean());
-		assertEquals(.25 != .5, da.neq(state, db).toboolean());
-		assertEquals(1.5 != 2., sa.neq(state, sb).toboolean());
-		assertEquals(3. != 4., ia.neq_b(state, ib));
-		assertEquals(.25 != .5, da.neq_b(state, db));
-		assertEquals(1.5 != 2., sa.neq_b(state, sb));
+		assertEquals(3. != 4., (OperationHelper.eq(state, ia, ib) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(.25 != .5, (OperationHelper.eq(state, da, db) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(1.5 != 2., (OperationHelper.eq(state, sa, sb) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(3. != 4., !OperationHelper.eq(state, ia, ib));
+		assertEquals(.25 != .5, !OperationHelper.eq(state, da, db));
+		assertEquals(1.5 != 2., !OperationHelper.eq(state, sa, sb));
 
 		// unlike kinds
-		assertEquals(3. != .25, ia.neq(state, da).toboolean());
-		assertEquals(.25 != 3., da.neq(state, ia).toboolean());
-		assertEquals(3. != 1.5, ia.neq(state, sa).toboolean());
-		assertEquals(1.5 != 3., sa.neq(state, ia).toboolean());
-		assertEquals(.25 != 1.5, da.neq(state, sa).toboolean());
-		assertEquals(1.5 != .25, sa.neq(state, da).toboolean());
-		assertEquals(3. != .25, ia.neq_b(state, da));
-		assertEquals(.25 != 3., da.neq_b(state, ia));
-		assertEquals(3. != 1.5, ia.neq_b(state, sa));
-		assertEquals(1.5 != 3., sa.neq_b(state, ia));
-		assertEquals(.25 != 1.5, da.neq_b(state, sa));
-		assertEquals(1.5 != .25, sa.neq_b(state, da));
+		assertEquals(3. != .25, (OperationHelper.eq(state, ia, da) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(.25 != 3., (OperationHelper.eq(state, da, ia) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(3. != 1.5, (OperationHelper.eq(state, ia, sa) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(1.5 != 3., (OperationHelper.eq(state, sa, ia) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(.25 != 1.5, (OperationHelper.eq(state, da, sa) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(1.5 != .25, (OperationHelper.eq(state, sa, da) ? Constants.FALSE : Constants.TRUE).toboolean());
+		assertEquals(3. != .25, !OperationHelper.eq(state, ia, da));
+		assertEquals(.25 != 3., !OperationHelper.eq(state, da, ia));
+		assertEquals(3. != 1.5, !OperationHelper.eq(state, ia, sa));
+		assertEquals(1.5 != 3., !OperationHelper.eq(state, sa, ia));
+		assertEquals(.25 != 1.5, !OperationHelper.eq(state, da, sa));
+		assertEquals(1.5 != .25, !OperationHelper.eq(state, sa, da));
 	}
 
 	@Test
@@ -1043,7 +1027,7 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue da = valueOf(55.25), db = valueOf(3.5);
 		LuaValue sa = valueOf("22.125"), sb = valueOf("7.25");
 
-		String[] ops = {"lt", "lteq",};
+		String[] ops = {"lt", "le",};
 		LuaValue[] vals = {Constants.NIL, Constants.TRUE, tableOf()};
 		LuaValue[] numerics = {valueOf(111), valueOf(55.25), valueOf("22.125")};
 		for (String op : ops) {
@@ -1058,14 +1042,14 @@ public class UnaryBinaryOperatorsTest {
 
 	private void checkCompareError(LuaValue a, LuaValue b, String op, String type) {
 		try {
-			LuaValue.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class}).invoke(a, state, b);
+			OperationHelper.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to compare")) || !actual.contains(type)) {
-				fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") reported '" + actual + "'");
+				fail(op + "(" + a.typeName() + "," + b.typeName() + ") reported '" + actual + "'");
 			}
 		} catch (Exception e) {
-			fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") threw " + e);
+			fail(op + "(" + a.typeName() + "," + b.typeName() + ") threw " + e);
 		}
 	}
 
@@ -1085,34 +1069,34 @@ public class UnaryBinaryOperatorsTest {
 			state.booleanMetatable = mt;
 			tbl.setMetatable(state, mt);
 			tbl2.setMetatable(state, mt);
-			assertEquals(tru, tru.lt(state, fal));
-			assertEquals(fal, fal.lt(state, tru));
-			assertEquals(tbl, tbl.lt(state, tbl2));
-			assertEquals(tbl2, tbl2.lt(state, tbl));
+			assertEquals(tru, OperationHelper.ltValue(state, tru, fal));
+			assertEquals(fal, OperationHelper.ltValue(state, fal, tru));
+			assertEquals(tbl, OperationHelper.ltValue(state, tbl, tbl2));
+			assertEquals(tbl2, OperationHelper.ltValue(state, tbl2, tbl));
 			try {
-				tbl.lt(state, tbl3);
+				OperationHelper.ltValue(state, tbl, tbl3);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tbl3.lt(state, tbl);
+				OperationHelper.ltValue(state, tbl3, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
-			assertEquals(fal, tru.lteq(state, fal));
-			assertEquals(tru, fal.lteq(state, tru));
-			assertEquals(tbl2, tbl.lteq(state, tbl2));
-			assertEquals(tbl, tbl2.lteq(state, tbl));
+			assertEquals(fal, OperationHelper.leValue(state, tru, fal));
+			assertEquals(tru, OperationHelper.leValue(state, fal, tru));
+			assertEquals(tbl2, OperationHelper.leValue(state, tbl, tbl2));
+			assertEquals(tbl, OperationHelper.leValue(state, tbl2, tbl));
 			try {
-				tbl.lteq(state, tbl3);
+				OperationHelper.leValue(state, tbl, tbl3);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tbl3.lteq(state, tbl);
+				OperationHelper.leValue(state, tbl3, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
@@ -1125,34 +1109,34 @@ public class UnaryBinaryOperatorsTest {
 			state.booleanMetatable = mt;
 			tbl.setMetatable(state, mt);
 			tbl2.setMetatable(state, mt);
-			assertEquals(fal, tru.lt(state, fal));
-			assertEquals(tru, fal.lt(state, tru));
-			assertEquals(tbl2, tbl.lt(state, tbl2));
-			assertEquals(tbl, tbl2.lt(state, tbl));
+			assertEquals(fal, OperationHelper.ltValue(state, tru, fal));
+			assertEquals(tru, OperationHelper.ltValue(state, fal, tru));
+			assertEquals(tbl2, OperationHelper.ltValue(state, tbl, tbl2));
+			assertEquals(tbl, OperationHelper.ltValue(state, tbl2, tbl));
 			try {
-				tbl.lt(state, tbl3);
+				OperationHelper.ltValue(state, tbl, tbl3);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tbl3.lt(state, tbl);
+				OperationHelper.ltValue(state, tbl3, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
-			assertEquals(tru, tru.lteq(state, fal));
-			assertEquals(fal, fal.lteq(state, tru));
-			assertEquals(tbl, tbl.lteq(state, tbl2));
-			assertEquals(tbl2, tbl2.lteq(state, tbl));
+			assertEquals(tru, OperationHelper.leValue(state, tru, fal));
+			assertEquals(fal, OperationHelper.leValue(state, fal, tru));
+			assertEquals(tbl, OperationHelper.leValue(state, tbl, tbl2));
+			assertEquals(tbl2, OperationHelper.leValue(state, tbl2, tbl));
 			try {
-				tbl.lteq(state, tbl3);
+				OperationHelper.leValue(state, tbl, tbl3);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tbl3.lteq(state, tbl);
+				OperationHelper.leValue(state, tbl3, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
@@ -1228,56 +1212,56 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue f = Constants.FALSE;
 
 		// basics
-		assertEquals(t, aaa.eq(state, aaa));
-		assertEquals(t, aaa.lt(state, baa));
-		assertEquals(t, aaa.lteq(state, baa));
-		assertEquals(f, aaa.gt(state, baa));
-		assertEquals(f, aaa.gteq(state, baa));
-		assertEquals(f, baa.lt(state, aaa));
-		assertEquals(f, baa.lteq(state, aaa));
-		assertEquals(t, baa.gt(state, aaa));
-		assertEquals(t, baa.gteq(state, aaa));
-		assertEquals(t, aaa.lteq(state, aaa));
-		assertEquals(t, aaa.gteq(state, aaa));
+		assertEquals(t, OperationHelper.eq(state, aaa, aaa) ? Constants.TRUE : Constants.FALSE);
+		assertEquals(t, OperationHelper.ltValue(state, aaa, baa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, baa));
+		assertEquals(f, OperationHelper.ltValue(state, baa, aaa));
+		assertEquals(f, OperationHelper.leValue(state, baa, aaa));
+		assertEquals(f, OperationHelper.ltValue(state, baa, aaa));
+		assertEquals(f, OperationHelper.leValue(state, baa, aaa));
+		assertEquals(t, OperationHelper.ltValue(state, aaa, baa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, baa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaa));
 
 		// different case
-		assertEquals(t, Aaa.eq(state, Aaa));
-		assertEquals(t, Aaa.lt(state, aaa));
-		assertEquals(t, Aaa.lteq(state, aaa));
-		assertEquals(f, Aaa.gt(state, aaa));
-		assertEquals(f, Aaa.gteq(state, aaa));
-		assertEquals(f, aaa.lt(state, Aaa));
-		assertEquals(f, aaa.lteq(state, Aaa));
-		assertEquals(t, aaa.gt(state, Aaa));
-		assertEquals(t, aaa.gteq(state, Aaa));
-		assertEquals(t, Aaa.lteq(state, Aaa));
-		assertEquals(t, Aaa.gteq(state, Aaa));
+		assertEquals(t, OperationHelper.eq(state, Aaa, Aaa) ? Constants.TRUE : Constants.FALSE);
+		assertEquals(t, OperationHelper.ltValue(state, Aaa, aaa));
+		assertEquals(t, OperationHelper.leValue(state, Aaa, aaa));
+		assertEquals(f, OperationHelper.ltValue(state, aaa, Aaa));
+		assertEquals(f, OperationHelper.leValue(state, aaa, Aaa));
+		assertEquals(f, OperationHelper.ltValue(state, aaa, Aaa));
+		assertEquals(f, OperationHelper.leValue(state, aaa, Aaa));
+		assertEquals(t, OperationHelper.ltValue(state, Aaa, aaa));
+		assertEquals(t, OperationHelper.leValue(state, Aaa, aaa));
+		assertEquals(t, OperationHelper.leValue(state, Aaa, Aaa));
+		assertEquals(t, OperationHelper.leValue(state, Aaa, Aaa));
 
 		// second letter differs
-		assertEquals(t, aaa.eq(state, aaa));
-		assertEquals(t, aaa.lt(state, aba));
-		assertEquals(t, aaa.lteq(state, aba));
-		assertEquals(f, aaa.gt(state, aba));
-		assertEquals(f, aaa.gteq(state, aba));
-		assertEquals(f, aba.lt(state, aaa));
-		assertEquals(f, aba.lteq(state, aaa));
-		assertEquals(t, aba.gt(state, aaa));
-		assertEquals(t, aba.gteq(state, aaa));
-		assertEquals(t, aaa.lteq(state, aaa));
-		assertEquals(t, aaa.gteq(state, aaa));
+		assertEquals(t, OperationHelper.eq(state, aaa, aaa) ? Constants.TRUE : Constants.FALSE);
+		assertEquals(t, OperationHelper.ltValue(state, aaa, aba));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aba));
+		assertEquals(f, OperationHelper.ltValue(state, aba, aaa));
+		assertEquals(f, OperationHelper.leValue(state, aba, aaa));
+		assertEquals(f, OperationHelper.ltValue(state, aba, aaa));
+		assertEquals(f, OperationHelper.leValue(state, aba, aaa));
+		assertEquals(t, OperationHelper.ltValue(state, aaa, aba));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aba));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaa));
 
 		// longer
-		assertEquals(t, aaa.eq(state, aaa));
-		assertEquals(t, aaa.lt(state, aaaa));
-		assertEquals(t, aaa.lteq(state, aaaa));
-		assertEquals(f, aaa.gt(state, aaaa));
-		assertEquals(f, aaa.gteq(state, aaaa));
-		assertEquals(f, aaaa.lt(state, aaa));
-		assertEquals(f, aaaa.lteq(state, aaa));
-		assertEquals(t, aaaa.gt(state, aaa));
-		assertEquals(t, aaaa.gteq(state, aaa));
-		assertEquals(t, aaa.lteq(state, aaa));
-		assertEquals(t, aaa.gteq(state, aaa));
+		assertEquals(t, OperationHelper.eq(state, aaa, aaa) ? Constants.TRUE : Constants.FALSE);
+		assertEquals(t, OperationHelper.ltValue(state, aaa, aaaa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaaa));
+		assertEquals(f, OperationHelper.ltValue(state, aaaa, aaa));
+		assertEquals(f, OperationHelper.leValue(state, aaaa, aaa));
+		assertEquals(f, OperationHelper.ltValue(state, aaaa, aaa));
+		assertEquals(f, OperationHelper.leValue(state, aaaa, aaa));
+		assertEquals(t, OperationHelper.ltValue(state, aaa, aaaa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaaa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaa));
+		assertEquals(t, OperationHelper.leValue(state, aaa, aaa));
 	}
 
 	@Test
