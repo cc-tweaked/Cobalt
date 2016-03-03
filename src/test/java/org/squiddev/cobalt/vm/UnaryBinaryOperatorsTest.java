@@ -1148,60 +1148,6 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testAnd() {
-		LuaValue ia = valueOf(3), ib = valueOf(4);
-		LuaValue da = valueOf(.25), db = valueOf(.5);
-		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
-		LuaValue ba = Constants.TRUE, bb = Constants.FALSE;
-
-		// like kinds
-		assertSame(ib, ia.and(ib));
-		assertSame(db, da.and(db));
-		assertSame(sb, sa.and(sb));
-
-		// unlike kinds
-		assertSame(da, ia.and(da));
-		assertSame(ia, da.and(ia));
-		assertSame(sa, ia.and(sa));
-		assertSame(ia, sa.and(ia));
-		assertSame(sa, da.and(sa));
-		assertSame(da, sa.and(da));
-
-		// boolean values
-		assertSame(bb, ba.and(bb));
-		assertSame(bb, bb.and(ba));
-		assertSame(ia, ba.and(ia));
-		assertSame(bb, bb.and(ia));
-	}
-
-	@Test
-	public void testOr() {
-		LuaValue ia = valueOf(3), ib = valueOf(4);
-		LuaValue da = valueOf(.25), db = valueOf(.5);
-		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
-		LuaValue ba = Constants.TRUE, bb = Constants.FALSE;
-
-		// like kinds
-		assertSame(ia, ia.or(ib));
-		assertSame(da, da.or(db));
-		assertSame(sa, sa.or(sb));
-
-		// unlike kinds
-		assertSame(ia, ia.or(da));
-		assertSame(da, da.or(ia));
-		assertSame(ia, ia.or(sa));
-		assertSame(sa, sa.or(ia));
-		assertSame(da, da.or(sa));
-		assertSame(sa, sa.or(da));
-
-		// boolean values
-		assertSame(ba, ba.or(bb));
-		assertSame(ba, bb.or(ba));
-		assertSame(ba, ba.or(ia));
-		assertSame(ia, bb.or(ia));
-	}
-
-	@Test
 	public void testLexicalComparison() {
 		LuaValue aaa = valueOf("aaa");
 		LuaValue baa = valueOf("baa");
@@ -1341,35 +1287,12 @@ public class UnaryBinaryOperatorsTest {
 		assertEquals("def", def.toString());
 		assertEquals("ghi", ghi.toString());
 		assertEquals("123", n123.toString());
-		assertEquals("abcabc", abc.concat(state, abc).toString());
-		assertEquals("defghi", def.concat(state, ghi).toString());
-		assertEquals("ghidef", ghi.concat(state, def).toString());
-		assertEquals("ghidefabcghi", ghi.concat(state, def).concat(state, abc).concat(state, ghi).toString());
-		assertEquals("123def", n123.concat(state, def).toString());
-		assertEquals("def123", def.concat(state, n123).toString());
-	}
-
-	@Test
-	public void testConcatBuffer() {
-		LuaValue abc = valueOf("abcdefghi").substring(0, 3);
-		LuaValue def = valueOf("abcdefghi").substring(3, 6);
-		LuaValue ghi = valueOf("abcdefghi").substring(6, 9);
-		LuaValue n123 = valueOf(123);
-		Buffer b;
-
-		b = new Buffer(def);
-		assertEquals("def", b.value().toString());
-		b = ghi.concat(state, b);
-		assertEquals("ghidef", b.value().toString());
-		b = abc.concat(state, b);
-		assertEquals("abcghidef", b.value().toString());
-		b = n123.concat(state, b);
-		assertEquals("123abcghidef", b.value().toString());
-		b.setvalue(n123);
-		b = def.concat(state, b);
-		assertEquals("def123", b.value().toString());
-		b = abc.concat(state, b);
-		assertEquals("abcdef123", b.value().toString());
+		assertEquals("abcabc", OperationHelper.concat(state, abc, abc).toString());
+		assertEquals("defghi", OperationHelper.concat(state, def, ghi).toString());
+		assertEquals("ghidef", OperationHelper.concat(state, ghi, def).toString());
+		assertEquals("ghidefabcghi", OperationHelper.concat(state, OperationHelper.concat(state, OperationHelper.concat(state, ghi, def), abc), ghi).toString());
+		assertEquals("123def", OperationHelper.concat(state, n123, def).toString());
+		assertEquals("def123", OperationHelper.concat(state, def, n123).toString());
 	}
 
 	@Test
@@ -1383,46 +1306,30 @@ public class UnaryBinaryOperatorsTest {
 		try {
 			// always use left argument
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.CONCAT, RETURN_LHS});
-			assertEquals(tru, tru.concat(state, tbl));
-			assertEquals(tbl, tbl.concat(state, tru));
-			assertEquals(tru, tru.concat(state, tbl));
-			assertEquals(tbl, tbl.concat(state, tru));
-			assertEquals(tru, tru.concat(state, tbl.buffer()).value());
-			assertEquals(tbl, tbl.concat(state, tru.buffer()).value());
-			assertEquals(fal, fal.concat(state, tbl.concat(state, tru.buffer())).value());
-			assertEquals(uda, uda.concat(state, tru.concat(state, tbl.buffer())).value());
+			assertEquals(tru, OperationHelper.concat(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.concat(state, tbl, tru));
+			assertEquals(tru, OperationHelper.concat(state, tru, tbl));
+			assertEquals(tbl, OperationHelper.concat(state, tbl, tru));
 			try {
-				tbl.concat(state, def);
+				OperationHelper.concat(state, tbl, def);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				def.concat(state, tbl);
+				OperationHelper.concat(state, def, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tbl.concat(state, def.buffer()).value();
+				OperationHelper.concat(state, uda, OperationHelper.concat(state, def, tbl));
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				def.concat(state, tbl.buffer()).value();
-				fail("did not throw error");
-			} catch (LuaError ignored) {
-			}
-
-			try {
-				uda.concat(state, def.concat(state, tbl.buffer())).value();
-				fail("did not throw error");
-			} catch (LuaError ignored) {
-			}
-
-			try {
-				ghi.concat(state, tbl.concat(state, def.buffer())).value();
+				OperationHelper.concat(state, ghi, OperationHelper.concat(state, tbl, def));
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
@@ -1430,44 +1337,44 @@ public class UnaryBinaryOperatorsTest {
 
 			// always use right argument
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.CONCAT, RETURN_RHS});
-			assertEquals(tbl, tru.concat(state, tbl));
-			assertEquals(tru, tbl.concat(state, tru));
-			assertEquals(tbl, tru.concat(state, tbl.buffer()).value());
-			assertEquals(tru, tbl.concat(state, tru.buffer()).value());
-			assertEquals(tru, uda.concat(state, tbl.concat(state, tru.buffer())).value());
-			assertEquals(tbl, fal.concat(state, tru.concat(state, tbl.buffer())).value());
+			assertEquals(tbl, OperationHelper.concat(state, tru, tbl));
+			assertEquals(tru, OperationHelper.concat(state, tbl, tru));
+			assertEquals(tbl, OperationHelper.concat(state, tru, tbl));
+			assertEquals(tru, OperationHelper.concat(state, tbl, tru));
+			assertEquals(tru, OperationHelper.concat(state, uda, OperationHelper.concat(state, tbl, tru)));
+			assertEquals(tbl, OperationHelper.concat(state, fal, OperationHelper.concat(state, tru, tbl)));
 			try {
-				tbl.concat(state, def);
+				OperationHelper.concat(state, tbl, def);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				def.concat(state, tbl);
+				OperationHelper.concat(state, def, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				tbl.concat(state, def.buffer()).value();
+				OperationHelper.concat(state, tbl, def);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				def.concat(state, tbl.buffer()).value();
+				OperationHelper.concat(state, def, tbl);
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				uda.concat(state, def.concat(state, tbl.buffer())).value();
+				OperationHelper.concat(state, uda, OperationHelper.concat(state, def, tbl));
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
 
 			try {
-				uda.concat(state, tbl.concat(state, def.buffer())).value();
+				OperationHelper.concat(state, uda, OperationHelper.concat(state, tbl, def));
 				fail("did not throw error");
 			} catch (LuaError ignored) {
 			}
@@ -1499,14 +1406,14 @@ public class UnaryBinaryOperatorsTest {
 
 	private void checkConcatError(LuaValue a, LuaValue b, String op, String type) {
 		try {
-			LuaValue.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class}).invoke(a, state, b);
+			OperationHelper.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to concatenate")) || !actual.contains(type)) {
-				fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") reported '" + actual + "'");
+				fail(op + "(" + a.typeName() + "," + b.typeName() + ") reported '" + actual + "'");
 			}
 		} catch (Exception e) {
-			fail("(" + a.typeName() + "," + op + "," + b.typeName() + ") threw " + e);
+			fail(op + "(" + a.typeName() + "," + b.typeName() + ") threw " + e);
 		}
 	}
 

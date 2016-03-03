@@ -193,30 +193,6 @@ public class LuaString extends LuaValue {
 		return Double.isNaN(d) ? super.neg(state) : ValueFactory.valueOf(-d);
 	}
 
-	// concatenation
-	@Override
-	public LuaValue concat(LuaState state, LuaValue rhs) {
-		return rhs.concatTo(state, this);
-	}
-
-	@Override
-	public Buffer concat(LuaState state, Buffer rhs) {
-		return rhs.concatTo(state, this);
-	}
-
-	@Override
-	public LuaValue concatTo(LuaState state, LuaNumber lhs) {
-		return concatTo(state, lhs.strvalue());
-	}
-
-	@Override
-	public LuaValue concatTo(LuaState state, LuaString lhs) {
-		byte[] b = new byte[lhs.m_length + this.m_length];
-		System.arraycopy(lhs.m_bytes, lhs.m_offset, b, 0, lhs.m_length);
-		System.arraycopy(this.m_bytes, this.m_offset, b, lhs.m_length, this.m_length);
-		return new LuaString(b, 0, b.length);
-	}
-
 	// string comparison
 	@Override
 	public int strcmp(LuaValue lhs) {

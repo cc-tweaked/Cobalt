@@ -70,26 +70,6 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public LuaValue concat(LuaState state, LuaValue rhs) {
-		return rhs.concatTo(state, this);
-	}
-
-	@Override
-	public Buffer concat(LuaState state, Buffer rhs) {
-		return rhs.concatTo(state, this);
-	}
-
-	@Override
-	public LuaValue concatTo(LuaState state, LuaNumber lhs) {
-		return strvalue().concatTo(state, lhs.strvalue());
-	}
-
-	@Override
-	public LuaValue concatTo(LuaState state, LuaString lhs) {
-		return strvalue().concatTo(state, lhs);
-	}
-
-	@Override
 	public double checkArith() {
 		return toDouble();
 	}

@@ -1781,110 +1781,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Concatenate another value onto this value and return the result
-	 * using rules of lua string concatenation including metatag processing.
-	 * <p>
-	 * Only strings and numbers as represented can be concatenated, meaning
-	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
-	 *
-	 * @param state The current lua state
-	 * @param rhs   The right-hand-side value to perform the operation with
-	 * @return {@link LuaValue} resulting from concatenation of {@code (this .. rhs)}
-	 * @throws LuaError if either operand is not of an appropriate type,
-	 *                  such as nil or a table
-	 */
-	public LuaValue concat(LuaState state, LuaValue rhs) {
-		return this.concatmt(state, rhs);
-	}
-
-	/**
-	 * Reverse-concatenation: concatenate this value onto another value
-	 * whose type is unknwon
-	 * and return the result using rules of lua string concatenation including
-	 * metatag processing.
-	 * <p>
-	 * Only strings and numbers as represented can be concatenated, meaning
-	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
-	 *
-	 * @param state The current lua state
-	 * @param lhs   The left-hand-side value onto which this will be concatenated
-	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
-	 * @throws LuaError if either operand is not of an appropriate type,
-	 *                  such as nil or a table
-	 * @see #concat(LuaState, LuaValue)
-	 */
-	public LuaValue concatTo(LuaState state, LuaValue lhs) {
-		return lhs.concatmt(state, this);
-	}
-
-	/**
-	 * Reverse-concatenation: concatenate this value onto another value
-	 * known to be a {@link  LuaNumber}
-	 * and return the result using rules of lua string concatenation including
-	 * metatag processing.
-	 * <p>
-	 * Only strings and numbers as represented can be concatenated, meaning
-	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
-	 *
-	 * @param state The current lua state
-	 * @param lhs   The left-hand-side value onto which this will be concatenated
-	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
-	 * @throws LuaError if either operand is not of an appropriate type,
-	 *                  such as nil or a table
-	 * @see #concat(LuaState, LuaValue)
-	 */
-	public LuaValue concatTo(LuaState state, LuaNumber lhs) {
-		return lhs.concatmt(state, this);
-	}
-
-	/**
-	 * Reverse-concatenation: concatenate this value onto another value
-	 * known to be a {@link  LuaString}
-	 * and return the result using rules of lua string concatenation including
-	 * metatag processing.
-	 * <p>
-	 * Only strings and numbers as represented can be concatenated, meaning
-	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
-	 *
-	 * @param state The current lua state
-	 * @param lhs   The left-hand-side value onto which this will be concatenated
-	 * @return {@link LuaValue} resulting from concatenation of {@code (lhs .. this)}
-	 * @throws LuaError if either operand is not of an appropriate type,
-	 *                  such as nil or a table
-	 * @see #concat(LuaState, LuaValue)
-	 */
-	public LuaValue concatTo(LuaState state, LuaString lhs) {
-		return lhs.concatmt(state, this);
-	}
-
-	/**
-	 * Convert the value to a {@link Buffer} for more efficient concatenation of
-	 * multiple strings.
-	 *
-	 * @return Buffer instance containing the string or number
-	 */
-	public Buffer buffer() {
-		return new Buffer(this);
-	}
-
-	/**
-	 * Concatenate a {@link Buffer} onto this value and return the result
-	 * using rules of lua string concatenation including metatag processing.
-	 * <p>
-	 * Only strings and numbers as represented can be concatenated, meaning
-	 * each operand must derive from {@link LuaString} or {@link LuaNumber}.
-	 *
-	 * @param state The current lua state
-	 * @param rhs   The right-hand-side {@link Buffer} to perform the operation with
-	 * @return LuaString resulting from concatenation of {@code (this .. rhs)}
-	 * @throws LuaError if either operand is not of an appropriate type,
-	 *                  such as nil or a table
-	 */
-	public Buffer concat(LuaState state, Buffer rhs) {
-		return rhs.concatTo(state, this);
-	}
-
-	/**
 	 * Perform metatag processing for concatenation operations.
 	 * <p>
 	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
@@ -1901,28 +1797,6 @@ public abstract class LuaValue extends Varargs {
 			throw new LuaError("attempt to concatenate " + typeName() + " and " + rhs.typeName());
 		}
 		return h.call(state, this, rhs);
-	}
-
-	/**
-	 * Perform boolean {@code and} with another operand, based on lua rules for boolean evaluation.
-	 * This returns either {@code this} or {@code rhs} depending on the boolean value for {@code this}.
-	 *
-	 * @param rhs The right-hand-side value to perform the operation with
-	 * @return {@code this} if {@code this.toboolean()} is false, {@code rhs} otherwise.
-	 */
-	public LuaValue and(LuaValue rhs) {
-		return this.toBoolean() ? rhs : this;
-	}
-
-	/**
-	 * Perform boolean {@code or} with another operand, based on lua rules for boolean evaluation.
-	 * This returns either {@code this} or {@code rhs} depending on the boolean value for {@code this}.
-	 *
-	 * @param rhs The right-hand-side value to perform the operation with
-	 * @return {@code this} if {@code this.toboolean()} is true, {@code rhs} otherwise.
-	 */
-	public LuaValue or(LuaValue rhs) {
-		return this.toBoolean() ? this : rhs;
 	}
 
 	/**

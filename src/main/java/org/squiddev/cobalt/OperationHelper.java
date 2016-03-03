@@ -178,4 +178,19 @@ public final class OperationHelper {
 				return left.raweq(right);
 		}
 	}
+
+	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right) {
+		if (left.isString() && right.isString()) {
+			return concat(left.checkLuaString(), right.checkLuaString());
+		} else {
+			return left.concatmt(state, right);
+		}
+	}
+
+	public static LuaString concat(LuaString left, LuaString right) {
+		byte[] b = new byte[left.m_length + right.m_length];
+		System.arraycopy(left.m_bytes, left.m_offset, b, 0, left.m_length);
+		System.arraycopy(right.m_bytes, right.m_offset, b, left.m_length, right.m_length);
+		return ValueFactory.valueOf(b);
+	}
 }

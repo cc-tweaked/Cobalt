@@ -35,7 +35,6 @@ package org.squiddev.cobalt;
  * the function {@link Buffer#value()} is used.
  *
  * @see LuaValue
- * @see LuaValue#buffer()
  * @see LuaString
  */
 public final class Buffer {
@@ -196,41 +195,6 @@ public final class Buffer {
 		LuaString.encodeToUtf8(chars, bytes, offset + length);
 		length += n;
 		return this;
-	}
-
-	/**
-	 * Concatenate this buffer onto a {@link LuaValue}
-	 *
-	 * @param state The current lua state
-	 * @param lhs   the left-hand-side value onto which we are concatenating {@code this}
-	 * @return {@link Buffer} for use in call chaining.
-	 */
-	public Buffer concatTo(LuaState state, LuaValue lhs) {
-		return setvalue(lhs.concat(state, value()));
-	}
-
-	/**
-	 * Concatenate this buffer onto a {@link LuaString}
-	 *
-	 * @param state The current lua state
-	 * @param lhs   the left-hand-side value onto which we are concatenating {@code this}
-	 * @return {@link Buffer} for use in call chaining.
-	 */
-	public Buffer concatTo(LuaState state, LuaString lhs) {
-		return value != null && !value.isString() ? setvalue(lhs.concat(state, value)) : prepend(lhs);
-	}
-
-	/**
-	 * Concatenate this buffer onto a {@link LuaNumber}
-	 * <p>
-	 * The {@link LuaNumber} will be converted to a string before concatenating.
-	 *
-	 * @param state The current lua state
-	 * @param lhs   the left-hand-side value onto which we are concatenating {@code this}
-	 * @return {@link Buffer} for use in call chaining.
-	 */
-	public Buffer concatTo(LuaState state, LuaNumber lhs) {
-		return value != null && !value.isString() ? setvalue(lhs.concat(state, value)) : prepend(lhs.strvalue());
 	}
 
 	/**

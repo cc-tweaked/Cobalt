@@ -339,14 +339,16 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						b = i >>> 23;
 						c = (i >> 14) & 0x1ff;
 					{
-						if (c > b + 1) {
-							Buffer sb = stack[c].buffer();
+						int count = c - b + 1;
+
+						if (count > 1) {
+							LuaValue buffer = stack[c];
 							while (--c >= b) {
-								sb = stack[c].concat(state, sb);
+								buffer = OperationHelper.concat(state, stack[c], buffer);
 							}
-							stack[a] = sb.value();
+							stack[a] = buffer;
 						} else {
-							stack[a] = stack[c - 1].concat(state, stack[c]);
+							stack[a] = OperationHelper.concat(state, stack[c - 1], stack[c]);
 						}
 					}
 					continue;
