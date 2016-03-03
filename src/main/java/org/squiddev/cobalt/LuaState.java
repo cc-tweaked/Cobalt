@@ -92,11 +92,18 @@ public final class LuaState {
 
 	/**
 	 * The active thread
+	 *
+	 * @return The active thread
 	 */
 	public LuaThread getCurrentThread() {
 		return currentThread;
 	}
 
+	/**
+	 * Setup the main thread
+	 *
+	 * @param environment The main thread to use
+	 */
 	public void setupThread(LuaTable environment) {
 		if (mainThread != null && mainThread.isAlive()) {
 			throw new IllegalStateException("State already has main thread");
@@ -107,6 +114,9 @@ public final class LuaState {
 		currentThread = thread;
 	}
 
+	/**
+	 * Abandon all threads but the main
+	 */
 	public void abandon() {
 		next:
 		while (true) {

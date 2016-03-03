@@ -2028,6 +2028,8 @@ public abstract class LuaValue extends Varargs {
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
+		 * @param v The initial values
+		 * @param r Remaining arguments
 		 * @see ValueFactory#varargsOf(LuaValue[])
 		 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 		 */
@@ -2073,6 +2075,9 @@ public abstract class LuaValue extends Varargs {
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
+		 * @param v      The values to use
+		 * @param offset Offset in the array
+		 * @param length Length of the varargs
 		 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 		 */
 		public ArrayPartVarargs(LuaValue[] v, int offset, int length) {
@@ -2088,6 +2093,10 @@ public abstract class LuaValue extends Varargs {
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static method on LuaValue.
 		 *
+		 * @param v      The values to use
+		 * @param offset Offset in the array
+		 * @param length Length of the varargs
+		 * @param more   Remaining arguments
 		 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 		 */
 		public ArrayPartVarargs(LuaValue[] v, int offset, int length, Varargs more) {
