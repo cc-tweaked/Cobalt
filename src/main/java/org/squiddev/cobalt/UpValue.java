@@ -50,10 +50,11 @@ public final class UpValue {
 	 * Convert this upvalue to a Java String
 	 *
 	 * @return the Java String for this upvalue.
-	 * @see LuaValue#tojstring()
+	 * @see LuaValue#toString()
 	 */
-	public String tojstring() {
-		return array[index].tojstring();
+	@Override
+	public String toString() {
+		return array[index].toString();
 	}
 
 	/**

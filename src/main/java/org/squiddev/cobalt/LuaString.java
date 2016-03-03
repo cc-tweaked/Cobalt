@@ -191,7 +191,7 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public String tojstring() {
+	public String toString() {
 		return decodeAsUtf8(m_bytes, m_offset, m_length);
 	}
 
@@ -381,8 +381,8 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public String optjstring(String defval) {
-		return tojstring();
+	public String optString(String defval) {
+		return toString();
 	}
 
 	@Override
@@ -482,8 +482,8 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public String checkjstring() {
-		return tojstring();
+	public String checkString() {
+		return toString();
 	}
 
 	@Override

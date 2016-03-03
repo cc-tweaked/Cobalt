@@ -106,7 +106,7 @@ public class BaseLib extends OneArgFunction {
 		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
 			switch (opcode) {
 				case 0: // "collectgarbage", // ( opt [,arg] ) -> value
-					String s = arg1.optjstring("collect");
+					String s = arg1.optString("collect");
 					if ("collect".equals(s)) {
 						System.gc();
 						return Constants.ZERO;
@@ -158,16 +158,16 @@ public class BaseLib extends OneArgFunction {
 			switch (opcode) {
 				case 0: // "assert", // ( v [,message] ) -> v, message | ERR
 					if (!args.first().toBoolean()) {
-						throw new LuaError(args.count() > 1 ? args.arg(2).optjstring("assertion failed!") : "assertion failed!");
+						throw new LuaError(args.count() > 1 ? args.arg(2).optString("assertion failed!") : "assertion failed!");
 					}
 					return args;
 				case 1: // "dofile", // ( filename ) -> result1, ...
 				{
 					Varargs v = args.isNil(1) ?
 						BaseLib.loadStream(state, state.stdin, "=stdin") :
-						BaseLib.loadFile(state, args.arg(1).checkjstring());
+						BaseLib.loadFile(state, args.arg(1).checkString());
 					if (v.isNil(1)) {
-						throw new LuaError(v.arg(2).tojstring());
+						throw new LuaError(v.arg(2).toString());
 					} else {
 						return v.first().invoke(state, Constants.NONE);
 					}
@@ -186,19 +186,19 @@ public class BaseLib extends OneArgFunction {
 				case 4: // "load", // ( func [,chunkname] ) -> chunk | nil, msg
 				{
 					LuaValue func = args.arg(1).checkFunction();
-					String chunkname = args.arg(2).optjstring("function");
+					String chunkname = args.arg(2).optString("function");
 					return BaseLib.loadStream(state, new StringInputStream(state, func), chunkname);
 				}
 				case 5: // "loadfile", // ( [filename] ) -> chunk | nil, msg
 				{
 					return args.isNil(1) ?
 						BaseLib.loadStream(state, state.stdin, "stdin") :
-						BaseLib.loadFile(state, args.arg(1).checkjstring());
+						BaseLib.loadFile(state, args.arg(1).checkString());
 				}
 				case 6: // "loadstring", // ( string [,chunkname] ) -> chunk | nil, msg
 				{
 					LuaString script = args.arg(1).checkLuaString();
-					String chunkname = args.arg(2).optjstring("string");
+					String chunkname = args.arg(2).optString("string");
 					return BaseLib.loadStream(state, script.toInputStream(), chunkname);
 				}
 				case 7: // "pcall", // (f, arg1, ...) -> status, result1, ...
@@ -292,7 +292,7 @@ public class BaseLib extends OneArgFunction {
 					if (!v.isNil()) {
 						return v;
 					}
-					return valueOf(arg.tojstring());
+					return valueOf(arg.toString());
 				}
 				case 18: { // "tonumber", // (e [,base]) -> value
 					LuaValue arg1 = args.checkValue(1);

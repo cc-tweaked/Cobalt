@@ -10,7 +10,6 @@ import org.squiddev.cobalt.require.RequireSampleLoadRuntimeExcep;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class RequireClassTest {
 
@@ -27,9 +26,9 @@ public class RequireClassTest {
 	@Test
 	public void testRequireClassSuccess() {
 		LuaValue result = require.call(state, ValueFactory.valueOf("org.squiddev.cobalt.require.RequireSampleSuccess"));
-		assertEquals("require-sample-success", result.tojstring());
+		assertEquals("require-sample-success", result.toString());
 		result = require.call(state, ValueFactory.valueOf("org.squiddev.cobalt.require.RequireSampleSuccess"));
-		assertEquals("require-sample-success", result.tojstring());
+		assertEquals("require-sample-success", result.toString());
 	}
 
 	@Test

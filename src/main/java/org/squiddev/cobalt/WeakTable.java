@@ -240,6 +240,7 @@ public class WeakTable extends LuaTable {
 			throw ErrorFactory.illegal("typename", "weak value");
 		}
 
+		@Override
 		public String toString() {
 			return "weak<" + ref.get() + ">";
 		}
@@ -343,10 +344,12 @@ public class WeakTable extends LuaTable {
 			throw ErrorFactory.illegal("typename", "weak entry");
 		}
 
+		@Override
 		public String toString() {
 			return "weak<" + weakkey.strongvalue() + "," + strongvalue() + ">";
 		}
 
+		@Override
 		public int hashCode() {
 			return keyhash;
 		}

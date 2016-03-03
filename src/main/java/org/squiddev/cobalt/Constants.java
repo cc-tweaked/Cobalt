@@ -229,7 +229,7 @@ public class Constants {
 		}
 
 		@Override
-		public String tojstring() {
+		public String toString() {
 			return "none";
 		}
 	}

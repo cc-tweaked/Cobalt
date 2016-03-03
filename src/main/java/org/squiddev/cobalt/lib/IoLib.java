@@ -103,7 +103,7 @@ public abstract class IoLib extends OneArgFunction {
 
 		// displays as "file" type
 		@Override
-		public String tojstring() {
+		public String toString() {
 			return "file: " + Integer.toHexString(hashCode());
 		}
 	}
@@ -285,11 +285,11 @@ public abstract class IoLib extends OneArgFunction {
 					case IO_TYPE:
 						return iolib._io_type(args.first());
 					case IO_POPEN:
-						return iolib._io_popen(args.arg(1).checkjstring(), args.arg(2).optjstring("r"));
+						return iolib._io_popen(args.arg(1).checkString(), args.arg(2).optString("r"));
 					case IO_OPEN:
-						return iolib._io_open(state, args.arg(1).checkjstring(), args.arg(2).optjstring("r"));
+						return iolib._io_open(state, args.arg(1).checkString(), args.arg(2).optString("r"));
 					case IO_LINES:
-						return iolib._io_lines(state, args.exists(1) ? args.arg(1).checkjstring() : null);
+						return iolib._io_lines(state, args.exists(1) ? args.arg(1).checkString() : null);
 					case IO_READ:
 						return iolib._io_read(state, args);
 					case IO_WRITE:
@@ -300,13 +300,13 @@ public abstract class IoLib extends OneArgFunction {
 					case FILE_FLUSH:
 						return iolib._file_flush(args.first());
 					case FILE_SETVBUF:
-						return iolib._file_setvbuf(args.first(), args.arg(2).checkjstring(), args.arg(3).optInteger(1024));
+						return iolib._file_setvbuf(args.first(), args.arg(2).checkString(), args.arg(3).optInteger(1024));
 					case FILE_LINES:
 						return iolib._file_lines(args.first());
 					case FILE_READ:
 						return iolib._file_read(args.first(), args.subargs(2));
 					case FILE_SEEK:
-						return iolib._file_seek(args.first(), args.arg(2).optjstring("cur"), args.arg(3).optInteger(0));
+						return iolib._file_seek(args.first(), args.arg(2).optString("cur"), args.arg(3).optInteger(0));
 					case FILE_WRITE:
 						return iolib._file_write(args.first(), args.subargs(2));
 
@@ -348,7 +348,7 @@ public abstract class IoLib extends OneArgFunction {
 	//	io.input([file]) -> file
 	public Varargs _io_input(LuaState state, LuaValue file) {
 		infile = file.isNil() ? input(state) :
-			file.isString() ? ioopenfile(state, file.checkjstring(), "r") :
+			file.isString() ? ioopenfile(state, file.checkString(), "r") :
 				checkfile(file);
 		return infile;
 	}
@@ -356,7 +356,7 @@ public abstract class IoLib extends OneArgFunction {
 	// io.output(filename) -> file
 	public Varargs _io_output(LuaState state, LuaValue filename) {
 		outfile = filename.isNil() ? output(state) :
-			filename.isString() ? ioopenfile(state, filename.checkjstring(), "w") :
+			filename.isString() ? ioopenfile(state, filename.checkString(), "w") :
 				checkfile(filename);
 		return outfile;
 	}

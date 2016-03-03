@@ -253,7 +253,7 @@ public class LuaTable extends LuaValue {
 		m_metatable = metatable;
 		LuaValue mode;
 		if (m_metatable != null && (mode = m_metatable.rawget(Constants.MODE)).isString()) {
-			String m = mode.tojstring();
+			String m = mode.toString();
 			boolean k = m.indexOf('k') >= 0;
 			boolean v = m.indexOf('v') >= 0;
 			return changemode(k, v);

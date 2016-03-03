@@ -383,13 +383,13 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return String for use by human readers based on type.
 	 * @see #toLuaString()
-	 * @see #optjstring(String)
-	 * @see #checkjstring()
+	 * @see #optString(String)
+	 * @see #checkString()
 	 * @see #isString()
 	 * @see Constants#TSTRING
 	 */
 	@Override
-	public String tojstring() {
+	public String toString() {
 		return typeName() + ": " + Integer.toHexString(hashCode());
 	}
 
@@ -419,20 +419,6 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public Object toUserdata(Class<?> c) {
 		return null;
-	}
-
-	/**
-	 * Convert the value to a human readable string using {@link #tojstring()}
-	 *
-	 * @return String value intended to be human readible.
-	 * @see #toLuaString()
-	 * @see #tojstring()
-	 * @see #optLuaString(LuaString)
-	 * @see #checkLuaString()
-	 * @see #toString()
-	 */
-	public String toString() {
-		return tojstring();
 	}
 
 	/**
@@ -474,7 +460,7 @@ public abstract class LuaValue extends Varargs {
 	 * @return {@code this} if it is a {@link LuaString} or {@link LuaNumber},
 	 * otherwise {@link Constants#NIL}
 	 * @see #toNumber()
-	 * @see #tojstring()
+	 * @see #toString()
 	 * @see #optLuaString(LuaString)
 	 * @see #checkLuaString()
 	 * @see #toString()
@@ -648,13 +634,13 @@ public abstract class LuaValue extends Varargs {
 	 * {@code defval} if nil or none,
 	 * throws {@link LuaError} if some other type
 	 * @throws LuaError if was not a string or number or nil or none.
-	 * @see #tojstring()
+	 * @see #toString()
 	 * @see #optLuaString(LuaString)
-	 * @see #checkjstring()
+	 * @see #checkString()
 	 * @see #toString()
 	 * @see Constants#TSTRING
 	 */
-	public String optjstring(String defval) {
+	public String optString(String defval) {
 		throw ErrorFactory.argError(this, "string");
 	}
 
@@ -666,8 +652,8 @@ public abstract class LuaValue extends Varargs {
 	 * {@code defval} if nil or none,
 	 * throws {@link LuaError} if some other type
 	 * @throws LuaError if was not a string or number or nil or none.
-	 * @see #tojstring()
-	 * @see #optjstring(String)
+	 * @see #toString()
+	 * @see #optString(String)
 	 * @see #checkLuaString()
 	 * @see #toString()
 	 * @see Constants#TSTRING
@@ -940,12 +926,12 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return String representation of the value
 	 * @see #checkLuaString()
-	 * @see #optjstring(String)
-	 * @see #tojstring()
+	 * @see #optString(String)
+	 * @see #toString()
 	 * @see #isString
 	 * @see Constants#TSTRING
 	 */
-	public String checkjstring() {
+	public String checkString() {
 		throw ErrorFactory.argError(this, "string");
 	}
 
@@ -958,7 +944,7 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return {@link LuaString} representation of the value if it is a {@link LuaString} or {@link LuaNumber}
 	 * @throws LuaError if {@code this} is not a {@link LuaTable}
-	 * @see #checkjstring()
+	 * @see #checkString()
 	 * @see #optLuaString(LuaString)
 	 * @see #toLuaString()
 	 * @see #isString()

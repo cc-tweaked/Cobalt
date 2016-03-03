@@ -139,17 +139,9 @@ public final class Buffer {
 	 *
 	 * @return the value as a Java String
 	 */
-	public String tojstring() {
-		return value().tojstring();
-	}
-
-	/**
-	 * Convert the buffer to a Java String
-	 *
-	 * @return the value as a Java String
-	 */
+	@Override
 	public String toString() {
-		return tojstring();
+		return value().toString();
 	}
 
 	/**

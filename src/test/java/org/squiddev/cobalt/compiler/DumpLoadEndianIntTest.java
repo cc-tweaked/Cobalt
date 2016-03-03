@@ -2,7 +2,6 @@ package org.squiddev.cobalt.compiler;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -92,7 +91,7 @@ public class DumpLoadEndianIntTest {
 			// double check script result before dumping
 			LuaFunction f = new LuaClosure(p, _G);
 			LuaValue r = f.call(state);
-			String actual = r.tojstring();
+			String actual = r.toString();
 			assertEquals(expectedPriorDump, actual);
 
 			// dump into bytes
@@ -115,7 +114,7 @@ public class DumpLoadEndianIntTest {
 			is = new ByteArrayInputStream(dumped);
 			f = LoadState.load(state, is, "dumped", _G);
 			r = f.call(state);
-			actual = r.tojstring();
+			actual = r.toString();
 			assertEquals(expectedPostDump, actual);
 
 			// write test chunk

@@ -177,7 +177,7 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	@Override
-	public String tojstring() {
+	public String toString() {
 		return "package";
 	}
 
@@ -348,7 +348,7 @@ public class PackageLib extends OneArgFunction {
 				break;
 			}
 			if (chunk.isString()) {
-				sb.append(chunk.tojstring());
+				sb.append(chunk.toString());
 			}
 		}
 
@@ -378,7 +378,7 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	LuaValue loader_Lua(LuaState state, Varargs args) {
-		String name = args.arg(1).checkjstring();
+		String name = args.arg(1).checkString();
 		InputStream is = null;
 
 
@@ -387,7 +387,7 @@ public class PackageLib extends OneArgFunction {
 		if (!pp.isString()) {
 			return ValueFactory.valueOf("package.path is not a string");
 		}
-		String path = pp.tojstring();
+		String path = pp.toString();
 
 		// check the path elements
 		int e = -1;
@@ -427,7 +427,7 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	LuaValue loader_Java(Varargs args) {
-		String name = args.arg(1).checkjstring();
+		String name = args.arg(1).checkString();
 		String classname = toClassname(name);
 		Class c = null;
 		LuaValue v = null;

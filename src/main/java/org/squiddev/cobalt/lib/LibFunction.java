@@ -150,8 +150,8 @@ public abstract class LibFunction extends LuaFunction {
 	}
 
 	@Override
-	public String tojstring() {
-		return name != null ? name : super.tojstring();
+	public String toString() {
+		return name != null ? name : super.toString();
 	}
 
 	/**

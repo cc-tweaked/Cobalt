@@ -1273,61 +1273,61 @@ public class UnaryBinaryOperatorsTest {
 
 		// basic append
 		Buffer b = new Buffer();
-		assertEquals("", b.value().tojstring());
+		assertEquals("", b.value().toString());
 		b.append(def);
-		assertEquals("def", b.value().tojstring());
+		assertEquals("def", b.value().toString());
 		b.append(abc);
-		assertEquals("defabc", b.value().tojstring());
+		assertEquals("defabc", b.value().toString());
 		b.append(ghi);
-		assertEquals("defabcghi", b.value().tojstring());
+		assertEquals("defabcghi", b.value().toString());
 		b.append(n123);
-		assertEquals("defabcghi123", b.value().tojstring());
+		assertEquals("defabcghi123", b.value().toString());
 
 		// basic prepend
 		b = new Buffer();
-		assertEquals("", b.value().tojstring());
+		assertEquals("", b.value().toString());
 		b.prepend(def.strvalue());
-		assertEquals("def", b.value().tojstring());
+		assertEquals("def", b.value().toString());
 		b.prepend(ghi.strvalue());
-		assertEquals("ghidef", b.value().tojstring());
+		assertEquals("ghidef", b.value().toString());
 		b.prepend(abc.strvalue());
-		assertEquals("abcghidef", b.value().tojstring());
+		assertEquals("abcghidef", b.value().toString());
 		b.prepend(n123.strvalue());
-		assertEquals("123abcghidef", b.value().tojstring());
+		assertEquals("123abcghidef", b.value().toString());
 
 		// mixed append, prepend
 		b = new Buffer();
-		assertEquals("", b.value().tojstring());
+		assertEquals("", b.value().toString());
 		b.append(def);
-		assertEquals("def", b.value().tojstring());
+		assertEquals("def", b.value().toString());
 		b.append(abc);
-		assertEquals("defabc", b.value().tojstring());
+		assertEquals("defabc", b.value().toString());
 		b.prepend(ghi.strvalue());
-		assertEquals("ghidefabc", b.value().tojstring());
+		assertEquals("ghidefabc", b.value().toString());
 		b.prepend(n123.strvalue());
-		assertEquals("123ghidefabc", b.value().tojstring());
+		assertEquals("123ghidefabc", b.value().toString());
 		b.append(def);
-		assertEquals("123ghidefabcdef", b.value().tojstring());
+		assertEquals("123ghidefabcdef", b.value().toString());
 		b.append(abc);
-		assertEquals("123ghidefabcdefabc", b.value().tojstring());
+		assertEquals("123ghidefabcdefabc", b.value().toString());
 		b.prepend(ghi.strvalue());
-		assertEquals("ghi123ghidefabcdefabc", b.value().tojstring());
+		assertEquals("ghi123ghidefabcdefabc", b.value().toString());
 		b.prepend(n123.strvalue());
-		assertEquals("123ghi123ghidefabcdefabc", b.value().tojstring());
+		assertEquals("123ghi123ghidefabcdefabc", b.value().toString());
 
 		// value
 		b = new Buffer(def);
-		assertEquals("def", b.value().tojstring());
+		assertEquals("def", b.value().toString());
 		b.append(abc);
-		assertEquals("defabc", b.value().tojstring());
+		assertEquals("defabc", b.value().toString());
 		b.prepend(ghi.strvalue());
-		assertEquals("ghidefabc", b.value().tojstring());
+		assertEquals("ghidefabc", b.value().toString());
 		b.setvalue(def);
-		assertEquals("def", b.value().tojstring());
+		assertEquals("def", b.value().toString());
 		b.prepend(ghi.strvalue());
-		assertEquals("ghidef", b.value().tojstring());
+		assertEquals("ghidef", b.value().toString());
 		b.append(abc);
-		assertEquals("ghidefabc", b.value().tojstring());
+		assertEquals("ghidefabc", b.value().toString());
 	}
 
 	@Test
@@ -1337,16 +1337,16 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue ghi = valueOf("abcdefghi").substring(6, 9);
 		LuaValue n123 = valueOf(123);
 
-		assertEquals("abc", abc.tojstring());
-		assertEquals("def", def.tojstring());
-		assertEquals("ghi", ghi.tojstring());
-		assertEquals("123", n123.tojstring());
-		assertEquals("abcabc", abc.concat(state, abc).tojstring());
-		assertEquals("defghi", def.concat(state, ghi).tojstring());
-		assertEquals("ghidef", ghi.concat(state, def).tojstring());
-		assertEquals("ghidefabcghi", ghi.concat(state, def).concat(state, abc).concat(state, ghi).tojstring());
-		assertEquals("123def", n123.concat(state, def).tojstring());
-		assertEquals("def123", def.concat(state, n123).tojstring());
+		assertEquals("abc", abc.toString());
+		assertEquals("def", def.toString());
+		assertEquals("ghi", ghi.toString());
+		assertEquals("123", n123.toString());
+		assertEquals("abcabc", abc.concat(state, abc).toString());
+		assertEquals("defghi", def.concat(state, ghi).toString());
+		assertEquals("ghidef", ghi.concat(state, def).toString());
+		assertEquals("ghidefabcghi", ghi.concat(state, def).concat(state, abc).concat(state, ghi).toString());
+		assertEquals("123def", n123.concat(state, def).toString());
+		assertEquals("def123", def.concat(state, n123).toString());
 	}
 
 	@Test
@@ -1358,18 +1358,18 @@ public class UnaryBinaryOperatorsTest {
 		Buffer b;
 
 		b = new Buffer(def);
-		assertEquals("def", b.value().tojstring());
+		assertEquals("def", b.value().toString());
 		b = ghi.concat(state, b);
-		assertEquals("ghidef", b.value().tojstring());
+		assertEquals("ghidef", b.value().toString());
 		b = abc.concat(state, b);
-		assertEquals("abcghidef", b.value().tojstring());
+		assertEquals("abcghidef", b.value().toString());
 		b = n123.concat(state, b);
-		assertEquals("123abcghidef", b.value().tojstring());
+		assertEquals("123abcghidef", b.value().toString());
 		b.setvalue(n123);
 		b = def.concat(state, b);
-		assertEquals("def123", b.value().tojstring());
+		assertEquals("def123", b.value().toString());
 		b = abc.concat(state, b);
-		assertEquals("abcdef123", b.value().tojstring());
+		assertEquals("abcdef123", b.value().toString());
 	}
 
 	@Test

@@ -92,7 +92,7 @@ public class OsLib extends VarArgFunction {
 				case CLOCK:
 					return ValueFactory.valueOf(clock());
 				case DATE: {
-					String s = args.arg(1).optjstring(null);
+					String s = args.arg(1).optString(null);
 					double defval = -1;
 					double t = args.arg(2).optDouble(defval);
 					return ValueFactory.valueOf(date(s, t == -1 ? System.currentTimeMillis() / 1000. : t));
@@ -100,22 +100,22 @@ public class OsLib extends VarArgFunction {
 				case DIFFTIME:
 					return ValueFactory.valueOf(difftime(args.arg(1).checkDouble(), args.arg(2).checkDouble()));
 				case EXECUTE:
-					return valueOf(state.resourceManipulator.execute(args.arg(1).optjstring(null)));
+					return valueOf(state.resourceManipulator.execute(args.arg(1).optString(null)));
 				case EXIT:
 					exit(args.arg(1).optInteger(0));
 					return Constants.NONE;
 				case GETENV: {
-					final String val = getenv(args.arg(1).checkjstring());
+					final String val = getenv(args.arg(1).checkString());
 					return val != null ? ValueFactory.valueOf(val) : Constants.NIL;
 				}
 				case REMOVE:
-					state.resourceManipulator.remove(args.arg(1).checkjstring());
+					state.resourceManipulator.remove(args.arg(1).checkString());
 					return Constants.TRUE;
 				case RENAME:
-					state.resourceManipulator.rename(args.arg(1).checkjstring(), args.arg(2).checkjstring());
+					state.resourceManipulator.rename(args.arg(1).checkString(), args.arg(2).checkString());
 					return Constants.TRUE;
 				case SETLOCALE: {
-					String s = setlocale(args.arg(1).optjstring(null), args.arg(2).optjstring("all"));
+					String s = setlocale(args.arg(1).optString(null), args.arg(2).optString("all"));
 					return s != null ? ValueFactory.valueOf(s) : Constants.NIL;
 				}
 				case TIME:

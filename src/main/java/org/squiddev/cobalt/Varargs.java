@@ -184,26 +184,15 @@ public abstract class Varargs {
 	 *
 	 * @return String value in human readable form such as {1,2}.
 	 */
-	public String tojstring() {
+	public String toString() {
 		Buffer sb = new Buffer();
 		sb.append("(");
 		for (int i = 1, n = count(); i <= n; i++) {
 			if (i > 1) sb.append(",");
-			sb.append(arg(i).tojstring());
+			sb.append(arg(i).toString());
 		}
 		sb.append(")");
-		return sb.tojstring();
-	}
-
-	/**
-	 * Convert the value or values to a java String using Varargs.tojstring()
-	 *
-	 * @return String value in human readable form.
-	 * @see Varargs#tojstring()
-	 */
-	@Override
-	public String toString() {
-		return tojstring();
+		return sb.toString();
 	}
 
 	/**

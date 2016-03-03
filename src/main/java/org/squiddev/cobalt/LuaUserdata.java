@@ -38,7 +38,7 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public String tojstring() {
+	public String toString() {
 		return String.valueOf(m_instance);
 	}
 

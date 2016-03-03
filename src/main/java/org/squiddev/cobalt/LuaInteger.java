@@ -136,7 +136,7 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public String tojstring() {
+	public String toString() {
 		return Integer.toString(v);
 	}
 
@@ -156,7 +156,7 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public String optjstring(String defval) {
+	public String optString(String defval) {
 		return Integer.toString(v);
 	}
 
@@ -217,7 +217,7 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public String checkjstring() {
+	public String checkString() {
 		return String.valueOf(v);
 	}
 

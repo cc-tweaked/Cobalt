@@ -175,7 +175,7 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public String tojstring() {
+	public String toString() {
 		/*
 		if ( v == 0.0 ) { // never occurs in J2me
 			long bits = Double.doubleToLongBits( v );
@@ -197,22 +197,22 @@ public class LuaDouble extends LuaNumber {
 
 	@Override
 	public LuaString strvalue() {
-		return LuaString.valueOf(tojstring());
+		return LuaString.valueOf(toString());
 	}
 
 	@Override
 	public LuaString optLuaString(LuaString defval) {
-		return LuaString.valueOf(tojstring());
+		return LuaString.valueOf(toString());
 	}
 
 	@Override
 	public LuaValue toLuaString() {
-		return LuaString.valueOf(tojstring());
+		return LuaString.valueOf(toString());
 	}
 
 	@Override
-	public String optjstring(String defval) {
-		return tojstring();
+	public String optString(String defval) {
+		return toString();
 	}
 
 	@Override
@@ -231,13 +231,13 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public String checkjstring() {
-		return tojstring();
+	public String checkString() {
+		return toString();
 	}
 
 	@Override
 	public LuaString checkLuaString() {
-		return LuaString.valueOf(tojstring());
+		return LuaString.valueOf(toString());
 	}
 
 	@Override

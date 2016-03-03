@@ -55,7 +55,8 @@ public class LocVars {
 		this.endpc = endpc;
 	}
 
-	public String tojstring() {
+	@Override
+	public String toString() {
 		return varname + " " + startpc + "-" + endpc;
 	}
 }

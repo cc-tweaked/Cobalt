@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
-import static org.squiddev.cobalt.ValueFactory.valueOf;
-
 public class LexState {
 
 	protected static final String RESERVED_LOCAL_VAR_FOR_CONTROL = "(for control)";
@@ -259,7 +257,7 @@ public class LexState {
 	}
 
 	void lexerror(String msg, int token) {
-		String cid = chunkid(source.tojstring()); // TODO: get source name from source
+		String cid = chunkid(source.toString()); // TODO: get source name from source
 		L.pushfstring(cid + ":" + linenumber + ": " + msg);
 		if (token != 0) {
 			L.pushfstring("syntax error: " + msg + " near " + txtToken(token));

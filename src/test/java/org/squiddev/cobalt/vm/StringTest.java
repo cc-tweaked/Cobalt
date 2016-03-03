@@ -83,7 +83,7 @@ public class StringTest {
 		char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
 		String before = new String(c) + " " + i + "-" + (i + 4);
 		LuaString ls = LuaString.valueOf(before);
-		String after = ls.tojstring();
+		String after = ls.toString();
 		assertEquals(userFriendly(before), userFriendly(after));
 
 	}
@@ -94,13 +94,13 @@ public class StringTest {
 			char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
 			String before = new String(c) + " " + i + "-" + (i + 4);
 			LuaString ls = LuaString.valueOf(before);
-			String after = ls.tojstring();
+			String after = ls.toString();
 			assertEquals(userFriendly(before), userFriendly(after));
 		}
 		char[] c = {(char) (1), (char) (2), (char) (3)};
 		String before = new String(c) + " 1-3";
 		LuaString ls = LuaString.valueOf(before);
-		String after = ls.tojstring();
+		String after = ls.toString();
 		assertEquals(userFriendly(before), userFriendly(after));
 
 	}
@@ -109,7 +109,7 @@ public class StringTest {
 	public void testSpotCheckUtf8() throws UnsupportedEncodingException {
 		byte[] bytes = {(byte) 194, (byte) 160, (byte) 194, (byte) 161, (byte) 194, (byte) 162, (byte) 194, (byte) 163, (byte) 194, (byte) 164};
 		String expected = new String(bytes, "UTF8");
-		String actual = LuaString.valueOf(bytes).tojstring();
+		String actual = LuaString.valueOf(bytes).toString();
 		char[] d = actual.toCharArray();
 		assertEquals(160, d[0]);
 		assertEquals(161, d[1]);
@@ -124,7 +124,7 @@ public class StringTest {
 		char[] c = {'a', 'b', 'c', '\0', 'd', 'e', 'f'};
 		String before = new String(c);
 		LuaString ls = LuaString.valueOf(before);
-		String after = ls.tojstring();
+		String after = ls.toString();
 		assertEquals(userFriendly("abc\0def"), userFriendly(after));
 
 	}

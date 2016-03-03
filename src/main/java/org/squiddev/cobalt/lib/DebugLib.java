@@ -221,8 +221,8 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public String sourceline() {
-			if (prototype == null) return func.tojstring();
-			String s = prototype.source.tojstring();
+			if (prototype == null) return func.toString();
+			String s = prototype.source.toString();
 			int line = currentline();
 			return (s.startsWith("@") || s.startsWith("=") ? s.substring(1) : s) + ":" + line;
 		}
@@ -232,7 +232,7 @@ public class DebugLib extends VarArgFunction {
 			if (kind == null) {
 				return "function ?";
 			}
-			return "function '" + kind[0].tojstring() + "'";
+			return "function '" + kind[0].toString() + "'";
 		}
 
 		public LuaString getlocalname(int index) {
@@ -240,7 +240,8 @@ public class DebugLib extends VarArgFunction {
 			return prototype.getlocalname(index, pc);
 		}
 
-		public String tojstring() {
+		@Override
+		public String toString() {
 			return tracename() + " " + sourceline();
 		}
 	}
@@ -338,7 +339,8 @@ public class DebugLib extends VarArgFunction {
 			return new DebugInfo(func);
 		}
 
-		public String tojstring() {
+		@Override
+		public String toString() {
 			LuaThread thread = thread_ref.get();
 			return thread != null ? DebugLib.traceback(thread, 0) : "orphaned thread";
 		}
@@ -454,7 +456,7 @@ public class DebugLib extends VarArgFunction {
 		int i1 = a++;
 		LuaValue func = args.arg(i1).optFunction(null);
 		int i3 = a++;
-		String str = args.arg(i3).optjstring("");
+		String str = args.arg(i3).optString("");
 		int i2 = a++;
 		int count = args.arg(i2).optInteger(0);
 		boolean call = false, line = false, rtrn = false;
@@ -493,7 +495,7 @@ public class DebugLib extends VarArgFunction {
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
 		LuaValue func = args.arg(a++);
 		int i1 = a++;
-		String what = args.arg(i1).optjstring("nSluf");
+		String what = args.arg(i1).optString("nSluf");
 
 		// find the stack info
 		DebugState ds = getDebugState(thread);
@@ -524,7 +526,7 @@ public class DebugLib extends VarArgFunction {
 						info.set(state, LINEDEFINED, valueOf(p.linedefined));
 						info.set(state, LASTLINEDEFINED, valueOf(p.lastlinedefined));
 					} else {
-						String shortName = di.func.tojstring();
+						String shortName = di.func.toString();
 						LuaString name = LuaString.valueOf("[Java] " + shortName);
 						info.set(state, WHAT, JAVA);
 						info.set(state, SOURCE, name);
@@ -569,7 +571,7 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	public static String sourceshort(Prototype p) {
-		String name = p.source.tojstring();
+		String name = p.source.toString();
 		if (name.startsWith("@") || name.startsWith("=")) {
 			name = name.substring(1);
 		} else if (name.startsWith("\033")) {
@@ -702,7 +704,7 @@ public class DebugLib extends VarArgFunction {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
 		int i1 = a++;
-		String message = args.arg(i1).optjstring(null);
+		String message = args.arg(i1).optString(null);
 		int i = a++;
 		int level = args.arg(i).optInteger(1);
 		String tb = DebugLib.traceback(thread, level - 1);

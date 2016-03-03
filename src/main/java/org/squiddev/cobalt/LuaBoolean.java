@@ -85,7 +85,7 @@ public final class LuaBoolean extends LuaValue {
 	}
 
 	@Override
-	public String tojstring() {
+	public String toString() {
 		return v ? "true" : "false";
 	}
 

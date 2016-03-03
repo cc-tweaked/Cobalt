@@ -57,7 +57,7 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public String tojstring() {
+	public String toString() {
 		return "nil";
 	}
 
@@ -142,7 +142,7 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public String optjstring(String defval) {
+	public String optString(String defval) {
 		return defval;
 	}
 

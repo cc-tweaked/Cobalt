@@ -26,13 +26,12 @@ package org.squiddev.cobalt.vm;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.StringLib;
 import org.squiddev.cobalt.lib.ThreeArgFunction;
 import org.squiddev.cobalt.lib.TwoArgFunction;
 import org.squiddev.cobalt.lib.ZeroArgFunction;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
-import org.squiddev.cobalt.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -185,18 +184,18 @@ public class MetatableTest {
 		mt.set(state, Constants.INDEX, new TwoArgFunction() {
 			@Override
 			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
-				return ValueFactory.valueOf(arg1.typeName() + "[" + arg2.tojstring() + "]=xyz");
+				return ValueFactory.valueOf(arg1.typeName() + "[" + arg2.toString() + "]=xyz");
 			}
 
 		});
-		assertEquals("table[1]=xyz", table.get(state, 1).tojstring());
-		assertEquals("userdata[1]=xyz", userdata.get(state, 1).tojstring());
-		assertEquals("nil[1]=xyz", Constants.NIL.get(state, 1).tojstring());
-		assertEquals("boolean[1]=xyz", Constants.TRUE.get(state, 1).tojstring());
-		assertEquals("number[1]=xyz", Constants.ONE.get(state, 1).tojstring());
-		//	assertEquals( "string[1]=xyz",   string.get(1).tojstring() );
-		assertEquals("function[1]=xyz", function.get(state, 1).tojstring());
-		assertEquals("thread[1]=xyz", thread.get(state, 1).tojstring());
+		assertEquals("table[1]=xyz", table.get(state, 1).toString());
+		assertEquals("userdata[1]=xyz", userdata.get(state, 1).toString());
+		assertEquals("nil[1]=xyz", Constants.NIL.get(state, 1).toString());
+		assertEquals("boolean[1]=xyz", Constants.TRUE.get(state, 1).toString());
+		assertEquals("number[1]=xyz", Constants.ONE.get(state, 1).toString());
+		//	assertEquals( "string[1]=xyz",   string.get(1).toString() );
+		assertEquals("function[1]=xyz", function.get(state, 1).toString());
+		assertEquals("thread[1]=xyz", thread.get(state, 1).toString());
 	}
 
 

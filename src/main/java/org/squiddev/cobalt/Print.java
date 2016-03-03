@@ -137,7 +137,7 @@ public class Print {
 				printString(ps, (LuaString) v);
 				break;
 			default:
-				ps.print(v.tojstring());
+				ps.print(v.toString());
 
 		}
 	}
@@ -412,12 +412,12 @@ public class Print {
 					case Constants.TSTRING:
 						LuaString s = v.checkLuaString();
 						ps.print(s.length() < 48 ?
-							s.tojstring() :
-							s.substring(0, 32).tojstring() + "...+" + (s.length() - 32) + "b");
+							s.toString() :
+							s.substring(0, 32).toString() + "...+" + (s.length() - 32) + "b");
 						break;
 					case Constants.TFUNCTION:
 						ps.print((v instanceof LuaClosure) ?
-							((LuaClosure) v).p.toString() : v.tojstring());
+							((LuaClosure) v).p.toString() : v.toString());
 						break;
 					case Constants.TUSERDATA:
 						Object o = v.toUserdata();
@@ -430,7 +430,7 @@ public class Print {
 						}
 						break;
 					default:
-						ps.print(v.tojstring());
+						ps.print(v.toString());
 				}
 			}
 			if (i + 1 == top) {

@@ -114,7 +114,7 @@ public class JseIoLib extends IoLib {
 		}
 
 		@Override
-		public String tojstring() {
+		public String toString() {
 			return "file (" + this.hashCode() + ")";
 		}
 
