@@ -107,6 +107,7 @@ public class LuaTable extends LuaValue {
 	 * Construct empty table
 	 */
 	public LuaTable() {
+		super(Constants.TTABLE);
 		array = Constants.NOVALS;
 		hashKeys = Constants.NOVALS;
 		hashValues = Constants.NOVALS;
@@ -119,6 +120,7 @@ public class LuaTable extends LuaValue {
 	 * @param nhash  capacity of hash part
 	 */
 	public LuaTable(int narray, int nhash) {
+		super(Constants.TTABLE);
 		presize(narray, nhash);
 	}
 
@@ -130,6 +132,7 @@ public class LuaTable extends LuaValue {
 	 * @param lastarg Additional unnamed values beyond {@code unnamed.length}
 	 */
 	public LuaTable(LuaValue[] named, LuaValue[] unnamed, Varargs lastarg) {
+		super(Constants.TTABLE);
 		int nn = (named != null ? named.length : 0);
 		int nu = (unnamed != null ? unnamed.length : 0);
 		int nl = (lastarg != null ? lastarg.count() : 0);
@@ -165,6 +168,7 @@ public class LuaTable extends LuaValue {
 	 * @param firstarg the index in varargs of the first argument to include in the table
 	 */
 	public LuaTable(Varargs varargs, int firstarg) {
+		super(Constants.TTABLE);
 		int nskip = firstarg - 1;
 		int n = Math.max(varargs.count() - nskip, 0);
 		presize(n, 1);
@@ -172,21 +176,6 @@ public class LuaTable extends LuaValue {
 		for (int i = 1; i <= n; i++) {
 			rawset(i, varargs.arg(i + nskip));
 		}
-	}
-
-	@Override
-	public int type() {
-		return Constants.TTABLE;
-	}
-
-	@Override
-	public String typeName() {
-		return "table";
-	}
-
-	@Override
-	public boolean isTable() {
-		return true;
 	}
 
 	@Override

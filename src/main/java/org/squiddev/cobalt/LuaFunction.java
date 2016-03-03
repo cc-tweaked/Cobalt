@@ -41,26 +41,13 @@ public abstract class LuaFunction extends LuaValue {
 	protected LuaValue env;
 
 	public LuaFunction() {
+		super(Constants.TFUNCTION);
 		this.env = Constants.NIL;
 	}
 
 	public LuaFunction(LuaValue env) {
+		super(Constants.TFUNCTION);
 		this.env = env;
-	}
-
-	@Override
-	public int type() {
-		return Constants.TFUNCTION;
-	}
-
-	@Override
-	public String typeName() {
-		return "function";
-	}
-
-	@Override
-	public boolean isFunction() {
-		return true;
 	}
 
 	@Override

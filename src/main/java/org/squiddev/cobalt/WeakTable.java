@@ -227,17 +227,8 @@ public class WeakTable extends LuaTable {
 		final WeakReference<LuaValue> ref;
 
 		protected WeakValue(LuaValue value) {
+			super(Constants.TNONE);
 			ref = new WeakReference<LuaValue>(value);
-		}
-
-		@Override
-		public int type() {
-			throw ErrorFactory.illegal("type", "weak value");
-		}
-
-		@Override
-		public String typeName() {
-			throw ErrorFactory.illegal("typename", "weak value");
 		}
 
 		@Override
@@ -314,6 +305,7 @@ public class WeakTable extends LuaTable {
 		final int keyhash;
 
 		private WeakEntry(WeakTable table, LuaValue key, LuaValue weakvalue) {
+			super(Constants.TNONE);
 			this.weakkey = table.weaken(key);
 			this.keyhash = key.hashCode();
 			this.weakvalue = weakvalue;
@@ -332,16 +324,6 @@ public class WeakTable extends LuaTable {
 				return weakvalue = Constants.NIL;
 			}
 			return weakvalue.strongvalue();
-		}
-
-		@Override
-		public int type() {
-			return Constants.TNONE;
-		}
-
-		@Override
-		public String typeName() {
-			throw ErrorFactory.illegal("typename", "weak entry");
 		}
 
 		@Override

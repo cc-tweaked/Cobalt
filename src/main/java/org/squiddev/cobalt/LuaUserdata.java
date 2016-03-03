@@ -29,10 +29,12 @@ public class LuaUserdata extends LuaValue {
 	public LuaValue m_metatable;
 
 	public LuaUserdata(Object obj) {
+		super(Constants.TUSERDATA);
 		m_instance = obj;
 	}
 
 	public LuaUserdata(Object obj, LuaValue metatable) {
+		super(Constants.TUSERDATA);
 		m_instance = obj;
 		m_metatable = metatable;
 	}
@@ -42,27 +44,12 @@ public class LuaUserdata extends LuaValue {
 		return String.valueOf(m_instance);
 	}
 
-	@Override
-	public int type() {
-		return Constants.TUSERDATA;
-	}
-
-	@Override
-	public String typeName() {
-		return "userdata";
-	}
-
 	public int hashCode() {
 		return m_instance.hashCode();
 	}
 
 	public Object userdata() {
 		return m_instance;
-	}
-
-	@Override
-	public boolean isUserdata() {
-		return true;
 	}
 
 	@Override

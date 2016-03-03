@@ -35,14 +35,8 @@ package org.squiddev.cobalt;
  */
 public abstract class LuaNumber extends LuaValue {
 
-	@Override
-	public int type() {
-		return Constants.TNUMBER;
-	}
-
-	@Override
-	public String typeName() {
-		return "number";
+	public LuaNumber() {
+		super(Constants.TNUMBER);
 	}
 
 	@Override
@@ -67,11 +61,6 @@ public abstract class LuaNumber extends LuaValue {
 
 	@Override
 	public boolean isNumber() {
-		return true;
-	}
-
-	@Override
-	public boolean isString() {
 		return true;
 	}
 

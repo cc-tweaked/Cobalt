@@ -31,7 +31,6 @@ import java.lang.ref.WeakReference;
 import java.util.Hashtable;
 
 import static org.squiddev.cobalt.Constants.NIL;
-import static org.squiddev.cobalt.Constants.TSTRING;
 
 /**
  * Subclass of {@link LuaValue} for representing lua strings.
@@ -165,29 +164,15 @@ public class LuaString extends LuaValue {
 	 * @param length length of the byte buffer
 	 */
 	private LuaString(byte[] bytes, int offset, int length) {
+		super(Constants.TSTRING);
 		this.m_bytes = bytes;
 		this.m_offset = offset;
 		this.m_length = length;
 	}
 
 	@Override
-	public boolean isString() {
-		return true;
-	}
-
-	@Override
 	public LuaValue getMetatable(LuaState state) {
 		return state.stringMetatable;
-	}
-
-	@Override
-	public int type() {
-		return TSTRING;
-	}
-
-	@Override
-	public String typeName() {
-		return "string";
 	}
 
 	@Override

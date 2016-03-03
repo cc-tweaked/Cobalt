@@ -106,6 +106,7 @@ public class LuaThread extends LuaValue {
 	 * @param env      The thread's environment
 	 */
 	public LuaThread(LuaState luaState, LuaValue env) {
+		super(Constants.TTHREAD);
 		state = new State(this, null);
 		this.luaState = luaState;
 		callstack = new CallStack(luaState);
@@ -121,26 +122,12 @@ public class LuaThread extends LuaValue {
 	 * @param env      The environment to apply to the thread
 	 */
 	public LuaThread(LuaState luaState, LuaValue func, LuaValue env) {
+		super(Constants.TTHREAD);
 		if (!(func != null)) throw new LuaError("function cannot be null");
 		this.env = env;
 		this.luaState = luaState;
 		callstack = new CallStack(luaState);
 		state = new State(this, func);
-	}
-
-	@Override
-	public int type() {
-		return Constants.TTHREAD;
-	}
-
-	@Override
-	public String typeName() {
-		return "thread";
-	}
-
-	@Override
-	public boolean isThread() {
-		return true;
 	}
 
 	@Override

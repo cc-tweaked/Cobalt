@@ -44,16 +44,7 @@ public class LuaNil extends LuaValue {
 	protected static final LuaNil _NIL = new LuaNil();
 
 	protected LuaNil() {
-	}
-
-	@Override
-	public int type() {
-		return Constants.TNIL;
-	}
-
-	@Override
-	public String typeName() {
-		return "nil";
+		super(Constants.TNIL);
 	}
 
 	@Override

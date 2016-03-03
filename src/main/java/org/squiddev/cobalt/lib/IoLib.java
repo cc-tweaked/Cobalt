@@ -57,6 +57,10 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public abstract class IoLib extends OneArgFunction {
 
 	protected abstract class File extends LuaValue {
+		protected File() {
+			super(TUSERDATA);
+		}
+
 		public abstract void write(LuaString string) throws IOException;
 
 		public abstract void flush() throws IOException;
@@ -88,17 +92,6 @@ public abstract class IoLib extends OneArgFunction {
 		@Override
 		public LuaValue get(LuaState state, LuaValue key) {
 			return filemethods.get(state, key);
-		}
-
-		// essentially a userdata instance
-		@Override
-		public int type() {
-			return TUSERDATA;
-		}
-
-		@Override
-		public String typeName() {
-			return "userdata";
 		}
 
 		// displays as "file" type

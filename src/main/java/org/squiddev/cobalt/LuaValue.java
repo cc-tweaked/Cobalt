@@ -25,6 +25,8 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
+import static org.squiddev.cobalt.Constants.*;
+
 /**
  * Base class for all concrete lua type values.
  * <p>
@@ -91,6 +93,12 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
  * @see Varargs
  */
 public abstract class LuaValue extends Varargs {
+	private final int type;
+
+	protected LuaValue(int type) {
+		this.type = type;
+	}
+
 	//region Type checking
 
 	/**
@@ -107,7 +115,9 @@ public abstract class LuaValue extends Varargs {
 	 * {@link Constants#TTHREAD}
 	 * @see #typeName()
 	 */
-	public abstract int type();
+	public final int type() {
+		return type;
+	}
 
 	/**
 	 * Get the String name of the type of this value.
@@ -119,7 +129,13 @@ public abstract class LuaValue extends Varargs {
 	 * "table", "function", "userdata", "thread"
 	 * @see #type()
 	 */
-	public abstract String typeName();
+	public final String typeName() {
+		if (type >= 0) {
+			return Constants.TYPE_NAMES[type];
+		} else {
+			throw ErrorFactory.illegal("type", "cannot get type of " + this);
+		}
+	}
 
 	/**
 	 * Check if {@code this} is a {@code boolean}
@@ -131,8 +147,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optBoolean(boolean)
 	 * @see Constants#TBOOLEAN
 	 */
-	public boolean isBoolean() {
-		return false;
+	public final boolean isBoolean() {
+		return type == TBOOLEAN;
 	}
 
 	/**
@@ -158,8 +174,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optFunction(LuaFunction)
 	 * @see Constants#TFUNCTION
 	 */
-	public boolean isFunction() {
-		return false;
+	public final boolean isFunction() {
+		return type == TFUNCTION;
 	}
 
 	/**
@@ -229,7 +245,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNONE
 	 */
 	public boolean isNil() {
-		return false;
+		return type == TNIL;
 	}
 
 	/**
@@ -259,8 +275,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optLuaString(LuaString)
 	 * @see Constants#TSTRING
 	 */
-	public boolean isString() {
-		return false;
+	public final boolean isString() {
+		return type == TSTRING || type == TNUMBER;
 	}
 
 	/**
@@ -271,8 +287,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optThread(LuaThread)
 	 * @see Constants#TTHREAD
 	 */
-	public boolean isThread() {
-		return false;
+	public final boolean isThread() {
+		return type == TTHREAD;
 	}
 
 	/**
@@ -283,8 +299,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optTable(LuaTable)
 	 * @see Constants#TTABLE
 	 */
-	public boolean isTable() {
-		return false;
+	public final boolean isTable() {
+		return type == TTABLE;
 	}
 
 	/**
@@ -297,8 +313,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optUserdata(Object)
 	 * @see Constants#TUSERDATA
 	 */
-	public boolean isUserdata() {
-		return false;
+	public final boolean isUserdata() {
+		return type == TUSERDATA;
 	}
 
 	/**

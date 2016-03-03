@@ -61,22 +61,8 @@ public final class LuaBoolean extends LuaValue {
 	public final boolean v;
 
 	LuaBoolean(boolean b) {
+		super(TBOOLEAN);
 		this.v = b;
-	}
-
-	@Override
-	public int type() {
-		return TBOOLEAN;
-	}
-
-	@Override
-	public String typeName() {
-		return "boolean";
-	}
-
-	@Override
-	public boolean isBoolean() {
-		return true;
 	}
 
 	@Override
