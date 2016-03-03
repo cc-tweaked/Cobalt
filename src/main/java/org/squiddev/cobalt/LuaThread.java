@@ -123,7 +123,7 @@ public class LuaThread extends LuaValue {
 	 */
 	public LuaThread(LuaState luaState, LuaValue func, LuaValue env) {
 		super(Constants.TTHREAD);
-		if (!(func != null)) throw new LuaError("function cannot be null");
+		if (func == null) throw new LuaError("function cannot be null");
 		this.env = env;
 		this.luaState = luaState;
 		callstack = new CallStack(luaState);
@@ -166,6 +166,10 @@ public class LuaThread extends LuaValue {
 	 */
 	public boolean isMainThread() {
 		return luaState.mainThread == this;
+	}
+
+	public boolean isAlive() {
+		return state.status != STATUS_DEAD;
 	}
 
 	/**

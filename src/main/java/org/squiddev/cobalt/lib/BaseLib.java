@@ -143,7 +143,7 @@ public class BaseLib extends OneArgFunction {
 		int level = arg.optInteger(1);
 		Varargs.argCheck(level >= 0, 1, "level must be non-negative");
 		if (level == 0) {
-			return state.currentThread;
+			return state.getCurrentThread();
 		}
 		LuaValue f = LuaThread.getCallstackFunction(state, level);
 		Varargs.argCheck(f != null, 1, "invalid level");
@@ -222,7 +222,7 @@ public class BaseLib extends OneArgFunction {
 				}
 				case 9: // "print", // (...) -> void
 				{
-					LuaValue tostring = state.currentThread.getfenv().get(state, "tostring");
+					LuaValue tostring = state.getCurrentThread().getfenv().get(state, "tostring");
 					for (int i = 1, n = args.count(); i <= n; i++) {
 						if (i > 1) state.stdout.write('\t');
 						LuaString s = tostring.call(state, args.arg(i)).strvalue();
@@ -366,7 +366,7 @@ public class BaseLib extends OneArgFunction {
 			if (is == null) {
 				return varargsOf(Constants.NIL, valueOf("not found: " + chunkname));
 			}
-			return LoadState.load(state, is, chunkname, state.currentThread.getfenv());
+			return LoadState.load(state, is, chunkname, state.getCurrentThread().getfenv());
 		} catch (Exception e) {
 			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
 		}

@@ -24,12 +24,11 @@
 package org.squiddev.cobalt.vm;
 
 import org.junit.Test;
-
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
-import org.squiddev.cobalt.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -202,7 +201,6 @@ public class LuaOperationsTest {
 
 	public Prototype createPrototype(String script, String name) {
 		try {
-			JsePlatform.standardGlobals(state);
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
 			return LuaC.compile(is, name);
 		} catch (Exception e) {

@@ -131,7 +131,7 @@ public final class LuaError extends RuntimeException {
 	public LuaError fillTraceback(LuaState state) {
 		if (traceback != null) return this;
 
-		LuaThread thread = state.currentThread;
+		LuaThread thread = state.getCurrentThread();
 		if (level > 0 && value.isString()) {
 			String fileLine;
 			if (calculateLevel) {

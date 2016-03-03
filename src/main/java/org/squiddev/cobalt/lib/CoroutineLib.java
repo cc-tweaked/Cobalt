@@ -73,14 +73,14 @@ public class CoroutineLib extends VarArgFunction {
 			}
 			case CREATE: {
 				final LuaValue func = args.arg(1).checkFunction();
-				return new LuaThread(state, func, state.currentThread.getfenv());
+				return new LuaThread(state, func, state.getCurrentThread().getfenv());
 			}
 			case RESUME: {
 				final LuaThread t = args.arg(1).checkThread();
 				return t.resume(args.subargs(2));
 			}
 			case RUNNING: {
-				final LuaThread r = state.currentThread;
+				final LuaThread r = state.getCurrentThread();
 				return r.isMainThread() ? Constants.NIL : r;
 			}
 			case STATUS: {

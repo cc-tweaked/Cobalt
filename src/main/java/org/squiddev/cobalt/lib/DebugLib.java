@@ -358,7 +358,7 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	public static DebugState getDebugState(LuaState state) {
-		return getDebugState(state.currentThread);
+		return getDebugState(state.getCurrentThread());
 	}
 
 	/**
@@ -442,7 +442,7 @@ public class DebugLib extends VarArgFunction {
 
 	static Varargs _gethook(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		DebugState ds = getDebugState(thread);
 		return varargsOf(
 			ds.hookfunc,
@@ -452,7 +452,7 @@ public class DebugLib extends VarArgFunction {
 
 	static Varargs _sethook(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
 		LuaValue func = args.arg(i1).optFunction(null);
 		int i3 = a++;
@@ -492,7 +492,7 @@ public class DebugLib extends VarArgFunction {
 
 	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) {
 		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		LuaValue func = args.arg(a++);
 		int i1 = a++;
 		String what = args.arg(i1).optString("nSluf");
@@ -582,7 +582,7 @@ public class DebugLib extends VarArgFunction {
 
 	private static Varargs _getlocal(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
 		int level = args.arg(i1).checkInteger();
 		int i = a++;
@@ -601,7 +601,7 @@ public class DebugLib extends VarArgFunction {
 
 	private static Varargs _setlocal(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
 		int level = args.arg(i1).checkInteger();
 		int i = a++;
@@ -702,7 +702,7 @@ public class DebugLib extends VarArgFunction {
 
 	private static LuaValue _traceback(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
 		String message = args.arg(i1).optString(null);
 		int i = a++;

@@ -87,7 +87,7 @@ public class PackageLib extends OneArgFunction {
 		env.set(state, "require", new PkgLib1(env, "require", OP_REQUIRE, this));
 		env.set(state, "module", new PkgLibV(env, "module", OP_MODULE, this));
 		env.set(state, "package", PACKAGE = ValueFactory.tableOf(new LuaValue[]{
-			_LOADED, state.loadedPackages = ValueFactory.tableOf(),
+			_LOADED, state.loadedPackages,
 			_PRELOAD, ValueFactory.tableOf(),
 			_PATH, ValueFactory.valueOf(DEFAULT_LUA_PATH),
 			_LOADLIB, new PkgLibV(env, "loadlib", OP_LOADLIB, this),
@@ -122,7 +122,7 @@ public class PackageLib extends OneArgFunction {
 					if (m == null) {
 						t.setMetatable(state, m = ValueFactory.tableOf());
 					}
-					m.set(state, Constants.INDEX, state.currentThread.getfenv());
+					m.set(state, Constants.INDEX, state.getCurrentThread().getfenv());
 					return Constants.NONE;
 				}
 			}
@@ -217,7 +217,7 @@ public class PackageLib extends OneArgFunction {
 		if (!value.isTable()) { /* not found? */
 
 		    /* try global variable (and create one if it does not exist) */
-			LuaValue globals = state.currentThread.getfenv();
+			LuaValue globals = state.getCurrentThread().getfenv();
 			module = findtable(state, globals, modname);
 			if (module == null) {
 				LuaValue result;

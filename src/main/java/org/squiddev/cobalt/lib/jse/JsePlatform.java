@@ -25,10 +25,9 @@ package org.squiddev.cobalt.lib.jse;
 
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaThread;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 import org.squiddev.cobalt.lib.*;
+import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
 /**
  * The {@link JsePlatform} class is a convenience class to standardize
@@ -73,7 +72,7 @@ import org.squiddev.cobalt.lib.*;
 public class JsePlatform {
 
 	/**
-	 * Create a standard set of globals for JSE including all the libraries.
+	 * Create a standard set of globals and setup a thread
 	 *
 	 * @param state The current lua state
 	 * @return Table of globals initialized with the standard JSE libraries
@@ -82,9 +81,7 @@ public class JsePlatform {
 	 */
 	public static LuaTable standardGlobals(LuaState state) {
 		LuaTable _G = new LuaTable();
-		state.mainThread = new LuaThread(state, _G);
-		state.currentThread = state.mainThread;
-
+		state.setupThread(_G);
 		_G.load(state, new BaseLib());
 		_G.load(state, new PackageLib());
 		_G.load(state, new TableLib());

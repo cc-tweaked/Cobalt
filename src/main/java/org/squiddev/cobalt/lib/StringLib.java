@@ -157,7 +157,6 @@ public class StringLib extends OneArgFunction {
 		for (int i = 0, a = 1; i < n; i++, a++) {
 			int c = args.arg(a).checkInteger();
 			if (c < 0 || c >= 256) {
-				LuaValue result;
 				throw ErrorFactory.argError(a, "invalid value");
 			}
 			bytes[i] = (byte) c;
@@ -866,8 +865,7 @@ public class StringLib extends OneArgFunction {
 		CHAR_TABLE['\r'] |= MASK_SPACE;
 		CHAR_TABLE['\n'] |= MASK_SPACE;
 		CHAR_TABLE['\t'] |= MASK_SPACE;
-		CHAR_TABLE[0x0B] |= MASK_SPACE;
-		CHAR_TABLE[0x0C /* '\v' */] |= MASK_SPACE;
+		CHAR_TABLE[0x0B] |= MASK_SPACE; // \v
 		CHAR_TABLE['\f'] |= MASK_SPACE;
 	}
 
