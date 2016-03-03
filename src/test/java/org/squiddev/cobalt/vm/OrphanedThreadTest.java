@@ -27,7 +27,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.OneArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -85,7 +84,7 @@ public class OrphanedThreadTest {
 				"arg = coroutine.yield(0)\n" +
 				"print('leakage in closure.3, arg is '..arg)\n" +
 				"return 'done'\n";
-		LuaC.install(state);
+
 		function = LoadState.load(state, new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(TRUE, ZERO);
 	}
@@ -102,7 +101,7 @@ public class OrphanedThreadTest {
 				"  return 'done'\n" +
 				"end\n" +
 				"print( 'pcall-closre.result:', pcall( f, ... ) )\n";
-		LuaC.install(state);
+
 		function = LoadState.load(state, new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(TRUE, ZERO);
 	}
@@ -120,9 +119,42 @@ public class OrphanedThreadTest {
 				"	return t[i]\n" +
 				"end\n" +
 				"load(f)()\n";
-		LuaC.install(state);
+
 		function = LoadState.load(state, new ByteArrayInputStream(script.getBytes()), "script", env);
 		doTest(TRUE, ONE);
+	}
+
+	@Test
+	public void testAbandon() throws Exception {
+		String script =
+			"local function foo(n)\n" +
+				"\tif n == 0 then\n" +
+				"\t\tcoroutine.yield()\n" +
+				"\t\terror(\"Should never reach this point\")\n" +
+				"\telse\n" +
+				"\t\tlocal f = coroutine.create(function() foo(n - 1) end)\n" +
+				"\t\twhile true do\n" +
+				"\t\t\tcoroutine.resume(f)\n" +
+				"\t\t\tcoroutine.yield()\n" +
+				"\t\t\t\n" +
+				"\t\t\tif coroutine.status(f) == \"dead\" then\n" +
+				"\t\t\t\tbreak\n" +
+				"\t\t\tend\n" +
+				"\t\tend\n" +
+				"\tend\n" +
+				"end\n" +
+				"\n" +
+				"foo(5)";
+
+		function = LoadState.load(state, new ByteArrayInputStream(script.getBytes()), "script", env);
+
+		LuaThread thread = new LuaThread(state, function, env);
+
+		thread.resume(NONE);
+		assertEquals("suspended", thread.getStatus());
+
+		state.abandon();
+		assertEquals("dead", thread.getStatus());
 	}
 
 	private void doTest(LuaValue status2, LuaValue value2) throws Exception {

@@ -75,12 +75,15 @@ public final class LuaState {
 	 */
 	protected LuaThread mainThread;
 
+	protected Set<LuaThread> threads = Collections.newSetFromMap(new WeakHashMap<LuaThread, Boolean>());
+
 	public LuaState(ResourceManipulator resourceManipulator) {
 		this.resourceManipulator = resourceManipulator;
 	}
 
 	/**
 	 * Get the main thread
+	 *
 	 * @return The main thread
 	 */
 	public LuaThread getMainThread() {
@@ -102,5 +105,19 @@ public final class LuaState {
 		LuaThread thread = new LuaThread(this, environment);
 		mainThread = thread;
 		currentThread = thread;
+	}
+
+	public void abandon() {
+		next:
+		while (true) {
+			for (LuaThread thread : threads) {
+				if (thread != mainThread) {
+					thread.abandon();
+					continue next;
+				}
+			}
+
+			break;
+		}
 	}
 }

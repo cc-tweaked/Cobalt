@@ -100,18 +100,21 @@ public class LuaThread extends LuaValue {
 	public DebugLib.DebugState debugState;
 
 	/**
-	 * Private constructor for main thread only
+	 * Constructor for main thread only
 	 *
 	 * @param luaState The current lua state
 	 * @param env      The thread's environment
 	 */
 	public LuaThread(LuaState luaState, LuaValue env) {
 		super(Constants.TTHREAD);
-		state = new State(this, null);
+
+		luaState.threads.add(this);
 		this.luaState = luaState;
-		callstack = new CallStack(luaState);
-		state.status = STATUS_RUNNING;
 		this.env = env;
+
+		state = new State(this, null);
+		state.status = STATUS_RUNNING;
+		callstack = new CallStack(luaState);
 	}
 
 	/**
@@ -124,10 +127,13 @@ public class LuaThread extends LuaValue {
 	public LuaThread(LuaState luaState, LuaValue func, LuaValue env) {
 		super(Constants.TTHREAD);
 		if (func == null) throw new LuaError("function cannot be null");
-		this.env = env;
+
+		luaState.threads.add(this);
 		this.luaState = luaState;
-		callstack = new CallStack(luaState);
+		this.env = env;
+
 		state = new State(this, func);
+		callstack = new CallStack(luaState);
 	}
 
 	@Override
@@ -222,7 +228,24 @@ public class LuaThread extends LuaValue {
 		if (s.function == null) {
 			throw new LuaError("cannot yield main thread");
 		}
-		return s.lua_yield(args);
+		return s.yield(args);
+	}
+
+	public void abandon() {
+		if (state.status == STATUS_DEAD) {
+			luaState.threads.remove(this);
+		} else if (isMainThread()) {
+			// Can't do anything if the main thread
+			return;
+		} else if (state.status > STATUS_SUSPENDED) {
+			throw new IllegalStateException("Cannot abandon " + getStatus() + " coroutine");
+		} else {
+			state.abandon();
+
+			if (luaState.threads.contains(this)) {
+				throw new IllegalStateException("Abandonment failed");
+			}
+		}
 	}
 
 	/**
@@ -232,97 +255,126 @@ public class LuaThread extends LuaValue {
 	 * @return {@link Varargs} provided as arguments to {@link #yield(LuaState, Varargs)}
 	 */
 	public Varargs resume(Varargs args) {
-		if (this.state.status > STATUS_SUSPENDED) {
-			return varargsOf(Constants.FALSE,
-				valueOf("cannot resume " + LuaThread.STATUS_NAMES[this.state.status] + " coroutine"));
+		if (state.status > STATUS_SUSPENDED) {
+			return varargsOf(Constants.FALSE, valueOf("cannot resume " + LuaThread.STATUS_NAMES[this.state.status] + " coroutine"));
 		}
-		return state.lua_resume(this, args);
+		return state.resume(this, args);
 	}
 
-	static class State implements Runnable {
+	private static class State implements Runnable {
 		private final LuaState state;
-		final WeakReference<LuaThread> lua_thread;
-		final LuaValue function;
-		Varargs args = Constants.NONE;
-		Varargs result = Constants.NONE;
-		String error = null;
-		int status = LuaThread.STATUS_INITIAL;
+		private final WeakReference<LuaThread> thread;
+		private final LuaValue function;
+		private Varargs args = Constants.NONE;
+		private Varargs result = Constants.NONE;
+		private String error = null;
+		protected int status = LuaThread.STATUS_INITIAL;
+		private boolean abandoned = false;
 
-		State(LuaThread lua_thread, LuaValue function) {
-			this.state = lua_thread.luaState;
-			this.lua_thread = new WeakReference<LuaThread>(lua_thread);
+		private State(LuaThread thread, LuaValue function) {
+			this.state = thread.luaState;
+			this.thread = new WeakReference<LuaThread>(thread);
 			this.function = function;
 		}
 
 		@Override
 		public synchronized void run() {
 			try {
-				Varargs a = this.args;
-				this.args = Constants.NONE;
-				this.result = function.invoke(state, a);
+				Varargs a = args;
+				args = Constants.NONE;
+				result = function.invoke(state, a);
 			} catch (Throwable t) {
-				this.error = t.getMessage();
+				error = t.getMessage();
 			} finally {
-				this.status = LuaThread.STATUS_DEAD;
-				this.notify();
+				markDead();
+				notify();
 			}
 		}
 
-		synchronized Varargs lua_resume(LuaThread new_thread, Varargs args) {
-			LuaThread previous_thread = state.currentThread;
+		protected synchronized Varargs resume(LuaThread newThread, Varargs args) {
+			LuaThread previous = state.currentThread;
 			try {
-				state.currentThread = new_thread;
+				state.currentThread = newThread;
 				this.args = args;
-				if (this.status == STATUS_INITIAL) {
-					this.status = STATUS_RUNNING;
+				if (status == STATUS_INITIAL) {
+					status = STATUS_RUNNING;
 					new Thread(this, "Coroutine-" + (++coroutineCount)).start();
 				} else {
-					this.notify();
+					notify();
 				}
-				previous_thread.state.status = STATUS_NORMAL;
-				this.status = STATUS_RUNNING;
-				this.wait();
-				return (this.error != null ?
-					varargsOf(Constants.FALSE, valueOf(this.error)) :
-					varargsOf(Constants.TRUE, this.result));
+				previous.state.status = STATUS_NORMAL;
+				status = STATUS_RUNNING;
+				wait();
+				return (error != null ?
+					varargsOf(Constants.FALSE, valueOf(error)) :
+					varargsOf(Constants.TRUE, result));
+
 			} catch (InterruptedException ie) {
 				throw new OrphanedThread();
 			} finally {
-				state.currentThread = previous_thread;
+				state.currentThread = previous;
 				state.currentThread.state.status = STATUS_RUNNING;
+
 				this.args = Constants.NONE;
-				this.result = Constants.NONE;
-				this.error = null;
+				result = Constants.NONE;
+				error = null;
 			}
 		}
 
-		synchronized Varargs lua_yield(Varargs args) {
+		protected synchronized Varargs yield(Varargs args) {
 			try {
-				this.result = args;
-				this.status = STATUS_SUSPENDED;
-				this.notify();
+				result = args;
+				status = STATUS_SUSPENDED;
+				notify();
 				do {
-					this.wait(threadOrphanCheckInterval);
-					if (this.lua_thread.get() == null) {
-						this.status = STATUS_DEAD;
+					wait(threadOrphanCheckInterval);
+					if (abandoned || thread.get() == null) {
+						markDead();
 						throw new OrphanedThread();
 					}
-				} while (this.status == STATUS_SUSPENDED);
+				} while (status == STATUS_SUSPENDED);
 				return this.args;
 			} catch (InterruptedException ie) {
-				this.status = STATUS_DEAD;
+				markDead();
 				throw new OrphanedThread();
 			} finally {
 				this.args = Constants.NONE;
-				this.result = Constants.NONE;
+				result = Constants.NONE;
 			}
+		}
+
+		protected synchronized void abandon() {
+			LuaThread currentThread = state.currentThread;
+			try {
+				currentThread.state.status = STATUS_NORMAL;
+				abandoned = true;
+				if (status == STATUS_INITIAL) {
+					markDead();
+				} else {
+					notify();
+					wait();
+				}
+			} catch (InterruptedException e) {
+				markDead();
+			} finally {
+				currentThread.state.status = STATUS_RUNNING;
+				args = Constants.NONE;
+				result = Constants.NONE;
+				error = null;
+			}
+		}
+
+		private void markDead() {
+			status = STATUS_DEAD;
+			LuaThread current = thread.get();
+			if(current != null) state.threads.remove(current);
 		}
 	}
 
 	public static class CallStack {
 		private final LuaState state;
-		final LuaFunction[] functions = new LuaFunction[MAX_CALLSTACK];
-		int calls = 0;
+		private final LuaFunction[] functions = new LuaFunction[MAX_CALLSTACK];
+		private int calls = 0;
 
 		public CallStack(LuaState state) {
 			this.state = state;
