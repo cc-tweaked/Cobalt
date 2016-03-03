@@ -26,7 +26,6 @@ package org.squiddev.cobalt.vm;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.OneArgFunction;
@@ -135,10 +134,10 @@ public class OrphanedThreadTest {
 		// resume two times
 		Varargs a = luathread.resume(valueOf("foo"));
 		assertEquals(ONE, a.arg(2));
-		assertEquals(TRUE, a.arg1());
+		assertEquals(TRUE, a.first());
 		a = luathread.resume(valueOf("bar"));
 		assertEquals(value2, a.arg(2));
-		assertEquals(status2, a.arg1());
+		assertEquals(status2, a.first());
 
 		// drop strong references
 		luathread = null;
@@ -160,9 +159,9 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in normal.1, arg is " + arg);
-			arg = LuaThread.yield(state, ONE).arg1();
+			arg = LuaThread.yield(state, ONE).first();
 			System.out.println("in normal.2, arg is " + arg);
-			arg = LuaThread.yield(state, ZERO).arg1();
+			arg = LuaThread.yield(state, ZERO).first();
 			System.out.println("in normal.3, arg is " + arg);
 			return NONE;
 		}
@@ -172,7 +171,7 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in early.1, arg is " + arg);
-			arg = LuaThread.yield(state, ONE).arg1();
+			arg = LuaThread.yield(state, ONE).first();
 			System.out.println("in early.2, arg is " + arg);
 			return ZERO;
 		}
@@ -182,7 +181,7 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
-			arg = LuaThread.yield(state, ONE).arg1();
+			arg = LuaThread.yield(state, ONE).first();
 			System.out.println("in abnormal.2, arg is " + arg);
 			throw new LuaError("abnormal condition");
 		}
@@ -192,7 +191,7 @@ public class OrphanedThreadTest {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) {
 			System.out.println("in abnormal.1, arg is " + arg);
-			arg = LuaThread.yield(state, ONE).arg1();
+			arg = LuaThread.yield(state, ONE).first();
 			System.out.println("in abnormal.2, arg is " + arg);
 			throw new LuaError("abnormal condition");
 		}

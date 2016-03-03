@@ -26,7 +26,6 @@ package org.squiddev.cobalt;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
@@ -35,9 +34,9 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * Almost all API's implemented in {@link LuaTable} are defined and documented in {@link LuaValue}.
  * <p>
  * If a table is needed, the one of the type-checking functions can be used such as
- * {@link #istable()},
- * {@link #checktable()}, or
- * {@link #opttable(LuaTable)}
+ * {@link #isTable()},
+ * {@link #checkTable()}, or
+ * {@link #optTable(LuaTable)}
  * <p>
  * The main table operations are defined on {@link LuaValue}
  * for getting and setting values with and without metatag processing:
@@ -133,18 +132,18 @@ public class LuaTable extends LuaValue {
 	public LuaTable(LuaValue[] named, LuaValue[] unnamed, Varargs lastarg) {
 		int nn = (named != null ? named.length : 0);
 		int nu = (unnamed != null ? unnamed.length : 0);
-		int nl = (lastarg != null ? lastarg.narg() : 0);
+		int nl = (lastarg != null ? lastarg.count() : 0);
 		presize(nu + nl, nn - (nn >> 1));
 		for (int i = 0; i < nu; i++) {
 			rawset(i + 1, unnamed[i]);
 		}
 		if (lastarg != null) {
-			for (int i = 1, n = lastarg.narg(); i <= n; ++i) {
+			for (int i = 1, n = lastarg.count(); i <= n; ++i) {
 				rawset(nu + i, lastarg.arg(i));
 			}
 		}
 		for (int i = 0; i < nn; i += 2) {
-			if (!named[i + 1].isnil()) {
+			if (!named[i + 1].isNil()) {
 				rawset(named[i], named[i + 1]);
 			}
 		}
@@ -167,7 +166,7 @@ public class LuaTable extends LuaValue {
 	 */
 	public LuaTable(Varargs varargs, int firstarg) {
 		int nskip = firstarg - 1;
-		int n = Math.max(varargs.narg() - nskip, 0);
+		int n = Math.max(varargs.count() - nskip, 0);
 		presize(n, 1);
 		rawset(N, ValueFactory.valueOf(n));
 		for (int i = 1; i <= n; i++) {
@@ -186,17 +185,17 @@ public class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public boolean istable() {
+	public boolean isTable() {
 		return true;
 	}
 
 	@Override
-	public LuaTable checktable() {
+	public LuaTable checkTable() {
 		return this;
 	}
 
 	@Override
-	public LuaTable opttable(LuaTable defval) {
+	public LuaTable optTable(LuaTable defval) {
 		return this;
 	}
 
@@ -253,7 +252,7 @@ public class LuaTable extends LuaValue {
 	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
 		m_metatable = metatable;
 		LuaValue mode;
-		if (m_metatable != null && (mode = m_metatable.rawget(Constants.MODE)).isstring()) {
+		if (m_metatable != null && (mode = m_metatable.rawget(Constants.MODE)).isString()) {
 			String m = mode.tojstring();
 			boolean k = m.indexOf('k') >= 0;
 			boolean v = m.indexOf('v') >= 0;
@@ -279,13 +278,13 @@ public class LuaTable extends LuaValue {
 	@Override
 	public LuaValue get(LuaState state, int key) {
 		LuaValue v = rawget(key);
-		return v.isnil() && m_metatable != null ? getTable(state, this, ValueFactory.valueOf(key)) : v;
+		return v.isNil() && m_metatable != null ? getTable(state, this, ValueFactory.valueOf(key)) : v;
 	}
 
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
 		LuaValue v = rawget(key);
-		return v.isnil() && m_metatable != null ? getTable(state, this, key) : v;
+		return v.isNil() && m_metatable != null ? getTable(state, this, key) : v;
 	}
 
 	@Override
@@ -298,8 +297,8 @@ public class LuaTable extends LuaValue {
 
 	@Override
 	public LuaValue rawget(LuaValue key) {
-		if (key.isinttype()) {
-			int ikey = key.toint();
+		if (key.isIntExact()) {
+			int ikey = key.toInteger();
 			if (ikey > 0 && ikey <= array.length) {
 				return array[ikey - 1] != null ? array[ikey - 1] : Constants.NIL;
 			}
@@ -317,7 +316,7 @@ public class LuaTable extends LuaValue {
 
 	@Override
 	public void set(LuaState state, int key, LuaValue value) {
-		if (m_metatable == null || !rawget(key).isnil() || !setTable(state, this, LuaInteger.valueOf(key), value)) {
+		if (m_metatable == null || !rawget(key).isNil() || !setTable(state, this, LuaInteger.valueOf(key), value)) {
 			rawset(key, value);
 		}
 	}
@@ -327,8 +326,8 @@ public class LuaTable extends LuaValue {
 	 */
 	@Override
 	public void set(LuaState state, LuaValue key, LuaValue value) {
-		key.checkvalidkey();
-		if (m_metatable == null || !rawget(key).isnil() || !setTable(state, this, key, value)) {
+		key.checkValidKey();
+		if (m_metatable == null || !rawget(key).isNil() || !setTable(state, this, key, value)) {
 			rawset(key, value);
 		}
 	}
@@ -342,7 +341,7 @@ public class LuaTable extends LuaValue {
 
 	@Override
 	public void rawset(LuaValue key, LuaValue value) {
-		if (!key.isinttype() || !arrayset(key.toint(), value)) {
+		if (!key.isIntExact() || !arrayset(key.toInteger(), value)) {
 			hashset(key, value);
 		}
 	}
@@ -352,9 +351,9 @@ public class LuaTable extends LuaValue {
 	 */
 	private boolean arrayset(int key, LuaValue value) {
 		if (key > 0 && key <= array.length) {
-			array[key - 1] = (value.isnil() ? null : value);
+			array[key - 1] = (value.isNil() ? null : value);
 			return true;
-		} else if (key == array.length + 1 && !value.isnil()) {
+		} else if (key == array.length + 1 && !value.isNil()) {
 			expandarray();
 			array[key - 1] = value;
 			return true;
@@ -372,7 +371,7 @@ public class LuaTable extends LuaValue {
 		for (int i = n; i < m; i++) {
 			LuaValue k = LuaInteger.valueOf(i + 1);
 			LuaValue v = hashget(k);
-			if (!v.isnil()) {
+			if (!v.isNil()) {
 				hashset(k, Constants.NIL);
 				array[i] = v;
 			}
@@ -393,11 +392,11 @@ public class LuaTable extends LuaValue {
 			return Constants.NONE;
 		}
 		LuaValue v = rawget(pos);
-		for (LuaValue r = v; !r.isnil(); ) {
+		for (LuaValue r = v; !r.isNil(); ) {
 			r = rawget(pos + 1);
 			rawset(pos++, r);
 		}
-		return v.isnil() ? Constants.NONE : v;
+		return v.isNil() ? Constants.NONE : v;
 
 	}
 
@@ -411,7 +410,7 @@ public class LuaTable extends LuaValue {
 		if (pos == 0) {
 			pos = length() + 1;
 		}
-		while (!value.isnil()) {
+		while (!value.isNil()) {
 			LuaValue v = rawget(pos);
 			rawset(pos++, value);
 			value = v;
@@ -430,10 +429,10 @@ public class LuaTable extends LuaValue {
 	public LuaValue concat(LuaState state, LuaString sep, int i, int j) {
 		Buffer sb = new Buffer();
 		if (i <= j) {
-			sb.append(get(state, i).checkstring());
+			sb.append(get(state, i).checkLuaString());
 			while (++i <= j) {
 				sb.append(sep);
-				sb.append(get(state, i).checkstring());
+				sb.append(get(state, i).checkLuaString());
 			}
 		}
 		return sb.tostring();
@@ -442,7 +441,7 @@ public class LuaTable extends LuaValue {
 	@Override
 	public LuaValue getn() {
 		for (int n = getArrayLength(); n > 0; --n) {
-			if (!rawget(n).isnil()) {
+			if (!rawget(n).isNil()) {
 				return LuaInteger.valueOf(n);
 			}
 		}
@@ -457,13 +456,13 @@ public class LuaTable extends LuaValue {
 	public int length() {
 		int a = getArrayLength();
 		int n = a + 1, m = 0;
-		while (!rawget(n).isnil()) {
+		while (!rawget(n).isNil()) {
 			m = n;
 			n += a + getHashLength() + 1;
 		}
 		while (n > m + 1) {
 			int k = (n + m) / 2;
-			if (!rawget(k).isnil()) {
+			if (!rawget(k).isNil()) {
 				m = k;
 			} else {
 				n = k;
@@ -492,8 +491,8 @@ public class LuaTable extends LuaValue {
 			}
 		}
 		for (LuaValue v : hashKeys) {
-			if (v != null && v.isinttype()) {
-				int key = v.toint();
+			if (v != null && v.isIntExact()) {
+				int key = v.toInteger();
 				if (key > n) {
 					n = key;
 				}
@@ -512,9 +511,9 @@ public class LuaTable extends LuaValue {
 		int i = 0;
 		do {
 			// find current key index
-			if (!key.isnil()) {
-				if (key.isinttype()) {
-					i = key.toint();
+			if (!key.isNil()) {
+				if (key.isIntExact()) {
+					i = key.toInteger();
 					if (i > 0 && i <= array.length) {
 						if (array[i - 1] == null) {
 							throw new LuaError("invalid key to 'next'");
@@ -559,9 +558,9 @@ public class LuaTable extends LuaValue {
 	 */
 	@Override
 	public Varargs inext(LuaValue key) {
-		int k = key.checkint() + 1;
+		int k = key.checkInteger() + 1;
 		LuaValue v = rawget(k);
-		return v.isnil() ? Constants.NONE : varargsOf(LuaInteger.valueOf(k), v);
+		return v.isNil() ? Constants.NONE : varargsOf(LuaInteger.valueOf(k), v);
 	}
 
 	/**
@@ -575,8 +574,8 @@ public class LuaTable extends LuaValue {
 		Varargs n;
 		LuaValue k = Constants.NIL;
 		LuaValue v;
-		while (!(k = ((n = next(k)).arg1())).isnil()) {
-			if (!(v = func.call(state, k, n.arg(2))).isnil()) {
+		while (!(k = ((n = next(k)).first())).isNil()) {
+			if (!(v = func.call(state, k, n.arg(2))).isNil()) {
 				return v;
 			}
 		}
@@ -593,8 +592,8 @@ public class LuaTable extends LuaValue {
 	 */
 	public LuaValue foreachi(LuaState state, LuaValue func) {
 		LuaValue v, r;
-		for (int k = 0; !(v = rawget(++k)).isnil(); ) {
-			if (!(r = func.call(state, ValueFactory.valueOf(k), v)).isnil()) {
+		for (int k = 0; !(v = rawget(++k)).isNil(); ) {
+			if (!(r = func.call(state, ValueFactory.valueOf(k), v)).isNil()) {
 				return r;
 			}
 		}
@@ -609,7 +608,7 @@ public class LuaTable extends LuaValue {
 	 * @param value value to set
 	 */
 	public void hashset(LuaValue key, LuaValue value) {
-		if (value.isnil()) {
+		if (value.isNil()) {
 			hashRemove(key);
 		} else {
 			if (hashKeys.length == 0) {
@@ -780,8 +779,8 @@ public class LuaTable extends LuaValue {
 		if (a == null || b == null) {
 			return false;
 		}
-		if (!cmpfunc.isnil()) {
-			return cmpfunc.call(state, a, b).toboolean();
+		if (!cmpfunc.isNil()) {
+			return cmpfunc.call(state, a, b).toBoolean();
 		} else {
 			return OperationHelper.lt(state, a, b);
 		}
@@ -803,7 +802,7 @@ public class LuaTable extends LuaValue {
 		LuaValue k = Constants.NIL;
 		for (int i = 0; true; i++) {
 			Varargs n = next(k);
-			if ((k = n.arg1()).isnil()) {
+			if ((k = n.first()).isNil()) {
 				return i;
 			}
 		}
@@ -820,7 +819,7 @@ public class LuaTable extends LuaValue {
 		LuaValue k = Constants.NIL;
 		while (true) {
 			Varargs n = next(k);
-			if ((k = n.arg1()).isnil()) {
+			if ((k = n.first()).isNil()) {
 				break;
 			}
 			l.add(k);

@@ -440,7 +440,7 @@ public class DebugLib extends VarArgFunction {
 
 	static Varargs _gethook(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
 		DebugState ds = getDebugState(thread);
 		return varargsOf(
 			ds.hookfunc,
@@ -450,10 +450,13 @@ public class DebugLib extends VarArgFunction {
 
 	static Varargs _sethook(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
-		LuaValue func = args.optfunction(a++, null);
-		String str = args.optjstring(a++, "");
-		int count = args.optint(a++, 0);
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		int i1 = a++;
+		LuaValue func = args.arg(i1).optFunction(null);
+		int i3 = a++;
+		String str = args.arg(i3).optjstring("");
+		int i2 = a++;
+		int count = args.arg(i2).optInteger(0);
 		boolean call = false, line = false, rtrn = false;
 		for (int i = 0; i < str.length(); i++) {
 			switch (str.charAt(i)) {
@@ -473,34 +476,35 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	private static Varargs _getfenv(Varargs args) {
-		LuaValue object = args.arg1();
+		LuaValue object = args.first();
 		LuaValue env = object.getfenv();
 		return env != null ? env : NIL;
 	}
 
 	private static Varargs _setfenv(Varargs args) {
-		LuaValue object = args.arg1();
-		LuaTable table = args.checktable(2);
+		LuaValue object = args.first();
+		LuaTable table = args.arg(2).checkTable();
 		object.setfenv(table);
 		return object;
 	}
 
 	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
 		LuaValue func = args.arg(a++);
-		String what = args.optjstring(a++, "nSluf");
+		int i1 = a++;
+		String what = args.arg(i1).optjstring("nSluf");
 
 		// find the stack info
 		DebugState ds = getDebugState(thread);
 		DebugInfo di = null;
-		if (func.isnumber()) {
-			int level = func.checkint();
+		if (func.isNumber()) {
+			int level = func.checkInteger();
 			di = level > 0 ?
 				ds.getDebugInfo(level - 1) :
 				new DebugInfo(level0func);
 		} else {
-			di = ds.findDebugInfo(func.checkfunction());
+			di = ds.findDebugInfo(func.checkFunction());
 		}
 		if (di == null) {
 			return NIL;
@@ -576,9 +580,11 @@ public class DebugLib extends VarArgFunction {
 
 	private static Varargs _getlocal(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
-		int level = args.checkint(a++);
-		int local = args.checkint(a++);
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		int i1 = a++;
+		int level = args.arg(i1).checkInteger();
+		int i = a++;
+		int local = args.arg(i).checkInteger();
 
 		DebugState ds = getDebugState(thread);
 		DebugInfo di = ds.getDebugInfo(level - 1);
@@ -593,9 +599,11 @@ public class DebugLib extends VarArgFunction {
 
 	private static Varargs _setlocal(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
-		int level = args.checkint(a++);
-		int local = args.checkint(a++);
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		int i1 = a++;
+		int level = args.arg(i1).checkInteger();
+		int i = a++;
+		int local = args.arg(i).checkInteger();
 		LuaValue value = args.arg(a++);
 
 		DebugState ds = getDebugState(thread);
@@ -618,7 +626,7 @@ public class DebugLib extends VarArgFunction {
 	private static Varargs _setmetatable(LuaState state, Varargs args) {
 		LuaValue object = args.arg(1);
 		try {
-			LuaValue mt = args.opttable(2, null);
+			LuaValue mt = args.arg(2).optTable(null);
 			switch (object.type()) {
 				case TNIL:
 					state.nilMetatable = mt;
@@ -663,8 +671,8 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	private static Varargs _getupvalue(Varargs args) {
-		LuaValue func = args.checkfunction(1);
-		int up = args.checkint(2);
+		LuaValue func = args.arg(1).checkFunction();
+		int up = args.arg(2).checkInteger();
 		if (func instanceof LuaClosure) {
 			LuaClosure c = (LuaClosure) func;
 			LuaString name = findupvalue(c, up);
@@ -676,8 +684,8 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	private static LuaValue _setupvalue(Varargs args) {
-		LuaValue func = args.checkfunction(1);
-		int up = args.checkint(2);
+		LuaValue func = args.arg(1).checkFunction();
+		int up = args.arg(2).checkInteger();
 		LuaValue value = args.arg(3);
 		if (func instanceof LuaClosure) {
 			LuaClosure c = (LuaClosure) func;
@@ -692,9 +700,11 @@ public class DebugLib extends VarArgFunction {
 
 	private static LuaValue _traceback(LuaState state, Varargs args) {
 		int a = 1;
-		LuaThread thread = args.isthread(a) ? args.checkthread(a++) : state.currentThread;
-		String message = args.optjstring(a++, null);
-		int level = args.optint(a++, 1);
+		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.currentThread;
+		int i1 = a++;
+		String message = args.arg(i1).optjstring(null);
+		int i = a++;
+		int level = args.arg(i).optInteger(1);
 		String tb = DebugLib.traceback(thread, level - 1);
 		return valueOf(message != null ? message + "\n" + tb : tb);
 	}
@@ -741,7 +751,7 @@ public class DebugLib extends VarArgFunction {
 		DebugInfo di;
 		for (int i = 0, n = ds.debugCalls; i < n; i++) {
 			di = ds.getDebugInfo(i);
-			if (di != null && di.func.isclosure()) {
+			if (di != null && di.func.isClosure()) {
 				return di.sourceline();
 			}
 		}
@@ -811,7 +821,7 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	static LuaString kname(Prototype p, int c) {
-		if (Lua.ISK(c) && p.k[Lua.INDEXK(c)].isstring()) {
+		if (Lua.ISK(c) && p.k[Lua.INDEXK(c)].isString()) {
 			return p.k[Lua.INDEXK(c)].strvalue();
 		} else {
 			return QMARK;
@@ -936,7 +946,7 @@ public class DebugLib extends VarArgFunction {
 				}
 				case Lua.OP_GETGLOBAL:
 				case Lua.OP_SETGLOBAL: {
-					if (!(pt.k[b].isstring())) return 0;
+					if (!(pt.k[b].isString())) return 0;
 					break;
 				}
 				case Lua.OP_SELF: {

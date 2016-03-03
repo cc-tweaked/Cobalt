@@ -46,32 +46,32 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public LuaNumber checknumber() {
+	public LuaNumber checkNumber() {
 		return this;
 	}
 
 	@Override
-	public LuaNumber checknumber(String errmsg) {
+	public LuaNumber checkNumber(String errmsg) {
 		return this;
 	}
 
 	@Override
-	public LuaNumber optnumber(LuaNumber defval) {
+	public LuaNumber optNumber(LuaNumber defval) {
 		return this;
 	}
 
 	@Override
-	public LuaValue tonumber() {
+	public LuaValue toNumber() {
 		return this;
 	}
 
 	@Override
-	public boolean isnumber() {
+	public boolean isNumber() {
 		return true;
 	}
 
 	@Override
-	public boolean isstring() {
+	public boolean isString() {
 		return true;
 	}
 
@@ -101,7 +101,7 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public double checkarith() {
-		return todouble();
+	public double checkArith() {
+		return toDouble();
 	}
 }

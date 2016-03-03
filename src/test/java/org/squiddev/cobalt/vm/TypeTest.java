@@ -24,7 +24,6 @@
 package org.squiddev.cobalt.vm;
 
 import org.junit.Test;
-
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.ZeroArgFunction;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -79,451 +78,367 @@ public class TypeTest {
 
 	@Test
 	public void testIsBoolean() {
-		assertEquals(false, somenil.isboolean());
-		assertEquals(true, sometrue.isboolean());
-		assertEquals(true, somefalse.isboolean());
-		assertEquals(false, zero.isboolean());
-		assertEquals(false, intint.isboolean());
-		assertEquals(false, longdouble.isboolean());
-		assertEquals(false, doubledouble.isboolean());
-		assertEquals(false, stringstring.isboolean());
-		assertEquals(false, stringint.isboolean());
-		assertEquals(false, stringlong.isboolean());
-		assertEquals(false, stringdouble.isboolean());
-		assertEquals(false, thread.isboolean());
-		assertEquals(false, table.isboolean());
-		assertEquals(false, userdataobj.isboolean());
-		assertEquals(false, userdatacls.isboolean());
-		assertEquals(false, somefunc.isboolean());
-		assertEquals(false, someclosure.isboolean());
+		assertEquals(false, somenil.isBoolean());
+		assertEquals(true, sometrue.isBoolean());
+		assertEquals(true, somefalse.isBoolean());
+		assertEquals(false, zero.isBoolean());
+		assertEquals(false, intint.isBoolean());
+		assertEquals(false, longdouble.isBoolean());
+		assertEquals(false, doubledouble.isBoolean());
+		assertEquals(false, stringstring.isBoolean());
+		assertEquals(false, stringint.isBoolean());
+		assertEquals(false, stringlong.isBoolean());
+		assertEquals(false, stringdouble.isBoolean());
+		assertEquals(false, thread.isBoolean());
+		assertEquals(false, table.isBoolean());
+		assertEquals(false, userdataobj.isBoolean());
+		assertEquals(false, userdatacls.isBoolean());
+		assertEquals(false, somefunc.isBoolean());
+		assertEquals(false, someclosure.isBoolean());
 	}
 
 	@Test
 	public void testIsClosure() {
-		assertEquals(false, somenil.isclosure());
-		assertEquals(false, sometrue.isclosure());
-		assertEquals(false, somefalse.isclosure());
-		assertEquals(false, zero.isclosure());
-		assertEquals(false, intint.isclosure());
-		assertEquals(false, longdouble.isclosure());
-		assertEquals(false, doubledouble.isclosure());
-		assertEquals(false, stringstring.isclosure());
-		assertEquals(false, stringint.isclosure());
-		assertEquals(false, stringlong.isclosure());
-		assertEquals(false, stringdouble.isclosure());
-		assertEquals(false, thread.isclosure());
-		assertEquals(false, table.isclosure());
-		assertEquals(false, userdataobj.isclosure());
-		assertEquals(false, userdatacls.isclosure());
-		assertEquals(false, somefunc.isclosure());
-		assertEquals(true, someclosure.isclosure());
+		assertEquals(false, somenil.isClosure());
+		assertEquals(false, sometrue.isClosure());
+		assertEquals(false, somefalse.isClosure());
+		assertEquals(false, zero.isClosure());
+		assertEquals(false, intint.isClosure());
+		assertEquals(false, longdouble.isClosure());
+		assertEquals(false, doubledouble.isClosure());
+		assertEquals(false, stringstring.isClosure());
+		assertEquals(false, stringint.isClosure());
+		assertEquals(false, stringlong.isClosure());
+		assertEquals(false, stringdouble.isClosure());
+		assertEquals(false, thread.isClosure());
+		assertEquals(false, table.isClosure());
+		assertEquals(false, userdataobj.isClosure());
+		assertEquals(false, userdatacls.isClosure());
+		assertEquals(false, somefunc.isClosure());
+		assertEquals(true, someclosure.isClosure());
 	}
 
 	@Test
 	public void testIsFunction() {
-		assertEquals(false, somenil.isfunction());
-		assertEquals(false, sometrue.isfunction());
-		assertEquals(false, somefalse.isfunction());
-		assertEquals(false, zero.isfunction());
-		assertEquals(false, intint.isfunction());
-		assertEquals(false, longdouble.isfunction());
-		assertEquals(false, doubledouble.isfunction());
-		assertEquals(false, stringstring.isfunction());
-		assertEquals(false, stringint.isfunction());
-		assertEquals(false, stringlong.isfunction());
-		assertEquals(false, stringdouble.isfunction());
-		assertEquals(false, thread.isfunction());
-		assertEquals(false, table.isfunction());
-		assertEquals(false, userdataobj.isfunction());
-		assertEquals(false, userdatacls.isfunction());
-		assertEquals(true, somefunc.isfunction());
-		assertEquals(true, someclosure.isfunction());
+		assertEquals(false, somenil.isFunction());
+		assertEquals(false, sometrue.isFunction());
+		assertEquals(false, somefalse.isFunction());
+		assertEquals(false, zero.isFunction());
+		assertEquals(false, intint.isFunction());
+		assertEquals(false, longdouble.isFunction());
+		assertEquals(false, doubledouble.isFunction());
+		assertEquals(false, stringstring.isFunction());
+		assertEquals(false, stringint.isFunction());
+		assertEquals(false, stringlong.isFunction());
+		assertEquals(false, stringdouble.isFunction());
+		assertEquals(false, thread.isFunction());
+		assertEquals(false, table.isFunction());
+		assertEquals(false, userdataobj.isFunction());
+		assertEquals(false, userdatacls.isFunction());
+		assertEquals(true, somefunc.isFunction());
+		assertEquals(true, someclosure.isFunction());
 	}
 
 	@Test
 	public void testIsInt() {
-		assertEquals(false, somenil.isint());
-		assertEquals(false, sometrue.isint());
-		assertEquals(false, somefalse.isint());
-		assertEquals(true, zero.isint());
-		assertEquals(true, intint.isint());
-		assertEquals(false, longdouble.isint());
-		assertEquals(false, doubledouble.isint());
-		assertEquals(false, stringstring.isint());
-		assertEquals(true, stringint.isint());
-		assertEquals(false, stringdouble.isint());
-		assertEquals(false, thread.isint());
-		assertEquals(false, table.isint());
-		assertEquals(false, userdataobj.isint());
-		assertEquals(false, userdatacls.isint());
-		assertEquals(false, somefunc.isint());
-		assertEquals(false, someclosure.isint());
+		assertEquals(false, somenil.isInteger());
+		assertEquals(false, sometrue.isInteger());
+		assertEquals(false, somefalse.isInteger());
+		assertEquals(true, zero.isInteger());
+		assertEquals(true, intint.isInteger());
+		assertEquals(false, longdouble.isInteger());
+		assertEquals(false, doubledouble.isInteger());
+		assertEquals(false, stringstring.isInteger());
+		assertEquals(true, stringint.isInteger());
+		assertEquals(false, stringdouble.isInteger());
+		assertEquals(false, thread.isInteger());
+		assertEquals(false, table.isInteger());
+		assertEquals(false, userdataobj.isInteger());
+		assertEquals(false, userdatacls.isInteger());
+		assertEquals(false, somefunc.isInteger());
+		assertEquals(false, someclosure.isInteger());
 	}
 
 	@Test
 	public void testIsIntType() {
-		assertEquals(false, somenil.isinttype());
-		assertEquals(false, sometrue.isinttype());
-		assertEquals(false, somefalse.isinttype());
-		assertEquals(true, zero.isinttype());
-		assertEquals(true, intint.isinttype());
-		assertEquals(false, longdouble.isinttype());
-		assertEquals(false, doubledouble.isinttype());
-		assertEquals(false, stringstring.isinttype());
-		assertEquals(false, stringint.isinttype());
-		assertEquals(false, stringlong.isinttype());
-		assertEquals(false, stringdouble.isinttype());
-		assertEquals(false, thread.isinttype());
-		assertEquals(false, table.isinttype());
-		assertEquals(false, userdataobj.isinttype());
-		assertEquals(false, userdatacls.isinttype());
-		assertEquals(false, somefunc.isinttype());
-		assertEquals(false, someclosure.isinttype());
+		assertEquals(false, somenil.isIntExact());
+		assertEquals(false, sometrue.isIntExact());
+		assertEquals(false, somefalse.isIntExact());
+		assertEquals(true, zero.isIntExact());
+		assertEquals(true, intint.isIntExact());
+		assertEquals(false, longdouble.isIntExact());
+		assertEquals(false, doubledouble.isIntExact());
+		assertEquals(false, stringstring.isIntExact());
+		assertEquals(false, stringint.isIntExact());
+		assertEquals(false, stringlong.isIntExact());
+		assertEquals(false, stringdouble.isIntExact());
+		assertEquals(false, thread.isIntExact());
+		assertEquals(false, table.isIntExact());
+		assertEquals(false, userdataobj.isIntExact());
+		assertEquals(false, userdatacls.isIntExact());
+		assertEquals(false, somefunc.isIntExact());
+		assertEquals(false, someclosure.isIntExact());
 	}
 
 	@Test
 	public void testIsLong() {
-		assertEquals(false, somenil.islong());
-		assertEquals(false, sometrue.islong());
-		assertEquals(false, somefalse.islong());
-		assertEquals(true, intint.isint());
-		assertEquals(true, longdouble.islong());
-		assertEquals(false, doubledouble.islong());
-		assertEquals(false, stringstring.islong());
-		assertEquals(true, stringint.islong());
-		assertEquals(true, stringlong.islong());
-		assertEquals(false, stringdouble.islong());
-		assertEquals(false, thread.islong());
-		assertEquals(false, table.islong());
-		assertEquals(false, userdataobj.islong());
-		assertEquals(false, userdatacls.islong());
-		assertEquals(false, somefunc.islong());
-		assertEquals(false, someclosure.islong());
+		assertEquals(false, somenil.isLong());
+		assertEquals(false, sometrue.isLong());
+		assertEquals(false, somefalse.isLong());
+		assertEquals(true, intint.isInteger());
+		assertEquals(true, longdouble.isLong());
+		assertEquals(false, doubledouble.isLong());
+		assertEquals(false, stringstring.isLong());
+		assertEquals(true, stringint.isLong());
+		assertEquals(true, stringlong.isLong());
+		assertEquals(false, stringdouble.isLong());
+		assertEquals(false, thread.isLong());
+		assertEquals(false, table.isLong());
+		assertEquals(false, userdataobj.isLong());
+		assertEquals(false, userdatacls.isLong());
+		assertEquals(false, somefunc.isLong());
+		assertEquals(false, someclosure.isLong());
 	}
 
 	@Test
 	public void testIsNil() {
-		assertEquals(true, somenil.isnil());
-		assertEquals(false, sometrue.isnil());
-		assertEquals(false, somefalse.isnil());
-		assertEquals(false, zero.isnil());
-		assertEquals(false, intint.isnil());
-		assertEquals(false, longdouble.isnil());
-		assertEquals(false, doubledouble.isnil());
-		assertEquals(false, stringstring.isnil());
-		assertEquals(false, stringint.isnil());
-		assertEquals(false, stringlong.isnil());
-		assertEquals(false, stringdouble.isnil());
-		assertEquals(false, thread.isnil());
-		assertEquals(false, table.isnil());
-		assertEquals(false, userdataobj.isnil());
-		assertEquals(false, userdatacls.isnil());
-		assertEquals(false, somefunc.isnil());
-		assertEquals(false, someclosure.isnil());
+		assertEquals(true, somenil.isNil());
+		assertEquals(false, sometrue.isNil());
+		assertEquals(false, somefalse.isNil());
+		assertEquals(false, zero.isNil());
+		assertEquals(false, intint.isNil());
+		assertEquals(false, longdouble.isNil());
+		assertEquals(false, doubledouble.isNil());
+		assertEquals(false, stringstring.isNil());
+		assertEquals(false, stringint.isNil());
+		assertEquals(false, stringlong.isNil());
+		assertEquals(false, stringdouble.isNil());
+		assertEquals(false, thread.isNil());
+		assertEquals(false, table.isNil());
+		assertEquals(false, userdataobj.isNil());
+		assertEquals(false, userdatacls.isNil());
+		assertEquals(false, somefunc.isNil());
+		assertEquals(false, someclosure.isNil());
 	}
 
 	@Test
 	public void testIsNumber() {
-		assertEquals(false, somenil.isnumber());
-		assertEquals(false, sometrue.isnumber());
-		assertEquals(false, somefalse.isnumber());
-		assertEquals(true, zero.isnumber());
-		assertEquals(true, intint.isnumber());
-		assertEquals(true, longdouble.isnumber());
-		assertEquals(true, doubledouble.isnumber());
-		assertEquals(false, stringstring.isnumber());
-		assertEquals(true, stringint.isnumber());
-		assertEquals(true, stringlong.isnumber());
-		assertEquals(true, stringdouble.isnumber());
-		assertEquals(false, thread.isnumber());
-		assertEquals(false, table.isnumber());
-		assertEquals(false, userdataobj.isnumber());
-		assertEquals(false, userdatacls.isnumber());
-		assertEquals(false, somefunc.isnumber());
-		assertEquals(false, someclosure.isnumber());
+		assertEquals(false, somenil.isNumber());
+		assertEquals(false, sometrue.isNumber());
+		assertEquals(false, somefalse.isNumber());
+		assertEquals(true, zero.isNumber());
+		assertEquals(true, intint.isNumber());
+		assertEquals(true, longdouble.isNumber());
+		assertEquals(true, doubledouble.isNumber());
+		assertEquals(false, stringstring.isNumber());
+		assertEquals(true, stringint.isNumber());
+		assertEquals(true, stringlong.isNumber());
+		assertEquals(true, stringdouble.isNumber());
+		assertEquals(false, thread.isNumber());
+		assertEquals(false, table.isNumber());
+		assertEquals(false, userdataobj.isNumber());
+		assertEquals(false, userdatacls.isNumber());
+		assertEquals(false, somefunc.isNumber());
+		assertEquals(false, someclosure.isNumber());
 	}
 
 	@Test
 	public void testIsString() {
-		assertEquals(false, somenil.isstring());
-		assertEquals(false, sometrue.isstring());
-		assertEquals(false, somefalse.isstring());
-		assertEquals(true, zero.isstring());
-		assertEquals(true, longdouble.isstring());
-		assertEquals(true, doubledouble.isstring());
-		assertEquals(true, stringstring.isstring());
-		assertEquals(true, stringint.isstring());
-		assertEquals(true, stringlong.isstring());
-		assertEquals(true, stringdouble.isstring());
-		assertEquals(false, thread.isstring());
-		assertEquals(false, table.isstring());
-		assertEquals(false, userdataobj.isstring());
-		assertEquals(false, userdatacls.isstring());
-		assertEquals(false, somefunc.isstring());
-		assertEquals(false, someclosure.isstring());
+		assertEquals(false, somenil.isString());
+		assertEquals(false, sometrue.isString());
+		assertEquals(false, somefalse.isString());
+		assertEquals(true, zero.isString());
+		assertEquals(true, longdouble.isString());
+		assertEquals(true, doubledouble.isString());
+		assertEquals(true, stringstring.isString());
+		assertEquals(true, stringint.isString());
+		assertEquals(true, stringlong.isString());
+		assertEquals(true, stringdouble.isString());
+		assertEquals(false, thread.isString());
+		assertEquals(false, table.isString());
+		assertEquals(false, userdataobj.isString());
+		assertEquals(false, userdatacls.isString());
+		assertEquals(false, somefunc.isString());
+		assertEquals(false, someclosure.isString());
 	}
 
 	@Test
 	public void testIsThread() {
-		assertEquals(false, somenil.isthread());
-		assertEquals(false, sometrue.isthread());
-		assertEquals(false, somefalse.isthread());
-		assertEquals(false, intint.isthread());
-		assertEquals(false, longdouble.isthread());
-		assertEquals(false, doubledouble.isthread());
-		assertEquals(false, stringstring.isthread());
-		assertEquals(false, stringint.isthread());
-		assertEquals(false, stringdouble.isthread());
-		assertEquals(true, thread.isthread());
-		assertEquals(false, table.isthread());
-		assertEquals(false, userdataobj.isthread());
-		assertEquals(false, userdatacls.isthread());
-		assertEquals(false, somefunc.isthread());
-		assertEquals(false, someclosure.isthread());
+		assertEquals(false, somenil.isThread());
+		assertEquals(false, sometrue.isThread());
+		assertEquals(false, somefalse.isThread());
+		assertEquals(false, intint.isThread());
+		assertEquals(false, longdouble.isThread());
+		assertEquals(false, doubledouble.isThread());
+		assertEquals(false, stringstring.isThread());
+		assertEquals(false, stringint.isThread());
+		assertEquals(false, stringdouble.isThread());
+		assertEquals(true, thread.isThread());
+		assertEquals(false, table.isThread());
+		assertEquals(false, userdataobj.isThread());
+		assertEquals(false, userdatacls.isThread());
+		assertEquals(false, somefunc.isThread());
+		assertEquals(false, someclosure.isThread());
 	}
 
 	@Test
 	public void testIsTable() {
-		assertEquals(false, somenil.istable());
-		assertEquals(false, sometrue.istable());
-		assertEquals(false, somefalse.istable());
-		assertEquals(false, intint.istable());
-		assertEquals(false, longdouble.istable());
-		assertEquals(false, doubledouble.istable());
-		assertEquals(false, stringstring.istable());
-		assertEquals(false, stringint.istable());
-		assertEquals(false, stringdouble.istable());
-		assertEquals(false, thread.istable());
-		assertEquals(true, table.istable());
-		assertEquals(false, userdataobj.istable());
-		assertEquals(false, userdatacls.istable());
-		assertEquals(false, somefunc.istable());
-		assertEquals(false, someclosure.istable());
+		assertEquals(false, somenil.isTable());
+		assertEquals(false, sometrue.isTable());
+		assertEquals(false, somefalse.isTable());
+		assertEquals(false, intint.isTable());
+		assertEquals(false, longdouble.isTable());
+		assertEquals(false, doubledouble.isTable());
+		assertEquals(false, stringstring.isTable());
+		assertEquals(false, stringint.isTable());
+		assertEquals(false, stringdouble.isTable());
+		assertEquals(false, thread.isTable());
+		assertEquals(true, table.isTable());
+		assertEquals(false, userdataobj.isTable());
+		assertEquals(false, userdatacls.isTable());
+		assertEquals(false, somefunc.isTable());
+		assertEquals(false, someclosure.isTable());
 	}
 
 	@Test
 	public void testIsUserdata() {
-		assertEquals(false, somenil.isuserdata());
-		assertEquals(false, sometrue.isuserdata());
-		assertEquals(false, somefalse.isuserdata());
-		assertEquals(false, intint.isuserdata());
-		assertEquals(false, longdouble.isuserdata());
-		assertEquals(false, doubledouble.isuserdata());
-		assertEquals(false, stringstring.isuserdata());
-		assertEquals(false, stringint.isuserdata());
-		assertEquals(false, stringdouble.isuserdata());
-		assertEquals(false, thread.isuserdata());
-		assertEquals(false, table.isuserdata());
-		assertEquals(true, userdataobj.isuserdata());
-		assertEquals(true, userdatacls.isuserdata());
-		assertEquals(false, somefunc.isuserdata());
-		assertEquals(false, someclosure.isuserdata());
+		assertEquals(false, somenil.isUserdata());
+		assertEquals(false, sometrue.isUserdata());
+		assertEquals(false, somefalse.isUserdata());
+		assertEquals(false, intint.isUserdata());
+		assertEquals(false, longdouble.isUserdata());
+		assertEquals(false, doubledouble.isUserdata());
+		assertEquals(false, stringstring.isUserdata());
+		assertEquals(false, stringint.isUserdata());
+		assertEquals(false, stringdouble.isUserdata());
+		assertEquals(false, thread.isUserdata());
+		assertEquals(false, table.isUserdata());
+		assertEquals(true, userdataobj.isUserdata());
+		assertEquals(true, userdatacls.isUserdata());
+		assertEquals(false, somefunc.isUserdata());
+		assertEquals(false, someclosure.isUserdata());
 	}
 
 	@Test
 	public void testIsUserdataObject() {
-		assertEquals(false, somenil.isuserdata(Object.class));
-		assertEquals(false, sometrue.isuserdata(Object.class));
-		assertEquals(false, somefalse.isuserdata(Object.class));
-		assertEquals(false, longdouble.isuserdata(Object.class));
-		assertEquals(false, doubledouble.isuserdata(Object.class));
-		assertEquals(false, stringstring.isuserdata(Object.class));
-		assertEquals(false, stringint.isuserdata(Object.class));
-		assertEquals(false, stringdouble.isuserdata(Object.class));
-		assertEquals(false, thread.isuserdata(Object.class));
-		assertEquals(false, table.isuserdata(Object.class));
-		assertEquals(true, userdataobj.isuserdata(Object.class));
-		assertEquals(true, userdatacls.isuserdata(Object.class));
-		assertEquals(false, somefunc.isuserdata(Object.class));
-		assertEquals(false, someclosure.isuserdata(Object.class));
+		assertEquals(false, somenil.isUserdata(Object.class));
+		assertEquals(false, sometrue.isUserdata(Object.class));
+		assertEquals(false, somefalse.isUserdata(Object.class));
+		assertEquals(false, longdouble.isUserdata(Object.class));
+		assertEquals(false, doubledouble.isUserdata(Object.class));
+		assertEquals(false, stringstring.isUserdata(Object.class));
+		assertEquals(false, stringint.isUserdata(Object.class));
+		assertEquals(false, stringdouble.isUserdata(Object.class));
+		assertEquals(false, thread.isUserdata(Object.class));
+		assertEquals(false, table.isUserdata(Object.class));
+		assertEquals(true, userdataobj.isUserdata(Object.class));
+		assertEquals(true, userdatacls.isUserdata(Object.class));
+		assertEquals(false, somefunc.isUserdata(Object.class));
+		assertEquals(false, someclosure.isUserdata(Object.class));
 	}
 
 	@Test
 	public void testIsUserdataMyData() {
-		assertEquals(false, somenil.isuserdata(MyData.class));
-		assertEquals(false, sometrue.isuserdata(MyData.class));
-		assertEquals(false, somefalse.isuserdata(MyData.class));
-		assertEquals(false, longdouble.isuserdata(MyData.class));
-		assertEquals(false, doubledouble.isuserdata(MyData.class));
-		assertEquals(false, stringstring.isuserdata(MyData.class));
-		assertEquals(false, stringint.isuserdata(MyData.class));
-		assertEquals(false, stringdouble.isuserdata(MyData.class));
-		assertEquals(false, thread.isuserdata(MyData.class));
-		assertEquals(false, table.isuserdata(MyData.class));
-		assertEquals(false, userdataobj.isuserdata(MyData.class));
-		assertEquals(true, userdatacls.isuserdata(MyData.class));
-		assertEquals(false, somefunc.isuserdata(MyData.class));
-		assertEquals(false, someclosure.isuserdata(MyData.class));
+		assertEquals(false, somenil.isUserdata(MyData.class));
+		assertEquals(false, sometrue.isUserdata(MyData.class));
+		assertEquals(false, somefalse.isUserdata(MyData.class));
+		assertEquals(false, longdouble.isUserdata(MyData.class));
+		assertEquals(false, doubledouble.isUserdata(MyData.class));
+		assertEquals(false, stringstring.isUserdata(MyData.class));
+		assertEquals(false, stringint.isUserdata(MyData.class));
+		assertEquals(false, stringdouble.isUserdata(MyData.class));
+		assertEquals(false, thread.isUserdata(MyData.class));
+		assertEquals(false, table.isUserdata(MyData.class));
+		assertEquals(false, userdataobj.isUserdata(MyData.class));
+		assertEquals(true, userdatacls.isUserdata(MyData.class));
+		assertEquals(false, somefunc.isUserdata(MyData.class));
+		assertEquals(false, someclosure.isUserdata(MyData.class));
 	}
 
 
 	// ===================== Coerce to Java =======================
 	@Test
 	public void testToBoolean() {
-		assertEquals(false, somenil.toboolean());
-		assertEquals(true, sometrue.toboolean());
-		assertEquals(false, somefalse.toboolean());
-		assertEquals(true, zero.toboolean());
-		assertEquals(true, intint.toboolean());
-		assertEquals(true, longdouble.toboolean());
-		assertEquals(true, doubledouble.toboolean());
-		assertEquals(true, stringstring.toboolean());
-		assertEquals(true, stringint.toboolean());
-		assertEquals(true, stringlong.toboolean());
-		assertEquals(true, stringdouble.toboolean());
-		assertEquals(true, thread.toboolean());
-		assertEquals(true, table.toboolean());
-		assertEquals(true, userdataobj.toboolean());
-		assertEquals(true, userdatacls.toboolean());
-		assertEquals(true, somefunc.toboolean());
-		assertEquals(true, someclosure.toboolean());
-	}
-
-	@Test
-	public void testToByte() {
-		assertEquals((byte) 0, somenil.tobyte());
-		assertEquals((byte) 0, somefalse.tobyte());
-		assertEquals((byte) 0, sometrue.tobyte());
-		assertEquals((byte) 0, zero.tobyte());
-		assertEquals((byte) sampleint, intint.tobyte());
-		assertEquals((byte) samplelong, longdouble.tobyte());
-		assertEquals((byte) sampledouble, doubledouble.tobyte());
-		assertEquals((byte) 0, stringstring.tobyte());
-		assertEquals((byte) sampleint, stringint.tobyte());
-		assertEquals((byte) samplelong, stringlong.tobyte());
-		assertEquals((byte) sampledouble, stringdouble.tobyte());
-		assertEquals((byte) 0, thread.tobyte());
-		assertEquals((byte) 0, table.tobyte());
-		assertEquals((byte) 0, userdataobj.tobyte());
-		assertEquals((byte) 0, userdatacls.tobyte());
-		assertEquals((byte) 0, somefunc.tobyte());
-		assertEquals((byte) 0, someclosure.tobyte());
-	}
-
-	@Test
-	public void testToChar() {
-		assertEquals((char) 0, somenil.tochar());
-		assertEquals((char) 0, somefalse.tochar());
-		assertEquals((char) 0, sometrue.tochar());
-		assertEquals((char) 0, zero.tochar());
-		assertEquals((int) (char) sampleint, (int) intint.tochar());
-		assertEquals((int) (char) samplelong, (int) longdouble.tochar());
-		assertEquals((int) (char) sampledouble, (int) doubledouble.tochar());
-		assertEquals((char) 0, stringstring.tochar());
-		assertEquals((int) (char) sampleint, (int) stringint.tochar());
-		assertEquals((int) (char) samplelong, (int) stringlong.tochar());
-		assertEquals((int) (char) sampledouble, (int) stringdouble.tochar());
-		assertEquals((char) 0, thread.tochar());
-		assertEquals((char) 0, table.tochar());
-		assertEquals((char) 0, userdataobj.tochar());
-		assertEquals((char) 0, userdatacls.tochar());
-		assertEquals((char) 0, somefunc.tochar());
-		assertEquals((char) 0, someclosure.tochar());
+		assertEquals(false, somenil.toBoolean());
+		assertEquals(true, sometrue.toBoolean());
+		assertEquals(false, somefalse.toBoolean());
+		assertEquals(true, zero.toBoolean());
+		assertEquals(true, intint.toBoolean());
+		assertEquals(true, longdouble.toBoolean());
+		assertEquals(true, doubledouble.toBoolean());
+		assertEquals(true, stringstring.toBoolean());
+		assertEquals(true, stringint.toBoolean());
+		assertEquals(true, stringlong.toBoolean());
+		assertEquals(true, stringdouble.toBoolean());
+		assertEquals(true, thread.toBoolean());
+		assertEquals(true, table.toBoolean());
+		assertEquals(true, userdataobj.toBoolean());
+		assertEquals(true, userdatacls.toBoolean());
+		assertEquals(true, somefunc.toBoolean());
+		assertEquals(true, someclosure.toBoolean());
 	}
 
 	@Test
 	public void testToDouble() {
-		assertDoubleEquals(0., somenil.todouble());
-		assertDoubleEquals(0., somefalse.todouble());
-		assertDoubleEquals(0., sometrue.todouble());
-		assertDoubleEquals(0., zero.todouble());
-		assertDoubleEquals((double) sampleint, intint.todouble());
-		assertDoubleEquals((double) samplelong, longdouble.todouble());
-		assertDoubleEquals(sampledouble, doubledouble.todouble());
-		assertDoubleEquals((double) 0, stringstring.todouble());
-		assertDoubleEquals((double) sampleint, stringint.todouble());
-		assertDoubleEquals((double) samplelong, stringlong.todouble());
-		assertDoubleEquals(sampledouble, stringdouble.todouble());
-		assertDoubleEquals(0., thread.todouble());
-		assertDoubleEquals(0., table.todouble());
-		assertDoubleEquals(0., userdataobj.todouble());
-		assertDoubleEquals(0., userdatacls.todouble());
-		assertDoubleEquals(0., somefunc.todouble());
-		assertDoubleEquals(0., someclosure.todouble());
-	}
-
-	@Test
-	public void testToFloat() {
-		assertDoubleEquals(0.f, somenil.tofloat());
-		assertDoubleEquals(0.f, somefalse.tofloat());
-		assertDoubleEquals(0.f, sometrue.tofloat());
-		assertDoubleEquals(0.f, zero.tofloat());
-		assertDoubleEquals((float) sampleint, intint.tofloat());
-		assertDoubleEquals((float) samplelong, longdouble.tofloat());
-		assertDoubleEquals((float) sampledouble, doubledouble.tofloat());
-		assertDoubleEquals((float) 0, stringstring.tofloat());
-		assertDoubleEquals((float) sampleint, stringint.tofloat());
-		assertDoubleEquals((float) samplelong, stringlong.tofloat());
-		assertDoubleEquals((float) sampledouble, stringdouble.tofloat());
-		assertDoubleEquals(0.f, thread.tofloat());
-		assertDoubleEquals(0.f, table.tofloat());
-		assertDoubleEquals(0.f, userdataobj.tofloat());
-		assertDoubleEquals(0.f, userdatacls.tofloat());
-		assertDoubleEquals(0.f, somefunc.tofloat());
-		assertDoubleEquals(0.f, someclosure.tofloat());
+		assertDoubleEquals(0., somenil.toDouble());
+		assertDoubleEquals(0., somefalse.toDouble());
+		assertDoubleEquals(0., sometrue.toDouble());
+		assertDoubleEquals(0., zero.toDouble());
+		assertDoubleEquals((double) sampleint, intint.toDouble());
+		assertDoubleEquals((double) samplelong, longdouble.toDouble());
+		assertDoubleEquals(sampledouble, doubledouble.toDouble());
+		assertDoubleEquals((double) 0, stringstring.toDouble());
+		assertDoubleEquals((double) sampleint, stringint.toDouble());
+		assertDoubleEquals((double) samplelong, stringlong.toDouble());
+		assertDoubleEquals(sampledouble, stringdouble.toDouble());
+		assertDoubleEquals(0., thread.toDouble());
+		assertDoubleEquals(0., table.toDouble());
+		assertDoubleEquals(0., userdataobj.toDouble());
+		assertDoubleEquals(0., userdatacls.toDouble());
+		assertDoubleEquals(0., somefunc.toDouble());
+		assertDoubleEquals(0., someclosure.toDouble());
 	}
 
 	@Test
 	public void testToInt() {
-		assertEquals(0, somenil.toint());
-		assertEquals(0, somefalse.toint());
-		assertEquals(0, sometrue.toint());
-		assertEquals(0, zero.toint());
-		assertEquals(sampleint, intint.toint());
-		assertEquals((int) samplelong, longdouble.toint());
-		assertEquals((int) sampledouble, doubledouble.toint());
-		assertEquals(0, stringstring.toint());
-		assertEquals(sampleint, stringint.toint());
-		assertEquals((int) samplelong, stringlong.toint());
-		assertEquals((int) sampledouble, stringdouble.toint());
-		assertEquals(0, thread.toint());
-		assertEquals(0, table.toint());
-		assertEquals(0, userdataobj.toint());
-		assertEquals(0, userdatacls.toint());
-		assertEquals(0, somefunc.toint());
-		assertEquals(0, someclosure.toint());
+		assertEquals(0, somenil.toInteger());
+		assertEquals(0, somefalse.toInteger());
+		assertEquals(0, sometrue.toInteger());
+		assertEquals(0, zero.toInteger());
+		assertEquals(sampleint, intint.toInteger());
+		assertEquals((int) samplelong, longdouble.toInteger());
+		assertEquals((int) sampledouble, doubledouble.toInteger());
+		assertEquals(0, stringstring.toInteger());
+		assertEquals(sampleint, stringint.toInteger());
+		assertEquals((int) samplelong, stringlong.toInteger());
+		assertEquals((int) sampledouble, stringdouble.toInteger());
+		assertEquals(0, thread.toInteger());
+		assertEquals(0, table.toInteger());
+		assertEquals(0, userdataobj.toInteger());
+		assertEquals(0, userdatacls.toInteger());
+		assertEquals(0, somefunc.toInteger());
+		assertEquals(0, someclosure.toInteger());
 	}
 
 	@Test
 	public void testToLong() {
-		assertEquals(0L, somenil.tolong());
-		assertEquals(0L, somefalse.tolong());
-		assertEquals(0L, sometrue.tolong());
-		assertEquals(0L, zero.tolong());
-		assertEquals((long) sampleint, intint.tolong());
-		assertEquals(samplelong, longdouble.tolong());
-		assertEquals((long) sampledouble, doubledouble.tolong());
-		assertEquals((long) 0, stringstring.tolong());
-		assertEquals((long) sampleint, stringint.tolong());
-		assertEquals(samplelong, stringlong.tolong());
-		assertEquals((long) sampledouble, stringdouble.tolong());
-		assertEquals(0L, thread.tolong());
-		assertEquals(0L, table.tolong());
-		assertEquals(0L, userdataobj.tolong());
-		assertEquals(0L, userdatacls.tolong());
-		assertEquals(0L, somefunc.tolong());
-		assertEquals(0L, someclosure.tolong());
-	}
-
-	@Test
-	public void testToShort() {
-		assertEquals((short) 0, somenil.toshort());
-		assertEquals((short) 0, somefalse.toshort());
-		assertEquals((short) 0, sometrue.toshort());
-		assertEquals((short) 0, zero.toshort());
-		assertEquals((short) sampleint, intint.toshort());
-		assertEquals((short) samplelong, longdouble.toshort());
-		assertEquals((short) sampledouble, doubledouble.toshort());
-		assertEquals((short) 0, stringstring.toshort());
-		assertEquals((short) sampleint, stringint.toshort());
-		assertEquals((short) samplelong, stringlong.toshort());
-		assertEquals((short) sampledouble, stringdouble.toshort());
-		assertEquals((short) 0, thread.toshort());
-		assertEquals((short) 0, table.toshort());
-		assertEquals((short) 0, userdataobj.toshort());
-		assertEquals((short) 0, userdatacls.toshort());
-		assertEquals((short) 0, somefunc.toshort());
-		assertEquals((short) 0, someclosure.toshort());
+		assertEquals(0L, somenil.toLong());
+		assertEquals(0L, somefalse.toLong());
+		assertEquals(0L, sometrue.toLong());
+		assertEquals(0L, zero.toLong());
+		assertEquals((long) sampleint, intint.toLong());
+		assertEquals(samplelong, longdouble.toLong());
+		assertEquals((long) sampledouble, doubledouble.toLong());
+		assertEquals((long) 0, stringstring.toLong());
+		assertEquals((long) sampleint, stringint.toLong());
+		assertEquals(samplelong, stringlong.toLong());
+		assertEquals((long) sampledouble, stringdouble.toLong());
+		assertEquals(0L, thread.toLong());
+		assertEquals(0L, table.toLong());
+		assertEquals(0L, userdataobj.toLong());
+		assertEquals(0L, userdatacls.toLong());
+		assertEquals(0L, somefunc.toLong());
+		assertEquals(0L, someclosure.toLong());
 	}
 
 	@Test
@@ -549,23 +464,23 @@ public class TypeTest {
 
 	@Test
 	public void testToUserdata() {
-		assertEquals(null, somenil.touserdata());
-		assertEquals(null, somefalse.touserdata());
-		assertEquals(null, sometrue.touserdata());
-		assertEquals(null, zero.touserdata());
-		assertEquals(null, intint.touserdata());
-		assertEquals(null, longdouble.touserdata());
-		assertEquals(null, doubledouble.touserdata());
-		assertEquals(null, stringstring.touserdata());
-		assertEquals(null, stringint.touserdata());
-		assertEquals(null, stringlong.touserdata());
-		assertEquals(null, stringdouble.touserdata());
-		assertEquals(null, thread.touserdata());
-		assertEquals(null, table.touserdata());
-		assertEquals(sampleobject, userdataobj.touserdata());
-		assertEquals(sampledata, userdatacls.touserdata());
-		assertEquals(null, somefunc.touserdata());
-		assertEquals(null, someclosure.touserdata());
+		assertEquals(null, somenil.toUserdata());
+		assertEquals(null, somefalse.toUserdata());
+		assertEquals(null, sometrue.toUserdata());
+		assertEquals(null, zero.toUserdata());
+		assertEquals(null, intint.toUserdata());
+		assertEquals(null, longdouble.toUserdata());
+		assertEquals(null, doubledouble.toUserdata());
+		assertEquals(null, stringstring.toUserdata());
+		assertEquals(null, stringint.toUserdata());
+		assertEquals(null, stringlong.toUserdata());
+		assertEquals(null, stringdouble.toUserdata());
+		assertEquals(null, thread.toUserdata());
+		assertEquals(null, table.toUserdata());
+		assertEquals(sampleobject, userdataobj.toUserdata());
+		assertEquals(sampledata, userdatacls.toUserdata());
+		assertEquals(null, somefunc.toUserdata());
+		assertEquals(null, someclosure.toUserdata());
 	}
 
 
@@ -588,222 +503,222 @@ public class TypeTest {
 
 	@Test
 	public void testOptBoolean() {
-		assertEquals(true, somenil.optboolean(true));
-		assertEquals(false, somenil.optboolean(false));
-		assertEquals(true, sometrue.optboolean(false));
-		assertEquals(false, somefalse.optboolean(true));
-		throwsError(zero, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(intint, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(longdouble, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(doubledouble, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(somefunc, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(someclosure, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(stringstring, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(stringint, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(stringlong, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(stringdouble, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(thread, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(table, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(userdataobj, "optboolean", boolean.class, Boolean.FALSE);
-		throwsError(userdatacls, "optboolean", boolean.class, Boolean.FALSE);
+		assertEquals(true, somenil.optBoolean(true));
+		assertEquals(false, somenil.optBoolean(false));
+		assertEquals(true, sometrue.optBoolean(false));
+		assertEquals(false, somefalse.optBoolean(true));
+		throwsError(zero, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(intint, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(longdouble, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(doubledouble, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(somefunc, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(someclosure, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(stringstring, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(stringint, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(stringlong, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(stringdouble, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(thread, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(table, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(userdataobj, "optBoolean", boolean.class, Boolean.FALSE);
+		throwsError(userdatacls, "optBoolean", boolean.class, Boolean.FALSE);
 	}
 
 	@Test
 	public void testOptClosure() {
-		assertEquals(someclosure, somenil.optclosure(someclosure));
-		assertEquals(null, somenil.optclosure(null));
-		throwsError(sometrue, "optclosure", LuaClosure.class, someclosure);
-		throwsError(somefalse, "optclosure", LuaClosure.class, someclosure);
-		throwsError(zero, "optclosure", LuaClosure.class, someclosure);
-		throwsError(intint, "optclosure", LuaClosure.class, someclosure);
-		throwsError(longdouble, "optclosure", LuaClosure.class, someclosure);
-		throwsError(doubledouble, "optclosure", LuaClosure.class, someclosure);
-		throwsError(somefunc, "optclosure", LuaClosure.class, someclosure);
-		assertEquals(someclosure, someclosure.optclosure(someclosure));
-		assertEquals(someclosure, someclosure.optclosure(null));
-		throwsError(stringstring, "optclosure", LuaClosure.class, someclosure);
-		throwsError(stringint, "optclosure", LuaClosure.class, someclosure);
-		throwsError(stringlong, "optclosure", LuaClosure.class, someclosure);
-		throwsError(stringdouble, "optclosure", LuaClosure.class, someclosure);
-		throwsError(thread, "optclosure", LuaClosure.class, someclosure);
-		throwsError(table, "optclosure", LuaClosure.class, someclosure);
-		throwsError(userdataobj, "optclosure", LuaClosure.class, someclosure);
-		throwsError(userdatacls, "optclosure", LuaClosure.class, someclosure);
+		assertEquals(someclosure, somenil.optClosure(someclosure));
+		assertEquals(null, somenil.optClosure(null));
+		throwsError(sometrue, "optClosure", LuaClosure.class, someclosure);
+		throwsError(somefalse, "optClosure", LuaClosure.class, someclosure);
+		throwsError(zero, "optClosure", LuaClosure.class, someclosure);
+		throwsError(intint, "optClosure", LuaClosure.class, someclosure);
+		throwsError(longdouble, "optClosure", LuaClosure.class, someclosure);
+		throwsError(doubledouble, "optClosure", LuaClosure.class, someclosure);
+		throwsError(somefunc, "optClosure", LuaClosure.class, someclosure);
+		assertEquals(someclosure, someclosure.optClosure(someclosure));
+		assertEquals(someclosure, someclosure.optClosure(null));
+		throwsError(stringstring, "optClosure", LuaClosure.class, someclosure);
+		throwsError(stringint, "optClosure", LuaClosure.class, someclosure);
+		throwsError(stringlong, "optClosure", LuaClosure.class, someclosure);
+		throwsError(stringdouble, "optClosure", LuaClosure.class, someclosure);
+		throwsError(thread, "optClosure", LuaClosure.class, someclosure);
+		throwsError(table, "optClosure", LuaClosure.class, someclosure);
+		throwsError(userdataobj, "optClosure", LuaClosure.class, someclosure);
+		throwsError(userdatacls, "optClosure", LuaClosure.class, someclosure);
 	}
 
 	@Test
 	public void testOptDouble() {
-		assertDoubleEquals(33., somenil.optdouble(33.));
-		throwsError(sometrue, "optdouble", double.class, 33.);
-		throwsError(somefalse, "optdouble", double.class, 33.);
-		assertDoubleEquals(0., zero.optdouble(33.));
-		assertDoubleEquals((double) sampleint, intint.optdouble(33.));
-		assertDoubleEquals((double) samplelong, longdouble.optdouble(33.));
-		assertDoubleEquals(sampledouble, doubledouble.optdouble(33.));
-		throwsError(somefunc, "optdouble", double.class, 33.);
-		throwsError(someclosure, "optdouble", double.class, 33.);
-		throwsError(stringstring, "optdouble", double.class, 33.);
-		assertDoubleEquals((double) sampleint, stringint.optdouble(33.));
-		assertDoubleEquals((double) samplelong, stringlong.optdouble(33.));
-		assertDoubleEquals(sampledouble, stringdouble.optdouble(33.));
-		throwsError(thread, "optdouble", double.class, 33.);
-		throwsError(table, "optdouble", double.class, 33.);
-		throwsError(userdataobj, "optdouble", double.class, 33.);
-		throwsError(userdatacls, "optdouble", double.class, 33.);
+		assertDoubleEquals(33., somenil.optDouble(33.));
+		throwsError(sometrue, "optDouble", double.class, 33.);
+		throwsError(somefalse, "optDouble", double.class, 33.);
+		assertDoubleEquals(0., zero.optDouble(33.));
+		assertDoubleEquals((double) sampleint, intint.optDouble(33.));
+		assertDoubleEquals((double) samplelong, longdouble.optDouble(33.));
+		assertDoubleEquals(sampledouble, doubledouble.optDouble(33.));
+		throwsError(somefunc, "optDouble", double.class, 33.);
+		throwsError(someclosure, "optDouble", double.class, 33.);
+		throwsError(stringstring, "optDouble", double.class, 33.);
+		assertDoubleEquals((double) sampleint, stringint.optDouble(33.));
+		assertDoubleEquals((double) samplelong, stringlong.optDouble(33.));
+		assertDoubleEquals(sampledouble, stringdouble.optDouble(33.));
+		throwsError(thread, "optDouble", double.class, 33.);
+		throwsError(table, "optDouble", double.class, 33.);
+		throwsError(userdataobj, "optDouble", double.class, 33.);
+		throwsError(userdatacls, "optDouble", double.class, 33.);
 	}
 
 	@Test
 	public void testOptFunction() {
-		assertEquals(somefunc, somenil.optfunction(somefunc));
-		assertEquals(null, somenil.optfunction(null));
-		throwsError(sometrue, "optfunction", LuaFunction.class, somefunc);
-		throwsError(somefalse, "optfunction", LuaFunction.class, somefunc);
-		throwsError(zero, "optfunction", LuaFunction.class, somefunc);
-		throwsError(intint, "optfunction", LuaFunction.class, somefunc);
-		throwsError(longdouble, "optfunction", LuaFunction.class, somefunc);
-		throwsError(doubledouble, "optfunction", LuaFunction.class, somefunc);
-		assertEquals(somefunc, somefunc.optfunction(null));
-		assertEquals(someclosure, someclosure.optfunction(null));
-		assertEquals(somefunc, somefunc.optfunction(somefunc));
-		assertEquals(someclosure, someclosure.optfunction(somefunc));
-		throwsError(stringstring, "optfunction", LuaFunction.class, somefunc);
-		throwsError(stringint, "optfunction", LuaFunction.class, somefunc);
-		throwsError(stringlong, "optfunction", LuaFunction.class, somefunc);
-		throwsError(stringdouble, "optfunction", LuaFunction.class, somefunc);
-		throwsError(thread, "optfunction", LuaFunction.class, somefunc);
-		throwsError(table, "optfunction", LuaFunction.class, somefunc);
-		throwsError(userdataobj, "optfunction", LuaFunction.class, somefunc);
-		throwsError(userdatacls, "optfunction", LuaFunction.class, somefunc);
+		assertEquals(somefunc, somenil.optFunction(somefunc));
+		assertEquals(null, somenil.optFunction(null));
+		throwsError(sometrue, "optFunction", LuaFunction.class, somefunc);
+		throwsError(somefalse, "optFunction", LuaFunction.class, somefunc);
+		throwsError(zero, "optFunction", LuaFunction.class, somefunc);
+		throwsError(intint, "optFunction", LuaFunction.class, somefunc);
+		throwsError(longdouble, "optFunction", LuaFunction.class, somefunc);
+		throwsError(doubledouble, "optFunction", LuaFunction.class, somefunc);
+		assertEquals(somefunc, somefunc.optFunction(null));
+		assertEquals(someclosure, someclosure.optFunction(null));
+		assertEquals(somefunc, somefunc.optFunction(somefunc));
+		assertEquals(someclosure, someclosure.optFunction(somefunc));
+		throwsError(stringstring, "optFunction", LuaFunction.class, somefunc);
+		throwsError(stringint, "optFunction", LuaFunction.class, somefunc);
+		throwsError(stringlong, "optFunction", LuaFunction.class, somefunc);
+		throwsError(stringdouble, "optFunction", LuaFunction.class, somefunc);
+		throwsError(thread, "optFunction", LuaFunction.class, somefunc);
+		throwsError(table, "optFunction", LuaFunction.class, somefunc);
+		throwsError(userdataobj, "optFunction", LuaFunction.class, somefunc);
+		throwsError(userdatacls, "optFunction", LuaFunction.class, somefunc);
 	}
 
 	@Test
 	public void testOptInt() {
-		assertEquals(33, somenil.optint(33));
-		throwsError(sometrue, "optint", int.class, 33);
-		throwsError(somefalse, "optint", int.class, 33);
-		assertEquals(0, zero.optint(33));
-		assertEquals(sampleint, intint.optint(33));
-		assertEquals((int) samplelong, longdouble.optint(33));
-		assertEquals((int) sampledouble, doubledouble.optint(33));
-		throwsError(somefunc, "optint", int.class, 33);
-		throwsError(someclosure, "optint", int.class, 33);
-		throwsError(stringstring, "optint", int.class, 33);
-		assertEquals(sampleint, stringint.optint(33));
-		assertEquals((int) samplelong, stringlong.optint(33));
-		assertEquals((int) sampledouble, stringdouble.optint(33));
-		throwsError(thread, "optint", int.class, 33);
-		throwsError(table, "optint", int.class, 33);
-		throwsError(userdataobj, "optint", int.class, 33);
-		throwsError(userdatacls, "optint", int.class, 33);
+		assertEquals(33, somenil.optInteger(33));
+		throwsError(sometrue, "optInteger", int.class, 33);
+		throwsError(somefalse, "optInteger", int.class, 33);
+		assertEquals(0, zero.optInteger(33));
+		assertEquals(sampleint, intint.optInteger(33));
+		assertEquals((int) samplelong, longdouble.optInteger(33));
+		assertEquals((int) sampledouble, doubledouble.optInteger(33));
+		throwsError(somefunc, "optInteger", int.class, 33);
+		throwsError(someclosure, "optInteger", int.class, 33);
+		throwsError(stringstring, "optInteger", int.class, 33);
+		assertEquals(sampleint, stringint.optInteger(33));
+		assertEquals((int) samplelong, stringlong.optInteger(33));
+		assertEquals((int) sampledouble, stringdouble.optInteger(33));
+		throwsError(thread, "optInteger", int.class, 33);
+		throwsError(table, "optInteger", int.class, 33);
+		throwsError(userdataobj, "optInteger", int.class, 33);
+		throwsError(userdatacls, "optInteger", int.class, 33);
 	}
 
 	@Test
 	public void testOptInteger() {
-		assertEquals(valueOf(33), somenil.optinteger(valueOf(33)));
-		throwsError(sometrue, "optinteger", LuaInteger.class, valueOf(33));
-		throwsError(somefalse, "optinteger", LuaInteger.class, valueOf(33));
-		assertEquals(zero, zero.optinteger(valueOf(33)));
-		assertEquals(valueOf(sampleint), intint.optinteger(valueOf(33)));
-		assertEquals(valueOf((int) samplelong), longdouble.optinteger(valueOf(33)));
-		assertEquals(valueOf((int) sampledouble), doubledouble.optinteger(valueOf(33)));
-		throwsError(somefunc, "optinteger", LuaInteger.class, valueOf(33));
-		throwsError(someclosure, "optinteger", LuaInteger.class, valueOf(33));
-		throwsError(stringstring, "optinteger", LuaInteger.class, valueOf(33));
-		assertEquals(valueOf(sampleint), stringint.optinteger(valueOf(33)));
-		assertEquals(valueOf((int) samplelong), stringlong.optinteger(valueOf(33)));
-		assertEquals(valueOf((int) sampledouble), stringdouble.optinteger(valueOf(33)));
-		throwsError(thread, "optinteger", LuaInteger.class, valueOf(33));
-		throwsError(table, "optinteger", LuaInteger.class, valueOf(33));
-		throwsError(userdataobj, "optinteger", LuaInteger.class, valueOf(33));
-		throwsError(userdatacls, "optinteger", LuaInteger.class, valueOf(33));
+		assertEquals(valueOf(33), somenil.optLuaInteger(valueOf(33)));
+		throwsError(sometrue, "optLuaInteger", LuaInteger.class, valueOf(33));
+		throwsError(somefalse, "optLuaInteger", LuaInteger.class, valueOf(33));
+		assertEquals(zero, zero.optLuaInteger(valueOf(33)));
+		assertEquals(valueOf(sampleint), intint.optLuaInteger(valueOf(33)));
+		assertEquals(valueOf((int) samplelong), longdouble.optLuaInteger(valueOf(33)));
+		assertEquals(valueOf((int) sampledouble), doubledouble.optLuaInteger(valueOf(33)));
+		throwsError(somefunc, "optLuaInteger", LuaInteger.class, valueOf(33));
+		throwsError(someclosure, "optLuaInteger", LuaInteger.class, valueOf(33));
+		throwsError(stringstring, "optLuaInteger", LuaInteger.class, valueOf(33));
+		assertEquals(valueOf(sampleint), stringint.optLuaInteger(valueOf(33)));
+		assertEquals(valueOf((int) samplelong), stringlong.optLuaInteger(valueOf(33)));
+		assertEquals(valueOf((int) sampledouble), stringdouble.optLuaInteger(valueOf(33)));
+		throwsError(thread, "optLuaInteger", LuaInteger.class, valueOf(33));
+		throwsError(table, "optLuaInteger", LuaInteger.class, valueOf(33));
+		throwsError(userdataobj, "optLuaInteger", LuaInteger.class, valueOf(33));
+		throwsError(userdatacls, "optLuaInteger", LuaInteger.class, valueOf(33));
 	}
 
 	@Test
 	public void testOptLong() {
-		assertEquals(33L, somenil.optlong(33));
-		throwsError(sometrue, "optlong", long.class, (long) 33);
-		throwsError(somefalse, "optlong", long.class, (long) 33);
-		assertEquals(0L, zero.optlong(33));
-		assertEquals(sampleint, intint.optlong(33));
-		assertEquals(samplelong, longdouble.optlong(33));
-		assertEquals((long) sampledouble, doubledouble.optlong(33));
-		throwsError(somefunc, "optlong", long.class, (long) 33);
-		throwsError(someclosure, "optlong", long.class, (long) 33);
-		throwsError(stringstring, "optlong", long.class, (long) 33);
-		assertEquals(sampleint, stringint.optlong(33));
-		assertEquals(samplelong, stringlong.optlong(33));
-		assertEquals((long) sampledouble, stringdouble.optlong(33));
-		throwsError(thread, "optlong", long.class, (long) 33);
-		throwsError(table, "optlong", long.class, (long) 33);
-		throwsError(userdataobj, "optlong", long.class, (long) 33);
-		throwsError(userdatacls, "optlong", long.class, (long) 33);
+		assertEquals(33L, somenil.optLong(33));
+		throwsError(sometrue, "optLong", long.class, (long) 33);
+		throwsError(somefalse, "optLong", long.class, (long) 33);
+		assertEquals(0L, zero.optLong(33));
+		assertEquals(sampleint, intint.optLong(33));
+		assertEquals(samplelong, longdouble.optLong(33));
+		assertEquals((long) sampledouble, doubledouble.optLong(33));
+		throwsError(somefunc, "optLong", long.class, (long) 33);
+		throwsError(someclosure, "optLong", long.class, (long) 33);
+		throwsError(stringstring, "optLong", long.class, (long) 33);
+		assertEquals(sampleint, stringint.optLong(33));
+		assertEquals(samplelong, stringlong.optLong(33));
+		assertEquals((long) sampledouble, stringdouble.optLong(33));
+		throwsError(thread, "optLong", long.class, (long) 33);
+		throwsError(table, "optLong", long.class, (long) 33);
+		throwsError(userdataobj, "optLong", long.class, (long) 33);
+		throwsError(userdatacls, "optLong", long.class, (long) 33);
 	}
 
 	@Test
 	public void testOptNumber() {
-		assertEquals(valueOf(33), somenil.optnumber(valueOf(33)));
-		throwsError(sometrue, "optnumber", LuaNumber.class, valueOf(33));
-		throwsError(somefalse, "optnumber", LuaNumber.class, valueOf(33));
-		assertEquals(zero, zero.optnumber(valueOf(33)));
-		assertEquals(valueOf(sampleint), intint.optnumber(valueOf(33)));
-		assertEquals(valueOf(samplelong), longdouble.optnumber(valueOf(33)));
-		assertEquals(valueOf(sampledouble), doubledouble.optnumber(valueOf(33)));
-		throwsError(somefunc, "optnumber", LuaNumber.class, valueOf(33));
-		throwsError(someclosure, "optnumber", LuaNumber.class, valueOf(33));
-		throwsError(stringstring, "optnumber", LuaNumber.class, valueOf(33));
-		assertEquals(valueOf(sampleint), stringint.optnumber(valueOf(33)));
-		assertEquals(valueOf(samplelong), stringlong.optnumber(valueOf(33)));
-		assertEquals(valueOf(sampledouble), stringdouble.optnumber(valueOf(33)));
-		throwsError(thread, "optnumber", LuaNumber.class, valueOf(33));
-		throwsError(table, "optnumber", LuaNumber.class, valueOf(33));
-		throwsError(userdataobj, "optnumber", LuaNumber.class, valueOf(33));
-		throwsError(userdatacls, "optnumber", LuaNumber.class, valueOf(33));
+		assertEquals(valueOf(33), somenil.optNumber(valueOf(33)));
+		throwsError(sometrue, "optNumber", LuaNumber.class, valueOf(33));
+		throwsError(somefalse, "optNumber", LuaNumber.class, valueOf(33));
+		assertEquals(zero, zero.optNumber(valueOf(33)));
+		assertEquals(valueOf(sampleint), intint.optNumber(valueOf(33)));
+		assertEquals(valueOf(samplelong), longdouble.optNumber(valueOf(33)));
+		assertEquals(valueOf(sampledouble), doubledouble.optNumber(valueOf(33)));
+		throwsError(somefunc, "optNumber", LuaNumber.class, valueOf(33));
+		throwsError(someclosure, "optNumber", LuaNumber.class, valueOf(33));
+		throwsError(stringstring, "optNumber", LuaNumber.class, valueOf(33));
+		assertEquals(valueOf(sampleint), stringint.optNumber(valueOf(33)));
+		assertEquals(valueOf(samplelong), stringlong.optNumber(valueOf(33)));
+		assertEquals(valueOf(sampledouble), stringdouble.optNumber(valueOf(33)));
+		throwsError(thread, "optNumber", LuaNumber.class, valueOf(33));
+		throwsError(table, "optNumber", LuaNumber.class, valueOf(33));
+		throwsError(userdataobj, "optNumber", LuaNumber.class, valueOf(33));
+		throwsError(userdatacls, "optNumber", LuaNumber.class, valueOf(33));
 	}
 
 	@Test
 	public void testOptTable() {
-		assertEquals(table, somenil.opttable(table));
-		assertEquals(null, somenil.opttable(null));
-		throwsError(sometrue, "opttable", LuaTable.class, table);
-		throwsError(somefalse, "opttable", LuaTable.class, table);
-		throwsError(zero, "opttable", LuaTable.class, table);
-		throwsError(intint, "opttable", LuaTable.class, table);
-		throwsError(longdouble, "opttable", LuaTable.class, table);
-		throwsError(doubledouble, "opttable", LuaTable.class, table);
-		throwsError(somefunc, "opttable", LuaTable.class, table);
-		throwsError(someclosure, "opttable", LuaTable.class, table);
-		throwsError(stringstring, "opttable", LuaTable.class, table);
-		throwsError(stringint, "opttable", LuaTable.class, table);
-		throwsError(stringlong, "opttable", LuaTable.class, table);
-		throwsError(stringdouble, "opttable", LuaTable.class, table);
-		throwsError(thread, "opttable", LuaTable.class, table);
-		assertEquals(table, table.opttable(table));
-		assertEquals(table, table.opttable(null));
-		throwsError(userdataobj, "opttable", LuaTable.class, table);
-		throwsError(userdatacls, "opttable", LuaTable.class, table);
+		assertEquals(table, somenil.optTable(table));
+		assertEquals(null, somenil.optTable(null));
+		throwsError(sometrue, "optTable", LuaTable.class, table);
+		throwsError(somefalse, "optTable", LuaTable.class, table);
+		throwsError(zero, "optTable", LuaTable.class, table);
+		throwsError(intint, "optTable", LuaTable.class, table);
+		throwsError(longdouble, "optTable", LuaTable.class, table);
+		throwsError(doubledouble, "optTable", LuaTable.class, table);
+		throwsError(somefunc, "optTable", LuaTable.class, table);
+		throwsError(someclosure, "optTable", LuaTable.class, table);
+		throwsError(stringstring, "optTable", LuaTable.class, table);
+		throwsError(stringint, "optTable", LuaTable.class, table);
+		throwsError(stringlong, "optTable", LuaTable.class, table);
+		throwsError(stringdouble, "optTable", LuaTable.class, table);
+		throwsError(thread, "optTable", LuaTable.class, table);
+		assertEquals(table, table.optTable(table));
+		assertEquals(table, table.optTable(null));
+		throwsError(userdataobj, "optTable", LuaTable.class, table);
+		throwsError(userdatacls, "optTable", LuaTable.class, table);
 	}
 
 	@Test
 	public void testOptThread() {
-		assertEquals(thread, somenil.optthread(thread));
-		assertEquals(null, somenil.optthread(null));
-		throwsError(sometrue, "optthread", LuaThread.class, thread);
-		throwsError(somefalse, "optthread", LuaThread.class, thread);
-		throwsError(zero, "optthread", LuaThread.class, thread);
-		throwsError(intint, "optthread", LuaThread.class, thread);
-		throwsError(longdouble, "optthread", LuaThread.class, thread);
-		throwsError(doubledouble, "optthread", LuaThread.class, thread);
-		throwsError(somefunc, "optthread", LuaThread.class, thread);
-		throwsError(someclosure, "optthread", LuaThread.class, thread);
-		throwsError(stringstring, "optthread", LuaThread.class, thread);
-		throwsError(stringint, "optthread", LuaThread.class, thread);
-		throwsError(stringlong, "optthread", LuaThread.class, thread);
-		throwsError(stringdouble, "optthread", LuaThread.class, thread);
-		throwsError(table, "optthread", LuaThread.class, thread);
-		assertEquals(thread, thread.optthread(thread));
-		assertEquals(thread, thread.optthread(null));
-		throwsError(userdataobj, "optthread", LuaThread.class, thread);
-		throwsError(userdatacls, "optthread", LuaThread.class, thread);
+		assertEquals(thread, somenil.optThread(thread));
+		assertEquals(null, somenil.optThread(null));
+		throwsError(sometrue, "optThread", LuaThread.class, thread);
+		throwsError(somefalse, "optThread", LuaThread.class, thread);
+		throwsError(zero, "optThread", LuaThread.class, thread);
+		throwsError(intint, "optThread", LuaThread.class, thread);
+		throwsError(longdouble, "optThread", LuaThread.class, thread);
+		throwsError(doubledouble, "optThread", LuaThread.class, thread);
+		throwsError(somefunc, "optThread", LuaThread.class, thread);
+		throwsError(someclosure, "optThread", LuaThread.class, thread);
+		throwsError(stringstring, "optThread", LuaThread.class, thread);
+		throwsError(stringint, "optThread", LuaThread.class, thread);
+		throwsError(stringlong, "optThread", LuaThread.class, thread);
+		throwsError(stringdouble, "optThread", LuaThread.class, thread);
+		throwsError(table, "optThread", LuaThread.class, thread);
+		assertEquals(thread, thread.optThread(thread));
+		assertEquals(thread, thread.optThread(null));
+		throwsError(userdataobj, "optThread", LuaThread.class, thread);
+		throwsError(userdatacls, "optThread", LuaThread.class, thread);
 	}
 
 	@Test
@@ -830,53 +745,53 @@ public class TypeTest {
 
 	@Test
 	public void testOptLuaString() {
-		assertEquals(valueOf("xyz"), somenil.optstring(valueOf("xyz")));
-		assertEquals(null, somenil.optstring(null));
-		throwsError(sometrue, "optstring", LuaString.class, valueOf("xyz"));
-		throwsError(somefalse, "optstring", LuaString.class, valueOf("xyz"));
-		assertEquals(valueOf("0"), zero.optstring(valueOf("xyz")));
-		assertEquals(stringint, intint.optstring(valueOf("xyz")));
-		assertEquals(stringlong, longdouble.optstring(valueOf("xyz")));
-		assertEquals(stringdouble, doubledouble.optstring(valueOf("xyz")));
-		throwsError(somefunc, "optstring", LuaString.class, valueOf("xyz"));
-		throwsError(someclosure, "optstring", LuaString.class, valueOf("xyz"));
-		assertEquals(stringstring, stringstring.optstring(valueOf("xyz")));
-		assertEquals(stringint, stringint.optstring(valueOf("xyz")));
-		assertEquals(stringlong, stringlong.optstring(valueOf("xyz")));
-		assertEquals(stringdouble, stringdouble.optstring(valueOf("xyz")));
-		throwsError(thread, "optstring", LuaString.class, valueOf("xyz"));
-		throwsError(table, "optstring", LuaString.class, valueOf("xyz"));
-		throwsError(userdataobj, "optstring", LuaString.class, valueOf("xyz"));
-		throwsError(userdatacls, "optstring", LuaString.class, valueOf("xyz"));
+		assertEquals(valueOf("xyz"), somenil.optLuaString(valueOf("xyz")));
+		assertEquals(null, somenil.optLuaString(null));
+		throwsError(sometrue, "optLuaString", LuaString.class, valueOf("xyz"));
+		throwsError(somefalse, "optLuaString", LuaString.class, valueOf("xyz"));
+		assertEquals(valueOf("0"), zero.optLuaString(valueOf("xyz")));
+		assertEquals(stringint, intint.optLuaString(valueOf("xyz")));
+		assertEquals(stringlong, longdouble.optLuaString(valueOf("xyz")));
+		assertEquals(stringdouble, doubledouble.optLuaString(valueOf("xyz")));
+		throwsError(somefunc, "optLuaString", LuaString.class, valueOf("xyz"));
+		throwsError(someclosure, "optLuaString", LuaString.class, valueOf("xyz"));
+		assertEquals(stringstring, stringstring.optLuaString(valueOf("xyz")));
+		assertEquals(stringint, stringint.optLuaString(valueOf("xyz")));
+		assertEquals(stringlong, stringlong.optLuaString(valueOf("xyz")));
+		assertEquals(stringdouble, stringdouble.optLuaString(valueOf("xyz")));
+		throwsError(thread, "optLuaString", LuaString.class, valueOf("xyz"));
+		throwsError(table, "optLuaString", LuaString.class, valueOf("xyz"));
+		throwsError(userdataobj, "optLuaString", LuaString.class, valueOf("xyz"));
+		throwsError(userdatacls, "optLuaString", LuaString.class, valueOf("xyz"));
 	}
 
 	@Test
 	public void testOptUserdata() {
-		assertEquals(sampleobject, somenil.optuserdata(sampleobject));
-		assertEquals(sampledata, somenil.optuserdata(sampledata));
-		assertEquals(null, somenil.optuserdata(null));
-		throwsError(sometrue, "optuserdata", Object.class, sampledata);
-		throwsError(somefalse, "optuserdata", Object.class, sampledata);
-		throwsError(zero, "optuserdata", Object.class, sampledata);
-		throwsError(intint, "optuserdata", Object.class, sampledata);
-		throwsError(longdouble, "optuserdata", Object.class, sampledata);
-		throwsError(doubledouble, "optuserdata", Object.class, sampledata);
-		throwsError(somefunc, "optuserdata", Object.class, sampledata);
-		throwsError(someclosure, "optuserdata", Object.class, sampledata);
-		throwsError(stringstring, "optuserdata", Object.class, sampledata);
-		throwsError(stringint, "optuserdata", Object.class, sampledata);
-		throwsError(stringlong, "optuserdata", Object.class, sampledata);
-		throwsError(stringdouble, "optuserdata", Object.class, sampledata);
-		throwsError(table, "optuserdata", Object.class, sampledata);
-		assertEquals(sampleobject, userdataobj.optuserdata(sampledata));
-		assertEquals(sampleobject, userdataobj.optuserdata(null));
-		assertEquals(sampledata, userdatacls.optuserdata(sampleobject));
-		assertEquals(sampledata, userdatacls.optuserdata(null));
+		assertEquals(sampleobject, somenil.optUserdata(sampleobject));
+		assertEquals(sampledata, somenil.optUserdata(sampledata));
+		assertEquals(null, somenil.optUserdata(null));
+		throwsError(sometrue, "optUserdata", Object.class, sampledata);
+		throwsError(somefalse, "optUserdata", Object.class, sampledata);
+		throwsError(zero, "optUserdata", Object.class, sampledata);
+		throwsError(intint, "optUserdata", Object.class, sampledata);
+		throwsError(longdouble, "optUserdata", Object.class, sampledata);
+		throwsError(doubledouble, "optUserdata", Object.class, sampledata);
+		throwsError(somefunc, "optUserdata", Object.class, sampledata);
+		throwsError(someclosure, "optUserdata", Object.class, sampledata);
+		throwsError(stringstring, "optUserdata", Object.class, sampledata);
+		throwsError(stringint, "optUserdata", Object.class, sampledata);
+		throwsError(stringlong, "optUserdata", Object.class, sampledata);
+		throwsError(stringdouble, "optUserdata", Object.class, sampledata);
+		throwsError(table, "optUserdata", Object.class, sampledata);
+		assertEquals(sampleobject, userdataobj.optUserdata(sampledata));
+		assertEquals(sampleobject, userdataobj.optUserdata(null));
+		assertEquals(sampledata, userdatacls.optUserdata(sampleobject));
+		assertEquals(sampledata, userdatacls.optUserdata(null));
 	}
 
 	private void throwsErrorOptUserdataClass(LuaValue obj, Class arg1, Object arg2) {
 		try {
-			obj.getClass().getMethod("optuserdata", Class.class, Object.class).invoke(obj, arg1, arg2);
+			obj.getClass().getMethod("optUserdata", Class.class, Object.class).invoke(obj, arg1, arg2);
 		} catch (InvocationTargetException e) {
 			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
@@ -890,9 +805,9 @@ public class TypeTest {
 
 	@Test
 	public void testOptUserdataClass() {
-		assertEquals(sampledata, somenil.optuserdata(MyData.class, sampledata));
-		assertEquals(sampleobject, somenil.optuserdata(Object.class, sampleobject));
-		assertEquals(null, somenil.optuserdata(null));
+		assertEquals(sampledata, somenil.optUserdata(MyData.class, sampledata));
+		assertEquals(sampleobject, somenil.optUserdata(Object.class, sampleobject));
+		assertEquals(null, somenil.optUserdata(null));
 		throwsErrorOptUserdataClass(sometrue, Object.class, sampledata);
 		throwsErrorOptUserdataClass(zero, MyData.class, sampledata);
 		throwsErrorOptUserdataClass(intint, MyData.class, sampledata);
@@ -906,14 +821,14 @@ public class TypeTest {
 		throwsErrorOptUserdataClass(stringdouble, MyData.class, sampledata);
 		throwsErrorOptUserdataClass(table, MyData.class, sampledata);
 		throwsErrorOptUserdataClass(thread, MyData.class, sampledata);
-		assertEquals(sampleobject, userdataobj.optuserdata(Object.class, sampleobject));
-		assertEquals(sampleobject, userdataobj.optuserdata(null));
-		assertEquals(sampledata, userdatacls.optuserdata(MyData.class, sampledata));
-		assertEquals(sampledata, userdatacls.optuserdata(Object.class, sampleobject));
-		assertEquals(sampledata, userdatacls.optuserdata(null));
+		assertEquals(sampleobject, userdataobj.optUserdata(Object.class, sampleobject));
+		assertEquals(sampleobject, userdataobj.optUserdata(null));
+		assertEquals(sampledata, userdatacls.optUserdata(MyData.class, sampledata));
+		assertEquals(sampledata, userdatacls.optUserdata(Object.class, sampleobject));
+		assertEquals(sampledata, userdatacls.optUserdata(null));
 		// should fail due to wrong class
 		try {
-			Object o = userdataobj.optuserdata(MyData.class, sampledata);
+			Object o = userdataobj.optUserdata(MyData.class, sampledata);
 			fail("did not throw bad type error");
 			assertTrue(o instanceof MyData);
 		} catch (LuaError le) {
@@ -923,23 +838,23 @@ public class TypeTest {
 
 	@Test
 	public void testOptValue() {
-		assertEquals(zero, somenil.optvalue(zero));
-		assertEquals(stringstring, somenil.optvalue(stringstring));
-		assertEquals(sometrue, sometrue.optvalue(TRUE));
-		assertEquals(somefalse, somefalse.optvalue(TRUE));
-		assertEquals(zero, zero.optvalue(TRUE));
-		assertEquals(intint, intint.optvalue(TRUE));
-		assertEquals(longdouble, longdouble.optvalue(TRUE));
-		assertEquals(somefunc, somefunc.optvalue(TRUE));
-		assertEquals(someclosure, someclosure.optvalue(TRUE));
-		assertEquals(stringstring, stringstring.optvalue(TRUE));
-		assertEquals(stringint, stringint.optvalue(TRUE));
-		assertEquals(stringlong, stringlong.optvalue(TRUE));
-		assertEquals(stringdouble, stringdouble.optvalue(TRUE));
-		assertEquals(thread, thread.optvalue(TRUE));
-		assertEquals(table, table.optvalue(TRUE));
-		assertEquals(userdataobj, userdataobj.optvalue(TRUE));
-		assertEquals(userdatacls, userdatacls.optvalue(TRUE));
+		assertEquals(zero, somenil.optValue(zero));
+		assertEquals(stringstring, somenil.optValue(stringstring));
+		assertEquals(sometrue, sometrue.optValue(TRUE));
+		assertEquals(somefalse, somefalse.optValue(TRUE));
+		assertEquals(zero, zero.optValue(TRUE));
+		assertEquals(intint, intint.optValue(TRUE));
+		assertEquals(longdouble, longdouble.optValue(TRUE));
+		assertEquals(somefunc, somefunc.optValue(TRUE));
+		assertEquals(someclosure, someclosure.optValue(TRUE));
+		assertEquals(stringstring, stringstring.optValue(TRUE));
+		assertEquals(stringint, stringint.optValue(TRUE));
+		assertEquals(stringlong, stringlong.optValue(TRUE));
+		assertEquals(stringdouble, stringdouble.optValue(TRUE));
+		assertEquals(thread, thread.optValue(TRUE));
+		assertEquals(table, table.optValue(TRUE));
+		assertEquals(userdataobj, userdataobj.optValue(TRUE));
+		assertEquals(userdatacls, userdatacls.optValue(TRUE));
 	}
 
 
@@ -962,217 +877,217 @@ public class TypeTest {
 
 	@Test
 	public void testCheckBoolean() {
-		throwsErrorReq(somenil, "checkboolean");
-		assertEquals(true, sometrue.checkboolean());
-		assertEquals(false, somefalse.checkboolean());
-		throwsErrorReq(zero, "checkboolean");
-		throwsErrorReq(intint, "checkboolean");
-		throwsErrorReq(longdouble, "checkboolean");
-		throwsErrorReq(doubledouble, "checkboolean");
-		throwsErrorReq(somefunc, "checkboolean");
-		throwsErrorReq(someclosure, "checkboolean");
-		throwsErrorReq(stringstring, "checkboolean");
-		throwsErrorReq(stringint, "checkboolean");
-		throwsErrorReq(stringlong, "checkboolean");
-		throwsErrorReq(stringdouble, "checkboolean");
-		throwsErrorReq(thread, "checkboolean");
-		throwsErrorReq(table, "checkboolean");
-		throwsErrorReq(userdataobj, "checkboolean");
-		throwsErrorReq(userdatacls, "checkboolean");
+		throwsErrorReq(somenil, "checkBoolean");
+		assertEquals(true, sometrue.checkBoolean());
+		assertEquals(false, somefalse.checkBoolean());
+		throwsErrorReq(zero, "checkBoolean");
+		throwsErrorReq(intint, "checkBoolean");
+		throwsErrorReq(longdouble, "checkBoolean");
+		throwsErrorReq(doubledouble, "checkBoolean");
+		throwsErrorReq(somefunc, "checkBoolean");
+		throwsErrorReq(someclosure, "checkBoolean");
+		throwsErrorReq(stringstring, "checkBoolean");
+		throwsErrorReq(stringint, "checkBoolean");
+		throwsErrorReq(stringlong, "checkBoolean");
+		throwsErrorReq(stringdouble, "checkBoolean");
+		throwsErrorReq(thread, "checkBoolean");
+		throwsErrorReq(table, "checkBoolean");
+		throwsErrorReq(userdataobj, "checkBoolean");
+		throwsErrorReq(userdatacls, "checkBoolean");
 	}
 
 	@Test
 	public void testCheckClosure() {
-		throwsErrorReq(somenil, "checkclosure");
-		throwsErrorReq(sometrue, "checkclosure");
-		throwsErrorReq(somefalse, "checkclosure");
-		throwsErrorReq(zero, "checkclosure");
-		throwsErrorReq(intint, "checkclosure");
-		throwsErrorReq(longdouble, "checkclosure");
-		throwsErrorReq(doubledouble, "checkclosure");
-		throwsErrorReq(somefunc, "checkclosure");
-		assertEquals(someclosure, someclosure.checkclosure());
-		assertEquals(someclosure, someclosure.checkclosure());
-		throwsErrorReq(stringstring, "checkclosure");
-		throwsErrorReq(stringint, "checkclosure");
-		throwsErrorReq(stringlong, "checkclosure");
-		throwsErrorReq(stringdouble, "checkclosure");
-		throwsErrorReq(thread, "checkclosure");
-		throwsErrorReq(table, "checkclosure");
-		throwsErrorReq(userdataobj, "checkclosure");
-		throwsErrorReq(userdatacls, "checkclosure");
+		throwsErrorReq(somenil, "checkClosure");
+		throwsErrorReq(sometrue, "checkClosure");
+		throwsErrorReq(somefalse, "checkClosure");
+		throwsErrorReq(zero, "checkClosure");
+		throwsErrorReq(intint, "checkClosure");
+		throwsErrorReq(longdouble, "checkClosure");
+		throwsErrorReq(doubledouble, "checkClosure");
+		throwsErrorReq(somefunc, "checkClosure");
+		assertEquals(someclosure, someclosure.checkClosure());
+		assertEquals(someclosure, someclosure.checkClosure());
+		throwsErrorReq(stringstring, "checkClosure");
+		throwsErrorReq(stringint, "checkClosure");
+		throwsErrorReq(stringlong, "checkClosure");
+		throwsErrorReq(stringdouble, "checkClosure");
+		throwsErrorReq(thread, "checkClosure");
+		throwsErrorReq(table, "checkClosure");
+		throwsErrorReq(userdataobj, "checkClosure");
+		throwsErrorReq(userdatacls, "checkClosure");
 	}
 
 	@Test
 	public void testCheckDouble() {
-		throwsErrorReq(somenil, "checkdouble");
-		throwsErrorReq(sometrue, "checkdouble");
-		throwsErrorReq(somefalse, "checkdouble");
-		assertDoubleEquals(0., zero.checkdouble());
-		assertDoubleEquals((double) sampleint, intint.checkdouble());
-		assertDoubleEquals((double) samplelong, longdouble.checkdouble());
-		assertDoubleEquals(sampledouble, doubledouble.checkdouble());
-		throwsErrorReq(somefunc, "checkdouble");
-		throwsErrorReq(someclosure, "checkdouble");
-		throwsErrorReq(stringstring, "checkdouble");
-		assertDoubleEquals((double) sampleint, stringint.checkdouble());
-		assertDoubleEquals((double) samplelong, stringlong.checkdouble());
-		assertDoubleEquals(sampledouble, stringdouble.checkdouble());
-		throwsErrorReq(thread, "checkdouble");
-		throwsErrorReq(table, "checkdouble");
-		throwsErrorReq(userdataobj, "checkdouble");
-		throwsErrorReq(userdatacls, "checkdouble");
+		throwsErrorReq(somenil, "checkDouble");
+		throwsErrorReq(sometrue, "checkDouble");
+		throwsErrorReq(somefalse, "checkDouble");
+		assertDoubleEquals(0., zero.checkDouble());
+		assertDoubleEquals((double) sampleint, intint.checkDouble());
+		assertDoubleEquals((double) samplelong, longdouble.checkDouble());
+		assertDoubleEquals(sampledouble, doubledouble.checkDouble());
+		throwsErrorReq(somefunc, "checkDouble");
+		throwsErrorReq(someclosure, "checkDouble");
+		throwsErrorReq(stringstring, "checkDouble");
+		assertDoubleEquals((double) sampleint, stringint.checkDouble());
+		assertDoubleEquals((double) samplelong, stringlong.checkDouble());
+		assertDoubleEquals(sampledouble, stringdouble.checkDouble());
+		throwsErrorReq(thread, "checkDouble");
+		throwsErrorReq(table, "checkDouble");
+		throwsErrorReq(userdataobj, "checkDouble");
+		throwsErrorReq(userdatacls, "checkDouble");
 	}
 
 	@Test
 	public void testCheckFunction() {
-		throwsErrorReq(somenil, "checkfunction");
-		throwsErrorReq(sometrue, "checkfunction");
-		throwsErrorReq(somefalse, "checkfunction");
-		throwsErrorReq(zero, "checkfunction");
-		throwsErrorReq(intint, "checkfunction");
-		throwsErrorReq(longdouble, "checkfunction");
-		throwsErrorReq(doubledouble, "checkfunction");
-		assertEquals(somefunc, somefunc.checkfunction());
-		assertEquals(someclosure, someclosure.checkfunction());
-		assertEquals(somefunc, somefunc.checkfunction());
-		assertEquals(someclosure, someclosure.checkfunction());
-		throwsErrorReq(stringstring, "checkfunction");
-		throwsErrorReq(stringint, "checkfunction");
-		throwsErrorReq(stringlong, "checkfunction");
-		throwsErrorReq(stringdouble, "checkfunction");
-		throwsErrorReq(thread, "checkfunction");
-		throwsErrorReq(table, "checkfunction");
-		throwsErrorReq(userdataobj, "checkfunction");
-		throwsErrorReq(userdatacls, "checkfunction");
+		throwsErrorReq(somenil, "checkFunction");
+		throwsErrorReq(sometrue, "checkFunction");
+		throwsErrorReq(somefalse, "checkFunction");
+		throwsErrorReq(zero, "checkFunction");
+		throwsErrorReq(intint, "checkFunction");
+		throwsErrorReq(longdouble, "checkFunction");
+		throwsErrorReq(doubledouble, "checkFunction");
+		assertEquals(somefunc, somefunc.checkFunction());
+		assertEquals(someclosure, someclosure.checkFunction());
+		assertEquals(somefunc, somefunc.checkFunction());
+		assertEquals(someclosure, someclosure.checkFunction());
+		throwsErrorReq(stringstring, "checkFunction");
+		throwsErrorReq(stringint, "checkFunction");
+		throwsErrorReq(stringlong, "checkFunction");
+		throwsErrorReq(stringdouble, "checkFunction");
+		throwsErrorReq(thread, "checkFunction");
+		throwsErrorReq(table, "checkFunction");
+		throwsErrorReq(userdataobj, "checkFunction");
+		throwsErrorReq(userdatacls, "checkFunction");
 	}
 
 	@Test
 	public void testCheckInt() {
-		throwsErrorReq(somenil, "checkint");
-		throwsErrorReq(sometrue, "checkint");
-		throwsErrorReq(somefalse, "checkint");
-		assertEquals(0, zero.checkint());
-		assertEquals(sampleint, intint.checkint());
-		assertEquals((int) samplelong, longdouble.checkint());
-		assertEquals((int) sampledouble, doubledouble.checkint());
-		throwsErrorReq(somefunc, "checkint");
-		throwsErrorReq(someclosure, "checkint");
-		throwsErrorReq(stringstring, "checkint");
-		assertEquals(sampleint, stringint.checkint());
-		assertEquals((int) samplelong, stringlong.checkint());
-		assertEquals((int) sampledouble, stringdouble.checkint());
-		throwsErrorReq(thread, "checkint");
-		throwsErrorReq(table, "checkint");
-		throwsErrorReq(userdataobj, "checkint");
-		throwsErrorReq(userdatacls, "checkint");
+		throwsErrorReq(somenil, "checkInteger");
+		throwsErrorReq(sometrue, "checkInteger");
+		throwsErrorReq(somefalse, "checkInteger");
+		assertEquals(0, zero.checkInteger());
+		assertEquals(sampleint, intint.checkInteger());
+		assertEquals((int) samplelong, longdouble.checkInteger());
+		assertEquals((int) sampledouble, doubledouble.checkInteger());
+		throwsErrorReq(somefunc, "checkInteger");
+		throwsErrorReq(someclosure, "checkInteger");
+		throwsErrorReq(stringstring, "checkInteger");
+		assertEquals(sampleint, stringint.checkInteger());
+		assertEquals((int) samplelong, stringlong.checkInteger());
+		assertEquals((int) sampledouble, stringdouble.checkInteger());
+		throwsErrorReq(thread, "checkInteger");
+		throwsErrorReq(table, "checkInteger");
+		throwsErrorReq(userdataobj, "checkInteger");
+		throwsErrorReq(userdatacls, "checkInteger");
 	}
 
 	@Test
 	public void testCheckInteger() {
-		throwsErrorReq(somenil, "checkinteger");
-		throwsErrorReq(sometrue, "checkinteger");
-		throwsErrorReq(somefalse, "checkinteger");
-		assertEquals(zero, zero.checkinteger());
-		assertEquals(valueOf(sampleint), intint.checkinteger());
-		assertEquals(valueOf((int) samplelong), longdouble.checkinteger());
-		assertEquals(valueOf((int) sampledouble), doubledouble.checkinteger());
-		throwsErrorReq(somefunc, "checkinteger");
-		throwsErrorReq(someclosure, "checkinteger");
-		throwsErrorReq(stringstring, "checkinteger");
-		assertEquals(valueOf(sampleint), stringint.checkinteger());
-		assertEquals(valueOf((int) samplelong), stringlong.checkinteger());
-		assertEquals(valueOf((int) sampledouble), stringdouble.checkinteger());
-		throwsErrorReq(thread, "checkinteger");
-		throwsErrorReq(table, "checkinteger");
-		throwsErrorReq(userdataobj, "checkinteger");
-		throwsErrorReq(userdatacls, "checkinteger");
+		throwsErrorReq(somenil, "checkLuaInteger");
+		throwsErrorReq(sometrue, "checkLuaInteger");
+		throwsErrorReq(somefalse, "checkLuaInteger");
+		assertEquals(zero, zero.checkLuaInteger());
+		assertEquals(valueOf(sampleint), intint.checkLuaInteger());
+		assertEquals(valueOf((int) samplelong), longdouble.checkLuaInteger());
+		assertEquals(valueOf((int) sampledouble), doubledouble.checkLuaInteger());
+		throwsErrorReq(somefunc, "checkLuaInteger");
+		throwsErrorReq(someclosure, "checkLuaInteger");
+		throwsErrorReq(stringstring, "checkLuaInteger");
+		assertEquals(valueOf(sampleint), stringint.checkLuaInteger());
+		assertEquals(valueOf((int) samplelong), stringlong.checkLuaInteger());
+		assertEquals(valueOf((int) sampledouble), stringdouble.checkLuaInteger());
+		throwsErrorReq(thread, "checkLuaInteger");
+		throwsErrorReq(table, "checkLuaInteger");
+		throwsErrorReq(userdataobj, "checkLuaInteger");
+		throwsErrorReq(userdatacls, "checkLuaInteger");
 	}
 
 	@Test
 	public void testCheckLong() {
-		throwsErrorReq(somenil, "checklong");
-		throwsErrorReq(sometrue, "checklong");
-		throwsErrorReq(somefalse, "checklong");
-		assertEquals(0L, zero.checklong());
-		assertEquals(sampleint, intint.checklong());
-		assertEquals(samplelong, longdouble.checklong());
-		assertEquals((long) sampledouble, doubledouble.checklong());
-		throwsErrorReq(somefunc, "checklong");
-		throwsErrorReq(someclosure, "checklong");
-		throwsErrorReq(stringstring, "checklong");
-		assertEquals(sampleint, stringint.checklong());
-		assertEquals(samplelong, stringlong.checklong());
-		assertEquals((long) sampledouble, stringdouble.checklong());
-		throwsErrorReq(thread, "checklong");
-		throwsErrorReq(table, "checklong");
-		throwsErrorReq(userdataobj, "checklong");
-		throwsErrorReq(userdatacls, "checklong");
+		throwsErrorReq(somenil, "checkLong");
+		throwsErrorReq(sometrue, "checkLong");
+		throwsErrorReq(somefalse, "checkLong");
+		assertEquals(0L, zero.checkLong());
+		assertEquals(sampleint, intint.checkLong());
+		assertEquals(samplelong, longdouble.checkLong());
+		assertEquals((long) sampledouble, doubledouble.checkLong());
+		throwsErrorReq(somefunc, "checkLong");
+		throwsErrorReq(someclosure, "checkLong");
+		throwsErrorReq(stringstring, "checkLong");
+		assertEquals(sampleint, stringint.checkLong());
+		assertEquals(samplelong, stringlong.checkLong());
+		assertEquals((long) sampledouble, stringdouble.checkLong());
+		throwsErrorReq(thread, "checkLong");
+		throwsErrorReq(table, "checkLong");
+		throwsErrorReq(userdataobj, "checkLong");
+		throwsErrorReq(userdatacls, "checkLong");
 	}
 
 	@Test
 	public void testCheckNumber() {
-		throwsErrorReq(somenil, "checknumber");
-		throwsErrorReq(sometrue, "checknumber");
-		throwsErrorReq(somefalse, "checknumber");
-		assertEquals(zero, zero.checknumber());
-		assertEquals(valueOf(sampleint), intint.checknumber());
-		assertEquals(valueOf(samplelong), longdouble.checknumber());
-		assertEquals(valueOf(sampledouble), doubledouble.checknumber());
-		throwsErrorReq(somefunc, "checknumber");
-		throwsErrorReq(someclosure, "checknumber");
-		throwsErrorReq(stringstring, "checknumber");
-		assertEquals(valueOf(sampleint), stringint.checknumber());
-		assertEquals(valueOf(samplelong), stringlong.checknumber());
-		assertEquals(valueOf(sampledouble), stringdouble.checknumber());
-		throwsErrorReq(thread, "checknumber");
-		throwsErrorReq(table, "checknumber");
-		throwsErrorReq(userdataobj, "checknumber");
-		throwsErrorReq(userdatacls, "checknumber");
+		throwsErrorReq(somenil, "checkNumber");
+		throwsErrorReq(sometrue, "checkNumber");
+		throwsErrorReq(somefalse, "checkNumber");
+		assertEquals(zero, zero.checkNumber());
+		assertEquals(valueOf(sampleint), intint.checkNumber());
+		assertEquals(valueOf(samplelong), longdouble.checkNumber());
+		assertEquals(valueOf(sampledouble), doubledouble.checkNumber());
+		throwsErrorReq(somefunc, "checkNumber");
+		throwsErrorReq(someclosure, "checkNumber");
+		throwsErrorReq(stringstring, "checkNumber");
+		assertEquals(valueOf(sampleint), stringint.checkNumber());
+		assertEquals(valueOf(samplelong), stringlong.checkNumber());
+		assertEquals(valueOf(sampledouble), stringdouble.checkNumber());
+		throwsErrorReq(thread, "checkNumber");
+		throwsErrorReq(table, "checkNumber");
+		throwsErrorReq(userdataobj, "checkNumber");
+		throwsErrorReq(userdatacls, "checkNumber");
 	}
 
 	@Test
 	public void testCheckTable() {
-		throwsErrorReq(somenil, "checktable");
-		throwsErrorReq(sometrue, "checktable");
-		throwsErrorReq(somefalse, "checktable");
-		throwsErrorReq(zero, "checktable");
-		throwsErrorReq(intint, "checktable");
-		throwsErrorReq(longdouble, "checktable");
-		throwsErrorReq(doubledouble, "checktable");
-		throwsErrorReq(somefunc, "checktable");
-		throwsErrorReq(someclosure, "checktable");
-		throwsErrorReq(stringstring, "checktable");
-		throwsErrorReq(stringint, "checktable");
-		throwsErrorReq(stringlong, "checktable");
-		throwsErrorReq(stringdouble, "checktable");
-		throwsErrorReq(thread, "checktable");
-		assertEquals(table, table.checktable());
-		assertEquals(table, table.checktable());
-		throwsErrorReq(userdataobj, "checktable");
-		throwsErrorReq(userdatacls, "checktable");
+		throwsErrorReq(somenil, "checkTable");
+		throwsErrorReq(sometrue, "checkTable");
+		throwsErrorReq(somefalse, "checkTable");
+		throwsErrorReq(zero, "checkTable");
+		throwsErrorReq(intint, "checkTable");
+		throwsErrorReq(longdouble, "checkTable");
+		throwsErrorReq(doubledouble, "checkTable");
+		throwsErrorReq(somefunc, "checkTable");
+		throwsErrorReq(someclosure, "checkTable");
+		throwsErrorReq(stringstring, "checkTable");
+		throwsErrorReq(stringint, "checkTable");
+		throwsErrorReq(stringlong, "checkTable");
+		throwsErrorReq(stringdouble, "checkTable");
+		throwsErrorReq(thread, "checkTable");
+		assertEquals(table, table.checkTable());
+		assertEquals(table, table.checkTable());
+		throwsErrorReq(userdataobj, "checkTable");
+		throwsErrorReq(userdatacls, "checkTable");
 	}
 
 	@Test
 	public void testCheckThread() {
-		throwsErrorReq(somenil, "checkthread");
-		throwsErrorReq(sometrue, "checkthread");
-		throwsErrorReq(somefalse, "checkthread");
-		throwsErrorReq(zero, "checkthread");
-		throwsErrorReq(intint, "checkthread");
-		throwsErrorReq(longdouble, "checkthread");
-		throwsErrorReq(doubledouble, "checkthread");
-		throwsErrorReq(somefunc, "checkthread");
-		throwsErrorReq(someclosure, "checkthread");
-		throwsErrorReq(stringstring, "checkthread");
-		throwsErrorReq(stringint, "checkthread");
-		throwsErrorReq(stringlong, "checkthread");
-		throwsErrorReq(stringdouble, "checkthread");
-		throwsErrorReq(table, "checkthread");
-		assertEquals(thread, thread.checkthread());
-		assertEquals(thread, thread.checkthread());
-		throwsErrorReq(userdataobj, "checkthread");
-		throwsErrorReq(userdatacls, "checkthread");
+		throwsErrorReq(somenil, "checkThread");
+		throwsErrorReq(sometrue, "checkThread");
+		throwsErrorReq(somefalse, "checkThread");
+		throwsErrorReq(zero, "checkThread");
+		throwsErrorReq(intint, "checkThread");
+		throwsErrorReq(longdouble, "checkThread");
+		throwsErrorReq(doubledouble, "checkThread");
+		throwsErrorReq(somefunc, "checkThread");
+		throwsErrorReq(someclosure, "checkThread");
+		throwsErrorReq(stringstring, "checkThread");
+		throwsErrorReq(stringint, "checkThread");
+		throwsErrorReq(stringlong, "checkThread");
+		throwsErrorReq(stringdouble, "checkThread");
+		throwsErrorReq(table, "checkThread");
+		assertEquals(thread, thread.checkThread());
+		assertEquals(thread, thread.checkThread());
+		throwsErrorReq(userdataobj, "checkThread");
+		throwsErrorReq(userdatacls, "checkThread");
 	}
 
 	@Test
@@ -1198,50 +1113,50 @@ public class TypeTest {
 
 	@Test
 	public void testCheckLuaString() {
-		throwsErrorReq(somenil, "checkstring");
-		throwsErrorReq(sometrue, "checkstring");
-		throwsErrorReq(somefalse, "checkstring");
-		assertEquals(valueOf("0"), zero.checkstring());
-		assertEquals(stringint, intint.checkstring());
-		assertEquals(stringlong, longdouble.checkstring());
-		assertEquals(stringdouble, doubledouble.checkstring());
-		throwsErrorReq(somefunc, "checkstring");
-		throwsErrorReq(someclosure, "checkstring");
-		assertEquals(stringstring, stringstring.checkstring());
-		assertEquals(stringint, stringint.checkstring());
-		assertEquals(stringlong, stringlong.checkstring());
-		assertEquals(stringdouble, stringdouble.checkstring());
-		throwsErrorReq(thread, "checkstring");
-		throwsErrorReq(table, "checkstring");
-		throwsErrorReq(userdataobj, "checkstring");
-		throwsErrorReq(userdatacls, "checkstring");
+		throwsErrorReq(somenil, "checkLuaString");
+		throwsErrorReq(sometrue, "checkLuaString");
+		throwsErrorReq(somefalse, "checkLuaString");
+		assertEquals(valueOf("0"), zero.checkLuaString());
+		assertEquals(stringint, intint.checkLuaString());
+		assertEquals(stringlong, longdouble.checkLuaString());
+		assertEquals(stringdouble, doubledouble.checkLuaString());
+		throwsErrorReq(somefunc, "checkLuaString");
+		throwsErrorReq(someclosure, "checkLuaString");
+		assertEquals(stringstring, stringstring.checkLuaString());
+		assertEquals(stringint, stringint.checkLuaString());
+		assertEquals(stringlong, stringlong.checkLuaString());
+		assertEquals(stringdouble, stringdouble.checkLuaString());
+		throwsErrorReq(thread, "checkLuaString");
+		throwsErrorReq(table, "checkLuaString");
+		throwsErrorReq(userdataobj, "checkLuaString");
+		throwsErrorReq(userdatacls, "checkLuaString");
 	}
 
 	@Test
 	public void testCheckUserdata() {
-		throwsErrorReq(somenil, "checkuserdata");
-		throwsErrorReq(sometrue, "checkuserdata");
-		throwsErrorReq(somefalse, "checkuserdata");
-		throwsErrorReq(zero, "checkuserdata");
-		throwsErrorReq(intint, "checkuserdata");
-		throwsErrorReq(longdouble, "checkuserdata");
-		throwsErrorReq(doubledouble, "checkuserdata");
-		throwsErrorReq(somefunc, "checkuserdata");
-		throwsErrorReq(someclosure, "checkuserdata");
-		throwsErrorReq(stringstring, "checkuserdata");
-		throwsErrorReq(stringint, "checkuserdata");
-		throwsErrorReq(stringlong, "checkuserdata");
-		throwsErrorReq(stringdouble, "checkuserdata");
-		throwsErrorReq(table, "checkuserdata");
-		assertEquals(sampleobject, userdataobj.checkuserdata());
-		assertEquals(sampleobject, userdataobj.checkuserdata());
-		assertEquals(sampledata, userdatacls.checkuserdata());
-		assertEquals(sampledata, userdatacls.checkuserdata());
+		throwsErrorReq(somenil, "checkUserdata");
+		throwsErrorReq(sometrue, "checkUserdata");
+		throwsErrorReq(somefalse, "checkUserdata");
+		throwsErrorReq(zero, "checkUserdata");
+		throwsErrorReq(intint, "checkUserdata");
+		throwsErrorReq(longdouble, "checkUserdata");
+		throwsErrorReq(doubledouble, "checkUserdata");
+		throwsErrorReq(somefunc, "checkUserdata");
+		throwsErrorReq(someclosure, "checkUserdata");
+		throwsErrorReq(stringstring, "checkUserdata");
+		throwsErrorReq(stringint, "checkUserdata");
+		throwsErrorReq(stringlong, "checkUserdata");
+		throwsErrorReq(stringdouble, "checkUserdata");
+		throwsErrorReq(table, "checkUserdata");
+		assertEquals(sampleobject, userdataobj.checkUserdata());
+		assertEquals(sampleobject, userdataobj.checkUserdata());
+		assertEquals(sampledata, userdatacls.checkUserdata());
+		assertEquals(sampledata, userdatacls.checkUserdata());
 	}
 
 	private void throwsErrorReqCheckUserdataClass(LuaValue obj, Class arg) {
 		try {
-			obj.getClass().getMethod("checkuserdata", Class.class).invoke(obj, arg);
+			obj.getClass().getMethod("checkUserdata", Class.class).invoke(obj, arg);
 		} catch (InvocationTargetException e) {
 			if (!(e.getTargetException() instanceof LuaError)) {
 				fail("not a LuaError: " + e.getTargetException());
@@ -1270,14 +1185,14 @@ public class TypeTest {
 		throwsErrorReqCheckUserdataClass(stringdouble, MyData.class);
 		throwsErrorReqCheckUserdataClass(table, MyData.class);
 		throwsErrorReqCheckUserdataClass(thread, MyData.class);
-		assertEquals(sampleobject, userdataobj.checkuserdata(Object.class));
-		assertEquals(sampleobject, userdataobj.checkuserdata());
-		assertEquals(sampledata, userdatacls.checkuserdata(MyData.class));
-		assertEquals(sampledata, userdatacls.checkuserdata(Object.class));
-		assertEquals(sampledata, userdatacls.checkuserdata());
+		assertEquals(sampleobject, userdataobj.checkUserdata(Object.class));
+		assertEquals(sampleobject, userdataobj.checkUserdata());
+		assertEquals(sampledata, userdatacls.checkUserdata(MyData.class));
+		assertEquals(sampledata, userdatacls.checkUserdata(Object.class));
+		assertEquals(sampledata, userdatacls.checkUserdata());
 		// should fail due to wrong class
 		try {
-			Object o = userdataobj.checkuserdata(MyData.class);
+			Object o = userdataobj.checkUserdata(MyData.class);
 			fail("did not throw bad type error");
 			assertTrue(o instanceof MyData);
 		} catch (LuaError le) {
@@ -1287,22 +1202,22 @@ public class TypeTest {
 
 	@Test
 	public void testCheckValue() {
-		throwsErrorReq(somenil, "checknotnil");
-		assertEquals(sometrue, sometrue.checknotnil());
-		assertEquals(somefalse, somefalse.checknotnil());
-		assertEquals(zero, zero.checknotnil());
-		assertEquals(intint, intint.checknotnil());
-		assertEquals(longdouble, longdouble.checknotnil());
-		assertEquals(somefunc, somefunc.checknotnil());
-		assertEquals(someclosure, someclosure.checknotnil());
-		assertEquals(stringstring, stringstring.checknotnil());
-		assertEquals(stringint, stringint.checknotnil());
-		assertEquals(stringlong, stringlong.checknotnil());
-		assertEquals(stringdouble, stringdouble.checknotnil());
-		assertEquals(thread, thread.checknotnil());
-		assertEquals(table, table.checknotnil());
-		assertEquals(userdataobj, userdataobj.checknotnil());
-		assertEquals(userdatacls, userdatacls.checknotnil());
+		throwsErrorReq(somenil, "checkNotNil");
+		assertEquals(sometrue, sometrue.checkNotNil());
+		assertEquals(somefalse, somefalse.checkNotNil());
+		assertEquals(zero, zero.checkNotNil());
+		assertEquals(intint, intint.checkNotNil());
+		assertEquals(longdouble, longdouble.checkNotNil());
+		assertEquals(somefunc, somefunc.checkNotNil());
+		assertEquals(someclosure, someclosure.checkNotNil());
+		assertEquals(stringstring, stringstring.checkNotNil());
+		assertEquals(stringint, stringint.checkNotNil());
+		assertEquals(stringlong, stringlong.checkNotNil());
+		assertEquals(stringdouble, stringdouble.checkNotNil());
+		assertEquals(thread, thread.checkNotNil());
+		assertEquals(table, table.checkNotNil());
+		assertEquals(userdataobj, userdataobj.checkNotNil());
+		assertEquals(userdatacls, userdatacls.checkNotNil());
 	}
 
 	/**

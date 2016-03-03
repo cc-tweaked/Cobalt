@@ -56,8 +56,8 @@ public class FragmentsTest {
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
 			LuaValue chunk = LuaC.instance.load(is, name, _G);
 			Varargs actual = chunk.invoke(state, NONE);
-			assertEquals(expected.narg(), actual.narg());
-			for (int i = 1; i <= actual.narg(); i++) {
+			assertEquals(expected.count(), actual.count());
+			for (int i = 1; i <= actual.count(); i++) {
 				assertEquals(expected.arg(i), actual.arg(i));
 			}
 		} catch (Exception e) {

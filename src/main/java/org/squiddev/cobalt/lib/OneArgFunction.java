@@ -23,10 +23,10 @@
  */
 package org.squiddev.cobalt.lib;
 
+import org.squiddev.cobalt.Constants;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
-import org.squiddev.cobalt.Constants;
 
 /**
  * Abstract base class for Java function implementations that take one argument and
@@ -89,6 +89,6 @@ public abstract class OneArgFunction extends LibFunction {
 
 	@Override
 	public Varargs invoke(LuaState state, Varargs varargs) {
-		return call(state, varargs.arg1());
+		return call(state, varargs.first());
 	}
 }

@@ -86,72 +86,52 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public boolean isint() {
+	public boolean isInteger() {
 		return true;
 	}
 
 	@Override
-	public boolean isinttype() {
+	public boolean isIntExact() {
 		return true;
 	}
 
 	@Override
-	public boolean islong() {
+	public boolean isLong() {
 		return true;
 	}
 
 	@Override
-	public byte tobyte() {
-		return (byte) v;
-	}
-
-	@Override
-	public char tochar() {
-		return (char) v;
-	}
-
-	@Override
-	public double todouble() {
+	public double toDouble() {
 		return v;
 	}
 
 	@Override
-	public float tofloat() {
+	public int toInteger() {
 		return v;
 	}
 
 	@Override
-	public int toint() {
+	public long toLong() {
 		return v;
 	}
 
 	@Override
-	public long tolong() {
+	public double optDouble(double defval) {
 		return v;
 	}
 
 	@Override
-	public short toshort() {
-		return (short) v;
-	}
-
-	@Override
-	public double optdouble(double defval) {
+	public int optInteger(int defval) {
 		return v;
 	}
 
 	@Override
-	public int optint(int defval) {
-		return v;
-	}
-
-	@Override
-	public LuaInteger optinteger(LuaInteger defval) {
+	public LuaInteger optLuaInteger(LuaInteger defval) {
 		return this;
 	}
 
 	@Override
-	public long optlong(long defval) {
+	public long optLong(long defval) {
 		return v;
 	}
 
@@ -166,12 +146,12 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public LuaString optstring(LuaString defval) {
+	public LuaString optLuaString(LuaString defval) {
 		return LuaString.valueOf(Integer.toString(v));
 	}
 
 	@Override
-	public LuaValue tostring() {
+	public LuaValue toLuaString() {
 		return LuaString.valueOf(Integer.toString(v));
 	}
 
@@ -181,7 +161,7 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public LuaInteger checkinteger() {
+	public LuaInteger checkLuaInteger() {
 		return this;
 	}
 
@@ -222,17 +202,17 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public int checkint() {
+	public int checkInteger() {
 		return v;
 	}
 
 	@Override
-	public long checklong() {
+	public long checkLong() {
 		return v;
 	}
 
 	@Override
-	public double checkdouble() {
+	public double checkDouble() {
 		return v;
 	}
 
@@ -242,12 +222,12 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public LuaString checkstring() {
+	public LuaString checkLuaString() {
 		return ValueFactory.valueOf(String.valueOf(v));
 	}
 
 	@Override
-	public double checkarith() {
+	public double checkArith() {
 		return v;
 	}
 }

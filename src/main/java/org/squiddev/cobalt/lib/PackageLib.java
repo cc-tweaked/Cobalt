@@ -28,7 +28,7 @@ import org.squiddev.cobalt.*;
 
 import java.io.InputStream;
 
-import static org.squiddev.cobalt.ValueFactory.*;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard package and module
@@ -117,7 +117,7 @@ public class PackageLib extends OneArgFunction {
 				case OP_REQUIRE:
 					return lib.require(state, arg);
 				case OP_SEEALL: {
-					LuaTable t = arg.checktable();
+					LuaTable t = arg.checkTable();
 					LuaValue m = t.getMetatable(state);
 					if (m == null) {
 						t.setMetatable(state, m = ValueFactory.tableOf());
@@ -210,11 +210,11 @@ public class PackageLib extends OneArgFunction {
 	 * @return {@link Constants#NONE}
 	 */
 	public Varargs module(LuaState state, Varargs args) {
-		LuaString modname = args.checkstring(1);
-		int n = args.narg();
+		LuaString modname = args.arg(1).checkLuaString();
+		int n = args.count();
 		LuaValue value = state.loadedPackages.get(state, modname);
 		LuaValue module;
-		if (!value.istable()) { /* not found? */
+		if (!value.isTable()) { /* not found? */
 
 		    /* try global variable (and create one if it does not exist) */
 			LuaValue globals = state.currentThread.getfenv();
@@ -231,7 +231,7 @@ public class PackageLib extends OneArgFunction {
 
 		/* check whether table already has a _NAME field */
 		LuaValue name = module.get(state, _NAME);
-		if (name.isnil()) {
+		if (name.isNil()) {
 			modinit(state, module, modname);
 		}
 
@@ -241,7 +241,7 @@ public class PackageLib extends OneArgFunction {
 			LuaValue result;
 			throw new LuaError("no calling function");
 		}
-		if (!f.isclosure()) {
+		if (!f.isClosure()) {
 			LuaValue result;
 			throw new LuaError("'module' not called from a Lua function");
 		}
@@ -271,11 +271,11 @@ public class PackageLib extends OneArgFunction {
 			}
 			LuaString key = fname.substring(b, e);
 			LuaValue val = table.rawget(key);
-			if (val.isnil()) { /* no such field? */
+			if (val.isNil()) { /* no such field? */
 				LuaTable field = new LuaTable(); /* new table for field */
 				table.set(state, key, field);
 				table = field;
-			} else if (!val.istable()) {  /* field has a non-table value? */
+			} else if (!val.isTable()) {  /* field has a non-table value? */
 				return null;
 			} else {
 				table = val;
@@ -323,9 +323,9 @@ public class PackageLib extends OneArgFunction {
 	 * @return The loaded value
 	 */
 	public LuaValue require(LuaState state, LuaValue arg) {
-		LuaString name = arg.checkstring();
+		LuaString name = arg.checkLuaString();
 		LuaValue loaded = state.loadedPackages.get(state, name);
-		if (loaded.toboolean()) {
+		if (loaded.toBoolean()) {
 			if (loaded == _SENTINEL) {
 				throw new LuaError("loop or previous error loading module '" + name + "'");
 			}
@@ -333,21 +333,21 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		/* else must load it; iterate over available loaders */
-		LuaTable tbl = PACKAGE.get(state, _LOADERS).checktable();
+		LuaTable tbl = PACKAGE.get(state, _LOADERS).checkTable();
 		StringBuilder sb = new StringBuilder();
 		LuaValue chunk;
 		for (int i = 1; true; i++) {
 			LuaValue loader = tbl.get(state, i);
-			if (loader.isnil()) {
+			if (loader.isNil()) {
 				throw new LuaError("module '" + name + "' not found: " + name + sb);
 			}
 
 		    /* call loader with module name as argument */
 			chunk = loader.call(state, name);
-			if (chunk.isfunction()) {
+			if (chunk.isFunction()) {
 				break;
 			}
-			if (chunk.isstring()) {
+			if (chunk.isString()) {
 				sb.append(chunk.tojstring());
 			}
 		}
@@ -355,7 +355,7 @@ public class PackageLib extends OneArgFunction {
 		// load the module using the loader
 		state.loadedPackages.set(state, name, _SENTINEL);
 		LuaValue result = chunk.call(state, name);
-		if (!result.isnil()) {
+		if (!result.isNil()) {
 			state.loadedPackages.set(state, name, result);
 		} else if ((result = state.loadedPackages.get(state, name)) == _SENTINEL) {
 			state.loadedPackages.set(state, name, result = Constants.TRUE);
@@ -364,27 +364,27 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	public static Varargs loadlib(Varargs args) {
-		args.checkstring(1);
+		args.arg(1).checkLuaString();
 		return varargsOf(Constants.NIL, ValueFactory.valueOf("dynamic libraries not enabled"), ValueFactory.valueOf("absent"));
 	}
 
 	LuaValue loader_preload(LuaState state, Varargs args) {
-		LuaString name = args.checkstring(1);
-		LuaValue preload = PACKAGE.get(state, _PRELOAD).checktable();
+		LuaString name = args.arg(1).checkLuaString();
+		LuaValue preload = PACKAGE.get(state, _PRELOAD).checkTable();
 		LuaValue val = preload.get(state, name);
-		return val.isnil() ?
+		return val.isNil() ?
 			ValueFactory.valueOf("\n\tno field package.preload['" + name + "']") :
 			val;
 	}
 
 	LuaValue loader_Lua(LuaState state, Varargs args) {
-		String name = args.checkjstring(1);
+		String name = args.arg(1).checkjstring();
 		InputStream is = null;
 
 
 		// get package path
 		LuaValue pp = PACKAGE.get(state, _PATH);
-		if (!pp.isstring()) {
+		if (!pp.isString()) {
 			return ValueFactory.valueOf("package.path is not a string");
 		}
 		String path = pp.tojstring();
@@ -413,8 +413,8 @@ public class PackageLib extends OneArgFunction {
 
 			// try loading the file
 			Varargs v = BaseLib.loadFile(state, filename);
-			if (v.arg1().isfunction()) {
-				return v.arg1();
+			if (v.first().isFunction()) {
+				return v.first();
 			}
 
 			// report error
@@ -427,7 +427,7 @@ public class PackageLib extends OneArgFunction {
 	}
 
 	LuaValue loader_Java(Varargs args) {
-		String name = args.checkjstring(1);
+		String name = args.arg(1).checkjstring();
 		String classname = toClassname(name);
 		Class c = null;
 		LuaValue v = null;

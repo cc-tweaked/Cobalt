@@ -171,7 +171,7 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public boolean isstring() {
+	public boolean isString() {
 		return true;
 	}
 
@@ -252,7 +252,7 @@ public class LuaString extends LuaValue {
 	 * Check for number in arithmetic, or throw aritherror
 	 */
 	@Override
-	public double checkarith() {
+	public double checkArith() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			throw ErrorFactory.arithError(this);
@@ -261,22 +261,22 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public int checkint() {
-		return (int) (long) checkdouble();
+	public int checkInteger() {
+		return (int) (long) checkDouble();
 	}
 
 	@Override
-	public LuaInteger checkinteger() {
-		return ValueFactory.valueOf(checkint());
+	public LuaInteger checkLuaInteger() {
+		return ValueFactory.valueOf(checkInteger());
 	}
 
 	@Override
-	public long checklong() {
-		return (long) checkdouble();
+	public long checkLong() {
+		return (long) checkDouble();
 	}
 
 	@Override
-	public double checkdouble() {
+	public double checkDouble() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			throw ErrorFactory.argError(this, "number");
@@ -285,12 +285,12 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public LuaNumber checknumber() {
-		return ValueFactory.valueOf(checkdouble());
+	public LuaNumber checkNumber() {
+		return ValueFactory.valueOf(checkDouble());
 	}
 
 	@Override
-	public LuaNumber checknumber(String msg) {
+	public LuaNumber checkNumber(String msg) {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			throw new LuaError(msg);
@@ -299,18 +299,18 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public LuaValue tonumber() {
+	public LuaValue toNumber() {
 		return tonumber(10);
 	}
 
 	@Override
-	public boolean isnumber() {
+	public boolean isNumber() {
 		double d = scannumber(10);
 		return !Double.isNaN(d);
 	}
 
 	@Override
-	public boolean isint() {
+	public boolean isInteger() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			return false;
@@ -320,7 +320,7 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public boolean islong() {
+	public boolean isLong() {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			return false;
@@ -330,73 +330,53 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public byte tobyte() {
-		return (byte) toint();
-	}
-
-	@Override
-	public char tochar() {
-		return (char) toint();
-	}
-
-	@Override
-	public double todouble() {
+	public double toDouble() {
 		double d = scannumber(10);
 		return Double.isNaN(d) ? 0 : d;
 	}
 
 	@Override
-	public float tofloat() {
-		return (float) todouble();
+	public int toInteger() {
+		return (int) toLong();
 	}
 
 	@Override
-	public int toint() {
-		return (int) tolong();
+	public long toLong() {
+		return (long) toDouble();
 	}
 
 	@Override
-	public long tolong() {
-		return (long) todouble();
+	public double optDouble(double defval) {
+		return checkNumber().checkDouble();
 	}
 
 	@Override
-	public short toshort() {
-		return (short) toint();
+	public int optInteger(int defval) {
+		return checkNumber().checkInteger();
 	}
 
 	@Override
-	public double optdouble(double defval) {
-		return checknumber().checkdouble();
+	public LuaInteger optLuaInteger(LuaInteger defval) {
+		return checkNumber().checkLuaInteger();
 	}
 
 	@Override
-	public int optint(int defval) {
-		return checknumber().checkint();
+	public long optLong(long defval) {
+		return checkNumber().checkLong();
 	}
 
 	@Override
-	public LuaInteger optinteger(LuaInteger defval) {
-		return checknumber().checkinteger();
+	public LuaNumber optNumber(LuaNumber defval) {
+		return checkNumber().checkNumber();
 	}
 
 	@Override
-	public long optlong(long defval) {
-		return checknumber().checklong();
-	}
-
-	@Override
-	public LuaNumber optnumber(LuaNumber defval) {
-		return checknumber().checknumber();
-	}
-
-	@Override
-	public LuaString optstring(LuaString defval) {
+	public LuaString optLuaString(LuaString defval) {
 		return this;
 	}
 
 	@Override
-	public LuaValue tostring() {
+	public LuaValue toLuaString() {
 		return this;
 	}
 
@@ -507,7 +487,7 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public LuaString checkstring() {
+	public LuaString checkLuaString() {
 		return this;
 	}
 
@@ -721,7 +701,7 @@ public class LuaString extends LuaValue {
 	 *
 	 * @param base the base to use, such as 10
 	 * @return IntValue, DoubleValue, or NIL depending on the content of the string.
-	 * @see LuaValue#tonumber()
+	 * @see LuaValue#toNumber()
 	 */
 	public LuaValue tonumber(int base) {
 		double d = scannumber(base);

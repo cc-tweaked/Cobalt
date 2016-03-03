@@ -25,7 +25,6 @@ package org.squiddev.cobalt.table;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
@@ -98,7 +97,7 @@ public abstract class WeakTableTest {
 			// check that table can be used to get elements
 			assertEquals(tableValue, t.get(state, "table"));
 			assertEquals(stringValue, t.get(state, "string"));
-			assertEquals(obj, t.get(state, "userdata").checkuserdata());
+			assertEquals(obj, t.get(state, "userdata").checkUserdata());
 
 			// nothing should be collected, since we have strong references here
 			collectGarbage();
@@ -106,7 +105,7 @@ public abstract class WeakTableTest {
 			// check that elements are still there
 			assertEquals(tableValue, t.get(state, "table"));
 			assertEquals(stringValue, t.get(state, "string"));
-			assertEquals(obj, t.get(state, "userdata").checkuserdata());
+			assertEquals(obj, t.get(state, "userdata").checkUserdata());
 
 			// drop our strong references
 			obj = null;
@@ -119,7 +118,7 @@ public abstract class WeakTableTest {
 			// check that they are dropped
 			assertEquals(NIL, t.get(state, "table"));
 			assertEquals(NIL, t.get(state, "userdata"));
-			assertFalse("strings should not be in weak references", t.get(state, "string").isnil());
+			assertFalse("strings should not be in weak references", t.get(state, "string").isNil());
 		}
 	}
 
@@ -181,8 +180,8 @@ public abstract class WeakTableTest {
 
 			// table should have 2 entries
 			int size = 0;
-			for (LuaValue k = t.next(NIL).arg1(); !k.isnil();
-			     k = t.next(k).arg1()) {
+			for (LuaValue k = t.next(NIL).first(); !k.isNil();
+			     k = t.next(k).first()) {
 				size++;
 			}
 			assertEquals(2, size);
@@ -266,9 +265,9 @@ public abstract class WeakTableTest {
 
 			// table should have 3 entries
 			int size = 0;
-			for (LuaValue k = t.next(NIL).arg1();
-			     !k.isnil() && size < 1000;
-			     k = t.next(k).arg1()) {
+			for (LuaValue k = t.next(NIL).first();
+			     !k.isNil() && size < 1000;
+			     k = t.next(k).first()) {
 				size++;
 			}
 			assertEquals(3, size);

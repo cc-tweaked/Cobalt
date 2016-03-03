@@ -23,12 +23,8 @@
  */
 package org.squiddev.cobalt.lib;
 
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.IOException;
 
@@ -96,33 +92,34 @@ public class OsLib extends VarArgFunction {
 				case CLOCK:
 					return ValueFactory.valueOf(clock());
 				case DATE: {
-					String s = args.optjstring(1, null);
-					double t = args.optdouble(2, -1);
+					String s = args.arg(1).optjstring(null);
+					double defval = -1;
+					double t = args.arg(2).optDouble(defval);
 					return ValueFactory.valueOf(date(s, t == -1 ? System.currentTimeMillis() / 1000. : t));
 				}
 				case DIFFTIME:
-					return ValueFactory.valueOf(difftime(args.checkdouble(1), args.checkdouble(2)));
+					return ValueFactory.valueOf(difftime(args.arg(1).checkDouble(), args.arg(2).checkDouble()));
 				case EXECUTE:
-					return valueOf(state.resourceManipulator.execute(args.optjstring(1, null)));
+					return valueOf(state.resourceManipulator.execute(args.arg(1).optjstring(null)));
 				case EXIT:
-					exit(args.optint(1, 0));
+					exit(args.arg(1).optInteger(0));
 					return Constants.NONE;
 				case GETENV: {
-					final String val = getenv(args.checkjstring(1));
+					final String val = getenv(args.arg(1).checkjstring());
 					return val != null ? ValueFactory.valueOf(val) : Constants.NIL;
 				}
 				case REMOVE:
-					state.resourceManipulator.remove(args.checkjstring(1));
+					state.resourceManipulator.remove(args.arg(1).checkjstring());
 					return Constants.TRUE;
 				case RENAME:
-					state.resourceManipulator.rename(args.checkjstring(1), args.checkjstring(2));
+					state.resourceManipulator.rename(args.arg(1).checkjstring(), args.arg(2).checkjstring());
 					return Constants.TRUE;
 				case SETLOCALE: {
-					String s = setlocale(args.optjstring(1, null), args.optjstring(2, "all"));
+					String s = setlocale(args.arg(1).optjstring(null), args.arg(2).optjstring("all"));
 					return s != null ? ValueFactory.valueOf(s) : Constants.NIL;
 				}
 				case TIME:
-					return ValueFactory.valueOf(time(args.arg1().isnil() ? null : args.checktable(1)));
+					return ValueFactory.valueOf(time(args.first().isNil() ? null : args.arg(1).checkTable()));
 				case TMPNAME:
 					return valueOf(state.resourceManipulator.tmpName());
 			}

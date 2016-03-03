@@ -59,17 +59,17 @@ public abstract class LuaFunction extends LuaValue {
 	}
 
 	@Override
-	public boolean isfunction() {
+	public boolean isFunction() {
 		return true;
 	}
 
 	@Override
-	public LuaValue checkfunction() {
+	public LuaValue checkFunction() {
 		return this;
 	}
 
 	@Override
-	public LuaFunction optfunction(LuaFunction defval) {
+	public LuaFunction optFunction(LuaFunction defval) {
 		return this;
 	}
 

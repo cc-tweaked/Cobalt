@@ -280,7 +280,7 @@ public class ValueFactory {
 	 * @return {@link Varargs} wrapping the supplied values.
 	 */
 	public static Varargs varargsOf(LuaValue v, Varargs r) {
-		switch (r.narg()) {
+		switch (r.count()) {
 			case 0:
 				return v;
 			default:
@@ -301,7 +301,7 @@ public class ValueFactory {
 	 * @return {@link Varargs} wrapping the supplied values.
 	 */
 	public static Varargs varargsOf(LuaValue v1, LuaValue v2, Varargs v3) {
-		switch (v3.narg()) {
+		switch (v3.count()) {
 			case 0:
 				return new LuaValue.PairVarargs(v1, v2);
 			default:

@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,11 +40,9 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 public class CompatibilityTest {
 	protected String name;
-	protected LuaState state;
 	protected ScriptDrivenHelpers helpers;
 
 	public CompatibilityTest(String name) {
-		state = new LuaState(new FileResourceManipulator());
 		helpers = new ScriptDrivenHelpers("/");
 		this.name = name;
 	}

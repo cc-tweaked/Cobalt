@@ -25,8 +25,6 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.lib.DebugLib;
 
-import static org.squiddev.cobalt.ValueFactory.valueOf;
-
 /**
  * RuntimeException that is thrown and caught in response to a lua error.
  * <p>
@@ -134,7 +132,7 @@ public final class LuaError extends RuntimeException {
 		if (traceback != null) return this;
 
 		LuaThread thread = state.currentThread;
-		if (level > 0 && value.isstring()) {
+		if (level > 0 && value.isString()) {
 			String fileLine;
 			if (calculateLevel) {
 				fileLine = DebugLib.fileline(thread);

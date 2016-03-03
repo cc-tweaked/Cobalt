@@ -219,12 +219,12 @@ public class Constants {
 		}
 
 		@Override
-		public int narg() {
+		public int count() {
 			return 0;
 		}
 
 		@Override
-		public LuaValue arg1() {
+		public LuaValue first() {
 			return NIL;
 		}
 

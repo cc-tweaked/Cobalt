@@ -84,18 +84,18 @@ public class TailcallVarargs extends Varargs {
 	}
 
 	@Override
-	public LuaValue arg1() {
+	public LuaValue first() {
 		if (result == null) {
 			throw new IllegalStateException("Hasn't been evaluated");
 		}
-		return result.arg1();
+		return result.first();
 	}
 
 	@Override
-	public int narg() {
+	public int count() {
 		if (result == null) {
 			throw new IllegalStateException("Hasn't been evaluated");
 		}
-		return result.narg();
+		return result.count();
 	}
 }

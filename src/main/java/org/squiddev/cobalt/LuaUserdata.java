@@ -61,32 +61,32 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public boolean isuserdata() {
+	public boolean isUserdata() {
 		return true;
 	}
 
 	@Override
-	public boolean isuserdata(Class<?> c) {
+	public boolean isUserdata(Class<?> c) {
 		return c.isAssignableFrom(m_instance.getClass());
 	}
 
 	@Override
-	public Object touserdata() {
+	public Object toUserdata() {
 		return m_instance;
 	}
 
 	@Override
-	public Object touserdata(Class<?> c) {
+	public Object toUserdata(Class<?> c) {
 		return c.isAssignableFrom(m_instance.getClass()) ? m_instance : null;
 	}
 
 	@Override
-	public Object optuserdata(Object defval) {
+	public Object optUserdata(Object defval) {
 		return m_instance;
 	}
 
 	@Override
-	public Object optuserdata(Class<?> c, Object defval) {
+	public Object optUserdata(Class<?> c, Object defval) {
 		if (!c.isAssignableFrom(m_instance.getClass())) {
 			LuaValue result;
 			throw ErrorFactory.typeError(this, c.getName());
@@ -106,12 +106,12 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public Object checkuserdata() {
+	public Object checkUserdata() {
 		return m_instance;
 	}
 
 	@Override
-	public Object checkuserdata(Class<?> c) {
+	public Object checkUserdata(Class<?> c) {
 		if (c.isAssignableFrom(m_instance.getClass())) {
 			return m_instance;
 		}

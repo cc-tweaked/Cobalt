@@ -60,9 +60,9 @@ public class TableLib extends OneArgFunction {
 			case 0: // init library
 				return init(state);
 			case 1:  // "getn" (table) -> number
-				return arg.checktable().getn();
+				return arg.checkTable().getn();
 			case 2: // "maxn"  (table) -> number
-				return valueOf(arg.checktable().maxn());
+				return valueOf(arg.checkTable().maxn());
 		}
 		return NIL;
 	}
@@ -72,35 +72,35 @@ public class TableLib extends OneArgFunction {
 		public Varargs invoke(LuaState state, Varargs args) {
 			switch (opcode) {
 				case 0: { // "remove" (table [, pos]) -> removed-ele
-					LuaTable table = args.checktable(1);
-					int pos = args.narg() > 1 ? args.checkint(2) : 0;
+					LuaTable table = args.arg(1).checkTable();
+					int pos = args.count() > 1 ? args.arg(2).checkInteger() : 0;
 					return table.remove(pos);
 				}
 				case 1: { // "concat" (table [, sep [, i [, j]]]) -> string
-					LuaTable table = args.checktable(1);
+					LuaTable table = args.arg(1).checkTable();
 					return table.concat(
-						state, args.optstring(2, EMPTYSTRING),
-						args.optint(3, 1),
-						args.isvalue(4) ? args.checkint(4) : table.length(state));
+						state, args.arg(2).optLuaString(EMPTYSTRING),
+						args.arg(3).optInteger(1),
+						args.exists(4) ? args.arg(4).checkInteger() : table.length(state));
 				}
 				case 2: { // "insert" (table, [pos,] value) -> prev-ele
-					final LuaTable table = args.checktable(1);
-					final int pos = args.narg() > 2 ? args.checkint(2) : 0;
-					final LuaValue value = args.arg(args.narg() > 2 ? 3 : 2);
+					final LuaTable table = args.arg(1).checkTable();
+					final int pos = args.count() > 2 ? args.arg(2).checkInteger() : 0;
+					final LuaValue value = args.arg(args.count() > 2 ? 3 : 2);
 					table.insert(pos, value);
 					return NONE;
 				}
 				case 3: { // "sort" (table [, comp]) -> void
-					LuaTable table = args.checktable(1);
-					LuaValue compare = (args.isnoneornil(2) ? NIL : args.checkfunction(2));
+					LuaTable table = args.arg(1).checkTable();
+					LuaValue compare = (args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction());
 					table.sort(state, compare);
 					return NONE;
 				}
 				case 4: { // (table, func) -> void
-					return args.checktable(1).foreach(state, args.checkfunction(2));
+					return args.arg(1).checkTable().foreach(state, args.arg(2).checkFunction());
 				}
 				case 5: { // "foreachi" (table, func) -> void
-					return args.checktable(1).foreachi(state, args.checkfunction(2));
+					return args.arg(1).checkTable().foreachi(state, args.arg(2).checkFunction());
 				}
 			}
 			return NONE;

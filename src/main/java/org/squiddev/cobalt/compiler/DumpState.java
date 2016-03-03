@@ -23,17 +23,11 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.LocVars;
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Prototype;
-import org.squiddev.cobalt.Constants;
+import org.squiddev.cobalt.*;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import static org.squiddev.cobalt.Constants.*;
 
 public class DumpState {
 
@@ -162,28 +156,28 @@ public class DumpState {
 					break;
 				case Constants.TBOOLEAN:
 					writer.write(Constants.TBOOLEAN);
-					dumpChar(o.toboolean() ? 1 : 0);
+					dumpChar(o.toBoolean() ? 1 : 0);
 					break;
 				case Constants.TNUMBER:
 					switch (NUMBER_FORMAT) {
 						case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
 							writer.write(Constants.TNUMBER);
-							dumpDouble(o.todouble());
+							dumpDouble(o.toDouble());
 							break;
 						case NUMBER_FORMAT_INTS_ONLY:
-							if (!ALLOW_INTEGER_CASTING && !o.isint()) {
+							if (!ALLOW_INTEGER_CASTING && !o.isInteger()) {
 								throw new java.lang.IllegalArgumentException("not an integer: " + o);
 							}
 							writer.write(Constants.TNUMBER);
-							dumpInt(o.toint());
+							dumpInt(o.toInteger());
 							break;
 						case NUMBER_FORMAT_NUM_PATCH_INT32:
-							if (o.isint()) {
+							if (o.isInteger()) {
 								writer.write(Constants.TINT);
-								dumpInt(o.toint());
+								dumpInt(o.toInteger());
 							} else {
 								writer.write(Constants.TNUMBER);
-								dumpDouble(o.todouble());
+								dumpDouble(o.toDouble());
 							}
 							break;
 						default:

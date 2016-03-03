@@ -277,38 +277,38 @@ public abstract class IoLib extends OneArgFunction {
 					case IO_TMPFILE:
 						return iolib._io_tmpfile();
 					case IO_CLOSE:
-						return iolib._io_close(state, args.arg1());
+						return iolib._io_close(state, args.first());
 					case IO_INPUT:
-						return iolib._io_input(state, args.arg1());
+						return iolib._io_input(state, args.first());
 					case IO_OUTPUT:
-						return iolib._io_output(state, args.arg1());
+						return iolib._io_output(state, args.first());
 					case IO_TYPE:
-						return iolib._io_type(args.arg1());
+						return iolib._io_type(args.first());
 					case IO_POPEN:
-						return iolib._io_popen(args.checkjstring(1), args.optjstring(2, "r"));
+						return iolib._io_popen(args.arg(1).checkjstring(), args.arg(2).optjstring("r"));
 					case IO_OPEN:
-						return iolib._io_open(state, args.checkjstring(1), args.optjstring(2, "r"));
+						return iolib._io_open(state, args.arg(1).checkjstring(), args.arg(2).optjstring("r"));
 					case IO_LINES:
-						return iolib._io_lines(state, args.isvalue(1) ? args.checkjstring(1) : null);
+						return iolib._io_lines(state, args.exists(1) ? args.arg(1).checkjstring() : null);
 					case IO_READ:
 						return iolib._io_read(state, args);
 					case IO_WRITE:
 						return iolib._io_write(state, args);
 
 					case FILE_CLOSE:
-						return iolib._file_close(args.arg1());
+						return iolib._file_close(args.first());
 					case FILE_FLUSH:
-						return iolib._file_flush(args.arg1());
+						return iolib._file_flush(args.first());
 					case FILE_SETVBUF:
-						return iolib._file_setvbuf(args.arg1(), args.checkjstring(2), args.optint(3, 1024));
+						return iolib._file_setvbuf(args.first(), args.arg(2).checkjstring(), args.arg(3).optInteger(1024));
 					case FILE_LINES:
-						return iolib._file_lines(args.arg1());
+						return iolib._file_lines(args.first());
 					case FILE_READ:
-						return iolib._file_read(args.arg1(), args.subargs(2));
+						return iolib._file_read(args.first(), args.subargs(2));
 					case FILE_SEEK:
-						return iolib._file_seek(args.arg1(), args.optjstring(2, "cur"), args.optint(3, 0));
+						return iolib._file_seek(args.first(), args.arg(2).optjstring("cur"), args.arg(3).optInteger(0));
 					case FILE_WRITE:
-						return iolib._file_write(args.arg1(), args.subargs(2));
+						return iolib._file_write(args.first(), args.subargs(2));
 
 					case IO_INDEX:
 						return iolib._io_index(state, args.arg(2));
@@ -340,23 +340,23 @@ public abstract class IoLib extends OneArgFunction {
 
 	//	io.close([file]) -> void
 	public Varargs _io_close(LuaState state, LuaValue file) throws IOException {
-		File f = file.isnil() ? output(state) : checkfile(file);
+		File f = file.isNil() ? output(state) : checkfile(file);
 		checkopen(f);
 		return ioclose(f);
 	}
 
 	//	io.input([file]) -> file
 	public Varargs _io_input(LuaState state, LuaValue file) {
-		infile = file.isnil() ? input(state) :
-			file.isstring() ? ioopenfile(state, file.checkjstring(), "r") :
+		infile = file.isNil() ? input(state) :
+			file.isString() ? ioopenfile(state, file.checkjstring(), "r") :
 				checkfile(file);
 		return infile;
 	}
 
 	// io.output(filename) -> file
 	public Varargs _io_output(LuaState state, LuaValue filename) {
-		outfile = filename.isnil() ? output(state) :
-			filename.isstring() ? ioopenfile(state, filename.checkjstring(), "w") :
+		outfile = filename.isNil() ? output(state) :
+			filename.isString() ? ioopenfile(state, filename.checkjstring(), "w") :
 				checkfile(filename);
 		return outfile;
 	}
@@ -494,14 +494,14 @@ public abstract class IoLib extends OneArgFunction {
 	}
 
 	private static Varargs iowrite(File f, Varargs args) throws IOException {
-		for (int i = 1, n = args.narg(); i <= n; i++) {
-			f.write(args.checkstring(i));
+		for (int i = 1, n = args.count(); i <= n; i++) {
+			f.write(args.arg(i).checkLuaString());
 		}
 		return TRUE;
 	}
 
 	private Varargs ioread(File f, Varargs args) throws IOException {
-		int i, n = args.narg();
+		int i, n = args.count();
 		LuaValue[] v = new LuaValue[n];
 		LuaValue ai, vi;
 		LuaString fmt;
@@ -509,10 +509,10 @@ public abstract class IoLib extends OneArgFunction {
 			item:
 			switch ((ai = args.arg(i + 1)).type()) {
 				case TNUMBER:
-					vi = freadbytes(f, ai.toint());
+					vi = freadbytes(f, ai.toInteger());
 					break;
 				case TSTRING:
-					fmt = ai.checkstring();
+					fmt = ai.checkLuaString();
 					if (fmt.m_length == 2 && fmt.m_bytes[fmt.m_offset] == '*') {
 						switch (fmt.m_bytes[fmt.m_offset + 1]) {
 							case 'n':
@@ -529,7 +529,7 @@ public abstract class IoLib extends OneArgFunction {
 				default:
 					throw ErrorFactory.argError(i + 1, "(invalid format)");
 			}
-			if ((v[i++] = vi).isnil()) {
+			if ((v[i++] = vi).isNil()) {
 				break;
 			}
 		}

@@ -90,7 +90,7 @@ public abstract class TwoArgFunction extends LibFunction {
 
 	@Override
 	public Varargs invoke(LuaState state, Varargs varargs) {
-		return call(state, varargs.arg1(), varargs.arg(2));
+		return call(state, varargs.first(), varargs.arg(2));
 	}
 
 }

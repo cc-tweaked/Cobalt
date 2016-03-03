@@ -33,7 +33,7 @@ package org.squiddev.cobalt;
  * is also considered treated as a nil value by default.
  * <p>
  * Although it is possible to test for nil using Java == operator,
- * the recommended approach is to use the method {@link LuaValue#isnil()}
+ * the recommended approach is to use the method {@link LuaValue#isNil()}
  * instead.  By using that any ambiguities between
  * {@link Constants#NIL} and {@link Constants#NONE} are avoided.
  *
@@ -62,12 +62,12 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public boolean toboolean() {
+	public boolean toBoolean() {
 		return false;
 	}
 
 	@Override
-	public boolean isnil() {
+	public boolean isNil() {
 		return true;
 	}
 
@@ -81,63 +81,63 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public LuaValue checknotnil() {
+	public LuaValue checkNotNil() {
 		throw ErrorFactory.argError(this, "value");
 	}
 
 	@Override
-	public LuaValue checkvalidkey() {
+	public LuaValue checkValidKey() {
 		throw ErrorFactory.typeError(this, "table index");
 	}
 
 	// optional argument conversions - nil alwas falls badk to default value
 	@Override
-	public boolean optboolean(boolean defval) {
+	public boolean optBoolean(boolean defval) {
 		return defval;
 	}
 
 	@Override
-	public LuaClosure optclosure(LuaClosure defval) {
+	public LuaClosure optClosure(LuaClosure defval) {
 		return defval;
 	}
 
 	@Override
-	public double optdouble(double defval) {
+	public double optDouble(double defval) {
 		return defval;
 	}
 
 	@Override
-	public LuaFunction optfunction(LuaFunction defval) {
+	public LuaFunction optFunction(LuaFunction defval) {
 		return defval;
 	}
 
 	@Override
-	public int optint(int defval) {
+	public int optInteger(int defval) {
 		return defval;
 	}
 
 	@Override
-	public LuaInteger optinteger(LuaInteger defval) {
+	public LuaInteger optLuaInteger(LuaInteger defval) {
 		return defval;
 	}
 
 	@Override
-	public long optlong(long defval) {
+	public long optLong(long defval) {
 		return defval;
 	}
 
 	@Override
-	public LuaNumber optnumber(LuaNumber defval) {
+	public LuaNumber optNumber(LuaNumber defval) {
 		return defval;
 	}
 
 	@Override
-	public LuaTable opttable(LuaTable defval) {
+	public LuaTable optTable(LuaTable defval) {
 		return defval;
 	}
 
 	@Override
-	public LuaThread optthread(LuaThread defval) {
+	public LuaThread optThread(LuaThread defval) {
 		return defval;
 	}
 
@@ -147,22 +147,22 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public LuaString optstring(LuaString defval) {
+	public LuaString optLuaString(LuaString defval) {
 		return defval;
 	}
 
 	@Override
-	public Object optuserdata(Object defval) {
+	public Object optUserdata(Object defval) {
 		return defval;
 	}
 
 	@Override
-	public Object optuserdata(Class c, Object defval) {
+	public Object optUserdata(Class c, Object defval) {
 		return defval;
 	}
 
 	@Override
-	public LuaValue optvalue(LuaValue defval) {
+	public LuaValue optValue(LuaValue defval) {
 		return defval;
 	}
 }

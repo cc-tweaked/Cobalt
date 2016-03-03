@@ -81,9 +81,9 @@ import static org.squiddev.cobalt.Constants.TRUE;
  *
  * @see LuaValue
  * @see LuaFunction
- * @see LuaValue#isclosure()
- * @see LuaValue#checkclosure()
- * @see LuaValue#optclosure(LuaClosure)
+ * @see LuaValue#isClosure()
+ * @see LuaValue#checkClosure()
+ * @see LuaValue#optClosure(LuaClosure)
  * @see LoadState
  */
 public class LuaClosure extends LuaFunction implements PrototypeStorage {
@@ -116,17 +116,17 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 	}
 
 	@Override
-	public boolean isclosure() {
+	public boolean isClosure() {
 		return true;
 	}
 
 	@Override
-	public LuaClosure optclosure(LuaClosure defval) {
+	public LuaClosure optClosure(LuaClosure defval) {
 		return this;
 	}
 
 	@Override
-	public LuaClosure checkclosure() {
+	public LuaClosure checkClosure() {
 		return this;
 	}
 
@@ -134,7 +134,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 	public final LuaValue call(LuaState state) {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(Constants.NILS, 0, stack, 0, p.maxstacksize);
-		return execute(state, stack, Constants.NONE).eval(state).arg1();
+		return execute(state, stack, Constants.NONE).eval(state).first();
 	}
 
 	@Override
@@ -144,9 +144,9 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 		switch (p.numparams) {
 			default:
 				stack[0] = arg;
-				return execute(state, stack, Constants.NONE).eval(state).arg1();
+				return execute(state, stack, Constants.NONE).eval(state).first();
 			case 0:
-				return execute(state, stack, arg).eval(state).arg1();
+				return execute(state, stack, arg).eval(state).first();
 		}
 	}
 
@@ -158,12 +158,12 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 			default:
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return execute(state, stack, Constants.NONE).eval(state).arg1();
+				return execute(state, stack, Constants.NONE).eval(state).first();
 			case 1:
 				stack[0] = arg1;
-				return execute(state, stack, arg2).eval(state).arg1();
+				return execute(state, stack, arg2).eval(state).first();
 			case 0:
-				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2) : Constants.NONE).eval(state).arg1();
+				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2) : Constants.NONE).eval(state).first();
 		}
 	}
 
@@ -176,16 +176,16 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 				stack[0] = arg1;
 				stack[1] = arg2;
 				stack[2] = arg3;
-				return execute(state, stack, Constants.NONE).eval(state).arg1();
+				return execute(state, stack, Constants.NONE).eval(state).first();
 			case 2:
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return execute(state, stack, arg3).eval(state).arg1();
+				return execute(state, stack, arg3).eval(state).first();
 			case 1:
 				stack[0] = arg1;
-				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg2, arg3) : Constants.NONE).eval(state).arg1();
+				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg2, arg3) : Constants.NONE).eval(state).first();
 			case 0:
-				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : Constants.NONE).eval(state).arg1();
+				return execute(state, stack, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : Constants.NONE).eval(state).first();
 		}
 	}
 
@@ -328,7 +328,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						continue;
 
 					case Lua.OP_NOT: /*	A B	R(A):= not R(B)				*/
-						stack[a] = stack[i >>> 23].toboolean() ? FALSE : TRUE;
+						stack[a] = stack[i >>> 23].toBoolean() ? FALSE : TRUE;
 						continue;
 
 					case Lua.OP_LEN: /*	A B	R(A):= length of R(B)				*/
@@ -374,14 +374,14 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						continue;
 
 					case Lua.OP_TEST: /*	A C	if not (R(A) <=> C) then pc++			*/
-						if (stack[a].toboolean() == ((i & (0x1ff << 14)) == 0)) {
+						if (stack[a].toBoolean() == ((i & (0x1ff << 14)) == 0)) {
 							++pc;
 						}
 						continue;
 
 					case Lua.OP_TESTSET: /*	A B C	if (R(B) <=> C) then R(A):= R(B) else pc++	*/
 					/* note: doc appears to be reversed */
-						if ((o = stack[i >>> 23]).toboolean() == ((i & (0x1ff << 14)) == 0)) {
+						if ((o = stack[i >>> 23]).toBoolean() == ((i & (0x1ff << 14)) == 0)) {
 							++pc;
 						} else {
 							stack[a] = o; // TODO: should be sBx?
@@ -392,11 +392,11 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						switch (i & (Lua.MASK_B | Lua.MASK_C)) {
 							case (1 << Lua.POS_B) | (0 << Lua.POS_C):
 								v = stack[a].invoke(state, Constants.NONE);
-								top = a + v.narg();
+								top = a + v.count();
 								continue;
 							case (2 << Lua.POS_B) | (0 << Lua.POS_C):
 								v = stack[a].invoke(state, stack[a + 1]);
-								top = a + v.narg();
+								top = a + v.count();
 								continue;
 							case (1 << Lua.POS_B) | (1 << Lua.POS_C):
 								stack[a].call(state);
@@ -427,7 +427,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 								c = (i >> 14) & 0x1ff;
 								v = b > 0 ?
 									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-									ValueFactory.varargsOf(stack, a + 1, top - v.narg() - (a + 1), v); // from prev top
+									ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
 								v = stack[a].invoke(state, v);
 								if (c > 0) {
 									while (--c > 0) {
@@ -435,7 +435,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 									}
 									v = Constants.NONE; // TODO: necessary?
 								} else {
-									top = a + v.narg();
+									top = a + v.count();
 								}
 								continue;
 						}
@@ -454,7 +454,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 								b = i >>> 23;
 								v = b > 0 ?
 									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-									ValueFactory.varargsOf(stack, a + 1, top - v.narg() - (a + 1), v); // from prev top
+									ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
 								return new TailcallVarargs(stack[a], v);
 						}
 
@@ -462,7 +462,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						b = i >>> 23;
 						switch (b) {
 							case 0:
-								return ValueFactory.varargsOf(stack, a, top - v.narg() - a, v);
+								return ValueFactory.varargsOf(stack, a, top - v.count() - a, v);
 							case 1:
 								return Constants.NONE;
 							case 2:
@@ -484,9 +484,9 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 					continue;
 
 					case Lua.OP_FORPREP: /*	A sBx	R(A)-=R(A+2): pc+=sBx				*/ {
-						LuaValue init = stack[a].checknumber("'for' initial value must be a number");
-						LuaValue limit = stack[a + 1].checknumber("'for' limit must be a number");
-						LuaValue step = stack[a + 2].checknumber("'for' step must be a number");
+						LuaValue init = stack[a].checkNumber("'for' initial value must be a number");
+						LuaValue limit = stack[a + 1].checkNumber("'for' limit must be a number");
+						LuaValue step = stack[a + 2].checkNumber("'for' step must be a number");
 						stack[a] = OperationHelper.sub(state, init, step);
 						stack[a + 1] = limit;
 						stack[a + 2] = step;
@@ -501,7 +501,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 									 */
 						// TODO: stack call on for loop body, such as:   stack[a].call(ci);
 						v = stack[a].invoke(state, ValueFactory.varargsOf(stack[a + 1], stack[a + 2]));
-						if ((o = v.arg1()).isnil()) {
+						if ((o = v.first()).isNil()) {
 							++pc;
 						} else {
 							stack[a + 2] = stack[a + 3] = o;
@@ -520,7 +520,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 						o = stack[a];
 						if ((b = i >>> 23) == 0) {
 							b = top - a - 1;
-							int m = b - v.narg();
+							int m = b - v.count();
 							int j = 1;
 							for (; j <= m; j++) {
 								o.set(state, offset + j, stack[a + j]);
@@ -564,7 +564,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 					case Lua.OP_VARARG: /*	A B	R(A), R(A+1), ..., R(A+B-1) = vararg		*/
 						b = i >>> 23;
 						if (b == 0) {
-							top = a + (b = varargs.narg());
+							top = a + (b = varargs.count());
 							v = varargs;
 						} else {
 							for (int j = 1; j < b; ++j) {

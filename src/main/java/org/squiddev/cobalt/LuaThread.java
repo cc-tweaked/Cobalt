@@ -139,17 +139,17 @@ public class LuaThread extends LuaValue {
 	}
 
 	@Override
-	public boolean isthread() {
+	public boolean isThread() {
 		return true;
 	}
 
 	@Override
-	public LuaThread optthread(LuaThread defval) {
+	public LuaThread optThread(LuaThread defval) {
 		return this;
 	}
 
 	@Override
-	public LuaThread checkthread() {
+	public LuaThread checkThread() {
 		return this;
 	}
 

@@ -410,7 +410,7 @@ public class Print {
 			} else {
 				switch (v.type()) {
 					case Constants.TSTRING:
-						LuaString s = v.checkstring();
+						LuaString s = v.checkLuaString();
 						ps.print(s.length() < 48 ?
 							s.tojstring() :
 							s.substring(0, 32).tojstring() + "...+" + (s.length() - 32) + "b");
@@ -420,7 +420,7 @@ public class Print {
 							((LuaClosure) v).p.toString() : v.tojstring());
 						break;
 					case Constants.TUSERDATA:
-						Object o = v.touserdata();
+						Object o = v.toUserdata();
 						if (o != null) {
 							String n = o.getClass().getName();
 							n = n.substring(n.lastIndexOf('.') + 1);

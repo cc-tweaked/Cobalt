@@ -23,13 +23,7 @@
  */
 package org.squiddev.cobalt.lib;
 
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaThread;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
 import org.squiddev.cobalt.*;
-
-import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Abstract base class for Java function implementations that takes varaiable arguments and
@@ -64,22 +58,22 @@ public abstract class VarArgFunction extends LibFunction {
 
 	@Override
 	public LuaValue call(LuaState state) {
-		return invoke(state, Constants.NONE).arg1();
+		return invoke(state, Constants.NONE).first();
 	}
 
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg) {
-		return invoke(state, arg).arg1();
+		return invoke(state, arg).first();
 	}
 
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
-		return invoke(state, ValueFactory.varargsOf(arg1, arg2)).arg1();
+		return invoke(state, ValueFactory.varargsOf(arg1, arg2)).first();
 	}
 
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).arg1();
+		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
 	}
 
 	/**

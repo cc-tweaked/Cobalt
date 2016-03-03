@@ -120,10 +120,10 @@ public class StringLib extends OneArgFunction {
 	 * @param args the calling args
 	 */
 	static Varargs byte_(Varargs args) {
-		LuaString s = args.checkstring(1);
+		LuaString s = args.arg(1).checkLuaString();
 		int l = s.m_length;
-		int posi = posrelat(args.optint(2, 1), l);
-		int pose = posrelat(args.optint(3, posi), l);
+		int posi = posrelat(args.arg(2).optInteger(1), l);
+		int pose = posrelat(args.arg(3).optInteger(posi), l);
 		int n, i;
 		if (posi <= 0) posi = 1;
 		if (pose > l) pose = l;
@@ -152,10 +152,10 @@ public class StringLib extends OneArgFunction {
 	 * @return The characters for this string
 	 */
 	public static Varargs char_(Varargs args) {
-		int n = args.narg();
+		int n = args.count();
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
-			int c = args.checkint(a);
+			int c = args.arg(a).checkInteger();
 			if (c < 0 || c >= 256) {
 				LuaValue result;
 				throw ErrorFactory.argError(a, "invalid value");
@@ -173,7 +173,7 @@ public class StringLib extends OneArgFunction {
 	 * function must be a Lua function without upvalues.
 	 */
 	static LuaValue dump(LuaValue arg) {
-		LuaValue f = arg.checkfunction();
+		LuaValue f = arg.checkFunction();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			if (f instanceof PrototypeStorage) {
@@ -231,7 +231,7 @@ public class StringLib extends OneArgFunction {
 	 * except as arguments to the q option.
 	 */
 	static Varargs format(Varargs args) {
-		LuaString fmt = args.checkstring(1);
+		LuaString fmt = args.arg(1).checkLuaString();
 		final int n = fmt.length();
 		Buffer result = new Buffer(n);
 		int arg = 1;
@@ -256,30 +256,30 @@ public class StringLib extends OneArgFunction {
 							i += fdsc.length;
 							switch (fdsc.conversion) {
 								case 'c':
-									fdsc.format(result, (byte) args.checkint(arg));
+									fdsc.format(result, (byte) args.arg(arg).checkInteger());
 									break;
 								case 'i':
 								case 'd':
-									fdsc.format(result, args.checkint(arg));
+									fdsc.format(result, args.arg(arg).checkInteger());
 									break;
 								case 'o':
 								case 'u':
 								case 'x':
 								case 'X':
-									fdsc.format(result, args.checklong(arg));
+									fdsc.format(result, args.arg(arg).checkLong());
 									break;
 								case 'e':
 								case 'E':
 								case 'f':
 								case 'g':
 								case 'G':
-									fdsc.format(result, args.checkdouble(arg));
+									fdsc.format(result, args.arg(arg).checkDouble());
 									break;
 								case 'q':
-									addquoted(result, args.checkstring(arg));
+									addquoted(result, args.arg(arg).checkLuaString());
 									break;
 								case 's': {
-									LuaString s = args.checkstring(arg);
+									LuaString s = args.arg(arg).checkLuaString();
 									if (fdsc.precision == -1 && s.length() >= 100) {
 										result.append(s);
 									} else {
@@ -549,8 +549,8 @@ public class StringLib extends OneArgFunction {
 	 * as this would prevent the iteration.
 	 */
 	static Varargs gmatch(Varargs args) {
-		LuaString src = args.checkstring(1);
-		LuaString pat = args.checkstring(2);
+		LuaString src = args.arg(1).checkLuaString();
+		LuaString pat = args.arg(2).checkLuaString();
 		return new GMatchAux(args, src, pat);
 	}
 
@@ -628,11 +628,11 @@ public class StringLib extends OneArgFunction {
 	 * --> x="lua-5.1.tar.gz"
 	 */
 	static Varargs gsub(LuaState state, Varargs args) {
-		LuaString src = args.checkstring(1);
+		LuaString src = args.arg(1).checkLuaString();
 		final int srclen = src.length();
-		LuaString p = args.checkstring(2);
+		LuaString p = args.arg(2).checkLuaString();
 		LuaValue repl = args.arg(3);
-		int max_s = args.optint(4, srclen + 1);
+		int max_s = args.arg(4).optInteger(srclen + 1);
 		final boolean anchor = p.length() > 0 && p.charAt(0) == '^';
 
 		Buffer lbuf = new Buffer(srclen);
@@ -669,7 +669,7 @@ public class StringLib extends OneArgFunction {
 	 * Embedded zeros are counted, so "a\000bc\000" has length 5.
 	 */
 	static LuaValue len(LuaValue arg) {
-		return valueOf(arg.checkstring().length());
+		return valueOf(arg.checkLuaString().length());
 	}
 
 	/**
@@ -702,8 +702,8 @@ public class StringLib extends OneArgFunction {
 	 * Returns a string that is the concatenation of n copies of the string s.
 	 */
 	static Varargs rep(Varargs args) {
-		LuaString s = args.checkstring(1);
-		int n = args.checkint(2);
+		LuaString s = args.arg(1).checkLuaString();
+		int n = args.arg(2).checkInteger();
 		final byte[] bytes = new byte[s.length() * n];
 		int len = s.length();
 		for (int offset = 0; offset < bytes.length; offset += len) {
@@ -718,7 +718,7 @@ public class StringLib extends OneArgFunction {
 	 * Returns a string that is the string s reversed.
 	 */
 	static LuaValue reverse(LuaValue arg) {
-		LuaString s = arg.checkstring();
+		LuaString s = arg.checkLuaString();
 		int n = s.length();
 		byte[] b = new byte[n];
 		for (int i = 0, j = n - 1; i < n; i++, j--) {
@@ -739,11 +739,12 @@ public class StringLib extends OneArgFunction {
 	 * returns a suffix of s with length i.
 	 */
 	static Varargs sub(Varargs args) {
-		final LuaString s = args.checkstring(1);
+		final LuaString s = args.arg(1).checkLuaString();
 		final int l = s.length();
 
-		int start = posrelat(args.checkint(2), l);
-		int end = posrelat(args.optint(3, -1), l);
+		int start = posrelat(args.arg(2).checkInteger(), l);
+		int defval = -1;
+		int end = posrelat(args.arg(3).optInteger(defval), l);
 
 		if (start < 1) {
 			start = 1;
@@ -774,9 +775,9 @@ public class StringLib extends OneArgFunction {
 	 * This utility method implements both string.find and string.match.
 	 */
 	static Varargs str_find_aux(Varargs args, boolean find) {
-		LuaString s = args.checkstring(1);
-		LuaString pat = args.checkstring(2);
-		int init = args.optint(3, 1);
+		LuaString s = args.arg(1).checkLuaString();
+		LuaString pat = args.arg(2).checkLuaString();
+		int init = args.arg(3).optInteger(1);
 
 		if (init > 0) {
 			init = Math.min(init - 1, s.length());
@@ -784,7 +785,7 @@ public class StringLib extends OneArgFunction {
 			init = Math.max(0, s.length() + init);
 		}
 
-		boolean fastMatch = find && (args.arg(4).toboolean() || pat.indexOfAny(SPECIALS) == -1);
+		boolean fastMatch = find && (args.arg(4).toBoolean() || pat.indexOfAny(SPECIALS) == -1);
 
 		if (fastMatch) {
 			int result = s.indexOf(pat, init);
@@ -919,7 +920,7 @@ public class StringLib extends OneArgFunction {
 					return;
 
 				case TFUNCTION:
-					repl = repl.invoke(state, push_captures(true, soffset, end)).arg1();
+					repl = repl.invoke(state, push_captures(true, soffset, end)).first();
 					break;
 
 				case TTABLE:
@@ -931,9 +932,9 @@ public class StringLib extends OneArgFunction {
 					throw new LuaError("bad argument: string/function/table expected");
 			}
 
-			if (!repl.toboolean()) {
+			if (!repl.toBoolean()) {
 				repl = s.substring(soffset, end);
-			} else if (!repl.isstring()) {
+			} else if (!repl.isString()) {
 				LuaValue result;
 				throw new LuaError("invalid replacement value (a " + repl.typeName() + ")");
 			}

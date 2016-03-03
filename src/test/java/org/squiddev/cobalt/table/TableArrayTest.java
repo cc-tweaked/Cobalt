@@ -25,9 +25,8 @@ package org.squiddev.cobalt.table;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.util.Vector;
 
@@ -130,7 +129,7 @@ public class TableArrayTest {
 		assertEquals(20, keys.length);
 		for (LuaValue k : keys) {
 			if (k instanceof LuaInteger) {
-				final int ik = k.toint();
+				final int ik = k.toInteger();
 				assertTrue(ik >= 0 && ik < 10);
 				final int mask = 1 << ik;
 				assertTrue((intKeys & mask) == 0);

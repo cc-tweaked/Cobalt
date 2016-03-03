@@ -36,7 +36,7 @@ import static org.squiddev.cobalt.Constants.TBOOLEAN;
  * return one of these two values.
  * <p>
  * Any {@link LuaValue} can be converted to its equivalent
- * boolean representation using {@link LuaValue#toboolean()}
+ * boolean representation using {@link LuaValue#toBoolean()}
  *
  * @see LuaValue
  * @see ValueFactory#valueOf(boolean)
@@ -75,12 +75,12 @@ public final class LuaBoolean extends LuaValue {
 	}
 
 	@Override
-	public boolean isboolean() {
+	public boolean isBoolean() {
 		return true;
 	}
 
 	@Override
-	public boolean toboolean() {
+	public boolean toBoolean() {
 		return v;
 	}
 
@@ -90,12 +90,12 @@ public final class LuaBoolean extends LuaValue {
 	}
 
 	@Override
-	public boolean optboolean(boolean defval) {
+	public boolean optBoolean(boolean defval) {
 		return this.v;
 	}
 
 	@Override
-	public boolean checkboolean() {
+	public boolean checkBoolean() {
 		return v;
 	}
 

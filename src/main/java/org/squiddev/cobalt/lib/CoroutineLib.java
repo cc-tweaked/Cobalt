@@ -72,11 +72,11 @@ public class CoroutineLib extends VarArgFunction {
 				return init(state);
 			}
 			case CREATE: {
-				final LuaValue func = args.checkfunction(1);
+				final LuaValue func = args.arg(1).checkFunction();
 				return new LuaThread(state, func, state.currentThread.getfenv());
 			}
 			case RESUME: {
-				final LuaThread t = args.checkthread(1);
+				final LuaThread t = args.arg(1).checkThread();
 				return t.resume(args.subargs(2));
 			}
 			case RUNNING: {
@@ -84,13 +84,13 @@ public class CoroutineLib extends VarArgFunction {
 				return r.isMainThread() ? Constants.NIL : r;
 			}
 			case STATUS: {
-				return valueOf(args.checkthread(1).getStatus());
+				return valueOf(args.arg(1).checkThread().getStatus());
 			}
 			case YIELD: {
 				return LuaThread.yield(state, args);
 			}
 			case WRAP: {
-				final LuaValue func = args.checkfunction(1);
+				final LuaValue func = args.arg(1).checkFunction();
 				final LuaThread thread = new LuaThread(state, func, func.getfenv());
 				CoroutineLib cl = new CoroutineLib();
 				cl.setfenv(thread);
@@ -101,7 +101,7 @@ public class CoroutineLib extends VarArgFunction {
 			case WRAPPED: {
 				final LuaThread t = (LuaThread) env;
 				final Varargs result = t.resume(args);
-				if (result.arg1().toboolean()) {
+				if (result.first().toBoolean()) {
 					return result.subargs(2);
 				} else {
 					throw new LuaError(result.arg(2).tojstring());

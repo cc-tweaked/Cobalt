@@ -98,67 +98,47 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public boolean islong() {
+	public boolean isLong() {
 		return v == (long) v;
 	}
 
 	@Override
-	public byte tobyte() {
-		return (byte) (long) v;
-	}
-
-	@Override
-	public char tochar() {
-		return (char) (long) v;
-	}
-
-	@Override
-	public double todouble() {
+	public double toDouble() {
 		return v;
 	}
 
 	@Override
-	public float tofloat() {
-		return (float) v;
-	}
-
-	@Override
-	public int toint() {
+	public int toInteger() {
 		return (int) (long) v;
 	}
 
 	@Override
-	public long tolong() {
+	public long toLong() {
 		return (long) v;
 	}
 
 	@Override
-	public short toshort() {
-		return (short) (long) v;
-	}
-
-	@Override
-	public double optdouble(double defval) {
+	public double optDouble(double defval) {
 		return v;
 	}
 
 	@Override
-	public int optint(int defval) {
+	public int optInteger(int defval) {
 		return (int) (long) v;
 	}
 
 	@Override
-	public LuaInteger optinteger(LuaInteger defval) {
+	public LuaInteger optLuaInteger(LuaInteger defval) {
 		return LuaInteger.valueOf((int) (long) v);
 	}
 
 	@Override
-	public long optlong(long defval) {
+	public long optLong(long defval) {
 		return (long) v;
 	}
 
 	@Override
-	public LuaInteger checkinteger() {
+	public LuaInteger checkLuaInteger() {
 		return LuaInteger.valueOf((int) (long) v);
 	}
 
@@ -221,12 +201,12 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public LuaString optstring(LuaString defval) {
+	public LuaString optLuaString(LuaString defval) {
 		return LuaString.valueOf(tojstring());
 	}
 
 	@Override
-	public LuaValue tostring() {
+	public LuaValue toLuaString() {
 		return LuaString.valueOf(tojstring());
 	}
 
@@ -236,17 +216,17 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public int checkint() {
+	public int checkInteger() {
 		return (int) (long) v;
 	}
 
 	@Override
-	public long checklong() {
+	public long checkLong() {
 		return (long) v;
 	}
 
 	@Override
-	public double checkdouble() {
+	public double checkDouble() {
 		return v;
 	}
 
@@ -256,12 +236,12 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public LuaString checkstring() {
+	public LuaString checkLuaString() {
 		return LuaString.valueOf(tojstring());
 	}
 
 	@Override
-	public LuaValue checkvalidkey() {
+	public LuaValue checkValidKey() {
 		if (Double.isNaN(v)) {
 			throw new LuaError("table index expected, got nan");
 		}
@@ -269,7 +249,7 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public double checkarith() {
+	public double checkArith() {
 		return v;
 	}
 }

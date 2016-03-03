@@ -225,7 +225,7 @@ public final class Buffer {
 	 * @return {@link Buffer} for use in call chaining.
 	 */
 	public Buffer concatTo(LuaState state, LuaString lhs) {
-		return value != null && !value.isstring() ? setvalue(lhs.concat(state, value)) : prepend(lhs);
+		return value != null && !value.isString() ? setvalue(lhs.concat(state, value)) : prepend(lhs);
 	}
 
 	/**
@@ -238,7 +238,7 @@ public final class Buffer {
 	 * @return {@link Buffer} for use in call chaining.
 	 */
 	public Buffer concatTo(LuaState state, LuaNumber lhs) {
-		return value != null && !value.isstring() ? setvalue(lhs.concat(state, value)) : prepend(lhs.strvalue());
+		return value != null && !value.isString() ? setvalue(lhs.concat(state, value)) : prepend(lhs.strvalue());
 	}
 
 	/**

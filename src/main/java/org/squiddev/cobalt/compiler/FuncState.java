@@ -474,7 +474,7 @@ public class FuncState {
 
 	int numberK(LuaValue r) {
 		if (r instanceof LuaDouble) {
-			double d = r.todouble();
+			double d = r.toDouble();
 			int i = (int) d;
 			if (d == (double) i) {
 				r = LuaInteger.valueOf(i);
@@ -891,7 +891,7 @@ public class FuncState {
 				r = null;
 				break;
 		}
-		if (Double.isNaN(r.todouble())) {
+		if (Double.isNaN(r.toDouble())) {
 			return false; /* do not attempt to produce NaN */
 		}
 		e1.u.setNval(r);

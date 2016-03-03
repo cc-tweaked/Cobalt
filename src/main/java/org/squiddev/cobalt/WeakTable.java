@@ -27,9 +27,6 @@ import org.squiddev.cobalt.lib.TwoArgFunction;
 
 import java.lang.ref.WeakReference;
 
-import static org.squiddev.cobalt.ValueFactory.userdataOf;
-import static org.squiddev.cobalt.ValueFactory.varargsOf;
-
 /**
  * Subclass of {@link LuaTable} that provides weak key and weak value semantics.
  * <p>
@@ -77,7 +74,7 @@ public class WeakTable extends LuaTable {
 		this(weakkeys, weakvalues, source.getArrayLength(), source.getHashLength());
 		Varargs n;
 		LuaValue k = Constants.NIL;
-		while (!(k = ((n = source.next(k)).arg1())).isnil()) {
+		while (!(k = ((n = source.next(k)).first())).isNil()) {
 			rawset(k, n.arg(2));
 		}
 		m_metatable = source.m_metatable;
@@ -196,13 +193,13 @@ public class WeakTable extends LuaTable {
 	public Varargs next(LuaValue key) {
 		while (true) {
 			Varargs n = super.next(key);
-			LuaValue k = n.arg1();
-			if (k.isnil()) {
+			LuaValue k = n.first();
+			if (k.isNil()) {
 				return Constants.NIL;
 			}
 			LuaValue ks = k.strongkey();
 			LuaValue vs = n.arg(2).strongvalue();
-			if (ks.isnil() || vs.isnil()) {
+			if (ks.isNil() || vs.isNil()) {
 				super.rawset(k, Constants.NIL);
 			} else {
 				return ValueFactory.varargsOf(ks, vs);
@@ -276,7 +273,7 @@ public class WeakTable extends LuaTable {
 
 		private WeakUserdata(LuaUserdata value) {
 			super(value);
-			ob = new WeakReference<Object>(value.touserdata());
+			ob = new WeakReference<Object>(value.toUserdata());
 			mt = value.m_metatable;
 		}
 
@@ -292,11 +289,11 @@ public class WeakTable extends LuaTable {
 
 		@Override
 		public boolean raweq(LuaValue rhs) {
-			if (!rhs.isuserdata()) {
+			if (!rhs.isUserdata()) {
 				return false;
 			}
 			LuaValue v = ref.get();
-			return v != null && v.raweq(rhs) || rhs.touserdata() == ob.get();
+			return v != null && v.raweq(rhs) || rhs.toUserdata() == ob.get();
 		}
 
 		@Override
@@ -330,7 +327,7 @@ public class WeakTable extends LuaTable {
 		@Override
 		public LuaValue strongvalue() {
 			LuaValue key = weakkey.strongvalue();
-			if (key.isnil()) {
+			if (key.isNil()) {
 				return weakvalue = Constants.NIL;
 			}
 			return weakvalue.strongvalue();
