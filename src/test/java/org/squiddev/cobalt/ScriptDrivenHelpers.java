@@ -76,6 +76,9 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 			expectedOutput = expectedOutput.replaceAll("\r\n", "\n");
 
 			assertEquals(expectedOutput.replace("-nan", "<nan>"), actualOutput);
+		} catch (LuaError e) {
+			System.out.println(new String(output.toByteArray()));
+			throw e;
 		} finally {
 			state.stdout = oldps;
 			ps.close();

@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.TwoArgFunction;
@@ -209,20 +210,22 @@ public class BaseLib extends OneArgFunction {
 				case 7: // "pcall", // (f, arg1, ...) -> status, result1, ...
 				{
 					LuaValue func = args.checkValue(1);
-					LuaThread.CallStack cs = LuaThread.onCall(state, this);
+					DebugState ds = state.debug.getDebugState();
+					ds.onCall(this);
 					try {
 						return pcall(state, func, args.subargs(2), null);
 					} finally {
-						cs.onReturn();
+						ds.onReturn();
 					}
 				}
 				case 8: // "xpcall", // (f, err) -> result1, ...
 				{
-					LuaThread.CallStack cs = LuaThread.onCall(state, this);
+					DebugState ds = state.debug.getDebugState();
+					ds.onCall(this);
 					try {
 						return pcall(state, args.first(), Constants.NONE, args.checkValue(2));
 					} finally {
-						cs.onReturn();
+						ds.onReturn();
 					}
 				}
 				case 9: // "print", // (...) -> void

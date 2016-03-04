@@ -240,7 +240,7 @@ public class PackageLib extends OneArgFunction {
 		}
 
 		// set the environment of the current function
-		LuaFunction f = LuaThread.getCallstackFunction(state, 1);
+		LuaFunction f = LuaThread.getCallstackFunction(state, 0);
 		if (f == null) {
 			throw new LuaError("no calling function");
 		}

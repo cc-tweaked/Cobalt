@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaClosure;
 
 /**
  * Upvalue used with Closure formulation

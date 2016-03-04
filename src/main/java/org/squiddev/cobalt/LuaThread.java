@@ -24,9 +24,11 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
-import org.squiddev.cobalt.lib.DebugLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
@@ -90,8 +92,6 @@ public class LuaThread extends LuaValue {
 	 */
 	public LuaValue err;
 
-	private final CallStack callstack;
-
 	public static final int MAX_CALLSTACK = 256;
 
 	public final LuaState luaState;
@@ -99,7 +99,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * Thread-local used by DebugLib to store debugging state.
 	 */
-	public DebugLib.DebugState debugState;
+	public DebugState debugState;
 
 	/**
 	 * Constructor for main thread only
@@ -116,7 +116,6 @@ public class LuaThread extends LuaValue {
 
 		state = new State(this, null);
 		state.status = STATUS_RUNNING;
-		callstack = new CallStack(luaState);
 	}
 
 	/**
@@ -135,7 +134,6 @@ public class LuaThread extends LuaValue {
 		this.env = env;
 
 		state = new State(this, func);
-		callstack = new CallStack(luaState);
 	}
 
 	@Override
@@ -181,20 +179,6 @@ public class LuaThread extends LuaValue {
 	}
 
 	/**
-	 * Callback used at the beginning of a call to prepare for possible getfenv/setfenv calls
-	 *
-	 * @param state    The current lua state
-	 * @param function Function being called
-	 * @return CallStack which is used to signal the return or a tail-call recursion
-	 * @see DebugLib
-	 */
-	public static CallStack onCall(LuaState state, LuaFunction function) {
-		CallStack cs = state.currentThread.callstack;
-		cs.onCall(function);
-		return cs;
-	}
-
-	/**
 	 * Get the function called as a specific location on the stack.
 	 *
 	 * @param state The current lua state
@@ -202,7 +186,8 @@ public class LuaThread extends LuaValue {
 	 * @return LuaFunction on the call stack, or null if outside of range of active stack
 	 */
 	public static LuaFunction getCallstackFunction(LuaState state, int level) {
-		return state.currentThread.callstack.getFunction(level);
+		DebugInfo info = DebugHandler.getDebugState(state.currentThread).getDebugInfo(level);
+		return info == null ? null : info.func;
 	}
 
 	/**
@@ -238,7 +223,6 @@ public class LuaThread extends LuaValue {
 			luaState.threads.remove(this);
 		} else if (isMainThread()) {
 			// Can't do anything if the main thread
-			return;
 		} else if (state.status > STATUS_SUSPENDED) {
 			throw new IllegalStateException("Cannot abandon " + getStatus() + " coroutine");
 		} else {
@@ -269,7 +253,7 @@ public class LuaThread extends LuaValue {
 		private final LuaValue function;
 		private Varargs args = Constants.NONE;
 		private Varargs result = Constants.NONE;
-		private String error = null;
+		private LuaValue error = null;
 		protected int status = LuaThread.STATUS_INITIAL;
 		private boolean abandoned = false;
 
@@ -285,8 +269,10 @@ public class LuaThread extends LuaValue {
 				Varargs a = args;
 				args = Constants.NONE;
 				result = function.invoke(state, a);
+			} catch (LuaError e) {
+				error = e.value;
 			} catch (Throwable t) {
-				error = t.getMessage();
+				error = valueOf(t.getMessage());
 			} finally {
 				markDead();
 				notify();
@@ -308,7 +294,7 @@ public class LuaThread extends LuaValue {
 				status = STATUS_RUNNING;
 				wait();
 				return (error != null ?
-					varargsOf(Constants.FALSE, valueOf(error)) :
+					varargsOf(Constants.FALSE, error) :
 					varargsOf(Constants.TRUE, result));
 
 			} catch (InterruptedException ie) {
@@ -370,46 +356,6 @@ public class LuaThread extends LuaValue {
 			status = STATUS_DEAD;
 			LuaThread current = thread.get();
 			if (current != null) state.threads.remove(current);
-		}
-	}
-
-	public static class CallStack {
-		private final LuaState state;
-		private final LuaFunction[] functions = new LuaFunction[MAX_CALLSTACK];
-		private int calls = 0;
-
-		public CallStack(LuaState state) {
-			this.state = state;
-		}
-
-		/**
-		 * Method to indicate the start of a call
-		 *
-		 * @see DebugLib
-		 */
-		final void onCall(LuaFunction function) {
-			functions[calls++] = function;
-			DebugLib.debugOnCall(state.currentThread, calls, function);
-		}
-
-		/**
-		 * Method to signal the end of a call
-		 *
-		 * @see DebugLib
-		 */
-		public final void onReturn() {
-			functions[--calls] = null;
-			DebugLib.debugOnReturn(state.currentThread, calls);
-		}
-
-		/**
-		 * Get the function at a particular level of the stack.
-		 *
-		 * @param level # of levels back from the top of the stack.
-		 * @return LuaFunction, or null if beyond the stack limits.
-		 */
-		LuaFunction getFunction(int level) {
-			return level > 0 && level <= calls ? functions[calls - level] : null;
 		}
 	}
 }

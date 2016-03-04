@@ -838,7 +838,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if not a function
 	 * @see #checkClosure()
 	 */
-	public LuaValue checkFunction() {
+	public LuaFunction checkFunction() {
 		throw ErrorFactory.argError(this, "function");
 	}
 

@@ -26,6 +26,7 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.debug.DebugState;
 
 /**
  * Abstract base class for Java function implementations that takes varaiable arguments and
@@ -90,11 +91,12 @@ public abstract class VarArgFunction extends LibFunction {
 	 */
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) {
-		LuaThread.CallStack cs = LuaThread.onCall(state, this);
+		DebugState ds = state.debug.getDebugState();
+		ds.onCall(this);
 		try {
 			return this.onInvoke(state, args).eval(state);
 		} finally {
-			cs.onReturn();
+			ds.onReturn();
 		}
 	}
 

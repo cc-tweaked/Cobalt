@@ -26,6 +26,7 @@ public class AssertionTest {
 	public static Collection<Object[]> getTests() {
 		Object[][] tests = {
 			{"stringIssues"},
+			{"debug"},
 		};
 
 		return Arrays.asList(tests);

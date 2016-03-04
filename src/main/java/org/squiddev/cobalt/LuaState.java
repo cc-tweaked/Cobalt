@@ -26,6 +26,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
 import java.io.InputStream;
@@ -93,6 +94,8 @@ public final class LuaState {
 	 */
 	public LoadState.LuaCompiler compiler = LuaC.instance;
 
+	public DebugHandler debug;
+
 	protected LuaThread currentThread;
 
 	/**
@@ -104,6 +107,7 @@ public final class LuaState {
 
 	public LuaState(ResourceManipulator resourceManipulator) {
 		this.resourceManipulator = resourceManipulator;
+		debug = new DebugHandler(this);
 	}
 
 	/**

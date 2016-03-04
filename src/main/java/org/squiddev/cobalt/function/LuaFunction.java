@@ -55,7 +55,7 @@ public abstract class LuaFunction extends LuaValue {
 	}
 
 	@Override
-	public LuaValue checkFunction() {
+	public LuaFunction checkFunction() {
 		return this;
 	}
 

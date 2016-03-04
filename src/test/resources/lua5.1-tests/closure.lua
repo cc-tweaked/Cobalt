@@ -367,7 +367,7 @@ if not T then
 else
 
   local turn
-  
+
   function fact (t, x)
     assert(turn == t)
     if x == 0 then return 1

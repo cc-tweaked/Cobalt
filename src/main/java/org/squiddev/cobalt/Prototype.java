@@ -24,19 +24,20 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaInterpreter;
+
 /**
  * Prototype representing compiled lua code.
  *
  * This is both a straight translation of the corresponding C type,
  * and the main data structure for execution of compiled lua bytecode.
  *
- * See documentatation on {@link LuaClosure} for information on how to load
+ * See documentatation on {@link LuaInterpreter} for information on how to load
  * and execute a {@link Prototype}.
  *
- * @see LuaClosure
+ * @see LuaInterpreter
  */
-
-public class Prototype {
+public final class Prototype {
 	/* constants used by the function */
 	public LuaValue[] k;
 	public int[] code;
@@ -56,6 +57,15 @@ public class Prototype {
 	public int is_vararg;
 	public int maxstacksize;
 
+	public String sourceShort() {
+		String name = source.toString();
+		if (name.startsWith("@") || name.startsWith("=")) {
+			name = name.substring(1);
+		} else if (name.startsWith("\033")) {
+			name = "binary string";
+		}
+		return name;
+	}
 
 	public String toString() {
 		return source + ":" + linedefined + "-" + lastlinedefined;

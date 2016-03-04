@@ -27,7 +27,9 @@ package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.lib.DebugLib;
+import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.Constants.FALSE;
 import static org.squiddev.cobalt.Constants.TRUE;
@@ -210,21 +212,14 @@ public class LuaInterpreter extends LuaClosure {
 		}
 
 		// debug wants args to this function
-		DebugLib.DebugState ds = DebugLib.getDebugState(state);
-		final boolean enabled = !ds.inHook();
-
-		DebugLib.DebugInfo di = null;
-		if (enabled) {
-			di = ds.nextInfo();
-			di.setargs(varargs, stack);
-		}
+		DebugHandler handler = state.debug;
+		DebugState ds = handler.getDebugState();
+		DebugInfo di = handler.onCall(ds, this, varargs, stack);
 
 		// process instructions
-		LuaThread.CallStack cs = LuaThread.onCall(state, this);
-
 		try {
 			while (true) {
-				if (enabled) DebugLib.debugBytecode(ds, di, pc, v, top);
+				if (di != null) handler.onInstruction(ds, di, pc, v, top);
 
 				// pull out instruction
 				i = code[pc++];
@@ -568,7 +563,7 @@ public class LuaInterpreter extends LuaClosure {
 		} catch (Exception e) {
 			throw new LuaError(e).fillTraceback(state);
 		} finally {
-			cs.onReturn();
+			ds.onReturn();
 			if (openups != null) {
 				for (int u = openups.length; --u >= 0; ) {
 					if (openups[u] != null) {
