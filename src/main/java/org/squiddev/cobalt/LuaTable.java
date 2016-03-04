@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,14 +31,14 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LuaValue} for representing lua tables.
- * <p>
+ *
  * Almost all API's implemented in {@link LuaTable} are defined and documented in {@link LuaValue}.
- * <p>
+ *
  * If a table is needed, the one of the type-checking functions can be used such as
  * {@link #isTable()},
  * {@link #checkTable()}, or
  * {@link #optTable(LuaTable)}
- * <p>
+ *
  * The main table operations are defined on {@link LuaValue}
  * for getting and setting values with and without metatag processing:
  * <ul>
@@ -47,7 +48,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * <li>{@link LuaValue#rawset(LuaValue, LuaValue)}</li>
  * <li>plus overloads such as {@link LuaValue#get(LuaState, String)}, {@link LuaValue#get(LuaState, int)}, and so on</li>
  * </ul>
- * <p>
+ *
  * To iterate over key-value pairs from Java, use
  * <pre> {@code
  * LuaValue k = LuaValue.NIL;
@@ -58,7 +59,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  *    LuaValue v = n.arg(2)
  *    process( k, v )
  * }}</pre>
- * <p>
+ *
  * As with other types, {@link LuaTable} instances should be constructed via one of the table constructor
  * methods on {@link LuaValue}:
  * <ul>
@@ -467,7 +468,7 @@ public class LuaTable extends LuaValue {
 
 	/**
 	 * Return table.maxn() as defined by lua 5.0.
-	 * <p>
+	 *
 	 * Provided for compatibility, not a scalable operation.
 	 *
 	 * @return value for maxn

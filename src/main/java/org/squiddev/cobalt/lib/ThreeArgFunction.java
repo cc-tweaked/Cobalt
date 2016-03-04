@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,18 +33,18 @@ import static org.squiddev.cobalt.Constants.NIL;
 /**
  * Abstract base class for Java function implementations that take two arguments and
  * return one value.
- * <p>
+ *
  * Subclasses need only implement {@link LuaValue#call(LuaState, LuaValue, LuaValue, LuaValue)} to complete this class,
  * simplifying development.
  * All other uses of {@link LuaValue#call(LuaState)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * dropping or extending arguments with {@code nil} values as required.
- * <p>
+ *
  * If more or less than three arguments are required,
  * or variable argument or variable return values,
  * then use one of the related function
  * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link VarArgFunction}.
- * <p>
+ *
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
  * @see LuaValue#call(LuaState, LuaValue, LuaValue, LuaValue)

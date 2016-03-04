@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2007-2012 LuaJ. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,19 +36,19 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * Subclass of {@link LuaValue} that implements
  * a lua coroutine thread using Java Threads.
- * <p>
+ *
  * A LuaThread is typically created in response to a scripted call to
  * {@code coroutine.create()}
- * <p>
+ *
  * The utility class {@link JsePlatform}
  * sees to it that this initialization is done properly.
  * For this reason it is highly recommended to use one of these classes
  * when initializing globals.
- * <p>
+ *
  * The behavior of coroutine threads matches closely the behavior
  * of C coroutine library.  However, because of the use of Java threads
  * to manage call state, it is possible to yield from anywhere in luaj.
- * <p>
+ *
  * Each Java thread wakes up at regular intervals and checks a weak reference
  * to determine if it can ever be resumed.  If not, it throws
  * {@link OrphanedThread} which is an {@link java.lang.Error}.

@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,17 +32,17 @@ import static org.squiddev.cobalt.Constants.TRUE;
 
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
- * <p>
+ *
  * A {@link LuaClosure} is a combination of a {@link Prototype}
  * and a {@link LuaValue} to use as an environment for execution.
- * <p>
+ *
  * There are three main ways {@link LuaClosure} instances are created:
  * <ul>
  * <li>Construct an instance using {@link #LuaClosure(Prototype, LuaValue)}</li>
  * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, String, LuaValue)}
  * <li>Execute the lua bytecode {@link Lua#OP_CLOSURE} as part of bytecode processing
  * </ul>
- * <p>
+ *
  * To construct it directly, the {@link Prototype} is typically created via a compiler such as {@link LuaC}:
  * <pre> {@code
  * InputStream is = new ByteArrayInputStream("print('hello,world').getBytes());
@@ -49,25 +50,25 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * LuaValue _G = JsePlatform.standardGlobals()
  * LuaClosure f = new LuaClosure(p, _G);
  * }</pre>
- * <p>
+ *
  * To construct it indirectly, the {@link LuaC} compiler may be used,
  * which implements the {@link LoadState.LuaCompiler} interface:
  * <pre> {@code
  * LuaFunction f = LuaC.instance.load(is, "script", _G);
  * }</pre>
- * <p>
+ *
  * Typically, a closure that has just been loaded needs to be initialized by executing it,
  * and its return value can be saved if needed:
  * <pre> {@code
  * LuaValue r = f.call();
  * _G.set( "mypkg", r )
  * }</pre>
- * <p>
+ *
  * In the preceding, the loaded value is typed as {@link LuaFunction}
  * to allow for the possibility of other compilers such as LuaJC
  * producing {@link LuaFunction} directly without
  * creating a {@link Prototype} or {@link LuaClosure}.
- * <p>
+ *
  * Since a {@link LuaClosure} is a {@link LuaFunction} which is a {@link LuaValue},
  * all the value operations can be used directly such as:
  * <ul>

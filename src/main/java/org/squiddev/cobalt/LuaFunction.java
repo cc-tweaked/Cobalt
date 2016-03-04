@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +28,7 @@ import org.squiddev.cobalt.lib.LibFunction;
 
 /**
  * Base class for functions implemented in Java.
- * <p>
+ *
  * Direct subclass include {@link LibFunction} which is the base class for
  * all built-in library functions coded in Java,
  * and {@link LuaClosure}, which represents a lua closure

@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,10 +30,10 @@ import java.lang.ref.WeakReference;
 
 /**
  * Subclass of {@link LuaTable} that provides weak key and weak value semantics.
- * <p>
+ *
  * Normally these are not created directly, but indirectly when changing the mode
  * of a {@link LuaTable} as lua script executes.
- * <p>
+ *
  * However, calling the constructors directly when weak tables are required from
  * Java will reduce overhead.
  */

@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,17 +29,17 @@ import org.squiddev.cobalt.*;
 /**
  * Abstract base class for Java function implementations that takes varaiable arguments and
  * returns multiple return values.
- * <p>
+ *
  * Subclasses need only implement {@link LuaValue#invoke(LuaState, Varargs)} to complete this class,
  * simplifying development.
  * All other uses of {@link LuaValue#call(LuaState, LuaValue)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * converting arguments to {@link Varargs} and
  * dropping or extending return values with {@code nil} values as required.
- * <p>
+ *
  * If between one and three arguments are required, and only one return value is returned,
  * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link ThreeArgFunction}.
- * <p>
+ *
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
  * @see LuaValue#invoke(LuaState, Varargs)

@@ -36,7 +36,7 @@ import java.util.Collection;
 
 /**
  * Test argument type check errors
- * <p>
+ *
  * Results are compared for exact match with
  * the installed C-based lua environment.
  */

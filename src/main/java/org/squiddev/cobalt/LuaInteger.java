@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,12 +26,12 @@ package org.squiddev.cobalt;
 
 /**
  * Extension of {@link LuaNumber} which can hold a Java int as its value.
- * <p>
+ *
  * These instance are not instantiated directly by clients, but indirectly
  * via the static functions {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(double)}
  * functions.  This ensures that policies regarding pooling of instances are
  * encapsulated.
- * <p>
+ *
  * There are no API's specific to LuaInteger that are useful beyond what is already
  * exposed in {@link LuaValue}.
  *

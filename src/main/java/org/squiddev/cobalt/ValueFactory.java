@@ -1,3 +1,28 @@
+/*
+ * ****************************************************************************
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * ****************************************************************************
+ */
+
 package org.squiddev.cobalt;
 
 public class ValueFactory {
@@ -270,7 +295,7 @@ public class ValueFactory {
 
 	/**
 	 * Construct a {@link Varargs} around a set of 2 or more {@link LuaValue}s.
-	 * <p>
+	 *
 	 * This can be used to wrap exactly 2 values, or a list consisting of 1 initial value
 	 * followed by another variable list of remaining values.
 	 *
@@ -290,7 +315,7 @@ public class ValueFactory {
 
 	/**
 	 * Construct a {@link Varargs} around a set of 3 or more {@link LuaValue}s.
-	 * <p>
+	 *
 	 * This can be used to wrap exactly 3 values, or a list consisting of 2 initial values
 	 * followed by another variable list of remaining values.
 	 *
@@ -311,10 +336,10 @@ public class ValueFactory {
 
 	/**
 	 * Construct a {@link TailcallVarargs} around a function and arguments.
-	 * <p>
+	 *
 	 * The tail call is not yet called or processing until the client invokes
 	 * {@link Varargs#eval(LuaState)} which performs the tail call processing.
-	 * <p>
+	 *
 	 * This method is typically not used directly by client code.
 	 * Instead use one of the function invocation methods.
 	 *

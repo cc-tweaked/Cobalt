@@ -33,7 +33,7 @@ import java.util.Collection;
 
 /**
  * Compatibility tests for the LuaJ VM
- * <p>
+ *
  * Results are compared for exact match with
  * the installed C-based lua environment.
  */

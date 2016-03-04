@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,16 +38,16 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Compiler for Lua.
- * <p>
+ *
  * Compiles lua source files into lua bytecode within a {@link Prototype},
  * loads lua binary files directly into a{@link Prototype},
  * and optionaly instantiates a {@link LuaClosure} around the result
  * using a user-supplied environment.
- * <p>
+ *
  * Implements the {@link LuaCompiler} interface for loading
  * initialized chunks, which is an interface common to
  * lua bytecode compiling and java bytecode compiling.
- * <p>
+ *
  * Teh {@link LuaC} compiler is installed by default by the
  * {@link JsePlatform} class
  * so in the following example, the default {@link LuaC} compiler

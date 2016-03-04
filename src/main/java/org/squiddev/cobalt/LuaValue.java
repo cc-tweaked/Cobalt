@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,18 +30,18 @@ import static org.squiddev.cobalt.Constants.*;
 
 /**
  * Base class for all concrete lua type values.
- * <p>
+ *
  * Establishes base implementations for all the operations on lua types.
  * This allows Java clients to deal essentially with one type for all Java values, namely {@link LuaValue}.
- * <p>
+ *
  * Constructors are provided as static methods for common Java types, such as
  * {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(String)}
  * to allow for instance pooling.
- * <p>
+ *
  * Constants are defined for the lua values
  * {@link Constants#NIL}, {@link Constants#TRUE}, and {@link Constants#FALSE}.
  * A constant {@link Constants#NONE} is defined which is a {@link Varargs} list having no values.
- * <p>
+ *
  * Operations are performed on values directly via their Java methods.
  * For example, the following code divides two numbers:
  * <pre> {@code
@@ -52,7 +53,7 @@ import static org.squiddev.cobalt.Constants.*;
  * if the value of a were changed to 8, say.
  * In general the value of c in practice will vary depending on both the types and values of a and b
  * as well as any metatable/metatag processing that occurs.
- * <p>
+ *
  * Field access and function calls are similar, with common overloads to simplify Java usage:
  * <pre> {@code
  * LuaValue globals = JsePlatform.standardGlobals();
@@ -61,7 +62,7 @@ import static org.squiddev.cobalt.Constants.*;
  * LuaValue d = sqrt.call( a );
  * print.call( LuaValue.valueOf("sqrt(5):"), a );
  * } </pre>
- * <p>
+ *
  * To supply variable arguments or get multiple return values, use
  * {@link #invoke(LuaState, Varargs)} or {@link #invokeMethod(LuaState, LuaValue, Varargs)} methods:
  * <pre> {@code
@@ -69,12 +70,12 @@ import static org.squiddev.cobalt.Constants.*;
  * Varargs r = modf.invoke( d );
  * print.call( r.arg(1), r.arg(2) );
  * } </pre>
- * <p>
+ *
  * To load and run a script, {@link LoadState} is used:
  * <pre> {@code
  * LoadState.load(new FileInputStream("main.lua"), "main.lua", globals ).call();
  * } </pre>
- * <p>
+ *
  * although {@code require} could also be used:
  * <pre> {@code
  * globals.get("require").call(LuaValue.valueOf("main"));
@@ -82,7 +83,7 @@ import static org.squiddev.cobalt.Constants.*;
  * For this to work the file must be in the current directory, or in the class path,
  * depending on the platform.
  * See {@link JsePlatform} for details.
- * <p>
+ *
  * In general a {@link LuaError} may be thrown on any operation when the
  * types supplied to any operation are illegal from a lua perspective.
  * Examples could be attempting to concatenate a NIL value, or attempting arithmetic
@@ -121,7 +122,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Get the String name of the type of this value.
-	 * <p>
+	 *
 	 *
 	 * @return name from type name list {@link Constants#TYPE_NAMES}
 	 * corresponding to the type of this value:
@@ -200,7 +201,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check if {@code this} is a {@link LuaInteger}
-	 * <p>
+	 *
 	 * No attempt to convert from string will be made by this call.
 	 *
 	 * @return true if this is a {@code LuaInteger},
@@ -439,13 +440,13 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Conditionally convert to lua number without throwing errors.
-	 * <p>
+	 *
 	 * In lua all numbers are strings, but not all strings are numbers.
 	 * This function will return
 	 * the {@link LuaValue} {@code this} if it is a number
 	 * or a string convertible to a number,
 	 * and {@link Constants#NIL} for all other cases.
-	 * <p>
+	 *
 	 * This allows values to be tested for their "numeric-ness" without
 	 * the penalty of throwing exceptions,
 	 * nor the cost of converting the type and creating storage for it.
@@ -465,11 +466,11 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Conditionally convert to lua string without throwing errors.
-	 * <p>
+	 *
 	 * In lua all numbers are strings, so this function will return
 	 * the {@link LuaValue} {@code this} if it is a string or number,
 	 * and {@link Constants#NIL} for all other cases.
-	 * <p>
+	 *
 	 * This allows values to be tested for their "string-ness" without
 	 * the penalty of throwing exceptions.
 	 *
@@ -503,7 +504,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that optional argument is a closure and return as {@link LuaClosure}
-	 * <p>
+	 *
 	 * A {@link LuaClosure} is a {@link LuaFunction} that executes lua byteccode.
 	 *
 	 * @param defval {@link LuaClosure} to return if {@code this} is nil or none
@@ -541,7 +542,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that optional argument is a function and return as {@link LuaFunction}
-	 * <p>
+	 *
 	 * A {@link LuaFunction} may either be a Java function that implements
 	 * functionality directly in Java,
 	 * or a {@link LuaClosure}
@@ -779,7 +780,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Check that the value is a {@link LuaClosure} ,
 	 * or throw {@link LuaError} if not
-	 * <p>
+	 *
 	 * {@link LuaClosure} is a subclass of {@link LuaFunction} that interprets lua bytecode.
 	 *
 	 * @return {@code this} cast as {@link LuaClosure}
@@ -807,7 +808,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Check that the value is numeric and return the value as a double,
 	 * or throw {@link LuaError} if not numeric
-	 * <p>
+	 *
 	 * Values that are {@link LuaNumber} and values that are {@link LuaString}
 	 * that can be converted to a number will be converted to double.
 	 *
@@ -825,7 +826,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is a function , or throw {@link LuaError} if not
-	 * <p>
+	 *
 	 * A function is considered anything whose {@link #type()} returns {@link Constants#TFUNCTION}.
 	 * In practice it will be either a built-in Java function, typically deriving from
 	 * {@link LuaFunction} or a {@link LuaClosure} which represents lua source compiled
@@ -841,7 +842,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and convert and cast value to int, or throw {@link LuaError} if not numeric
-	 * <p>
+	 *
 	 * Values that are {@link LuaNumber} will be cast to int and may lose precision.
 	 * Values that are {@link LuaString} that can be converted to a number will be converted,
 	 * then cast to int, so may also lose precision.
@@ -860,7 +861,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and convert and cast value to int, or throw {@link LuaError} if not numeric
-	 * <p>
+	 *
 	 * Values that are {@link LuaNumber} will be cast to int and may lose precision.
 	 * Values that are {@link LuaString} that can be converted to a number will be converted,
 	 * then cast to int, so may also lose precision.
@@ -879,7 +880,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and convert and cast value to long, or throw {@link LuaError} if not numeric
-	 * <p>
+	 *
 	 * Values that are {@link LuaNumber} will be cast to long and may lose precision.
 	 * Values that are {@link LuaString} that can be converted to a number will be converted,
 	 * then cast to long, so may also lose precision.
@@ -898,7 +899,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and return as a LuaNumber if so, or throw {@link LuaError}
-	 * <p>
+	 *
 	 * Values that are {@link LuaString} that can be converted to a number will be converted and returned.
 	 *
 	 * @return value as a {@link LuaNumber} if numeric
@@ -916,7 +917,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and return as a LuaNumber if so, or throw {@link LuaError}
-	 * <p>
+	 *
 	 * Values that are {@link LuaString} that can be converted to a number will be converted and returned.
 	 *
 	 * @param msg String message to supply if conversion fails
@@ -935,7 +936,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Convert this value to a Java String.
-	 * <p>
+	 *
 	 * The string representations here will roughly match what is produced by the
 	 * C lua distribution, however hash codes have no relationship,
 	 * and there may be differences in number formatting.
@@ -953,7 +954,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that this is a lua string, or throw {@link LuaError} if it is not.
-	 * <p>
+	 *
 	 * In lua all numbers are strings, so this will succeed for
 	 * anything that derives from {@link LuaString} or {@link LuaNumber}.
 	 * Numbers will be converted to {@link LuaString}.
@@ -1204,7 +1205,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Preallocate the array part of a table to be a certain size,
-	 * <p>
+	 *
 	 * Primarily used internally in response to a SETLIST bytecode.
 	 *
 	 * @param i the number of array slots to preallocate in the table.
@@ -1217,7 +1218,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Find the next key,value pair if {@code this} is a table,
 	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
-	 * <p>
+	 *
 	 * To iterate over all key-value pairs in a table you can use
 	 * <pre> {@code
 	 * LuaValue k = LuaValue.NIL;
@@ -1248,7 +1249,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Find the next integer-key,value pair if {@code this} is a table,
 	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
-	 * <p>
+	 *
 	 * To iterate over integer keys in a table you can use
 	 * <pre> {@code
 	 *   LuaValue k = LuaValue.NIL;
@@ -1309,7 +1310,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Get the metatable for this {@link LuaValue}
-	 * <p>
+	 *
 	 * For {@link LuaTable} and {@link LuaUserdata} instances,
 	 * the metatable returned is this instance metatable.
 	 * For all other types, the class metatable value will be returned.
@@ -1323,7 +1324,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Set the metatable for this {@link LuaValue}
-	 * <p>
+	 *
 	 * For {@link LuaTable} and {@link LuaUserdata} instances, the metatable is per instance.
 	 * For all other types, there is one metatable per type that can be set directly from java
 	 *
@@ -1346,7 +1347,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Set the environment on an object.
-	 * <p>
+	 *
 	 * Typically the environment is created once per application via a platform
 	 * helper method such as {@link JsePlatform#standardGlobals(LuaState)}
 	 * However, any object can serve as an environment if it contains suitable metatag
@@ -1362,14 +1363,14 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call {@code this} with 0 arguments, including metatag processing,
 	 * and return only the first return value.
-	 * <p>
+	 *
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 * <p>
+	 *
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
 	 * @param state The current lua state
@@ -1390,14 +1391,14 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call {@code this} with 1 argument, including metatag processing,
 	 * and return only the first return value.
-	 * <p>
+	 *
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 * <p>
+	 *
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
 	 * @param state The current lua state
@@ -1419,14 +1420,14 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call {@code this} with 2 arguments, including metatag processing,
 	 * and return only the first return value.
-	 * <p>
+	 *
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 * <p>
+	 *
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
 	 * @param state The current lua state
@@ -1448,14 +1449,14 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call {@code this} with 3 arguments, including metatag processing,
 	 * and return only the first return value.
-	 * <p>
+	 *
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 * <p>
+	 *
 	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
 	 *
 	 * @param state The current lua state
@@ -1478,15 +1479,15 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call named method on {@code this} with 0 arguments, including metatag processing,
 	 * and return only the first return value.
-	 * <p>
+	 *
 	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
 	 * call it inserting {@code this} as an additional first argument,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 * <p>
+	 *
 	 * To call {@code this} as a plain call, use {@link #call(LuaState)} instead.
 	 *
 	 * @param state The current lua state
@@ -1507,15 +1508,15 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call named method on {@code this} with 1 argument, including metatag processing,
 	 * and return only the first return value.
-	 * <p>
+	 *
 	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
 	 * call it inserting {@code this} as an additional first argument,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 * <p>
+	 *
 	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue)} instead.
 	 *
 	 * @param state The current lua state
@@ -1537,15 +1538,15 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call named method on {@code this} with 2 arguments, including metatag processing,
 	 * and return only the first return value.
-	 * <p>
+	 *
 	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
 	 * call it inserting {@code this} as an additional first argument,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 * <p>
+	 *
 	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue, LuaValue)} instead.
 	 *
 	 * @param state The current lua state
@@ -1566,12 +1567,12 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call {@code this} with variable arguments, including metatag processing,
 	 * and retain all return values in a {@link Varargs}.
-	 * <p>
+	 *
 	 * If {@code this} is a {@link LuaFunction}, call it, and return all values.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * To get a particular return value, us {@link Varargs#arg(int)}
-	 * <p>
+	 *
 	 * To call {@code this} as a method call, use {@link #invokeMethod(LuaState, LuaValue, Varargs)} instead.
 	 *
 	 * @param state The current lua state
@@ -1591,14 +1592,14 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Call named method on {@code this} with variable arguments, including metatag processing,
 	 * and retain all return values in a {@link Varargs}.
-	 * <p>
+	 *
 	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
 	 * call it inserting {@code this} as an additional first argument,
 	 * and return all return values as a {@link Varargs} instance.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
+	 *
 	 * To get a particular return value, us {@link Varargs#arg(int)}
-	 * <p>
+	 *
 	 * To call {@code this} as a plain call, use {@link #invoke(LuaState, Varargs)} instead.
 	 *
 	 * @param state The current lua state
@@ -1752,7 +1753,7 @@ public abstract class LuaValue extends Varargs {
 	 * Perform string comparison with another value
 	 * of any type
 	 * using string comparison based on byte values.
-	 * <p>
+	 *
 	 * Only strings can be compared, meaning
 	 * each operand must derive from {@link LuaString}.
 	 *
@@ -1768,7 +1769,7 @@ public abstract class LuaValue extends Varargs {
 	 * Perform string comparison with another value
 	 * known to be a {@link LuaString}
 	 * using string comparison based on byte values.
-	 * <p>
+	 *
 	 * Only strings can be compared, meaning
 	 * each operand must derive from {@link LuaString}.
 	 *
@@ -1782,7 +1783,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Perform metatag processing for concatenation operations.
-	 * <p>
+	 *
 	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
 	 * or throws {@link LuaError} if it doesn't exist.
 	 *
@@ -1890,7 +1891,6 @@ public abstract class LuaValue extends Varargs {
 					return true;
 				}
 			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
-				LuaValue result;
 				throw ErrorFactory.typeError(t, "index");
 			}
 			if (tm.isFunction()) {
@@ -1905,7 +1905,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Perform metatag processing for comparison operations.
-	 * <p>
+	 *
 	 * Finds the supplied metatag value and invokes it,
 	 * or throws {@link LuaError} if none applies.
 	 *
@@ -1929,7 +1929,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Perform metatag processing for arithmetic operations.
-	 * <p>
+	 *
 	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
 	 * or throws {@link LuaError} if neither is defined.
 	 *
@@ -1992,9 +1992,9 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Callback used during tail call processing to invoke the function once.
-	 * <p>
+	 *
 	 * This may return a {@link TailcallVarargs} to be evaluated by the client.
-	 * <p>
+	 *
 	 * This should not be called directly, instead use on of the call invocation functions.
 	 *
 	 * @param state The current lua state

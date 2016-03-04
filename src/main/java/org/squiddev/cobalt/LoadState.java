@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,11 +35,11 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Class to manage loading of {@link Prototype} instances.
- * <p>
+ *
  * The {@link LoadState} class exposes one main function,
  * namely {@link #load(LuaState, InputStream, String, LuaValue)},
  * to be used to load code from a particular input stream.
- * <p>
+ *
  * A simple pattern for loading and executing code is
  * <pre> {@code
  * LuaValue _G = JsePlatform.standardGlobals();
@@ -46,9 +47,9 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * } </pre>
  * This should work regardless of which {@link LuaCompiler}
  * has been installed.
- * <p>
+ *
  * Prior to loading code, a compiler should be installed.
- * <p>
+ *
  * By default, when using {@link JsePlatform} to construct globals, the {@link LuaC} compiler is installed.
  *
  * @see LuaCompiler
@@ -90,7 +91,7 @@ public class LoadState {
 
 	/**
 	 * Interface for the compiler, if it is installed.
-	 * <p>
+	 *
 	 * See the {@link LuaClosure} documentation for examples of how to use the compiler.
 	 *
 	 * @see LuaClosure

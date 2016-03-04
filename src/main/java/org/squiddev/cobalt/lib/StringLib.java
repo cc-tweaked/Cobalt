@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,7 +38,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
  * library.
- * <p>
+ *
  * This is a direct port of the corresponding library in C.
  *
  * @see LibFunction
@@ -110,11 +111,11 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.byte (s [, i [, j]])
-	 * <p>
+	 *
 	 * Returns the internal numerical codes of the
 	 * characters s[i], s[i+1], ..., s[j]. The default value for i is 1; the
 	 * default value for j is i.
-	 * <p>
+	 *
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
 	 * @param args the calling args
@@ -141,11 +142,11 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.char (...)
-	 * <p>
+	 *
 	 * Receives zero or more integers. Returns a string with length equal
 	 * to the number of arguments, in which each character has the internal
 	 * numerical code equal to its corresponding argument.
-	 * <p>
+	 *
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
 	 * @param args the calling VM
@@ -188,7 +189,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.find (s, pattern [, init [, plain]])
-	 * <p>
+	 *
 	 * Looks for the first match of pattern in the string s.
 	 * If it finds a match, then find returns the indices of s
 	 * where this occurrence starts and ends; otherwise, it returns nil.
@@ -198,7 +199,7 @@ public class StringLib extends OneArgFunction {
 	 * so the function does a plain "find substring" operation,
 	 * with no characters in pattern being considered "magic".
 	 * Note that if plain is given, then init must be given as well.
-	 * <p>
+	 *
 	 * If the pattern has captures, then in a successful match the captured values
 	 * are also returned, after the two indices.
 	 */
@@ -208,7 +209,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.format (formatstring, ...)
-	 * <p>
+	 *
 	 * Returns a formatted version of its variable number of arguments following
 	 * the description given in its first argument (which must be a string).
 	 * The format string follows the same rules as the printf family of standard C functions.
@@ -218,14 +219,14 @@ public class StringLib extends OneArgFunction {
 	 * and all double quotes, newlines, embedded zeros, and backslashes in the string are correctly
 	 * escaped when written. For instance, the call
 	 * string.format('%q', 'a string with "quotes" and \n new line')
-	 * <p>
+	 *
 	 * will produce the string:
 	 * "a string with \"quotes\" and \
 	 * new line"
-	 * <p>
+	 *
 	 * The options c, d, E, e, f, g, G, i, o, u, X, and x all expect a number as argument,
 	 * whereas q and s expect a string.
-	 * <p>
+	 *
 	 * This function does not accept string values containing embedded zeros,
 	 * except as arguments to the q option.
 	 */
@@ -525,17 +526,17 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.gmatch (s, pattern)
-	 * <p>
+	 *
 	 * Returns an iterator function that, each time it is called, returns the next captures
 	 * from pattern over string s. If pattern specifies no captures, then the
 	 * whole match is produced in each call.
-	 * <p>
+	 *
 	 * As an example, the following loop
 	 * s = "hello world from Lua"
 	 * for w in string.gmatch(s, "%a+") do
 	 * print(w)
 	 * end
-	 * <p>
+	 *
 	 * will iterate over all the words from string s, printing one per line.
 	 * The next example collects all pairs key=value from the given string into a table:
 	 * t = {}
@@ -543,7 +544,7 @@ public class StringLib extends OneArgFunction {
 	 * for k, v in string.gmatch(s, "(%w+)=(%w+)") do
 	 * t[k] = v
 	 * end
-	 * <p>
+	 *
 	 * For this function, a '^' at the start of a pattern does not work as an anchor,
 	 * as this would prevent the iteration.
 	 */
@@ -587,41 +588,41 @@ public class StringLib extends OneArgFunction {
 	 * pattern have been replaced by a replacement string specified by repl, which
 	 * may be a string, a table, or a function. gsub also returns, as its second value,
 	 * the total number of matches that occurred.
-	 * <p>
+	 *
 	 * If repl is a string, then its value is used for replacement.
 	 * The character % works as an escape character: any sequence in repl of the form %n,
 	 * with n between 1 and 9, stands for the value of the n-th captured substring (see below).
 	 * The sequence %0 stands for the whole match. The sequence %% stands for a single %.
-	 * <p>
+	 *
 	 * If repl is a table, then the table is queried for every match, using the first capture
 	 * as the key; if the pattern specifies no captures, then the whole match is used as the key.
-	 * <p>
+	 *
 	 * If repl is a function, then this function is called every time a match occurs,
 	 * with all captured substrings passed as arguments, in order; if the pattern specifies
 	 * no captures, then the whole match is passed as a sole argument.
-	 * <p>
+	 *
 	 * If the value returned by the table query or by the function call is a string or a number,
 	 * then it is used as the replacement string; otherwise, if it is false or nil,
 	 * then there is no replacement (that is, the original match is kept in the string).
-	 * <p>
+	 *
 	 * Here are some examples:
 	 * x = string.gsub("hello world", "(%w+)", "%1 %1")
 	 * --> x="hello hello world world"
-	 * <p>
+	 *
 	 * x = string.gsub("hello world", "%w+", "%0 %0", 1)
 	 * --> x="hello hello world"
-	 * <p>
+	 *
 	 * x = string.gsub("hello world from Lua", "(%w+)%s*(%w+)", "%2 %1")
 	 * --> x="world hello Lua from"
-	 * <p>
+	 *
 	 * x = string.gsub("home = $HOME, user = $USER", "%$(%w+)", os.getenv)
 	 * --> x="home = /home/roberto, user = roberto"
-	 * <p>
+	 *
 	 * x = string.gsub("4+5 = $return 4+5$", "%$(.-)%$", function (s)
 	 * return loadstring(s)()
 	 * end)
 	 * --> x="4+5 = 9"
-	 * <p>
+	 *
 	 * local t = {name="lua", version="5.1"}
 	 * x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
 	 * --> x="lua-5.1.tar.gz"
@@ -663,7 +664,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.len (s)
-	 * <p>
+	 *
 	 * Receives a string and returns its length. The empty string "" has length 0.
 	 * Embedded zeros are counted, so "a\000bc\000" has length 5.
 	 */
@@ -673,7 +674,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.lower (s)
-	 * <p>
+	 *
 	 * Receives a string and returns a copy of this string with all uppercase letters
 	 * changed to lowercase. All other characters are left unchanged.
 	 * The definition of what an uppercase letter is depends on the current locale.
@@ -684,7 +685,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.match (s, pattern [, init])
-	 * <p>
+	 *
 	 * Looks for the first match of pattern in the string s. If it finds one,
 	 * then match returns the captures from the pattern; otherwise it returns
 	 * nil. If pattern specifies no captures, then the whole match is returned.
@@ -697,7 +698,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.rep (s, n)
-	 * <p>
+	 *
 	 * Returns a string that is the concatenation of n copies of the string s.
 	 */
 	static Varargs rep(Varargs args) {
@@ -713,7 +714,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.reverse (s)
-	 * <p>
+	 *
 	 * Returns a string that is the string s reversed.
 	 */
 	static LuaValue reverse(LuaValue arg) {
@@ -728,7 +729,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.sub (s, i [, j])
-	 * <p>
+	 *
 	 * Returns the substring of s that starts at i and continues until j;
 	 * i and j may be negative. If j is absent, then it is assumed to be equal to -1
 	 * (which is the same as the string length). In particular, the call
@@ -761,7 +762,7 @@ public class StringLib extends OneArgFunction {
 
 	/**
 	 * string.upper (s)
-	 * <p>
+	 *
 	 * Receives a string and returns a copy of this string with all lowercase letters
 	 * changed to uppercase. All other characters are left unchanged.
 	 * The definition of what a lowercase letter is depends on the current locale.
@@ -933,7 +934,6 @@ public class StringLib extends OneArgFunction {
 			if (!repl.toBoolean()) {
 				repl = s.substring(soffset, end);
 			} else if (!repl.isString()) {
-				LuaValue result;
 				throw new LuaError("invalid replacement value (a " + repl.typeName() + ")");
 			}
 			lbuf.append(repl.strvalue());

@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2010-2011 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,7 +34,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard package and module
  * library functions.
- * <p>
+ *
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  * However, the default filesystem search semantics are different and delegated to the bas library
  * as outlined in the {@link BaseLib}.
@@ -186,7 +187,7 @@ public class PackageLib extends OneArgFunction {
 
 	/**
 	 * module (name [, ...])
-	 * <p>
+	 *
 	 * Creates a module. If there is a table in package.loaded[name], this table
 	 * is the module. Otherwise, if there is a global table t with the given
 	 * name, this table is the module. Otherwise creates a new table t and sets
@@ -196,12 +197,12 @@ public class PackageLib extends OneArgFunction {
 	 * name minus last component; see below). Finally, module sets t as the new
 	 * environment of the current function and the new value of
 	 * package.loaded[name], so that require returns t.
-	 * <p>
+	 *
 	 * If name is a compound name (that is, one with components separated by
 	 * dots), module creates (or reuses, if they already exist) tables for each
 	 * component. For instance, if name is a.b.c, then module stores the module
 	 * table in field c of field b of global a.
-	 * <p>
+	 *
 	 * This function may receive optional options after the module name, where
 	 * each option is a function to be applied over the module.
 	 *
@@ -220,7 +221,6 @@ public class PackageLib extends OneArgFunction {
 			LuaValue globals = state.getCurrentThread().getfenv();
 			module = findtable(state, globals, modname);
 			if (module == null) {
-				LuaValue result;
 				throw new LuaError("name conflict for module '" + modname + "'");
 			}
 			state.loadedPackages.set(state, modname, module);
@@ -238,11 +238,9 @@ public class PackageLib extends OneArgFunction {
 		// set the environment of the current function
 		LuaFunction f = LuaThread.getCallstackFunction(state, 1);
 		if (f == null) {
-			LuaValue result;
 			throw new LuaError("no calling function");
 		}
 		if (!f.isClosure()) {
-			LuaValue result;
 			throw new LuaError("'module' not called from a Lua function");
 		}
 		f.setfenv(module);
@@ -294,27 +292,27 @@ public class PackageLib extends OneArgFunction {
 
 	/**
 	 * require (modname)
-	 * <p>
+	 *
 	 * Loads the given module. The function starts by looking into the package.loaded table to
 	 * determine whether modname is already loaded. If it is, then require returns the value
 	 * stored at package.loaded[modname]. Otherwise, it tries to find a loader for the module.
-	 * <p>
+	 *
 	 * To find a loader, require is guided by the package.loaders array. By changing this array,
 	 * we can change how require looks for a module. The following explanation is based on the
 	 * default configuration for package.loaders.
-	 * <p>
+	 *
 	 * First require queries package.preload[modname]. If it has a value, this value
 	 * (which should be a function) is the loader. Otherwise require searches for a Lua loader
 	 * using the path stored in package.path. If that also fails, it searches for a C loader
 	 * using the path stored in package.cpath. If that also fails, it tries an all-in-one loader
 	 * (see package.loaders).
-	 * <p>
+	 *
 	 * Once a loader is found, require calls the loader with a single argument, modname.
 	 * If the loader returns any value, require assigns the returned value to package.loaded[modname].
 	 * If the loader returns no value and has not assigned any value to package.loaded[modname],
 	 * then require assigns true to this entry. In any case, require returns the final value of
 	 * package.loaded[modname].
-	 * <p>
+	 *
 	 * If there is any error loading or running the module, or if it cannot find any loader for
 	 * the module, then require signals an error.
 	 *

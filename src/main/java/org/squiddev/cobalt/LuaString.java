@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,19 +35,19 @@ import static org.squiddev.cobalt.Constants.NIL;
 
 /**
  * Subclass of {@link LuaValue} for representing lua strings.
- * <p>
+ *
  * Because lua string values are more nearly sequences of bytes than
  * sequences of characters or unicode code points, the {@link LuaString}
  * implementation holds the string value in an internal byte array.
- * <p>
+ *
  * {@link LuaString} values are generally not mutable once constructed,
  * so multiple {@link LuaString} values can chare a single byte array.
- * <p>
+ *
  * Currently {@link LuaString}s are pooled via a centrally managed weak table.
  * To ensure that as many string values as possible take advantage of this,
  * Constructors are not exposed directly.  As with number, booleans, and nil,
  * instance construction should be via {@link ValueFactory#valueOf(byte[])} or similar API.
- * <p>
+ *
  * When Java Strings are used to initialize {@link LuaString} data, the UTF8 encoding is assumed.
  * The functions
  * {@link LuaString#lengthAsUtf8(char[])}
@@ -107,9 +108,9 @@ public class LuaString extends LuaValue {
 
 	/**
 	 * Construct a {@link LuaString} around a byte array without copying the contents.
-	 * <p>
+	 *
 	 * The array is used directly after this is called, so clients must not change contents.
-	 * <p>
+	 *
 	 *
 	 * @param bytes byte buffer
 	 * @param off   offset into the byte buffer
@@ -122,9 +123,9 @@ public class LuaString extends LuaValue {
 
 	/**
 	 * Construct a {@link LuaString} using the supplied characters as byte values.
-	 * <p>
+	 *
 	 * Only th elow-order 8-bits of each character are used, the remainder is ignored.
-	 * <p>
+	 *
 	 * This is most useful for constructing byte sequences that do not conform to UTF8.
 	 *
 	 * @param bytes array of char, whose values are truncated at 8-bits each and put into a byte array.
@@ -142,9 +143,9 @@ public class LuaString extends LuaValue {
 
 	/**
 	 * Construct a {@link LuaString} around a byte array without copying the contents.
-	 * <p>
+	 *
 	 * The array is used directly after this is called, so clients must not change contents.
-	 * <p>
+	 *
 	 *
 	 * @param bytes byte buffer
 	 * @return {@link LuaString} wrapping the byte buffer
@@ -155,9 +156,9 @@ public class LuaString extends LuaValue {
 
 	/**
 	 * Construct a {@link LuaString} around a byte array without copying the contents.
-	 * <p>
+	 *
 	 * The array is used directly after this is called, so clients must not change contents.
-	 * <p>
+	 *
 	 *
 	 * @param bytes  byte buffer
 	 * @param offset offset into the byte buffer
@@ -598,7 +599,7 @@ public class LuaString extends LuaValue {
 	/**
 	 * Encode the given Java string as UTF-8 bytes, writing the result to bytes
 	 * starting at offset.
-	 * <p>
+	 *
 	 * The string should be measured first with lengthAsUtf8
 	 * to make sure the given byte array is large enough.
 	 *

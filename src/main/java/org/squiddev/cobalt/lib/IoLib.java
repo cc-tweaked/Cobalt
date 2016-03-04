@@ -1,17 +1,18 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * <p>
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,6 +22,7 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
+
 package org.squiddev.cobalt.lib;
 
 
@@ -37,16 +39,16 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * Abstract base class extending {@link LibFunction} which implements the
  * core of the lua standard {@code io} library.
- * <p>
+ *
  * It contains the implementation of the io library support that is common to
  * the JSE and JME platforms.
  * In practice on of the concrete IOLib subclasses is chosen:
  * {@link JseIoLib} for the JSE platform
- * <p>
+ *
  * The JSE implementation conforms almost completely to the C-based lua library,
  * while the JME implementation follows closely except in the area of random-access files,
  * which are difficult to support properly on JME.
- * <p>
+ *
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction
@@ -532,7 +534,6 @@ public abstract class IoLib extends OneArgFunction {
 	private static File checkfile(LuaValue val) {
 		File f = optfile(val);
 		if (f == null) {
-			LuaValue result;
 			throw ErrorFactory.argError(1, "file");
 		}
 		checkopen(f);

@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +36,12 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua basic library functions.
- * <p>
+ *
  * This contains all library functions listed as "basic functions" in the lua documentation for JME.
  * The functions dofile and loadfile use the
  * {@link LuaState#resourceManipulator} instance to find resource files.
  * The default loader chain in {@link PackageLib} will use these as well.
- * <p>
+ *
  * This is a direct port of the corresponding library in C.
  *
  * @see ResourceManipulator
@@ -240,7 +241,6 @@ public class BaseLib extends OneArgFunction {
 					}
 					int i = args.arg(1).checkInteger();
 					if (i == 0 || i < -n) {
-						LuaValue result;
 						throw ErrorFactory.argError(1, "index out of range");
 					}
 					return args.subargs(i < 0 ? n + i + 2 : i + 1);
@@ -301,7 +301,6 @@ public class BaseLib extends OneArgFunction {
 						return arg1.toNumber();
 					} else {
 						if (base < 2 || base > 36) {
-							LuaValue result;
 							throw ErrorFactory.argError(2, "base out of range");
 						}
 						return arg1.checkLuaString().tonumber(base);

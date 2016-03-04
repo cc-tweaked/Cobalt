@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +26,10 @@ package org.squiddev.cobalt;
 
 /**
  * Prototype representing compiled lua code.
- * <p>
+ *
  * This is both a straight translation of the corresponding C type,
  * and the main data structure for execution of compiled lua bytecode.
- * <p>
+ *
  * See documentatation on {@link LuaClosure} for information on how to load
  * and execute a {@link Prototype}.
  *

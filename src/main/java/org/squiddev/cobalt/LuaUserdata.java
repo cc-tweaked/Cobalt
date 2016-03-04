@@ -1,6 +1,7 @@
-/**
+/*
  * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2016 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +76,6 @@ public class LuaUserdata extends LuaValue {
 	@Override
 	public Object optUserdata(Class<?> c, Object defval) {
 		if (!c.isAssignableFrom(m_instance.getClass())) {
-			LuaValue result;
 			throw ErrorFactory.typeError(this, c.getName());
 		}
 		return m_instance;
