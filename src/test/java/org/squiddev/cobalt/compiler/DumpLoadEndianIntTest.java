@@ -3,6 +3,8 @@ package org.squiddev.cobalt.compiler;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
@@ -89,7 +91,7 @@ public class DumpLoadEndianIntTest {
 			Prototype p = LuaC.compile(is, "script");
 
 			// double check script result before dumping
-			LuaFunction f = new LuaClosure(p, _G);
+			LuaFunction f = new LuaInterpreter(p, _G);
 			LuaValue r = f.call(state);
 			String actual = r.toString();
 			assertEquals(expectedPriorDump, actual);

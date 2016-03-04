@@ -2,10 +2,8 @@ package org.squiddev.cobalt.require;
 
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.lib.ZeroArgFunction;
 import org.squiddev.cobalt.ValueFactory;
-
-import static org.squiddev.cobalt.ValueFactory.valueOf;
+import org.squiddev.cobalt.function.ZeroArgFunction;
 
 /**
  * This should succeed as a library that can be loaded dynamically via "require()"

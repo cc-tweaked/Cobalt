@@ -27,6 +27,9 @@ package org.squiddev.cobalt.lib;
 
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.OneArgFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 

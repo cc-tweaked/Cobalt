@@ -26,6 +26,8 @@ package org.squiddev.cobalt.lib;
 
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;

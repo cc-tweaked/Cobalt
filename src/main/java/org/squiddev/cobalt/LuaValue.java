@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;

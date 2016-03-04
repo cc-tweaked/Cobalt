@@ -28,6 +28,9 @@ import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.OneArgFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;

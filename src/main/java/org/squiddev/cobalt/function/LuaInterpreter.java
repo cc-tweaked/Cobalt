@@ -22,8 +22,10 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt;
 
+package org.squiddev.cobalt.function;
+
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.DebugLib;
 
@@ -33,12 +35,12 @@ import static org.squiddev.cobalt.Constants.TRUE;
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
  *
- * A {@link LuaClosure} is a combination of a {@link Prototype}
+ * A {@link LuaInterpreter} is a combination of a {@link Prototype}
  * and a {@link LuaValue} to use as an environment for execution.
  *
- * There are three main ways {@link LuaClosure} instances are created:
+ * There are three main ways {@link LuaInterpreter} instances are created:
  * <ul>
- * <li>Construct an instance using {@link #LuaClosure(Prototype, LuaValue)}</li>
+ * <li>Construct an instance using {@link #LuaInterpreter(Prototype, LuaValue)}</li>
  * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, String, LuaValue)}
  * <li>Execute the lua bytecode {@link Lua#OP_CLOSURE} as part of bytecode processing
  * </ul>
@@ -67,9 +69,9 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * In the preceding, the loaded value is typed as {@link LuaFunction}
  * to allow for the possibility of other compilers such as LuaJC
  * producing {@link LuaFunction} directly without
- * creating a {@link Prototype} or {@link LuaClosure}.
+ * creating a {@link Prototype} or {@link LuaInterpreter}.
  *
- * Since a {@link LuaClosure} is a {@link LuaFunction} which is a {@link LuaValue},
+ * Since a {@link LuaInterpreter} is a {@link LuaFunction} which is a {@link LuaValue},
  * all the value operations can be used directly such as:
  * <ul>
  * <li>{@link LuaValue#setfenv(LuaValue)}</li>
@@ -87,13 +89,13 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * @see LuaValue#optClosure(LuaClosure)
  * @see LoadState
  */
-public class LuaClosure extends LuaFunction implements PrototypeStorage {
+public class LuaInterpreter extends LuaClosure {
 	private static final UpValue[] NOUPVALUES = new UpValue[0];
 
 	public final Prototype p;
 	public final UpValue[] upValues;
 
-	public LuaClosure() {
+	public LuaInterpreter() {
 		p = null;
 		upValues = null;
 	}
@@ -104,31 +106,16 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 	 * @param p   The prototype to run
 	 * @param env The environement to run in
 	 */
-	public LuaClosure(Prototype p, LuaValue env) {
+	public LuaInterpreter(Prototype p, LuaValue env) {
 		super(env);
 		this.p = p;
 		this.upValues = p.nups > 0 ? new UpValue[p.nups] : NOUPVALUES;
 	}
 
-	protected LuaClosure(int nupvalues, LuaValue env) {
+	protected LuaInterpreter(int nupvalues, LuaValue env) {
 		super(env);
 		this.p = null;
 		this.upValues = nupvalues > 0 ? new UpValue[nupvalues] : NOUPVALUES;
-	}
-
-	@Override
-	public boolean isClosure() {
-		return true;
-	}
-
-	@Override
-	public LuaClosure optClosure(LuaClosure defval) {
-		return this;
-	}
-
-	@Override
-	public LuaClosure checkClosure() {
-		return this;
 	}
 
 	@Override
@@ -551,7 +538,7 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 
 					case Lua.OP_CLOSURE: /*	A Bx	R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))	*/ {
 						Prototype newp = p.p[i >>> 14];
-						LuaClosure newcl = new LuaClosure(newp, env);
+						LuaInterpreter newcl = new LuaInterpreter(newp, env);
 						for (int j = 0, nup = newp.nups; j < nup; ++j) {
 							i = code[pc++];
 							//b = B(i);
@@ -592,11 +579,13 @@ public class LuaClosure extends LuaFunction implements PrototypeStorage {
 		}
 	}
 
-	protected LuaValue getUpvalue(int i) {
+	@Override
+	public LuaValue getUpvalue(int i) {
 		return upValues[i].getValue();
 	}
 
-	protected void setUpvalue(int i, LuaValue v) {
+	@Override
+	public void setUpvalue(int i, LuaValue v) {
 		upValues[i].setValue(v);
 	}
 

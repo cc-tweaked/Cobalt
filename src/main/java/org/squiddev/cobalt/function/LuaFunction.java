@@ -23,11 +23,59 @@
  * ****************************************************************************
  */
 
-package org.squiddev.cobalt;
+package org.squiddev.cobalt.function;
+
+import org.squiddev.cobalt.Constants;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaValue;
 
 /**
- * Used to denote a {@link LuaFunction} that is bound to a prototype
+ * Base class for functions implemented in Java.
+ *
+ * Direct subclass include {@link LibFunction} which is the base class for
+ * all built-in library functions coded in Java,
+ * and {@link LuaInterpreter}, which represents a lua closure
+ * whose bytecode is interpreted when the function is invoked.
+ *
+ * @see LuaValue
+ * @see LibFunction
+ * @see LuaInterpreter
  */
-public interface PrototypeStorage {
-	Prototype getPrototype();
+public abstract class LuaFunction extends LuaValue {
+	protected LuaValue env;
+
+	public LuaFunction() {
+		super(Constants.TFUNCTION);
+		this.env = Constants.NIL;
+	}
+
+	public LuaFunction(LuaValue env) {
+		super(Constants.TFUNCTION);
+		this.env = env;
+	}
+
+	@Override
+	public LuaValue checkFunction() {
+		return this;
+	}
+
+	@Override
+	public LuaFunction optFunction(LuaFunction defval) {
+		return this;
+	}
+
+	@Override
+	public LuaValue getMetatable(LuaState state) {
+		return state.functionMetatable;
+	}
+
+	@Override
+	public LuaValue getfenv() {
+		return env;
+	}
+
+	@Override
+	public void setfenv(LuaValue env) {
+		this.env = env != null ? env : Constants.NIL;
+	}
 }

@@ -2,7 +2,7 @@ package org.squiddev.cobalt.require;
 
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.lib.ZeroArgFunction;
+import org.squiddev.cobalt.function.ZeroArgFunction;
 
 /**
  * This should fail while trying to load via "require()" because it throws a RuntimeException

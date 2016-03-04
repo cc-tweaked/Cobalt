@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
 import org.squiddev.cobalt.lib.DebugLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
@@ -368,7 +369,7 @@ public class LuaThread extends LuaValue {
 		private void markDead() {
 			status = STATUS_DEAD;
 			LuaThread current = thread.get();
-			if(current != null) state.threads.remove(current);
+			if (current != null) state.threads.remove(current);
 		}
 	}
 

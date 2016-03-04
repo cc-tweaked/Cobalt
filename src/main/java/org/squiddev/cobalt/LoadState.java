@@ -25,13 +25,14 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Class to manage loading of {@link Prototype} instances.
@@ -395,7 +396,7 @@ public class LoadState {
 	/**
 	 * Load lua in either binary or text form from an input stream.
 	 *
-	 * @param state The current lua state
+	 * @param state  The current lua state
 	 * @param stream InputStream to read, after having read the first byte already
 	 * @param name   Name to apply to the loaded chunk
 	 * @param env    Environment to load into
@@ -412,7 +413,7 @@ public class LoadState {
 				throw new LuaError("no compiler");
 			}
 			Prototype p = loadBinaryChunk(firstByte, stream, name);
-			return new LuaClosure(p, env);
+			return new LuaInterpreter(p, env);
 		}
 	}
 

@@ -27,6 +27,10 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.DumpState;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.OneArgFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
@@ -176,8 +180,8 @@ public class StringLib extends OneArgFunction {
 		LuaValue f = arg.checkFunction();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			if (f instanceof PrototypeStorage) {
-				DumpState.dump(((PrototypeStorage) f).getPrototype(), baos, true);
+			if (f instanceof LuaClosure) {
+				DumpState.dump(((LuaClosure) f).getPrototype(), baos, true);
 				return LuaString.valueOf(baos.toByteArray());
 			}
 

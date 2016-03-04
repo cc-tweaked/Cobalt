@@ -22,7 +22,8 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt.lib;
+
+package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
 

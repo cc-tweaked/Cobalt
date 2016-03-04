@@ -26,7 +26,10 @@ package org.squiddev.cobalt.vm;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.lib.ZeroArgFunction;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpreter;
+import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
@@ -68,7 +71,7 @@ public class LuaOperationsTest {
 	private final LuaState state = new LuaState(new FileResourceManipulator());
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
 	private final Prototype proto = new Prototype();
-	private final LuaClosure someclosure = new LuaClosure(proto, table);
+	private final LuaClosure someclosure = new LuaInterpreter(proto, table);
 	private final LuaUserdata userdataobj = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = ValueFactory.userdataOf(sampledata);
 
@@ -242,7 +245,7 @@ public class LuaOperationsTest {
 		// closure tests
 		{
 			Prototype p = createPrototype("return a\n", "closuretester");
-			LuaClosure c = new LuaClosure(p, _G);
+			LuaClosure c = new LuaInterpreter(p, _G);
 			assertEquals(aaa, c.call(state));
 			c.setfenv(newenv);
 			assertEquals(newenv, c.getfenv());
@@ -253,7 +256,7 @@ public class LuaOperationsTest {
 		// those closures created not in any other function get the thread's enviroment
 		Prototype p2 = createPrototype("return loadstring('return a')", "threadtester");
 		{
-			LuaThread t = new LuaThread(state, new LuaClosure(p2, _G), _G);
+			LuaThread t = new LuaThread(state, new LuaInterpreter(p2, _G), _G);
 			Varargs v = t.resume(Constants.NONE);
 			assertEquals(Constants.TRUE, v.arg(1));
 			LuaValue f = v.arg(2);
@@ -263,7 +266,7 @@ public class LuaOperationsTest {
 		}
 		{
 			// change the thread environment after creation!
-			LuaThread t = new LuaThread(state, new LuaClosure(p2, _G), _G);
+			LuaThread t = new LuaThread(state, new LuaInterpreter(p2, _G), _G);
 			t.setfenv(newenv);
 			Varargs v = t.resume(Constants.NONE);
 			assertEquals(Constants.TRUE, v.arg(1));
@@ -275,7 +278,7 @@ public class LuaOperationsTest {
 		{
 			// let the closure have a different environment from the thread
 			Prototype p3 = createPrototype("return function() return a end", "envtester");
-			LuaThread t = new LuaThread(state, new LuaClosure(p3, newenv), _G);
+			LuaThread t = new LuaThread(state, new LuaInterpreter(p3, newenv), _G);
 			Varargs v = t.resume(Constants.NONE);
 			assertEquals(Constants.TRUE, v.arg(1));
 			LuaValue f = v.arg(2);

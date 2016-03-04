@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.lib.TwoArgFunction;
+import org.squiddev.cobalt.function.TwoArgFunction;
 
 import java.lang.ref.WeakReference;
 

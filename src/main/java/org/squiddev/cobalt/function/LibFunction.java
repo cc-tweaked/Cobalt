@@ -22,12 +22,14 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt.lib;
+
+package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.LuaFunction;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.lib.BaseLib;
+import org.squiddev.cobalt.lib.TableLib;
 
 import java.lang.reflect.Constructor;
 

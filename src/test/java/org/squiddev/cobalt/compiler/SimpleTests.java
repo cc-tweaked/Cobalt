@@ -2,8 +2,11 @@ package org.squiddev.cobalt.compiler;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.LuaInteger;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaTable;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 

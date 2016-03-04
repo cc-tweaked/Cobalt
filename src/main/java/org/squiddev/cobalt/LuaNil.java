@@ -24,6 +24,9 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
+
 /**
  * Class to encapsulate behavior of the singleton instance {@code nil}
  *

@@ -26,7 +26,7 @@ package org.squiddev.cobalt.table;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.lib.TwoArgFunction;
+import org.squiddev.cobalt.function.TwoArgFunction;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import static org.junit.Assert.assertEquals;

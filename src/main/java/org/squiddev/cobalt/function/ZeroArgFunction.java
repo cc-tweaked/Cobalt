@@ -22,47 +22,44 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt.lib;
+
+package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 
-import static org.squiddev.cobalt.Constants.NIL;
-
 /**
- * Abstract base class for Java function implementations that take two arguments and
+ * Abstract base class for Java function implementations that take no arguments and
  * return one value.
  *
- * Subclasses need only implement {@link LuaValue#call(LuaState, LuaValue, LuaValue, LuaValue)} to complete this class,
+ * Subclasses need only implement {@link LuaValue#call(LuaState)} to complete this class,
  * simplifying development.
- * All other uses of {@link LuaValue#call(LuaState)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
- * are routed through this method by this class,
- * dropping or extending arguments with {@code nil} values as required.
+ * All other uses of {@link LuaValue#call(LuaState, LuaValue)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
+ * are routed through this method by this class.
  *
- * If more or less than three arguments are required,
- * or variable argument or variable return values,
+ * If one or more arguments are required, or variable argument or variable return values,
  * then use one of the related function
- * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link VarArgFunction}.
+ * {@link OneArgFunction}, {@link TwoArgFunction}, {@link ThreeArgFunction}, or {@link VarArgFunction}.
  *
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
- * @see LuaValue#call(LuaState, LuaValue, LuaValue, LuaValue)
+ * @see LuaValue#call(LuaState)
  * @see LibFunction
- * @see ZeroArgFunction
  * @see OneArgFunction
  * @see TwoArgFunction
+ * @see ThreeArgFunction
  * @see VarArgFunction
  */
-public abstract class ThreeArgFunction extends LibFunction {
+public abstract class ZeroArgFunction extends LibFunction {
 
 	@Override
-	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3);
+	public abstract LuaValue call(LuaState state);
 
 	/**
 	 * Default constructor
 	 */
-	public ThreeArgFunction() {
+	public ZeroArgFunction() {
 	}
 
 	/**
@@ -70,28 +67,27 @@ public abstract class ThreeArgFunction extends LibFunction {
 	 *
 	 * @param env The environment to apply during constructon.
 	 */
-	public ThreeArgFunction(LuaValue env) {
+	public ZeroArgFunction(LuaValue env) {
 		this.env = env;
 	}
 
 	@Override
-	public final LuaValue call(LuaState state) {
-		return call(state, NIL, NIL, NIL);
-	}
-
-	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) {
-		return call(state, arg, NIL, NIL);
+	public LuaValue call(LuaState state, LuaValue arg) {
+		return call(state);
 	}
 
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
-		return call(state, arg1, arg2, NIL);
+		return call(state);
+	}
+
+	@Override
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+		return call(state);
 	}
 
 	@Override
 	public Varargs invoke(LuaState state, Varargs varargs) {
-		return call(state, varargs.first(), varargs.arg(2), varargs.arg(3));
+		return call(state);
 	}
-
 }

@@ -25,7 +25,10 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.lib.ZeroArgFunction;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpreter;
+import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.lang.reflect.InvocationTargetException;
@@ -65,7 +68,7 @@ public class TypeTest {
 		}
 	};
 	private final LuaThread thread = new LuaThread(new LuaState(new FileResourceManipulator()), somefunc, table);
-	private final LuaClosure someclosure = new LuaClosure();
+	private final LuaClosure someclosure = new LuaInterpreter();
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);
 

@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaClosure;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
@@ -396,7 +398,7 @@ public class Print {
 		PrintStream previous = ps;
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ps = new PrintStream(baos);
-		printOpCode(cl.p, pc);
+		printOpCode(cl.getPrototype(), pc);
 		ps.flush();
 		ps.close();
 		ps = previous;
@@ -418,7 +420,7 @@ public class Print {
 						break;
 					case Constants.TFUNCTION:
 						ps.print((v instanceof LuaClosure) ?
-							((LuaClosure) v).p.toString() : v.toString());
+							((LuaClosure) v).getPrototype().toString() : v.toString());
 						break;
 					case Constants.TUSERDATA:
 						Object o = v.toUserdata();

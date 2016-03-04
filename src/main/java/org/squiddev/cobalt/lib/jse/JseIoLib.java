@@ -24,11 +24,10 @@
  */
 package org.squiddev.cobalt.lib.jse;
 
-
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.IoLib;
-import org.squiddev.cobalt.lib.LibFunction;
 
 import java.io.*;
 

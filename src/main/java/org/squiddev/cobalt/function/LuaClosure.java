@@ -22,57 +22,46 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.lib.LibFunction;
+package org.squiddev.cobalt.function;
+
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Prototype;
 
 /**
- * Base class for functions implemented in Java.
- *
- * Direct subclass include {@link LibFunction} which is the base class for
- * all built-in library functions coded in Java,
- * and {@link LuaClosure}, which represents a lua closure
- * whose bytecode is interpreted when the function is invoked.
- *
- * @see LuaValue
- * @see LibFunction
- * @see LuaClosure
+ * A lua function that provides a coroutine.
  */
-public abstract class LuaFunction extends LuaValue {
-	protected LuaValue env;
-
-	public LuaFunction() {
-		super(Constants.TFUNCTION);
-		this.env = Constants.NIL;
+public abstract class LuaClosure extends LuaFunction {
+	public LuaClosure() {
 	}
 
-	public LuaFunction(LuaValue env) {
-		super(Constants.TFUNCTION);
-		this.env = env;
+	public LuaClosure(LuaValue env) {
+		super(env);
 	}
+
+	/**
+	 * Get the prototype for this closure
+	 *
+	 * @return The prototype's closure
+	 */
+	public abstract Prototype getPrototype();
+
+	public abstract LuaValue getUpvalue(int i);
+
+	public abstract void setUpvalue(int i, LuaValue v);
 
 	@Override
-	public LuaValue checkFunction() {
+	public LuaClosure checkClosure() {
 		return this;
 	}
 
 	@Override
-	public LuaFunction optFunction(LuaFunction defval) {
+	public boolean isClosure() {
+		return true;
+	}
+
+	@Override
+	public LuaClosure optClosure(LuaClosure defval) {
 		return this;
-	}
-
-	@Override
-	public LuaValue getMetatable(LuaState state) {
-		return state.functionMetatable;
-	}
-
-	@Override
-	public LuaValue getfenv() {
-		return env;
-	}
-
-	@Override
-	public void setfenv(LuaValue env) {
-		this.env = env != null ? env : Constants.NIL;
 	}
 }

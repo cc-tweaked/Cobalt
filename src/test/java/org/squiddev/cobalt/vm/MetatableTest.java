@@ -27,10 +27,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.StringLib;
-import org.squiddev.cobalt.lib.ThreeArgFunction;
-import org.squiddev.cobalt.lib.TwoArgFunction;
-import org.squiddev.cobalt.lib.ZeroArgFunction;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import static org.junit.Assert.assertEquals;
@@ -51,7 +49,7 @@ public class MetatableTest {
 	};
 	private final LuaState state = new LuaState(new FileResourceManipulator());
 	private final LuaThread thread = new LuaThread(state, function, table);
-	private final LuaClosure closure = new LuaClosure();
+	private final LuaClosure closure = new LuaInterpreter();
 	private final LuaUserdata userdata = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatamt = ValueFactory.userdataOf(sampledata, table);
 

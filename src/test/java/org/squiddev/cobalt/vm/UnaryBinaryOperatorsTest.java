@@ -26,7 +26,7 @@ package org.squiddev.cobalt.vm;
 import org.junit.Assert;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.lib.TwoArgFunction;
+import org.squiddev.cobalt.function.TwoArgFunction;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.lang.reflect.InvocationTargetException;

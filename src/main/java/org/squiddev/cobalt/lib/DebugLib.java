@@ -26,6 +26,10 @@ package org.squiddev.cobalt.lib;
 
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
@@ -169,7 +173,6 @@ public class DebugLib extends VarArgFunction {
 	public static final class DebugInfo {
 		private LuaValue func;
 		private LuaClosure closure;
-		private Prototype prototype;
 		private LuaValue[] stack;
 		private Varargs varargs, extras;
 		private int pc, top;
@@ -191,13 +194,11 @@ public class DebugLib extends VarArgFunction {
 		public void setfunction(LuaValue func) {
 			this.func = func;
 			this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
-			this.prototype = func instanceof PrototypeStorage ? ((PrototypeStorage) func).getPrototype() : null;
 		}
 
 		public void clear() {
 			func = NIL;
 			closure = null;
-			prototype = null;
 			stack = null;
 			varargs = extras = null;
 			pc = top = 0;
@@ -210,20 +211,20 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public int currentline() {
-			if (prototype == null) return -1;
-			int[] li = prototype.lineinfo;
+			if (closure == null) return -1;
+			int[] li = closure.getPrototype().lineinfo;
 			return li == null || pc < 0 || pc >= li.length ? -1 : li[pc];
 		}
 
 		public LuaString[] getfunckind() {
-			if (prototype == null || pc < 0) return null;
-			int stackpos = (prototype.code[pc] >> 6) & 0xff;
+			if (closure == null || pc < 0) return null;
+			int stackpos = (closure.getPrototype().code[pc] >> 6) & 0xff;
 			return getobjname(this, stackpos);
 		}
 
 		public String sourceline() {
-			if (prototype == null) return func.toString();
-			String s = prototype.source.toString();
+			if (closure == null) return func.toString();
+			String s = closure.getPrototype().source.toString();
 			int line = currentline();
 			return (s.startsWith("@") || s.startsWith("=") ? s.substring(1) : s) + ":" + line;
 		}
@@ -237,8 +238,8 @@ public class DebugLib extends VarArgFunction {
 		}
 
 		public LuaString getlocalname(int index) {
-			if (prototype == null) return null;
-			return prototype.getlocalname(index, pc);
+			if (closure == null) return null;
+			return closure.getPrototype().getlocalname(index, pc);
 		}
 
 		@Override
@@ -424,7 +425,7 @@ public class DebugLib extends VarArgFunction {
 		if (ds.hookline) {
 			int newline = di.currentline();
 			if (newline != ds.line) {
-				int c = di.prototype.code[pc];
+				int c = di.closure.getPrototype().code[pc];
 				if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
 					ds.line = newline;
 					ds.callHookFunc(ds, LINE, valueOf(newline));
@@ -520,7 +521,7 @@ public class DebugLib extends VarArgFunction {
 			switch (what.charAt(i)) {
 				case 'S': {
 					if (c != null) {
-						Prototype p = c.p;
+						Prototype p = c.getPrototype();
 						info.set(state, WHAT, LUA);
 						info.set(state, SOURCE, p.source);
 						info.set(state, SHORT_SRC, valueOf(sourceshort(p)));
@@ -543,7 +544,7 @@ public class DebugLib extends VarArgFunction {
 					break;
 				}
 				case 'u': {
-					info.set(state, NUPS, valueOf(c != null ? c.p.nups : 0));
+					info.set(state, NUPS, valueOf(c != null ? c.getPrototype().nups : 0));
 					break;
 				}
 				case 'n': {
@@ -663,14 +664,12 @@ public class DebugLib extends VarArgFunction {
 	}
 
 	private static LuaString findupvalue(LuaClosure c, int up) {
-		if (c.upValues != null && up > 0 && up <= c.upValues.length) {
-			if (c.p.upvalues != null && up <= c.p.upvalues.length) {
-				return c.p.upvalues[up - 1];
-			} else {
-				return LuaString.valueOf("." + up);
-			}
+		Prototype p = c.getPrototype();
+		if (up > 0 && p.upvalues != null && up <= p.upvalues.length) {
+			return p.upvalues[up - 1];
+		} else {
+			return null;
 		}
-		return null;
 	}
 
 	private static Varargs _getupvalue(Varargs args) {
@@ -680,7 +679,7 @@ public class DebugLib extends VarArgFunction {
 			LuaClosure c = (LuaClosure) func;
 			LuaString name = findupvalue(c, up);
 			if (name != null) {
-				return varargsOf(name, c.upValues[up - 1].getValue());
+				return varargsOf(name, c.getUpvalue(up - 1));
 			}
 		}
 		return NIL;
@@ -694,7 +693,7 @@ public class DebugLib extends VarArgFunction {
 			LuaClosure c = (LuaClosure) func;
 			LuaString name = findupvalue(c, up);
 			if (name != null) {
-				c.upValues[up - 1].setValue(value);
+				c.setUpvalue(up - 1, value);
 				return name;
 			}
 		}
@@ -777,8 +776,8 @@ public class DebugLib extends VarArgFunction {
 	// return StrValue[] { name, namewhat } if found, null if not
 	static LuaString[] getobjname(DebugInfo di, int stackpos) {
 		LuaString name;
-		Prototype p = di.prototype;
-		if (p != null) { // a Lua function?
+		if (di.closure != null) { // a Lua function?
+			Prototype p = di.closure.getPrototype();
 			int pc = di.pc; // currentpc(L, ci);
 			int i;// Instruction i;
 			name = p.getlocalname(stackpos + 1, pc);

@@ -25,6 +25,7 @@
 
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 

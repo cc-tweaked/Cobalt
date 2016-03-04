@@ -27,6 +27,8 @@ package org.squiddev.cobalt.compiler;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.LoadState.LuaCompiler;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -41,7 +43,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  *
  * Compiles lua source files into lua bytecode within a {@link Prototype},
  * loads lua binary files directly into a{@link Prototype},
- * and optionaly instantiates a {@link LuaClosure} around the result
+ * and optionaly instantiates a {@link LuaInterpreter} around the result
  * using a user-supplied environment.
  *
  * Implements the {@link LuaCompiler} interface for loading
@@ -193,7 +195,7 @@ public class LuaC implements LuaCompiler {
 	@Override
 	public LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
 		Prototype p = compile(stream, name);
-		return new LuaClosure(p, env);
+		return new LuaInterpreter(p, env);
 	}
 
 	/**
@@ -252,7 +254,7 @@ public class LuaC implements LuaCompiler {
 	}
 
 	public LuaFunction load(Prototype p, String filename, LuaValue env) {
-		return new LuaClosure(p, env);
+		return new LuaInterpreter(p, env);
 	}
 
 }
