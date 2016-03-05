@@ -174,7 +174,7 @@ public final class Buffer {
 	 * @return {@code this} to allow call chaining
 	 */
 	public final Buffer append(LuaString str) {
-		final int n = str.m_length;
+		final int n = str.length;
 		makeroom(0, n);
 		str.copyInto(0, bytes, offset + length, n);
 		length += n;
@@ -205,9 +205,9 @@ public final class Buffer {
 	 * @return {@link Buffer} for use in call chaining.
 	 */
 	public Buffer prepend(LuaString s) {
-		int n = s.m_length;
+		int n = s.length;
 		makeroom(n, 0);
-		System.arraycopy(s.m_bytes, s.m_offset, bytes, offset - n, n);
+		System.arraycopy(s.bytes, s.offset, bytes, offset - n, n);
 		offset -= n;
 		length += n;
 		value = null;
@@ -224,10 +224,10 @@ public final class Buffer {
 		if (value != null) {
 			LuaString s = value.strvalue();
 			value = null;
-			length = s.m_length;
+			length = s.length;
 			offset = nbefore;
 			bytes = new byte[nbefore + length + nafter];
-			System.arraycopy(s.m_bytes, s.m_offset, bytes, offset, length);
+			System.arraycopy(s.bytes, s.offset, bytes, offset, length);
 		} else if (offset + length + nafter > bytes.length || offset < nbefore) {
 			int n = nbefore + length + nafter;
 			int m = n < 32 ? 32 : n < length * 2 ? length * 2 : n;

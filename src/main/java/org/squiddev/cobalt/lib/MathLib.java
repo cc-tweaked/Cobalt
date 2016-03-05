@@ -47,8 +47,6 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
 public class MathLib extends OneArgFunction {
-	private Random random;
-
 	@Override
 	public LuaValue call(LuaState state, LuaValue arg) {
 		LuaTable t = new LuaTable(0, 30);
@@ -68,8 +66,6 @@ public class MathLib extends OneArgFunction {
 		bind(state, t, MathLibV.class, new String[]{
 			"frexp", "max", "min", "modf",
 			"randomseed", "random",});
-		((MathLibV) t.get(state, "randomseed")).mathlib = this;
-		((MathLibV) t.get(state, "random")).mathlib = this;
 		env.set(state, "math", t);
 		state.loadedPackages.set(state, "math", t);
 		return t;
@@ -149,8 +145,6 @@ public class MathLib extends OneArgFunction {
 	}
 
 	private static final class MathLibV extends VarArgFunction {
-		private MathLib mathlib;
-
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) {
 			switch (opcode) {
@@ -184,23 +178,23 @@ public class MathLib extends OneArgFunction {
 				}
 				case 4: { // randomseed
 					long seed = args.arg(1).checkLong();
-					mathlib.random = new Random(seed);
+					state.random = new Random(seed);
 					return Constants.NONE;
 				}
 				case 5: { // random
-					if (mathlib.random == null) {
-						mathlib.random = new Random();
+					if (state.random == null) {
+						state.random = new Random();
 					}
 
 					switch (args.count()) {
 						case 0:
-							return ValueFactory.valueOf(mathlib.random.nextDouble());
+							return ValueFactory.valueOf(state.random.nextDouble());
 						case 1: {
 							int m = args.arg(1).checkInteger();
 							if (m < 1) {
 								throw ErrorFactory.argError(1, "interval is empty");
 							}
-							return ValueFactory.valueOf(1 + mathlib.random.nextInt(m));
+							return ValueFactory.valueOf(1 + state.random.nextInt(m));
 						}
 						default: {
 							int m = args.arg(1).checkInteger();
@@ -208,7 +202,7 @@ public class MathLib extends OneArgFunction {
 							if (n < m) {
 								throw ErrorFactory.argError(2, "interval is empty");
 							}
-							return ValueFactory.valueOf(m + mathlib.random.nextInt(n + 1 - m));
+							return ValueFactory.valueOf(m + state.random.nextInt(n + 1 - m));
 						}
 					}
 				}

@@ -269,7 +269,7 @@ public class PackageLib extends OneArgFunction {
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
 			if (e < 0) {
-				e = fname.m_length;
+				e = fname.length;
 			}
 			LuaString key = fname.substring(b, e);
 			LuaValue val = table.rawget(key);
@@ -282,7 +282,7 @@ public class PackageLib extends OneArgFunction {
 			} else {
 				table = val;
 			}
-		} while (e < fname.m_length);
+		} while (e < fname.length);
 		return table;
 	}
 

@@ -91,8 +91,8 @@ public class Print {
 	static void printString(PrintStream ps, final LuaString s) {
 
 		ps.print('"');
-		for (int i = 0, n = s.m_length; i < n; i++) {
-			int c = s.m_bytes[s.m_offset + i];
+		for (int i = 0, n = s.length; i < n; i++) {
+			int c = s.bytes[s.offset + i];
 			if (c >= ' ' && c <= '~' && c != '\"' && c != '\\') {
 				ps.print((char) c);
 			} else {

@@ -511,8 +511,8 @@ public abstract class IoLib extends OneArgFunction {
 					break;
 				case TSTRING:
 					fmt = ai.checkLuaString();
-					if (fmt.m_length == 2 && fmt.m_bytes[fmt.m_offset] == '*') {
-						switch (fmt.m_bytes[fmt.m_offset + 1]) {
+					if (fmt.length == 2 && fmt.bytes[fmt.offset] == '*') {
+						switch (fmt.bytes[fmt.offset + 1]) {
 							case 'n':
 								vi = freadnumber(f);
 								break item;

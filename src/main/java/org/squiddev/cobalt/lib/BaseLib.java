@@ -104,6 +104,9 @@ public class BaseLib extends OneArgFunction {
 		for (String LIBV_KEY : LIBV_KEYS) {
 			((BaseLibV) env.get(state, LIBV_KEY)).baselib = this;
 		}
+
+		env.rawset("_VERSION", valueOf("Lua 5.1"));
+
 		return env;
 	}
 
@@ -151,7 +154,7 @@ public class BaseLib extends OneArgFunction {
 		if (level == 0) {
 			return state.getCurrentThread();
 		}
-		LuaValue f = LuaThread.getCallstackFunction(state, level);
+		LuaValue f = LuaThread.getCallstackFunction(state, level - 1);
 		Varargs.argCheck(f != null, 1, "invalid level");
 		return f;
 	}
@@ -235,7 +238,7 @@ public class BaseLib extends OneArgFunction {
 						if (i > 1) state.stdout.write('\t');
 						LuaString s = tostring.call(state, args.arg(i)).strvalue();
 						int z = s.indexOf((byte) 0, 0);
-						state.stdout.write(s.m_bytes, s.m_offset, z >= 0 ? z : s.m_length);
+						state.stdout.write(s.bytes, s.offset, z >= 0 ? z : s.length);
 					}
 					state.stdout.println();
 					return Constants.NONE;
@@ -398,9 +401,9 @@ public class BaseLib extends OneArgFunction {
 					return -1;
 				}
 				LuaString ls = s.strvalue();
-				bytes = ls.m_bytes;
-				offset = ls.m_offset;
-				remaining = ls.m_length;
+				bytes = ls.bytes;
+				offset = ls.offset;
+				remaining = ls.length;
 				if (remaining <= 0) {
 					return -1;
 				}

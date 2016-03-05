@@ -126,7 +126,7 @@ public class StringLib extends OneArgFunction {
 	 */
 	static Varargs byte_(Varargs args) {
 		LuaString s = args.arg(1).checkLuaString();
-		int l = s.m_length;
+		int l = s.length;
 		int posi = posrelat(args.arg(2).optInteger(1), l);
 		int pose = posrelat(args.arg(3).optInteger(posi), l);
 		int n, i;

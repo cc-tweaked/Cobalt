@@ -1,7 +1,7 @@
 local function assertEquals(val, expected) assert(val == expected, "Got " .. tostring(val) .. ", expected " .. tostring(expected)) end
 
 local function assertLine(stack, line)
-	local success, msg = pcall(error, "", stack + 2)
+	local _, msg = pcall(error, "", stack + 2)
 	assertEquals("debug.lua:" .. line .. ": ", msg)
 end
 
@@ -44,3 +44,11 @@ local co = coroutine.create(overflow)
 local result, message = coroutine.resume(co)
 assert(not result)
 assert(message == "debug.lua:42: stack overflow", message)
+
+-- Check correct getfenv levels
+local function foo()
+	assertEquals(getfenv(1), getfenv(foo))
+	assertEquals(getfenv(2), _G)
+end
+setfenv(foo, { getfenv = getfenv, print = print, _G = _G })
+foo()

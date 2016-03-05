@@ -32,6 +32,7 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Collections;
+import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -94,8 +95,19 @@ public final class LuaState {
 	 */
 	public LoadState.LuaCompiler compiler = LuaC.instance;
 
+	/**
+	 * The handler for the debugger. Override this for custom debug actions.
+	 */
 	public DebugHandler debug;
 
+	/**
+	 * The random instance for this state.
+	 */
+	public Random random;
+
+	/**
+	 * The currently executing state
+	 */
 	protected LuaThread currentThread;
 
 	/**
@@ -114,6 +126,8 @@ public final class LuaState {
 	 * Get the main thread
 	 *
 	 * @return The main thread
+	 * @see #getCurrentThread()
+	 * @see #setupThread(LuaTable)
 	 */
 	public LuaThread getMainThread() {
 		return mainThread;
@@ -123,6 +137,8 @@ public final class LuaState {
 	 * The active thread
 	 *
 	 * @return The active thread
+	 * @see #getMainThread()
+	 * @see #setupThread(LuaTable)
 	 */
 	public LuaThread getCurrentThread() {
 		return currentThread;
@@ -132,6 +148,8 @@ public final class LuaState {
 	 * Setup the main thread
 	 *
 	 * @param environment The main thread to use
+	 * @see #getMainThread()
+	 * @see #getCurrentThread()
 	 */
 	public void setupThread(LuaTable environment) {
 		if (mainThread != null && mainThread.isAlive()) {
@@ -144,7 +162,7 @@ public final class LuaState {
 	}
 
 	/**
-	 * Abandon all threads but the main
+	 * Abandon all threads but the main one
 	 */
 	public void abandon() {
 		next:

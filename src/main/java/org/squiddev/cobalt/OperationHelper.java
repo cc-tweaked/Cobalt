@@ -213,9 +213,9 @@ public final class OperationHelper {
 	}
 
 	public static LuaString concat(LuaString left, LuaString right) {
-		byte[] b = new byte[left.m_length + right.m_length];
-		System.arraycopy(left.m_bytes, left.m_offset, b, 0, left.m_length);
-		System.arraycopy(right.m_bytes, right.m_offset, b, left.m_length, right.m_length);
+		byte[] b = new byte[left.length + right.length];
+		System.arraycopy(left.bytes, left.offset, b, 0, left.length);
+		System.arraycopy(right.bytes, right.offset, b, left.length, right.length);
 		return ValueFactory.valueOf(b);
 	}
 }

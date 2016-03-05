@@ -141,9 +141,9 @@ public class JseIoLib extends IoLib {
 		@Override
 		public void write(LuaString s) throws IOException {
 			if (os != null) {
-				os.write(s.m_bytes, s.m_offset, s.m_length);
+				os.write(s.bytes, s.offset, s.length);
 			} else if (file != null) {
-				file.write(s.m_bytes, s.m_offset, s.m_length);
+				file.write(s.bytes, s.offset, s.length);
 			} else {
 				throw new LuaError("not implemented");
 			}
