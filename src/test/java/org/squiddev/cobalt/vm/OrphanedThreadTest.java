@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -159,8 +160,8 @@ public class OrphanedThreadTest {
 
 	private void doTest(LuaValue status2, LuaValue value2) throws Exception {
 		LuaThread luathread = new LuaThread(state, function, env);
-		WeakReference luathr_ref = new WeakReference<>(luathread);
-		WeakReference func_ref = new WeakReference<>(function);
+		WeakReference<LuaThread> luathr_ref = new WeakReference<>(luathread);
+		WeakReference<LuaValue> func_ref = new WeakReference<>(function);
 		assertNotNull(luathr_ref.get());
 
 		// resume two times

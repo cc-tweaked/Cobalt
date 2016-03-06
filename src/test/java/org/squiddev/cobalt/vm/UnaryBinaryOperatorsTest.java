@@ -511,7 +511,7 @@ public class UnaryBinaryOperatorsTest {
 
 	private void checkArithError(LuaValue a, LuaValue b, String op, String type) {
 		try {
-			OperationHelper.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
+			OperationHelper.class.getMethod(op, new Class<?>[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to perform arithmetic")) || !actual.contains(type)) {
@@ -1042,7 +1042,7 @@ public class UnaryBinaryOperatorsTest {
 
 	private void checkCompareError(LuaValue a, LuaValue b, String op, String type) {
 		try {
-			OperationHelper.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
+			OperationHelper.class.getMethod(op, new Class<?>[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to compare")) || !actual.contains(type)) {
@@ -1406,7 +1406,7 @@ public class UnaryBinaryOperatorsTest {
 
 	private void checkConcatError(LuaValue a, LuaValue b, String op, String type) {
 		try {
-			OperationHelper.class.getMethod(op, new Class[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
+			OperationHelper.class.getMethod(op, new Class<?>[]{LuaState.class, LuaValue.class, LuaValue.class}).invoke(null, state, a, b);
 		} catch (InvocationTargetException ite) {
 			String actual = ite.getTargetException().getMessage();
 			if ((!actual.startsWith("attempt to concatenate")) || !actual.contains(type)) {
