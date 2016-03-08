@@ -22,16 +22,19 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt;
+package org.squiddev.cobalt.function;
+
+import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.Prototype;
 
 /**
  * Data class to hold debug information relatign to local variables for a {@link Prototype}
  */
-public class LocVars {
+public final class LocalVariable {
 	/**
 	 * The local variable name
 	 */
-	public LuaString varname;
+	public final LuaString name;
 
 	/**
 	 * The instruction offset when the variable comes into scope
@@ -46,18 +49,18 @@ public class LocVars {
 	/**
 	 * Construct a LocVars instance.
 	 *
-	 * @param varname The local variable name
+	 * @param name    The local variable name
 	 * @param startpc The instruction offset when the variable comes into scope
 	 * @param endpc   The instruction offset when the variable goes out of scope
 	 */
-	public LocVars(LuaString varname, int startpc, int endpc) {
-		this.varname = varname;
+	public LocalVariable(LuaString name, int startpc, int endpc) {
+		this.name = name;
 		this.startpc = startpc;
 		this.endpc = endpc;
 	}
 
 	@Override
 	public String toString() {
-		return varname + " " + startpc + "-" + endpc;
+		return name + " " + startpc + "-" + endpc;
 	}
 }

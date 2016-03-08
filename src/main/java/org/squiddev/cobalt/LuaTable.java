@@ -102,7 +102,7 @@ public class LuaTable extends LuaValue {
 	/**
 	 * metatable for this table, or null
 	 */
-	protected LuaValue m_metatable;
+	protected LuaValue metatable;
 
 	/**
 	 * Construct empty table
@@ -235,14 +235,14 @@ public class LuaTable extends LuaValue {
 
 	@Override
 	public LuaValue getMetatable(LuaState state) {
-		return m_metatable;
+		return metatable;
 	}
 
 	@Override
 	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
-		m_metatable = metatable;
+		this.metatable = metatable;
 		LuaValue mode;
-		if (m_metatable != null && (mode = m_metatable.rawget(Constants.MODE)).isString()) {
+		if (this.metatable != null && (mode = this.metatable.rawget(Constants.MODE)).isString()) {
 			String m = mode.toString();
 			boolean k = m.indexOf('k') >= 0;
 			boolean v = m.indexOf('v') >= 0;
@@ -268,13 +268,13 @@ public class LuaTable extends LuaValue {
 	@Override
 	public LuaValue get(LuaState state, int key) {
 		LuaValue v = rawget(key);
-		return v.isNil() && m_metatable != null ? getTable(state, this, ValueFactory.valueOf(key)) : v;
+		return v.isNil() && metatable != null ? getTable(state, this, ValueFactory.valueOf(key)) : v;
 	}
 
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
 		LuaValue v = rawget(key);
-		return v.isNil() && m_metatable != null ? getTable(state, this, key) : v;
+		return v.isNil() && metatable != null ? getTable(state, this, key) : v;
 	}
 
 	@Override
@@ -306,7 +306,7 @@ public class LuaTable extends LuaValue {
 
 	@Override
 	public void set(LuaState state, int key, LuaValue value) {
-		if (m_metatable == null || !rawget(key).isNil() || !setTable(state, this, LuaInteger.valueOf(key), value)) {
+		if (metatable == null || !rawget(key).isNil() || !setTable(state, this, LuaInteger.valueOf(key), value)) {
 			rawset(key, value);
 		}
 	}
@@ -317,7 +317,7 @@ public class LuaTable extends LuaValue {
 	@Override
 	public void set(LuaState state, LuaValue key, LuaValue value) {
 		key.checkValidKey();
-		if (m_metatable == null || !rawget(key).isNil() || !setTable(state, this, key, value)) {
+		if (metatable == null || !rawget(key).isNil() || !setTable(state, this, key, value)) {
 			rawset(key, value);
 		}
 	}

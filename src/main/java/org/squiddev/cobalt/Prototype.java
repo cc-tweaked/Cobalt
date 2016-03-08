@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpreter;
 
 /**
@@ -46,7 +47,7 @@ public final class Prototype {
 	/* map from opcodes to source lines */
 	public int[] lineinfo;
 	/* information about local variables */
-	public LocVars[] locvars;
+	public LocalVariable[] locvars;
 	/* upvalue names */
 	public LuaString[] upvalues;
 	public LuaString source;
@@ -84,7 +85,7 @@ public final class Prototype {
 			if (pc < locvars[i].endpc) {  /* is variable active? */
 				number--;
 				if (number == 0) {
-					return locvars[i].varname;
+					return locvars[i].name;
 				}
 			}
 		}

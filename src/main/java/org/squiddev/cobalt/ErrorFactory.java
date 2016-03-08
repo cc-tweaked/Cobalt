@@ -32,7 +32,7 @@ public class ErrorFactory {
 	/**
 	 * Throw a {@link LuaError} indicating an invalid argument was supplied to a function
 	 *
-	 * @param value The current value
+	 * @param value    The current value
 	 * @param expected String naming the type that was expected
 	 * @return The created LuaError
 	 */

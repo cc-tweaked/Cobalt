@@ -25,6 +25,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpreter;
@@ -160,7 +161,7 @@ public class LoadState {
 
 	private static final LuaValue[] NOVALUES = {};
 	private static final Prototype[] NOPROTOS = {};
-	private static final LocVars[] NOLOCVARS = {};
+	private static final LocalVariable[] NOLOCVARS = {};
 	private static final LuaString[] NOSTRVALUES = {};
 	private static final int[] NOINTS = {};
 
@@ -330,12 +331,12 @@ public class LoadState {
 	void loadDebug(Prototype f) throws IOException {
 		f.lineinfo = loadIntArray();
 		int n = loadInt();
-		f.locvars = n > 0 ? new LocVars[n] : NOLOCVARS;
+		f.locvars = n > 0 ? new LocalVariable[n] : NOLOCVARS;
 		for (int i = 0; i < n; i++) {
 			LuaString varname = loadString();
 			int startpc = loadInt();
 			int endpc = loadInt();
-			f.locvars[i] = new LocVars(varname, startpc, endpc);
+			f.locvars[i] = new LocalVariable(varname, startpc, endpc);
 		}
 
 		n = loadInt();

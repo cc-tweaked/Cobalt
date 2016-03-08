@@ -3,8 +3,6 @@ package org.squiddev.cobalt.require;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.ValueFactory;
 
-import static org.squiddev.cobalt.ValueFactory.valueOf;
-
 /**
  * This should fail while trying to load via "require() because it is not a LibFunction"
  */

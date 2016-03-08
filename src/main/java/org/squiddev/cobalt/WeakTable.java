@@ -78,7 +78,7 @@ public class WeakTable extends LuaTable {
 		while (!(k = ((n = source.next(k)).first())).isNil()) {
 			rawset(k, n.arg(2));
 		}
-		m_metatable = source.m_metatable;
+		metatable = source.metatable;
 	}
 
 	@Override
@@ -267,7 +267,7 @@ public class WeakTable extends LuaTable {
 		private WeakUserdata(LuaUserdata value) {
 			super(value);
 			ob = new WeakReference<Object>(value.toUserdata());
-			mt = value.m_metatable;
+			mt = value.metatable;
 		}
 
 		@Override

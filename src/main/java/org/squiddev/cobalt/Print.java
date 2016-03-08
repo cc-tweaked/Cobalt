@@ -332,7 +332,7 @@ public class Print {
 		int i, n = f.locvars.length;
 		ps.print("locals (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
-			ps.println("  " + i + "  " + f.locvars[i].varname + " " + (f.locvars[i].startpc + 1) + " " + (f.locvars[i].endpc + 1));
+			ps.println("  " + i + "  " + f.locvars[i].name + " " + (f.locvars[i].startpc + 1) + " " + (f.locvars[i].endpc + 1));
 		}
 	}
 

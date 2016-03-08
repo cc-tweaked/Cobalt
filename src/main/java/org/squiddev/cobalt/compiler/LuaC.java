@@ -27,6 +27,7 @@ package org.squiddev.cobalt.compiler;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.LoadState.LuaCompiler;
+import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.lib.BaseLib;
@@ -155,8 +156,8 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	static LocVars[] realloc(LocVars[] v, int n) {
-		LocVars[] a = new LocVars[n];
+	static LocalVariable[] realloc(LocalVariable[] v, int n) {
+		LocalVariable[] a = new LocalVariable[n];
 		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
 		}

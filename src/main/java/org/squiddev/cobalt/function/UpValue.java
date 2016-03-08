@@ -22,9 +22,10 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt;
+package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Prototype;
 
 /**
  * Upvalue used with Closure formulation
@@ -32,10 +33,9 @@ import org.squiddev.cobalt.function.LuaClosure;
  * @see LuaClosure
  * @see Prototype
  */
-public final class UpValue {
-
-	LuaValue[] array; // initially the stack, becomes a holder
-	int index;
+public final class Upvalue {
+	private LuaValue[] array; // initially the stack, becomes a holder
+	private int index;
 
 	/**
 	 * Create an upvalue relative to a stack
@@ -43,7 +43,7 @@ public final class UpValue {
 	 * @param stack the stack
 	 * @param index the index on the stack for the upvalue
 	 */
-	public UpValue(LuaValue[] stack, int index) {
+	public Upvalue(LuaValue[] stack, int index) {
 		this.array = stack;
 		this.index = index;
 	}
@@ -64,7 +64,7 @@ public final class UpValue {
 	 *
 	 * @return the {@link LuaValue} for this upvalue
 	 */
-	public final LuaValue getValue() {
+	public LuaValue getValue() {
 		return array[index];
 	}
 
@@ -73,14 +73,14 @@ public final class UpValue {
 	 *
 	 * @param value {@link LuaValue} to set it to
 	 */
-	public final void setValue(LuaValue value) {
+	public void setValue(LuaValue value) {
 		array[index] = value;
 	}
 
 	/**
 	 * Close this upvalue so it is no longer on the stack
 	 */
-	public final void close() {
+	public void close() {
 		array = new LuaValue[]{array[index]};
 		index = 0;
 	}

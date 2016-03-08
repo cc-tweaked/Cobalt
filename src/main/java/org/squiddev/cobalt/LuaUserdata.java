@@ -26,93 +26,93 @@ package org.squiddev.cobalt;
 
 public class LuaUserdata extends LuaValue {
 
-	public final Object m_instance;
-	public LuaValue m_metatable;
+	public final Object instance;
+	public LuaValue metatable;
 
 	public LuaUserdata(Object obj) {
 		super(Constants.TUSERDATA);
-		m_instance = obj;
+		instance = obj;
 	}
 
 	public LuaUserdata(Object obj, LuaValue metatable) {
 		super(Constants.TUSERDATA);
-		m_instance = obj;
-		m_metatable = metatable;
+		instance = obj;
+		this.metatable = metatable;
 	}
 
 	@Override
 	public String toString() {
-		return String.valueOf(m_instance);
+		return String.valueOf(instance);
 	}
 
 	public int hashCode() {
-		return m_instance.hashCode();
+		return instance.hashCode();
 	}
 
 	public Object userdata() {
-		return m_instance;
+		return instance;
 	}
 
 	@Override
 	public boolean isUserdata(Class<?> c) {
-		return c.isAssignableFrom(m_instance.getClass());
+		return c.isAssignableFrom(instance.getClass());
 	}
 
 	@Override
 	public Object toUserdata() {
-		return m_instance;
+		return instance;
 	}
 
 	@Override
 	public Object toUserdata(Class<?> c) {
-		return c.isAssignableFrom(m_instance.getClass()) ? m_instance : null;
+		return c.isAssignableFrom(instance.getClass()) ? instance : null;
 	}
 
 	@Override
 	public Object optUserdata(Object defval) {
-		return m_instance;
+		return instance;
 	}
 
 	@Override
 	public Object optUserdata(Class<?> c, Object defval) {
-		if (!c.isAssignableFrom(m_instance.getClass())) {
+		if (!c.isAssignableFrom(instance.getClass())) {
 			throw ErrorFactory.typeError(this, c.getName());
 		}
-		return m_instance;
+		return instance;
 	}
 
 	@Override
 	public LuaValue getMetatable(LuaState state) {
-		return m_metatable;
+		return metatable;
 	}
 
 	@Override
 	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
-		this.m_metatable = metatable;
+		this.metatable = metatable;
 		return this;
 	}
 
 	@Override
 	public Object checkUserdata() {
-		return m_instance;
+		return instance;
 	}
 
 	@Override
 	public Object checkUserdata(Class<?> c) {
-		if (c.isAssignableFrom(m_instance.getClass())) {
-			return m_instance;
+		if (c.isAssignableFrom(instance.getClass())) {
+			return instance;
 		}
 		throw ErrorFactory.typeError(this, c.getName());
 	}
 
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
-		return m_metatable != null ? getTable(state, this, key) : Constants.NIL;
+		return metatable != null ? getTable(state, this, key) : Constants.NIL;
 	}
 
 	@Override
 	public void set(LuaState state, LuaValue key, LuaValue value) {
-		if (m_metatable == null || !setTable(state, this, key, value)) {
+		if (metatable == null || !setTable(state, this, key, value)) {
 			throw new LuaError("cannot set " + key + " for userdata");
 		}
 	}
@@ -125,7 +125,7 @@ public class LuaUserdata extends LuaValue {
 			return false;
 		}
 		LuaUserdata u = (LuaUserdata) val;
-		return m_instance.equals(u.m_instance);
+		return instance.equals(u.instance);
 	}
 
 	// equality w/o metatable processing
@@ -136,6 +136,6 @@ public class LuaUserdata extends LuaValue {
 
 	@Override
 	public boolean raweq(LuaUserdata val) {
-		return this == val || (m_metatable == val.m_metatable && m_instance.equals(val.m_instance));
+		return this == val || (metatable == val.metatable && instance.equals(val.instance));
 	}
 }

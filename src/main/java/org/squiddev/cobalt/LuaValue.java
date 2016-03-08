@@ -125,7 +125,6 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get the String name of the type of this value.
 	 *
-	 *
 	 * @return name from type name list {@link Constants#TYPE_NAMES}
 	 * corresponding to the type of this value:
 	 * "nil", "boolean", "number", "string",

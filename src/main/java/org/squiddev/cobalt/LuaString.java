@@ -111,7 +111,6 @@ public class LuaString extends LuaValue {
 	 *
 	 * The array is used directly after this is called, so clients must not change contents.
 	 *
-	 *
 	 * @param bytes byte buffer
 	 * @param off   offset into the byte buffer
 	 * @param len   length of the byte buffer
@@ -146,7 +145,6 @@ public class LuaString extends LuaValue {
 	 *
 	 * The array is used directly after this is called, so clients must not change contents.
 	 *
-	 *
 	 * @param bytes byte buffer
 	 * @return {@link LuaString} wrapping the byte buffer
 	 */
@@ -158,7 +156,6 @@ public class LuaString extends LuaValue {
 	 * Construct a {@link LuaString} around a byte array without copying the contents.
 	 *
 	 * The array is used directly after this is called, so clients must not change contents.
-	 *
 	 *
 	 * @param bytes  byte buffer
 	 * @param offset offset into the byte buffer

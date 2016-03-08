@@ -26,6 +26,7 @@ package org.squiddev.cobalt.compiler;
 
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LocalVariable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -846,7 +847,7 @@ public class LexState {
 		if (f.locvars == null || fs.nlocvars + 1 > f.locvars.length) {
 			f.locvars = LuaC.realloc(f.locvars, fs.nlocvars * 2 + 1);
 		}
-		f.locvars[fs.nlocvars] = new LocVars(varname, 0, 0);
+		f.locvars[fs.nlocvars] = new LocalVariable(varname, 0, 0);
 		return fs.nlocvars++;
 	}
 

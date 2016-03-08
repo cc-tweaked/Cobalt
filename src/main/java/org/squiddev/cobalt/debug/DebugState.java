@@ -109,7 +109,7 @@ public final class DebugState {
 	 */
 	protected DebugInfo pushInfo() {
 		int top = this.top + 1;
-		if(top >= LuaThread.MAX_CALLSTACK) throw new LuaError("stack overflow");
+		if (top >= LuaThread.MAX_CALLSTACK) throw new LuaError("stack overflow");
 
 		this.top = top;
 		return getInfo(top);

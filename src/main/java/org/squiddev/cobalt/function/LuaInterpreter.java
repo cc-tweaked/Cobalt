@@ -92,14 +92,14 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * @see LoadState
  */
 public class LuaInterpreter extends LuaClosure {
-	private static final UpValue[] NOUPVALUES = new UpValue[0];
+	private static final Upvalue[] NOUPVALUEs = new Upvalue[0];
 
 	public final Prototype p;
-	public final UpValue[] upValues;
+	public final Upvalue[] upvalues;
 
 	public LuaInterpreter() {
 		p = null;
-		upValues = null;
+		upvalues = null;
 	}
 
 	/**
@@ -111,13 +111,13 @@ public class LuaInterpreter extends LuaClosure {
 	public LuaInterpreter(Prototype p, LuaValue env) {
 		super(env);
 		this.p = p;
-		this.upValues = p.nups > 0 ? new UpValue[p.nups] : NOUPVALUES;
+		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NOUPVALUEs;
 	}
 
 	protected LuaInterpreter(int nupvalues, LuaValue env) {
 		super(env);
 		this.p = null;
-		this.upValues = nupvalues > 0 ? new UpValue[nupvalues] : NOUPVALUES;
+		this.upvalues = nupvalues > 0 ? new Upvalue[nupvalues] : NOUPVALUEs;
 	}
 
 	@Override
@@ -204,7 +204,7 @@ public class LuaInterpreter extends LuaClosure {
 		LuaValue[] k = p.k;
 
 		// upvalues are only possible when closures create closures
-		UpValue[] openups = p.p.length > 0 ? new UpValue[stack.length] : null;
+		Upvalue[] openups = p.p.length > 0 ? new Upvalue[stack.length] : null;
 
 		// create varargs "arg" table
 		if (p.is_vararg >= Lua.VARARG_NEEDSARG) {
@@ -250,7 +250,7 @@ public class LuaInterpreter extends LuaClosure {
 						continue;
 
 					case Lua.OP_GETUPVAL: /*	A B	R(A):= UpValue[B]				*/
-						stack[a] = upValues[i >>> 23].getValue();
+						stack[a] = upvalues[i >>> 23].getValue();
 						continue;
 
 					case Lua.OP_GETGLOBAL: /*	A Bx	R(A):= Gbl[Kst(Bx)]				*/
@@ -266,7 +266,7 @@ public class LuaInterpreter extends LuaClosure {
 						continue;
 
 					case Lua.OP_SETUPVAL: /*	A B	UpValue[B]:= R(A)				*/
-						upValues[i >>> 23].setValue(stack[a]);
+						upvalues[i >>> 23].setValue(stack[a]);
 						continue;
 
 					case Lua.OP_SETTABLE: /*	A B C	R(A)[RK(B)]:= RK(C)				*/
@@ -538,9 +538,9 @@ public class LuaInterpreter extends LuaClosure {
 							i = code[pc++];
 							//b = B(i);
 							b = i >>> 23;
-							newcl.upValues[j] = (i & 4) != 0 ?
-								upValues[b] :
-								openups[b] != null ? openups[b] : (openups[b] = new UpValue(stack, b));
+							newcl.upvalues[j] = (i & 4) != 0 ?
+								upvalues[b] :
+								openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b));
 						}
 						stack[a] = newcl;
 					}
@@ -576,12 +576,12 @@ public class LuaInterpreter extends LuaClosure {
 
 	@Override
 	public LuaValue getUpvalue(int i) {
-		return upValues[i].getValue();
+		return upvalues[i].getValue();
 	}
 
 	@Override
 	public void setUpvalue(int i, LuaValue v) {
-		upValues[i].setValue(v);
+		upvalues[i].setValue(v);
 	}
 
 	@Override

@@ -24,7 +24,11 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.Constants;
+import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.function.LocalVariable;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -210,8 +214,8 @@ public class DumpState {
 		n = (strip) ? 0 : f.locvars.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
-			LocVars lvi = f.locvars[i];
-			dumpString(lvi.varname);
+			LocalVariable lvi = f.locvars[i];
+			dumpString(lvi.name);
 			dumpInt(lvi.startpc);
 			dumpInt(lvi.endpc);
 		}

@@ -28,6 +28,7 @@ package org.squiddev.cobalt.compiler;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LexState.ConsControl;
 import org.squiddev.cobalt.compiler.LexState.expdesc;
+import org.squiddev.cobalt.function.LocalVariable;
 
 import java.util.Hashtable;
 
@@ -97,7 +98,7 @@ public class FuncState {
 	// from lparser.c
 	// =============================================================
 
-	LocVars getlocvar(int i) {
+	LocalVariable getlocvar(int i) {
 		return f.locvars[actvar[i]];
 	}
 
@@ -139,7 +140,7 @@ public class FuncState {
 	int searchvar(LuaString n) {
 		int i;
 		for (i = nactvar - 1; i >= 0; i--) {
-			if (n == getlocvar(i).varname) {
+			if (n == getlocvar(i).name) {
 				return i;
 			}
 		}
