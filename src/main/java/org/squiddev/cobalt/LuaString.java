@@ -48,13 +48,6 @@ import static org.squiddev.cobalt.Constants.NIL;
  * Constructors are not exposed directly.  As with number, booleans, and nil,
  * instance construction should be via {@link ValueFactory#valueOf(byte[])} or similar API.
  *
- * When Java Strings are used to initialize {@link LuaString} data, the UTF8 encoding is assumed.
- * The functions
- * {@link LuaString#lengthAsUtf8(char[])}
- * {@link LuaString#encodeToUtf8(char[], byte[], int)}, and
- * {@link LuaString#decodeAsUtf8(byte[], int, int)}
- * are used to convert back and forth between UTF8 byte arrays and character arrays.
- *
  * @see LuaValue
  * @see ValueFactory#valueOf(String)
  * @see ValueFactory#valueOf(byte[])
@@ -88,23 +81,20 @@ public class LuaString extends LuaValue {
 
 	/**
 	 * Get a {@link LuaString} instance whose bytes match
-	 * the supplied Java String using the UTF8 encoding.
+	 * the supplied Java String which will be limited to the 0-255 range
 	 *
-	 * @param string Java String containing characters to encode as UTF8
-	 * @return {@link LuaString} with UTF8 bytes corresponding to the supplied String
+	 * @param string Java String containing characters which will be limited to the 0-255 range
+	 * @return {@link LuaString} with bytes corresponding to the supplied String
 	 */
 	public static LuaString valueOf(String string) {
 		LuaString s = index_get(string);
 		if (s != null) return s;
-		char[] c = string.toCharArray();
-		byte[] b = new byte[lengthAsUtf8(c)];
-		encodeToUtf8(c, b, 0);
-		s = valueOf(b, 0, b.length);
+		byte[] bytes = new byte[string.length()];
+		encode(string, bytes, 0);
+		s = valueOf(bytes, 0, bytes.length);
 		index_set(string, s);
 		return s;
 	}
-
-	// TODO: should this be deprecated or made private?
 
 	/**
 	 * Construct a {@link LuaString} around a byte array without copying the contents.
@@ -175,7 +165,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public String toString() {
-		return decodeAsUtf8(bytes, offset, length);
+		return decode(bytes, offset, length);
 	}
 
 	// get is delegated to the string library
@@ -543,114 +533,40 @@ public class LuaString extends LuaValue {
 
 
 	/**
-	 * Convert to Java String interpreting as utf8 characters.
+	 * Convert to Java String
 	 *
-	 * @param bytes  byte array in UTF8 encoding to convert
+	 * @param bytes  byte array to convert
 	 * @param offset starting index in byte array
 	 * @param length number of bytes to convert
 	 * @return Java String corresponding to the value of bytes interpreted using UTF8
-	 * @see #lengthAsUtf8(char[])
-	 * @see #encodeToUtf8(char[], byte[], int)
-	 * @see #isValidUtf8()
+	 * @see #encode(String, byte[], int)
 	 */
-	public static String decodeAsUtf8(byte[] bytes, int offset, int length) {
-		int i, j, n, b;
-		for (i = offset, j = offset + length, n = 0; i < j; ++n) {
-			switch (0xE0 & bytes[i++]) {
-				case 0xE0:
-					++i;
-				case 0xC0:
-					++i;
-			}
+	public static String decode(byte[] bytes, int offset, int length) {
+		char[] chars = new char[length];
+		for (int i = 0; i < length; i++) {
+			chars[i] = ((char) (bytes[offset + i] & 0xFF));
 		}
-		char[] chars = new char[n];
-		for (i = offset, j = offset + length, n = 0; i < j; ) {
-			chars[n++] = (char) (
-				((b = bytes[i++]) >= 0 || i >= j) ? b :
-					(b < -32 || i + 1 >= j) ? (((b & 0x3f) << 6) | (bytes[i++] & 0x3f)) :
-						(((b & 0xf) << 12) | ((bytes[i++] & 0x3f) << 6) | (bytes[i++] & 0x3f)));
-		}
-		return new String(chars);
+		return String.valueOf(chars);
 	}
 
 	/**
-	 * Count the number of bytes required to encode the string as UTF-8.
-	 *
-	 * @param chars Array of unicode characters to be encoded as UTF-8
-	 * @return count of bytes needed to encode using UTF-8
-	 * @see #encodeToUtf8(char[], byte[], int)
-	 * @see #decodeAsUtf8(byte[], int, int)
-	 * @see #isValidUtf8()
-	 */
-	public static int lengthAsUtf8(char[] chars) {
-		int i, b;
-		char c;
-		for (i = b = chars.length; --i >= 0; ) {
-			if ((c = chars[i]) >= 0x80) {
-				b += (c >= 0x800) ? 2 : 1;
-			}
-		}
-		return b;
-	}
-
-	/**
-	 * Encode the given Java string as UTF-8 bytes, writing the result to bytes
-	 * starting at offset.
+	 * Encode the given Java string with characters limited to the 0-255 range,
+	 * writing the result to bytes starting at offset.
 	 *
 	 * The string should be measured first with lengthAsUtf8
 	 * to make sure the given byte array is large enough.
 	 *
-	 * @param chars Array of unicode characters to be encoded as UTF-8
-	 * @param bytes byte array to hold the result
-	 * @param off   offset into the byte array to start writing
-	 * @see #lengthAsUtf8(char[])
-	 * @see #decodeAsUtf8(byte[], int, int)
-	 * @see #isValidUtf8()
+	 * @param string Array of characters to be encoded
+	 * @param bytes  byte array to hold the result
+	 * @param off    offset into the byte array to start writing
+	 * @see #decode(byte[], int, int)
 	 */
-	public static void encodeToUtf8(char[] chars, byte[] bytes, int off) {
-		final int n = chars.length;
-		char c;
-		for (int i = 0, j = off; i < n; i++) {
-			if ((c = chars[i]) < 0x80) {
-				bytes[j++] = (byte) c;
-			} else if (c < 0x800) {
-				bytes[j++] = (byte) (0xC0 | ((c >> 6) & 0x1f));
-				bytes[j++] = (byte) (0x80 | (c & 0x3f));
-			} else {
-				bytes[j++] = (byte) (0xE0 | ((c >> 12) & 0x0f));
-				bytes[j++] = (byte) (0x80 | ((c >> 6) & 0x3f));
-				bytes[j++] = (byte) (0x80 | (c & 0x3f));
-			}
+	public static void encode(String string, byte[] bytes, int off) {
+		int length = string.length();
+		for (int i = 0; i < length; i++) {
+			int c = string.charAt(i);
+			bytes[i + off] = (c < 256 ? (byte) c : 63);
 		}
-	}
-
-	/**
-	 * Check that a byte sequence is valid UTF-8
-	 *
-	 * @return true if it is valid UTF-8, otherwise false
-	 * @see #lengthAsUtf8(char[])
-	 * @see #encodeToUtf8(char[], byte[], int)
-	 * @see #decodeAsUtf8(byte[], int, int)
-	 */
-	public boolean isValidUtf8() {
-		int i, j, n, b, e = 0;
-		for (i = offset, j = offset + length, n = 0; i < j; ++n) {
-			int c = bytes[i++];
-			if (c >= 0) continue;
-			if (((c & 0xE0) == 0xC0)
-				&& i < j
-				&& (bytes[i++] & 0xC0) == 0x80) {
-				continue;
-			}
-			if (((c & 0xF0) == 0xE0)
-				&& i + 1 < j
-				&& (bytes[i++] & 0xC0) == 0x80
-				&& (bytes[i++] & 0xC0) == 0x80) {
-				continue;
-			}
-			return false;
-		}
-		return true;
 	}
 
 	// --------------------- number conversion -----------------------

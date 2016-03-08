@@ -187,13 +187,12 @@ public final class Buffer {
 	 *
 	 * @param str The string to append
 	 * @return {@code this} to allow call chaining
-	 * @see LuaString#encodeToUtf8(char[], byte[], int)
+	 * @see LuaString#encode(String, byte[], int)
 	 */
 	public final Buffer append(String str) {
-		char[] chars = str.toCharArray();
-		final int n = LuaString.lengthAsUtf8(chars);
+		final int n = str.length();
 		makeroom(0, n);
-		LuaString.encodeToUtf8(chars, bytes, offset + length);
+		LuaString.encode(str, bytes, offset + length);
 		length += n;
 		return this;
 	}
