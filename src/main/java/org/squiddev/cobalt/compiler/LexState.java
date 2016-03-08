@@ -258,13 +258,13 @@ public class LexState {
 		}
 	}
 
-	void lexerror(String msg, int token) {
+	LuaError lexerror(String msg, int token) {
 		String cid = chunkid(source.toString()); // TODO: get source name from source
 		L.pushfstring(cid + ":" + linenumber + ": " + msg);
 		if (token != 0) {
 			L.pushfstring("syntax error: " + msg + " near " + txtToken(token));
 		}
-		throw new LuaError(cid + ":" + linenumber + ": " + msg);
+		return new LuaError(cid + ":" + linenumber + ": " + msg);
 	}
 
 	String chunkid(String source) {
@@ -285,8 +285,8 @@ public class LexState {
 		return source + end;
 	}
 
-	void syntaxerror(String msg) {
-		lexerror(msg, t.token);
+	LuaError syntaxerror(String msg) {
+		return lexerror(msg, t.token);
 	}
 
 	// only called by new_localvarliteral() for var names.
@@ -307,7 +307,7 @@ public class LexState {
 			nextChar(); /* skip '\n\r' or '\r\n' */
 		}
 		if (++linenumber >= MAX_INT) {
-			syntaxerror("chunk has too many lines");
+			throw syntaxerror("chunk has too many lines");
 		}
 	}
 
@@ -441,16 +441,16 @@ public class LexState {
 		for (boolean endloop = false; !endloop; ) {
 			switch (current) {
 				case EOZ:
-					lexerror((seminfo != null) ? "unfinished long string"
-						: "unfinished long comment", TK_EOS);
-					break; /* to avoid warnings */
+					String msg = (seminfo != null) ? "unfinished long string"
+						: "unfinished long comment";
+					throw lexerror(msg, TK_EOS);
 				case '[': {
 					if (skip_sep() == sep) {
 						save_and_next(); /* skip 2nd `[' */
 						cont++;
 						if (LUA_COMPAT_LSTR == 1) {
 							if (sep == 0) {
-								lexerror("nesting of [[...]] is deprecated", '[');
+								throw lexerror("nesting of [[...]] is deprecated", (int) '[');
 							}
 						}
 					}
@@ -497,12 +497,10 @@ public class LexState {
 		while (current != del) {
 			switch (current) {
 				case EOZ:
-					lexerror("unfinished string", TK_EOS);
-					continue; /* to avoid warnings */
+					throw lexerror("unfinished string", TK_EOS);
 				case '\n':
 				case '\r':
-					lexerror("unfinished string", TK_STRING);
-					continue; /* to avoid warnings */
+					throw lexerror("unfinished string", TK_STRING);
 				case '\\': {
 					int c;
 					nextChar(); /* do not save the `\' */
@@ -546,7 +544,7 @@ public class LexState {
 									nextChar();
 								} while (++i < 3 && isdigit(current));
 								if (c > UCHAR_MAX) {
-									lexerror("escape sequence too large", TK_STRING);
+									throw lexerror("escape sequence too large", TK_STRING);
 								}
 								save(c);
 							}
@@ -604,7 +602,7 @@ public class LexState {
 					} else if (sep == -1) {
 						return '[';
 					} else {
-						lexerror("invalid long string delimiter", TK_STRING);
+						throw lexerror("invalid long string delimiter", TK_STRING);
 					}
 				}
 				case '=': {
@@ -782,7 +780,7 @@ public class LexState {
 	 */
 
 	void error_expected(int token) {
-		syntaxerror(L.pushfstring(LUA_QS(token2str(token)) + " expected"));
+		throw syntaxerror(L.pushfstring(LUA_QS(token2str(token)) + " expected"));
 	}
 
 	boolean testnext(int c) {
@@ -807,7 +805,7 @@ public class LexState {
 
 	void check_condition(boolean c, String msg) {
 		if (!(c)) {
-			syntaxerror(msg);
+			throw syntaxerror(msg);
 		}
 	}
 
@@ -817,7 +815,7 @@ public class LexState {
 			if (where == linenumber) {
 				error_expected(what);
 			} else {
-				syntaxerror(L.pushfstring(LUA_QS(token2str(what))
+				throw syntaxerror(L.pushfstring(LUA_QS(token2str(what))
 					+ " expected " + "(to close " + LUA_QS(token2str(who))
 					+ " at line " + where + ")"));
 			}
@@ -919,7 +917,7 @@ public class LexState {
 
 	void enterlevel() {
 		if (++L.nCcalls > LUAI_MAXCCALLS) {
-			lexerror("chunk has too many syntax levels", 0);
+			throw lexerror("chunk has too many syntax levels", 0);
 		}
 	}
 
@@ -1148,7 +1146,7 @@ public class LexState {
 						break;
 					}
 					default:
-						this.syntaxerror("<name> or " + LUA_QL("...") + " expected");
+						throw syntaxerror("<name> or " + LUA_QL("...") + " expected");
 				}
 			} while ((f.is_vararg == 0) && this.testnext(','));
 		}
@@ -1198,7 +1196,7 @@ public class LexState {
 		switch (this.t.token) {
 			case '(': { /* funcargs -> `(' [ explist1 ] `)' */
 				if (line != this.lastline) {
-					this.syntaxerror("ambiguous syntax (function call x new statement)");
+					throw syntaxerror("ambiguous syntax (function call x new statement)");
 				}
 				this.next();
 				if (this.t.token == ')') /* arg list is empty? */ {
@@ -1220,8 +1218,7 @@ public class LexState {
 				break;
 			}
 			default: {
-				this.syntaxerror("function arguments expected");
-				return;
+				throw syntaxerror("function arguments expected");
 			}
 		}
 		LuaC._assert(f.k == VNONRELOC);
@@ -1263,7 +1260,7 @@ public class LexState {
 				return;
 			}
 			default: {
-				this.syntaxerror("unexpected symbol");
+				throw syntaxerror("unexpected symbol");
 			}
 		}
 	}
@@ -1604,7 +1601,7 @@ public class LexState {
 			bl = bl.previous;
 		}
 		if (bl == null) {
-			this.syntaxerror("no loop to break");
+			throw syntaxerror("no loop to break");
 		}
 		if (upval) {
 			fs.codeABC(Lua.OP_CLOSE, bl.nactvar, 0, 0);
@@ -1751,7 +1748,7 @@ public class LexState {
 				this.forlist(varname);
 				break;
 			default:
-				this.syntaxerror(LUA_QL("=") + " or " + LUA_QL("in") + " expected");
+				throw syntaxerror(LUA_QL("=") + " or " + LUA_QL("in") + " expected");
 		}
 		this.check_match(TK_END, TK_FOR, line);
 		fs.leaveblock(); /* loop scope (`break' jumps to this point) */

@@ -71,8 +71,14 @@ public class LuaNil extends LuaValue {
 		return state.nilMetatable;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		return o instanceof LuaNil;
+	}
+
+	@Override
+	public int hashCode() {
+		return 0;
 	}
 
 	@Override
@@ -152,7 +158,7 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public Object optUserdata(Class c, Object defval) {
+	public Object optUserdata(Class<?> c, Object defval) {
 		return defval;
 	}
 

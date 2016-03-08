@@ -431,11 +431,9 @@ public class PackageLib extends OneArgFunction {
 	LuaValue loader_Java(Varargs args) {
 		String name = args.arg(1).checkString();
 		String classname = toClassname(name);
-		Class c = null;
-		LuaValue v = null;
 		try {
-			c = Class.forName(classname);
-			v = (LuaValue) c.newInstance();
+			Class<?> c = Class.forName(classname);
+			LuaValue v = (LuaValue) c.newInstance();
 			v.setfenv(env);
 			return v;
 		} catch (ClassNotFoundException cnfe) {

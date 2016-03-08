@@ -40,6 +40,7 @@ package org.squiddev.cobalt;
  * processing could be going on in a different thread.
  */
 public class OrphanedThread extends Error {
+	private static final long serialVersionUID = -611369749534243472L;
 
 	public OrphanedThread() {
 		super("orphaned thread");

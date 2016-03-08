@@ -38,7 +38,7 @@ public class FileResourceManipulator implements ResourceManipulator {
 	public InputStream findResource(String filename) {
 		File f = new File(filename);
 		if (!f.exists()) {
-			Class c = getClass();
+			Class<?> c = getClass();
 			return c.getResourceAsStream(filename.startsWith("/") ? filename : "/" + filename);
 		}
 

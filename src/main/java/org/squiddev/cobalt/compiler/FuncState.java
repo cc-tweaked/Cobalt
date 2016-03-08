@@ -112,7 +112,7 @@ public class FuncState {
 		String msg = (f.linedefined == 0) ?
 			L.pushfstring("main function has more than " + limit + " " + what) :
 			L.pushfstring("function at line " + f.linedefined + " has more than " + limit + " " + what);
-		ls.lexerror(msg, 0);
+		throw ls.lexerror(msg, 0);
 	}
 
 
@@ -301,7 +301,7 @@ public class FuncState {
 		int offset = dest - (pc + 1);
 		_assert(dest != LexState.NO_JUMP);
 		if (Math.abs(offset) > MAXARG_sBx) {
-			ls.syntaxerror("control structure too long");
+			throw ls.syntaxerror("control structure too long");
 		}
 		SETARG_sBx(jmp, offset);
 	}
@@ -430,7 +430,7 @@ public class FuncState {
 		int newstack = this.freereg + n;
 		if (newstack > this.f.maxstacksize) {
 			if (newstack >= MAXSTACK) {
-				ls.syntaxerror("function or expression too complex");
+				throw ls.syntaxerror("function or expression too complex");
 			}
 			this.f.maxstacksize = newstack;
 		}

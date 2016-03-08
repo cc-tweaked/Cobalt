@@ -1154,6 +1154,7 @@ public class StringLib extends OneArgFunction {
 								}
 							}
 						}
+						break;
 					case '$':
 						if (poffset + 1 == p.length()) {
 							return (soffset == s.length()) ? soffset : -1;
