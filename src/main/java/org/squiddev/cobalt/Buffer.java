@@ -183,7 +183,7 @@ public final class Buffer {
 
 	/**
 	 * Append a Java String to the buffer.
-	 * The Java string will be converted to bytes using the UTF8 encoding.
+	 * The Java string will be converted to bytes by limiting between 0 and 255
 	 *
 	 * @param str The string to append
 	 * @return {@code this} to allow call chaining

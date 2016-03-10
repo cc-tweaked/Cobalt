@@ -186,7 +186,7 @@ public abstract class Varargs {
 	 * @return String value in human readable form such as {1,2}.
 	 */
 	public String toString() {
-		Buffer sb = new Buffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("(");
 		for (int i = 1, n = count(); i <= n; i++) {
 			if (i > 1) sb.append(",");

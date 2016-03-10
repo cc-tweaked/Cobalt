@@ -68,15 +68,25 @@ public class LuaString extends LuaValue {
 	 */
 	public final int length;
 
-	private static final Hashtable<Object, WeakReference<LuaString>> index_java = new Hashtable<Object, WeakReference<LuaString>>();
+	private static final Hashtable<String, WeakReference<LuaString>> stringLookup = new Hashtable<String, WeakReference<LuaString>>();
+	private static final Hashtable<String, WeakReference<LuaString>> utf8Lookup = new Hashtable<String, WeakReference<LuaString>>();
 
-	private static LuaString index_get(Object key) {
-		WeakReference<LuaString> w = LuaString.index_java.get(key);
+	private static LuaString stringGet(String key) {
+		WeakReference<LuaString> w = stringLookup.get(key);
 		return w != null ? w.get() : null;
 	}
 
-	private static void index_set(Object key, LuaString value) {
-		LuaString.index_java.put(key, new WeakReference<LuaString>(value));
+	private static void stringSet(String key, LuaString value) {
+		stringLookup.put(key, new WeakReference<LuaString>(value));
+	}
+
+	private static LuaString utf8Get(String key) {
+		WeakReference<LuaString> w = utf8Lookup.get(key);
+		return w != null ? w.get() : null;
+	}
+
+	private static void utf8Set(String key, LuaString value) {
+		utf8Lookup.put(key, new WeakReference<LuaString>(value));
 	}
 
 	/**
@@ -87,12 +97,12 @@ public class LuaString extends LuaValue {
 	 * @return {@link LuaString} with bytes corresponding to the supplied String
 	 */
 	public static LuaString valueOf(String string) {
-		LuaString s = index_get(string);
+		LuaString s = stringGet(string);
 		if (s != null) return s;
 		byte[] bytes = new byte[string.length()];
 		encode(string, bytes, 0);
 		s = valueOf(bytes, 0, bytes.length);
-		index_set(string, s);
+		stringSet(string, s);
 		return s;
 	}
 
@@ -568,6 +578,141 @@ public class LuaString extends LuaValue {
 			bytes[i + off] = (c < 256 ? (byte) c : 63);
 		}
 	}
+
+	//region UTF8
+
+	/**
+	 * Get a {@link LuaString} instance whose bytes match
+	 * the supplied Java String using the UTF8 encoding.
+	 *
+	 * @param string Java String containing characters to encode as UTF8
+	 * @return {@link LuaString} with UTF8 bytes corresponding to the supplied String
+	 */
+	public static LuaString valueOfUtf8(String string) {
+		LuaString s = utf8Get(string);
+		if (s != null) return s;
+		byte[] b = new byte[lengthAsUtf8(string)];
+		encodeToUtf8(string, b, 0);
+		s = valueOf(b, 0, b.length);
+		utf8Set(string, s);
+		return s;
+	}
+
+	public String toUtf8() {
+		return decodeAsUtf8(bytes, offset, length);
+	}
+
+	/**
+	 * Convert to Java String interpreting as utf8 characters.
+	 *
+	 * @param bytes  byte array in UTF8 encoding to convert
+	 * @param offset starting index in byte array
+	 * @param length number of bytes to convert
+	 * @return Java String corresponding to the value of bytes interpreted using UTF8
+	 * @see #lengthAsUtf8(String)
+	 * @see #encodeToUtf8(String, byte[], int)
+	 * @see #isValidUtf8()
+	 */
+	public static String decodeAsUtf8(byte[] bytes, int offset, int length) {
+		int i, j, n, b;
+		for (i = offset, j = offset + length, n = 0; i < j; ++n) {
+			switch (0xE0 & bytes[i++]) {
+				case 0xE0:
+					++i;
+				case 0xC0:
+					++i;
+			}
+		}
+		char[] chars = new char[n];
+		for (i = offset, j = offset + length, n = 0; i < j; ) {
+			chars[n++] = (char) (
+				((b = bytes[i++]) >= 0 || i >= j) ? b :
+					(b < -32 || i + 1 >= j) ? (((b & 0x3f) << 6) | (bytes[i++] & 0x3f)) :
+						(((b & 0xf) << 12) | ((bytes[i++] & 0x3f) << 6) | (bytes[i++] & 0x3f)));
+		}
+		return new String(chars);
+	}
+
+	/**
+	 * Count the number of bytes required to encode the string as UTF-8.
+	 *
+	 * @param chars Array of unicode characters to be encoded as UTF-8
+	 * @return count of bytes needed to encode using UTF-8
+	 * @see #encodeToUtf8(String, byte[], int)
+	 * @see #decodeAsUtf8(byte[], int, int)
+	 * @see #isValidUtf8()
+	 */
+	public static int lengthAsUtf8(String chars) {
+		int i, b;
+		char c;
+		for (i = b = chars.length(); --i >= 0; ) {
+			if ((c = chars.charAt(i)) >= 0x80) {
+				b += (c >= 0x800) ? 2 : 1;
+			}
+		}
+		return b;
+	}
+
+	/**
+	 * Encode the given Java string as UTF-8 bytes, writing the result to bytes
+	 * starting at offset.
+	 *
+	 * The string should be measured first with lengthAsUtf8
+	 * to make sure the given byte array is large enough.
+	 *
+	 * @param chars String to be encoded as UTF-8
+	 * @param bytes byte array to hold the result
+	 * @param off   offset into the byte array to start writing
+	 * @see #lengthAsUtf8(String)
+	 * @see #decodeAsUtf8(byte[], int, int)
+	 * @see #isValidUtf8()
+	 */
+	public static void encodeToUtf8(String chars, byte[] bytes, int off) {
+		final int n = chars.length();
+		char c;
+		for (int i = 0, j = off; i < n; i++) {
+			if ((c = chars.charAt(i)) < 0x80) {
+				bytes[j++] = (byte) c;
+			} else if (c < 0x800) {
+				bytes[j++] = (byte) (0xC0 | ((c >> 6) & 0x1f));
+				bytes[j++] = (byte) (0x80 | (c & 0x3f));
+			} else {
+				bytes[j++] = (byte) (0xE0 | ((c >> 12) & 0x0f));
+				bytes[j++] = (byte) (0x80 | ((c >> 6) & 0x3f));
+				bytes[j++] = (byte) (0x80 | (c & 0x3f));
+			}
+		}
+	}
+
+	/**
+	 * Check that a byte sequence is valid UTF-8
+	 *
+	 * @return true if it is valid UTF-8, otherwise false
+	 * @see #lengthAsUtf8(String)
+	 * @see #encodeToUtf8(String, byte[], int)
+	 * @see #decodeAsUtf8(byte[], int, int)
+	 */
+	public boolean isValidUtf8() {
+		int i, j, n, b, e = 0;
+		for (i = offset, j = offset + length, n = 0; i < j; ++n) {
+			int c = bytes[i++];
+			if (c >= 0) continue;
+			if (((c & 0xE0) == 0xC0)
+				&& i < j
+				&& (bytes[i++] & 0xC0) == 0x80) {
+				continue;
+			}
+			if (((c & 0xF0) == 0xE0)
+				&& i + 1 < j
+				&& (bytes[i++] & 0xC0) == 0x80
+				&& (bytes[i++] & 0xC0) == 0x80) {
+				continue;
+			}
+			return false;
+		}
+		return true;
+	}
+	//endregion
 
 	// --------------------- number conversion -----------------------
 
