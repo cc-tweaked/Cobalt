@@ -64,12 +64,10 @@ public class DebugHandler {
 	 * @param func the function called
 	 */
 	public void onCall(DebugState ds, LuaFunction func) {
-		if (ds.inhook) return;
-
 		DebugInfo di = ds.pushInfo();
 		di.setFunction(func);
 
-		if (ds.hookcall) ds.callHookFunc(CALL, NIL);
+		if (!ds.inhook && ds.hookcall) ds.callHookFunc(CALL, NIL);
 	}
 
 	/**
@@ -79,15 +77,13 @@ public class DebugHandler {
 	 * @param func  the function called
 	 * @param args  The arguments to this function
 	 * @param stack The current lua stack
-	 * @return The pushed info, or {@code null}
+	 * @return The pushed info
 	 */
 	public DebugInfo onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack) {
-		if (ds.inhook) return null;
-
 		DebugInfo di = ds.pushInfo();
 		di.setFunction(func, args, stack);
 
-		if (ds.hookcall) ds.callHookFunc(CALL, NIL);
+		if (!ds.inhook && ds.hookcall) ds.callHookFunc(CALL, NIL);
 		return di;
 	}
 
@@ -97,10 +93,8 @@ public class DebugHandler {
 	 * @param ds Debug state
 	 */
 	public void onReturn(DebugState ds) {
-		if (ds.inhook) return;
-
 		try {
-			if (ds.hookrtrn) ds.callHookFunc(RETURN, NIL);
+			if (!ds.inhook && ds.hookrtrn) ds.callHookFunc(RETURN, NIL);
 		} finally {
 			ds.popInfo();
 		}
@@ -117,19 +111,22 @@ public class DebugHandler {
 	 */
 	public void onInstruction(DebugState ds, DebugInfo di, int pc, Varargs extras, int top) {
 		di.bytecode(pc, extras, top);
-		if (ds.hookcount > 0) {
-			if (++ds.hookcodes >= ds.hookcount) {
-				ds.hookcodes = 0;
-				ds.callHookFunc(COUNT, NIL);
+
+		if (ds.inhook) {
+			if (ds.hookcount > 0) {
+				if (++ds.hookcodes >= ds.hookcount) {
+					ds.hookcodes = 0;
+					ds.callHookFunc(COUNT, NIL);
+				}
 			}
-		}
-		if (ds.hookline) {
-			int newline = di.currentline();
-			if (newline != ds.line) {
-				int c = di.closure.getPrototype().code[pc];
-				if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
-					ds.line = newline;
-					ds.callHookFunc(LINE, valueOf(newline));
+			if (ds.hookline) {
+				int newline = di.currentline();
+				if (newline != ds.line) {
+					int c = di.closure.getPrototype().code[pc];
+					if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
+						ds.line = newline;
+						ds.callHookFunc(LINE, valueOf(newline));
+					}
 				}
 			}
 		}

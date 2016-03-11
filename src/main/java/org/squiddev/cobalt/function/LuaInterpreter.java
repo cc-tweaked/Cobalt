@@ -219,7 +219,7 @@ public class LuaInterpreter extends LuaClosure {
 		// process instructions
 		try {
 			while (true) {
-				if (di != null) handler.onInstruction(ds, di, pc, v, top);
+				handler.onInstruction(ds, di, pc, v, top);
 
 				// pull out instruction
 				i = code[pc++];

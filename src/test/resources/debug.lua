@@ -1,4 +1,4 @@
-local function assertEquals(val, expected) assert(val == expected, "Got " .. tostring(val) .. ", expected " .. tostring(expected)) end
+local function assertEquals(expected, val) assert(val == expected, "Got " .. tostring(val) .. ", expected " .. tostring(expected)) end
 
 local function assertLine(stack, line)
 	local _, msg = pcall(error, "", stack + 2)
@@ -52,3 +52,20 @@ local function foo()
 end
 setfenv(foo, { getfenv = getfenv, print = print, _G = _G })
 foo()
+
+local function tracebackVerbose(x)
+	if x then
+		assertLine(1, 58)
+		assertLine(2, 63)
+		assertLine(3, 67)
+		assertLine(4, 70)
+	else
+		tracebackVerbose(true)
+	end
+end
+
+debug.sethook(function()
+	tracebackVerbose(false)
+end, "c");
+
+(function() end)()
