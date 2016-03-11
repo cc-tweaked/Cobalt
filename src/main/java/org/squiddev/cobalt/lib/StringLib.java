@@ -27,6 +27,7 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.DumpState;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.OneArgFunction;
@@ -95,15 +96,15 @@ public class StringLib extends OneArgFunction {
 				case 1:
 					return StringLib.char_(args);
 				case 2:
-					return StringLib.find(args);
+					return StringLib.find(state, args);
 				case 3:
 					return StringLib.format(args);
 				case 4:
-					return StringLib.gmatch(args);
+					return StringLib.gmatch(state, args);
 				case 5:
 					return StringLib.gsub(state, args);
 				case 6:
-					return StringLib.match(args);
+					return StringLib.match(state, args);
 				case 7:
 					return StringLib.rep(args);
 				case 8:
@@ -207,8 +208,8 @@ public class StringLib extends OneArgFunction {
 	 * If the pattern has captures, then in a successful match the captured values
 	 * are also returned, after the two indices.
 	 */
-	static Varargs find(Varargs args) {
-		return str_find_aux(args, true);
+	static Varargs find(LuaState state, Varargs args) {
+		return str_find_aux(state, args, true);
 	}
 
 	/**
@@ -552,10 +553,10 @@ public class StringLib extends OneArgFunction {
 	 * For this function, a '^' at the start of a pattern does not work as an anchor,
 	 * as this would prevent the iteration.
 	 */
-	static Varargs gmatch(Varargs args) {
+	static Varargs gmatch(LuaState state, Varargs args) {
 		LuaString src = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
-		return new GMatchAux(args, src, pat);
+		return new GMatchAux(state, args, src, pat);
 	}
 
 	static class GMatchAux extends VarArgFunction {
@@ -563,9 +564,9 @@ public class StringLib extends OneArgFunction {
 		private final MatchState ms;
 		private int soffset;
 
-		public GMatchAux(Varargs args, LuaString src, LuaString pat) {
+		public GMatchAux(LuaState state, Varargs args, LuaString src, LuaString pat) {
 			this.srclen = src.length();
-			this.ms = new MatchState(args, src, pat);
+			this.ms = new MatchState(state.debug, args, src, pat);
 			this.soffset = 0;
 		}
 
@@ -640,7 +641,7 @@ public class StringLib extends OneArgFunction {
 		final boolean anchor = p.length() > 0 && p.charAt(0) == '^';
 
 		Buffer lbuf = new Buffer(srclen);
-		MatchState ms = new MatchState(args, src, p);
+		MatchState ms = new MatchState(state.debug, args, src, p);
 
 		int soffset = 0;
 		int n = 0;
@@ -696,8 +697,8 @@ public class StringLib extends OneArgFunction {
 	 * A third, optional numerical argument init specifies where to start the
 	 * search; its default value is 1 and may be negative.
 	 */
-	static Varargs match(Varargs args) {
-		return str_find_aux(args, false);
+	static Varargs match(LuaState state, Varargs args) {
+		return str_find_aux(state, args, false);
 	}
 
 	/**
@@ -778,7 +779,7 @@ public class StringLib extends OneArgFunction {
 	/**
 	 * This utility method implements both string.find and string.match.
 	 */
-	static Varargs str_find_aux(Varargs args, boolean find) {
+	static Varargs str_find_aux(LuaState state, Varargs args, boolean find) {
 		LuaString s = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
 		int init = args.arg(3).optInteger(1);
@@ -797,7 +798,7 @@ public class StringLib extends OneArgFunction {
 				return varargsOf(valueOf(result + 1), valueOf(result + pat.length()));
 			}
 		} else {
-			MatchState ms = new MatchState(args, s, pat);
+			MatchState ms = new MatchState(state.debug, args, s, pat);
 
 			boolean anchor = false;
 			int poff = 0;
@@ -875,6 +876,7 @@ public class StringLib extends OneArgFunction {
 	}
 
 	static class MatchState {
+		private final DebugHandler handler;
 		final LuaString s;
 		final LuaString p;
 		final Varargs args;
@@ -882,7 +884,8 @@ public class StringLib extends OneArgFunction {
 		int[] cinit;
 		int[] clen;
 
-		MatchState(Varargs args, LuaString s, LuaString pattern) {
+		MatchState(DebugHandler handler, Varargs args, LuaString s, LuaString pattern) {
+			this.handler = handler;
 			this.s = s;
 			this.p = pattern;
 			this.args = args;
@@ -1104,6 +1107,8 @@ public class StringLib extends OneArgFunction {
 		 */
 		int match(int soffset, int poffset) {
 			while (true) {
+				handler.poll();
+
 				// Check if we are at the end of the pattern -
 				// equivalent to the '\0' case in the C version, but our pattern
 				// string is not NUL-terminated.

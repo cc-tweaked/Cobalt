@@ -131,4 +131,11 @@ public class DebugHandler {
 			}
 		}
 	}
+
+	/**
+	 * Called within long running processes (such as pattern matching)
+	 * to allow terminating the process.
+	 */
+	public void poll() {
+	}
 }

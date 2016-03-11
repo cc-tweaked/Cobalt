@@ -57,8 +57,8 @@ local function tracebackVerbose(x)
 	if x then
 		assertLine(1, 58)
 		assertLine(2, 63)
-		assertLine(3, 67)
-		assertLine(4, 70)
+		assertLine(3, 68)
+		assertLine(4, 71)
 	else
 		tracebackVerbose(true)
 	end
