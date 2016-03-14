@@ -104,7 +104,7 @@ public final class DebugInfo {
 	}
 
 	public String sourceline() {
-		if (closure == null) return func == null ? "nil" : func.toString();
+		if (closure == null) return func == null ? "nil" : func.debugName();
 		String s = closure.getPrototype().source.toString();
 		int line = currentline();
 		return (s.startsWith("@") || s.startsWith("=") ? s.substring(1) : s) + ":" + line;

@@ -78,4 +78,9 @@ public abstract class LuaFunction extends LuaValue {
 	public void setfenv(LuaValue env) {
 		this.env = env != null ? env : Constants.NIL;
 	}
+
+	public String debugName() {
+		return toString();
+	}
+
 }

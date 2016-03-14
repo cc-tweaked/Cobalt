@@ -461,7 +461,7 @@ public abstract class IoLib extends OneArgFunction {
 		return varargsOf(NIL, valueOf(errortext), ZERO);
 	}
 
-	private Varargs lines(final File f, boolean autoClose) {
+	private Varargs lines(final File f, final boolean autoClose) {
 		return new VarArgFunction() {
 
 			@Override

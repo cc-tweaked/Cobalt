@@ -149,11 +149,11 @@ public abstract class LibFunction extends LuaFunction {
 	/**
 	 * Default constructor for use by subclasses
 	 */
-	protected LibFunction() {
+	public LibFunction() {
 	}
 
 	@Override
-	public String toString() {
+	public String debugName() {
 		return name != null ? name : super.toString();
 	}
 
