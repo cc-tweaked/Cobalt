@@ -25,6 +25,7 @@ public class AssertionTest {
 	@Parameterized.Parameters(name = "{0}")
 	public static Collection<Object[]> getTests() {
 		Object[][] tests = {
+			{"baseIssues"},
 			{"stringIssues"},
 			{"debug"},
 		};

@@ -260,8 +260,8 @@ public class BaseLib extends OneArgFunction {
 					int na = args.count();
 					LuaTable t = args.arg(1).checkTable();
 					int n = t.length(state);
-					int i = na >= 2 ? args.arg(2).checkInteger() : 1;
-					int j = na >= 3 ? args.arg(3).checkInteger() : n;
+					int i = na >= 2 ? args.arg(2).optInteger(1) : 1;
+					int j = na >= 3 ? args.arg(3).optInteger(n) : n;
 					n = j - i + 1;
 					if (n < 0) return Constants.NONE;
 					if (n == 1) return t.get(state, i);
