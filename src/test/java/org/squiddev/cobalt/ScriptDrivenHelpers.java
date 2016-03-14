@@ -24,6 +24,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
@@ -66,6 +67,7 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 		final PrintStream oldps = state.stdout;
 		final PrintStream ps = new PrintStream(output);
 		state.stdout = ps;
+		globals.load(state, new JseIoLib());
 
 		// Run the script
 		try {

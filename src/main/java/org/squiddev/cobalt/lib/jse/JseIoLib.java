@@ -100,7 +100,7 @@ public class JseIoLib extends IoLib {
 			this.file = file;
 			this.is = is != null ? is.markSupported() ? is : new BufferedInputStream(is) : null;
 			this.os = os;
-			this.isStandard = false;
+			this.isStandard = isStandard;
 		}
 
 		private FileImpl(RandomAccessFile f) {
@@ -108,11 +108,11 @@ public class JseIoLib extends IoLib {
 		}
 
 		private FileImpl(InputStream i, boolean isStandard) {
-			this(null, i, null, true);
+			this(null, i, null, isStandard);
 		}
 
 		private FileImpl(OutputStream o, boolean isStandard) {
-			this(null, null, o, true);
+			this(null, null, o, isStandard);
 		}
 
 		@Override
