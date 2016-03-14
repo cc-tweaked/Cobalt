@@ -242,7 +242,7 @@ public class TableTest {
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, i, valueOf("Test Value! " + i));
 			assertEquals(i, t.length(state));
-			assertEquals(i, t.maxn());
+			assertEquals(i, t.maxn(), 1e-10);
 		}
 	}
 
@@ -255,7 +255,7 @@ public class TableTest {
 				t.set(state, i, valueOf("Test Value! " + i));
 			}
 			assertEquals(j, t.length(state));
-			assertEquals(j, t.maxn());
+			assertEquals(j, t.maxn(), 1e-10);
 		}
 	}
 
@@ -266,7 +266,7 @@ public class TableTest {
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, "str-" + i, valueOf("String Key Test Value! " + i));
 			assertEquals(0, t.length(state));
-			assertEquals(0, t.maxn());
+			assertEquals(0, t.maxn(), 1e-10);
 		}
 	}
 
@@ -278,7 +278,7 @@ public class TableTest {
 			t.set(state, "str-" + i, valueOf("String Key Test Value! " + i));
 			t.set(state, i, valueOf("Int Key Test Value! " + i));
 			assertEquals(i, t.length(state));
-			assertEquals(i, t.maxn());
+			assertEquals(i, t.maxn(), 1e-10);
 		}
 	}
 
@@ -288,7 +288,7 @@ public class TableTest {
 		for (int j = 0; j < n; j++) {
 			Object vj = v.elementAt(j);
 			Object tj = t.get(state, j + 1).toString();
-			vj = ((LuaString) vj).toString();
+			vj = vj.toString();
 			assertEquals(vj, tj);
 		}
 	}

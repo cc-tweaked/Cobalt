@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.lib.StringLib;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -451,7 +453,7 @@ public class LuaString extends LuaValue {
 	}
 
 	public int luaByte(int index) {
-		return bytes[offset + index] & 0x0FF;
+		return bytes[offset + index] & 0xFF;
 	}
 
 	public int charAt(int index) {
@@ -754,10 +756,10 @@ public class LuaString extends LuaValue {
 	public double scannumber(int base) {
 		if (base >= 2 && base <= 36) {
 			int i = offset, j = offset + length;
-			while (i < j && bytes[i] == ' ') {
+			while (i < j && StringLib.isWhitespace(bytes[i])) {
 				++i;
 			}
-			while (i < j && bytes[j - 1] == ' ') {
+			while (i < j && StringLib.isWhitespace(bytes[j - 1])) {
 				--j;
 			}
 			if (i >= j) {

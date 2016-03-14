@@ -154,8 +154,6 @@ public final class OperationHelper {
 	}
 
 	public static boolean eq(LuaState state, LuaValue left, LuaValue right) {
-		if (left == right) return true;
-
 		int tLeft = left.type();
 		if (tLeft != right.type()) return false;
 
@@ -167,10 +165,10 @@ public final class OperationHelper {
 			case Constants.TBOOLEAN:
 				return left.toBoolean() == right.toBoolean();
 			case Constants.TSTRING:
-				return left.raweq(right);
+				return left == right || left.raweq(right);
 			case Constants.TUSERDATA:
 			case Constants.TTABLE: {
-				if (left.raweq(right)) return true;
+				if (left == right || left.raweq(right)) return true;
 
 				LuaValue leftMeta = left.getMetatable(state);
 				if (leftMeta == null) return false;
@@ -182,7 +180,7 @@ public final class OperationHelper {
 				return !(h.isNil() || h != rightMeta.rawget(Constants.EQ)) && h.call(state, left, right).toBoolean();
 			}
 			default:
-				return left.raweq(right);
+				return left == right || left.raweq(right);
 		}
 	}
 

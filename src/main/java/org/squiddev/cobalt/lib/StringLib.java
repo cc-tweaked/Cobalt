@@ -61,9 +61,11 @@ public class StringLib extends OneArgFunction {
 			"byte", "char", "find", "format",
 			"gmatch", "gsub", "match", "rep",
 			"sub"});
+
+		t.rawset("gfind", t.rawget("gmatch"));
 		env.set(state, "string", t);
 
-		state.stringMetatable = tableOf(new LuaValue[]{INDEX, t});
+		state.stringMetatable = tableOf(INDEX, t);
 		state.loadedPackages.set(state, "string", t);
 		return t;
 	}
@@ -854,6 +856,10 @@ public class StringLib extends OneArgFunction {
 
 	private static final byte[] CHAR_TABLE;
 
+	public static boolean isWhitespace(byte b) {
+		return (CHAR_TABLE[b] & MASK_SPACE) != 0;
+	}
+
 	static {
 		CHAR_TABLE = new byte[256];
 
@@ -1147,9 +1153,8 @@ public class StringLib extends OneArgFunction {
 									throw new LuaError("Missing [ after %f in pattern");
 								}
 								int ep = classend(poffset);
-								int previous = (soffset == 0) ? -1 : s.luaByte(soffset - 1);
-								if (matchbracketclass(previous, poffset, ep - 1) ||
-									matchbracketclass(s.luaByte(soffset), poffset, ep - 1)) {
+								int previous = (soffset == 0) ? 0 : s.luaByte(soffset - 1);
+								if (matchbracketclass(previous, poffset, ep - 1) || (soffset < s.length && !matchbracketclass(s.luaByte(soffset), poffset, ep - 1))) {
 									return -1;
 								}
 								poffset = ep;

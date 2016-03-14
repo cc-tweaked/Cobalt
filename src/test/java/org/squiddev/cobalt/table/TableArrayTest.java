@@ -232,7 +232,7 @@ public class TableArrayTest {
 			LuaValue v = LuaString.valueOf("Test Value! " + i);
 			t.set(state, i, v);
 			assertEquals(i, t.length(state));
-			assertEquals(i, t.maxn());
+			assertEquals(i, t.maxn(), 1e-10);
 		}
 	}
 
@@ -245,7 +245,7 @@ public class TableArrayTest {
 				t.set(state, i, LuaString.valueOf("Test Value! " + i));
 			}
 			assertEquals(j, t.length(state));
-			assertEquals(j, t.maxn());
+			assertEquals(j, t.maxn(), 1e-10);
 		}
 	}
 
@@ -256,7 +256,7 @@ public class TableArrayTest {
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, "str-" + i, LuaString.valueOf("String Key Test Value! " + i));
 			assertEquals(0, t.length(state));
-			assertEquals(0, t.maxn());
+			assertEquals(0, t.maxn(), 1e-10);
 		}
 	}
 
@@ -268,7 +268,7 @@ public class TableArrayTest {
 			t.set(state, "str-" + i, LuaString.valueOf("String Key Test Value! " + i));
 			t.set(state, i, LuaString.valueOf("Int Key Test Value! " + i));
 			assertEquals(i, t.length(state));
-			assertEquals(i, t.maxn());
+			assertEquals(i, t.maxn(), 1e-10);
 		}
 	}
 
@@ -283,6 +283,7 @@ public class TableArrayTest {
 		}
 	}
 
+	@Test
 	public void testInsertBeginningOfList() {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
@@ -295,6 +296,7 @@ public class TableArrayTest {
 		}
 	}
 
+	@Test
 	public void testInsertEndOfList() {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
@@ -307,6 +309,7 @@ public class TableArrayTest {
 		}
 	}
 
+	@Test
 	public void testInsertMiddleOfList() {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
@@ -328,6 +331,7 @@ public class TableArrayTest {
 		}
 	}
 
+	@Test
 	public void testRemoveBeginningOfList() {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
@@ -339,6 +343,7 @@ public class TableArrayTest {
 		}
 	}
 
+	@Test
 	public void testRemoveEndOfList() {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
@@ -350,6 +355,7 @@ public class TableArrayTest {
 		}
 	}
 
+	@Test
 	public void testRemoveMiddleOfList() {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();

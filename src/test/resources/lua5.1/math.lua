@@ -32,7 +32,7 @@ assert(tonumber '+ 0.01' == nil and tonumber '+.e1' == nil and
 		tonumber '1e' == nil and tonumber '1.0e+' == nil and
 		tonumber '.' == nil)
 assert(tonumber('-12') == -10 - 2)
-assert(tonumber('-1.2e2') == ---120)
+assert(tonumber('-1.2e2') == - - -120)
 assert(f(tonumber('1  a')) == nil)
 assert(f(tonumber('e1')) == nil)
 assert(f(tonumber('e  1')) == nil)
@@ -60,8 +60,8 @@ assert(1.1 == '1.' + '.1')
 assert('1111111111111111' - '1111111111111110' == tonumber "  +0.001e+3 \n\t")
 
 function eq(a, b, limit)
-	if not limit then limit = 10E-10 end
-	return math.abs(a - b) <= limit
+	if not limit then limit = 10E-6 end
+	return math.abs(a - b) <= limit, a .. " ~= " .. b .. " : " .. math.abs(a - b)
 end
 
 assert(0.1e-30 > 0.9E-31 and 0.9E30 < 0.1e31)

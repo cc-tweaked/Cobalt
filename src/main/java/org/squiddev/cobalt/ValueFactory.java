@@ -127,7 +127,7 @@ public class ValueFactory {
 	 * @param unnamedValues array of {@link LuaValue} containing the values to use in initialization
 	 * @return new {@link LuaTable} instance with sequential elements coming from the array.
 	 */
-	public static LuaTable listOf(LuaValue[] unnamedValues) {
+	public static LuaTable listOf(LuaValue... unnamedValues) {
 		return new LuaTable(null, unnamedValues, null);
 	}
 
@@ -150,7 +150,7 @@ public class ValueFactory {
 	 *                    in order {@code {key-a, value-a, key-b, value-b, ...} }
 	 * @return new {@link LuaTable} instance with non-sequential keys coming from the supplied array.
 	 */
-	public static LuaTable tableOf(LuaValue[] namedValues) {
+	public static LuaTable tableOf(LuaValue... namedValues) {
 		return new LuaTable(namedValues, null, null);
 	}
 

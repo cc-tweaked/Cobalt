@@ -47,7 +47,7 @@ print('+')
 a1 = [["isto e' um string com v�rias 'aspas'"]]
 a2 = "'aspas'"
 
-assert(string.find(a1, a2) == 31)
+assert(string.find(a1, a2) == 33)
 print('+')
 
 a1 = [==[temp = [[um valor qualquer]]; ]==]

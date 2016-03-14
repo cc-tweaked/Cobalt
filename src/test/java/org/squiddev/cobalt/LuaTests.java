@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.squiddev.cobalt.ValueFactory.listOf;
+import static org.squiddev.cobalt.ValueFactory.tableOf;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
@@ -39,14 +41,14 @@ public class LuaTests {
 			{"closure"},
 			{"code"},
 			{"constructs"},
-			// {"db"}, TODO: Many issues
-			// {"errors"}, TODO: Add variable
+			// {"db"}, TODO: Getinfo.name is broken
+			// {"errors"}, TODO: Add variable in error messages
 			{"events"},
 			{"files"},
 			{"gc"},
 			{"literals"},
 			{"locals"},
-			{"main"},
+			// {"main"}, // Tests Lua flags
 			{"math"},
 			{"nextvar"},
 			{"pm"},

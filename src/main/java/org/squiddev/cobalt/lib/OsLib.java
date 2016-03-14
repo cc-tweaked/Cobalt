@@ -219,7 +219,8 @@ public class OsLib extends VarArgFunction {
 	 * cannot be honored.
 	 */
 	protected String setlocale(String locale, String category) {
-		return "C";
+		if(locale == null || locale.equals("C")) return "C";
+		return null;
 	}
 
 	/**

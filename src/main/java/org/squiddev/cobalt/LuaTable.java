@@ -473,16 +473,16 @@ public class LuaTable extends LuaValue {
 	 *
 	 * @return value for maxn
 	 */
-	public int maxn() {
-		int n = 0;
+	public double maxn() {
+		double n = 0;
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] != null) {
 				n = i + 1;
 			}
 		}
 		for (LuaValue v : hashKeys) {
-			if (v != null && v.isIntExact()) {
-				int key = v.toInteger();
+			if (v != null && v.type() == Constants.TNUMBER) {
+				double key = v.toDouble();
 				if (key > n) {
 					n = key;
 				}
