@@ -11,19 +11,20 @@ assert(require "debug" == debug)
 assert(require "coroutine" == coroutine)
 
 assert(type(package.path) == "string")
-assert(type(package.cpath) == "string")
+-- assert(type(package.cpath) == "string")
 assert(type(package.loaded) == "table")
 assert(type(package.preload) == "table")
 
 
-local DIR = "libs/"
+local DIR = "lib/"
+mkdir(DIR)
 
 local function createfiles(files, preextras, posextras)
 	for n, c in pairs(files) do
 		io.output(DIR .. n)
 		io.write(string.format(preextras, n))
 		io.write(c)
-		io.write(string.format(posextras, n))
+		io.write(string.format(posextras, n, n))
 		io.close(io.output())
 	end
 end
@@ -60,7 +61,7 @@ package.path = string.gsub("D/?.lua;D/?.lc;D/?;D/??x?;D/L", "D/", DIR)
 local try = function(p, n, r)
 	NAME = nil
 	local rr = require(p)
-	assert(NAME == n)
+	assert(NAME == n, "Expected " .. tostring(n) .. ", got " .. tostring(NAME))
 	assert(REQUIRED == p)
 	assert(rr == r)
 end
@@ -101,6 +102,7 @@ files = {
 	["P1/xuxu.lua"] = "AA = 20",
 }
 
+mkdir(DIR .. "P1")
 createfiles(files, "module(..., package.seeall)\n", "")
 AA = 0
 
@@ -134,7 +136,7 @@ package.path = oldpath
 -- check 'require' error message
 local fname = "file_does_not_exist2"
 local m, err = pcall(require, fname)
-for t in string.gmatch(package.path .. ";" .. package.cpath, "[^;]+") do
+for t in string.gmatch(package.path, "[^;]+") do
 	t = string.gsub(t, "?", fname)
 	assert(string.find(err, t, 1, true))
 end

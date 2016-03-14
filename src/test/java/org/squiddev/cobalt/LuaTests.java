@@ -4,10 +4,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.squiddev.cobalt.function.OneArgFunction;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Lua driven assertion tests
@@ -25,10 +29,10 @@ public class LuaTests {
 	@Parameterized.Parameters(name = "{0}")
 	public static Collection<Object[]> getTests() {
 		Object[][] tests = {
-			{"all"},
-			{"api"},
+			// {"all"},
+			// {"api"},
 			{"attrib"},
-			{"big"},
+			// {"big"},
 			{"calls"},
 			{"checktable"},
 			{"closure"},
@@ -48,7 +52,7 @@ public class LuaTests {
 			{"sort"},
 			{"strings"},
 			{"vararg"},
-			{"verybig"},
+			// {"verybig"},
 		};
 
 		return Arrays.asList(tests);
@@ -57,6 +61,12 @@ public class LuaTests {
 	@Before
 	public void setup() {
 		helpers.setup();
+		helpers.globals.rawset("mkdir", new OneArgFunction() {
+			@Override
+			public LuaValue call(LuaState state, LuaValue arg) {
+				return valueOf(new File(arg.checkString()).mkdirs());
+			}
+		});
 	}
 
 	@Test(timeout = 5000)

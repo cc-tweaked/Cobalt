@@ -31,8 +31,6 @@ import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 
-import java.io.InputStream;
-
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
@@ -381,8 +379,6 @@ public class PackageLib extends OneArgFunction {
 
 	LuaValue loader_Lua(LuaState state, Varargs args) {
 		String name = args.arg(1).checkString();
-		InputStream is = null;
-
 
 		// get package path
 		LuaValue pp = PACKAGE.get(state, _PATH);
@@ -407,11 +403,7 @@ public class PackageLib extends OneArgFunction {
 			String template = path.substring(b, e);
 
 			// create filename
-			int q = template.indexOf('?');
-			String filename = template;
-			if (q >= 0) {
-				filename = template.substring(0, q) + name + template.substring(q + 1);
-			}
+			String filename = template.replace("?", name);
 
 			// try loading the file
 			Varargs v = BaseLib.loadFile(state, filename);
