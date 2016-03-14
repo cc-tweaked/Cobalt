@@ -28,8 +28,6 @@ import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
-import java.util.Hashtable;
 
 import static org.squiddev.cobalt.Constants.NIL;
 
@@ -54,6 +52,19 @@ import static org.squiddev.cobalt.Constants.NIL;
  */
 public class LuaString extends LuaValue {
 	/**
+	 * Size of cache of recent short strings. This is the maximum number of LuaStrings that
+	 * will be retained in the cache of recent short strings.
+	 */
+	public static final int RECENT_STRINGS_CACHE_SIZE = 128;
+
+	/**
+	 * Maximum length of a string to be considered for recent short strings caching.
+	 * This effectively limits the total memory that can be spent on the recent strings cache,
+	 * because no LuaString whose backing exceeds this length will be put into the cache.
+	 */
+	public static final int RECENT_STRINGS_MAX_LENGTH = 32;
+
+	/**
 	 * The bytes for the string
 	 */
 	public final byte[] bytes;
@@ -68,25 +79,27 @@ public class LuaString extends LuaValue {
 	 */
 	public final int length;
 
-	private static final Hashtable<String, WeakReference<LuaString>> stringLookup = new Hashtable<String, WeakReference<LuaString>>();
-	private static final Hashtable<String, WeakReference<LuaString>> utf8Lookup = new Hashtable<String, WeakReference<LuaString>>();
+	private static class Cache {
+		/**
+		 * Simple cache of recently created strings that are short.
+		 * This is simply a list of strings, indexed by their hash codes modulo the cache size
+		 * that have been recently constructed.  If a string is being constructed frequently
+		 * from different contexts, it will generally may show up as a cache hit and resolve
+		 * to the same value.
+		 */
+		public final LuaString recentShortStrings[] = new LuaString[RECENT_STRINGS_CACHE_SIZE];
 
-	private static LuaString stringGet(String key) {
-		WeakReference<LuaString> w = stringLookup.get(key);
-		return w != null ? w.get() : null;
-	}
+		public LuaString get(LuaString s) {
+			final int index = s.hashCode() & (RECENT_STRINGS_CACHE_SIZE - 1);
+			final LuaString cached = recentShortStrings[index];
+			if (cached != null && s.raweq(cached)) {
+				return cached;
+			}
+			recentShortStrings[index] = s;
+			return s;
+		}
 
-	private static void stringSet(String key, LuaString value) {
-		stringLookup.put(key, new WeakReference<LuaString>(value));
-	}
-
-	private static LuaString utf8Get(String key) {
-		WeakReference<LuaString> w = utf8Lookup.get(key);
-		return w != null ? w.get() : null;
-	}
-
-	private static void utf8Set(String key, LuaString value) {
-		utf8Lookup.put(key, new WeakReference<LuaString>(value));
+		public static final Cache instance = new Cache();
 	}
 
 	/**
@@ -97,13 +110,9 @@ public class LuaString extends LuaValue {
 	 * @return {@link LuaString} with bytes corresponding to the supplied String
 	 */
 	public static LuaString valueOf(String string) {
-		LuaString s = stringGet(string);
-		if (s != null) return s;
 		byte[] bytes = new byte[string.length()];
 		encode(string, bytes, 0);
-		s = valueOf(bytes, 0, bytes.length);
-		stringSet(string, s);
-		return s;
+		return valueOf(bytes, 0, bytes.length);
 	}
 
 	/**
@@ -117,7 +126,19 @@ public class LuaString extends LuaValue {
 	 * @return {@link LuaString} wrapping the byte buffer
 	 */
 	public static LuaString valueOf(byte[] bytes, int off, int len) {
-		return new LuaString(bytes, off, len);
+		if (bytes.length < RECENT_STRINGS_MAX_LENGTH) {
+			// Short string.  Reuse the backing and check the cache of recent strings before returning.
+			return Cache.instance.get(new LuaString(bytes, off, len));
+		} else if (len >= bytes.length / 2) {
+			// Reuse backing only when more than half the bytes are part of the result.
+			return new LuaString(bytes, off, len);
+		} else {
+			// Short result relative to the source.  Copy only the bytes that are actually to be used.
+			final byte[] b = new byte[len];
+			System.arraycopy(bytes, off, b, 0, len);
+			LuaString string = new LuaString(b, 0, len);
+			return len < RECENT_STRINGS_MAX_LENGTH ? Cache.instance.get(string) : string;
+		}
 	}
 
 	/**
@@ -350,7 +371,7 @@ public class LuaString extends LuaValue {
 	}
 
 	public LuaString substring(int beginIndex, int endIndex) {
-		return new LuaString(bytes, offset + beginIndex, endIndex - beginIndex);
+		return valueOf(bytes, offset + beginIndex, endIndex - beginIndex);
 	}
 
 	public int hashCode() {
@@ -589,13 +610,9 @@ public class LuaString extends LuaValue {
 	 * @return {@link LuaString} with UTF8 bytes corresponding to the supplied String
 	 */
 	public static LuaString valueOfUtf8(String string) {
-		LuaString s = utf8Get(string);
-		if (s != null) return s;
 		byte[] b = new byte[lengthAsUtf8(string)];
 		encodeToUtf8(string, b, 0);
-		s = valueOf(b, 0, b.length);
-		utf8Set(string, s);
-		return s;
+		return valueOf(b, 0, b.length);
 	}
 
 	public String toUtf8() {
