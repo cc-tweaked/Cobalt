@@ -247,7 +247,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNIL
 	 * @see Constants#TNONE
 	 */
-	public boolean isNil() {
+	public final boolean isNil() {
 		return type == TNIL;
 	}
 

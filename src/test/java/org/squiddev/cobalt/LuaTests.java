@@ -18,7 +18,6 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * Lua driven assertion tests
  */
 @RunWith(Parameterized.class)
-@Ignore
 public class LuaTests {
 	private final String name;
 	private ScriptDrivenHelpers helpers;

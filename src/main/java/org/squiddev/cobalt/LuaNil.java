@@ -62,11 +62,6 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public boolean isNil() {
-		return true;
-	}
-
-	@Override
 	public LuaValue getMetatable(LuaState state) {
 		return state.nilMetatable;
 	}

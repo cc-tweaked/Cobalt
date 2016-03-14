@@ -102,7 +102,7 @@ public abstract class IoLib extends OneArgFunction {
 		// displays as "file" type
 		@Override
 		public String toString() {
-			return "file: " + Integer.toHexString(hashCode());
+			return "file (" + (isclosed() ? "closed" : Integer.toHexString(hashCode())) + ")";
 		}
 	}
 
@@ -114,7 +114,7 @@ public abstract class IoLib extends OneArgFunction {
 	 * @return File
 	 * @throws IOException On stream exception
 	 */
-	protected abstract File wrapStream(InputStream stream) throws IOException;
+	protected abstract File wrapStandardStream(InputStream stream) throws IOException;
 
 	/**
 	 * Wrap the standard output.
@@ -123,7 +123,7 @@ public abstract class IoLib extends OneArgFunction {
 	 * @return File
 	 * @throws IOException On stream exception
 	 */
-	protected abstract File wrapStream(OutputStream stream) throws IOException;
+	protected abstract File wrapStandardStream(OutputStream stream) throws IOException;
 
 	/**
 	 * Open a file in a particular mode.
@@ -186,8 +186,7 @@ public abstract class IoLib extends OneArgFunction {
 	private static final int FILE_SETVBUF = 16;
 	private static final int FILE_WRITE = 17;
 
-	private static final int IO_INDEX = 18;
-	private static final int LINES_ITER = 19;
+	private static final int LINES_ITER = 18;
 
 	public static final String[] IO_NAMES = {
 		"close",
@@ -229,15 +228,14 @@ public abstract class IoLib extends OneArgFunction {
 		filemethods = new LuaTable();
 		bind(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
 
-		// set up file metatable
-		LuaTable mt = new LuaTable();
-		bind(state, mt, IoLibV.class, new String[]{"__index"}, IO_INDEX);
-		t.setMetatable(state, mt);
-
 		// all functions link to library instance
 		setLibInstance(state, t);
 		setLibInstance(state, filemethods);
-		setLibInstance(state, mt);
+
+		// setup streams
+		t.rawset(STDIN, input(state));
+		t.rawset(STDOUT, output(state));
+		t.rawset(STDERR, errput(state));
 
 		// return the table
 		env.set(state, "io", t);
@@ -254,17 +252,6 @@ public abstract class IoLib extends OneArgFunction {
 
 	static final class IoLibV extends VarArgFunction {
 		public IoLib iolib;
-
-		public IoLibV() {
-		}
-
-		public IoLibV(LuaValue env, String name, int opcode, IoLib iolib) {
-			super();
-			this.env = env;
-			this.name = name;
-			this.opcode = opcode;
-			this.iolib = iolib;
-		}
 
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) {
@@ -307,11 +294,6 @@ public abstract class IoLib extends OneArgFunction {
 						return iolib._file_seek(args.first(), args.arg(2).optString("cur"), args.arg(3).optInteger(0));
 					case FILE_WRITE:
 						return iolib._file_write(args.first(), args.subargs(2));
-
-					case IO_INDEX:
-						return iolib._io_index(state, args.arg(2));
-					case LINES_ITER:
-						return iolib._lines_iter(env);
 				}
 			} catch (IOException ioe) {
 				return errorresult(ioe);
@@ -345,18 +327,20 @@ public abstract class IoLib extends OneArgFunction {
 
 	//	io.input([file]) -> file
 	public Varargs _io_input(LuaState state, LuaValue file) {
-		infile = file.isNil() ? input(state) :
-			file.isString() ? ioopenfile(state, file.checkString(), "r") :
-				checkfile(file);
-		return infile;
+		if (file.isNil()) {
+			return input(state);
+		} else {
+			return infile = file.isString() ? ioopenfile(state, file.checkString(), "r") : checkfile(file);
+		}
 	}
 
 	// io.output(filename) -> file
 	public Varargs _io_output(LuaState state, LuaValue filename) {
-		outfile = filename.isNil() ? output(state) :
-			filename.isString() ? ioopenfile(state, filename.checkString(), "w") :
-				checkfile(filename);
-		return outfile;
+		if (filename.isNil()) {
+			return output(state);
+		} else {
+			return outfile = filename.isString() ? ioopenfile(state, filename.checkString(), "w") : checkfile(filename);
+		}
 	}
 
 	//	io.type(obj) -> "file" | "closed file" | nil
@@ -379,9 +363,15 @@ public abstract class IoLib extends OneArgFunction {
 
 	//	io.lines(filename) -> iterator
 	public Varargs _io_lines(LuaState state, String filename) {
-		infile = filename == null ? input(state) : ioopenfile(state, filename, "r");
-		checkopen(infile);
-		return lines(infile);
+		if (filename == null) {
+			File file = input(state);
+			checkopen(file);
+			return lines(file, false);
+		} else {
+			File file = ioopenfile(state, filename, "r");
+			checkopen(file);
+			return lines(file, true);
+		}
 	}
 
 	//	io.read(...) -> (...)
@@ -415,7 +405,7 @@ public abstract class IoLib extends OneArgFunction {
 
 	// file:lines() -> iterator
 	public Varargs _file_lines(LuaValue file) {
-		return lines(checkfile(file));
+		return lines(checkfile(file), false);
 	}
 
 	//	file:read(...) -> (...)
@@ -431,18 +421,6 @@ public abstract class IoLib extends OneArgFunction {
 	//	file:write(...) -> void
 	public Varargs _file_write(LuaValue file, Varargs subargs) throws IOException {
 		return iowrite(checkfile(file), subargs);
-	}
-
-	// __index, returns a field
-	public Varargs _io_index(LuaState state, LuaValue v) {
-		return v.equals(STDOUT) ? output(state) :
-			v.equals(STDIN) ? input(state) :
-				v.equals(STDERR) ? errput(state) : NIL;
-	}
-
-	//	lines iterator(s,var) -> var'
-	public Varargs _lines_iter(LuaValue file) throws IOException {
-		return freadline(checkfile(file));
 	}
 
 	private File output(LuaState state) {
@@ -480,15 +458,26 @@ public abstract class IoLib extends OneArgFunction {
 	}
 
 	private static Varargs errorresult(String errortext) {
-		return varargsOf(NIL, valueOf(errortext));
+		return varargsOf(NIL, valueOf(errortext), ZERO);
 	}
 
-	private Varargs lines(final File f) {
-		try {
-			return new IoLibV(f, "lnext", LINES_ITER, this);
-		} catch (Exception e) {
-			throw new LuaError("lines: " + e);
-		}
+	private Varargs lines(final File f, boolean autoClose) {
+		return new VarArgFunction() {
+
+			@Override
+			public Varargs invoke(LuaState state, Varargs args) {
+				//	lines iterator(s,var) -> var'
+				checkopen(f);
+
+				try {
+					LuaValue result = freadline(f);
+					if (autoClose && result == NIL) ioclose(f);
+					return result;
+				} catch (IOException e) {
+					return errorresult(e);
+				}
+			}
+		};
 	}
 
 	private static Varargs iowrite(File f, Varargs args) throws IOException {
@@ -500,6 +489,10 @@ public abstract class IoLib extends OneArgFunction {
 
 	private Varargs ioread(File f, Varargs args) throws IOException {
 		int i, n = args.count();
+		if (n == 0) {
+			return freadline(f);
+		}
+
 		LuaValue[] v = new LuaValue[n];
 		LuaValue ai, vi;
 		LuaString fmt;
@@ -511,7 +504,7 @@ public abstract class IoLib extends OneArgFunction {
 					break;
 				case TSTRING:
 					fmt = ai.checkLuaString();
-					if (fmt.length == 2 && fmt.bytes[fmt.offset] == '*') {
+					if (fmt.length >= 2 && fmt.bytes[fmt.offset] == '*') {
 						switch (fmt.bytes[fmt.offset + 1]) {
 							case 'n':
 								vi = freadnumber(f);
@@ -559,8 +552,8 @@ public abstract class IoLib extends OneArgFunction {
 		boolean isreadmode = mode.startsWith("r");
 		if (isstdfile) {
 			return isreadmode ?
-				wrapStream(state.stdin) :
-				wrapStream(state.stdout);
+				wrapStandardStream(state.stdin) :
+				wrapStandardStream(state.stdout);
 		}
 		boolean isappend = mode.startsWith("a");
 		boolean isupdate = mode.indexOf("+") > 0;
@@ -586,7 +579,7 @@ public abstract class IoLib extends OneArgFunction {
 		try {
 			if (lineonly) {
 				loop:
-				while ((c = f.read()) > 0) {
+				while ((c = f.read()) >= 0) {
 					switch (c) {
 						case '\r':
 							break;
@@ -598,7 +591,7 @@ public abstract class IoLib extends OneArgFunction {
 					}
 				}
 			} else {
-				while ((c = f.read()) > 0) {
+				while ((c = f.read()) >= 0) {
 					baos.write(c);
 				}
 			}
@@ -632,9 +625,9 @@ public abstract class IoLib extends OneArgFunction {
 		freadchars(f, "0123456789", baos);
 		freadchars(f, ".", baos);
 		freadchars(f, "0123456789", baos);
-		//freadchars(f,"eEfFgG",baos);
-		// freadchars(f,"+-",baos);
-		//freadchars(f,"0123456789",baos);
+		freadchars(f,"eEfFgG",baos);
+		freadchars(f,"+-",baos);
+		freadchars(f,"0123456789",baos);
 		String s = baos.toString();
 		return s.length() > 0 ? valueOf(Double.parseDouble(s)) : NIL;
 	}

@@ -51,13 +51,13 @@ public class JseIoLib extends IoLib {
 	}
 
 	@Override
-	protected File wrapStream(InputStream stream) throws IOException {
-		return new FileImpl(stream);
+	protected File wrapStandardStream(InputStream stream) throws IOException {
+		return new FileImpl(stream, true);
 	}
 
 	@Override
-	protected File wrapStream(OutputStream stream) throws IOException {
-		return new FileImpl(stream);
+	protected File wrapStandardStream(OutputStream stream) throws IOException {
+		return new FileImpl(stream, true);
 	}
 
 	@Override
@@ -77,8 +77,8 @@ public class JseIoLib extends IoLib {
 	protected File openProgram(String prog, String mode) throws IOException {
 		final Process p = Runtime.getRuntime().exec(prog);
 		return "w".equals(mode) ?
-			new FileImpl(p.getOutputStream()) :
-			new FileImpl(p.getInputStream());
+			new FileImpl(p.getOutputStream(), false) :
+			new FileImpl(p.getInputStream(), false);
 	}
 
 	@Override
@@ -94,33 +94,35 @@ public class JseIoLib extends IoLib {
 		private final OutputStream os;
 		private boolean closed = false;
 		private boolean nobuffer = false;
+		private final boolean isStandard;
 
-		private FileImpl(RandomAccessFile file, InputStream is, OutputStream os) {
+		private FileImpl(RandomAccessFile file, InputStream is, OutputStream os, boolean isStandard) {
 			this.file = file;
 			this.is = is != null ? is.markSupported() ? is : new BufferedInputStream(is) : null;
 			this.os = os;
+			this.isStandard = false;
 		}
 
 		private FileImpl(RandomAccessFile f) {
-			this(f, null, null);
+			this(f, null, null, false);
 		}
 
-		private FileImpl(InputStream i) {
-			this(null, i, null);
+		private FileImpl(InputStream i, boolean isStandard) {
+			this(null, i, null, true);
 		}
 
-		private FileImpl(OutputStream o) {
-			this(null, null, o);
+		private FileImpl(OutputStream o, boolean isStandard) {
+			this(null, null, o, true);
 		}
 
 		@Override
 		public String toString() {
-			return "file (" + this.hashCode() + ")";
+			return "file (" + (isclosed() ? "closed" : hashCode()) + ")";
 		}
 
 		@Override
 		public boolean isstdfile() {
-			return file == null;
+			return isStandard;
 		}
 
 		@Override
