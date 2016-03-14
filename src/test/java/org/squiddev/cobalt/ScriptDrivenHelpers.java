@@ -50,7 +50,8 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 
 	@Override
 	public InputStream findResource(String filename) {
-		return getClass().getResourceAsStream(subdir + filename);
+		InputStream stream = getClass().getResourceAsStream(subdir + filename);
+		return stream == null ? super.findResource(filename) : stream;
 	}
 
 	/**
