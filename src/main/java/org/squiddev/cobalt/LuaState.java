@@ -25,6 +25,7 @@
 
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;

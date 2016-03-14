@@ -48,6 +48,10 @@ public final class Upvalue {
 		this.index = index;
 	}
 
+	public Upvalue(LuaValue value) {
+		this(new LuaValue[]{value}, 0);
+	}
+
 	/**
 	 * Convert this upvalue to a Java String
 	 *

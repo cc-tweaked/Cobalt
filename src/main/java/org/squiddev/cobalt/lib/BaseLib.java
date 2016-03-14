@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.OneArgFunction;

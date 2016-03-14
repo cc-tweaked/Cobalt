@@ -26,6 +26,7 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugInfo;
@@ -114,10 +115,14 @@ public class LuaInterpreter extends LuaClosure {
 		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NOUPVALUEs;
 	}
 
-	protected LuaInterpreter(int nupvalues, LuaValue env) {
-		super(env);
-		this.p = null;
-		this.upvalues = nupvalues > 0 ? new Upvalue[nupvalues] : NOUPVALUEs;
+	public void nilUpvalues() {
+		int nups = p.nups;
+		if (nups > 0) {
+			Upvalue[] upvalues = this.upvalues;
+			for (int i = 0; i < nups; i++) {
+				upvalues[i] = new Upvalue(Constants.NIL);
+			}
+		}
 	}
 
 	@Override

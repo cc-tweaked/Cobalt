@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;

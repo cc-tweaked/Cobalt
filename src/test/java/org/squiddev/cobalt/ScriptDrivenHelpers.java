@@ -23,6 +23,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 

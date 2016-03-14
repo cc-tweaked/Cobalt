@@ -182,7 +182,7 @@ public class StringLib extends OneArgFunction {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			if (f instanceof LuaClosure) {
-				DumpState.dump(((LuaClosure) f).getPrototype(), baos, true);
+				DumpState.dump(((LuaClosure) f).getPrototype(), baos, false);
 				return LuaString.valueOf(baos.toByteArray());
 			}
 

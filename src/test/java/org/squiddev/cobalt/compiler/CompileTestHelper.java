@@ -1,6 +1,5 @@
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.LoadState;
 import org.squiddev.cobalt.Print;
 import org.squiddev.cobalt.Prototype;
 

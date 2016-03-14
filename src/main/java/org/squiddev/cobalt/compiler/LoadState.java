@@ -22,9 +22,9 @@
  * THE SOFTWARE.
  * ****************************************************************************
  */
-package org.squiddev.cobalt;
+package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
@@ -414,7 +414,9 @@ public class LoadState {
 				throw new LuaError("no compiler");
 			}
 			Prototype p = loadBinaryChunk(firstByte, stream, name);
-			return new LuaInterpreter(p, env);
+			LuaInterpreter closure = new LuaInterpreter(p, env);
+			closure.nilUpvalues();
+			return closure;
 		}
 	}
 
