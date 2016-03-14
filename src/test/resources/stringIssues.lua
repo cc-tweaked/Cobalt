@@ -57,3 +57,8 @@ end
 local start, finish = ("--foo=bar"):match("%-%-(.+)"):find("=")
 assert(start == 4, "expected 4, got " .. start)
 assert(finish == 4, "expected 4, got " .. finish)
+
+-- string.rep allow negative numbers
+assert(("foobar"):rep(-1) == "")
+assert(("foobar"):rep(-100) == "")
+assert(("foobar"):rep(0) == "")

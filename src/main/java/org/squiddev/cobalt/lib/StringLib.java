@@ -709,12 +709,19 @@ public class StringLib extends OneArgFunction {
 	static Varargs rep(Varargs args) {
 		LuaString s = args.arg(1).checkLuaString();
 		int n = args.arg(2).checkInteger();
-		final byte[] bytes = new byte[s.length() * n];
 		int len = s.length();
-		for (int offset = 0; offset < bytes.length; offset += len) {
-			s.copyInto(0, bytes, offset, len);
+
+		if (n <= 0 || len == 0) {
+			return Constants.EMPTYSTRING;
+		} else if (n == 1) {
+			return s;
+		} else {
+			final byte[] bytes = new byte[len * n];
+			for (int offset = 0; offset < bytes.length; offset += len) {
+				s.copyInto(0, bytes, offset, len);
+			}
+			return LuaString.valueOf(bytes);
 		}
-		return LuaString.valueOf(bytes);
 	}
 
 	/**
