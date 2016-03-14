@@ -126,21 +126,6 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaValue ltValue(LuaState state, LuaValue left, LuaValue right) {
-		int tLeft = left.type();
-		if (tLeft != right.type()) {
-			throw ErrorFactory.compareError(left, right);
-		}
-		switch (tLeft) {
-			case Constants.TNUMBER:
-				return left.toDouble() < right.toDouble() ? Constants.TRUE : Constants.FALSE;
-			case Constants.TSTRING:
-				return left.strcmp(right) < 0 ? Constants.TRUE : Constants.FALSE;
-			default:
-				return left.comparemt(state, Constants.LT, right);
-		}
-	}
-
 	public static boolean le(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
@@ -152,22 +137,19 @@ public final class OperationHelper {
 			case Constants.TSTRING:
 				return left.strcmp(right) <= 0;
 			default:
-				return left.comparemt(state, Constants.LE, right).toBoolean();
-		}
-	}
+				if (left.type() == right.type()) {
+					LuaValue h = left.metatag(state, Constants.LE);
+					if (h.isNil()) {
+						h = left.metatag(state, Constants.LT);
+						if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
+							return !h.call(state, right, left).toBoolean();
+						}
+					} else if (h == right.metatag(state, Constants.LE)) {
+						return h.call(state, left, right).toBoolean();
+					}
+				}
 
-	public static LuaValue leValue(LuaState state, LuaValue left, LuaValue right) {
-		int tLeft = left.type();
-		if (tLeft != right.type()) {
-			throw ErrorFactory.compareError(left, right);
-		}
-		switch (tLeft) {
-			case Constants.TNUMBER:
-				return left.toDouble() <= right.toDouble() ? Constants.TRUE : Constants.FALSE;
-			case Constants.TSTRING:
-				return left.strcmp(right) <= 0 ? Constants.TRUE : Constants.FALSE;
-			default:
-				return left.comparemt(state, Constants.LE, right);
+				throw new LuaError("attempt to compare " + Constants.LE + " on " + left.typeName() + " and " + right.typeName());
 		}
 	}
 

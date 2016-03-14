@@ -208,7 +208,7 @@ public class BaseLib extends OneArgFunction {
 				case 6: // "loadstring", // ( string [,chunkname] ) -> chunk | nil, msg
 				{
 					LuaString script = args.arg(1).checkLuaString();
-					String chunkname = args.arg(2).optString("string");
+					String chunkname = args.arg(2).optString("[string \"\"]");
 					return BaseLib.loadStream(state, script.toInputStream(), chunkname);
 				}
 				case 7: // "pcall", // (f, arg1, ...) -> status, result1, ...

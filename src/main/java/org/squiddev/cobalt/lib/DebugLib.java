@@ -91,7 +91,8 @@ public class DebugLib extends VarArgFunction {
 	private static final int MAXSTACK = 250;
 
 	private static final LuaString LUA = valueOf("Lua");
-	private static final LuaString JAVA = valueOf("Java");
+	private static final LuaString C = valueOf("C");
+	private static final LuaString C_SOURCE = valueOf("[C]");
 	private static final LuaString QMARK = valueOf("?");
 	private static final LuaString GLOBAL = valueOf("global");
 	private static final LuaString LOCAL = valueOf("local");
@@ -252,10 +253,10 @@ public class DebugLib extends VarArgFunction {
 						info.set(state, LASTLINEDEFINED, valueOf(p.lastlinedefined));
 					} else {
 						String shortName = di.func == null ? "nil" : di.func.toString();
-						LuaString name = LuaString.valueOf("[Java] " + shortName);
-						info.set(state, WHAT, JAVA);
+						LuaString name = LuaString.valueOf("[C] " + shortName);
+						info.set(state, WHAT, C);
 						info.set(state, SOURCE, name);
-						info.set(state, SHORT_SRC, valueOf(shortName));
+						info.set(state, SHORT_SRC, C_SOURCE);
 						info.set(state, LINEDEFINED, MINUSONE);
 						info.set(state, LASTLINEDEFINED, MINUSONE);
 					}
