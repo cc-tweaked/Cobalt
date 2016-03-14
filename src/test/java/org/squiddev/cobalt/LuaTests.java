@@ -69,7 +69,7 @@ public class LuaTests {
 		});
 	}
 
-	@Test(timeout = 5000)
+	@Test()
 	public void run() throws IOException {
 		helpers.loadScript(name).call(helpers.state);
 	}

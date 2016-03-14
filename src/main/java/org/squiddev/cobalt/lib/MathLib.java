@@ -66,6 +66,8 @@ public class MathLib extends OneArgFunction {
 		bind(state, t, MathLibV.class, new String[]{
 			"frexp", "max", "min", "modf",
 			"randomseed", "random",});
+		t.rawset("mod", t.rawget("fmod"));
+
 		env.set(state, "math", t);
 		state.loadedPackages.set(state, "math", t);
 		return t;

@@ -107,7 +107,7 @@ public class CoroutineLib extends VarArgFunction {
 				if (result.first().toBoolean()) {
 					return result.subargs(2);
 				} else {
-					throw new LuaError(result.arg(2).toString());
+					throw new LuaError(result.arg(2));
 				}
 			}
 			default:

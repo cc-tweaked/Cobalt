@@ -22,7 +22,7 @@ end
 a = f(10)
 -- force a GC in this level
 local x = { [1] = {} } -- to detect a GC
-setmetatable(x, { __mode = 'kv' })
+x = setmetatable(x, { __mode = 'kv' })
 while x[1] do -- repeat until GC
 local a = A .. A .. A .. A -- create garbage
 A = A + 1
@@ -172,7 +172,8 @@ local function foo(a)
 	assert(getfenv(0) == a)
 	assert(getfenv(1) == _G)
 	assert(getfenv(loadstring "") == a)
-	return getfenv()
+	local env = getfenv()
+	return env
 end
 
 f = coroutine.wrap(foo)
@@ -320,7 +321,7 @@ assert(a == 5 ^ 4)
 
 
 -- access to locals of collected corroutines
-local C = {}; setmetatable(C, { __mode = "kv" })
+local C = {}; C = setmetatable(C, { __mode = "kv" })
 local x = coroutine.wrap(function()
 	local a = 10
 	local function f() a = a + 10; return a end
