@@ -19,7 +19,7 @@ public class AssertionTest {
 
 	public AssertionTest(String name) {
 		this.name = name;
-		this.helpers = new ScriptDrivenHelpers("/");
+		this.helpers = new ScriptDrivenHelpers("/assert/");
 	}
 
 	@Parameterized.Parameters(name = "{0}")

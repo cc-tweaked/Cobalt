@@ -43,7 +43,7 @@ public class CompatibilityTest {
 	protected ScriptDrivenHelpers helpers;
 
 	public CompatibilityTest(String name) {
-		helpers = new ScriptDrivenHelpers("/");
+		helpers = new ScriptDrivenHelpers("/compare/");
 		this.name = name;
 	}
 
