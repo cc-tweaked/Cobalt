@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
@@ -54,7 +55,7 @@ public class FragmentsTest {
 			String name = this.name.getMethodName();
 			LuaTable _G = JsePlatform.standardGlobals(state);
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
-			LuaValue chunk = LuaC.instance.load(is, name, _G);
+			LuaFunction chunk = LuaC.instance.load(is, name, _G);
 			Varargs actual = chunk.invoke(state, NONE);
 			assertEquals(expected.count(), actual.count());
 			for (int i = 1; i <= actual.count(); i++) {

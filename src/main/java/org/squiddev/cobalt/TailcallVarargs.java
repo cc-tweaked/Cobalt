@@ -48,6 +48,7 @@ public class TailcallVarargs extends Varargs {
 	private LuaValue func;
 	private Varargs args;
 	private Varargs result;
+	private int stack;
 
 	public TailcallVarargs(LuaValue f, Varargs args) {
 		this.func = f;
@@ -62,7 +63,7 @@ public class TailcallVarargs extends Varargs {
 	@Override
 	public Varargs eval(LuaState state) {
 		while (result == null) {
-			Varargs r = func.onInvoke(state, args);
+			Varargs r = OperationHelper.onInvoke(state, func, args);
 			if (r.isTailcall()) {
 				TailcallVarargs t = (TailcallVarargs) r;
 				func = t.func;

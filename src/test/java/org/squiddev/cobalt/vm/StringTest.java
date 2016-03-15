@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.OperationHelper;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
@@ -47,7 +48,7 @@ public class StringTest {
 		assertEquals('e', is.read());
 
 		LuaString substr = str.substring(1, 4);
-		assertEquals(3, substr.length(state));
+		assertEquals(3, OperationHelper.length(state, substr).toInteger());
 
 		is.close();
 		is = substr.toInputStream();

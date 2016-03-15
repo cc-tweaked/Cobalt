@@ -882,7 +882,7 @@ public class FuncState {
 				r = OperationHelper.pow(null, v1, v2);
 				break;
 			case OP_UNM:
-				r = v1.neg(null);
+				r = OperationHelper.neg(null, v1);
 				break;
 			case OP_LEN:
 				// r = v1.len();

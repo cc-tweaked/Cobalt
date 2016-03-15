@@ -249,7 +249,7 @@ public class PackageLib extends OneArgFunction {
 
 		// apply the functions
 		for (int i = 2; i <= n; i++) {
-			args.arg(i).call(state, module);
+			OperationHelper.call(state, args.arg(i), module);
 		}
 
 		// returns no results
@@ -343,7 +343,7 @@ public class PackageLib extends OneArgFunction {
 			}
 
 		    /* call loader with module name as argument */
-			chunk = loader.call(state, name);
+			chunk = OperationHelper.call(state, loader, name);
 			if (chunk.isFunction()) {
 				break;
 			}
@@ -354,7 +354,7 @@ public class PackageLib extends OneArgFunction {
 
 		// load the module using the loader
 		state.loadedPackages.set(state, name, _SENTINEL);
-		LuaValue result = chunk.call(state, name);
+		LuaValue result = OperationHelper.call(state, chunk, name);
 		if (!result.isNil()) {
 			state.loadedPackages.set(state, name, result);
 		} else if ((result = state.loadedPackages.get(state, name)) == _SENTINEL) {

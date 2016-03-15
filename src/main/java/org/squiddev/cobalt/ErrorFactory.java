@@ -25,6 +25,10 @@
 
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.lib.DebugLib;
+
 /**
  * Factory class for errors
  */
@@ -94,6 +98,25 @@ public class ErrorFactory {
 	 */
 	public static LuaError arithError(LuaValue value) {
 		return new LuaError("attempt to perform arithmetic on " + value.typeName());
+	}
+
+	public static LuaError operandError(LuaState state, LuaValue operand, String verb, int stack) {
+		String type = operand.typeName();
+		LuaString[] kind = null;
+		if (stack >= 0) {
+			DebugInfo info = DebugHandler.getDebugState(state.getCurrentThread()).getDebugInfo();
+			if (info != null && info.closure != null) {
+				if (stack < info.closure.getPrototype().maxstacksize) {
+					kind = DebugLib.getobjname(info, stack);
+				}
+			}
+		}
+
+		if (kind != null) {
+			return new LuaError("attempt to " + verb + " " + kind[1] + " '" + kind[0] + "' (a " + type + " value)");
+		} else {
+			return new LuaError("attempt to " + verb + " a " + type + " value");
+		}
 	}
 
 	/**

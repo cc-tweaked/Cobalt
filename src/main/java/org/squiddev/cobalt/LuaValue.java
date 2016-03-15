@@ -67,7 +67,7 @@ import static org.squiddev.cobalt.Constants.*;
  * } </pre>
  *
  * To supply variable arguments or get multiple return values, use
- * {@link #invoke(LuaState, Varargs)} or {@link #invokeMethod(LuaState, LuaValue, Varargs)} methods:
+ * {@link LuaFunction#invoke(LuaState, Varargs)}
  * <pre> {@code
  * LuaValue modf = globals.get("math").get("modf");
  * Varargs r = modf.invoke( d );
@@ -1286,10 +1286,10 @@ public abstract class LuaValue extends Varargs {
 	 * install itself into this instance.
 	 *
 	 * @param state   The current lua state
-	 * @param library The callable {@link LuaValue} to load into {@code this}
+	 * @param library The callable {@link LuaFunction} to load into {@code this}
 	 * @return {@link LuaValue} containing the result of the initialization call.
 	 */
-	public LuaValue load(LuaState state, LuaValue library) {
+	public LuaValue load(LuaState state, LuaFunction library) {
 		library.setfenv(this);
 		return library.call(state);
 	}
@@ -1360,310 +1360,6 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public void setfenv(LuaValue env) {
 		throw ErrorFactory.typeError(this, "function or thread");
-	}
-
-	/**
-	 * Call {@code this} with 0 arguments, including metatag processing,
-	 * and return only the first return value.
-	 *
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
-	 *
-	 * @param state The current lua state
-	 * @return First return value {@code (this())}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
-	 * @see #invoke(LuaState, Varargs)
-	 * @see #method(LuaState, LuaValue)
-	 */
-	public LuaValue call(LuaState state) {
-		return callmt(state).call(state, this);
-	}
-
-	/**
-	 * Call {@code this} with 1 argument, including metatag processing,
-	 * and return only the first return value.
-	 *
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param arg   First argument to supply to the called function
-	 * @return First return value {@code (this(arg))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState)
-	 * @see #call(LuaState, LuaValue, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
-	 * @see #invoke(LuaState, Varargs)
-	 * @see #method(LuaState, LuaValue, LuaValue)
-	 */
-	public LuaValue call(LuaState state, LuaValue arg) {
-		return callmt(state).call(state, this, arg);
-	}
-
-	/**
-	 * Call {@code this} with 2 arguments, including metatag processing,
-	 * and return only the first return value.
-	 *
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param arg1  First argument to supply to the called function
-	 * @param arg2  Second argument to supply to the called function
-	 * @return First return value {@code (this(arg1, arg2))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState)
-	 * @see #call(LuaState, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
-	 * @see #method(LuaState, LuaValue, LuaValue, LuaValue)
-	 */
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
-		return callmt(state).call(state, this, arg1, arg2);
-	}
-
-	/**
-	 * Call {@code this} with 3 arguments, including metatag processing,
-	 * and return only the first return value.
-	 *
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * To call {@code this} as a method call, use {@link #method(LuaState, LuaValue)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param arg1  First argument to supply to the called function
-	 * @param arg2  Second argument to supply to the called function
-	 * @param arg3  Second argument to supply to the called function
-	 * @return First return value {@code (this(arg1, arg2, arg3))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState)
-	 * @see #call(LuaState, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue)
-	 * @see #invokeMethod(LuaState, LuaValue, Varargs)
-	 */
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-		return callmt(state).invoke(state, ValueFactory.varargsOf(this, arg1, arg2, arg3)).first();
-	}
-
-	/**
-	 * Call named method on {@code this} with 0 arguments, including metatag processing,
-	 * and return only the first return value.
-	 *
-	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
-	 * call it inserting {@code this} as an additional first argument,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * To call {@code this} as a plain call, use {@link #call(LuaState)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param name  Name of the method to look up for invocation
-	 * @return All values returned from {@code this:name()} as a {@link Varargs} instance
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState)
-	 * @see #invoke(LuaState, Varargs)
-	 * @see #method(LuaState, LuaValue, LuaValue)
-	 * @see #method(LuaState, LuaValue, LuaValue, LuaValue)
-	 */
-	public LuaValue method(LuaState state, LuaValue name) {
-		return this.get(state, name).call(state, this);
-	}
-
-	/**
-	 * Call named method on {@code this} with 1 argument, including metatag processing,
-	 * and return only the first return value.
-	 *
-	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
-	 * call it inserting {@code this} as an additional first argument,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param name  Name of the method to look up for invocation
-	 * @param arg   Argument to supply to the method
-	 * @return All values returned from {@code this:name(arg)} as a {@link Varargs} instance
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState, LuaValue)
-	 * @see #invoke(LuaState, Varargs)
-	 * @see #method(LuaState, LuaValue)
-	 * @see #method(LuaState, LuaValue, LuaValue, LuaValue)
-	 */
-	public LuaValue method(LuaState state, LuaValue name, LuaValue arg) {
-		return this.get(state, name).call(state, this, arg);
-	}
-
-	/**
-	 * Call named method on {@code this} with 2 arguments, including metatag processing,
-	 * and return only the first return value.
-	 *
-	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
-	 * call it inserting {@code this} as an additional first argument,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * To call {@code this} as a plain call, use {@link #call(LuaState, LuaValue, LuaValue)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param name  Name of the method to look up for invocation
-	 * @param arg1  First argument to supply to the method
-	 * @param arg2  Second argument to supply to the method
-	 * @return All values returned from {@code this:name(arg1,arg2)} as a {@link Varargs} instance
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState, LuaValue, LuaValue)
-	 * @see #method(LuaState, LuaValue, LuaValue)
-	 */
-	public LuaValue method(LuaState state, LuaValue name, LuaValue arg1, LuaValue arg2) {
-		return this.get(state, name).call(state, this, arg1, arg2);
-	}
-
-	/**
-	 * Call {@code this} with variable arguments, including metatag processing,
-	 * and retain all return values in a {@link Varargs}.
-	 *
-	 * If {@code this} is a {@link LuaFunction}, call it, and return all values.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * To get a particular return value, us {@link Varargs#arg(int)}
-	 *
-	 * To call {@code this} as a method call, use {@link #invokeMethod(LuaState, LuaValue, Varargs)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param args  Varargs containing the arguments to supply to the called function
-	 * @return All return values as a {@link Varargs} instance.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see ValueFactory#varargsOf(LuaValue[])
-	 * @see #call(LuaState, LuaValue)
-	 * @see #invokeMethod(LuaState, LuaValue, Varargs)
-	 */
-	public Varargs invoke(LuaState state, Varargs args) {
-		return callmt(state).invoke(state, ValueFactory.varargsOf(this, args));
-	}
-
-	/**
-	 * Call named method on {@code this} with variable arguments, including metatag processing,
-	 * and retain all return values in a {@link Varargs}.
-	 *
-	 * Look up {@code this[name]} and if it is a {@link LuaFunction},
-	 * call it inserting {@code this} as an additional first argument,
-	 * and return all return values as a {@link Varargs} instance.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
-	 * To get a particular return value, us {@link Varargs#arg(int)}
-	 *
-	 * To call {@code this} as a plain call, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param name  Name of the method to look up for invocation
-	 * @param args  {@link Varargs} containing arguments to supply to the called function after {@code this}
-	 * @return All values returned from {@code this:name(args)} as a {@link Varargs} instance
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
-	 * @see #call(LuaState)
-	 * @see #invoke(LuaState, Varargs)
-	 */
-	public Varargs invokeMethod(LuaState state, LuaValue name, Varargs args) {
-		return get(state, name).invoke(state, ValueFactory.varargsOf(this, args));
-	}
-
-	/**
-	 * Get the metatag value for the {@link Constants#CALL} metatag, if it exists.
-	 *
-	 * @param state The current lua state
-	 * @return {@link LuaValue} value if metatag is defined
-	 * @throws LuaError if {@link Constants#CALL} metatag is not defined.
-	 */
-	protected LuaValue callmt(LuaState state) {
-		return checkmetatag(state, Constants.CALL, "attempt to call ");
-	}
-
-	/**
-	 * Unary minus: return negative value {@code (-this)} as defined by lua unary minus operator
-	 *
-	 * @param state The current lua state
-	 * @return boolean inverse as {@link LuaBoolean} if boolean or nil,
-	 * numeric inverse as {@link LuaNumber} if numeric,
-	 * or metatag processing result if {@link Constants#UNM} metatag is defined
-	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#UNM} metatag
-	 */
-	public LuaValue neg(LuaState state) {
-		return checkmetatag(state, Constants.UNM, "attempt to perform arithmetic on ").call(state, this);
-	}
-
-	/**
-	 * Length operator: return lua length of object {@code (#this)} including metatag processing as java int
-	 *
-	 * @param state The current lua state
-	 * @return length as defined by the lua # operator
-	 * or metatag processing result
-	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#LEN} metatag
-	 */
-	public LuaValue len(LuaState state) {
-		return checkmetatag(state, Constants.LEN, "attempt to get length of ").call(state, this);
-	}
-
-	/**
-	 * Length operator: return lua length of object {@code (#this)} including metatag processing as java int
-	 *
-	 * @param state The current lua state
-	 * @return length as defined by the lua # operator
-	 * or metatag processing result converted to java int using {@link #toInteger()}
-	 * @throws LuaError if  {@code this} is not a table or string, and has no {@link Constants#LEN} metatag
-	 */
-	public int length(LuaState state) {
-		return len(state).toInteger();
 	}
 
 	/**
@@ -1796,10 +1492,10 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public LuaValue concatmt(LuaState state, LuaValue rhs) {
 		LuaValue h = metatag(state, Constants.CONCAT);
-		if (h.isNil() && (h = rhs.metatag(state, Constants.CONCAT)).isNil()) {
+		if (!h.isFunction() && !(h = rhs.metatag(state, Constants.CONCAT)).isFunction()) {
 			throw new LuaError("attempt to concatenate " + typeName() + " and " + rhs.typeName());
 		}
-		return h.call(state, this, rhs);
+		return ((LuaFunction) h).call(state, this, rhs);
 	}
 
 	/**
@@ -1865,7 +1561,7 @@ public abstract class LuaValue extends Varargs {
 				throw ErrorFactory.indexError(t);
 			}
 			if (tm.isFunction()) {
-				return tm.call(state, t, key);
+				return ((LuaFunction) tm).call(state, t, key);
 			}
 			t = tm;
 		}
@@ -1896,66 +1592,13 @@ public abstract class LuaValue extends Varargs {
 				throw ErrorFactory.typeError(t, "index");
 			}
 			if (tm.isFunction()) {
-				tm.call(state, t, key, value);
+				((LuaFunction) tm).call(state, t, key, value);
 				return true;
 			}
 			t = tm;
 		}
 		while (++loop < Constants.MAXTAGLOOP);
 		throw new LuaError("loop in settable");
-	}
-
-	/**
-	 * Perform metatag processing for comparison operations.
-	 *
-	 * Finds the supplied metatag value and invokes it,
-	 * or throws {@link LuaError} if none applies.
-	 *
-	 * @param state The current lua state
-	 * @param tag   The metatag to look up
-	 * @param op1   The right-hand-side value to perform the operation with
-	 * @return {@link LuaValue} resulting from metatag processing
-	 * @throws LuaError if metatag was not defined for either operand,
-	 *                  or if the operands are not the same type,
-	 *                  or the metatag values for the two operands are different.
-	 */
-	public LuaValue comparemt(LuaState state, LuaValue tag, LuaValue op1) {
-		if (type() == op1.type()) {
-			LuaValue h = metatag(state, tag);
-			if (!h.isNil() && h == op1.metatag(state, tag)) {
-				return h.call(state, this, op1);
-			}
-		}
-		throw new LuaError("attempt to compare " + tag + " on " + typeName() + " and " + op1.typeName());
-	}
-
-	/**
-	 * Perform metatag processing for arithmetic operations.
-	 *
-	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
-	 * or throws {@link LuaError} if neither is defined.
-	 *
-	 * @param state The current lua state
-	 * @param tag   The metatag to look up
-	 * @param op2   The other operand value to perform the operation with
-	 * @return {@link LuaValue} resulting from metatag processing
-	 * @throws LuaError if metatag was not defined for either operand
-	 * @see Constants#ADD
-	 * @see Constants#SUB
-	 * @see Constants#MUL
-	 * @see Constants#POW
-	 * @see Constants#DIV
-	 * @see Constants#MOD
-	 */
-	protected LuaValue arithmt(LuaState state, LuaValue tag, LuaValue op2) {
-		LuaValue h = this.metatag(state, tag);
-		if (h.isNil()) {
-			h = op2.metatag(state, tag);
-			if (h.isNil()) {
-				throw new LuaError("attempt to perform arithmetic " + tag + " on " + typeName() + " and " + op2.typeName());
-			}
-		}
-		return h.call(state, this, op2);
 	}
 
 	/**
@@ -1972,43 +1615,6 @@ public abstract class LuaValue extends Varargs {
 			return Constants.NIL;
 		}
 		return mt.rawget(tag);
-	}
-
-	/**
-	 * Get particular metatag, or throw {@link LuaError} if it doesn't exist
-	 *
-	 * @param state  The current lua state
-	 * @param tag    Metatag name to look up, typically a string such as
-	 *               {@link Constants#INDEX} or {@link Constants#NEWINDEX}
-	 * @param reason Description of error when tag lookup fails.
-	 * @return {@link LuaValue} that can be called
-	 * @throws LuaError when the lookup fails.
-	 */
-	protected LuaValue checkmetatag(LuaState state, LuaValue tag, String reason) {
-		LuaValue h = this.metatag(state, tag);
-		if (h.isNil()) {
-			throw new LuaError(reason + typeName());
-		}
-		return h;
-	}
-
-	/**
-	 * Callback used during tail call processing to invoke the function once.
-	 *
-	 * This may return a {@link TailcallVarargs} to be evaluated by the client.
-	 *
-	 * This should not be called directly, instead use on of the call invocation functions.
-	 *
-	 * @param state The current lua state
-	 * @param args  the arguments to the call invocation.
-	 * @return Varargs the return values, possible a TailcallVarargs.
-	 * @see LuaValue#call(LuaState)
-	 * @see LuaValue#invoke(LuaState, Varargs)
-	 * @see LuaValue#method(LuaState, LuaValue)
-	 * @see LuaValue#invokeMethod(LuaState, LuaValue, Varargs)
-	 */
-	public Varargs onInvoke(LuaState state, Varargs args) {
-		return invoke(state, args);
 	}
 
 	/**

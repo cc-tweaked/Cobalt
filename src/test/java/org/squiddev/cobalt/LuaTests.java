@@ -38,7 +38,7 @@ public class LuaTests {
 			{"closure"},
 			{"code"},
 			{"constructs"},
-			{"db"}, // TODO: Getinfo.name is broken
+			{"db"},
 			// {"errors"}, // TODO: Add variable in error messages
 			{"events"},
 			{"files"},

@@ -207,13 +207,6 @@ public class LuaString extends LuaValue {
 		return getTable(state, this, key);
 	}
 
-	// unary operators
-	@Override
-	public LuaValue neg(LuaState state) {
-		double d = scannumber(10);
-		return Double.isNaN(d) ? super.neg(state) : ValueFactory.valueOf(-d);
-	}
-
 	// string comparison
 	@Override
 	public int strcmp(LuaValue lhs) {
@@ -313,8 +306,7 @@ public class LuaString extends LuaValue {
 
 	@Override
 	public double toDouble() {
-		double d = scannumber(10);
-		return Double.isNaN(d) ? 0 : d;
+		return scannumber(10);
 	}
 
 	@Override
@@ -436,16 +428,6 @@ public class LuaString extends LuaValue {
 
 	public void write(DataOutputStream writer, int i, int len) throws IOException {
 		writer.write(bytes, offset + i, len);
-	}
-
-	@Override
-	public LuaValue len(LuaState state) {
-		return LuaInteger.valueOf(length);
-	}
-
-	@Override
-	public int length(LuaState state) {
-		return length;
 	}
 
 	public int length() {

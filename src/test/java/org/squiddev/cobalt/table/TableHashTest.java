@@ -48,7 +48,7 @@ public class TableHashTest {
 		LuaTable t = new LuaTable();
 
 		assertEquals(0, t.getHashLength());
-		assertEquals(0, t.length(state));
+		assertEquals(0, t.length());
 		assertEquals(0, t.keyCount());
 
 		String[] keys = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "wxy", "z01",
@@ -58,7 +58,7 @@ public class TableHashTest {
 			assertEquals(capacities[i], t.getHashLength());
 			String si = "Test Value! " + i;
 			t.set(state, keys[i], ValueFactory.valueOf(si));
-			assertEquals(0, t.length(state));
+			assertEquals(0, t.length());
 			assertEquals(i + 1, t.keyCount());
 		}
 		assertEquals(capacities[keys.length], t.getHashLength());
@@ -73,7 +73,7 @@ public class TableHashTest {
 		// replace with new values
 		for (int i = 0; i < keys.length; ++i) {
 			t.set(state, keys[i], LuaString.valueOf("Replacement Value! " + i));
-			assertEquals(0, t.length(state));
+			assertEquals(0, t.length());
 			assertEquals(keys.length, t.keyCount());
 			assertEquals(capacities[keys.length], t.getHashLength());
 		}
@@ -85,7 +85,7 @@ public class TableHashTest {
 		// remove
 		for (int i = 0; i < keys.length; ++i) {
 			t.set(state, keys[i], Constants.NIL);
-			assertEquals(0, t.length(state));
+			assertEquals(0, t.length());
 			assertEquals(keys.length - i - 1, t.keyCount());
 			if (i < keys.length - 1) {
 				assertEquals(capacities[keys.length], t.getHashLength());

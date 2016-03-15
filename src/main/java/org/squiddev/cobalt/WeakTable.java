@@ -214,7 +214,7 @@ public class WeakTable extends LuaTable {
 		super.sort(luaState, new TwoArgFunction() {
 			@Override
 			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
-				return comparator.call(state, arg1.strongvalue(), arg2.strongvalue());
+				return OperationHelper.call(state, comparator, arg1.strongvalue(), arg2.strongvalue());
 			}
 		});
 	}

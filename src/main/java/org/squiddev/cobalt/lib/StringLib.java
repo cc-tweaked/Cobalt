@@ -939,7 +939,7 @@ public class StringLib extends OneArgFunction {
 					return;
 
 				case TFUNCTION:
-					repl = repl.invoke(state, push_captures(true, soffset, end)).first();
+					repl = OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first();
 					break;
 
 				case TTABLE:

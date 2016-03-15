@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -43,7 +44,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 public class OrphanedThreadTest {
 	private LuaState state;
 
-	private LuaValue function;
+	private LuaFunction function;
 	private LuaValue env;
 
 	@Before

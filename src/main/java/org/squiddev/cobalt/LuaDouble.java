@@ -143,12 +143,6 @@ public class LuaDouble extends LuaNumber {
 		return LuaInteger.valueOf((int) (long) v);
 	}
 
-	// unary operators
-	@Override
-	public LuaValue neg(LuaState state) {
-		return valueOf(-v);
-	}
-
 	// object equality, used for key comparison
 	public boolean equals(Object o) {
 		return o instanceof LuaDouble && ((LuaDouble) o).v == v;

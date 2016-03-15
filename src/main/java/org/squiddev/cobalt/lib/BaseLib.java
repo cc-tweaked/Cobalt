@@ -179,7 +179,7 @@ public class BaseLib extends OneArgFunction {
 					if (v.isNil(1)) {
 						throw new LuaError(v.arg(2).toString());
 					} else {
-						return v.first().invoke(state, Constants.NONE);
+						return OperationHelper.invoke(state, v.first(), Constants.NONE);
 					}
 				}
 				case 2: // "getfenv", // ( [f] ) -> env
@@ -237,7 +237,7 @@ public class BaseLib extends OneArgFunction {
 					LuaValue tostring = state.getCurrentThread().getfenv().get(state, "tostring");
 					for (int i = 1, n = args.count(); i <= n; i++) {
 						if (i > 1) state.stdout.write('\t');
-						LuaString s = tostring.call(state, args.arg(i)).strvalue();
+						LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
 						int z = s.indexOf((byte) 0, 0);
 						state.stdout.write(s.bytes, s.offset, z >= 0 ? z : s.length);
 					}
@@ -260,7 +260,7 @@ public class BaseLib extends OneArgFunction {
 				{
 					int na = args.count();
 					LuaTable t = args.arg(1).checkTable();
-					int n = t.length(state);
+					int n = t.length();
 					int i = na >= 2 ? args.arg(2).optInteger(1) : 1;
 					int j = na >= 3 ? args.arg(3).optInteger(n) : n;
 					n = j - i + 1;
@@ -297,7 +297,7 @@ public class BaseLib extends OneArgFunction {
 					LuaValue arg = args.checkValue(1);
 					LuaValue h = arg.metatag(state, Constants.TOSTRING);
 					if (!h.isNil()) {
-						return h.call(state, arg);
+						return OperationHelper.call(state, h, arg);
 					}
 					LuaValue v = arg.toLuaString();
 					if (!v.isNil()) {
@@ -333,7 +333,7 @@ public class BaseLib extends OneArgFunction {
 	public static Varargs pcall(LuaState state, LuaValue func, Varargs args, LuaValue errfunc) {
 		LuaValue olderr = LuaThread.setErrorFunc(state, errfunc);
 		try {
-			Varargs result = varargsOf(Constants.TRUE, func.invoke(state, args));
+			Varargs result = varargsOf(Constants.TRUE, OperationHelper.invoke(state, func, args));
 			LuaThread.setErrorFunc(state, olderr);
 			return result;
 		} catch (LuaError le) {
@@ -397,7 +397,7 @@ public class BaseLib extends OneArgFunction {
 		@Override
 		public int read() throws IOException {
 			if (remaining <= 0) {
-				LuaValue s = func.call(state);
+				LuaValue s = OperationHelper.call(state, func);
 				if (s.isNil()) {
 					return -1;
 				}

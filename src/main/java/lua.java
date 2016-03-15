@@ -132,10 +132,10 @@ public class lua {
 			processing = true;
 			for (int i = 0; i < args.length; i++) {
 				if (!processing || !args[i].startsWith("-")) {
-					processScript(state, new FileInputStream(args[i]), args[i], args, i);
+					processScript(state, new FileInputStream(args[i]), args[i], args, i, false);
 					break;
 				} else if ("-".equals(args[i])) {
-					processScript(state, System.in, "=stdin", args, i);
+					processScript(state, System.in, "=stdin", args, i, false);
 					break;
 				} else {
 					switch (args[i].charAt(1)) {
@@ -144,7 +144,7 @@ public class lua {
 							break;
 						case 'e':
 							++i;
-							processScript(state, new ByteArrayInputStream(args[i].getBytes()), "string", args, i);
+							processScript(state, new ByteArrayInputStream(args[i].getBytes()), "string", args, i, false);
 							break;
 						case '-':
 							processing = false;
@@ -167,20 +167,20 @@ public class lua {
 		LuaValue slibname = valueOf(libname);
 		try {
 			// load via plain require
-			_G.get(state, "require").call(state, slibname);
+			OperationHelper.call(state, _G.get(state, "require"), slibname);
 		} catch (Exception e) {
 			try {
 				// load as java class
 				LuaValue v = (LuaValue) Class.forName(libname).newInstance();
 				v.setfenv(_G);
-				v.call(state, slibname, _G);
+				OperationHelper.call(state, v, slibname, _G);
 			} catch (Exception f) {
 				throw new IOException("loadLibrary(" + libname + ") failed: " + e + "," + f);
 			}
 		}
 	}
 
-	private static void processScript(LuaState state, InputStream script, String chunkname, String[] args, int firstarg) throws IOException {
+	private static void processScript(LuaState state, InputStream script, String chunkname, String[] args, int firstarg, boolean printValue) throws IOException {
 		try {
 			LuaFunction c;
 			try {
@@ -189,7 +189,8 @@ public class lua {
 				script.close();
 			}
 			Varargs scriptargs = (args != null ? setGlobalArg(state, args, firstarg) : NONE);
-			c.invoke(state, scriptargs);
+			Varargs result = c.invoke(state, scriptargs);
+			if(printValue && result != NONE) OperationHelper.invoke(state, _G.get(state, "print"), result);
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}
@@ -201,7 +202,7 @@ public class lua {
 			arg.set(state, j - i, valueOf(args[j]));
 		}
 		_G.set(state, "arg", arg);
-		return _G.get(state, "unpack").invoke(state, arg);
+		return OperationHelper.invoke(state, _G.get(state, "unpack"), arg);
 	}
 
 	private static void interactiveMode(LuaState state) throws IOException {
@@ -213,7 +214,7 @@ public class lua {
 			if (line == null) {
 				return;
 			}
-			processScript(state, new ByteArrayInputStream(line.getBytes()), "=stdin", null, 0);
+			processScript(state, new ByteArrayInputStream(line.getBytes()), "=stdin", null, 0, true);
 		}
 	}
 }

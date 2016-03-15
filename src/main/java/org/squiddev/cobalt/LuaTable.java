@@ -438,10 +438,6 @@ public class LuaTable extends LuaValue {
 		return Constants.ZERO;
 	}
 
-	@Override
-	public int length(LuaState state) {
-		return length();
-	}
 
 	public int length() {
 		int a = getArrayLength();
@@ -459,11 +455,6 @@ public class LuaTable extends LuaValue {
 			}
 		}
 		return m;
-	}
-
-	@Override
-	public LuaValue len(LuaState state) {
-		return LuaInteger.valueOf(length(state));
 	}
 
 	/**
@@ -565,7 +556,7 @@ public class LuaTable extends LuaValue {
 		LuaValue k = Constants.NIL;
 		LuaValue v;
 		while (!(k = ((n = next(k)).first())).isNil()) {
-			if (!(v = func.call(state, k, n.arg(2))).isNil()) {
+			if (!(v = OperationHelper.call(state, func, k, n.arg(2))).isNil()) {
 				return v;
 			}
 		}
@@ -583,7 +574,7 @@ public class LuaTable extends LuaValue {
 	public LuaValue foreachi(LuaState state, LuaValue func) {
 		LuaValue v, r;
 		for (int k = 0; !(v = rawget(++k)).isNil(); ) {
-			if (!(r = func.call(state, ValueFactory.valueOf(k), v)).isNil()) {
+			if (!(r = OperationHelper.call(state, func, ValueFactory.valueOf(k), v)).isNil()) {
 				return r;
 			}
 		}
@@ -770,7 +761,7 @@ public class LuaTable extends LuaValue {
 			return false;
 		}
 		if (!cmpfunc.isNil()) {
-			return cmpfunc.call(state, a, b).toBoolean();
+			return OperationHelper.call(state, cmpfunc, a, b).toBoolean();
 		} else {
 			return OperationHelper.lt(state, a, b);
 		}

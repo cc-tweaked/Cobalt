@@ -231,7 +231,7 @@ public class TableArrayTest {
 		for (int i = 1; i <= 32; ++i) {
 			LuaValue v = LuaString.valueOf("Test Value! " + i);
 			t.set(state, i, v);
-			assertEquals(i, t.length(state));
+			assertEquals(i, OperationHelper.length(state, t).toInteger());
 			assertEquals(i, t.maxn(), 1e-10);
 		}
 	}
@@ -244,7 +244,7 @@ public class TableArrayTest {
 			for (int i = j; i > 0; --i) {
 				t.set(state, i, LuaString.valueOf("Test Value! " + i));
 			}
-			assertEquals(j, t.length(state));
+			assertEquals(j, OperationHelper.length(state, t).toInteger());
 			assertEquals(j, t.maxn(), 1e-10);
 		}
 	}
@@ -255,7 +255,7 @@ public class TableArrayTest {
 
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, "str-" + i, LuaString.valueOf("String Key Test Value! " + i));
-			assertEquals(0, t.length(state));
+			assertEquals(0, OperationHelper.length(state, t).toInteger());
 			assertEquals(0, t.maxn(), 1e-10);
 		}
 	}
@@ -267,14 +267,14 @@ public class TableArrayTest {
 		for (int i = 1; i <= 32; ++i) {
 			t.set(state, "str-" + i, LuaString.valueOf("String Key Test Value! " + i));
 			t.set(state, i, LuaString.valueOf("Int Key Test Value! " + i));
-			assertEquals(i, t.length(state));
+			assertEquals(i, OperationHelper.length(state, t).toInteger());
 			assertEquals(i, t.maxn(), 1e-10);
 		}
 	}
 
 	private void compareLists(LuaTable t, Vector<LuaString> v) {
 		int n = v.size();
-		assertEquals(v.size(), t.length(state));
+		assertEquals(v.size(), OperationHelper.length(state, t).toInteger());
 		for (int j = 0; j < n; j++) {
 			Object vj = v.elementAt(j);
 			Object tj = t.get(state, j + 1).toString();

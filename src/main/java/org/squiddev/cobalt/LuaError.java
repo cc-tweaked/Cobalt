@@ -149,7 +149,7 @@ public final class LuaError extends RuntimeException {
 			LuaValue errfunc = thread.err;
 			thread.err = null;
 			try {
-				value = errfunc.call(state, value);
+				value = OperationHelper.call(state, errfunc, value);
 			} catch (Throwable t) {
 				value = ValueFactory.valueOf("error in error handling");
 			} finally {

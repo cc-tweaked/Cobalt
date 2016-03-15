@@ -85,7 +85,7 @@ public class TableLib extends OneArgFunction {
 					return table.concat(
 						state, args.arg(2).optLuaString(EMPTYSTRING),
 						args.arg(3).optInteger(1),
-						args.exists(4) ? args.arg(4).checkInteger() : table.length(state));
+						args.exists(4) ? args.arg(4).checkInteger() : table.length());
 				}
 				case 2: { // "insert" (table, [pos,] value) -> prev-ele
 					final LuaTable table = args.arg(1).checkTable();

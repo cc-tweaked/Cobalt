@@ -24,6 +24,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -96,7 +97,7 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 	 * @return The loaded LuaFunction
 	 * @throws IOException
 	 */
-	public LuaValue loadScript(String name) throws IOException {
+	public LuaFunction loadScript(String name) throws IOException {
 		InputStream script = findResource(name + ".lua");
 		if (script == null) fail("Could not load script for test case: " + name);
 		try {

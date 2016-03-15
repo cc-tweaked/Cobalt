@@ -25,6 +25,8 @@
 
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaFunction;
+
 public class ValueFactory {
 	/**
 	 * Convert java boolean to a {@link LuaValue}.
@@ -343,15 +345,13 @@ public class ValueFactory {
 	 * This method is typically not used directly by client code.
 	 * Instead use one of the function invocation methods.
 	 *
-	 * @param func {@link LuaValue} to be called as a tail call
+	 * @param func {@link LuaFunction} to be called as a tail call
 	 * @param args {@link Varargs} containing the arguments to the call
 	 * @return {@link TailcallVarargs} to be used in tailcall oprocessing.
-	 * @see LuaValue#call(LuaState)
-	 * @see LuaValue#invoke(LuaState, Varargs)
-	 * @see LuaValue#method(LuaState, LuaValue)
-	 * @see LuaValue#invokeMethod(LuaState, LuaValue, Varargs)
+	 * @see LuaFunction#call(LuaState)
+	 * @see LuaFunction#invoke(LuaState, Varargs)
 	 */
-	public static Varargs tailcallOf(LuaValue func, Varargs args) {
+	public static Varargs tailcallOf(LuaFunction func, Varargs args) {
 		return new TailcallVarargs(func, args);
 	}
 }

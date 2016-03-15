@@ -390,7 +390,7 @@ public class TypeTest {
 		assertDoubleEquals((double) sampleint, intint.toDouble());
 		assertDoubleEquals((double) samplelong, longdouble.toDouble());
 		assertDoubleEquals(sampledouble, doubledouble.toDouble());
-		assertDoubleEquals((double) 0, stringstring.toDouble());
+		assertTrue(Double.isNaN(stringstring.toDouble()));
 		assertDoubleEquals((double) sampleint, stringint.toDouble());
 		assertDoubleEquals((double) samplelong, stringlong.toDouble());
 		assertDoubleEquals(sampledouble, stringdouble.toDouble());

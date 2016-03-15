@@ -125,7 +125,7 @@ public class LuaThread extends LuaValue {
 	 * @param func     The function to execute
 	 * @param env      The environment to apply to the thread
 	 */
-	public LuaThread(LuaState luaState, LuaValue func, LuaValue env) {
+	public LuaThread(LuaState luaState, LuaFunction func, LuaValue env) {
 		super(Constants.TTHREAD);
 		if (func == null) throw new LuaError("function cannot be null");
 
@@ -250,14 +250,14 @@ public class LuaThread extends LuaValue {
 	private static class State implements Runnable {
 		private final LuaState state;
 		private final WeakReference<LuaThread> thread;
-		private final LuaValue function;
+		private final LuaFunction function;
 		private Varargs args = Constants.NONE;
 		private Varargs result = Constants.NONE;
 		private LuaValue error = null;
 		protected int status = LuaThread.STATUS_INITIAL;
 		private boolean abandoned = false;
 
-		private State(LuaThread thread, LuaValue function) {
+		private State(LuaThread thread, LuaFunction function) {
 			this.state = thread.luaState;
 			this.thread = new WeakReference<LuaThread>(thread);
 			this.function = function;

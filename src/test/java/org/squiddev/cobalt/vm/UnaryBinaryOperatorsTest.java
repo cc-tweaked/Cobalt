@@ -76,12 +76,12 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sa = valueOf("1.5"), sb = valueOf("-2.0");
 
 		// like kinds
-		assertDoubleEquals(-3., ia.neg(state).toDouble());
-		assertDoubleEquals(-.25, da.neg(state).toDouble());
-		assertDoubleEquals(-1.5, sa.neg(state).toDouble());
-		assertDoubleEquals(4., ib.neg(state).toDouble());
-		assertDoubleEquals(.5, db.neg(state).toDouble());
-		assertDoubleEquals(2.0, sb.neg(state).toDouble());
+		assertDoubleEquals(-3., OperationHelper.neg(state, ia).toDouble());
+		assertDoubleEquals(-.25, OperationHelper.neg(state, da).toDouble());
+		assertDoubleEquals(-1.5, OperationHelper.neg(state, sa).toDouble());
+		assertDoubleEquals(4., OperationHelper.neg(state, ib).toDouble());
+		assertDoubleEquals(.5, OperationHelper.neg(state, db).toDouble());
+		assertDoubleEquals(2.0, OperationHelper.neg(state, sb).toDouble());
 	}
 
 	@Test

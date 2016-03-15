@@ -25,6 +25,8 @@
 
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaFunction;
+
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
@@ -34,58 +36,83 @@ public final class OperationHelper {
 	private OperationHelper() {
 	}
 
+	//region Arithmetic
 	public static LuaValue add(LuaState state, LuaValue left, LuaValue right) {
+		return add(state, left, right, -1, -1);
+	}
+
+	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return valueOf(left.checkArith() + right.checkArith());
 		}
 
-		return left.arithmt(state, Constants.ADD, right);
+		return arithMetatable(state, Constants.ADD, left, right, leftIdx, rightIdx);
 	}
 
 	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right) {
+		return sub(state, left, right, -1, -1);
+	}
+
+	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return valueOf(left.checkArith() - right.checkArith());
 		}
 
-		return left.arithmt(state, Constants.SUB, right);
+		return arithMetatable(state, Constants.SUB, left, right, leftIdx, rightIdx);
 	}
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right) {
+		return mul(state, left, right, -1, -1);
+	}
+
+	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return valueOf(left.checkArith() * right.checkArith());
 		}
 
-		return left.arithmt(state, Constants.MUL, right);
+		return arithMetatable(state, Constants.MUL, left, right, leftIdx, rightIdx);
 	}
 
 	public static LuaValue div(LuaState state, LuaValue left, LuaValue right) {
+		return div(state, left, right, -1, -1);
+	}
+
+	public static LuaValue div(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return ValueFactory.valueOf(div(left.checkArith(), right.checkArith()));
 		}
 
-		return left.arithmt(state, Constants.DIV, right);
+		return arithMetatable(state, Constants.DIV, left, right, leftIdx, rightIdx);
 	}
 
 	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right) {
+		return mod(state, left, right, -1, -1);
+	}
+
+	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return ValueFactory.valueOf(mod(left.checkArith(), right.checkArith()));
 		}
 
-		return left.arithmt(state, Constants.MOD, right);
+		return arithMetatable(state, Constants.MOD, left, right, leftIdx, rightIdx);
 	}
 
 	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right) {
+		return pow(state, left, right, -1, -1);
+	}
+
+	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return ValueFactory.valueOf(Math.pow(left.checkArith(), right.checkArith()));
 		}
 
-		return left.arithmt(state, Constants.POW, right);
+		return arithMetatable(state, Constants.POW, left, right, leftIdx, rightIdx);
 	}
 
 	/**
@@ -111,6 +138,53 @@ public final class OperationHelper {
 		return rhs != 0 ? lhs - rhs * Math.floor(lhs / rhs) : Double.NaN;
 	}
 
+	/**
+	 * Perform metatag processing for arithmetic operations.
+	 *
+	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
+	 * or throws {@link LuaError} if neither is defined.
+	 *
+	 * @param state      The current lua state
+	 * @param tag        The metatag to look up
+	 * @param left       The left operand value to perform the operation with
+	 * @param right      The other operand value to perform the operation with
+	 * @param leftStack  Stack index of the LHS
+	 * @param rightStack Stack index of the RHS
+	 * @return {@link LuaValue} resulting from metatag processing
+	 * @throws LuaError if metatag was not defined for either operand
+	 */
+	protected static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) {
+		LuaValue h = left.metatag(state, tag);
+		if (h.isNil()) {
+			h = right.metatag(state, tag);
+			if (h.isNil()) {
+				if (left.isNumber()) {
+					left = right;
+					leftStack = rightStack;
+				}
+				throw ErrorFactory.operandError(state, left, "perform arithmetic on", leftStack);
+			}
+		}
+		return OperationHelper.call(state, h, left, right);
+	}
+	//endregion
+
+	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right) {
+		if (left.isString() && right.isString()) {
+			return concat(left.checkLuaString(), right.checkLuaString());
+		} else {
+			return left.concatmt(state, right);
+		}
+	}
+
+	public static LuaString concat(LuaString left, LuaString right) {
+		byte[] b = new byte[left.length + right.length];
+		System.arraycopy(left.bytes, left.offset, b, 0, left.length);
+		System.arraycopy(right.bytes, right.offset, b, left.length, right.length);
+		return ValueFactory.valueOf(b);
+	}
+
+	//region Compare
 	public static boolean lt(LuaState state, LuaValue left, LuaValue right) {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
@@ -122,7 +196,12 @@ public final class OperationHelper {
 			case Constants.TSTRING:
 				return left.strcmp(right) < 0;
 			default:
-				return left.comparemt(state, Constants.LT, right).toBoolean();
+				LuaValue h = left.metatag(state, Constants.LT);
+				if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
+					return OperationHelper.call(state, h, left, right).toBoolean();
+				} else {
+					throw new LuaError("attempt to compare two " + left.typeName() + " values");
+				}
 		}
 	}
 
@@ -137,19 +216,17 @@ public final class OperationHelper {
 			case Constants.TSTRING:
 				return left.strcmp(right) <= 0;
 			default:
-				if (left.type() == right.type()) {
-					LuaValue h = left.metatag(state, Constants.LE);
-					if (h.isNil()) {
-						h = left.metatag(state, Constants.LT);
-						if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
-							return !h.call(state, right, left).toBoolean();
-						}
-					} else if (h == right.metatag(state, Constants.LE)) {
-						return h.call(state, left, right).toBoolean();
+				LuaValue h = left.metatag(state, Constants.LE);
+				if (h.isNil()) {
+					h = left.metatag(state, Constants.LT);
+					if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
+						return !OperationHelper.call(state, h, right, left).toBoolean();
 					}
+				} else if (h == right.metatag(state, Constants.LE)) {
+					return OperationHelper.call(state, h, left, right).toBoolean();
 				}
 
-				throw new LuaError("attempt to compare " + Constants.LE + " on " + left.typeName() + " and " + right.typeName());
+				throw new LuaError("attempt to compare two " + left.typeName() + " values");
 		}
 	}
 
@@ -177,25 +254,162 @@ public final class OperationHelper {
 				if (rightMeta == null) return false;
 
 				LuaValue h = leftMeta.rawget(Constants.EQ);
-				return !(h.isNil() || h != rightMeta.rawget(Constants.EQ)) && h.call(state, left, right).toBoolean();
+				return !(h.isNil() || h != rightMeta.rawget(Constants.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
 			}
 			default:
 				return left == right || left.raweq(right);
 		}
 	}
+	//endregion
 
-	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right) {
-		if (left.isString() && right.isString()) {
-			return concat(left.checkLuaString(), right.checkLuaString());
-		} else {
-			return left.concatmt(state, right);
+	//region Unary
+
+	public static LuaValue length(LuaState state, LuaValue value) {
+		return length(state, value, -1);
+	}
+
+	/**
+	 * Length operator: return lua length of object including metatag processing
+	 *
+	 * @param state The current lua state
+	 * @return length as defined by the lua # operator or metatag processing result
+	 * @throws LuaError if {@code value} is not a table or string, and has no {@link Constants#LEN} metatag
+	 */
+	public static LuaValue length(LuaState state, LuaValue value, int stack) {
+		switch (value.type()) {
+			case Constants.TTABLE:
+				return valueOf(((LuaTable) value).length());
+			case Constants.TSTRING:
+				return valueOf(((LuaString) value).length());
+			default: {
+				LuaValue h = value.metatag(state, Constants.LEN);
+				if (h.isNil()) {
+					throw ErrorFactory.operandError(state, value, "get length of", stack);
+				}
+				return OperationHelper.call(state, h, value);
+			}
 		}
 	}
 
-	public static LuaString concat(LuaString left, LuaString right) {
-		byte[] b = new byte[left.length + right.length];
-		System.arraycopy(left.bytes, left.offset, b, 0, left.length);
-		System.arraycopy(right.bytes, right.offset, b, left.length, right.length);
-		return ValueFactory.valueOf(b);
+	public static LuaValue neg(LuaState state, LuaValue value) {
+		return neg(state, value, -1);
 	}
+
+	/**
+	 * Unary minus: return negative value {@code (-this)} as defined by lua unary minus operator
+	 *
+	 * @param state The current lua state
+	 * @return numeric inverse as {@link LuaNumber} if numeric, or metatag processing result if {@link Constants#UNM} metatag is defined
+	 * @throws LuaError if {@code value} is not a table or string, and has no {@link Constants#UNM} metatag
+	 */
+	public static LuaValue neg(LuaState state, LuaValue value, int stack) {
+		int tValue = value.type();
+		if (tValue == Constants.TNUMBER) {
+			return valueOf(-value.checkArith());
+		} else if (tValue == Constants.TSTRING) {
+			double res = value.toDouble();
+			if (!Double.isNaN(res)) return valueOf(-res);
+		}
+
+		LuaValue meta = value.metatag(state, Constants.UNM);
+		if (meta.isNil()) {
+			throw ErrorFactory.operandError(state, value, "perform arithmetic on", stack);
+		}
+
+		return OperationHelper.call(state, meta, value);
+	}
+	//endregion
+
+	//region Calling
+	public static LuaValue call(LuaState state, LuaValue function) {
+		return call(state, function, -1);
+	}
+
+	public static LuaValue call(LuaState state, LuaValue function, int stack) {
+		if (function.isFunction()) {
+			return ((LuaFunction) function).call(state);
+		} else {
+			LuaValue meta = function.metatag(state, Constants.CALL);
+			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call: " + meta.typeName(), stack);
+
+			return ((LuaFunction) meta).call(state, function);
+		}
+	}
+
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg) {
+		return call(state, function, arg, -1);
+	}
+
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg, int stack) {
+		if (function.isFunction()) {
+			return ((LuaFunction) function).call(state, arg);
+		} else {
+			LuaValue meta = function.metatag(state, Constants.CALL);
+			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call: " + meta.typeName(), stack);
+
+			return ((LuaFunction) meta).call(state, function, arg);
+		}
+	}
+
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2) {
+		return call(state, function, arg1, arg2, -1);
+	}
+
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, int stack) {
+		if (function.isFunction()) {
+			return ((LuaFunction) function).call(state, arg1, arg2);
+		} else {
+			LuaValue meta = function.metatag(state, Constants.CALL);
+			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call: " + meta.typeName(), stack);
+
+			return ((LuaFunction) meta).call(state, function, arg1, arg2);
+		}
+	}
+
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+		return call(state, function, arg1, arg2, arg3, -1);
+	}
+
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int stack) {
+		if (function.isFunction()) {
+			return ((LuaFunction) function).call(state, arg1, arg2, arg3);
+		} else {
+			LuaValue meta = function.metatag(state, Constants.CALL);
+			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call: " + meta.typeName(), stack);
+
+			return ((LuaFunction) meta).invoke(state, ValueFactory.varargsOf(function, arg1, arg2, arg3)).first();
+		}
+	}
+
+	public static Varargs invoke(LuaState state, LuaValue function, Varargs args) {
+		return invoke(state, function, args, -1);
+	}
+
+	public static Varargs invoke(LuaState state, LuaValue function, Varargs args, int stack) {
+		if (function.isFunction()) {
+			return ((LuaFunction) function).invoke(state, args);
+		} else {
+			LuaValue meta = function.metatag(state, Constants.CALL);
+			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call: " + meta.typeName(), stack);
+
+			return ((LuaFunction) meta).invoke(state, ValueFactory.varargsOf(function, args));
+		}
+	}
+
+	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args) {
+		return onInvoke(state, function, args, -1);
+	}
+
+	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args, int stack) {
+		if (function.isFunction()) {
+			return ((LuaFunction) function).onInvoke(state, args);
+		} else {
+			LuaValue meta = function.metatag(state, Constants.CALL);
+			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call: " + meta.typeName(), stack);
+
+			return ((LuaFunction) meta).onInvoke(state, ValueFactory.varargsOf(function, args));
+		}
+	}
+
+	//endregion
 }

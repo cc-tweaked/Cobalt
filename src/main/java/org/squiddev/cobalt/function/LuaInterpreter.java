@@ -78,10 +78,10 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * all the value operations can be used directly such as:
  * <ul>
  * <li>{@link LuaValue#setfenv(LuaValue)}</li>
- * <li>{@link LuaValue#call(LuaState)}</li>
- * <li>{@link LuaValue#call(LuaState, LuaValue)}</li>
- * <li>{@link LuaValue#invoke(LuaState, Varargs)}</li>
- * <li>{@link LuaValue#invoke(LuaState, Varargs)}</li>
+ * <li>{@link LuaFunction#call(LuaState)}</li>
+ * <li>{@link LuaFunction#call(LuaState, LuaValue)}</li>
+ * <li>{@link LuaFunction#invoke(LuaState, Varargs)}</li>
+ * <li>{@link LuaFunction#invoke(LuaState, Varargs)}</li>
  * <li> ...</li>
  * </ul>
  *
@@ -288,31 +288,31 @@ public class LuaInterpreter extends LuaClosure {
 						continue;
 
 					case Lua.OP_ADD: /*	A B C	R(A):= RK(B) + RK(C)				*/
-						stack[a] = OperationHelper.add(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.add(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
 						continue;
 
 					case Lua.OP_SUB: /*	A B C	R(A):= RK(B) - RK(C)				*/
-						stack[a] = OperationHelper.sub(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.sub(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
 						continue;
 
 					case Lua.OP_MUL: /*	A B C	R(A):= RK(B) * RK(C)				*/
-						stack[a] = OperationHelper.mul(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.mul(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
 						continue;
 
 					case Lua.OP_DIV: /*	A B C	R(A):= RK(B) / RK(C)				*/
-						stack[a] = OperationHelper.div(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.div(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
 						continue;
 
 					case Lua.OP_MOD: /*	A B C	R(A):= RK(B) % RK(C)				*/
-						stack[a] = OperationHelper.mod(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.mod(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
 						continue;
 
 					case Lua.OP_POW: /*	A B C	R(A):= RK(B) ^ RK(C)				*/
-						stack[a] = OperationHelper.pow(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.pow(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
 						continue;
 
 					case Lua.OP_UNM: /*	A B	R(A):= -R(B)					*/
-						stack[a] = stack[i >>> 23].neg(state);
+						stack[a] = OperationHelper.neg(state, stack[b = i >>> 23], b);
 						continue;
 
 					case Lua.OP_NOT: /*	A B	R(A):= not R(B)				*/
@@ -320,7 +320,7 @@ public class LuaInterpreter extends LuaClosure {
 						continue;
 
 					case Lua.OP_LEN: /*	A B	R(A):= length of R(B)				*/
-						stack[a] = stack[i >>> 23].len(state);
+						stack[a] = OperationHelper.length(state, stack[b = i >>> 23], b);
 						continue;
 
 					case Lua.OP_CONCAT: /*	A B C	R(A):= R(B).. ... ..R(C)			*/
@@ -381,36 +381,36 @@ public class LuaInterpreter extends LuaClosure {
 					case Lua.OP_CALL: /*	A B C	R(A), ... ,R(A+C-2):= R(A)(R(A+1), ... ,R(A+B-1)) */
 						switch (i & (Lua.MASK_B | Lua.MASK_C)) {
 							case (1 << Lua.POS_B) | (0 << Lua.POS_C):
-								v = stack[a].invoke(state, Constants.NONE);
+								v = OperationHelper.invoke(state, stack[a], Constants.NONE, a);
 								top = a + v.count();
 								continue;
 							case (2 << Lua.POS_B) | (0 << Lua.POS_C):
-								v = stack[a].invoke(state, stack[a + 1]);
+								v = OperationHelper.invoke(state, stack[a], stack[a + 1], a);
 								top = a + v.count();
 								continue;
 							case (1 << Lua.POS_B) | (1 << Lua.POS_C):
-								stack[a].call(state);
+								OperationHelper.call(state, stack[a], a);
 								continue;
 							case (2 << Lua.POS_B) | (1 << Lua.POS_C):
-								stack[a].call(state, stack[a + 1]);
+								OperationHelper.call(state, stack[a], stack[a + 1], a);
 								continue;
 							case (3 << Lua.POS_B) | (1 << Lua.POS_C):
-								stack[a].call(state, stack[a + 1], stack[a + 2]);
+								OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], a);
 								continue;
 							case (4 << Lua.POS_B) | (1 << Lua.POS_C):
-								stack[a].call(state, stack[a + 1], stack[a + 2], stack[a + 3]);
+								OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], stack[a + 3], a);
 								continue;
 							case (1 << Lua.POS_B) | (2 << Lua.POS_C):
-								stack[a] = stack[a].call(state);
+								stack[a] = OperationHelper.call(state, stack[a], a);
 								continue;
 							case (2 << Lua.POS_B) | (2 << Lua.POS_C):
-								stack[a] = stack[a].call(state, stack[a + 1]);
+								stack[a] = OperationHelper.call(state, stack[a], stack[a + 1], a);
 								continue;
 							case (3 << Lua.POS_B) | (2 << Lua.POS_C):
-								stack[a] = stack[a].call(state, stack[a + 1], stack[a + 2]);
+								stack[a] = OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], a);
 								continue;
 							case (4 << Lua.POS_B) | (2 << Lua.POS_C):
-								stack[a] = stack[a].call(state, stack[a + 1], stack[a + 2], stack[a + 3]);
+								stack[a] = OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], stack[a + 3], a);
 								continue;
 							default:
 								b = i >>> 23;
@@ -418,7 +418,7 @@ public class LuaInterpreter extends LuaClosure {
 								v = b > 0 ?
 									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
 									ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
-								v = stack[a].invoke(state, v);
+								v = OperationHelper.invoke(state, stack[a], v, a);
 								if (c > 0) {
 									while (--c > 0) {
 										stack[a + c - 1] = v.arg(c);
@@ -490,7 +490,7 @@ public class LuaInterpreter extends LuaClosure {
 									 * else pc++
 									 */
 						// TODO: stack call on for loop body, such as:   stack[a].call(ci);
-						v = stack[a].invoke(state, ValueFactory.varargsOf(stack[a + 1], stack[a + 2]));
+						v = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
 						if ((o = v.first()).isNil()) {
 							++pc;
 						} else {

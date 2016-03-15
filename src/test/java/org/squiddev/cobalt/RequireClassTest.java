@@ -2,6 +2,7 @@ package org.squiddev.cobalt;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import org.squiddev.cobalt.require.RequireSampleClassCastExcep;
@@ -13,14 +14,14 @@ import static org.junit.Assert.fail;
 
 public class RequireClassTest {
 
-	private LuaValue require;
+	private LuaFunction require;
 	private LuaState state;
 
 	@Before
 	public void setup() {
 		state = new LuaState(new FileResourceManipulator());
 		LuaTable globals = JsePlatform.standardGlobals(state);
-		require = globals.get(state, "require");
+		require = (LuaFunction)globals.get(state, "require");
 	}
 
 	@Test

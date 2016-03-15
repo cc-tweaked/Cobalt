@@ -62,7 +62,7 @@ public class LuaOperationsTest {
 	private final LuaValue stringlong = ValueFactory.valueOf(samplestringlong);
 	private final LuaValue stringdouble = ValueFactory.valueOf(samplestringdouble);
 	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{ValueFactory.valueOf("aaa"), ValueFactory.valueOf("bbb")});
-	private final LuaValue somefunc = new ZeroArgFunction(table) {
+	private final LuaFunction somefunc = new ZeroArgFunction(table) {
 		@Override
 		public LuaValue call(LuaState state) {
 			return Constants.NONE;
@@ -79,8 +79,12 @@ public class LuaOperationsTest {
 		try {
 			try {
 				LuaValue.class.getMethod(methodName, LuaState.class).invoke(obj, state);
-			} catch (NoSuchMethodException e) {
-				LuaValue.class.getMethod(methodName).invoke(obj);
+			} catch (NoSuchMethodException e1) {
+				try {
+					LuaValue.class.getMethod(methodName).invoke(obj);
+				} catch (NoSuchMethodException e2) {
+					OperationHelper.class.getMethod(methodName, LuaState.class, LuaValue.class).invoke(null, state, obj);
+				}
 			}
 			fail("failed to throw LuaError as required");
 		} catch (InvocationTargetException e) {
@@ -110,27 +114,6 @@ public class LuaOperationsTest {
 	}
 
 	@Test
-	public void testLen() {
-		throwsLuaError("len", somenil);
-		throwsLuaError("len", sometrue);
-		throwsLuaError("len", somefalse);
-		throwsLuaError("len", zero);
-		throwsLuaError("len", intint);
-		throwsLuaError("len", longdouble);
-		throwsLuaError("len", doubledouble);
-		assertEquals(LuaInteger.valueOf(samplestringstring.length()), stringstring.len(state));
-		assertEquals(LuaInteger.valueOf(samplestringint.length()), stringint.len(state));
-		assertEquals(LuaInteger.valueOf(samplestringlong.length()), stringlong.len(state));
-		assertEquals(LuaInteger.valueOf(samplestringdouble.length()), stringdouble.len(state));
-		assertEquals(LuaInteger.valueOf(2), table.len(state));
-		throwsLuaError("len", somefunc);
-		throwsLuaError("len", thread);
-		throwsLuaError("len", someclosure);
-		throwsLuaError("len", userdataobj);
-		throwsLuaError("len", userdatacls);
-	}
-
-	@Test
 	public void testLength() {
 		throwsLuaError("length", somenil);
 		throwsLuaError("length", sometrue);
@@ -139,11 +122,11 @@ public class LuaOperationsTest {
 		throwsLuaError("length", intint);
 		throwsLuaError("length", longdouble);
 		throwsLuaError("length", doubledouble);
-		assertEquals(samplestringstring.length(), stringstring.length(state));
-		assertEquals(samplestringint.length(), stringint.length(state));
-		assertEquals(samplestringlong.length(), stringlong.length(state));
-		assertEquals(samplestringdouble.length(), stringdouble.length(state));
-		assertEquals(2, table.length(state));
+		assertEquals(samplestringstring.length(), OperationHelper.length(state, stringstring).toInteger());
+		assertEquals(samplestringint.length(), OperationHelper.length(state, stringint).toInteger());
+		assertEquals(samplestringlong.length(), OperationHelper.length(state, stringlong).toInteger());
+		assertEquals(samplestringdouble.length(), OperationHelper.length(state, stringdouble).toInteger());
+		assertEquals(2, table.length());
 		throwsLuaError("length", somefunc);
 		throwsLuaError("length", thread);
 		throwsLuaError("length", someclosure);
@@ -261,7 +244,7 @@ public class LuaOperationsTest {
 			assertEquals(Constants.TRUE, v.arg(1));
 			LuaValue f = v.arg(2);
 			assertEquals(Constants.TFUNCTION, f.type());
-			assertEquals(aaa, f.call(state));
+			assertEquals(aaa, OperationHelper.call(state, f));
 			assertEquals(_G, f.getfenv());
 		}
 		{
@@ -272,7 +255,7 @@ public class LuaOperationsTest {
 			assertEquals(Constants.TRUE, v.arg(1));
 			LuaValue f = v.arg(2);
 			assertEquals(Constants.TFUNCTION, f.type());
-			assertEquals(eee, f.call(state));
+			assertEquals(eee, OperationHelper.call(state, f));
 			assertEquals(newenv, f.getfenv());
 		}
 		{
@@ -283,7 +266,7 @@ public class LuaOperationsTest {
 			assertEquals(Constants.TRUE, v.arg(1));
 			LuaValue f = v.arg(2);
 			assertEquals(Constants.TFUNCTION, f.type());
-			assertEquals(eee, f.call(state));
+			assertEquals(eee, OperationHelper.call(state, f));
 			assertEquals(newenv, f.getfenv());
 		}
 	}

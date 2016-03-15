@@ -27,6 +27,7 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -75,7 +76,7 @@ public class CoroutineLib extends VarArgFunction {
 				return init(state);
 			}
 			case CREATE: {
-				final LuaValue func = args.arg(1).checkFunction();
+				final LuaFunction func = args.arg(1).checkFunction();
 				return new LuaThread(state, func, state.getCurrentThread().getfenv());
 			}
 			case RESUME: {
@@ -93,7 +94,7 @@ public class CoroutineLib extends VarArgFunction {
 				return LuaThread.yield(state, args);
 			}
 			case WRAP: {
-				final LuaValue func = args.arg(1).checkFunction();
+				final LuaFunction func = args.arg(1).checkFunction();
 				final LuaThread thread = new LuaThread(state, func, func.getfenv());
 				CoroutineLib cl = new CoroutineLib();
 				cl.setfenv(thread);

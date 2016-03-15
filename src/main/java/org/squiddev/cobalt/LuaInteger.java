@@ -170,12 +170,6 @@ public class LuaInteger extends LuaNumber {
 		return v;
 	}
 
-	// unary operators
-	@Override
-	public LuaValue neg(LuaState state) {
-		return valueOf(-(long) v);
-	}
-
 	// object equality, used for key comparison
 	public boolean equals(Object o) {
 		return o instanceof LuaInteger && ((LuaInteger) o).v == v;
