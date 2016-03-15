@@ -1,4 +1,4 @@
-local function assertEquals(expected, val) assert(val == expected, "Got " .. tostring(val) .. ", expected " .. tostring(expected)) end
+local function assertEquals(expected, val, msg) assert(val == expected, (msg and (msg .. ": ") or "") .. "Got " .. tostring(val) .. ", expected " .. tostring(expected)) end
 
 local function assertLine(stack, line)
 	local _, msg = pcall(error, "", stack + 2)
@@ -25,7 +25,7 @@ func(false)
 
 local function testing()
 	local info = debug.getinfo(1)
-	assertEquals(27, info.currentline, "currentline") assertEquals("testing", info.name, "name: " .. info.name)
+	assertEquals(27, info.currentline, "currentline") assertEquals("testing", info.name, "name")
 end
 
 local info = debug.getinfo(testing)

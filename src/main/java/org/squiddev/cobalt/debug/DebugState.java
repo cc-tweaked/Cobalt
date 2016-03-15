@@ -77,11 +77,6 @@ public final class DebugState {
 	 */
 	public int hookcodes;
 
-	/**
-	 * Current line
-	 */
-	public int line;
-
 	public DebugState(LuaThread thread) {
 		this.thread = new WeakReference<LuaThread>(thread);
 		this.state = thread.luaState;
@@ -160,7 +155,7 @@ public final class DebugState {
 	 * @return The top debug info or {@code null}
 	 */
 	public DebugInfo getDebugInfo() {
-		return top > 0 ? debugInfo[top] : null;
+		return top >= 0 ? debugInfo[top] : null;
 	}
 
 	/**

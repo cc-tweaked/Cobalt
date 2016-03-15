@@ -1,7 +1,6 @@
 package org.squiddev.cobalt;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -12,8 +11,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.squiddev.cobalt.ValueFactory.listOf;
-import static org.squiddev.cobalt.ValueFactory.tableOf;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
@@ -33,7 +30,7 @@ public class LuaTests {
 	public static Collection<Object[]> getTests() {
 		Object[][] tests = {
 			// {"all"},
-			// {"api"},
+			// {"api"}, // Used to test C API.
 			{"attrib"},
 			// {"big"},
 			{"calls"},
@@ -41,8 +38,8 @@ public class LuaTests {
 			{"closure"},
 			{"code"},
 			{"constructs"},
-			// {"db"}, TODO: Getinfo.name is broken
-			// {"errors"}, TODO: Add variable in error messages
+			{"db"}, // TODO: Getinfo.name is broken
+			// {"errors"}, // TODO: Add variable in error messages
 			{"events"},
 			{"files"},
 			{"gc"},
@@ -55,7 +52,7 @@ public class LuaTests {
 			{"sort"},
 			{"strings"},
 			{"vararg"},
-			// {"verybig"},
+			{"verybig"},
 		};
 
 		return Arrays.asList(tests);

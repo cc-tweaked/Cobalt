@@ -31,6 +31,7 @@ import org.squiddev.cobalt.debug.DebugInfo;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -172,8 +173,8 @@ public class DebugLib extends VarArgFunction {
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		DebugState ds = DebugHandler.getDebugState(thread);
 		return varargsOf(
-			ds.hookfunc,
-			valueOf((ds.hookcall ? "c" : "") + (ds.hookline ? "l" : "") + (ds.hookrtrn ? "r" : "")),
+			ds.hookfunc == null ? NIL : ds.hookfunc,
+			valueOf((ds.hookcall ? "c" : "") + (ds.hookrtrn ? "r" : "") + (ds.hookline ? "l" : "")),
 			valueOf(ds.hookcount));
 	}
 
@@ -181,26 +182,28 @@ public class DebugLib extends VarArgFunction {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
-		LuaValue func = args.arg(i1).optFunction(null);
+		LuaFunction func = args.arg(i1).optFunction(null);
 		int i3 = a++;
 		String str = args.arg(i3).optString("");
 		int i2 = a++;
 		int count = args.arg(i2).optInteger(0);
 		boolean call = false, line = false, rtrn = false;
-		for (int i = 0; i < str.length(); i++) {
-			switch (str.charAt(i)) {
-				case 'c':
-					call = true;
-					break;
-				case 'l':
-					line = true;
-					break;
-				case 'r':
-					rtrn = true;
-					break;
+		if (func != null) {
+			for (int i = 0; i < str.length(); i++) {
+				switch (str.charAt(i)) {
+					case 'c':
+						call = true;
+						break;
+					case 'l':
+						line = true;
+						break;
+					case 'r':
+						rtrn = true;
+						break;
+				}
 			}
 		}
-		DebugHandler.getDebugState(thread).setHook(func.checkFunction(), call, line, rtrn, count);
+		DebugHandler.getDebugState(thread).setHook(func, call, line, rtrn, count);
 		return NONE;
 	}
 
@@ -226,18 +229,14 @@ public class DebugLib extends VarArgFunction {
 
 		// find the stack info
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugInfo di = null;
+		DebugInfo di;
 		if (func.isNumber()) {
 			int level = func.checkInteger();
-			di = level > 0 ?
-				ds.getDebugInfo(level - 1) :
-				new DebugInfo(level0func.checkFunction());
+			di = level > 0 ? ds.getDebugInfo(level - 1) : new DebugInfo(level0func.checkFunction());
 		} else {
 			di = ds.findDebugInfo(func.checkFunction());
 		}
-		if (di == null) {
-			return NIL;
-		}
+		if (di == null) return NIL;
 
 		// start a table
 		LuaTable info = new LuaTable();
@@ -278,7 +277,7 @@ public class DebugLib extends VarArgFunction {
 						kind = di.previous.getfunckind();
 					}
 
-					info.rawset(NAME, kind != null ? kind[0] : QMARK);
+					info.rawset(NAME, kind != null ? kind[0] : NIL);
 					info.rawset(NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
 					break;
 				}
@@ -311,7 +310,7 @@ public class DebugLib extends VarArgFunction {
 
 		DebugState ds = DebugHandler.getDebugState(thread);
 		DebugInfo di = ds.getDebugInfo(level - 1);
-		LuaString name = (di != null ? di.getlocalname(local) : null);
+		LuaString name = (di != null ? di.getLocalName(local) : null);
 		if (name != null) {
 			LuaValue value = di.stack[local - 1];
 			return varargsOf(name, value);
@@ -331,7 +330,7 @@ public class DebugLib extends VarArgFunction {
 
 		DebugState ds = DebugHandler.getDebugState(thread);
 		DebugInfo di = ds.getDebugInfo(level - 1);
-		LuaString name = (di != null ? di.getlocalname(local) : null);
+		LuaString name = (di != null ? di.getLocalName(local) : null);
 		if (name != null) {
 			di.stack[local - 1] = value;
 			return name;
@@ -423,7 +422,9 @@ public class DebugLib extends VarArgFunction {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
-		String message = args.arg(i1).optString(null);
+		LuaValue messageValue = args.arg(i1);
+		if (messageValue != NIL && !messageValue.isString()) return messageValue;
+		String message = messageValue.optString(null);
 		int i = a++;
 		int level = args.arg(i).optInteger(1);
 		String tb = DebugLib.traceback(thread, level - 1);

@@ -593,4 +593,9 @@ public class LuaInterpreter extends LuaClosure {
 	public Prototype getPrototype() {
 		return p;
 	}
+
+	@Override
+	public String debugName() {
+		return getPrototype().sourceShort() + ":" + getPrototype().linedefined;
+	}
 }

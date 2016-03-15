@@ -83,7 +83,15 @@ public class DebugHandler {
 		DebugInfo di = ds.pushInfo();
 		di.setFunction(func, args, stack);
 
-		if (!ds.inhook && ds.hookcall) ds.callHookFunc(CALL, NIL);
+		if (!ds.inhook && ds.hookcall) {
+			// Pretend we are at the first instruction for the hook.
+			try {
+				di.pc++;
+				ds.callHookFunc(CALL, NIL);
+			} finally {
+				di.pc--;
+			}
+		}
 		return di;
 	}
 
@@ -110,22 +118,30 @@ public class DebugHandler {
 	 * @param top    The top of the callstack
 	 */
 	public void onInstruction(DebugState ds, DebugInfo di, int pc, Varargs extras, int top) {
+		Prototype prototype = ds.inhook || di.closure == null ? null : di.closure.getPrototype();
+		int oldPc = di.pc;
+
 		di.bytecode(pc, extras, top);
 
-		if (ds.inhook) {
+		if (!ds.inhook) {
 			if (ds.hookcount > 0) {
 				if (++ds.hookcodes >= ds.hookcount) {
 					ds.hookcodes = 0;
 					ds.callHookFunc(COUNT, NIL);
 				}
 			}
-			if (ds.hookline) {
-				int newline = di.currentline();
-				if (newline != ds.line) {
-					int c = di.closure.getPrototype().code[pc];
-					if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
-						ds.line = newline;
-						ds.callHookFunc(LINE, valueOf(newline));
+
+			if (ds.hookline && prototype != null) {
+				int[] lineInfo = prototype.lineinfo;
+				if (lineInfo != null && pc >= 0 && pc < lineInfo.length) {
+					int oldLine = oldPc >= 0 && oldPc < lineInfo.length ? lineInfo[oldPc] : -1;
+					int newLine = lineInfo[pc];
+
+					if (oldLine != newLine) {
+						int c = prototype.code[pc];
+						if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
+							ds.callHookFunc(LINE, valueOf(newLine));
+						}
 					}
 				}
 			}

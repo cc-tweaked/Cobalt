@@ -86,7 +86,7 @@ public final class DebugInfo {
 		closure = null;
 		stack = null;
 		varargs = extras = null;
-		pc = top = 0;
+		pc = top = -1;
 	}
 
 	public void bytecode(int pc, Varargs extras, int top) {
@@ -122,7 +122,7 @@ public final class DebugInfo {
 		return "function '" + kind[0].toString() + "'";
 	}
 
-	public LuaString getlocalname(int index) {
+	public LuaString getLocalName(int index) {
 		if (closure == null) return null;
 		return closure.getPrototype().getlocalname(index, pc);
 	}

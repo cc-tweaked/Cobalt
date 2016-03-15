@@ -89,6 +89,6 @@ public final class Prototype {
 				}
 			}
 		}
-		return null;  /* not found */
+		return null;  // not found
 	}
 }
