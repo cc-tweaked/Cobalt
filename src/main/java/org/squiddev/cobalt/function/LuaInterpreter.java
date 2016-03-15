@@ -263,7 +263,7 @@ public class LuaInterpreter extends LuaClosure {
 						continue;
 
 					case Lua.OP_GETTABLE: /*	A B C	R(A):= R(B)[RK(C)]				*/
-						stack[a] = stack[i >>> 23].get(state, (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a] = OperationHelper.getTable(state, stack[b = i >>> 23], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b);
 						continue;
 
 					case Lua.OP_SETGLOBAL: /*	A Bx	Gbl[Kst(Bx)]:= R(A)				*/
@@ -275,7 +275,7 @@ public class LuaInterpreter extends LuaClosure {
 						continue;
 
 					case Lua.OP_SETTABLE: /*	A B C	R(A)[RK(B)]:= RK(C)				*/
-						stack[a].set(state, ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]), (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						OperationHelper.setTable(state, stack[a], ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]), (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], a);
 						continue;
 
 					case Lua.OP_NEWTABLE: /*	A B C	R(A):= {} (size = B,C)				*/
@@ -283,8 +283,8 @@ public class LuaInterpreter extends LuaClosure {
 						continue;
 
 					case Lua.OP_SELF: /*	A B C	R(A+1):= R(B): R(A):= R(B)[RK(C)]		*/
-						stack[a + 1] = (o = stack[i >>> 23]);
-						stack[a] = o.get(state, (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]);
+						stack[a + 1] = (o = stack[b = i >>> 23]);
+						stack[a] = OperationHelper.getTable(state, o, (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b);
 						continue;
 
 					case Lua.OP_ADD: /*	A B C	R(A):= RK(B) + RK(C)				*/
@@ -507,21 +507,22 @@ public class LuaInterpreter extends LuaClosure {
 							c = code[pc++];
 						}
 						int offset = (c - 1) * Lua.LFIELDS_PER_FLUSH;
-						o = stack[a];
+						LuaTable tbl = stack[a].checkTable();
+						o = tbl;
 						if ((b = i >>> 23) == 0) {
 							b = top - a - 1;
 							int m = b - v.count();
 							int j = 1;
 							for (; j <= m; j++) {
-								o.set(state, offset + j, stack[a + j]);
+								o.rawset(offset + j, stack[a + j]);
 							}
 							for (; j <= b; j++) {
-								o.set(state, offset + j, v.arg(j - m));
+								o.rawset(offset + j, v.arg(j - m));
 							}
 						} else {
-							o.presize(offset + b);
+							tbl.presize(offset + b);
 							for (int j = 1; j <= b; j++) {
-								o.set(state, offset + j, stack[a + j]);
+								o.rawset(offset + j, stack[a + j]);
 							}
 						}
 					}

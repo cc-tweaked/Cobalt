@@ -437,4 +437,83 @@ public final class OperationHelper {
 	}
 
 	//endregion
+
+	//region Tables
+
+	/**
+	 * Return value for field reference including metatag processing, or {@link Constants#NIL} if it doesn't exist.
+	 *
+	 * @param state The current lua state
+	 * @param t     {@link LuaValue} on which field is being referenced, typically a table or something with the metatag {@link Constants#INDEX} defined
+	 * @param key   {@link LuaValue} naming the field to reference
+	 * @return {@link LuaValue} for the {@code key} if it exists, or {@link Constants#NIL}
+	 * @throws LuaError if there is a loop in metatag processing
+	 */
+	public static LuaValue getTable(LuaState state, LuaValue t, LuaValue key) {
+		return getTable(state, t, key, -1);
+	}
+
+	public static LuaValue getTable(LuaState state, LuaValue t, LuaValue key, int stack) {
+		LuaValue tm;
+		int loop = 0;
+		do {
+			if (t.isTable()) {
+				LuaValue res = t.rawget(key);
+				if (!res.isNil() || (tm = t.metatag(state, Constants.INDEX)).isNil()) {
+					return res;
+				}
+			} else if ((tm = t.metatag(state, Constants.INDEX)).isNil()) {
+				throw ErrorFactory.operandError(state, t, "index", stack);
+			}
+			if (tm.isFunction()) {
+				return ((LuaFunction) tm).call(state, t, key);
+			}
+			t = tm;
+			stack = -1;
+		}
+		while (++loop < Constants.MAXTAGLOOP);
+		throw new LuaError("loop in gettable");
+	}
+
+	/**
+	 * Perform field assignment including metatag processing.
+	 *
+	 * @param state The current lua state
+	 * @param t     {@link LuaValue} on which value is being set, typically a table or something with the metatag {@link Constants#NEWINDEX} defined
+	 * @param key   {@link LuaValue} naming the field to assign
+	 * @param value {@link LuaValue} the new value to assign to {@code key}
+	 * @return true if assignment or metatag processing succeeded, false otherwise
+	 * @throws LuaError if there is a loop in metatag processing
+	 */
+	public static boolean setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value) {
+		return setTable(state, t, key, value, -1);
+	}
+
+	public static boolean setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value, int stack) {
+		LuaValue tm;
+		int loop = 0;
+		do {
+			switch (t.type()) {
+				case Constants.TTABLE:
+			}
+			if (t.isTable()) {
+				key.checkValidKey();
+				if (!t.rawget(key).isNil() || (tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
+					t.rawset(key, value);
+					return true;
+				}
+			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
+				throw ErrorFactory.operandError(state, t, "index", stack);
+			}
+			if (tm.isFunction()) {
+				((LuaFunction) tm).call(state, t, key, value);
+				return true;
+			}
+			t = tm;
+			stack = -1;
+		}
+		while (++loop < Constants.MAXTAGLOOP);
+		throw new LuaError("loop in settable");
+	}
+	//endregion
 }

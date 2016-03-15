@@ -265,11 +265,11 @@ public class BaseLib extends OneArgFunction {
 					int j = na >= 3 ? args.arg(3).optInteger(n) : n;
 					n = j - i + 1;
 					if (n < 0) return Constants.NONE;
-					if (n == 1) return t.get(state, i);
-					if (n == 2) return varargsOf(t.get(state, i), t.get(state, j));
+					if (n == 1) return t.rawget(i);
+					if (n == 2) return varargsOf(t.rawget(i), t.rawget(j));
 					LuaValue[] v = new LuaValue[n];
 					for (int k = 0; k < n; k++) {
-						v[k] = t.get(state, i + k);
+						v[k] = t.rawget(i + k);
 					}
 					return varargsOf(v);
 				}

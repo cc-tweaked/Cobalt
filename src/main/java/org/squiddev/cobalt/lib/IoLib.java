@@ -62,6 +62,8 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public abstract class IoLib extends OneArgFunction {
 
 	protected abstract class File extends LuaValue {
+		private LuaValue metatable = filemethods;
+
 		protected File() {
 			super(TUSERDATA);
 		}
@@ -93,10 +95,15 @@ public abstract class IoLib extends OneArgFunction {
 		// return number of bytes read if positive, false if eof, throw IOException on other exception
 		public abstract int read(byte[] bytes, int offset, int length) throws IOException;
 
-		// delegate method access to file methods table
 		@Override
-		public LuaValue get(LuaState state, LuaValue key) {
-			return filemethods.get(state, key);
+		public LuaValue getMetatable(LuaState state) {
+			return metatable;
+		}
+
+		@Override
+		public LuaValue setMetatable(LuaState state, LuaValue metatable) {
+			this.metatable = metatable;
+			return this;
 		}
 
 		// displays as "file" type
@@ -224,18 +231,21 @@ public abstract class IoLib extends OneArgFunction {
 		LuaTable t = new LuaTable();
 		bind(state, t, IoLibV.class, IO_NAMES);
 
-		// create file methods table
-		filemethods = new LuaTable();
-		bind(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
-
 		// all functions link to library instance
 		setLibInstance(state, t);
-		setLibInstance(state, filemethods);
 
 		// setup streams
 		t.rawset(STDIN, input(state));
 		t.rawset(STDOUT, output(state));
 		t.rawset(STDERR, errput(state));
+
+		// create file methods table
+		filemethods = new LuaTable();
+		bind(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
+
+		// setup library and index
+		setLibInstance(state, filemethods);
+		filemethods.rawset("__index", filemethods);
 
 		// return the table
 		env.set(state, "io", t);
@@ -625,9 +635,9 @@ public abstract class IoLib extends OneArgFunction {
 		freadchars(f, "0123456789", baos);
 		freadchars(f, ".", baos);
 		freadchars(f, "0123456789", baos);
-		freadchars(f,"eEfFgG",baos);
-		freadchars(f,"+-",baos);
-		freadchars(f,"0123456789",baos);
+		freadchars(f, "eEfFgG", baos);
+		freadchars(f, "+-", baos);
+		freadchars(f, "0123456789", baos);
 		String s = baos.toString();
 		return s.length() > 0 ? valueOf(Double.parseDouble(s)) : NIL;
 	}

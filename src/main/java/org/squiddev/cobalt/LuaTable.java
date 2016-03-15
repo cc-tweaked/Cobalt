@@ -189,7 +189,14 @@ public class LuaTable extends LuaValue {
 		return this;
 	}
 
-	@Override
+	/**
+	 * Preallocate the array part of a table to be a certain size,
+	 *
+	 * Primarily used internally in response to a SETLIST bytecode.
+	 *
+	 * @param narray the number of array slots to preallocate in the table.
+	 * @throws LuaError if this is not a table.
+	 */
 	public void presize(int narray) {
 		if (narray > array.length) {
 			array = resize(array, narray);
@@ -266,26 +273,6 @@ public class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public LuaValue get(LuaState state, int key) {
-		LuaValue v = rawget(key);
-		return v.isNil() && metatable != null ? getTable(state, this, ValueFactory.valueOf(key)) : v;
-	}
-
-	@Override
-	public LuaValue get(LuaState state, LuaValue key) {
-		LuaValue v = rawget(key);
-		return v.isNil() && metatable != null ? getTable(state, this, key) : v;
-	}
-
-	@Override
-	public LuaValue rawget(int key) {
-		if (key > 0 && key <= array.length) {
-			return array[key - 1] != null ? array[key - 1] : Constants.NIL;
-		}
-		return hashget(LuaInteger.valueOf(key));
-	}
-
-	@Override
 	public LuaValue rawget(LuaValue key) {
 		if (key.isIntExact()) {
 			int ikey = key.toInteger();
@@ -302,24 +289,6 @@ public class LuaTable extends LuaValue {
 			return v != null ? v : Constants.NIL;
 		}
 		return Constants.NIL;
-	}
-
-	@Override
-	public void set(LuaState state, int key, LuaValue value) {
-		if (metatable == null || !rawget(key).isNil() || !setTable(state, this, LuaInteger.valueOf(key), value)) {
-			rawset(key, value);
-		}
-	}
-
-	/**
-	 * caller must ensure key is not nil
-	 */
-	@Override
-	public void set(LuaState state, LuaValue key, LuaValue value) {
-		key.checkValidKey();
-		if (metatable == null || !rawget(key).isNil() || !setTable(state, this, key, value)) {
-			rawset(key, value);
-		}
 	}
 
 	@Override
@@ -410,19 +379,18 @@ public class LuaTable extends LuaValue {
 	/**
 	 * Concatenate the contents of a table efficiently, using {@link Buffer}
 	 *
-	 * @param state The current lua state
-	 * @param sep   {@link LuaString} separater to apply between elements
-	 * @param i     the first element index
-	 * @param j     the last element index, inclusive
+	 * @param sep {@link LuaString} separater to apply between elements
+	 * @param i   the first element index
+	 * @param j   the last element index, inclusive
 	 * @return {@link LuaString} value of the concatenation
 	 */
-	public LuaValue concat(LuaState state, LuaString sep, int i, int j) {
+	public LuaValue concat(LuaString sep, int i, int j) {
 		Buffer sb = new Buffer();
 		if (i <= j) {
-			sb.append(get(state, i).checkLuaString());
+			sb.append(rawget(i).checkLuaString());
 			while (++i <= j) {
 				sb.append(sep);
-				sb.append(get(state, i).checkLuaString());
+				sb.append(rawget(i).checkLuaString());
 			}
 		}
 		return sb.tostring();

@@ -337,7 +337,7 @@ public class PackageLib extends OneArgFunction {
 		StringBuilder sb = new StringBuilder();
 		LuaValue chunk;
 		for (int i = 1; true; i++) {
-			LuaValue loader = tbl.get(state, i);
+			LuaValue loader = tbl.rawget(i);
 			if (loader.isNil()) {
 				throw new LuaError("module '" + name + "' not found: " + name + sb);
 			}

@@ -83,7 +83,7 @@ public class TableLib extends OneArgFunction {
 				case 1: { // "concat" (table [, sep [, i [, j]]]) -> string
 					LuaTable table = args.arg(1).checkTable();
 					return table.concat(
-						state, args.arg(2).optLuaString(EMPTYSTRING),
+						args.arg(2).optLuaString(EMPTYSTRING),
 						args.arg(3).optInteger(1),
 						args.exists(4) ? args.arg(4).checkInteger() : table.length());
 				}

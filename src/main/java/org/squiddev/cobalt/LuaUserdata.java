@@ -107,12 +107,12 @@ public class LuaUserdata extends LuaValue {
 
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
-		return metatable != null ? getTable(state, this, key) : Constants.NIL;
+		return metatable != null ? OperationHelper.getTable(state, this, key) : Constants.NIL;
 	}
 
 	@Override
 	public void set(LuaState state, LuaValue key, LuaValue value) {
-		if (metatable == null || !setTable(state, this, key, value)) {
+		if (metatable == null || !OperationHelper.setTable(state, this, key, value)) {
 			throw new LuaError("cannot set " + key + " for userdata");
 		}
 	}

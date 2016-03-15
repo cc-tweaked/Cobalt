@@ -204,7 +204,7 @@ public class LuaString extends LuaValue {
 	// get is delegated to the string library
 	@Override
 	public LuaValue get(LuaState state, LuaValue key) {
-		return getTable(state, this, key);
+		return OperationHelper.getTable(state, this, key);
 	}
 
 	// string comparison
