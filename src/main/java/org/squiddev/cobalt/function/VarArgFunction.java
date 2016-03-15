@@ -32,9 +32,9 @@ import org.squiddev.cobalt.debug.DebugState;
  * Abstract base class for Java function implementations that takes varaiable arguments and
  * returns multiple return values.
  *
- * Subclasses need only implement {@link LuaValue#invoke(LuaState, Varargs)} to complete this class,
+ * Subclasses need only implement {@link LuaFunction#invoke(LuaState, Varargs)} to complete this class,
  * simplifying development.
- * All other uses of {@link LuaValue#call(LuaState, LuaValue)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
+ * All other uses of {@link LuaFunction#call(LuaState, LuaValue)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * converting arguments to {@link Varargs} and
  * dropping or extending return values with {@code nil} values as required.
@@ -44,7 +44,7 @@ import org.squiddev.cobalt.debug.DebugState;
  *
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
- * @see LuaValue#invoke(LuaState, Varargs)
+ * @see LuaFunction#invoke(LuaState, Varargs)
  * @see LibFunction
  * @see ZeroArgFunction
  * @see OneArgFunction

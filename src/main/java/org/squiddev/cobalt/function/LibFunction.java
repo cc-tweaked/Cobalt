@@ -42,7 +42,7 @@ import java.lang.reflect.Constructor;
  * to the correct function within the library.
  *
  * Since lua functions can be called with too few or too many arguments,
- * and there are overloaded {@link LuaValue#call(LuaState)} functions with varying
+ * and there are overloaded {@link LuaFunction#call(LuaState)} functions with varying
  * number of arguments, a Java function exposed in lua needs to handle  the
  * argument fixup when a function is called with a number of arguments
  * differs from that expected.

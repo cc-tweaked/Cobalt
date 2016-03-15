@@ -289,17 +289,18 @@ public final class OperationHelper {
 
 	//region Unary
 
-	public static LuaValue length(LuaState state, LuaValue value) {
-		return length(state, value, -1);
-	}
-
 	/**
 	 * Length operator: return lua length of object including metatag processing
 	 *
 	 * @param state The current lua state
+	 * @param value The value to ge the length of
 	 * @return length as defined by the lua # operator or metatag processing result
 	 * @throws LuaError if {@code value} is not a table or string, and has no {@link Constants#LEN} metatag
 	 */
+	public static LuaValue length(LuaState state, LuaValue value) {
+		return length(state, value, -1);
+	}
+
 	public static LuaValue length(LuaState state, LuaValue value, int stack) {
 		switch (value.type()) {
 			case Constants.TTABLE:
@@ -316,17 +317,18 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaValue neg(LuaState state, LuaValue value) {
-		return neg(state, value, -1);
-	}
-
 	/**
 	 * Unary minus: return negative value {@code (-this)} as defined by lua unary minus operator
 	 *
 	 * @param state The current lua state
+	 * @param value Value to get the minus of
 	 * @return numeric inverse as {@link LuaNumber} if numeric, or metatag processing result if {@link Constants#UNM} metatag is defined
 	 * @throws LuaError if {@code value} is not a table or string, and has no {@link Constants#UNM} metatag
 	 */
+	public static LuaValue neg(LuaState state, LuaValue value) {
+		return neg(state, value, -1);
+	}
+
 	public static LuaValue neg(LuaState state, LuaValue value, int stack) {
 		int tValue = value.type();
 		if (tValue == Constants.TNUMBER) {

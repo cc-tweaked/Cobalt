@@ -34,9 +34,9 @@ import org.squiddev.cobalt.Varargs;
  * Abstract base class for Java function implementations that take one argument and
  * return one value.
  *
- * Subclasses need only implement {@link LuaValue#call(LuaState, LuaValue)} to complete this class,
+ * Subclasses need only implement {@link LuaFunction#call(LuaState, LuaValue)} to complete this class,
  * simplifying development.
- * All other uses of {@link LuaValue#call(LuaState)}, {@link LuaValue#invoke(LuaState, Varargs)},etc,
+ * All other uses of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * dropping or extending arguments with {@code nil} values as required.
  *
@@ -47,7 +47,7 @@ import org.squiddev.cobalt.Varargs;
  *
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
- * @see LuaValue#call(LuaState, LuaValue)
+ * @see LuaFunction#call(LuaState, LuaValue)
  * @see LibFunction
  * @see ZeroArgFunction
  * @see TwoArgFunction
