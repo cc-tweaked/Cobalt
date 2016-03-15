@@ -39,7 +39,7 @@ public class LuaTests {
 			{"code"},
 			{"constructs"},
 			{"db"},
-			// {"errors"}, // TODO: Add variable in error messages
+			{"errors"},
 			{"events"},
 			{"files"},
 			{"gc"},

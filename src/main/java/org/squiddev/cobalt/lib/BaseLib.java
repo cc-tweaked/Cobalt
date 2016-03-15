@@ -128,7 +128,7 @@ public class BaseLib extends OneArgFunction {
 						System.gc();
 						return Constants.TRUE;
 					} else {
-						throw ErrorFactory.argError(1, "gc op");
+						throw ErrorFactory.argError(1, "invalid option");
 					}
 				case 1: // "error", // ( message [,level] ) -> ERR
 					throw new LuaError(arg1.isNil() ? Constants.NIL : arg1, arg2.optInteger(1));
