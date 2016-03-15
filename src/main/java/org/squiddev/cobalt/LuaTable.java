@@ -483,11 +483,32 @@ public class LuaTable extends LuaValue {
 	}
 
 	/**
-	 * Get the next element after a particular key in the table
+	 * Find the next key,value pair if {@code this} is a table,
+	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
 	 *
-	 * @return key, value or nil
+	 * To iterate over all key-value pairs in a table you can use
+	 * <pre> {@code
+	 * LuaValue k = LuaValue.NIL;
+	 * while ( true ) {
+	 *    Varargs n = table.next(k);
+	 *    if ( (k = n.arg1()).isnil() )
+	 *       break;
+	 *    LuaValue v = n.arg(2)
+	 *    process( k, v )
+	 * }}</pre>
+	 *
+	 * @param key {@link LuaInteger} value identifying a key to start from,
+	 *            or {@link Constants#NIL} to start at the beginning
+	 * @return {@link Varargs} containing {key,value} for the next entry,
+	 * or {@link Constants#NIL} if there are no more.
+	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
+	 * @see LuaTable
+	 * @see #inext(LuaValue)
+	 * @see ValueFactory#valueOf(int)
+	 * @see Varargs#first()
+	 * @see Varargs#arg(int)
+	 * @see #isNil()
 	 */
-	@Override
 	public Varargs next(LuaValue key) {
 		int i = 0;
 		do {
@@ -532,12 +553,33 @@ public class LuaTable extends LuaValue {
 	}
 
 	/**
-	 * Get the next element after a particular key in the
-	 * contiguous array part of a table
+	 * Find the next integer-key,value pair if {@code this} is a table,
+	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
 	 *
-	 * @return key, value or none
+	 * To iterate over integer keys in a table you can use
+	 * <pre> {@code
+	 *   LuaValue k = LuaValue.NIL;
+	 *   while ( true ) {
+	 *      Varargs n = table.inext(k);
+	 *      if ( (k = n.arg1()).isnil() )
+	 *         break;
+	 *      LuaValue v = n.arg(2)
+	 *      process( k, v )
+	 *   }
+	 * } </pre>
+	 *
+	 * @param key {@link LuaInteger} value identifying a key to start from,
+	 *            or {@link Constants#NIL} to start at the beginning
+	 * @return {@link Varargs} containing {@code (key, value)} for the next entry,
+	 * or {@link Constants#NONE} if there are no more.
+	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
+	 * @see LuaTable
+	 * @see #next(LuaValue)
+	 * @see ValueFactory#valueOf(int)
+	 * @see Varargs#first()
+	 * @see Varargs#arg(int)
+	 * @see #isNil()
 	 */
-	@Override
 	public Varargs inext(LuaValue key) {
 		int k = key.checkInteger() + 1;
 		LuaValue v = rawget(k);

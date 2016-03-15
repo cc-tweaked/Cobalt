@@ -68,7 +68,7 @@ public final class Buffer {
 	/**
 	 * Value of this buffer, when not represented in bytes
 	 */
-	private LuaValue value;
+	private LuaString value;
 
 	/**
 	 * Create buffer with default capacity
@@ -96,7 +96,7 @@ public final class Buffer {
 	 *
 	 * @param value the initial value
 	 */
-	public Buffer(LuaValue value) {
+	public Buffer(LuaString value) {
 		bytes = NOBYTES;
 		length = offset = 0;
 		this.value = value;
@@ -117,7 +117,7 @@ public final class Buffer {
 	 * @param value value to set
 	 * @return {@code this}
 	 */
-	public Buffer setvalue(LuaValue value) {
+	public Buffer setvalue(LuaString value) {
 		bytes = NOBYTES;
 		offset = length = 0;
 		this.value = value;
@@ -153,17 +153,6 @@ public final class Buffer {
 	public final Buffer append(byte b) {
 		makeroom(0, 1);
 		bytes[offset + length++] = b;
-		return this;
-	}
-
-	/**
-	 * Append a {@link LuaValue} to the buffer.
-	 *
-	 * @param val The value to append. This will be converted to a string
-	 * @return {@code this} to allow call chaining
-	 */
-	public final Buffer append(LuaValue val) {
-		append(val.strvalue());
 		return this;
 	}
 
@@ -221,7 +210,7 @@ public final class Buffer {
 	 */
 	public final void makeroom(int nbefore, int nafter) {
 		if (value != null) {
-			LuaString s = value.strvalue();
+			LuaString s = value;
 			value = null;
 			length = s.length;
 			offset = nbefore;

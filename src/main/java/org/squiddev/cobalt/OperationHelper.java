@@ -36,7 +36,7 @@ public final class OperationHelper {
 	private OperationHelper() {
 	}
 
-	//region Arithmetic
+	//region Binary
 	public static LuaValue add(LuaState state, LuaValue left, LuaValue right) {
 		return add(state, left, right, -1, -1);
 	}
@@ -167,13 +167,37 @@ public final class OperationHelper {
 		}
 		return OperationHelper.call(state, h, left, right);
 	}
-	//endregion
 
+	/**
+	 * Perform metatag processing for concatenation operations.
+	 *
+	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
+	 * or throws {@link LuaError} if it doesn't exist.
+	 *
+	 * @param state The current lua state
+	 * @param left  The right-hand-side value to perform the operation with
+	 * @param right The right-hand-side value to perform the operation with
+	 * @return {@link LuaValue} resulting from metatag processing for {@link Constants#CONCAT} metatag.
+	 * @throws LuaError if metatag was not defined for either operand
+	 */
 	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right) {
+		return concat(state, left, right, -1, -1);
+	}
+
+	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right, int leftStack, int rightStack) {
 		if (left.isString() && right.isString()) {
 			return concat(left.checkLuaString(), right.checkLuaString());
 		} else {
-			return left.concatmt(state, right);
+			LuaValue h = left.metatag(state, Constants.CONCAT);
+			if (h.isNil() && (h = right.metatag(state, Constants.CONCAT)).isNil()) {
+				if (left.isString()) {
+					left = right;
+					leftStack = rightStack;
+				}
+				throw ErrorFactory.operandError(state, left, "concatenate", leftStack);
+			}
+
+			return OperationHelper.call(state, h, left, right);
 		}
 	}
 
@@ -183,6 +207,7 @@ public final class OperationHelper {
 		System.arraycopy(right.bytes, right.offset, b, left.length, right.length);
 		return ValueFactory.valueOf(b);
 	}
+	//endregion
 
 	//region Compare
 	public static boolean lt(LuaState state, LuaValue left, LuaValue right) {

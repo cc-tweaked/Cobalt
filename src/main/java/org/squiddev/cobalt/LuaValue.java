@@ -1218,69 +1218,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Find the next key,value pair if {@code this} is a table,
-	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
-	 *
-	 * To iterate over all key-value pairs in a table you can use
-	 * <pre> {@code
-	 * LuaValue k = LuaValue.NIL;
-	 * while ( true ) {
-	 *    Varargs n = table.next(k);
-	 *    if ( (k = n.arg1()).isnil() )
-	 *       break;
-	 *    LuaValue v = n.arg(2)
-	 *    process( k, v )
-	 * }}</pre>
-	 *
-	 * @param index {@link LuaInteger} value identifying a key to start from,
-	 *              or {@link Constants#NIL} to start at the beginning
-	 * @return {@link Varargs} containing {key,value} for the next entry,
-	 * or {@link Constants#NIL} if there are no more.
-	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
-	 * @see LuaTable
-	 * @see #inext(LuaValue)
-	 * @see ValueFactory#valueOf(int)
-	 * @see Varargs#first()
-	 * @see Varargs#arg(int)
-	 * @see #isNil()
-	 */
-	public Varargs next(LuaValue index) {
-		throw ErrorFactory.typeError(this, "table");
-	}
-
-	/**
-	 * Find the next integer-key,value pair if {@code this} is a table,
-	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
-	 *
-	 * To iterate over integer keys in a table you can use
-	 * <pre> {@code
-	 *   LuaValue k = LuaValue.NIL;
-	 *   while ( true ) {
-	 *      Varargs n = table.inext(k);
-	 *      if ( (k = n.arg1()).isnil() )
-	 *         break;
-	 *      LuaValue v = n.arg(2)
-	 *      process( k, v )
-	 *   }
-	 * } </pre>
-	 *
-	 * @param index {@link LuaInteger} value identifying a key to start from,
-	 *              or {@link Constants#NIL} to start at the beginning
-	 * @return {@link Varargs} containing {@code (key, value)} for the next entry,
-	 * or {@link Constants#NONE} if there are no more.
-	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
-	 * @see LuaTable
-	 * @see #next(LuaValue)
-	 * @see ValueFactory#valueOf(int)
-	 * @see Varargs#first()
-	 * @see Varargs#arg(int)
-	 * @see #isNil()
-	 */
-	public Varargs inext(LuaValue index) {
-		throw ErrorFactory.typeError(this, "table");
-	}
-
-	/**
 	 * Load a library instance by setting its environment to {@code this}
 	 * and calling it, which should iniitalize the library instance and
 	 * install itself into this instance.
@@ -1369,7 +1306,7 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if  {@code this} is not a {@link LuaTable}
 	 */
 	public LuaValue getn() {
-		throw ErrorFactory.typeError(this, "getn");
+		throw ErrorFactory.unimplemented(this, "getn");
 	}
 
 	// object equality, used for key comparison
@@ -1477,25 +1414,6 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public int strcmp(LuaString rhs) {
 		throw new LuaError("attempt to compare " + typeName());
-	}
-
-	/**
-	 * Perform metatag processing for concatenation operations.
-	 *
-	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
-	 * or throws {@link LuaError} if it doesn't exist.
-	 *
-	 * @param state The current lua state
-	 * @param rhs   The right-hand-side value to perform the operation with
-	 * @return {@link LuaValue} resulting from metatag processing for {@link Constants#CONCAT} metatag.
-	 * @throws LuaError if metatag was not defined for either operand
-	 */
-	public LuaValue concatmt(LuaState state, LuaValue rhs) {
-		LuaValue h = metatag(state, Constants.CONCAT);
-		if (!h.isFunction() && !(h = rhs.metatag(state, Constants.CONCAT)).isFunction()) {
-			throw new LuaError("attempt to concatenate " + typeName() + " and " + rhs.typeName());
-		}
-		return ((LuaFunction) h).call(state, this, rhs);
 	}
 
 	/**

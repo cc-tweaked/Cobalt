@@ -1184,10 +1184,10 @@ public class UnaryBinaryOperatorsTest {
 
 	@Test
 	public void testBuffer() {
-		LuaValue abc = valueOf("abcdefghi").substring(0, 3);
-		LuaValue def = valueOf("abcdefghi").substring(3, 6);
-		LuaValue ghi = valueOf("abcdefghi").substring(6, 9);
-		LuaValue n123 = valueOf(123);
+		LuaString abc = valueOf("abcdefghi").substring(0, 3);
+		LuaString def = valueOf("abcdefghi").substring(3, 6);
+		LuaString ghi = valueOf("abcdefghi").substring(6, 9);
+		LuaString n123 = valueOf(123).checkLuaString();
 
 		// basic append
 		Buffer b = new Buffer();
