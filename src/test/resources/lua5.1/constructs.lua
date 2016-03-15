@@ -4,7 +4,7 @@ print "testing syntax"
 
 assert(2 ^ 3 ^ 2 == 2 ^ (3 ^ 2));
 assert(2 ^ 3 * 4 == (2 ^ 3) * 4);
---assert(2 ^ -2 == 1 / 4 and -2 ^ --2 == ---4);
+assert(2 ^ -2 == 1 / 4 and -2 ^ - -2 == - - -4);
 assert(not nil and 2 and not (2 > 3 or 3 < 2));
 assert(-3 - 1 - 5 == 0 + 0 - 9);
 assert(-2 ^ 2 == -4 and (-2) ^ 2 == 4 and 2 * 2 - 3 - 1 == 0);
@@ -198,8 +198,7 @@ do
 end
 
 function F(a)
-	-- TODO: Fix me. Currently returns debug.getinfo - should be looking at the function above
-	-- assert(debug.getinfo(1, "n").name == 'F')
+	assert(debug.getinfo(1, "n").name == 'F')
 	return a, 2, 3
 end
 

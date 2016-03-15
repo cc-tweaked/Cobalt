@@ -90,6 +90,7 @@ public class DebugLib extends VarArgFunction {
 	/* maximum stack for a Lua function */
 	private static final int MAXSTACK = 250;
 
+	private static final LuaString MAIN = valueOf("main");
 	private static final LuaString LUA = valueOf("Lua");
 	private static final LuaString C = valueOf("C");
 	private static final LuaString C_SOURCE = valueOf("[C]");
@@ -115,8 +116,8 @@ public class DebugLib extends VarArgFunction {
 	private LuaTable init(LuaState state) {
 		LuaTable t = new LuaTable();
 		bind(state, t, DebugLib.class, NAMES, DEBUG);
-		env.set(state, "debug", t);
-		state.loadedPackages.set(state, "debug", t);
+		env.rawset("debug", t);
+		state.loadedPackages.rawset("debug", t);
 		return t;
 	}
 
@@ -246,44 +247,48 @@ public class DebugLib extends VarArgFunction {
 				case 'S': {
 					if (c != null) {
 						Prototype p = c.getPrototype();
-						info.set(state, WHAT, LUA);
-						info.set(state, SOURCE, p.source);
-						info.set(state, SHORT_SRC, valueOf(p.sourceShort()));
-						info.set(state, LINEDEFINED, valueOf(p.linedefined));
-						info.set(state, LASTLINEDEFINED, valueOf(p.lastlinedefined));
+						info.rawset(WHAT, p.linedefined == 0 ? MAIN : LUA);
+						info.rawset(SOURCE, p.source);
+						info.rawset(SHORT_SRC, valueOf(p.sourceShort()));
+						info.rawset(LINEDEFINED, valueOf(p.linedefined));
+						info.rawset(LASTLINEDEFINED, valueOf(p.lastlinedefined));
 					} else {
-						String shortName = di.func == null ? "nil" : di.func.toString();
-						LuaString name = LuaString.valueOf("[C] " + shortName);
-						info.set(state, WHAT, C);
-						info.set(state, SOURCE, name);
-						info.set(state, SHORT_SRC, C_SOURCE);
-						info.set(state, LINEDEFINED, MINUSONE);
-						info.set(state, LASTLINEDEFINED, MINUSONE);
+						String shortName = di.func == null ? "nil" : di.func.debugName();
+						LuaString name = valueOf("[C] " + shortName);
+						info.rawset(WHAT, C);
+						info.rawset(SOURCE, name);
+						info.rawset(SHORT_SRC, C_SOURCE);
+						info.rawset(LINEDEFINED, MINUSONE);
+						info.rawset(LASTLINEDEFINED, MINUSONE);
 					}
 					break;
 				}
 				case 'l': {
 					int line = di.currentline();
-					info.set(state, CURRENTLINE, valueOf(line));
+					info.rawset(CURRENTLINE, valueOf(line));
 					break;
 				}
 				case 'u': {
-					info.set(state, NUPS, valueOf(c != null ? c.getPrototype().nups : 0));
+					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().nups : 0));
 					break;
 				}
 				case 'n': {
-					LuaString[] kind = di.getfunckind();
-					info.set(state, NAME, kind != null ? kind[0] : QMARK);
-					info.set(state, NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
+					LuaString[] kind = null;
+					if (di.previous != null && di.previous.func.isClosure()) {
+						kind = di.previous.getfunckind();
+					}
+
+					info.rawset(NAME, kind != null ? kind[0] : QMARK);
+					info.rawset(NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
 					break;
 				}
 				case 'f': {
-					info.set(state, FUNC, di.func == null ? NIL : di.func);
+					info.rawset(FUNC, di.func == null ? NIL : di.func);
 					break;
 				}
 				case 'L': {
 					LuaTable lines = new LuaTable();
-					info.set(state, ACTIVELINES, lines);
+					info.rawset(ACTIVELINES, lines);
 //					if ( di.luainfo != null ) {
 //						int line = di.luainfo.currentline();
 //						if ( line >= 0 )

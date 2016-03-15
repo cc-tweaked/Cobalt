@@ -90,7 +90,7 @@ public final class DebugState {
 
 	public DebugInfo getInfo(int call) {
 		DebugInfo di = debugInfo[call];
-		if (di == null) debugInfo[call] = di = new DebugInfo();
+		if (di == null) debugInfo[call] = di = new DebugInfo(call == 0 ? null : getInfo(call - 1));
 		return di;
 	}
 

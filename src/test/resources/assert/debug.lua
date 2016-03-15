@@ -25,7 +25,7 @@ func(false)
 
 local function testing()
 	local info = debug.getinfo(1)
-	assertEquals(27, info.currentline, "currentline")
+	assertEquals(27, info.currentline, "currentline") assertEquals("testing", info.name, "name: " .. info.name)
 end
 
 local info = debug.getinfo(testing)

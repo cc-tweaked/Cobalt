@@ -52,16 +52,20 @@ public final class DebugInfo {
 	 */
 	public LuaValue[] stack;
 
+	public final DebugInfo previous;
+
 
 	public Varargs varargs, extras;
 	public int pc, top;
 
-	public DebugInfo() {
+	public DebugInfo(DebugInfo previous) {
+		this.previous = previous;
 		func = null;
 	}
 
 	public DebugInfo(LuaFunction func) {
 		pc = -1;
+		previous = null;
 		setFunction(func);
 	}
 
