@@ -64,7 +64,7 @@ public class DebugHandler {
 	 * @param func the function called
 	 */
 	public void onCall(DebugState ds, LuaFunction func) {
-		DebugInfo di = ds.pushInfo();
+		DebugFrame di = ds.pushInfo();
 		di.setFunction(func);
 
 		if (!ds.inhook && ds.hookcall) ds.callHookFunc(CALL, NIL);
@@ -79,8 +79,8 @@ public class DebugHandler {
 	 * @param stack The current lua stack
 	 * @return The pushed info
 	 */
-	public DebugInfo onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack) {
-		DebugInfo di = ds.pushInfo();
+	public DebugFrame onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack) {
+		DebugFrame di = ds.pushInfo();
 		di.setFunction(func, args, stack);
 
 		if (!ds.inhook && ds.hookcall) {
@@ -117,7 +117,7 @@ public class DebugHandler {
 	 * @param extras Extra arguments
 	 * @param top    The top of the callstack
 	 */
-	public void onInstruction(DebugState ds, DebugInfo di, int pc, Varargs extras, int top) {
+	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) {
 		Prototype prototype = ds.inhook || di.closure == null ? null : di.closure.getPrototype();
 		int oldPc = di.pc;
 

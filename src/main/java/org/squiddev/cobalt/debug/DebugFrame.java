@@ -36,7 +36,7 @@ import org.squiddev.cobalt.lib.DebugLib;
  * Each thread will get a DebugState attached to it by the debug library
  * which will track function calls, hook functions, etc.
  */
-public final class DebugInfo {
+public final class DebugFrame {
 	/**
 	 * The debug info's function
 	 */
@@ -52,18 +52,18 @@ public final class DebugInfo {
 	 */
 	public LuaValue[] stack;
 
-	public final DebugInfo previous;
+	public final DebugFrame previous;
 
 
 	public Varargs varargs, extras;
 	public int pc, top;
 
-	public DebugInfo(DebugInfo previous) {
+	public DebugFrame(DebugFrame previous) {
 		this.previous = previous;
 		func = null;
 	}
 
-	public DebugInfo(LuaFunction func) {
+	public DebugFrame(LuaFunction func) {
 		pc = -1;
 		previous = null;
 		setFunction(func);

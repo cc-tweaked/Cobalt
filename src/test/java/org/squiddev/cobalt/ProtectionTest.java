@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 
 import java.io.IOException;
@@ -51,7 +51,7 @@ public class ProtectionTest {
 			}
 
 			@Override
-			public void onInstruction(DebugState ds, DebugInfo di, int pc, Varargs extras, int top) {
+			public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) {
 				poll();
 				super.onInstruction(ds, di, pc, extras, top);
 			}

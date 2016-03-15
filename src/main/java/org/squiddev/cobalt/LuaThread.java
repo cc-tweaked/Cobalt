@@ -25,7 +25,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
@@ -91,8 +91,6 @@ public class LuaThread extends LuaValue {
 	 * Field to hold state of error condition during debug hook function calls.
 	 */
 	public LuaValue err;
-
-	public static final int MAX_CALLSTACK = 256;
 
 	public final LuaState luaState;
 
@@ -186,7 +184,7 @@ public class LuaThread extends LuaValue {
 	 * @return LuaFunction on the call stack, or null if outside of range of active stack
 	 */
 	public static LuaFunction getCallstackFunction(LuaState state, int level) {
-		DebugInfo info = DebugHandler.getDebugState(state.currentThread).getDebugInfo(level);
+		DebugFrame info = DebugHandler.getDebugState(state.currentThread).getDebugInfo(level);
 		return info == null ? null : info.func;
 	}
 
@@ -271,8 +269,10 @@ public class LuaThread extends LuaValue {
 				result = function.invoke(state, a);
 			} catch (LuaError e) {
 				error = e.value;
+			} catch (StackOverflowError e) {
+				error = valueOf("stack overflow");
 			} catch (Throwable t) {
-				error = valueOf(t.getMessage());
+				error = valueOf("vm error: " + t.toString());
 			} finally {
 				markDead();
 				notify();

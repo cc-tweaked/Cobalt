@@ -29,7 +29,7 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.Constants.FALSE;
@@ -219,7 +219,7 @@ public class LuaInterpreter extends LuaClosure {
 		// debug wants args to this function
 		DebugHandler handler = state.debug;
 		DebugState ds = handler.getDebugState();
-		DebugInfo di = handler.onCall(ds, this, varargs, stack);
+		DebugFrame di = handler.onCall(ds, this, varargs, stack);
 
 		// process instructions
 		try {

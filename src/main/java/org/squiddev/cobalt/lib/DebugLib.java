@@ -27,7 +27,7 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
@@ -229,10 +229,10 @@ public class DebugLib extends VarArgFunction {
 
 		// find the stack info
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugInfo di;
+		DebugFrame di;
 		if (func.isNumber()) {
 			int level = func.checkInteger();
-			di = level > 0 ? ds.getDebugInfo(level - 1) : new DebugInfo(level0func.checkFunction());
+			di = level > 0 ? ds.getDebugInfo(level - 1) : new DebugFrame(level0func.checkFunction());
 		} else {
 			di = ds.findDebugInfo(func.checkFunction());
 		}
@@ -309,7 +309,7 @@ public class DebugLib extends VarArgFunction {
 		int local = args.arg(i).checkInteger();
 
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugInfo di = ds.getDebugInfo(level - 1);
+		DebugFrame di = ds.getDebugInfo(level - 1);
 		LuaString name = (di != null ? di.getLocalName(local) : null);
 		if (name != null) {
 			LuaValue value = di.stack[local - 1];
@@ -329,7 +329,7 @@ public class DebugLib extends VarArgFunction {
 		LuaValue value = args.arg(a++);
 
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugInfo di = ds.getDebugInfo(level - 1);
+		DebugFrame di = ds.getDebugInfo(level - 1);
 		LuaString name = (di != null ? di.getLocalName(local) : null);
 		if (name != null) {
 			di.stack[local - 1] = value;
@@ -444,7 +444,7 @@ public class DebugLib extends VarArgFunction {
 		StringBuilder sb = new StringBuilder();
 		DebugState ds = DebugHandler.getDebugState(thread);
 		sb.append("stack traceback:");
-		DebugInfo di = ds.getDebugInfo(level);
+		DebugFrame di = ds.getDebugInfo(level);
 		if (di != null) {
 			sb.append("\n\t");
 			sb.append(di.sourceline());
@@ -470,7 +470,7 @@ public class DebugLib extends VarArgFunction {
 	 */
 	public static String fileline(LuaThread thread) {
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugInfo di;
+		DebugFrame di;
 		for (int i = 0, n = ds.top; i < n; i++) {
 			di = ds.getDebugInfo(i);
 			if (di != null && di.closure != null) {
@@ -482,7 +482,7 @@ public class DebugLib extends VarArgFunction {
 
 	public static String fileline(LuaThread thread, int level) {
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugInfo di = ds.getDebugInfo(level);
+		DebugFrame di = ds.getDebugInfo(level);
 		return di != null ? di.sourceline() : null;
 	}
 
@@ -494,7 +494,7 @@ public class DebugLib extends VarArgFunction {
 
 
 	// return StrValue[] { name, namewhat } if found, null if not
-	public static LuaString[] getobjname(DebugInfo di, int stackpos) {
+	public static LuaString[] getobjname(DebugFrame di, int stackpos) {
 		LuaString name;
 		if (di.closure != null) { // a Lua function?
 			Prototype p = di.closure.getPrototype();

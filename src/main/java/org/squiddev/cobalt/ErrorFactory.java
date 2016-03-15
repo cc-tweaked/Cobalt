@@ -26,7 +26,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugInfo;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.lib.DebugLib;
 
 /**
@@ -104,7 +104,7 @@ public class ErrorFactory {
 		String type = operand.typeName();
 		LuaString[] kind = null;
 		if (stack >= 0) {
-			DebugInfo info = DebugHandler.getDebugState(state.getCurrentThread()).getDebugInfo();
+			DebugFrame info = DebugHandler.getDebugState(state.getCurrentThread()).getStack();
 			if (info != null && info.closure != null) {
 				if (stack < info.closure.getPrototype().maxstacksize) {
 					kind = DebugLib.getobjname(info, stack);

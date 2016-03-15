@@ -35,6 +35,12 @@ import java.lang.ref.WeakReference;
  * DebugState is associated with a Thread
  */
 public final class DebugState {
+	public static final int MAX_SIZE = 512;
+
+	public static final int DEFAULT_SIZE = 8;
+
+	private static final DebugFrame[] EMPTY = new DebugFrame[0];
+
 	/**
 	 * The thread that owns this object
 	 */
@@ -55,7 +61,7 @@ public final class DebugState {
 	/**
 	 * The stack of debug info
 	 */
-	private final DebugInfo[] debugInfo = new DebugInfo[LuaThread.MAX_CALLSTACK];
+	private DebugFrame[] stack = EMPTY;
 
 	/**
 	 * The hook function to call
@@ -83,12 +89,6 @@ public final class DebugState {
 		this.handler = state.debug;
 	}
 
-	public DebugInfo getInfo(int call) {
-		DebugInfo di = debugInfo[call];
-		if (di == null) debugInfo[call] = di = new DebugInfo(call == 0 ? null : getInfo(call - 1));
-		return di;
-	}
-
 	public void onCall(LuaFunction func) {
 		handler.onCall(this, func);
 	}
@@ -102,19 +102,32 @@ public final class DebugState {
 	 *
 	 * @return The created info
 	 */
-	protected DebugInfo pushInfo() {
+	protected DebugFrame pushInfo() {
 		int top = this.top + 1;
-		if (top >= LuaThread.MAX_CALLSTACK) throw new LuaError("stack overflow");
+
+		DebugFrame[] frames = stack;
+		int length = frames.length;
+		if (top >= length) {
+			if (top >= MAX_SIZE) throw new LuaError("stack overflow");
+
+			int newSize = length == 0 ? DEFAULT_SIZE : length + (length / 2);
+			DebugFrame[] f = new DebugFrame[newSize];
+			System.arraycopy(frames, 0, f, 0, frames.length);
+			for (int i = frames.length; i < newSize; ++i) {
+				f[i] = new DebugFrame(i > 0 ? f[i - 1] : null);
+			}
+			frames = stack = f;
+		}
 
 		this.top = top;
-		return getInfo(top);
+		return frames[top];
 	}
 
 	/**
 	 * Pop a debug info off the stack
 	 */
 	protected void popInfo() {
-		debugInfo[top--].clear();
+		stack[top--].clear();
 	}
 
 	protected void callHookFunc(LuaString type, LuaValue arg) {
@@ -154,8 +167,8 @@ public final class DebugState {
 	 *
 	 * @return The top debug info or {@code null}
 	 */
-	public DebugInfo getDebugInfo() {
-		return top >= 0 ? debugInfo[top] : null;
+	public DebugFrame getStack() {
+		return top >= 0 ? stack[top] : null;
 	}
 
 	/**
@@ -164,8 +177,8 @@ public final class DebugState {
 	 * @param level The level to get at
 	 * @return The debug info or {@code null}
 	 */
-	public DebugInfo getDebugInfo(int level) {
-		return level >= 0 && level <= top ? debugInfo[top - level] : null;
+	public DebugFrame getDebugInfo(int level) {
+		return level >= 0 && level <= top ? stack[top - level] : null;
 	}
 
 	/**
@@ -174,13 +187,13 @@ public final class DebugState {
 	 * @param func The function to find
 	 * @return The debug info for this function
 	 */
-	public DebugInfo findDebugInfo(LuaFunction func) {
+	public DebugFrame findDebugInfo(LuaFunction func) {
 		for (int i = top - 1; --i >= 0; ) {
-			if (debugInfo[i].func == func) {
-				return debugInfo[i];
+			if (stack[i].func == func) {
+				return stack[i];
 			}
 		}
-		return new DebugInfo(func);
+		return new DebugFrame(func);
 	}
 
 	@Override
