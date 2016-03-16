@@ -27,6 +27,8 @@ package org.squiddev.cobalt;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.squiddev.cobalt.Constants.*;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
@@ -77,7 +79,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  */
 public class LuaTable extends LuaValue {
 	private static final int MIN_HASH_CAPACITY = 2;
-	private static final LuaString N = ValueFactory.valueOf("n");
+	private static final LuaString N = valueOf("n");
 
 	/**
 	 * the array values
@@ -108,10 +110,10 @@ public class LuaTable extends LuaValue {
 	 * Construct empty table
 	 */
 	public LuaTable() {
-		super(Constants.TTABLE);
-		array = Constants.NOVALS;
-		hashKeys = Constants.NOVALS;
-		hashValues = Constants.NOVALS;
+		super(TTABLE);
+		array = NOVALS;
+		hashKeys = NOVALS;
+		hashValues = NOVALS;
 	}
 
 	/**
@@ -121,7 +123,7 @@ public class LuaTable extends LuaValue {
 	 * @param nhash  capacity of hash part
 	 */
 	public LuaTable(int narray, int nhash) {
-		super(Constants.TTABLE);
+		super(TTABLE);
 		presize(narray, nhash);
 	}
 
@@ -133,7 +135,7 @@ public class LuaTable extends LuaValue {
 	 * @param lastarg Additional unnamed values beyond {@code unnamed.length}
 	 */
 	public LuaTable(LuaValue[] named, LuaValue[] unnamed, Varargs lastarg) {
-		super(Constants.TTABLE);
+		super(TTABLE);
 		int nn = (named != null ? named.length : 0);
 		int nu = (unnamed != null ? unnamed.length : 0);
 		int nl = (lastarg != null ? lastarg.count() : 0);
@@ -169,11 +171,11 @@ public class LuaTable extends LuaValue {
 	 * @param firstarg the index in varargs of the first argument to include in the table
 	 */
 	public LuaTable(Varargs varargs, int firstarg) {
-		super(Constants.TTABLE);
+		super(TTABLE);
 		int nskip = firstarg - 1;
 		int n = Math.max(varargs.count() - nskip, 0);
 		presize(n, 1);
-		rawset(N, ValueFactory.valueOf(n));
+		rawset(N, valueOf(n));
 		for (int i = 1; i <= n; i++) {
 			rawset(i, varargs.arg(i + nskip));
 		}
@@ -207,9 +209,9 @@ public class LuaTable extends LuaValue {
 		if (nhash > 0 && nhash < MIN_HASH_CAPACITY) {
 			nhash = MIN_HASH_CAPACITY;
 		}
-		array = (narray > 0 ? new LuaValue[narray] : Constants.NOVALS);
-		hashKeys = (nhash > 0 ? new LuaValue[nhash] : Constants.NOVALS);
-		hashValues = (nhash > 0 ? new LuaValue[nhash] : Constants.NOVALS);
+		array = (narray > 0 ? new LuaValue[narray] : NOVALS);
+		hashKeys = (nhash > 0 ? new LuaValue[nhash] : NOVALS);
+		hashValues = (nhash > 0 ? new LuaValue[nhash] : NOVALS);
 		hashEntries = 0;
 	}
 
@@ -249,7 +251,7 @@ public class LuaTable extends LuaValue {
 	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
 		this.metatable = metatable;
 		LuaValue mode;
-		if (this.metatable != null && (mode = this.metatable.rawget(Constants.MODE)).isString()) {
+		if (this.metatable != null && (mode = this.metatable.rawget(MODE)).isString()) {
 			String m = mode.toString();
 			boolean k = m.indexOf('k') >= 0;
 			boolean v = m.indexOf('v') >= 0;
@@ -277,7 +279,7 @@ public class LuaTable extends LuaValue {
 		if (key.isIntExact()) {
 			int ikey = key.toInteger();
 			if (ikey > 0 && ikey <= array.length) {
-				return array[ikey - 1] != null ? array[ikey - 1] : Constants.NIL;
+				return array[ikey - 1] != null ? array[ikey - 1] : NIL;
 			}
 		}
 		return hashget(key);
@@ -286,9 +288,9 @@ public class LuaTable extends LuaValue {
 	protected LuaValue hashget(LuaValue key) {
 		if (hashEntries > 0) {
 			LuaValue v = hashValues[hashFindSlot(key)];
-			return v != null ? v : Constants.NIL;
+			return v != null ? v : NIL;
 		}
-		return Constants.NIL;
+		return NIL;
 	}
 
 	@Override
@@ -331,7 +333,7 @@ public class LuaTable extends LuaValue {
 			LuaValue k = LuaInteger.valueOf(i + 1);
 			LuaValue v = hashget(k);
 			if (!v.isNil()) {
-				hashset(k, Constants.NIL);
+				hashset(k, NIL);
 				array[i] = v;
 			}
 		}
@@ -348,14 +350,14 @@ public class LuaTable extends LuaValue {
 		if (pos == 0) {
 			pos = n;
 		} else if (pos > n) {
-			return Constants.NONE;
+			return NONE;
 		}
 		LuaValue v = rawget(pos);
 		for (LuaValue r = v; !r.isNil(); ) {
 			r = rawget(pos + 1);
 			rawset(pos++, r);
 		}
-		return v.isNil() ? Constants.NONE : v;
+		return v.isNil() ? NONE : v;
 
 	}
 
@@ -403,7 +405,7 @@ public class LuaTable extends LuaValue {
 				return LuaInteger.valueOf(n);
 			}
 		}
-		return Constants.ZERO;
+		return ZERO;
 	}
 
 
@@ -440,7 +442,7 @@ public class LuaTable extends LuaValue {
 			}
 		}
 		for (LuaValue v : hashKeys) {
-			if (v != null && v.type() == Constants.TNUMBER) {
+			if (v != null && v.type() == TNUMBER) {
 				double key = v.toDouble();
 				if (key > n) {
 					n = key;
@@ -512,12 +514,12 @@ public class LuaTable extends LuaValue {
 		// check hash part
 		for (i -= array.length; i < hashKeys.length; ++i) {
 			if (hashKeys[i] != null) {
-				return ValueFactory.varargsOf(hashKeys[i], hashValues[i]);
+				return varargsOf(hashKeys[i], hashValues[i]);
 			}
 		}
 
 		// nothing found, push nil, return nil.
-		return Constants.NIL;
+		return NIL;
 	}
 
 	/**
@@ -551,7 +553,7 @@ public class LuaTable extends LuaValue {
 	public Varargs inext(LuaValue key) {
 		int k = key.checkInteger() + 1;
 		LuaValue v = rawget(k);
-		return v.isNil() ? Constants.NONE : varargsOf(LuaInteger.valueOf(k), v);
+		return v.isNil() ? NONE : varargsOf(LuaInteger.valueOf(k), v);
 	}
 
 	/**
@@ -563,14 +565,14 @@ public class LuaTable extends LuaValue {
 	 */
 	public LuaValue foreach(LuaState state, LuaValue func) {
 		Varargs n;
-		LuaValue k = Constants.NIL;
+		LuaValue k = NIL;
 		LuaValue v;
 		while (!(k = ((n = next(k)).first())).isNil()) {
 			if (!(v = OperationHelper.call(state, func, k, n.arg(2))).isNil()) {
 				return v;
 			}
 		}
-		return Constants.NIL;
+		return NIL;
 	}
 
 	/**
@@ -584,11 +586,11 @@ public class LuaTable extends LuaValue {
 	public LuaValue foreachi(LuaState state, LuaValue func) {
 		LuaValue v, r;
 		for (int k = 0; !(v = rawget(++k)).isNil(); ) {
-			if (!(r = OperationHelper.call(state, func, ValueFactory.valueOf(k), v)).isNil()) {
+			if (!(r = OperationHelper.call(state, func, valueOf(k), v)).isNil()) {
 				return r;
 			}
 		}
-		return Constants.NIL;
+		return NIL;
 	}
 
 
@@ -678,8 +680,8 @@ public class LuaTable extends LuaValue {
 			hashValues[i] = null;
 
 			if (hashEntries == 0) {
-				hashKeys = Constants.NOVALS;
-				hashValues = Constants.NOVALS;
+				hashKeys = NOVALS;
+				hashValues = NOVALS;
 			}
 		}
 	}
@@ -790,7 +792,7 @@ public class LuaTable extends LuaValue {
 	 * @return count of keys in the table
 	 */
 	public int keyCount() {
-		LuaValue k = Constants.NIL;
+		LuaValue k = NIL;
 		for (int i = 0; true; i++) {
 			Varargs n = next(k);
 			if ((k = n.first()).isNil()) {
@@ -807,7 +809,7 @@ public class LuaTable extends LuaValue {
 	 */
 	public LuaValue[] keys() {
 		List<LuaValue> l = new ArrayList<LuaValue>();
-		LuaValue k = Constants.NIL;
+		LuaValue k = NIL;
 		while (true) {
 			Varargs n = next(k);
 			if ((k = n.first()).isNil()) {
