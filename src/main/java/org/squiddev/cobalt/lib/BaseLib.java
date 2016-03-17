@@ -28,7 +28,6 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.TwoArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
@@ -55,7 +54,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.1">http://www.lua.org/manual/5.1/manual.html#5.1</a>
  */
-public class BaseLib extends OneArgFunction {
+public class BaseLib implements LuaLibrary {
 	private LuaValue next;
 	private LuaValue inext;
 
@@ -91,11 +90,11 @@ public class BaseLib extends OneArgFunction {
 	};
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
+	public LuaValue add(LuaState state, LuaValue env) {
 		env.set(state, "_G", env);
 		env.set(state, "_VERSION", valueOf(Lua._VERSION));
-		bind(state, env, BaseLib2.class, LIB2_KEYS);
-		bind(state, env, BaseLibV.class, LIBV_KEYS);
+		LibFunction.bind(state, env, BaseLib2.class, LIB2_KEYS);
+		LibFunction.bind(state, env, BaseLibV.class, LIBV_KEYS);
 
 		// remember next, and inext for use in pairs and ipairs
 		next = env.get(state, "next");

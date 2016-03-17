@@ -46,32 +46,33 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.5">http://www.lua.org/manual/5.1/manual.html#5.5</a>
  */
-public class TableLib extends OneArgFunction {
-
-	private LuaTable init(LuaState state) {
+public class TableLib implements LuaLibrary {
+	@Override
+	public LuaTable add(LuaState state, LuaValue env) {
 		LuaTable t = new LuaTable();
-		bind(state, t, TableLib.class, new String[]{"getn", "maxn",}, 1);
-		bind(state, t, TableLibV.class, new String[]{
+		LibFunction.bind(state, t, TableLib1.class, new String[]{"getn", "maxn",});
+		LibFunction.bind(state, t, TableLibV.class, new String[]{
 			"remove", "concat", "insert", "sort", "foreach", "foreachi",});
 		env.set(state, "table", t);
 		state.loadedPackages.set(state, "table", t);
 		return t;
 	}
 
-	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
-		switch (opcode) {
-			case 0: // init library
-				return init(state);
-			case 1:  // "getn" (table) -> number
-				return arg.checkTable().getn();
-			case 2: // "maxn"  (table) -> number
-				return valueOf(arg.checkTable().maxn());
+	private static final class TableLib1 extends OneArgFunction {
+
+		@Override
+		public LuaValue call(LuaState state, LuaValue arg) {
+			switch (opcode) {
+				case 0:  // "getn" (table) -> number
+					return arg.checkTable().getn();
+				case 1: // "maxn"  (table) -> number
+					return valueOf(arg.checkTable().maxn());
+			}
+			return NIL;
 		}
-		return NIL;
 	}
 
-	static final class TableLibV extends VarArgFunction {
+	private static final class TableLibV extends VarArgFunction {
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) {
 			switch (opcode) {

@@ -48,19 +48,18 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.8">http://www.lua.org/manual/5.1/manual.html#5.8</a>
  */
-public class OsLib extends VarArgFunction {
-	private static final int INIT = 0;
-	private static final int CLOCK = 1;
-	private static final int DATE = 2;
-	private static final int DIFFTIME = 3;
-	private static final int EXECUTE = 4;
-	private static final int EXIT = 5;
-	private static final int GETENV = 6;
-	private static final int REMOVE = 7;
-	private static final int RENAME = 8;
-	private static final int SETLOCALE = 9;
-	private static final int TIME = 10;
-	private static final int TMPNAME = 11;
+public class OsLib extends VarArgFunction implements LuaLibrary {
+	private static final int CLOCK = 0;
+	private static final int DATE = 1;
+	private static final int DIFFTIME = 2;
+	private static final int EXECUTE = 3;
+	private static final int EXIT = 4;
+	private static final int GETENV = 5;
+	private static final int REMOVE = 6;
+	private static final int RENAME = 7;
+	private static final int SETLOCALE = 8;
+	private static final int TIME = 9;
+	private static final int TMPNAME = 10;
 
 	private static final String[] NAMES = {
 		"clock",
@@ -78,9 +77,10 @@ public class OsLib extends VarArgFunction {
 
 	private static final long t0 = System.currentTimeMillis();
 
-	public LuaValue init(LuaState state) {
+	@Override
+	public LuaValue add(LuaState state, LuaValue env) {
 		LuaTable t = new LuaTable();
-		bind(state, t, this.getClass(), NAMES, CLOCK);
+		LibFunction.bind(state, t, getClass(), NAMES);
 		env.set(state, "os", t);
 		state.loadedPackages.set(state, "os", t);
 		return t;
@@ -90,8 +90,6 @@ public class OsLib extends VarArgFunction {
 	public Varargs invoke(LuaState state, Varargs args) {
 		try {
 			switch (opcode) {
-				case INIT:
-					return init(state);
 				case CLOCK:
 					return ValueFactory.valueOf(clock());
 				case DATE: {

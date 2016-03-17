@@ -50,14 +50,14 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.4">http://www.lua.org/manual/5.1/manual.html#5.4</a>
  */
-public class StringLib extends OneArgFunction {
+public class StringLib implements LuaLibrary {
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
+	public LuaValue add(LuaState state, LuaValue env) {
 		LuaTable t = new LuaTable();
-		bind(state, t, StringLib1.class, new String[]{
+		LibFunction.bind(state, t, StringLib1.class, new String[]{
 			"dump", "len", "lower", "reverse", "upper",});
-		bind(state, t, StringLibV.class, new String[]{
+		LibFunction.bind(state, t, StringLibV.class, new String[]{
 			"byte", "char", "find", "format",
 			"gmatch", "gsub", "match", "rep",
 			"sub"});

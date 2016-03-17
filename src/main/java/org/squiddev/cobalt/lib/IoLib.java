@@ -28,7 +28,6 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
@@ -59,7 +58,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see JseIoLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.7">http://www.lua.org/manual/5.1/manual.html#5.7</a>
  */
-public abstract class IoLib extends OneArgFunction {
+public abstract class IoLib implements LuaLibrary {
 
 	protected abstract class File extends LuaValue {
 		private LuaValue metatable = filemethods;
@@ -193,8 +192,6 @@ public abstract class IoLib extends OneArgFunction {
 	private static final int FILE_SETVBUF = 16;
 	private static final int FILE_WRITE = 17;
 
-	private static final int LINES_ITER = 18;
-
 	public static final String[] IO_NAMES = {
 		"close",
 		"flush",
@@ -219,17 +216,17 @@ public abstract class IoLib extends OneArgFunction {
 		"write",
 	};
 
-	LuaTable filemethods;
+	private LuaTable filemethods;
 
 	public IoLib() {
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
+	public LuaValue add(LuaState state, LuaValue env) {
 
 		// io lib functions
 		LuaTable t = new LuaTable();
-		bind(state, t, IoLibV.class, IO_NAMES);
+		LibFunction.bind(state, t, IoLibV.class, IO_NAMES);
 
 		// all functions link to library instance
 		setLibInstance(state, t);
@@ -241,7 +238,7 @@ public abstract class IoLib extends OneArgFunction {
 
 		// create file methods table
 		filemethods = new LuaTable();
-		bind(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
+		LibFunction.bind(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
 
 		// setup library and index
 		setLibInstance(state, filemethods);

@@ -45,7 +45,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see BaseLib
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.3">http://www.lua.org/manual/5.1/manual.html#5.3</a>
  */
-public class PackageLib extends OneArgFunction {
+public class PackageLib implements LuaLibrary {
 	public static final String DEFAULT_LUA_PATH = "?.lua";
 
 	public LuaTable PACKAGE;
@@ -86,7 +86,7 @@ public class PackageLib extends OneArgFunction {
 	private static final int OP_JAVA_LOADER = 6;
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
+	public LuaValue add(LuaState state, LuaValue env) {
 		env.set(state, "require", new PkgLib1(env, "require", OP_REQUIRE, this));
 		env.set(state, "module", new PkgLibV(env, "module", OP_MODULE, this));
 		env.set(state, "package", PACKAGE = ValueFactory.tableOf(new LuaValue[]{
@@ -157,7 +157,7 @@ public class PackageLib extends OneArgFunction {
 					return lib.loader_Lua(state, args);
 				}
 				case OP_JAVA_LOADER: {
-					return lib.loader_Java(args);
+					return lib.loader_Java(args, getfenv());
 				}
 			}
 			return Constants.NONE;
@@ -420,7 +420,7 @@ public class PackageLib extends OneArgFunction {
 		return ValueFactory.valueOf(sb.toString());
 	}
 
-	LuaValue loader_Java(Varargs args) {
+	private LuaValue loader_Java(Varargs args, LuaValue env) {
 		String name = args.arg(1).checkString();
 		String classname = toClassname(name);
 		try {

@@ -26,8 +26,8 @@ package org.squiddev.cobalt.lib;
 
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
@@ -51,10 +51,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.9">http://www.lua.org/manual/5.1/manual.html#5.9</a>
  */
-public class DebugLib extends VarArgFunction {
-	public static final boolean CALLS = (null != System.getProperty("CALLS"));
-	public static final boolean TRACE = (null != System.getProperty("TRACE"));
-
+public class DebugLib extends VarArgFunction implements LuaLibrary {
 	static final String[] NAMES = {
 		"debug",
 		"getfenv",
@@ -72,21 +69,20 @@ public class DebugLib extends VarArgFunction {
 		"traceback",
 	};
 
-	private static final int INIT = 0;
-	private static final int DEBUG = 1;
-	private static final int GETFENV = 2;
-	private static final int GETHOOK = 3;
-	private static final int GETINFO = 4;
-	private static final int GETLOCAL = 5;
-	private static final int GETMETATABLE = 6;
-	private static final int GETREGISTRY = 7;
-	private static final int GETUPVALUE = 8;
-	private static final int SETFENV = 9;
-	private static final int SETHOOK = 10;
-	private static final int SETLOCAL = 11;
-	private static final int SETMETATABLE = 12;
-	private static final int SETUPVALUE = 13;
-	private static final int TRACEBACK = 14;
+	private static final int DEBUG = 0;
+	private static final int GETFENV = 1;
+	private static final int GETHOOK = 2;
+	private static final int GETINFO = 3;
+	private static final int GETLOCAL = 4;
+	private static final int GETMETATABLE = 5;
+	private static final int GETREGISTRY = 6;
+	private static final int GETUPVALUE = 7;
+	private static final int SETFENV = 8;
+	private static final int SETHOOK = 9;
+	private static final int SETLOCAL = 10;
+	private static final int SETMETATABLE = 11;
+	private static final int SETUPVALUE = 12;
+	private static final int TRACEBACK = 13;
 
 	/* maximum stack for a Lua function */
 	private static final int MAXSTACK = 250;
@@ -114,9 +110,10 @@ public class DebugLib extends VarArgFunction {
 	private static final LuaString CURRENTLINE = valueOf("currentline");
 	private static final LuaString ACTIVELINES = valueOf("activelines");
 
-	private LuaTable init(LuaState state) {
+	@Override
+	public LuaTable add(LuaState state, LuaValue env) {
 		LuaTable t = new LuaTable();
-		bind(state, t, DebugLib.class, NAMES, DEBUG);
+		bind(state, t, DebugLib.class, NAMES);
 		env.rawset("debug", t);
 		state.loadedPackages.rawset("debug", t);
 		return t;
@@ -125,8 +122,6 @@ public class DebugLib extends VarArgFunction {
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) {
 		switch (opcode) {
-			case INIT:
-				return init(state);
 			case DEBUG:
 				return _debug(args);
 			case GETFENV:

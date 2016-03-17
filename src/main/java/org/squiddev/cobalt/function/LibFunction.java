@@ -169,7 +169,7 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param names   array of String names, one for each function.
 	 * @see #bind(LuaState, LuaValue, Class, String[], int)
 	 */
-	protected void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names) {
+	public static void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names) {
 		bind(state, env, factory, names, 0);
 	}
 
@@ -186,7 +186,7 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param firstopcode the first opcode to use
 	 * @see #bind(LuaState, LuaValue, Class, String[])
 	 */
-	protected void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode) {
+	public static void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode) {
 		try {
 			Constructor<? extends LibFunction> constructor = factory.getDeclaredConstructor();
 			constructor.setAccessible(true);

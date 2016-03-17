@@ -46,13 +46,13 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
-public class MathLib extends OneArgFunction {
+public class MathLib implements LuaLibrary {
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
+	public LuaValue add(LuaState state, LuaValue env) {
 		LuaTable t = new LuaTable(0, 30);
 		t.set(state, "pi", ValueFactory.valueOf(Math.PI));
 		t.set(state, "huge", LuaDouble.POSINF);
-		bind(state, t, MathLib1.class, new String[]{
+		LibFunction.bind(state, t, MathLib1.class, new String[]{
 			"abs", "ceil", "cos", "deg",
 			"exp", "floor", "rad", "sin",
 			"sqrt", "tan",
@@ -60,10 +60,10 @@ public class MathLib extends OneArgFunction {
 			"exp", "log", "log10", "sinh",
 			"tanh"
 		});
-		bind(state, t, MathLib2.class, new String[]{
+		LibFunction.bind(state, t, MathLib2.class, new String[]{
 			"fmod", "ldexp", "pow", "atan2"
 		});
-		bind(state, t, MathLibV.class, new String[]{
+		LibFunction.bind(state, t, MathLibV.class, new String[]{
 			"frexp", "max", "min", "modf",
 			"randomseed", "random",});
 		t.rawset("mod", t.rawget("fmod"));

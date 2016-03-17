@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.lib.LuaLibrary;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -1214,9 +1215,8 @@ public abstract class LuaValue extends Varargs {
 	 * @param library The callable {@link LuaFunction} to load into {@code this}
 	 * @return {@link LuaValue} containing the result of the initialization call.
 	 */
-	public LuaValue load(LuaState state, LuaFunction library) {
-		library.setfenv(this);
-		return library.call(state);
+	public LuaValue load(LuaState state, LuaLibrary library) {
+		return library.add(state, this);
 	}
 
 	// varargs references

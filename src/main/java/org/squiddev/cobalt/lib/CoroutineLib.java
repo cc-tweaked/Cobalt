@@ -48,22 +48,19 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.2">http://www.lua.org/manual/5.1/manual.html#5.2</a>
  */
-public class CoroutineLib extends VarArgFunction {
+public class CoroutineLib extends VarArgFunction implements LuaLibrary {
+	private static final int CREATE = 0;
+	private static final int RESUME = 1;
+	private static final int RUNNING = 2;
+	private static final int STATUS = 3;
+	private static final int YIELD = 4;
+	private static final int WRAP = 5;
+	private static final int WRAPPED = 6;
 
-	private static final int INIT = 0;
-	private static final int CREATE = 1;
-	private static final int RESUME = 2;
-	private static final int RUNNING = 3;
-	private static final int STATUS = 4;
-	private static final int YIELD = 5;
-	private static final int WRAP = 6;
-	private static final int WRAPPED = 7;
-
-	private LuaTable init(LuaState state) {
+	@Override
+	public LuaValue add(LuaState state, LuaValue env) {
 		LuaTable t = new LuaTable();
-		bind(state, t, CoroutineLib.class, new String[]{
-				"create", "resume", "running", "status", "yield", "wrap"},
-			CREATE);
+		bind(state, t, CoroutineLib.class, new String[]{"create", "resume", "running", "status", "yield", "wrap"});
 		env.set(state, "coroutine", t);
 		state.loadedPackages.set(state, "coroutine", t);
 		return t;
@@ -72,9 +69,6 @@ public class CoroutineLib extends VarArgFunction {
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) {
 		switch (opcode) {
-			case INIT: {
-				return init(state);
-			}
 			case CREATE: {
 				final LuaFunction func = args.arg(1).checkFunction();
 				return new LuaThread(state, func, state.getCurrentThread().getfenv());
