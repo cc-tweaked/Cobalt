@@ -6,6 +6,7 @@ import org.squiddev.cobalt.Prototype;
 import java.io.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class CompileTestHelper {
 	/**
@@ -64,7 +65,7 @@ public class CompileTestHelper {
 	 */
 	private static Prototype loadFromBytes(byte[] bytes, String script) throws IOException {
 		InputStream is = new ByteArrayInputStream(bytes);
-		return LoadState.loadBinaryChunk(is.read(), is, script);
+		return LoadState.loadBinaryChunk(is.read(), is, valueOf(script));
 	}
 
 	/**

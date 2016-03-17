@@ -184,7 +184,7 @@ public class lua {
 		try {
 			LuaFunction c;
 			try {
-				c = LoadState.load(state, script, chunkname, _G);
+				c = LoadState.load(state, script, valueOf(chunkname), _G);
 			} finally {
 				script.close();
 			}

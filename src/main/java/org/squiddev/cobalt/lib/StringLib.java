@@ -720,7 +720,7 @@ public class StringLib implements LuaLibrary {
 		} else {
 			final byte[] bytes = new byte[len * n];
 			for (int offset = 0; offset < bytes.length; offset += len) {
-				s.copyInto(0, bytes, offset, len);
+				s.copyTo(0, bytes, offset, len);
 			}
 			return LuaString.valueOf(bytes);
 		}

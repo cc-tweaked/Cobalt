@@ -55,6 +55,9 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.1">http://www.lua.org/manual/5.1/manual.html#5.1</a>
  */
 public class BaseLib implements LuaLibrary {
+	private static final LuaString STDIN_STR = valueOf("=stdin");
+	private static final LuaString FUNCTION_STR = valueOf("function");
+
 	private LuaValue next;
 	private LuaValue inext;
 
@@ -173,7 +176,7 @@ public class BaseLib implements LuaLibrary {
 				case 1: // "dofile", // ( filename ) -> result1, ...
 				{
 					Varargs v = args.isNil(1) ?
-						BaseLib.loadStream(state, state.stdin, "=stdin") :
+						BaseLib.loadStream(state, state.stdin, STDIN_STR) :
 						BaseLib.loadFile(state, args.arg(1).checkString());
 					if (v.isNil(1)) {
 						throw new LuaError(v.arg(2).toString());
@@ -195,20 +198,19 @@ public class BaseLib implements LuaLibrary {
 				case 4: // "load", // ( func [,chunkname] ) -> chunk | nil, msg
 				{
 					LuaValue func = args.arg(1).checkFunction();
-					String chunkname = args.arg(2).optString("function");
+					LuaString chunkname = args.arg(2).optLuaString(FUNCTION_STR);
 					return BaseLib.loadStream(state, new StringInputStream(state, func), chunkname);
 				}
 				case 5: // "loadfile", // ( [filename] ) -> chunk | nil, msg
 				{
 					return args.isNil(1) ?
-						BaseLib.loadStream(state, state.stdin, "stdin") :
+						BaseLib.loadStream(state, state.stdin, STDIN_STR) :
 						BaseLib.loadFile(state, args.arg(1).checkString());
 				}
 				case 6: // "loadstring", // ( string [,chunkname] ) -> chunk | nil, msg
 				{
 					LuaString script = args.arg(1).checkLuaString();
-					String chunkname = args.arg(2).optString("[string \"\"]");
-					return BaseLib.loadStream(state, script.toInputStream(), chunkname);
+					return BaseLib.loadStream(state, script.toInputStream(), args.arg(2).optLuaString(script));
 				}
 				case 7: // "pcall", // (f, arg1, ...) -> status, result1, ...
 				{
@@ -360,7 +362,7 @@ public class BaseLib implements LuaLibrary {
 			return varargsOf(Constants.NIL, valueOf("cannot open " + filename + ": No such file or directory"));
 		}
 		try {
-			return loadStream(state, is, "@" + filename);
+			return loadStream(state, is, valueOf("@" + filename));
 		} finally {
 			try {
 				is.close();
@@ -370,7 +372,7 @@ public class BaseLib implements LuaLibrary {
 		}
 	}
 
-	public static Varargs loadStream(LuaState state, InputStream is, String chunkname) {
+	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkname) {
 		try {
 			if (is == null) {
 				return varargsOf(Constants.NIL, valueOf("not found: " + chunkname));

@@ -368,6 +368,10 @@ public class LuaString extends LuaValue {
 		return valueOf(bytes, offset + beginIndex, endIndex - beginIndex);
 	}
 
+	public LuaString substring(int beginIndex) {
+		return valueOf(bytes, offset + beginIndex, length - 1);
+	}
+
 	public int hashCode() {
 		int h = length;  /* seed */
 		int step = (length >> 5) + 1;  /* if string is too long, don't hash all its chars */
@@ -472,8 +476,12 @@ public class LuaString extends LuaValue {
 	 * @param arrayOffset offset in destination
 	 * @param len         number of bytes to copy
 	 */
-	public void copyInto(int strOffset, byte[] bytes, int arrayOffset, int len) {
+	public void copyTo(int strOffset, byte[] bytes, int arrayOffset, int len) {
 		System.arraycopy(this.bytes, offset + strOffset, bytes, arrayOffset, len);
+	}
+
+	public void copyTo(byte[] bytes, int arrayOffset) {
+		copyTo(0, bytes, arrayOffset, length);
 	}
 
 	/**

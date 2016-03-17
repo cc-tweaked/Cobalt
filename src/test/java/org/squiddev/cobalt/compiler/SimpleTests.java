@@ -29,7 +29,7 @@ public class SimpleTests {
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF8"));
-			LuaFunction c = LuaC.instance.load(is, "script", _G);
+			LuaFunction c = LuaC.instance.load(is, valueOf("script"), _G);
 			c.call(state);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);

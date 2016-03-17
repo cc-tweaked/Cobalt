@@ -140,7 +140,7 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	static Prototype[] realloc(Prototype[] v, int n) {
+	public static Prototype[] realloc(Prototype[] v, int n) {
 		Prototype[] a = new Prototype[n];
 		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
@@ -148,7 +148,7 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	static LuaString[] realloc(LuaString[] v, int n) {
+	public static LuaString[] realloc(LuaString[] v, int n) {
 		LuaString[] a = new LuaString[n];
 		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
@@ -156,7 +156,7 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	static LocalVariable[] realloc(LocalVariable[] v, int n) {
+	public static LocalVariable[] realloc(LocalVariable[] v, int n) {
 		LocalVariable[] a = new LocalVariable[n];
 		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
@@ -164,7 +164,7 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	static int[] realloc(int[] v, int n) {
+	public static int[] realloc(int[] v, int n) {
 		int[] a = new int[n];
 		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
@@ -172,7 +172,7 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	static byte[] realloc(byte[] v, int n) {
+	public static byte[] realloc(byte[] v, int n) {
 		byte[] a = new byte[n];
 		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
@@ -181,7 +181,7 @@ public class LuaC implements LuaCompiler {
 	}
 
 	public int nCcalls;
-	Hashtable<LuaString, LuaString> strings;
+	private Hashtable<LuaString, LuaString> strings;
 
 	protected LuaC() {
 	}
@@ -194,11 +194,15 @@ public class LuaC implements LuaCompiler {
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
 	@Override
-	public LuaFunction load(InputStream stream, String name, LuaValue env) throws IOException {
+	public LuaFunction load(InputStream stream, LuaString name, LuaValue env) throws IOException {
 		Prototype p = compile(stream, name);
 		LuaInterpreter closure = new LuaInterpreter(p, env);
 		closure.nilUpvalues();
 		return closure;
+	}
+
+	public static Prototype compile(InputStream stream, String name) throws IOException {
+		return compile(stream, valueOf(name));
 	}
 
 	/**
@@ -209,7 +213,7 @@ public class LuaC implements LuaCompiler {
 	 * @return The compiled code
 	 * @throws IOException On stream read errors
 	 */
-	public static Prototype compile(InputStream stream, String name) throws IOException {
+	public static Prototype compile(InputStream stream, LuaString name) throws IOException {
 		int firstByte = stream.read();
 		return (firstByte == '\033') ?
 			LoadState.loadBinaryChunk(firstByte, stream, name) :
@@ -219,15 +223,15 @@ public class LuaC implements LuaCompiler {
 	/**
 	 * Parse the input
 	 */
-	private Prototype luaY_parser(int firstByte, InputStream z, String name) {
+	private Prototype luaY_parser(int firstByte, InputStream z, LuaString name) {
 		LexState lexstate = new LexState(this, z);
 		FuncState funcstate = new FuncState();
 		// lexstate.buff = buff;
-		lexstate.setinput(this, firstByte, z, valueOf(name));
+		lexstate.setinput(this, firstByte, z, name);
 		lexstate.open_func(funcstate);
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
-		funcstate.f.source = valueOf(name);
+		funcstate.f.source = name;
 		lexstate.next(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);

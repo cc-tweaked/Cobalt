@@ -34,6 +34,8 @@ import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+
 
 /**
  * Compiler for lua files to lua bytecode.
@@ -166,7 +168,7 @@ public class luac {
 	private void processScript(InputStream script, String chunkname, OutputStream out) throws IOException {
 		try {
 			// create the chunk
-			Prototype chunk = LuaC.compile(script, chunkname);
+			Prototype chunk = LuaC.compile(script, valueOf(chunkname));
 
 			// list the chunk
 			if (list) {

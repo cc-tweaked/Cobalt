@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.junit.Assert.*;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class LuaOperationsTest {
 	private final int sampleint = 77;
@@ -54,14 +55,14 @@ public class LuaOperationsTest {
 	private final LuaValue sometrue = Constants.TRUE;
 	private final LuaValue somefalse = Constants.FALSE;
 	private final LuaValue zero = Constants.ZERO;
-	private final LuaValue intint = ValueFactory.valueOf(sampleint);
-	private final LuaValue longdouble = ValueFactory.valueOf(samplelong);
-	private final LuaValue doubledouble = ValueFactory.valueOf(sampledouble);
-	private final LuaValue stringstring = ValueFactory.valueOf(samplestringstring);
-	private final LuaValue stringint = ValueFactory.valueOf(samplestringint);
-	private final LuaValue stringlong = ValueFactory.valueOf(samplestringlong);
-	private final LuaValue stringdouble = ValueFactory.valueOf(samplestringdouble);
-	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{ValueFactory.valueOf("aaa"), ValueFactory.valueOf("bbb")});
+	private final LuaValue intint = valueOf(sampleint);
+	private final LuaValue longdouble = valueOf(samplelong);
+	private final LuaValue doubledouble = valueOf(sampledouble);
+	private final LuaValue stringstring = valueOf(samplestringstring);
+	private final LuaValue stringint = valueOf(samplestringint);
+	private final LuaValue stringlong = valueOf(samplestringlong);
+	private final LuaValue stringdouble = valueOf(samplestringdouble);
+	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
 	private final LuaFunction somefunc = new ZeroArgFunction(table) {
 		@Override
 		public LuaValue call(LuaState state) {
@@ -158,8 +159,8 @@ public class LuaOperationsTest {
 	@Test
 	public void testSetfenv() {
 		LuaTable table2 = ValueFactory.listOf(new LuaValue[]{
-			ValueFactory.valueOf("ccc"),
-			ValueFactory.valueOf("ddd")});
+			valueOf("ccc"),
+			valueOf("ddd")});
 		throwsLuaError("setfenv", somenil, table2);
 		throwsLuaError("setfenv", sometrue, table2);
 		throwsLuaError("setfenv", somefalse, table2);
@@ -200,12 +201,12 @@ public class LuaOperationsTest {
 	@Test
 	public void testFunctionClosureThreadEnv() {
 		// set up suitable environments for execution
-		LuaValue aaa = ValueFactory.valueOf("aaa");
-		LuaValue eee = ValueFactory.valueOf("eee");
+		LuaValue aaa = valueOf("aaa");
+		LuaValue eee = valueOf("eee");
 		LuaTable _G = JsePlatform.standardGlobals(state);
 		LuaTable newenv = ValueFactory.tableOf(new LuaValue[]{
-			ValueFactory.valueOf("a"), ValueFactory.valueOf("aaa"),
-			ValueFactory.valueOf("b"), ValueFactory.valueOf("bbb"),});
+			valueOf("a"), valueOf("aaa"),
+			valueOf("b"), valueOf("bbb"),});
 		LuaTable mt = ValueFactory.tableOf(new LuaValue[]{Constants.INDEX, _G});
 		newenv.setMetatable(state, mt);
 		_G.set(state, "a", aaa);

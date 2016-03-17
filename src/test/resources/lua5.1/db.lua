@@ -62,7 +62,7 @@ assert(string.find(debug.getinfo(f).short_src, "^x*"))
 dostring(a, "=")
 assert(debug.getinfo(f).short_src == "")
 a = nil; f = nil;
-]]
+--]]
 
 
 repeat

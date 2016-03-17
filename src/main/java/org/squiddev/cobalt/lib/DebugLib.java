@@ -91,7 +91,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString LUA = valueOf("Lua");
 	private static final LuaString C = valueOf("C");
 	private static final LuaString C_SOURCE = valueOf("[C]");
-	private static final LuaString QMARK = valueOf("?");
+	public static final LuaString QMARK = valueOf("?");
 	private static final LuaString GLOBAL = valueOf("global");
 	private static final LuaString LOCAL = valueOf("local");
 	private static final LuaString METHOD = valueOf("method");

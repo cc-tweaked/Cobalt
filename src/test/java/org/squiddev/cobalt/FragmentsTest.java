@@ -55,7 +55,7 @@ public class FragmentsTest {
 			String name = this.name.getMethodName();
 			LuaTable _G = JsePlatform.standardGlobals(state);
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
-			LuaFunction chunk = LuaC.instance.load(is, name, _G);
+			LuaFunction chunk = LuaC.instance.load(is, valueOf(name), _G);
 			Varargs actual = chunk.invoke(state, NONE);
 			assertEquals(expected.count(), actual.count());
 			for (int i = 1; i <= actual.count(); i++) {

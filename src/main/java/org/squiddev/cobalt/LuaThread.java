@@ -24,8 +24,8 @@
  */
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
@@ -126,6 +126,12 @@ public class LuaThread extends LuaValue {
 	public LuaThread(LuaState luaState, LuaFunction func, LuaValue env) {
 		super(Constants.TTHREAD);
 		if (func == null) throw new LuaError("function cannot be null");
+
+		LuaThread current = luaState.currentThread;
+		if (current != null && current.state.status == STATUS_RUNNING && current.debugState != null) {
+			DebugState state = current.debugState;
+			if (state.hookfunc != null) DebugHandler.getDebugState(this).setHook(current.debugState);
+		}
 
 		luaState.threads.add(this);
 		this.luaState = luaState;

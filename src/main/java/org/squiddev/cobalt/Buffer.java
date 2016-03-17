@@ -165,7 +165,7 @@ public final class Buffer {
 	public final Buffer append(LuaString str) {
 		final int n = str.length;
 		makeroom(0, n);
-		str.copyInto(0, bytes, offset + length, n);
+		str.copyTo(0, bytes, offset + length, n);
 		length += n;
 		return this;
 	}

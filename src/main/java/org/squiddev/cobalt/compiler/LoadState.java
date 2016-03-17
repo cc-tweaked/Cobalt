@@ -25,21 +25,21 @@
 package org.squiddev.cobalt.compiler;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Class to manage loading of {@link Prototype} instances.
  *
  * The {@link LoadState} class exposes one main function,
- * namely {@link #load(LuaState, InputStream, String, LuaValue)},
+ * namely {@link #load(LuaState, InputStream, LuaString, LuaValue)},
  * to be used to load code from a particular input stream.
  *
  * A simple pattern for loading and executing code is
@@ -57,47 +57,17 @@ import java.io.InputStream;
  * @see LuaCompiler
  * @see LuaClosure
  * @see LuaFunction
- * @see LoadState#load(LuaState, InputStream, String, LuaValue)
+ * @see LoadState#load(LuaState, InputStream, LuaString, LuaValue)
  * @see LuaC
  */
-public class LoadState {
-
-	/**
-	 * format corresponding to non-number-patched lua, all numbers are floats or doubles
-	 */
-	public static final int NUMBER_FORMAT_FLOATS_OR_DOUBLES = 0;
-
-	/**
-	 * format corresponding to non-number-patched lua, all numbers are ints
-	 */
-	public static final int NUMBER_FORMAT_INTS_ONLY = 1;
-
-	/**
-	 * format corresponding to number-patched lua, all numbers are 32-bit (4 byte) ints
-	 */
-	public static final int NUMBER_FORMAT_NUM_PATCH_INT32 = 4;
-
-	// type constants
-	public static final int LUA_TINT = (-2);
-	public static final int LUA_TNONE = (-1);
-	public static final int LUA_TNIL = 0;
-	public static final int LUA_TBOOLEAN = 1;
-	public static final int LUA_TLIGHTUSERDATA = 2;
-	public static final int LUA_TNUMBER = 3;
-	public static final int LUA_TSTRING = 4;
-	public static final int LUA_TTABLE = 5;
-	public static final int LUA_TFUNCTION = 6;
-	public static final int LUA_TUSERDATA = 7;
-	public static final int LUA_TTHREAD = 8;
-	public static final int LUA_TVALUE = 9;
-
+public final class LoadState {
 	/**
 	 * Interface for the compiler, if it is installed.
 	 *
 	 * See the {@link LuaClosure} documentation for examples of how to use the compiler.
 	 *
 	 * @see LuaClosure
-	 * @see #load(InputStream, String, LuaValue)
+	 * @see #load(InputStream, LuaString, LuaValue)
 	 */
 	public interface LuaCompiler {
 
@@ -110,288 +80,22 @@ public class LoadState {
 		 * @return The loaded function
 		 * @throws IOException On stream read error
 		 */
-		LuaFunction load(InputStream stream, String filename, LuaValue env) throws IOException;
+		LuaFunction load(InputStream stream, LuaString filename, LuaValue env) throws IOException;
 	}
 
 	/**
 	 * Signature byte indicating the file is a compiled binary chunk
 	 */
-	private static final byte[] LUA_SIGNATURE = {'\033', 'L', 'u', 'a'};
+	private static final byte[] LUA_SIGNATURE = {27, 'L', 'u', 'a'};
 
 	/**
 	 * Name for compiled chunks
 	 */
-	public static final String SOURCE_BINARY_STRING = "binary string";
+	public static final LuaString SOURCE_BINARY_STRING = valueOf("binary string");
 
 
-	/**
-	 * for header of binary files -- this is Lua 5.1
-	 */
-	public static final int LUAC_VERSION = 0x51;
-
-	/**
-	 * for header of binary files -- this is the official format
-	 */
-	public static final int LUAC_FORMAT = 0;
-
-	/**
-	 * size of header of binary files
-	 */
-	public static final int LUAC_HEADERSIZE = 12;
-
-	// values read from the header
-	private int luacVersion;
-	private int luacFormat;
-	private boolean luacLittleEndian;
-	private int luacSizeofInt;
-	private int luacSizeofSizeT;
-	private int luacSizeofInstruction;
-	private int luacSizeofLuaNumber;
-	private int luacNumberFormat;
-
-	/**
-	 * input stream from which we are loading
-	 */
-	public final DataInputStream is;
-
-	/**
-	 * Name of what is being loaded?
-	 */
-	String name;
-
-	private static final LuaValue[] NOVALUES = {};
-	private static final Prototype[] NOPROTOS = {};
-	private static final LocalVariable[] NOLOCVARS = {};
-	private static final LuaString[] NOSTRVALUES = {};
-	private static final int[] NOINTS = {};
-
-	/**
-	 * Read buffer
-	 */
-	private byte[] buf = new byte[512];
-
-
-	/**
-	 * Load a 4-byte int value from the input stream
-	 *
-	 * @return the int value laoded.
-	 */
-	int loadInt() throws IOException {
-		is.readFully(buf, 0, 4);
-		return luacLittleEndian ?
-			(buf[3] << 24) | ((0xff & buf[2]) << 16) | ((0xff & buf[1]) << 8) | (0xff & buf[0]) :
-			(buf[0] << 24) | ((0xff & buf[1]) << 16) | ((0xff & buf[2]) << 8) | (0xff & buf[3]);
-	}
-
-	/**
-	 * Load an array of int values from the input stream
-	 *
-	 * @return the array of int values laoded.
-	 */
-	int[] loadIntArray() throws IOException {
-		int n = loadInt();
-		if (n == 0) {
-			return NOINTS;
-		}
-
-		// read all data at once
-		int m = n << 2;
-		if (buf.length < m) {
-			buf = new byte[m];
-		}
-		is.readFully(buf, 0, m);
-		int[] array = new int[n];
-		for (int i = 0, j = 0; i < n; ++i, j += 4) {
-			array[i] = luacLittleEndian ?
-				(buf[j + 3] << 24) | ((0xff & buf[j + 2]) << 16) | ((0xff & buf[j + 1]) << 8) | (0xff & buf[j + 0]) :
-				(buf[j + 0] << 24) | ((0xff & buf[j + 1]) << 16) | ((0xff & buf[j + 2]) << 8) | (0xff & buf[j + 3]);
-		}
-
-		return array;
-	}
-
-	/**
-	 * Load a long  value from the input stream
-	 *
-	 * @return the long value laoded.
-	 */
-	long loadInt64() throws IOException {
-		int a, b;
-		if (this.luacLittleEndian) {
-			a = loadInt();
-			b = loadInt();
-		} else {
-			b = loadInt();
-			a = loadInt();
-		}
-		return (((long) b) << 32) | (((long) a) & 0xffffffffL);
-	}
-
-	/**
-	 * Load a lua strin gvalue from the input stream
-	 *
-	 * @return the {@link LuaString} value laoded.
-	 */
-	LuaString loadString() throws IOException {
-		int size = this.luacSizeofSizeT == 8 ? (int) loadInt64() : loadInt();
-		if (size == 0) {
-			return null;
-		}
-		byte[] bytes = new byte[size];
-		is.readFully(bytes, 0, size);
-		return LuaString.valueOf(bytes, 0, bytes.length - 1);
-	}
-
-	/**
-	 * Convert bits in a long value to a {@link LuaValue}.
-	 *
-	 * @param bits long value containing the bits
-	 * @return {@link LuaInteger} or {@link LuaDouble} whose value corresponds to the bits provided.
-	 */
-	public static LuaValue longBitsToLuaNumber(long bits) {
-		if ((bits & ((1L << 63) - 1)) == 0L) {
-			return Constants.ZERO;
-		}
-
-		int e = (int) ((bits >> 52) & 0x7ffL) - 1023;
-
-		if (e >= 0 && e < 31) {
-			long f = bits & 0xFFFFFFFFFFFFFL;
-			int shift = 52 - e;
-			long intPrecMask = (1L << shift) - 1;
-			if ((f & intPrecMask) == 0) {
-				int intValue = (int) (f >> shift) | (1 << e);
-				return LuaInteger.valueOf(((bits >> 63) != 0) ? -intValue : intValue);
-			}
-		}
-
-		return ValueFactory.valueOf(Double.longBitsToDouble(bits));
-	}
-
-	/**
-	 * Load a number from a binary chunk
-	 *
-	 * @return the {@link LuaValue} loaded
-	 * @throws IOException if an i/o exception occurs
-	 */
-	LuaValue loadNumber() throws IOException {
-		if (luacNumberFormat == NUMBER_FORMAT_INTS_ONLY) {
-			return LuaInteger.valueOf(loadInt());
-		} else {
-			return longBitsToLuaNumber(loadInt64());
-		}
-	}
-
-	/**
-	 * Load a list of constants from a binary chunk
-	 *
-	 * @param f the function prototype
-	 * @throws IOException if an i/o exception occurs
-	 */
-	void loadConstants(Prototype f) throws IOException {
-		int n = loadInt();
-		LuaValue[] values = n > 0 ? new LuaValue[n] : NOVALUES;
-		for (int i = 0; i < n; i++) {
-			switch (is.readByte()) {
-				case LUA_TNIL:
-					values[i] = Constants.NIL;
-					break;
-				case LUA_TBOOLEAN:
-					values[i] = (0 != is.readUnsignedByte() ? Constants.TRUE : Constants.FALSE);
-					break;
-				case LUA_TINT:
-					values[i] = LuaInteger.valueOf(loadInt());
-					break;
-				case LUA_TNUMBER:
-					values[i] = loadNumber();
-					break;
-				case LUA_TSTRING:
-					values[i] = loadString();
-					break;
-				default:
-					throw new IllegalStateException("bad constant");
-			}
-		}
-		f.k = values;
-
-		n = loadInt();
-		Prototype[] protos = n > 0 ? new Prototype[n] : NOPROTOS;
-		for (int i = 0; i < n; i++) {
-			protos[i] = loadFunction(f.source);
-		}
-		f.p = protos;
-	}
-
-	/**
-	 * Load the debug infor for a function prototype
-	 *
-	 * @param f the function Prototype
-	 * @throws IOException if there is an i/o exception
-	 */
-	void loadDebug(Prototype f) throws IOException {
-		f.lineinfo = loadIntArray();
-		int n = loadInt();
-		f.locvars = n > 0 ? new LocalVariable[n] : NOLOCVARS;
-		for (int i = 0; i < n; i++) {
-			LuaString varname = loadString();
-			int startpc = loadInt();
-			int endpc = loadInt();
-			f.locvars[i] = new LocalVariable(varname, startpc, endpc);
-		}
-
-		n = loadInt();
-		f.upvalues = n > 0 ? new LuaString[n] : NOSTRVALUES;
-		for (int i = 0; i < n; i++) {
-			f.upvalues[i] = loadString();
-		}
-	}
-
-	/**
-	 * Load a function prototype from the input stream
-	 *
-	 * @param p name of the source
-	 * @return {@link Prototype} instance that was loaded
-	 * @throws IOException On stream read errors
-	 */
-	public Prototype loadFunction(LuaString p) throws IOException {
-		Prototype f = new Prototype();
-//		this.L.push(f);
-		f.source = loadString();
-		if (f.source == null) {
-			f.source = p;
-		}
-		f.linedefined = loadInt();
-		f.lastlinedefined = loadInt();
-		f.nups = is.readUnsignedByte();
-		f.numparams = is.readUnsignedByte();
-		f.is_vararg = is.readUnsignedByte();
-		f.maxstacksize = is.readUnsignedByte();
-		f.code = loadIntArray();
-		loadConstants(f);
-		loadDebug(f);
-
-		// TODO: add check here, for debugging purposes, I believe
-		// see ldebug.c
-//		 IF (!luaG_checkcode(f), "bad code");
-
-//		 this.L.pop();
-		return f;
-	}
-
-	/**
-	 * Load the lua chunk header values.
-	 *
-	 * @throws IOException if an i/o exception occurs.
-	 */
-	public void loadHeader() throws IOException {
-		luacVersion = is.readByte();
-		luacFormat = is.readByte();
-		luacLittleEndian = (0 != is.readByte());
-		luacSizeofInt = is.readByte();
-		luacSizeofSizeT = is.readByte();
-		luacSizeofInstruction = is.readByte();
-		luacSizeofLuaNumber = is.readByte();
-		luacNumberFormat = is.readByte();
+	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaValue env) throws IOException {
+		return load(state, stream, valueOf(name), env);
 	}
 
 	/**
@@ -405,7 +109,7 @@ public class LoadState {
 	 * @throws IllegalArgumentException if the signature is bac
 	 * @throws IOException              if an IOException occurs
 	 */
-	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaValue env) throws IOException {
+	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaValue env) throws IOException {
 		if (state.compiler != null) {
 			return state.compiler.load(stream, name, env);
 		} else {
@@ -430,8 +134,8 @@ public class LoadState {
 	 * @throws IllegalArgumentException if the signature is bac
 	 * @throws IOException              if an IOException occurs
 	 */
-	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, String name) throws IOException {
-
+	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, LuaString name) throws IOException {
+		name = getSourceName(name);
 		// check rest of signature
 		if (firstByte != LUA_SIGNATURE[0]
 			|| stream.read() != LUA_SIGNATURE[1]
@@ -441,20 +145,9 @@ public class LoadState {
 		}
 
 		// load file as a compiled chunk
-		String sname = getSourceName(name);
-		LoadState s = new LoadState(stream, sname);
+		BytecodeLoader s = new BytecodeLoader(stream, name);
 		s.loadHeader();
-
-		// check format
-		switch (s.luacNumberFormat) {
-			case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
-			case NUMBER_FORMAT_INTS_ONLY:
-			case NUMBER_FORMAT_NUM_PATCH_INT32:
-				break;
-			default:
-				throw new LuaError("unsupported int size");
-		}
-		return s.loadFunction(LuaString.valueOf(sname));
+		return s.loadFunction(name);
 	}
 
 	/**
@@ -463,21 +156,63 @@ public class LoadState {
 	 * @param name String name that appears in the chunk
 	 * @return source file name
 	 */
-	public static String getSourceName(String name) {
-		String sname = name;
-		if (name.startsWith("@") || name.startsWith("=")) {
-			sname = name.substring(1);
-		} else if (name.startsWith("\033")) {
-			sname = SOURCE_BINARY_STRING;
+	public static LuaString getSourceName(LuaString name) {
+		if (name.length > 0) {
+			byte first = name.bytes[name.offset];
+			switch (first) {
+				case '@':
+				case '=':
+					return name.substring(1);
+				case 27:
+					return SOURCE_BINARY_STRING;
+				default:
+					return name;
+			}
 		}
-		return sname;
+
+		return name;
 	}
 
-	/**
-	 * Private constructor for create a load state
-	 */
-	private LoadState(InputStream stream, String name) {
-		this.name = name;
-		this.is = new DataInputStream(stream);
+	private static final int NAME_LENGTH = 60;
+	private static final int FILE_LENGTH = NAME_LENGTH - " '...' ".length() - 1;
+	private static final int STRING_LENGTH = NAME_LENGTH - " [string \"...\"] ".length() - 1;
+
+	private static final LuaString REMAINING = valueOf("...");
+	private static final LuaString STRING = valueOf("[string \"");
+	private static final LuaString NEW_LINES = valueOf("\r\n");
+
+	public static LuaString getShortName(LuaString name) {
+		if (name.length == 0) return name;
+		switch (name.luaByte(0)) {
+			case '=':
+				return name.substring(1, Math.min(NAME_LENGTH, name.length) - 2);
+			case '@': { // out = "source", or "...source"
+				if (name.length - 1 > FILE_LENGTH) {
+					byte[] bytes = new byte[FILE_LENGTH + 3];
+					REMAINING.copyTo(bytes, 0);
+					name.copyTo(name.length - FILE_LENGTH, bytes, REMAINING.length, FILE_LENGTH);
+					return valueOf(bytes);
+				} else {
+					return name.substring(1);
+				}
+			}
+		}
+
+		int index = name.indexOfAny(NEW_LINES);
+		if (index >= 0) name = name.substring(0, index);
+
+		return null;
+
+//		size_t len = strcspn(source, "\n\r");  /* stop at first newline */
+//		bufflen -= sizeof(" [string \"...\"] ");
+//		if (len > bufflen) len = bufflen;
+//		strcpy(out, "[string \"");
+//		if (source[len] != '\0') {  /* must truncate? */
+//			strncat(out, source, len);
+//			strcat(out, "...");
+//		} else {
+//			strcat(out, source);
+//		}
+//		strcat(out, "\"]");
 	}
 }

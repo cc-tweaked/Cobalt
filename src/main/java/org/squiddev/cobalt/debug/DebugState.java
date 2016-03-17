@@ -163,6 +163,18 @@ public final class DebugState {
 	}
 
 	/**
+	 * Copy hooks from another debug state
+	 * @param other The state to copy from
+	 */
+	public void setHook(DebugState other) {
+		this.hookcount = other.hookcount;
+		this.hookcall = other.hookcall;
+		this.hookline = other.hookline;
+		this.hookrtrn = other.hookrtrn;
+		this.hookfunc = other.hookfunc;
+	}
+
+	/**
 	 * Get the top debug info
 	 *
 	 * @return The top debug info or {@code null}
