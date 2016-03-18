@@ -25,9 +25,9 @@
 
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.lib.DebugLib;
+import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugHelpers;
 
 /**
  * Factory class for errors
@@ -107,7 +107,7 @@ public class ErrorFactory {
 			DebugFrame info = DebugHandler.getDebugState(state.getCurrentThread()).getStack();
 			if (info != null && info.closure != null) {
 				if (stack < info.closure.getPrototype().maxstacksize) {
-					kind = DebugLib.getobjname(info, stack);
+					kind = DebugHelpers.getobjname(info, stack);
 				}
 			}
 		}

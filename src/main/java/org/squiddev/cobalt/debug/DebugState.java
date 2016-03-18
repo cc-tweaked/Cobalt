@@ -29,7 +29,6 @@ import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaThread;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.DebugLib;
 
 import java.lang.ref.WeakReference;
 
@@ -199,7 +198,7 @@ public final class DebugState {
 	@Override
 	public String toString() {
 		LuaThread thread = this.thread.get();
-		return thread != null ? DebugLib.traceback(thread, 0) : "orphaned thread";
+		return thread != null ? DebugHelpers.traceback(thread, 0) : "orphaned thread";
 	}
 
 	public void hookCall(DebugFrame frame) {

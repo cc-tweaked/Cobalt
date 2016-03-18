@@ -30,7 +30,6 @@ import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.DebugLib;
 
 /**
  * Each thread will get a DebugState attached to it by the debug library
@@ -104,7 +103,7 @@ public final class DebugFrame {
 	public LuaString[] getfunckind() {
 		if (closure == null || pc < 0) return null;
 		int stackpos = (closure.getPrototype().code[pc] >> 6) & 0xff;
-		return DebugLib.getobjname(this, stackpos);
+		return DebugHelpers.getobjname(this, stackpos);
 	}
 
 	public String sourceline() {
