@@ -45,7 +45,7 @@ public class ProfilerFrame {
 	public long currentLine;
 
 	public ProfilerFrame(DebugFrame frame) {
-		LuaString[] string = frame.getfunckind();
+		LuaString[] string = frame.getFuncKind();
 		functionName = string == null ? DebugLib.QMARK : string[1];
 
 		if (frame.closure == null) {

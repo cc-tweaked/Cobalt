@@ -261,7 +261,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 					break;
 				}
 				case 'l': {
-					int line = di.currentline();
+					int line = di.currentLine();
 					info.rawset(CURRENTLINE, valueOf(line));
 					break;
 				}
@@ -270,11 +270,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 					break;
 				}
 				case 'n': {
-					LuaString[] kind = null;
-					if (di.previous != null && di.previous.func.isClosure()) {
-						kind = di.previous.getfunckind();
-					}
-
+					LuaString[] kind = di.getFuncKind();
 					info.rawset(NAME, kind != null ? kind[0] : NIL);
 					info.rawset(NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
 					break;

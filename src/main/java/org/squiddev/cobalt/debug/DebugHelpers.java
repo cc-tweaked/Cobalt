@@ -26,21 +26,29 @@ public final class DebugHelpers {
 	 * @return String containing the stack trace.
 	 */
 	public static String traceback(LuaThread thread, int level) {
+		DebugState state = DebugHandler.getDebugState(thread);
 		StringBuilder sb = new StringBuilder();
-		DebugState ds = DebugHandler.getDebugState(thread);
 		sb.append("stack traceback:");
-		DebugFrame di = ds.getDebugInfo(level);
-		if (di != null) {
+		for (DebugFrame di; (di = state.getDebugInfo(level++)) != null; ) {
 			sb.append("\n\t");
-			sb.append(di.sourceline());
-			sb.append(": in ");
-			while ((di = ds.getDebugInfo(++level)) != null) {
-				sb.append(di.tracename());
-				sb.append("\n\t");
-				sb.append(di.sourceline());
-				sb.append(": in ");
+			sb.append(di.closure == null ? di.func.debugName() : di.closure.getPrototype().sourceShort());
+			sb.append(':');
+			if (di.currentLine() > 0) {
+				sb.append(di.currentLine()).append(":");
 			}
-			sb.append("main chunk");
+			sb.append(" in ");
+
+			LuaString[] kind = di.getFuncKind();
+
+			if (di.closure != null && di.closure.getPrototype().linedefined == 0) {
+				sb.append("main chunk");
+			} else if (kind != null) {
+				sb.append("function '");
+				sb.append(kind[0]);
+				sb.append('\'');
+			} else {
+				sb.append("function <").append(di.func.debugName()).append(">");
+			}
 		}
 		return sb.toString();
 	}
@@ -58,7 +66,7 @@ public final class DebugHelpers {
 		for (int i = 0, n = ds.top; i < n; i++) {
 			di = ds.getDebugInfo(i);
 			if (di != null && di.closure != null) {
-				return di.sourceline();
+				return di.sourceLine();
 			}
 		}
 		return fileLine(thread, 0);
@@ -67,7 +75,7 @@ public final class DebugHelpers {
 	public static String fileLine(LuaThread thread, int level) {
 		DebugState ds = DebugHandler.getDebugState(thread);
 		DebugFrame di = ds.getDebugInfo(level);
-		return di != null ? di.sourceline() : null;
+		return di != null ? di.sourceLine() : null;
 	}
 
 	// return StrValue[] { name, namewhat } if found, null if not

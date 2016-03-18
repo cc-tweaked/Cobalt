@@ -94,40 +94,39 @@ public final class DebugFrame {
 		this.extras = extras;
 	}
 
-	public int currentline() {
+	/**
+	 * Get the current line
+	 *
+	 * @return The current line the function is on
+	 */
+	public int currentLine() {
 		if (closure == null) return -1;
 		int[] li = closure.getPrototype().lineinfo;
 		return li == null || pc < 0 || pc >= li.length ? -1 : li[pc];
 	}
 
-	public LuaString[] getfunckind() {
-		if (closure == null || pc < 0) return null;
-		int stackpos = (closure.getPrototype().code[pc] >> 6) & 0xff;
-		return DebugHelpers.getobjname(this, stackpos);
+	/**
+	 * Get the kind for this function
+	 *
+	 * @return This function's kind
+	 */
+	public LuaString[] getFuncKind() {
+		DebugFrame previous = this.previous;
+		if (previous == null || previous.closure == null || previous.pc < 0) return null;
+
+		int stackpos = (previous.closure.getPrototype().code[previous.pc] >> 6) & 0xff;
+		return DebugHelpers.getobjname(previous, stackpos);
 	}
 
-	public String sourceline() {
+	public String sourceLine() {
 		if (closure == null) return func == null ? "nil" : func.debugName();
 		String s = closure.getPrototype().source.toString();
-		int line = currentline();
+		int line = currentLine();
 		return (s.startsWith("@") || s.startsWith("=") ? s.substring(1) : s) + ":" + line;
-	}
-
-	public String tracename() {
-		LuaString[] kind = getfunckind();
-		if (kind == null) {
-			return "function ?";
-		}
-		return "function '" + kind[0].toString() + "'";
 	}
 
 	public LuaString getLocalName(int index) {
 		if (closure == null) return null;
 		return closure.getPrototype().getlocalname(index, pc);
-	}
-
-	@Override
-	public String toString() {
-		return tracename() + " " + sourceline();
 	}
 }

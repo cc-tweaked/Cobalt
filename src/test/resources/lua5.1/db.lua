@@ -408,7 +408,7 @@ local function checktraceback(co, p)
 	local tb = debug.traceback(co)
 	local i = 0
 	for l in string.gmatch(tb, "[^\n]+\n?") do
-		assert(i == 0 or string.find(l, p[i]))
+		assert(i == 0 or string.find(l, p[i] or error("Nil for line " .. l)))
 		i = i + 1
 	end
 	assert(p[i] == nil)
