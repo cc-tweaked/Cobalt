@@ -476,12 +476,13 @@ public class LuaString extends LuaValue {
 	 * @param arrayOffset offset in destination
 	 * @param len         number of bytes to copy
 	 */
-	public void copyTo(int strOffset, byte[] bytes, int arrayOffset, int len) {
+	public int copyTo(int strOffset, byte[] bytes, int arrayOffset, int len) {
 		System.arraycopy(this.bytes, offset + strOffset, bytes, arrayOffset, len);
+		return arrayOffset + len;
 	}
 
-	public void copyTo(byte[] bytes, int arrayOffset) {
-		copyTo(0, bytes, arrayOffset, length);
+	public int copyTo(byte[] bytes, int arrayOffset) {
+		return copyTo(0, bytes, arrayOffset, length);
 	}
 
 	/**

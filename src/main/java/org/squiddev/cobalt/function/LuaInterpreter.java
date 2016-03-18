@@ -28,8 +28,8 @@ package org.squiddev.cobalt.function;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.Constants.FALSE;

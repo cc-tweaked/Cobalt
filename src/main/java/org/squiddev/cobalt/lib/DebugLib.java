@@ -243,7 +243,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 						Prototype p = c.getPrototype();
 						info.rawset(WHAT, p.linedefined == 0 ? MAIN : LUA);
 						info.rawset(SOURCE, p.source);
-						info.rawset(SHORT_SRC, valueOf(p.sourceShort()));
+						info.rawset(SHORT_SRC, p.sourceShort());
 						info.rawset(LINEDEFINED, valueOf(p.linedefined));
 						info.rawset(LASTLINEDEFINED, valueOf(p.lastlinedefined));
 					} else {

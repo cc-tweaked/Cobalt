@@ -42,7 +42,6 @@ end
 a = "function f () end"
 local function dostring(s, x) return loadstring(s, x)() end
 
---[[ TODO: Currently just sets it as "string"
 dostring(a)
 assert(debug.getinfo(f).short_src == string.format('[string "%s"]', a))
 dostring(a .. string.format("; %s\n=1", string.rep('p', 400)))
@@ -56,14 +55,12 @@ assert(debug.getinfo(f).short_src == "xuxu")
 dostring(a, "@" .. string.rep('p', 1000) .. 't')
 assert(string.find(debug.getinfo(f).short_src, "^%.%.%.p*t$"))
 dostring(a, "=xuxu")
-assert(debug.getinfo(f).short_src == "xuxu")
+assert(debug.getinfo(f).short_src == "xuxu", debug.getinfo(f).short_src)
 dostring(a, string.format("=%s", string.rep('x', 500)))
 assert(string.find(debug.getinfo(f).short_src, "^x*"))
 dostring(a, "=")
 assert(debug.getinfo(f).short_src == "")
 a = nil; f = nil;
---]]
-
 
 repeat
 	local g = {

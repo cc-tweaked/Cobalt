@@ -53,7 +53,7 @@ public class ProfilerFrame {
 			lineDefined = -1;
 		} else {
 			Prototype proto = frame.closure.getPrototype();
-			sourceCode = proto.sourceShort();
+			sourceCode = proto.sourceShort().toString();
 			lineDefined = proto.linedefined;
 		}
 

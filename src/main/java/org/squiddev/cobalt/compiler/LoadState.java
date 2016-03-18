@@ -179,13 +179,14 @@ public final class LoadState {
 
 	private static final LuaString REMAINING = valueOf("...");
 	private static final LuaString STRING = valueOf("[string \"");
+	private static final LuaString EMPTY_STRING = valueOf("[string \"\"]");
 	private static final LuaString NEW_LINES = valueOf("\r\n");
 
 	public static LuaString getShortName(LuaString name) {
-		if (name.length == 0) return name;
+		if (name.length == 0) return EMPTY_STRING;
 		switch (name.luaByte(0)) {
 			case '=':
-				return name.substring(1, Math.min(NAME_LENGTH, name.length) - 2);
+				return name.substring(1, Math.min(NAME_LENGTH, name.length));
 			case '@': { // out = "source", or "...source"
 				if (name.length - 1 > FILE_LENGTH) {
 					byte[] bytes = new byte[FILE_LENGTH + 3];
@@ -198,21 +199,30 @@ public final class LoadState {
 			}
 		}
 
-		int index = name.indexOfAny(NEW_LINES);
-		if (index >= 0) name = name.substring(0, index);
+		int len = name.indexOfAny(NEW_LINES);
+		boolean truncate = false;
 
-		return null;
+		if (len < 0) {
+			len = name.length;
+		} else {
+			// We're not at the end of the string so we add a ...
+			truncate = true;
+		}
 
-//		size_t len = strcspn(source, "\n\r");  /* stop at first newline */
-//		bufflen -= sizeof(" [string \"...\"] ");
-//		if (len > bufflen) len = bufflen;
-//		strcpy(out, "[string \"");
-//		if (source[len] != '\0') {  /* must truncate? */
-//			strncat(out, source, len);
-//			strcat(out, "...");
-//		} else {
-//			strcat(out, source);
-//		}
-//		strcat(out, "\"]");
+		if (len > STRING_LENGTH) {
+			truncate = true;
+			len = STRING_LENGTH;
+		}
+
+		byte[] out = new byte[NAME_LENGTH];
+		STRING.copyTo(out, 0);
+		int offset = STRING.length;
+		offset = name.copyTo(0, out, offset, len);
+		if (truncate) offset = REMAINING.copyTo(out, offset);
+
+		out[offset++] = '"';
+		out[offset++] = ']';
+
+		return LuaString.valueOf(out, 0, offset);
 	}
 }

@@ -27,6 +27,8 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpreter;
 
+import static org.squiddev.cobalt.compiler.LoadState.getShortName;
+
 /**
  * Prototype representing compiled lua code.
  *
@@ -58,14 +60,8 @@ public final class Prototype {
 	public int is_vararg;
 	public int maxstacksize;
 
-	public String sourceShort() {
-		String name = source.toString();
-		if (name.startsWith("@") || name.startsWith("=")) {
-			name = name.substring(1);
-		} else if (name.startsWith("\033")) {
-			name = "binary string";
-		}
-		return name;
+	public LuaString sourceShort() {
+		return getShortName(source);
 	}
 
 	public String toString() {

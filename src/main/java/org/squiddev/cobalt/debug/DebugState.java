@@ -35,7 +35,7 @@ import java.lang.ref.WeakReference;
  * DebugState is associated with a Thread
  */
 public final class DebugState {
-	public static final int MAX_SIZE = 512;
+	public static final int MAX_SIZE = 256;
 
 	public static final int DEFAULT_SIZE = 8;
 
