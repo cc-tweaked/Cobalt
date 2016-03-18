@@ -25,7 +25,9 @@
 
 package org.squiddev.cobalt.debug;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaThread;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.DebugLib;
 
@@ -66,7 +68,7 @@ public final class DebugState {
 	/**
 	 * The hook function to call
 	 */
-	public LuaFunction hookfunc;
+	public DebugHook hookfunc;
 
 	/**
 	 * Which item hooks should be called on
@@ -130,21 +132,6 @@ public final class DebugState {
 		stack[top--].clear();
 	}
 
-	protected void callHookFunc(LuaString type, LuaValue arg) {
-		if (inhook || hookfunc == null) return;
-
-		inhook = true;
-		try {
-			hookfunc.call(state, type, arg);
-		} catch (LuaError e) {
-			throw e;
-		} catch (RuntimeException e) {
-			throw new LuaError(e);
-		} finally {
-			inhook = false;
-		}
-	}
-
 	/**
 	 * Setup the hook
 	 *
@@ -154,7 +141,7 @@ public final class DebugState {
 	 * @param rtrn  Hook on returns
 	 * @param count Number of bytecode operators to use
 	 */
-	public void setHook(LuaFunction func, boolean call, boolean line, boolean rtrn, int count) {
+	public void setHook(DebugHook func, boolean call, boolean line, boolean rtrn, int count) {
 		this.hookcount = count;
 		this.hookcall = call;
 		this.hookline = line;
@@ -164,6 +151,7 @@ public final class DebugState {
 
 	/**
 	 * Copy hooks from another debug state
+	 *
 	 * @param other The state to copy from
 	 */
 	public void setHook(DebugState other) {
@@ -212,5 +200,65 @@ public final class DebugState {
 	public String toString() {
 		LuaThread thread = this.thread.get();
 		return thread != null ? DebugLib.traceback(thread, 0) : "orphaned thread";
+	}
+
+	public void hookCall(DebugFrame frame) {
+		if (inhook || hookfunc == null) return;
+
+		inhook = true;
+		try {
+			hookfunc.onCall(state, this, frame);
+		} catch (LuaError e) {
+			throw e;
+		} catch (RuntimeException e) {
+			throw new LuaError(e);
+		} finally {
+			inhook = false;
+		}
+	}
+
+	public void hookReturn() {
+		if (inhook || hookfunc == null) return;
+
+		inhook = true;
+		try {
+			hookfunc.onReturn(state, this, getStack());
+		} catch (LuaError e) {
+			throw e;
+		} catch (RuntimeException e) {
+			throw new LuaError(e);
+		} finally {
+			inhook = false;
+		}
+	}
+
+	public void hookInstruction(DebugFrame frame) {
+		if (inhook || hookfunc == null) return;
+
+		inhook = true;
+		try {
+			hookfunc.onCount(state, this, frame);
+		} catch (LuaError e) {
+			throw e;
+		} catch (RuntimeException e) {
+			throw new LuaError(e);
+		} finally {
+			inhook = false;
+		}
+	}
+
+	public void hookLine(DebugFrame frame, int oldLine, int newLine) {
+		if (inhook || hookfunc == null) return;
+
+		inhook = true;
+		try {
+			hookfunc.onLine(state, this, frame, oldLine, newLine);
+		} catch (LuaError e) {
+			throw e;
+		} catch (RuntimeException e) {
+			throw new LuaError(e);
+		} finally {
+			inhook = false;
+		}
 	}
 }

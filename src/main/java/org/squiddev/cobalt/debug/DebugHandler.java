@@ -29,19 +29,10 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 
-import static org.squiddev.cobalt.Constants.NIL;
-import static org.squiddev.cobalt.ValueFactory.valueOf;
-
 /**
  * The main handler for debugging
  */
 public class DebugHandler {
-	private static final LuaString CALL = valueOf("call");
-	private static final LuaString LINE = valueOf("line");
-	private static final LuaString COUNT = valueOf("count");
-	private static final LuaString RETURN = valueOf("return");
-	private static final LuaString TAILRETURN = valueOf("tail return");
-
 	private final LuaState state;
 
 	public DebugHandler(LuaState state) {
@@ -67,7 +58,7 @@ public class DebugHandler {
 		DebugFrame di = ds.pushInfo();
 		di.setFunction(func);
 
-		if (!ds.inhook && ds.hookcall) ds.callHookFunc(CALL, NIL);
+		if (!ds.inhook && ds.hookcall) ds.hookCall(di);
 	}
 
 	/**
@@ -87,7 +78,7 @@ public class DebugHandler {
 			// Pretend we are at the first instruction for the hook.
 			try {
 				di.pc++;
-				ds.callHookFunc(CALL, NIL);
+				ds.hookCall(di);
 			} finally {
 				di.pc--;
 			}
@@ -102,7 +93,7 @@ public class DebugHandler {
 	 */
 	public void onReturn(DebugState ds) {
 		try {
-			if (!ds.inhook && ds.hookrtrn) ds.callHookFunc(RETURN, NIL);
+			if (!ds.inhook && ds.hookrtrn) ds.hookReturn();
 		} finally {
 			ds.popInfo();
 		}
@@ -127,7 +118,7 @@ public class DebugHandler {
 			if (ds.hookcount > 0) {
 				if (++ds.hookcodes >= ds.hookcount) {
 					ds.hookcodes = 0;
-					ds.callHookFunc(COUNT, NIL);
+					ds.hookInstruction(di);
 				}
 			}
 
@@ -140,7 +131,7 @@ public class DebugHandler {
 					if (oldLine != newLine) {
 						int c = prototype.code[pc];
 						if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
-							ds.callHookFunc(LINE, valueOf(newLine));
+							ds.hookLine(di, oldLine, newLine);
 						}
 					}
 				}

@@ -97,6 +97,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString METHOD = valueOf("method");
 	private static final LuaString UPVALUE = valueOf("upvalue");
 	private static final LuaString FIELD = valueOf("field");
+	private static final LuaString EXTERNAL_HOOK = valueOf("external hook");
 
 	private static final LuaString FUNC = valueOf("func");
 	private static final LuaString NUPS = valueOf("nups");
@@ -167,8 +168,17 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		DebugState ds = DebugHandler.getDebugState(thread);
+
+		LuaValue hook;
+		if (ds.hookfunc == null) {
+			hook = NIL;
+		} else if (ds.hookfunc instanceof LuaValue) {
+			hook = (LuaValue) ds.hookfunc;
+		} else {
+			hook = EXTERNAL_HOOK;
+		}
 		return varargsOf(
-			ds.hookfunc == null ? NIL : ds.hookfunc,
+			hook,
 			valueOf((ds.hookcall ? "c" : "") + (ds.hookrtrn ? "r" : "") + (ds.hookline ? "l" : "")),
 			valueOf(ds.hookcount));
 	}
