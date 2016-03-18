@@ -30,7 +30,9 @@ import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.util.Vector;
 
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.*;
+import static org.squiddev.cobalt.Matchers.between;
 
 /**
  * Tests for tables used as lists.
@@ -59,9 +61,7 @@ public class TableArrayTest {
 		// Ensure capacities make sense
 		assertEquals(0, t.getHashLength());
 
-		assertTrue(t.getArrayLength() >= 32);
-		assertTrue(t.getArrayLength() <= 64);
-
+		assertThat(t.getArrayLength(), between(32, 64));
 	}
 
 	@Test
@@ -80,8 +80,8 @@ public class TableArrayTest {
 			assertEquals(LuaInteger.valueOf(i), t.get(state, i));
 		}
 
-		assertTrue(t.getArrayLength() >= 0 && t.getArrayLength() <= 2);
-		assertTrue(t.getHashLength() >= 4);
+		assertThat(t.getArrayLength(), between(3, 12));
+		assertThat(t.getHashLength(), lessThanOrEqualTo(3));
 	}
 
 	@Test
@@ -98,11 +98,8 @@ public class TableArrayTest {
 		}
 
 		// Ensure capacities make sense
-		assertTrue(t.getArrayLength() >= 0);
-		assertTrue(t.getArrayLength() <= 6);
-
-		assertTrue(t.getHashLength() >= 16);
-		assertTrue(t.getHashLength() <= 64);
+		assertEquals(32, t.getArrayLength());
+		assertEquals(0, t.getHashLength());
 
 	}
 
@@ -116,10 +113,8 @@ public class TableArrayTest {
 			t.set(state, str, LuaInteger.valueOf(i));
 		}
 
-		assertTrue(t.getArrayLength() >= 9); // 1, 2, ..., 9
-		assertTrue(t.getArrayLength() <= 18);
-		assertTrue(t.getHashLength() >= 11); // 0, "0", "1", ..., "9"
-		assertTrue(t.getHashLength() <= 33);
+		assertThat(t.getArrayLength(), between(8, 18)); // 1, 2, ..., 9
+		assertThat(t.getHashLength(), between(11, 33)); // 0, "0", "1", ..., "9"
 
 		LuaValue[] keys = t.keys();
 
@@ -278,7 +273,7 @@ public class TableArrayTest {
 		for (int j = 0; j < n; j++) {
 			Object vj = v.elementAt(j);
 			Object tj = t.get(state, j + 1).toString();
-			vj = ((LuaString) vj).toString();
+			vj = vj.toString();
 			assertEquals(vj, tj);
 		}
 	}

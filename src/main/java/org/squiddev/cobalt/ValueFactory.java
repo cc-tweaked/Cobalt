@@ -26,6 +26,9 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.table.Metatable;
+import org.squiddev.cobalt.table.NonTableMetatable;
+import org.squiddev.cobalt.table.WeakMetatable;
 
 public class ValueFactory {
 	/**
@@ -353,5 +356,37 @@ public class ValueFactory {
 	 */
 	public static Varargs tailcallOf(LuaFunction func, Varargs args) {
 		return new TailcallVarargs(func, args);
+	}
+
+	/**
+	 * Construct a Metatable instance from the given LuaValue
+	 */
+	public static Metatable metatableOf(LuaValue mt) {
+		if (mt != null && mt.isTable()) {
+			LuaValue mode = mt.rawget(Constants.MODE);
+			if (mode.isString()) {
+				String m = mode.toString();
+				boolean weakkeys = m.indexOf('k') >= 0;
+				boolean weakvalues = m.indexOf('v') >= 0;
+				if (weakkeys || weakvalues) {
+					return new WeakMetatable(weakkeys, weakvalues, mt);
+				}
+			}
+			return (LuaTable) mt;
+		} else if (mt != null) {
+			return new NonTableMetatable(mt);
+		} else {
+			return null;
+		}
+	}
+
+	public static Metatable weakMetatable(boolean weakKeys, boolean weakValues) {
+		return new WeakMetatable(weakKeys, weakValues, new LuaTable());
+	}
+
+	public static LuaTable weakTable(boolean weakKeys, boolean weakValues) {
+		LuaTable table = new LuaTable();
+		table.useMetatable(weakMetatable(weakKeys, weakValues));
+		return table;
 	}
 }

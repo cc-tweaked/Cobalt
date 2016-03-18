@@ -306,7 +306,6 @@ local t = {
 	[4] = 5
 }
 
---[[
 local n = 0
 for k, v in pairs(t) do
 	n = n + 1
@@ -316,7 +315,6 @@ for k, v in pairs(t) do
 	assert(t[k] == nil)
 end
 assert(n == 5)
-]]
 
 
 local function test(a)

@@ -30,6 +30,7 @@ import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.lang.ref.WeakReference;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.userdataOf;
@@ -77,7 +78,7 @@ public abstract class WeakTableTest {
 
 	public static class WeakValueTableTest extends WeakTableTest {
 		protected LuaTable new_Table() {
-			return new WeakTable(false, true);
+			return ValueFactory.weakTable(false, true);
 		}
 
 		@Test
@@ -86,13 +87,16 @@ public abstract class WeakTableTest {
 
 			Object obj = new Object();
 			LuaTable tableValue = new LuaTable();
+			LuaTable tableValue2 = new LuaTable();
 			LuaString stringValue = LuaString.valueOf("this is a test");
 
 			t.set(state, "table", tableValue);
 			t.set(state, "userdata", userdataOf(obj, null));
 			t.set(state, "string", stringValue);
 			t.set(state, "string2", LuaString.valueOf("another string"));
-			assertTrue("table must have at least 4 elements", t.getHashLength() > 4);
+			t.set(state, 1, tableValue2);
+			assertThat("table must have at least 4 elements", t.getHashLength(), greaterThanOrEqualTo(4));
+			assertThat("array part must have 1 element", t.getArrayLength(), greaterThanOrEqualTo(1));
 
 			// check that table can be used to get elements
 			assertEquals(tableValue, t.get(state, "table"));
@@ -125,7 +129,7 @@ public abstract class WeakTableTest {
 	public static class WeakKeyTableTest extends WeakTableTest {
 		@Test
 		public void testWeakKeysTable() {
-			LuaTable t = new WeakTable(true, false);
+			LuaTable t = ValueFactory.weakTable(true, false);
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -159,7 +163,7 @@ public abstract class WeakTableTest {
 
 		@Test
 		public void testNext() {
-			LuaTable t = new WeakTable(true, true);
+			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -192,7 +196,7 @@ public abstract class WeakTableTest {
 	public static class WeakKeyValueTableTest extends WeakTableTest {
 		@Test
 		public void testWeakKeysValuesTable() {
-			LuaTable t = new WeakTable(true, true);
+			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));
@@ -246,7 +250,7 @@ public abstract class WeakTableTest {
 
 		@Test
 		public void testReplace() {
-			LuaTable t = new WeakTable(true, true);
+			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
 			LuaValue val = userdataOf(new MyData(222));

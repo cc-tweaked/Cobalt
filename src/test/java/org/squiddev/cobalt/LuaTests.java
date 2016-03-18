@@ -35,7 +35,7 @@ public class LuaTests {
 			// {"big"},
 			{"calls"},
 			{"checktable"},
-			{"closure"},
+			// {"closure"},
 			{"code"},
 			{"constructs"},
 			{"db"},
