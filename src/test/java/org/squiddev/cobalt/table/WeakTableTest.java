@@ -31,9 +31,11 @@ import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import java.lang.ref.WeakReference;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.userdataOf;
+import static org.squiddev.cobalt.ValueFactory.weakMetatable;
 
 public abstract class WeakTableTest {
 	protected LuaState state;
@@ -63,7 +65,7 @@ public abstract class WeakTableTest {
 		}
 	}
 
-	static void collectGarbage() {
+	private static void collectGarbage() {
 		Runtime rt = Runtime.getRuntime();
 		rt.gc();
 		try {
@@ -123,6 +125,18 @@ public abstract class WeakTableTest {
 			assertEquals(NIL, t.get(state, "table"));
 			assertEquals(NIL, t.get(state, "userdata"));
 			assertFalse("strings should not be in weak references", t.get(state, "string").isNil());
+		}
+
+		@Test
+		public void testChangeMode() {
+			LuaTable table = new LuaTable();
+
+			table.set(state, 1, new LuaTable());
+			assertThat(table.get(state, 1), instanceOf(LuaTable.class));
+
+			table.useMetatable(weakMetatable(false, true));
+			collectGarbage();
+			assertThat(table.get(state, 1), instanceOf(LuaNil.class));
 		}
 	}
 
@@ -191,7 +205,6 @@ public abstract class WeakTableTest {
 			assertEquals(2, size);
 		}
 	}
-
 
 	public static class WeakKeyValueTableTest extends WeakTableTest {
 		@Test
@@ -275,6 +288,30 @@ public abstract class WeakTableTest {
 				size++;
 			}
 			assertEquals(3, size);
+		}
+
+		@Test
+		public void testChangeArrayMode() {
+			LuaTable table = new LuaTable();
+
+			table.set(state, 1, new LuaTable());
+			assertThat(table.get(state, 1), instanceOf(LuaTable.class));
+
+			table.useMetatable(weakMetatable(true, true));
+			collectGarbage();
+			assertThat(table.get(state, 1), instanceOf(LuaNil.class));
+		}
+
+		@Test
+		public void testChangeHashMode() {
+			LuaTable table = new LuaTable();
+
+			table.set(state, "foo", new LuaTable());
+			assertThat(table.get(state, "foo"), instanceOf(LuaTable.class));
+
+			table.useMetatable(weakMetatable(true, true));
+			collectGarbage();
+			assertThat(table.get(state, "foo"), instanceOf(LuaNil.class));
 		}
 	}
 }

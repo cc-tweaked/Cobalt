@@ -10,7 +10,6 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * Base class for regular entries.
  *
- * <p>
  * If the key may be an integer, the {@link #arraykey(int)} method must be
  * overridden to handle that case.
  */

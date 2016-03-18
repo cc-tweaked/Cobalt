@@ -22,7 +22,7 @@ end
 a = f(10)
 -- force a GC in this level
 local x = { [1] = {} } -- to detect a GC
-x = setmetatable(x, { __mode = 'kv' })
+setmetatable(x, { __mode = 'kv' })
 while x[1] do -- repeat until GC
 local a = A .. A .. A .. A -- create garbage
 A = A + 1

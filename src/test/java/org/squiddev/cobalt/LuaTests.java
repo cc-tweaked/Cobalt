@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.squiddev.cobalt.function.OneArgFunction;
+import org.squiddev.cobalt.function.ZeroArgFunction;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class LuaTests {
 			// {"big"},
 			{"calls"},
 			{"checktable"},
-			// {"closure"},
+			{"closure"},
 			{"code"},
 			{"constructs"},
 			{"db"},
@@ -65,6 +66,13 @@ public class LuaTests {
 			@Override
 			public LuaValue call(LuaState state, LuaValue arg) {
 				return valueOf(new File(arg.checkString()).mkdirs());
+			}
+		});
+		helpers.globals.rawget("debug").rawset("debug", new ZeroArgFunction() {
+			@Override
+			public LuaValue call(LuaState state) {
+				// Insert breakpoint here
+				return Constants.NONE;
 			}
 		});
 	}

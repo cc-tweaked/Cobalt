@@ -6,7 +6,7 @@ import org.squiddev.cobalt.LuaValue;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
- * Created by 09CoatJo on 18/03/2016.
+ * A slot with an integer key
  */
 public class IntKeyEntry extends Entry {
 	private final int key;

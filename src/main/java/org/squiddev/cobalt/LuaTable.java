@@ -251,8 +251,8 @@ public final class LuaTable extends LuaValue implements Metatable {
 		boolean hadWeakKeys = this.metatable != null && this.metatable.useWeakKeys();
 		boolean hadWeakValues = this.metatable != null && this.metatable.useWeakValues();
 		this.metatable = metatable;
-		if ((hadWeakKeys != (this.metatable != null && this.metatable.useWeakKeys())) ||
-			(hadWeakValues != (this.metatable != null && this.metatable.useWeakValues()))) {
+		if ((hadWeakKeys != (metatable != null && metatable.useWeakKeys())) ||
+			(hadWeakValues != (metatable != null && metatable.useWeakValues()))) {
 			// force a rehash
 			rehash(0);
 		}
@@ -823,12 +823,24 @@ public final class LuaTable extends LuaValue implements Metatable {
 		return lg;
 	}
 
+	private static void changeMode(Metatable metatable, LuaValue[] from, LuaValue[] to, int limit) {
+		for (int i = 0; i < limit; i++) {
+			LuaValue value = metatable.arrayGet(from, i);
+			if (value == null) {
+				to[i] = null;
+			} else {
+				to[i] = metatable.wrap(value);
+			}
+		}
+	}
+
 	/*
 	 * newKey > 0 is next key to insert
 	 * newKey == 0 means number of keys not changing (__mode changed)
 	 * newKey < 0 next key will go in hash part
 	 */
 	private void rehash(int newKey) {
+		Metatable metatable = this.metatable;
 		if (metatable != null && (metatable.useWeakKeys() || metatable.useWeakValues())) {
 			// If this table has weak entries, hashEntries is just an upper bound.
 			hashEntries = countHashKeys();
@@ -877,9 +889,17 @@ public final class LuaTable extends LuaValue implements Metatable {
 					movingToArray -= nums[i];
 				}
 			}
-			System.arraycopy(oldArray, 0, newArray, 0, Math.min(oldArray.length, newArraySize));
+
+			if (newKey == 0 && metatable != null) {
+				changeMode(metatable, oldArray, newArray, Math.min(oldArray.length, newArraySize));
+			} else {
+				System.arraycopy(oldArray, 0, newArray, 0, Math.min(oldArray.length, newArraySize));
+			}
+		} else if (newKey == 0 && metatable != null) {
+			newArray = oldArray;
+			changeMode(metatable, oldArray, newArray, oldArray.length);
 		} else {
-			newArray = array;
+			newArray = oldArray;
 		}
 
 		final int newHashSize = hashEntries - movingToArray + ((newKey < 0 || newKey > newArraySize) ? 1 : 0); // Make room for the new entry
@@ -907,11 +927,22 @@ public final class LuaTable extends LuaValue implements Metatable {
 				if ((k = slot.arraykey(newArraySize)) > 0) {
 					StrongSlot entry = slot.firstSlot();
 					if (entry != null) {
-						newArray[k - 1] = entry.value();
+						newArray[k - 1] = metatable == null ? entry.value() : metatable.wrap(entry.value());
 					}
 				} else {
 					int j = slot.keyindex(newHashMask);
-					newHash[j] = slot.relink(newHash[j]);
+					if (newKey == 0) {
+						Slot current = newHash[j];
+						StrongSlot currentEntry = slot.firstSlot();
+						if (currentEntry != null) {
+							Slot entry = metatable != null
+								? metatable.entry(currentEntry.key(), currentEntry.value())
+								: defaultEntry(currentEntry.key(), currentEntry.value());
+							newHash[j] = current != null ? current.add(entry) : entry;
+						}
+					} else {
+						newHash[j] = slot.relink(newHash[j]);
+					}
 				}
 			}
 		}

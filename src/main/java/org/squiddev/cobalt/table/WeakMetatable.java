@@ -109,7 +109,6 @@ public class WeakMetatable implements Metatable {
 	}
 
 	public static abstract class WeakSlot implements Slot {
-
 		protected Object key;
 		protected Object value;
 		protected Slot next;
@@ -224,7 +223,7 @@ public class WeakMetatable implements Metatable {
 		protected abstract WeakSlot copy(Slot next);
 	}
 
-	static class WeakKeySlot extends WeakSlot {
+	public static class WeakKeySlot extends WeakSlot {
 
 		private final int keyhash;
 
@@ -260,7 +259,7 @@ public class WeakMetatable implements Metatable {
 		}
 	}
 
-	static class WeakValueSlot extends WeakSlot {
+	public static class WeakValueSlot extends WeakSlot {
 
 		protected WeakValueSlot(LuaValue key, LuaValue value, Slot next) {
 			super(key, weaken(value), next);
@@ -292,7 +291,7 @@ public class WeakMetatable implements Metatable {
 		}
 	}
 
-	static class WeakKeyAndValueSlot extends WeakSlot {
+	public static class WeakKeyAndValueSlot extends WeakSlot {
 
 		private final int keyhash;
 
@@ -374,7 +373,7 @@ public class WeakMetatable implements Metatable {
 	 *
 	 * @see WeakMetatable
 	 */
-	static class WeakValue extends LuaValue {
+	public static class WeakValue extends LuaValue {
 		WeakReference<LuaValue> ref;
 
 		protected WeakValue(LuaValue value) {
@@ -404,7 +403,7 @@ public class WeakMetatable implements Metatable {
 	 *
 	 * @see WeakMetatable
 	 */
-	static final class WeakUserdata extends WeakValue {
+	public static final class WeakUserdata extends WeakValue {
 		private final WeakReference<Object> ob;
 		private final LuaValue mt;
 

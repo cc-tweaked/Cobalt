@@ -4,7 +4,7 @@ import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 
 /**
- * Created by 09CoatJo on 18/03/2016.
+ * A linked list implementation of a slot
  */
 public class LinkSlot implements StrongSlot {
 	private Entry entry;
