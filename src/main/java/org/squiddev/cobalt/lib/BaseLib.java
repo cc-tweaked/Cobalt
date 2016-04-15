@@ -97,16 +97,11 @@ public class BaseLib implements LuaLibrary {
 		env.set(state, "_G", env);
 		env.set(state, "_VERSION", valueOf(Lua._VERSION));
 		LibFunction.bind(state, env, BaseLib2.class, LIB2_KEYS);
-		LibFunction.bind(state, env, BaseLibV.class, LIBV_KEYS);
+		LibFunction.bind(state, env, BaseLibV.class, LIBV_KEYS, BaseLib.class, this);
 
 		// remember next, and inext for use in pairs and ipairs
 		next = env.get(state, "next");
 		inext = env.get(state, "__inext");
-
-		// inject base lib int vararg instances
-		for (String LIBV_KEY : LIBV_KEYS) {
-			((BaseLibV) env.get(state, LIBV_KEY)).baselib = this;
-		}
 
 		env.rawset("_VERSION", valueOf("Lua 5.1"));
 
@@ -163,7 +158,11 @@ public class BaseLib implements LuaLibrary {
 	}
 
 	private static final class BaseLibV extends VarArgFunction {
-		public BaseLib baselib;
+		private final BaseLib baselib;
+
+		private BaseLibV(BaseLib baselib) {
+			this.baselib = baselib;
+		}
 
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) {

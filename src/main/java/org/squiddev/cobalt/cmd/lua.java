@@ -1,4 +1,4 @@
-/*
+package org.squiddev.cobalt.cmd;/*
  * ****************************************************************************
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
  * Modifications: Copyright (c) 2015-2016 SquidDev
@@ -29,6 +29,7 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
+import org.squiddev.cobalt.lib.profiler.ProfilerLib;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -39,13 +40,13 @@ import static org.squiddev.cobalt.ValueFactory.tableOf;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
- * lua command for use in java se environments.
+ * org.squiddev.cobalt.cmd.lua command for use in java se environments.
  */
 public class lua {
 	private static final String version = Lua._VERSION + "Copyright (c) 2009 Luaj.org.org";
 
 	private static final String usage =
-		"usage: java -cp luaj-jse.jar lua [options] [script [args]].\n" +
+		"usage: java -cp luaj-jse.jar org.squiddev.cobalt.cmd.lua [options] [script [args]].\n" +
 			"Available options are:\n" +
 			"  -e stat  execute string 'stat'\n" +
 			"  -l name  require library 'name'\n" +
@@ -68,7 +69,6 @@ public class lua {
 		boolean interactive = (args.length == 0);
 		boolean versioninfo = false;
 		boolean processing = true;
-		boolean nodebug = false;
 		List<String> libs = null;
 		try {
 			// stateful argument processing
@@ -100,9 +100,6 @@ public class lua {
 						case 'v':
 							versioninfo = true;
 							break;
-						case 'n':
-							nodebug = true;
-							break;
 						case '-':
 							if (args[i].length() > 2) {
 								usageExit();
@@ -121,9 +118,10 @@ public class lua {
 				System.out.println(version);
 			}
 
-			// new lua state
+			// new org.squiddev.cobalt.cmd.lua state
 			LuaState state = new LuaState(new FileResourceManipulator());
-			_G = nodebug ? JsePlatform.standardGlobals(state) : JsePlatform.debugGlobals(state);
+			_G = JsePlatform.debugGlobals(state);
+			_G.load(state, new ProfilerLib());
 			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++) {
 				loadLibrary(state, libs.get(i));
 			}
@@ -190,7 +188,7 @@ public class lua {
 			}
 			Varargs scriptargs = (args != null ? setGlobalArg(state, args, firstarg) : NONE);
 			Varargs result = c.invoke(state, scriptargs);
-			if(printValue && result != NONE) OperationHelper.invoke(state, _G.get(state, "print"), result);
+			if (printValue && result != NONE) OperationHelper.invoke(state, _G.get(state, "print"), result);
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}

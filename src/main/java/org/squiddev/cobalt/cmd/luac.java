@@ -1,4 +1,4 @@
-/*
+package org.squiddev.cobalt.cmd;/*
  * ****************************************************************************
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
  * Modifications: Copyright (c) 2015-2016 SquidDev
@@ -38,17 +38,17 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 
 /**
- * Compiler for lua files to lua bytecode.
+ * Compiler for org.squiddev.cobalt.cmd.lua files to org.squiddev.cobalt.cmd.lua bytecode.
  */
 public class luac {
 	private static final String version = Lua._VERSION + "Copyright (C) 2009 luaj.org";
 
 	private static final String usage =
-		"usage: java -cp luaj-jse.jar luac [options] [filenames].\n" +
+		"usage: java -cp luaj-jse.jar org.squiddev.cobalt.cmd.luac [options] [filenames].\n" +
 			"Available options are:\n" +
 			"  -        process stdin\n" +
 			"  -l       list\n" +
-			"  -o name  output to file 'name' (default is \"luac.out\")\n" +
+			"  -o name  output to file 'name' (default is \"org.squiddev.cobalt.cmd.luac.out\")\n" +
 			"  -p       parse only\n" +
 			"  -s       strip debug information\n" +
 			"  -e       little endian format for numbers\n" +
@@ -62,7 +62,7 @@ public class luac {
 	}
 
 	private boolean list = false;
-	private String output = "luac.out";
+	private String output = "org.squiddev.cobalt.cmd.luac.out";
 	private boolean parseonly = false;
 	private boolean stripdebug = false;
 	private boolean littleendian = false;

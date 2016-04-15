@@ -26,12 +26,8 @@
 package org.squiddev.cobalt.lib.profiler;
 
 import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.debug.DebugFrame;
 
-/**
- * org.squiddev.cobalt.lib.profiler (Cobalt
- */
 public final class ProfilerStack {
 	public static final int MAX_SIZE = 512;
 
@@ -51,7 +47,7 @@ public final class ProfilerStack {
 	 *
 	 * @return The created info
 	 */
-	protected ProfilerFrame pushInfo() {
+	private ProfilerFrame pushInfo(DebugFrame frame) {
 		int top = this.top + 1;
 
 		ProfilerFrame[] frames = stack;
@@ -66,7 +62,7 @@ public final class ProfilerStack {
 		}
 
 		this.top = top;
-		return frames[top];
+		return frames[top] = new ProfilerFrame(top + 1, frame);
 	}
 
 	public void pauseLocalTime() {
@@ -76,6 +72,7 @@ public final class ProfilerStack {
 	public void pause() {
 		ProfilerFrame[] stack = this.stack;
 		int top = this.top;
+		if (top < 0) return;
 		long time = System.nanoTime();
 
 		stack[top].computeLocalTime(time);
@@ -91,6 +88,8 @@ public final class ProfilerStack {
 	public void resume() {
 		ProfilerFrame[] stack = this.stack;
 		int top = this.top;
+		if (top < 0) return;
+
 		long time = System.nanoTime();
 
 		stack[top].functionLocalTimeMarker = time;
@@ -99,18 +98,31 @@ public final class ProfilerStack {
 		}
 	}
 
-	public void enter(LuaFunction function, LuaClosure closure) {
+	public void enter(DebugFrame dFrame) {
+		long time = System.nanoTime();
+		int top = this.top;
+		if (top >= 0) {
+			stack[top].computeLocalTime(time);
+		}
 
+		ProfilerFrame frame = pushInfo(dFrame);
+		frame.functionLocalTimeMarker = time;
+		frame.functionTotalTimeMarker = time;
 	}
 
-	public ProfilerFrame pop() {
+	public ProfilerFrame leave(boolean resume) {
 		ProfilerFrame[] stack = this.stack;
 		int top = this.top;
+		if (top < 0) return null;
+		long time = System.nanoTime();
 
 		ProfilerFrame topFrame = stack[top];
-		long time = System.nanoTime();
 		topFrame.computeLocalTime(time);
 		topFrame.computeTotalTime(time);
+
+		if (resume && top > 0) {
+			stack[top - 1].functionLocalTimeMarker = time;
+		}
 
 		stack[top] = null;
 		this.top = top - 1;

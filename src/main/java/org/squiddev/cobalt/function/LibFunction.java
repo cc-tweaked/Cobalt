@@ -167,10 +167,28 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param env     The environment to apply to each bound function
 	 * @param factory the Class to instantiate for each bound function
 	 * @param names   array of String names, one for each function.
-	 * @see #bind(LuaState, LuaValue, Class, String[], int)
+	 * @see #bindOffset(LuaState, LuaValue, Class, String[], int, Class, Object)
 	 */
 	public static void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names) {
-		bind(state, env, factory, names, 0);
+		bindOffset(state, env, factory, names, 0, null, null);
+	}
+
+	/**
+	 * Bind a set of library functions.
+	 *
+	 * An array of names is provided, and the first name is bound
+	 * with opcode = 0, second with 1, etc.
+	 *
+	 * @param state      The current lua state
+	 * @param env        The environment to apply to each bound function
+	 * @param factory    the Class to instantiate for each bound function
+	 * @param names      array of String names, one for each function.
+	 * @param ownerKlass The owner's class
+	 * @param owner      The owner. This will be passed as the first argument
+	 * @see #bindOffset(LuaState, LuaValue, Class, String[], int, Class, Object)
+	 */
+	public static void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, Class<?> ownerKlass, Object owner) {
+		bindOffset(state, env, factory, names, 0, ownerKlass, owner);
 	}
 
 	/**
@@ -184,15 +202,15 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param factory     the Class to instantiate for each bound function
 	 * @param names       array of String names, one for each function.
 	 * @param firstopcode the first opcode to use
-	 * @see #bind(LuaState, LuaValue, Class, String[])
+	 * @see #bind(LuaState, LuaValue, Class, String[], Class, Object)
 	 */
-	public static void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode) {
+	public static void bindOffset(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode, Class<?> ownerClass, Object owner) {
 		try {
-			Constructor<? extends LibFunction> constructor = factory.getDeclaredConstructor();
+			Constructor<? extends LibFunction> constructor = ownerClass == null ? factory.getDeclaredConstructor() : factory.getDeclaredConstructor(ownerClass);
 			constructor.setAccessible(true);
 
 			for (int i = 0, n = names.length; i < n; i++) {
-				LibFunction f = constructor.newInstance();
+				LibFunction f = owner == null ? constructor.newInstance() : constructor.newInstance(owner);
 				f.opcode = firstopcode + i;
 				f.name = names[i];
 				f.env = env;

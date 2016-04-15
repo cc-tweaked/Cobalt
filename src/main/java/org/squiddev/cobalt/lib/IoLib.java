@@ -226,10 +226,7 @@ public abstract class IoLib implements LuaLibrary {
 
 		// io lib functions
 		LuaTable t = new LuaTable();
-		LibFunction.bind(state, t, IoLibV.class, IO_NAMES);
-
-		// all functions link to library instance
-		setLibInstance(state, t);
+		LibFunction.bind(state, t, IoLibV.class, IO_NAMES, IoLib.class, this);
 
 		// setup streams
 		t.rawset(STDIN, input(state));
@@ -238,10 +235,9 @@ public abstract class IoLib implements LuaLibrary {
 
 		// create file methods table
 		filemethods = new LuaTable();
-		LibFunction.bind(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE);
+		LibFunction.bindOffset(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE, IoLib.class, this);
 
 		// setup library and index
-		setLibInstance(state, filemethods);
 		filemethods.rawset("__index", filemethods);
 
 		// return the table
@@ -250,15 +246,12 @@ public abstract class IoLib implements LuaLibrary {
 		return t;
 	}
 
-	private void setLibInstance(LuaState state, LuaTable t) {
-		LuaValue[] k = t.keys();
-		for (LuaValue aK : k) {
-			((IoLibV) t.get(state, aK)).iolib = this;
-		}
-	}
+	private static final class IoLibV extends VarArgFunction {
+		private final IoLib iolib;
 
-	static final class IoLibV extends VarArgFunction {
-		public IoLib iolib;
+		public IoLibV(IoLib iolib) {
+			this.iolib = iolib;
+		}
 
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) {
