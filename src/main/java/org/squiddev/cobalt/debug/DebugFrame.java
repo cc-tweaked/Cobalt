@@ -120,9 +120,7 @@ public final class DebugFrame {
 
 	public String sourceLine() {
 		if (closure == null) return func == null ? "nil" : func.debugName();
-		LuaString s = closure.getPrototype().sourceShort();
-		int line = currentLine();
-		return (s.startsWith('@') || s.startsWith('=') ? s.substring(1) : s) + ":" + line;
+		return closure.getPrototype().sourceShort() + ":" + currentLine();
 	}
 
 	public LuaString getLocalName(int index) {

@@ -443,7 +443,7 @@ public class LuaString extends LuaValue {
 	}
 
 	public boolean startsWith(int character) {
-		return length == 0 && luaByte(offset) == character;
+		return length != 0 && luaByte(offset) == character;
 	}
 
 	public int charAt(int index) {
