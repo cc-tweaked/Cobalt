@@ -442,6 +442,10 @@ public class LuaString extends LuaValue {
 		return bytes[offset + index] & 0xFF;
 	}
 
+	public boolean startsWith(int character) {
+		return length == 0 && luaByte(offset) == character;
+	}
+
 	public int charAt(int index) {
 		if (index < 0 || index >= length) {
 			throw new IndexOutOfBoundsException();
