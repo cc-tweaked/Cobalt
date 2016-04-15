@@ -1416,33 +1416,13 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Return the key part of this value if it is a weak table entry, or {@link Constants#NIL} if it was weak and is no longer referenced.
-	 *
-	 * @return {@link LuaValue} key, or {@link Constants#NIL} if it was weak and is no longer referenced.
-	 * @see WeakTable
-	 */
-	public LuaValue strongkey() {
-		return strongvalue();
-	}
-
-	/**
 	 * Return this value as a strong reference, or {@link Constants#NIL} if it was weak and is no longer referenced.
 	 *
 	 * @return {@link LuaValue} referred to, or {@link Constants#NIL} if it was weak and is no longer referenced.
-	 * @see WeakTable
+	 * @see org.squiddev.cobalt.table.WeakMetatable
 	 */
 	public LuaValue strongvalue() {
 		return this;
-	}
-
-	/**
-	 * Test if this is a weak reference and its value no longer is referenced.
-	 *
-	 * @return true if this is a weak reference whose value no longer is referenced
-	 * @see WeakTable
-	 */
-	public boolean isweaknil() {
-		return false;
 	}
 
 	/**

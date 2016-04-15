@@ -80,8 +80,10 @@ public final class BytecodeLoader {
 
 	/**
 	 * Private constructor for create a load state
+	 *
+	 * @param stream The stream to read from
 	 */
-	public BytecodeLoader(InputStream stream, LuaString name) {
+	public BytecodeLoader(InputStream stream) {
 
 		this.is = new DataInputStream(stream);
 	}

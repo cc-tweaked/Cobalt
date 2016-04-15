@@ -145,7 +145,7 @@ public final class LoadState {
 		}
 
 		// load file as a compiled chunk
-		BytecodeLoader s = new BytecodeLoader(stream, name);
+		BytecodeLoader s = new BytecodeLoader(stream);
 		s.loadHeader();
 		return s.loadFunction(name);
 	}

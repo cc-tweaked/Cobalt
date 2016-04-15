@@ -67,6 +67,7 @@ public class WeakMetatable implements Metatable {
 	 *
 	 * @param weakkeys   true to let the table have weak keys
 	 * @param weakvalues true to let the table have weak values
+	 * @param backing    The backing table
 	 */
 	public WeakMetatable(boolean weakkeys, boolean weakvalues, LuaValue backing) {
 		this.weakkeys = weakkeys;

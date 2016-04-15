@@ -1008,6 +1008,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	/**
 	 * Sort the table using a comparator.
 	 *
+	 * @param state      Current lua state
 	 * @param comparator {@link LuaValue} to be called to compare elements.
 	 */
 	public void sort(LuaState state, LuaValue comparator) {
