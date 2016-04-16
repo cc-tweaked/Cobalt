@@ -31,6 +31,10 @@ public class ProfilerLib implements LuaLibrary {
 		this.provider = provider;
 	}
 
+	public ProfilerLib() {
+		this.provider = new FileOutputProvider();
+	}
+
 	public interface OutputProvider {
 		DataOutputStream createWriter(String name) throws IOException;
 	}
@@ -59,11 +63,12 @@ public class ProfilerLib implements LuaLibrary {
 
 	private static class ProfilerHook implements DebugHook {
 		private final ProfilerStack stack;
-		private final DataOutputStream writer;
+		private final ProfilerStream writer;
+		private long count = 0;
 
 		private ProfilerHook(ProfilerStack stack, DataOutputStream writer) {
 			this.stack = stack;
-			this.writer = writer;
+			this.writer = new ProfilerStream(writer);
 		}
 
 		@Override
@@ -75,6 +80,7 @@ public class ProfilerLib implements LuaLibrary {
 		public void onReturn(LuaState state, DebugState ds, DebugFrame dFrame) {
 			ProfilerFrame frame = stack.leave(false);
 			if (frame != null) {
+				count++;
 				try {
 					frame.write(writer);
 				} catch (IOException e) {
@@ -100,12 +106,14 @@ public class ProfilerLib implements LuaLibrary {
 			state.setHook(null, false, false, false, -1);
 		}
 
-		public void close() {
+		public long close() {
 			try {
 				writer.close();
 			} catch (IOException e) {
 				throw new LuaError(e);
 			}
+
+			return count;
 		}
 	}
 
@@ -140,10 +148,10 @@ public class ProfilerLib implements LuaLibrary {
 				{
 					ProfilerHook hook = lib.hook;
 					if (hook == null) throw new LuaError("Not profiling");
-					hook.close();
+					long count = hook.close();
 					hook.clearHook(state.debug.getDebugState());
 					lib.hook = null;
-					return NONE;
+					return valueOf(count);
 				}
 				default:
 					return NONE;

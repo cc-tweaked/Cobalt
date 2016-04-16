@@ -40,47 +40,93 @@ end
 for k, _ in pairs(cache) do cache[k] = nil end
 time("Without", allFibs, 30)
 
---for k, _ in pairs(cache) do cache[k] = nil end
---time("Without", allFibs, 30)
-
 io.write("> ")
 io.read("*l")
 profiler.start("prof.out")
 
 for k, _ in pairs(cache) do cache[k] = nil end
-time("With", allFibs, 25)
+time("With", allFibs, 30)
 
-profiler.stop()
+local total = profiler.stop()
 
---local summary = {}
---for _, v in ipairs(res) do
---	local name = v.source .. ":" .. v.name
---	if v.linedefined and v.lastlinedefined then
---		if v.linedefined == v.lastlinedefined then
---			name = name .. ":" .. v.linedefined
---		else
---			name = name .. ":" .. v.linedefined .. "-" .. v.lastlinedefined
---		end
---	end
---
---	local data = summary[name]
---	if data then
---		data.calls = data.calls + 1
---		data.total = data.total + v.localtime
---		data.longest = math.max(data.longest, v.localtime)
---		data.longestt = math.max(data.longestt, v.totaltime)
---	else
---		summary[name] = {
---			calls = 1,
---			total = v.localtime,
---			name = name,
---			longest = v.localtime,
---			longestt = v.totaltime
---		}
---	end
---end
---
---for _, v in pairs(summary) do
---	print(v.name, "Called:" .. v.calls, "Time: " .. v.total, "Average:" .. v.total / v.calls)
---	print("", "Longest:" .. v.longest, "Longest (inclusive):" .. v.longestt)
---end
+local summary = {}
+local file = assert(io.open("prof.out", 'rb'))
+
+
+local function readByte() return file:read(1):byte() end
+
+local function readShort()
+	local a, b = file:read(2):byte(1, 2)
+	return a * (2 ^ 8) + b
+end
+
+local function readInt()
+	local a, b, c, d = file:read(4):byte(1, 4)
+	return a * (2 ^ 24) + b * (2 ^ 16) + c * (2 ^ 8) + d
+end
+
+local function readLong()
+	return readInt() * (2 ^ 32) + readInt()
+end
+
+
+local function readString()
+	local length = readInt()
+	return file:read(length)
+end
+
+local str = file:read(1)
+local count = 0
+while str do
+	local code = str:byte()
+
+	if code == 0x00 then
+		-- Prototype
+		local id = readShort()
+		local name = readString()
+		local line = readInt()
+		local last = readInt()
+
+		if line == last then
+			name = name .. ":" .. line
+		else
+			name = name .. ":" .. line .. "-" .. last
+		end
+
+		summary[id] = {
+			name = name,
+			calls = 0,
+			total = 0,
+		}
+	elseif code == 0x01 then
+		-- Call proto
+		local level = readShort()
+		local id = readShort()
+		local localT = readLong()
+		local totalT = readLong()
+
+		summary[id].calls = summary[id].calls + 1
+		summary[id].total = summary[id].total + localT
+	elseif code == 0x02 then
+		local level = readShort()
+		local name = readString()
+
+		local localT = readLong()
+		local totalT = readLong()
+
+		print(name, " with ", totalT)
+	else
+		error("Unknown code")
+	end
+
+	count = count + 1
+	if count % 10000 == 0 then
+		print("Done " .. count .. "/" .. total, count / total)
+	end
+
+	str = file:read(1)
+end
+
+for _, v in pairs(summary) do
+	print(v.name, "Called:" .. v.calls, "Time: " .. v.total, "Average:" .. v.total / v.calls)
+end
