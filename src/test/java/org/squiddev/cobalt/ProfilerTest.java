@@ -12,13 +12,13 @@ import java.io.InputStream;
 import static org.junit.Assert.fail;
 
 /**
- * Created by 09CoatJo on 15/04/2016.
+ * Runs the profiler. Not a unit test.
  */
 public class ProfilerTest {
 	public static void main(String[] args) throws IOException {
 		LuaState state = new LuaState(new FileResourceManipulator());
 		LuaTable env = JsePlatform.debugGlobals(state);
-		env.load(state, new ProfilerLib());
+		env.load(state, new ProfilerLib(new ProfilerLib.FileOutputProvider()));
 
 		String name = "profiler.lua";
 		InputStream script = ProfilerTest.class.getResourceAsStream("/" + name);

@@ -1,28 +1,3 @@
-/*
- * ****************************************************************************
- * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2016 SquidDev
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
- */
-
 package org.squiddev.cobalt.lib.profiler;
 
 import org.squiddev.cobalt.LuaError;
@@ -47,7 +22,7 @@ public final class ProfilerStack {
 	 *
 	 * @return The created info
 	 */
-	private ProfilerFrame pushInfo(DebugFrame frame) {
+	private ProfilerFrame nextFrame() {
 		int top = this.top + 1;
 
 		ProfilerFrame[] frames = stack;
@@ -62,27 +37,20 @@ public final class ProfilerStack {
 		}
 
 		this.top = top;
-		return frames[top] = new ProfilerFrame(top + 1, frame);
+		ProfilerFrame frame = frames[top];
+		if (frame == null) frame = frames[top] = new ProfilerFrame((short) (top + 1));
+		return frame;
 	}
 
-	public void pauseLocalTime() {
-		stack[top].computeLocalTime(System.nanoTime());
-	}
-
-	public void pause() {
+	private void pause() {
 		ProfilerFrame[] stack = this.stack;
 		int top = this.top;
 		if (top < 0) return;
 		long time = System.nanoTime();
 
-		stack[top].computeLocalTime(time);
 		for (int i = top; i >= 0; i--) {
 			stack[i].computeTotalTime(time);
 		}
-	}
-
-	public void resumeLocalTime() {
-		stack[top].functionLocalTimeMarker = System.nanoTime();
 	}
 
 	public void resume() {
@@ -105,7 +73,8 @@ public final class ProfilerStack {
 			stack[top].computeLocalTime(time);
 		}
 
-		ProfilerFrame frame = pushInfo(dFrame);
+		ProfilerFrame frame = nextFrame();
+		frame.setup(dFrame);
 		frame.functionLocalTimeMarker = time;
 		frame.functionTotalTimeMarker = time;
 	}
@@ -117,16 +86,15 @@ public final class ProfilerStack {
 		long time = System.nanoTime();
 
 		ProfilerFrame topFrame = stack[top];
+		this.top = top - 1;
+
+		pause();
 		topFrame.computeLocalTime(time);
 		topFrame.computeTotalTime(time);
 
-		if (resume && top > 0) {
-			stack[top - 1].functionLocalTimeMarker = time;
-		}
+		if (resume && top > 0) resume();
 
 		stack[top] = null;
-		this.top = top - 1;
-
 		return topFrame;
 	}
 }

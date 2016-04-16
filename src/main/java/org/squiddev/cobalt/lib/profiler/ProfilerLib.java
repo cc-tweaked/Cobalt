@@ -8,11 +8,13 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHook;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.ZeroArgFunction;
+import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import static org.squiddev.cobalt.Constants.NONE;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -23,6 +25,22 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  */
 public class ProfilerLib implements LuaLibrary {
 	private ProfilerHook hook;
+	private final OutputProvider provider;
+
+	public ProfilerLib(OutputProvider provider) {
+		this.provider = provider;
+	}
+
+	public interface OutputProvider {
+		DataOutputStream createWriter(String name) throws IOException;
+	}
+
+	public static class FileOutputProvider implements OutputProvider {
+		@Override
+		public DataOutputStream createWriter(String name) throws IOException {
+			return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(name)));
+		}
+	}
 
 	@Override
 	public LuaValue add(LuaState state, LuaValue environment) {
@@ -31,7 +49,7 @@ public class ProfilerLib implements LuaLibrary {
 		environment.rawset("profiler", profiler);
 
 		LibFunction.bind(
-			state, profiler, Profiler0.class,
+			state, profiler, Profiler1.class,
 			new String[]{"milliTime", "nanoTime", "start", "stop", "pause", "resume"},
 			ProfilerLib.class, this
 		);
@@ -41,11 +59,11 @@ public class ProfilerLib implements LuaLibrary {
 
 	private static class ProfilerHook implements DebugHook {
 		private final ProfilerStack stack;
-		private final List<ProfilerFrame> frames = new ArrayList<ProfilerFrame>();
-		private boolean running = true;
+		private final DataOutputStream writer;
 
-		private ProfilerHook(ProfilerStack stack) {
+		private ProfilerHook(ProfilerStack stack, DataOutputStream writer) {
 			this.stack = stack;
+			this.writer = writer;
 		}
 
 		@Override
@@ -55,8 +73,15 @@ public class ProfilerLib implements LuaLibrary {
 
 		@Override
 		public void onReturn(LuaState state, DebugState ds, DebugFrame dFrame) {
-			ProfilerFrame frame = stack.leave(true);
-			if (frame != null) frames.add(frame);
+			ProfilerFrame frame = stack.leave(false);
+			if (frame != null) {
+				try {
+					frame.write(writer);
+				} catch (IOException e) {
+					throw new LuaError(e);
+				}
+			}
+			stack.resume();
 		}
 
 		@Override
@@ -75,41 +100,24 @@ public class ProfilerLib implements LuaLibrary {
 			state.setHook(null, false, false, false, -1);
 		}
 
-		public boolean running() {
-			return running;
-		}
-
-		public void resume() {
-			if (running) throw new LuaError("Already profiling");
-			stack.resume();
-			running = true;
-		}
-
-		public void pause() {
-			if (!running) throw new LuaError("Already paused");
-			stack.pause();
-			running = false;
-		}
-
-		public LuaTable toTable() {
-			LuaTable table = new LuaTable();
-			int i = 1;
-			for (ProfilerFrame frame : frames) {
-				table.rawset(i++, frame.toTable());
+		public void close() {
+			try {
+				writer.close();
+			} catch (IOException e) {
+				throw new LuaError(e);
 			}
-			return table;
 		}
 	}
 
-	private static class Profiler0 extends ZeroArgFunction {
+	private static class Profiler1 extends OneArgFunction {
 		private final ProfilerLib lib;
 
-		public Profiler0(ProfilerLib lib) {
+		public Profiler1(ProfilerLib lib) {
 			this.lib = lib;
 		}
 
 		@Override
-		public LuaValue call(LuaState state) {
+		public LuaValue call(LuaState state, LuaValue arg) {
 			switch (opcode) {
 				case 0: // milliTime
 					return valueOf(System.currentTimeMillis());
@@ -118,7 +126,13 @@ public class ProfilerLib implements LuaLibrary {
 				case 2: // start
 				{
 					if (lib.hook != null) throw new LuaError("Already profiling");
-					ProfilerHook hook = lib.hook = new ProfilerHook(new ProfilerStack());
+					DataOutputStream writer;
+					try {
+						writer = lib.provider.createWriter(arg.checkString());
+					} catch (IOException e) {
+						throw new LuaError(e);
+					}
+					ProfilerHook hook = lib.hook = new ProfilerHook(new ProfilerStack(), writer);
 					hook.setHook(state.debug.getDebugState());
 					return NONE;
 				}
@@ -126,25 +140,9 @@ public class ProfilerLib implements LuaLibrary {
 				{
 					ProfilerHook hook = lib.hook;
 					if (hook == null) throw new LuaError("Not profiling");
+					hook.close();
 					hook.clearHook(state.debug.getDebugState());
-					if (hook.running()) hook.pause();
 					lib.hook = null;
-					return hook.toTable();
-				}
-				case 4: // pause
-				{
-					ProfilerHook hook = lib.hook;
-					if (hook == null) throw new LuaError("Not profiling");
-					hook.pause();
-					hook.clearHook(state.debug.getDebugState());
-					return NONE;
-				}
-				case 5: // resume
-				{
-					ProfilerHook hook = lib.hook;
-					if (hook == null) throw new LuaError("Not profiling");
-					hook.setHook(state.debug.getDebugState());
-					hook.resume();
 					return NONE;
 				}
 				default:

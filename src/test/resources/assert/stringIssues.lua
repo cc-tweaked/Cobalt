@@ -62,3 +62,11 @@ assert(finish == 4, "expected 4, got " .. finish)
 assert(("foobar"):rep(-1) == "")
 assert(("foobar"):rep(-100) == "")
 assert(("foobar"):rep(0) == "")
+
+-- Frontier pattern
+local out = {}
+string.gsub("THE (QUICK) brOWN FOx JUMPS", "%f[%a]%u+%f[%A]", function(x) table.insert(out, x) end)
+for k, v in pairs(out) do print(k, v) end
+assert(out[1] == "THE")
+assert(out[2] == "QUICK")
+assert(out[3] == "JUMPS")

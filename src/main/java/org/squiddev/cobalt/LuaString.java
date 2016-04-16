@@ -81,6 +81,8 @@ public class LuaString extends LuaValue {
 	 */
 	public final int length;
 
+	private int hashCode;
+
 	private static class Cache {
 		/**
 		 * Simple cache of recently created strings that are short.
@@ -373,11 +375,15 @@ public class LuaString extends LuaValue {
 	}
 
 	public int hashCode() {
-		int h = length;  /* seed */
+		int h = hashCode;
+		if (h != 0) return h;
+
+		h = length;  /* seed */
 		int step = (length >> 5) + 1;  /* if string is too long, don't hash all its chars */
 		for (int l1 = length; l1 >= step; l1 -= step)  /* compute hash */ {
 			h = h ^ ((h << 5) + (h >> 2) + (((int) bytes[offset + l1 - 1]) & 0x0FF));
 		}
+		hashCode = h;
 		return h;
 	}
 
