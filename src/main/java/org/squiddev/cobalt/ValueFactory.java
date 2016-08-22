@@ -354,7 +354,7 @@ public class ValueFactory {
 	 * @see LuaFunction#call(LuaState)
 	 * @see LuaFunction#invoke(LuaState, Varargs)
 	 */
-	public static Varargs tailcallOf(LuaFunction func, Varargs args) {
+	public static Varargs tailcallOf(LuaValue func, Varargs args) {
 		return new TailcallVarargs(func, args);
 	}
 

@@ -48,7 +48,6 @@ public class TailcallVarargs extends Varargs {
 	private LuaValue func;
 	private Varargs args;
 	private Varargs result;
-	private int stack;
 
 	public TailcallVarargs(LuaValue f, Varargs args) {
 		this.func = f;
