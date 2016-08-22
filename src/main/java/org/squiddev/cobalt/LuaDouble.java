@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import java.util.regex.Pattern;
+
 /**
  * Extension of {@link LuaNumber} which can hold a Java double as its value.
  *
@@ -45,6 +47,10 @@ package org.squiddev.cobalt;
  * @see ValueFactory#valueOf(double)
  */
 public class LuaDouble extends LuaNumber {
+	/**
+	 * A regex to trim trailing 0s of a number
+	 */
+	private static final Pattern formatRegex = Pattern.compile("\\.?0+(e|$)");
 
 	/**
 	 * Constant LuaDouble representing NaN (not a number)
@@ -79,7 +85,7 @@ public class LuaDouble extends LuaNumber {
 	/**
 	 * The value being held by this instance.
 	 */
-	final double v;
+	private final double v;
 
 	public static LuaNumber valueOf(double d) {
 		int id = (int) d;
@@ -187,7 +193,8 @@ public class LuaDouble extends LuaNumber {
 		if (Double.isInfinite(v)) {
 			return (v < 0 ? JSTR_NEGINF : JSTR_POSINF);
 		}
-		return Float.toString((float) v);
+
+		return formatRegex.matcher(String.format("%.14g", v)).replaceFirst("$1");
 	}
 
 	@Override

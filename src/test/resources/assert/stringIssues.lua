@@ -70,3 +70,7 @@ for k, v in pairs(out) do print(k, v) end
 assert(out[1] == "THE")
 assert(out[2] == "QUICK")
 assert(out[3] == "JUMPS")
+
+-- Historically rounded to a float, resulting in Infinity
+assert(tostring(1e38) == "1e+38", "Got " .. tostring(1e38))
+assert(tostring(1e39) == "1e+39", "Got " .. tostring(1e39))
