@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt;
 
-import java.util.regex.Pattern;
+import java.util.Locale;
 
 /**
  * Extension of {@link LuaNumber} which can hold a Java double as its value.
@@ -47,11 +47,6 @@ import java.util.regex.Pattern;
  * @see ValueFactory#valueOf(double)
  */
 public class LuaDouble extends LuaNumber {
-	/**
-	 * A regex to trim trailing 0s of a number
-	 */
-	private static final Pattern formatRegex = Pattern.compile("\\.?0+(e|$)");
-
 	/**
 	 * Constant LuaDouble representing NaN (not a number)
 	 */
@@ -177,24 +172,40 @@ public class LuaDouble extends LuaNumber {
 
 	@Override
 	public String toString() {
-		/*
-		if ( v == 0.0 ) { // never occurs in J2me
-			long bits = Double.doubleToLongBits( v );
-			return ( bits >> 63 == 0 ) ? "0" : "-0";
-		}
-		*/
 		long l = (long) v;
-		if (l == v) {
-			return Long.toString(l);
-		}
-		if (Double.isNaN(v)) {
-			return JSTR_NAN;
-		}
-		if (Double.isInfinite(v)) {
-			return (v < 0 ? JSTR_NEGINF : JSTR_POSINF);
-		}
+		if (l == v) return Long.toString(l);
+		if (Double.isNaN(v)) return JSTR_NAN;
+		if (Double.isInfinite(v)) return v < 0 ? JSTR_NEGINF : JSTR_POSINF;
 
-		return formatRegex.matcher(String.format("%.14g", v)).replaceFirst("$1");
+		String formatted = String.format(Locale.ROOT, "%.14g", v);
+
+		// Attempt to trim 0s after the decimal point
+		int pos = formatted.indexOf('.');
+		if (pos < 0) return formatted;
+
+		// Strip all 0s between end and 0
+		int exp = formatted.indexOf('e');
+		if (exp < 0) {
+			int end = formatted.length() - 1;
+			for (; end > pos; end--) {
+				if (formatted.charAt(end) != '0') break;
+			}
+
+			// Trim trailing '.' if required
+			if (end == pos) end--;
+
+			return formatted.substring(0, end + 1);
+		} else {
+			int end = exp - 1;
+			for (; end > pos; end--) {
+				if (formatted.charAt(end) != '0') break;
+			}
+
+			// Trim trailing '.' if required
+			if (end == pos) end--;
+
+			return formatted.substring(0, end + 1) + formatted.substring(exp);
+		}
 	}
 
 	@Override
