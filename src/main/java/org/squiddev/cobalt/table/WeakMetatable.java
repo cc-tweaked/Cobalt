@@ -43,7 +43,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
 public class WeakMetatable implements Metatable {
 
 	private boolean weakkeys, weakvalues;
-	private LuaValue backing;
+	private LuaTable backing;
 
 	public static LuaTable make(boolean weakkeys, boolean weakvalues) {
 		LuaString mode;
@@ -69,7 +69,7 @@ public class WeakMetatable implements Metatable {
 	 * @param weakvalues true to let the table have weak values
 	 * @param backing    The backing table
 	 */
-	public WeakMetatable(boolean weakkeys, boolean weakvalues, LuaValue backing) {
+	public WeakMetatable(boolean weakkeys, boolean weakvalues, LuaTable backing) {
 		this.weakkeys = weakkeys;
 		this.weakvalues = weakvalues;
 		this.backing = backing;
@@ -86,7 +86,7 @@ public class WeakMetatable implements Metatable {
 	}
 
 	@Override
-	public LuaValue toLuaValue() {
+	public LuaTable toLuaValue() {
 		return backing;
 	}
 
@@ -406,7 +406,7 @@ public class WeakMetatable implements Metatable {
 	 */
 	public static final class WeakUserdata extends WeakValue {
 		private final WeakReference<Object> ob;
-		private final LuaValue mt;
+		private final LuaTable mt;
 
 		private WeakUserdata(LuaUserdata value) {
 			super(value);

@@ -194,7 +194,7 @@ public class LuaC implements LuaCompiler {
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
 	@Override
-	public LuaFunction load(InputStream stream, LuaString name, LuaValue env) throws IOException {
+	public LuaFunction load(InputStream stream, LuaString name, LuaTable env) throws IOException {
 		Prototype p = compile(stream, name);
 		LuaInterpreter closure = new LuaInterpreter(p, env);
 		closure.nilUpvalues();
@@ -260,8 +260,7 @@ public class LuaC implements LuaCompiler {
 		return string;
 	}
 
-	public LuaFunction load(Prototype p, String filename, LuaValue env) {
+	public LuaFunction load(Prototype p, LuaTable env) {
 		return new LuaInterpreter(p, env);
 	}
-
 }

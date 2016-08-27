@@ -25,6 +25,7 @@
 
 package org.squiddev.cobalt.function;
 
+import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Prototype;
 
@@ -35,7 +36,7 @@ public abstract class LuaClosure extends LuaFunction {
 	public LuaClosure() {
 	}
 
-	public LuaClosure(LuaValue env) {
+	public LuaClosure(LuaTable env) {
 		super(env);
 	}
 

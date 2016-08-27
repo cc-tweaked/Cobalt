@@ -84,7 +84,7 @@ public class LuaThread extends LuaValue {
 		"dead",
 	};
 
-	private LuaValue env;
+	private LuaTable env;
 	private final State state;
 
 	/**
@@ -105,7 +105,7 @@ public class LuaThread extends LuaValue {
 	 * @param luaState The current lua state
 	 * @param env      The thread's environment
 	 */
-	public LuaThread(LuaState luaState, LuaValue env) {
+	public LuaThread(LuaState luaState, LuaTable env) {
 		super(Constants.TTHREAD);
 
 		luaState.threads.add(this);
@@ -123,7 +123,7 @@ public class LuaThread extends LuaValue {
 	 * @param func     The function to execute
 	 * @param env      The environment to apply to the thread
 	 */
-	public LuaThread(LuaState luaState, LuaFunction func, LuaValue env) {
+	public LuaThread(LuaState luaState, LuaFunction func, LuaTable env) {
 		super(Constants.TTHREAD);
 		if (func == null) throw new LuaError("function cannot be null");
 
@@ -151,17 +151,17 @@ public class LuaThread extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable(LuaState state) {
+	public LuaTable getMetatable(LuaState state) {
 		return state.threadMetatable;
 	}
 
 	@Override
-	public LuaValue getfenv() {
+	public LuaTable getfenv() {
 		return env;
 	}
 
 	@Override
-	public void setfenv(LuaValue env) {
+	public void setfenv(LuaTable env) {
 		this.env = env;
 	}
 

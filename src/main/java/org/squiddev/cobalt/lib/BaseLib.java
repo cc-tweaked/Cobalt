@@ -93,7 +93,7 @@ public class BaseLib implements LuaLibrary {
 	};
 
 	@Override
-	public LuaValue add(LuaState state, LuaValue env) {
+	public LuaValue add(LuaState state, LuaTable env) {
 		env.set(state, "_G", env);
 		env.set(state, "_VERSION", valueOf(Lua._VERSION));
 		LibFunction.bind(state, env, BaseLib2.class, LIB2_KEYS);
@@ -191,7 +191,7 @@ public class BaseLib implements LuaLibrary {
 				}
 				case 3: // "getmetatable", // ( object ) -> table
 				{
-					LuaValue mt = args.checkValue(1).getMetatable(state);
+					LuaTable mt = args.checkValue(1).getMetatable(state);
 					return mt != null ? mt.rawget(Constants.METATABLE).optValue(mt) : Constants.NIL;
 				}
 				case 4: // "load", // ( func [,chunkname] ) -> chunk | nil, msg
@@ -286,7 +286,7 @@ public class BaseLib implements LuaLibrary {
 				}
 				case 16: { // "setmetatable", // (table, metatable) -> table
 					final LuaValue t = args.first();
-					final LuaValue mt0 = t.getMetatable(state);
+					final LuaTable mt0 = t.getMetatable(state);
 					if (mt0 != null && !mt0.rawget(Constants.METATABLE).isNil()) {
 						throw new LuaError("cannot change a protected metatable");
 					}

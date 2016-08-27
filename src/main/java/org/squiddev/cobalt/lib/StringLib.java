@@ -53,7 +53,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
 public class StringLib implements LuaLibrary {
 
 	@Override
-	public LuaValue add(LuaState state, LuaValue env) {
+	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(state, t, StringLib1.class, new String[]{
 			"dump", "len", "lower", "reverse", "upper",});

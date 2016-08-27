@@ -272,10 +272,10 @@ public final class OperationHelper {
 			case Constants.TTABLE: {
 				if (left == right || left.raweq(right)) return true;
 
-				LuaValue leftMeta = left.getMetatable(state);
+				LuaTable leftMeta = left.getMetatable(state);
 				if (leftMeta == null) return false;
 
-				LuaValue rightMeta = right.getMetatable(state);
+				LuaTable rightMeta = right.getMetatable(state);
 				if (rightMeta == null) return false;
 
 				LuaValue h = leftMeta.rawget(Constants.EQ);
@@ -460,7 +460,7 @@ public final class OperationHelper {
 		int loop = 0;
 		do {
 			if (t.isTable()) {
-				LuaValue res = t.rawget(key);
+				LuaValue res = ((LuaTable) t).rawget(key);
 				if (!res.isNil() || (tm = t.metatag(state, Constants.INDEX)).isNil()) {
 					return res;
 				}
@@ -494,13 +494,11 @@ public final class OperationHelper {
 		LuaValue tm;
 		int loop = 0;
 		do {
-			switch (t.type()) {
-				case Constants.TTABLE:
-			}
 			if (t.isTable()) {
+				LuaTable table = (LuaTable) t;
 				key.checkValidKey();
-				if (!t.rawget(key).isNil() || (tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
-					t.rawset(key, value);
+				if (!table.rawget(key).isNil() || (tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
+					table.rawset(key, value);
 					return;
 				}
 			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {

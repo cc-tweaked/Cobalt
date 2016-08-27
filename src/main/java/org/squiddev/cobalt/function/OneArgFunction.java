@@ -25,10 +25,7 @@
 
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.Constants;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.*;
 
 /**
  * Abstract base class for Java function implementations that take one argument and
@@ -70,7 +67,7 @@ public abstract class OneArgFunction extends LibFunction {
 	 *
 	 * @param env The environment to apply during constructon.
 	 */
-	public OneArgFunction(LuaValue env) {
+	public OneArgFunction(LuaTable env) {
 		this.env = env;
 	}
 

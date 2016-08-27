@@ -45,7 +45,7 @@ public class OrphanedThreadTest {
 	private LuaState state;
 
 	private LuaFunction function;
-	private LuaValue env;
+	private LuaTable env;
 
 	@Before
 	public void setup() throws Exception {

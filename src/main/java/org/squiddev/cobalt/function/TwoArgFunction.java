@@ -26,6 +26,7 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 
@@ -71,7 +72,7 @@ public abstract class TwoArgFunction extends LibFunction {
 	 *
 	 * @param env The environment to apply during constructon.
 	 */
-	public TwoArgFunction(LuaValue env) {
+	public TwoArgFunction(LuaTable env) {
 		this.env = env;
 	}
 

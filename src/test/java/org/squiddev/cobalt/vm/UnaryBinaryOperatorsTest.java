@@ -241,7 +241,7 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue oneb = valueOf(Constants.ONE.toBoolean());
 		assertEquals(Constants.FALSE, nilb);
 		assertEquals(Constants.TRUE, oneb);
-		LuaValue smt = state.stringMetatable;
+		LuaTable smt = state.stringMetatable;
 		try {
 			// always return nil0
 			state.booleanMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,});
@@ -1044,10 +1044,10 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue tbl3 = new LuaTable();
 		try {
 			// always use left argument
-			LuaValue mt = tableOf(new LuaValue[]{
+			LuaTable mt = tableOf(
 				Constants.LT, RETURN_LHS,
-				Constants.LE, RETURN_RHS,
-			});
+				Constants.LE, RETURN_RHS
+			);
 			state.booleanMetatable = mt;
 			tbl.setMetatable(state, mt);
 			tbl2.setMetatable(state, mt);
@@ -1081,9 +1081,10 @@ public class UnaryBinaryOperatorsTest {
 
 
 			// always use right argument
-			mt = tableOf(new LuaValue[]{
+			mt = tableOf(
 				Constants.LT, RETURN_RHS,
-				Constants.LE, RETURN_LHS});
+				Constants.LE, RETURN_LHS
+			);
 			state.booleanMetatable = mt;
 			tbl.setMetatable(state, mt);
 			tbl2.setMetatable(state, mt);

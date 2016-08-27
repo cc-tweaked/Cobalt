@@ -48,7 +48,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  */
 public class MathLib implements LuaLibrary {
 	@Override
-	public LuaValue add(LuaState state, LuaValue env) {
+	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable(0, 30);
 		t.set(state, "pi", ValueFactory.valueOf(Math.PI));
 		t.set(state, "huge", LuaDouble.POSINF);

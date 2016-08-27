@@ -105,7 +105,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString ACTIVELINES = valueOf("activelines");
 
 	@Override
-	public LuaTable add(LuaState state, LuaValue env) {
+	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		bind(state, t, DebugLib.class, NAMES);
 		env.rawset("debug", t);
@@ -342,7 +342,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static Varargs _setmetatable(LuaState state, Varargs args) {
 		LuaValue object = args.arg(1);
 		try {
-			LuaValue mt = args.arg(2).optTable(null);
+			LuaTable mt = args.arg(2).optTable(null);
 			switch (object.type()) {
 				case TNIL:
 					state.nilMetatable = mt;

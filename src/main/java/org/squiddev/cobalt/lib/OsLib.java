@@ -78,7 +78,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 	private static final long t0 = System.currentTimeMillis();
 
 	@Override
-	public LuaValue add(LuaState state, LuaValue env) {
+	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(state, t, getClass(), NAMES);
 		env.set(state, "os", t);

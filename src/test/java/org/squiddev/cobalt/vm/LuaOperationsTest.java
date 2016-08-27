@@ -114,6 +114,19 @@ public class LuaOperationsTest {
 		}
 	}
 
+	private void setfenvThrowsLuaError(String methodName, Object obj, Object arg) {
+		try {
+			LuaValue.class.getMethod(methodName, LuaTable.class).invoke(obj, arg);
+			fail("failed to throw LuaError as required");
+		} catch (InvocationTargetException e) {
+			if (!(e.getTargetException() instanceof LuaError)) {
+				fail("not a LuaError: " + e.getTargetException());
+			}
+		} catch (Exception e) {
+			fail("bad exception: " + e);
+		}
+	}
+
 	@Test
 	public void testLength() {
 		throwsLuaError("length", somenil);
@@ -158,21 +171,19 @@ public class LuaOperationsTest {
 
 	@Test
 	public void testSetfenv() {
-		LuaTable table2 = ValueFactory.listOf(new LuaValue[]{
-			valueOf("ccc"),
-			valueOf("ddd")});
-		throwsLuaError("setfenv", somenil, table2);
-		throwsLuaError("setfenv", sometrue, table2);
-		throwsLuaError("setfenv", somefalse, table2);
-		throwsLuaError("setfenv", zero, table2);
-		throwsLuaError("setfenv", intint, table2);
-		throwsLuaError("setfenv", longdouble, table2);
-		throwsLuaError("setfenv", doubledouble, table2);
-		throwsLuaError("setfenv", stringstring, table2);
-		throwsLuaError("setfenv", stringint, table2);
-		throwsLuaError("setfenv", stringlong, table2);
-		throwsLuaError("setfenv", stringdouble, table2);
-		throwsLuaError("setfenv", table, table2);
+		LuaTable table2 = ValueFactory.listOf(valueOf("ccc"), valueOf("ddd"));
+		setfenvThrowsLuaError("setfenv", somenil, table2);
+		setfenvThrowsLuaError("setfenv", sometrue, table2);
+		setfenvThrowsLuaError("setfenv", somefalse, table2);
+		setfenvThrowsLuaError("setfenv", zero, table2);
+		setfenvThrowsLuaError("setfenv", intint, table2);
+		setfenvThrowsLuaError("setfenv", longdouble, table2);
+		setfenvThrowsLuaError("setfenv", doubledouble, table2);
+		setfenvThrowsLuaError("setfenv", stringstring, table2);
+		setfenvThrowsLuaError("setfenv", stringint, table2);
+		setfenvThrowsLuaError("setfenv", stringlong, table2);
+		setfenvThrowsLuaError("setfenv", stringdouble, table2);
+		setfenvThrowsLuaError("setfenv", table, table2);
 		thread.setfenv(table2);
 		assertTrue(table2 == thread.getfenv());
 		assertTrue(table == someclosure.getfenv());
@@ -182,8 +193,8 @@ public class LuaOperationsTest {
 		assertTrue(table == somefunc.getfenv());
 		somefunc.setfenv(table2);
 		assertTrue(table2 == somefunc.getfenv());
-		throwsLuaError("setfenv", userdataobj, table2);
-		throwsLuaError("setfenv", userdatacls, table2);
+		setfenvThrowsLuaError("setfenv", userdataobj, table2);
+		setfenvThrowsLuaError("setfenv", userdatacls, table2);
 	}
 
 	public Prototype createPrototype(String script, String name) {

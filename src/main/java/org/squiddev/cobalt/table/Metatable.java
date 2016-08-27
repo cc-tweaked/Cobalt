@@ -25,6 +25,7 @@
 
 package org.squiddev.cobalt.table;
 
+import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 
 /**
@@ -44,7 +45,7 @@ public interface Metatable {
 	/**
 	 * Return this metatable as a LuaValue.
 	 */
-	LuaValue toLuaValue();
+	LuaTable toLuaValue();
 
 	/**
 	 * Return an instance of Slot appropriate for the given key and value.

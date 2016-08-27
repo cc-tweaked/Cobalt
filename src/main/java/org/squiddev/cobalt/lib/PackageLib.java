@@ -86,7 +86,7 @@ public class PackageLib implements LuaLibrary {
 	private static final int OP_JAVA_LOADER = 6;
 
 	@Override
-	public LuaValue add(LuaState state, LuaValue env) {
+	public LuaValue add(LuaState state, LuaTable env) {
 		env.set(state, "require", new PkgLib1(env, "require", OP_REQUIRE, this));
 		env.set(state, "module", new PkgLibV(env, "module", OP_MODULE, this));
 		env.set(state, "package", PACKAGE = ValueFactory.tableOf(new LuaValue[]{
@@ -107,7 +107,7 @@ public class PackageLib implements LuaLibrary {
 	static final class PkgLib1 extends OneArgFunction {
 		PackageLib lib;
 
-		public PkgLib1(LuaValue env, String name, int opcode, PackageLib lib) {
+		public PkgLib1(LuaTable env, String name, int opcode, PackageLib lib) {
 			this.env = env;
 			this.name = name;
 			this.opcode = opcode;
@@ -121,7 +121,7 @@ public class PackageLib implements LuaLibrary {
 					return lib.require(state, arg);
 				case OP_SEEALL: {
 					LuaTable t = arg.checkTable();
-					LuaValue m = t.getMetatable(state);
+					LuaTable m = t.getMetatable(state);
 					if (m == null) {
 						t.setMetatable(state, m = ValueFactory.tableOf());
 					}
@@ -136,7 +136,7 @@ public class PackageLib implements LuaLibrary {
 	static final class PkgLibV extends VarArgFunction {
 		PackageLib lib;
 
-		public PkgLibV(LuaValue env, String name, int opcode, PackageLib lib) {
+		public PkgLibV(LuaTable env, String name, int opcode, PackageLib lib) {
 			this.env = env;
 			this.name = name;
 			this.opcode = opcode;
@@ -216,18 +216,17 @@ public class PackageLib implements LuaLibrary {
 		LuaString modname = args.arg(1).checkLuaString();
 		int n = args.count();
 		LuaValue value = state.loadedPackages.get(state, modname);
-		LuaValue module;
+		LuaTable module;
 		if (!value.isTable()) { /* not found? */
-
 		    /* try global variable (and create one if it does not exist) */
-			LuaValue globals = state.getCurrentThread().getfenv();
+			LuaTable globals = state.getCurrentThread().getfenv();
 			module = findtable(state, globals, modname);
 			if (module == null) {
 				throw new LuaError("name conflict for module '" + modname + "'");
 			}
 			state.loadedPackages.set(state, modname, module);
 		} else {
-			module = value;
+			module = (LuaTable) value;
 		}
 
 
@@ -262,7 +261,7 @@ public class PackageLib implements LuaLibrary {
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
 	 */
-	private static LuaValue findtable(LuaState state, LuaValue table, LuaString fname) {
+	private static LuaTable findtable(LuaState state, LuaTable table, LuaString fname) {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
@@ -278,7 +277,7 @@ public class PackageLib implements LuaLibrary {
 			} else if (!val.isTable()) {  /* field has a non-table value? */
 				return null;
 			} else {
-				table = val;
+				table = (LuaTable) val;
 			}
 		} while (e < fname.length);
 		return table;
@@ -420,7 +419,7 @@ public class PackageLib implements LuaLibrary {
 		return ValueFactory.valueOf(sb.toString());
 	}
 
-	private LuaValue loader_Java(Varargs args, LuaValue env) {
+	private LuaValue loader_Java(Varargs args, LuaTable env) {
 		String name = args.arg(1).checkString();
 		String classname = toClassname(name);
 		try {

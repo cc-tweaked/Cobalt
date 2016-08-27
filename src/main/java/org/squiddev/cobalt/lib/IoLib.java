@@ -61,7 +61,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public abstract class IoLib implements LuaLibrary {
 
 	protected abstract class File extends LuaValue {
-		private LuaValue metatable = filemethods;
+		private LuaTable metatable = filemethods;
 
 		protected File() {
 			super(TUSERDATA);
@@ -95,12 +95,12 @@ public abstract class IoLib implements LuaLibrary {
 		public abstract int read(byte[] bytes, int offset, int length) throws IOException;
 
 		@Override
-		public LuaValue getMetatable(LuaState state) {
+		public LuaTable getMetatable(LuaState state) {
 			return metatable;
 		}
 
 		@Override
-		public void setMetatable(LuaState state, LuaValue metatable) {
+		public void setMetatable(LuaState state, LuaTable metatable) {
 			this.metatable = metatable;
 		}
 
@@ -221,7 +221,7 @@ public abstract class IoLib implements LuaLibrary {
 	}
 
 	@Override
-	public LuaValue add(LuaState state, LuaValue env) {
+	public LuaValue add(LuaState state, LuaTable env) {
 
 		// io lib functions
 		LuaTable t = new LuaTable();

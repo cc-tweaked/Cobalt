@@ -66,7 +66,7 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable(LuaState state) {
+	public LuaTable getMetatable(LuaState state) {
 		return state.numberMetatable;
 	}
 

@@ -27,7 +27,6 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.table.Metatable;
-import org.squiddev.cobalt.table.NonTableMetatable;
 import org.squiddev.cobalt.table.WeakMetatable;
 
 public class ValueFactory {
@@ -208,7 +207,7 @@ public class ValueFactory {
 	 * @param metatable The metatble to associate with the userdata instance.
 	 * @return {@link LuaUserdata} value wrapping the java instance.
 	 */
-	public static LuaUserdata userdataOf(Object o, LuaValue metatable) {
+	public static LuaUserdata userdataOf(Object o, LuaTable metatable) {
 		return new LuaUserdata(o, metatable);
 	}
 
@@ -361,8 +360,8 @@ public class ValueFactory {
 	/**
 	 * Construct a Metatable instance from the given LuaValue
 	 */
-	public static Metatable metatableOf(LuaValue mt) {
-		if (mt != null && mt.isTable()) {
+	public static Metatable metatableOf(LuaTable mt) {
+		if (mt != null) {
 			LuaValue mode = mt.rawget(Constants.MODE);
 			if (mode.isString()) {
 				String m = mode.toString();
@@ -373,8 +372,6 @@ public class ValueFactory {
 				}
 			}
 			return (LuaTable) mt;
-		} else if (mt != null) {
-			return new NonTableMetatable(mt);
 		} else {
 			return null;
 		}

@@ -55,7 +55,7 @@ public abstract class VarArgFunction extends LibFunction {
 	public VarArgFunction() {
 	}
 
-	public VarArgFunction(LuaValue env) {
+	public VarArgFunction(LuaTable env) {
 		this.env = env;
 	}
 

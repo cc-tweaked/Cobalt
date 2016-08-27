@@ -27,14 +27,14 @@ package org.squiddev.cobalt;
 public class LuaUserdata extends LuaValue {
 
 	public final Object instance;
-	public LuaValue metatable;
+	public LuaTable metatable;
 
 	public LuaUserdata(Object obj) {
 		super(Constants.TUSERDATA);
 		instance = obj;
 	}
 
-	public LuaUserdata(Object obj, LuaValue metatable) {
+	public LuaUserdata(Object obj, LuaTable metatable) {
 		super(Constants.TUSERDATA);
 		instance = obj;
 		this.metatable = metatable;
@@ -82,12 +82,12 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public LuaValue getMetatable(LuaState state) {
+	public LuaTable getMetatable(LuaState state) {
 		return metatable;
 	}
 
 	@Override
-	public void setMetatable(LuaState state, LuaValue metatable) {
+	public void setMetatable(LuaState state, LuaTable metatable) {
 		this.metatable = metatable;
 	}
 

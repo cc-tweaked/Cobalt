@@ -47,7 +47,7 @@ public class ProfilerLib implements LuaLibrary {
 	}
 
 	@Override
-	public LuaValue add(LuaState state, LuaValue environment) {
+	public LuaValue add(LuaState state, LuaTable environment) {
 		LuaTable profiler = new LuaTable();
 		state.loadedPackages.rawset("profiler", profiler);
 		environment.rawset("profiler", profiler);

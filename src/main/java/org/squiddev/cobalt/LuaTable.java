@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.lib.LuaLibrary;
 import org.squiddev.cobalt.table.*;
 
 import java.util.ArrayList;
@@ -47,8 +49,8 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * <ul>
  * <li>{@link LuaValue#get(LuaState, LuaValue)}</li>
  * <li>{@link LuaValue#set(LuaState, LuaValue, LuaValue)}</li>
- * <li>{@link LuaValue#rawget(LuaValue)}</li>
- * <li>{@link LuaValue#rawset(LuaValue, LuaValue)}</li>
+ * <li>{@link LuaTable#rawget(LuaValue)}</li>
+ * <li>{@link LuaTable#rawset(LuaValue, LuaValue)}</li>
  * <li>plus overloads such as {@link LuaValue#get(LuaState, String)}, {@link LuaValue#get(LuaState, int)}, and so on</li>
  * </ul>
  *
@@ -238,11 +240,11 @@ public final class LuaTable extends LuaValue implements Metatable {
 	}
 
 	@Override
-	public LuaValue getMetatable(LuaState state) {
+	public LuaTable getMetatable(LuaState state) {
 		return metatable != null ? metatable.toLuaValue() : null;
 	}
 
-	public void setMetatable(LuaValue metatable) {
+	public void setMetatable(LuaTable metatable) {
 		useMetatable(metatableOf(metatable));
 	}
 
@@ -258,11 +260,17 @@ public final class LuaTable extends LuaValue implements Metatable {
 	}
 
 	@Override
-	public void setMetatable(LuaState state, LuaValue metatable) {
+	public void setMetatable(LuaState state, LuaTable metatable) {
 		setMetatable(metatable);
 	}
 
-	@Override
+	/**
+	 * Get a value in a table without metatag processing.
+	 *
+	 * @param key the key to look up
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table
+	 */
 	public LuaValue rawget(int key) {
 		if (key > 0 && key <= array.length) {
 			LuaValue v = metatable == null ? array[key - 1] : metatable.arrayGet(array, key - 1);
@@ -271,7 +279,13 @@ public final class LuaTable extends LuaValue implements Metatable {
 		return hashget(LuaInteger.valueOf(key));
 	}
 
-	@Override
+	/**
+	 * Get a value in a table without metatag processing.
+	 *
+	 * @param key the key to look up, must not be {@link Constants#NIL} or null
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
+	 */
 	public LuaValue rawget(LuaValue key) {
 		if (key.isIntExact()) {
 			int ikey = key.toInteger();
@@ -296,7 +310,13 @@ public final class LuaTable extends LuaValue implements Metatable {
 		return NIL;
 	}
 
-	@Override
+	/**
+	 * Set a value in a table without metatag processing.
+	 *
+	 * @param key   the key to use
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table
+	 */
 	public void rawset(int key, LuaValue value) {
 		if (!arrayset(key, value)) {
 			hashset(LuaInteger.valueOf(key), value);
@@ -304,13 +324,38 @@ public final class LuaTable extends LuaValue implements Metatable {
 	}
 
 	/**
-	 * caller must ensure key is not nil
+	 * Set a value in a table without metatag processing.
+	 *
+	 * @param key   the key to use, must not be {@link Constants#NIL} or null
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
 	 */
-	@Override
 	public void rawset(LuaValue key, LuaValue value) {
 		if (!key.isIntExact() || !arrayset(key.toInteger(), value)) {
 			hashset(key, value);
 		}
+	}
+
+	/**
+	 * Get a value in a table without metatag processing.
+	 *
+	 * @param key the key to look up, must not be null
+	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
+	 * @throws LuaError if {@code this} is not a table
+	 */
+	public LuaValue rawget(String key) {
+		return rawget(ValueFactory.valueOf(key));
+	}
+
+	/**
+	 * Set a value in a table without metatag processing.
+	 *
+	 * @param key   the key to use, must not be null
+	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
+	 * @throws LuaError if {@code this} is not a table
+	 */
+	public void rawset(String key, LuaValue value) {
+		rawset(ValueFactory.valueOf(key), value);
 	}
 
 	/**
@@ -1126,7 +1171,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	}
 
 	@Override
-	public LuaValue toLuaValue() {
+	public LuaTable toLuaValue() {
 		return this;
 	}
 
@@ -1138,5 +1183,18 @@ public final class LuaTable extends LuaValue implements Metatable {
 	@Override
 	public LuaValue arrayGet(LuaValue[] array, int index) {
 		return array[index];
+	}
+
+	/**
+	 * Load a library instance by setting its environment to {@code this}
+	 * and calling it, which should initialize the library instance and
+	 * install itself into this instance.
+	 *
+	 * @param state   The current lua state
+	 * @param library The callable {@link LuaFunction} to load into {@code this}
+	 * @return {@link LuaValue} containing the result of the initialization call.
+	 */
+	public LuaValue load(LuaState state, LuaLibrary library) {
+		return library.add(state, this);
 	}
 }

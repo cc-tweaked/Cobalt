@@ -85,7 +85,7 @@ public class MetatableTest {
 
 	@Test
 	public void testSetMetatable() {
-		LuaValue mt = ValueFactory.tableOf();
+		LuaTable mt = ValueFactory.tableOf();
 		assertEquals(null, table.getMetatable(state));
 		assertEquals(null, userdata.getMetatable(state));
 		assertEquals(table, userdatamt.getMetatable(state));
@@ -148,7 +148,7 @@ public class MetatableTest {
 		assertEquals(Constants.NIL, userdatamt.get(state, 1));
 
 		// empty metatable
-		LuaValue mt = ValueFactory.tableOf();
+		LuaTable mt = ValueFactory.tableOf();
 		table.setMetatable(state, mt);
 		userdata.setMetatable(state, mt);
 		state.booleanMetatable = mt;
@@ -200,7 +200,7 @@ public class MetatableTest {
 	@Test
 	public void testMetatableNewIndex() {
 		// empty metatable
-		LuaValue mt = ValueFactory.tableOf();
+		LuaTable mt = ValueFactory.tableOf();
 		table.setMetatable(state, mt);
 		userdata.setMetatable(state, mt);
 		state.booleanMetatable = mt;
@@ -211,7 +211,7 @@ public class MetatableTest {
 		state.threadMetatable = mt;
 
 		// plain metatable
-		final LuaValue fallback = ValueFactory.tableOf();
+		final LuaTable fallback = ValueFactory.tableOf();
 		LuaValue abc = ValueFactory.valueOf("abc");
 		mt.set(state, Constants.NEWINDEX, fallback);
 		table.set(state, 2, abc);
@@ -260,7 +260,7 @@ public class MetatableTest {
 	}
 
 
-	private void checkTable(LuaValue t,
+	private void checkTable(LuaTable t,
 	                        LuaValue aa, LuaValue bb, LuaValue cc, LuaValue dd, LuaValue ee, LuaValue ff, LuaValue gg,
 	                        LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) {
 		assertEquals(aa, t.get(state, "aa"));
@@ -279,21 +279,21 @@ public class MetatableTest {
 		assertEquals(rg, t.rawget("gg"));
 	}
 
-	private LuaValue makeTable(String key1, String val1, String key2, String val2) {
-		return ValueFactory.tableOf(new LuaValue[]{
+	private LuaTable makeTable(String key1, String val1, String key2, String val2) {
+		return ValueFactory.tableOf(
 			ValueFactory.valueOf(key1), ValueFactory.valueOf(val1),
-			ValueFactory.valueOf(key2), ValueFactory.valueOf(val2),
-		});
+			ValueFactory.valueOf(key2), ValueFactory.valueOf(val2)
+		);
 	}
 
 	@Test
 	public void testRawsetMetatableSet() {
 		// set up tables
-		LuaValue m = makeTable("aa", "aaa", "bb", "bbb");
+		LuaTable m = makeTable("aa", "aaa", "bb", "bbb");
 		m.set(state, Constants.INDEX, m);
 		m.set(state, Constants.NEWINDEX, m);
-		LuaValue s = makeTable("cc", "ccc", "dd", "ddd");
-		LuaValue t = makeTable("cc", "ccc", "dd", "ddd");
+		LuaTable s = makeTable("cc", "ccc", "dd", "ddd");
+		LuaTable t = makeTable("cc", "ccc", "dd", "ddd");
 		t.setMetatable(state, m);
 		LuaValue aaa = ValueFactory.valueOf("aaa");
 		LuaValue bbb = ValueFactory.valueOf("bbb");

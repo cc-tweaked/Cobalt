@@ -27,6 +27,7 @@ package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.TableLib;
@@ -167,9 +168,9 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param env     The environment to apply to each bound function
 	 * @param factory the Class to instantiate for each bound function
 	 * @param names   array of String names, one for each function.
-	 * @see #bindOffset(LuaState, LuaValue, Class, String[], int, Class, Object)
+	 * @see #bindOffset(LuaState, LuaTable, Class, String[], int, Class, Object)
 	 */
-	public static void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names) {
+	public static void bind(LuaState state, LuaTable env, Class<? extends LibFunction> factory, String[] names) {
 		bindOffset(state, env, factory, names, 0, null, null);
 	}
 
@@ -185,9 +186,9 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param names      array of String names, one for each function.
 	 * @param ownerClass The owner's class
 	 * @param owner      The owner. This will be passed as the first argument
-	 * @see #bindOffset(LuaState, LuaValue, Class, String[], int, Class, Object)
+	 * @see #bindOffset(LuaState, LuaTable, Class, String[], int, Class, Object)
 	 */
-	public static void bind(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, Class<?> ownerClass, Object owner) {
+	public static void bind(LuaState state, LuaTable env, Class<? extends LibFunction> factory, String[] names, Class<?> ownerClass, Object owner) {
 		bindOffset(state, env, factory, names, 0, ownerClass, owner);
 	}
 
@@ -206,7 +207,7 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param owner       The owner. This will be passed as the first argument
 	 * @see #bind(LuaState, LuaValue, Class, String[], Class, Object)
 	 */
-	public static void bindOffset(LuaState state, LuaValue env, Class<? extends LibFunction> factory, String[] names, int firstopcode, Class<?> ownerClass, Object owner) {
+	public static void bindOffset(LuaState state, LuaTable env, Class<? extends LibFunction> factory, String[] names, int firstopcode, Class<?> ownerClass, Object owner) {
 		try {
 			Constructor<? extends LibFunction> constructor = ownerClass == null ? factory.getDeclaredConstructor() : factory.getDeclaredConstructor(ownerClass);
 			constructor.setAccessible(true);

@@ -68,7 +68,7 @@ public class LuaTests {
 				return valueOf(new File(arg.checkString()).mkdirs());
 			}
 		});
-		helpers.globals.rawget("debug").rawset("debug", new ZeroArgFunction() {
+		helpers.globals.rawget("debug").set(helpers.state, "debug", new ZeroArgFunction() {
 			@Override
 			public LuaValue call(LuaState state) {
 				// Insert breakpoint here

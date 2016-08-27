@@ -27,7 +27,6 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.LuaLibrary;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -1064,7 +1063,6 @@ public abstract class LuaValue extends Varargs {
 	 *                  or key is {@link Constants#NIL}
 	 * @see #get(LuaState, int)
 	 * @see #get(LuaState, String)
-	 * @see #rawget(LuaValue)
 	 */
 	public LuaValue get(LuaState state, LuaValue key) {
 		return OperationHelper.getTable(state, this, key);
@@ -1079,7 +1077,6 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table,
 	 *                  or there is no {@link Constants#INDEX} metatag
 	 * @see #get(LuaState, LuaValue)
-	 * @see #rawget(int)
 	 */
 	public LuaValue get(LuaState state, int key) {
 		return get(state, LuaInteger.valueOf(key));
@@ -1094,7 +1091,6 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if {@code this} is not a table,
 	 *                  or there is no {@link Constants#INDEX} metatag
 	 * @see #get(LuaState, LuaValue)
-	 * @see #rawget(String)
 	 */
 	public LuaValue get(LuaState state, String key) {
 		return get(state, ValueFactory.valueOf(key));
@@ -1140,85 +1136,6 @@ public abstract class LuaValue extends Varargs {
 		set(state, ValueFactory.valueOf(key), value);
 	}
 
-	/**
-	 * Get a value in a table without metatag processing.
-	 *
-	 * @param key the key to look up, must not be {@link Constants#NIL} or null
-	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
-	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
-	 */
-	public LuaValue rawget(LuaValue key) {
-		throw ErrorFactory.unimplemented(this, "rawget");
-	}
-
-	/**
-	 * Get a value in a table without metatag processing.
-	 *
-	 * @param key the key to look up
-	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
-	 * @throws LuaError if {@code this} is not a table
-	 */
-	public LuaValue rawget(int key) {
-		return rawget(ValueFactory.valueOf(key));
-	}
-
-	/**
-	 * Get a value in a table without metatag processing.
-	 *
-	 * @param key the key to look up, must not be null
-	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
-	 * @throws LuaError if {@code this} is not a table
-	 */
-	public LuaValue rawget(String key) {
-		return rawget(ValueFactory.valueOf(key));
-	}
-
-	/**
-	 * Set a value in a table without metatag processing.
-	 *
-	 * @param key   the key to use, must not be {@link Constants#NIL} or null
-	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
-	 * @throws LuaError if {@code this} is not a table, or key is {@link Constants#NIL}
-	 */
-	public void rawset(LuaValue key, LuaValue value) {
-		throw ErrorFactory.unimplemented(this, "rawset");
-	}
-
-	/**
-	 * Set a value in a table without metatag processing.
-	 *
-	 * @param key   the key to use
-	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
-	 * @throws LuaError if {@code this} is not a table
-	 */
-	public void rawset(int key, LuaValue value) {
-		rawset(ValueFactory.valueOf(key), value);
-	}
-
-	/**
-	 * Set a value in a table without metatag processing.
-	 *
-	 * @param key   the key to use, must not be null
-	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
-	 * @throws LuaError if {@code this} is not a table
-	 */
-	public void rawset(String key, LuaValue value) {
-		rawset(ValueFactory.valueOf(key), value);
-	}
-
-	/**
-	 * Load a library instance by setting its environment to {@code this}
-	 * and calling it, which should iniitalize the library instance and
-	 * install itself into this instance.
-	 *
-	 * @param state   The current lua state
-	 * @param library The callable {@link LuaFunction} to load into {@code this}
-	 * @return {@link LuaValue} containing the result of the initialization call.
-	 */
-	public LuaValue load(LuaState state, LuaLibrary library) {
-		return library.add(state, this);
-	}
-
 	// varargs references
 	@Override
 	public LuaValue arg(int index) {
@@ -1245,7 +1162,7 @@ public abstract class LuaValue extends Varargs {
 	 * @param state The current lua state
 	 * @return metatable, or null if it there is none
 	 */
-	public LuaValue getMetatable(LuaState state) {
+	public LuaTable getMetatable(LuaState state) {
 		return null;
 	}
 
@@ -1258,16 +1175,16 @@ public abstract class LuaValue extends Varargs {
 	 * @param state     The current lua state
 	 * @param metatable {@link LuaValue} instance to serve as the metatable, or null to reset it.
 	 */
-	public void setMetatable(LuaState state, LuaValue metatable) {
+	public void setMetatable(LuaState state, LuaTable metatable) {
 		throw ErrorFactory.argError(this, "table");
 	}
 
 	/**
-	 * Get the environemnt for an instance.
+	 * Get the environment for an instance.
 	 *
 	 * @return {@link LuaValue} currently set as the instances environent.
 	 */
-	public LuaValue getfenv() {
+	public LuaTable getfenv() {
 		throw ErrorFactory.typeError(this, "function or thread");
 	}
 
@@ -1282,7 +1199,7 @@ public abstract class LuaValue extends Varargs {
 	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
 	 * @see JsePlatform
 	 */
-	public void setfenv(LuaValue env) {
+	public void setfenv(LuaTable env) {
 		throw ErrorFactory.typeError(this, "function or thread");
 	}
 
@@ -1433,7 +1350,7 @@ public abstract class LuaValue extends Varargs {
 	 * @return {@link LuaValue} for tag {@code reason}, or  {@link Constants#NIL}
 	 */
 	public LuaValue metatag(LuaState state, LuaValue tag) {
-		LuaValue mt = getMetatable(state);
+		LuaTable mt = getMetatable(state);
 		if (mt == null) {
 			return Constants.NIL;
 		}

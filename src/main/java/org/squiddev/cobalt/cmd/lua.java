@@ -61,7 +61,7 @@ public class lua {
 		System.exit(-1);
 	}
 
-	private static LuaValue _G;
+	private static LuaTable _G;
 
 	public static void main(String[] args) throws IOException {
 

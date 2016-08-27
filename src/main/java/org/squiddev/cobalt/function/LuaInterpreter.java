@@ -44,7 +44,7 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * There are three main ways {@link LuaInterpreter} instances are created:
  * <ul>
  * <li>Construct an instance using {@link #LuaInterpreter(Prototype, LuaValue)}</li>
- * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, LuaString, LuaValue)}
+ * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, LuaString, LuaTable)}
  * <li>Execute the lua bytecode {@link Lua#OP_CLOSURE} as part of bytecode processing
  * </ul>
  *
@@ -77,7 +77,7 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * Since a {@link LuaInterpreter} is a {@link LuaFunction} which is a {@link LuaValue},
  * all the value operations can be used directly such as:
  * <ul>
- * <li>{@link LuaValue#setfenv(LuaValue)}</li>
+ * <li>{@link LuaValue#setfenv(LuaTable)}</li>
  * <li>{@link LuaFunction#call(LuaState)}</li>
  * <li>{@link LuaFunction#call(LuaState, LuaValue)}</li>
  * <li>{@link LuaFunction#invoke(LuaState, Varargs)}</li>
@@ -109,7 +109,7 @@ public class LuaInterpreter extends LuaClosure {
 	 * @param p   The prototype to run
 	 * @param env The environement to run in
 	 */
-	public LuaInterpreter(Prototype p, LuaValue env) {
+	public LuaInterpreter(Prototype p, LuaTable env) {
 		super(env);
 		this.p = p;
 		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NOUPVALUEs;
@@ -508,21 +508,20 @@ public class LuaInterpreter extends LuaClosure {
 						}
 						int offset = (c - 1) * Lua.LFIELDS_PER_FLUSH;
 						LuaTable tbl = stack[a].checkTable();
-						o = tbl;
 						if ((b = i >>> 23) == 0) {
 							b = top - a - 1;
 							int m = b - v.count();
 							int j = 1;
 							for (; j <= m; j++) {
-								o.rawset(offset + j, stack[a + j]);
+								tbl.rawset(offset + j, stack[a + j]);
 							}
 							for (; j <= b; j++) {
-								o.rawset(offset + j, v.arg(j - m));
+								tbl.rawset(offset + j, v.arg(j - m));
 							}
 						} else {
 							tbl.presize(offset + b);
 							for (int j = 1; j <= b; j++) {
-								o.rawset(offset + j, stack[a + j]);
+								tbl.rawset(offset + j, stack[a + j]);
 							}
 						}
 					}

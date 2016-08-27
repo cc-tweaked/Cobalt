@@ -26,6 +26,7 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 
@@ -67,7 +68,7 @@ public abstract class ZeroArgFunction extends LibFunction {
 	 *
 	 * @param env The environment to apply during constructon.
 	 */
-	public ZeroArgFunction(LuaValue env) {
+	public ZeroArgFunction(LuaTable env) {
 		this.env = env;
 	}
 

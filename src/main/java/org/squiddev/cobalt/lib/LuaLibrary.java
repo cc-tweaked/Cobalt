@@ -26,6 +26,7 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 
 /**
@@ -39,5 +40,5 @@ public interface LuaLibrary {
 	 * @param environment The environment to add to
 	 * @return The sub-table that was added
 	 */
-	LuaValue add(LuaState state, LuaValue environment);
+	LuaValue add(LuaState state, LuaTable environment);
 }

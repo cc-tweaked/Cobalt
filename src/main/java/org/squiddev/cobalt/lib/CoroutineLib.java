@@ -57,8 +57,18 @@ public class CoroutineLib extends VarArgFunction implements LuaLibrary {
 	private static final int WRAP = 5;
 	private static final int WRAPPED = 6;
 
+	private final LuaThread thread;
+
+	public CoroutineLib() {
+		thread = null;
+	}
+
+	private CoroutineLib(LuaThread thread) {
+		this.thread = thread;
+	}
+
 	@Override
-	public LuaValue add(LuaState state, LuaValue env) {
+	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		bind(state, t, CoroutineLib.class, new String[]{"create", "resume", "running", "status", "yield", "wrap"});
 		env.set(state, "coroutine", t);
@@ -89,16 +99,16 @@ public class CoroutineLib extends VarArgFunction implements LuaLibrary {
 			}
 			case WRAP: {
 				final LuaFunction func = args.arg(1).checkFunction();
-				final LuaThread thread = new LuaThread(state, func, func.getfenv());
-				CoroutineLib cl = new CoroutineLib();
-				cl.setfenv(thread);
+				final LuaTable env = func.getfenv();
+				final LuaThread thread = new LuaThread(state, func, env);
+				CoroutineLib cl = new CoroutineLib(thread);
+				cl.setfenv(env);
 				cl.name = "wrapped";
 				cl.opcode = WRAPPED;
 				return cl;
 			}
 			case WRAPPED: {
-				final LuaThread t = (LuaThread) env;
-				final Varargs result = t.resume(args);
+				final Varargs result = thread.resume(args);
 				if (result.first().toBoolean()) {
 					return result.subargs(2);
 				} else {

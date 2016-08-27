@@ -54,32 +54,32 @@ public final class LuaState {
 	/**
 	 * The metatable for all strings
 	 */
-	public LuaValue stringMetatable;
+	public LuaTable stringMetatable;
 
 	/**
 	 * The metatable for all booleans
 	 */
-	public LuaValue booleanMetatable;
+	public LuaTable booleanMetatable;
 
 	/**
 	 * The metatable for all numbers
 	 */
-	public LuaValue numberMetatable;
+	public LuaTable numberMetatable;
 
 	/**
 	 * The metatable for all nil values
 	 */
-	public LuaValue nilMetatable;
+	public LuaTable nilMetatable;
 
 	/**
 	 * The metatable for all functions
 	 */
-	public LuaValue functionMetatable;
+	public LuaTable functionMetatable;
 
 	/**
 	 * The metatable for all threads
 	 */
-	public LuaValue threadMetatable;
+	public LuaTable threadMetatable;
 
 	/**
 	 * Lookup of loaded packages

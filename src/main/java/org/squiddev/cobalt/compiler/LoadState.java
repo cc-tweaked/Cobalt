@@ -39,7 +39,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * Class to manage loading of {@link Prototype} instances.
  *
  * The {@link LoadState} class exposes one main function,
- * namely {@link #load(LuaState, InputStream, LuaString, LuaValue)},
+ * namely {@link #load(LuaState, InputStream, LuaString, LuaTable)},
  * to be used to load code from a particular input stream.
  *
  * A simple pattern for loading and executing code is
@@ -57,7 +57,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see LuaCompiler
  * @see LuaClosure
  * @see LuaFunction
- * @see LoadState#load(LuaState, InputStream, LuaString, LuaValue)
+ * @see LoadState#load(LuaState, InputStream, LuaString, LuaTable)
  * @see LuaC
  */
 public final class LoadState {
@@ -67,7 +67,7 @@ public final class LoadState {
 	 * See the {@link LuaClosure} documentation for examples of how to use the compiler.
 	 *
 	 * @see LuaClosure
-	 * @see #load(InputStream, LuaString, LuaValue)
+	 * @see #load(InputStream, LuaString, LuaTable)
 	 */
 	public interface LuaCompiler {
 
@@ -80,7 +80,7 @@ public final class LoadState {
 		 * @return The loaded function
 		 * @throws IOException On stream read error
 		 */
-		LuaFunction load(InputStream stream, LuaString filename, LuaValue env) throws IOException;
+		LuaFunction load(InputStream stream, LuaString filename, LuaTable env) throws IOException;
 	}
 
 	/**
@@ -94,7 +94,7 @@ public final class LoadState {
 	public static final LuaString SOURCE_BINARY_STRING = valueOf("binary string");
 
 
-	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaValue env) throws IOException {
+	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException {
 		return load(state, stream, valueOf(name), env);
 	}
 
@@ -109,7 +109,7 @@ public final class LoadState {
 	 * @throws IllegalArgumentException if the signature is bac
 	 * @throws IOException              if an IOException occurs
 	 */
-	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaValue env) throws IOException {
+	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException {
 		if (state.compiler != null) {
 			return state.compiler.load(stream, name, env);
 		} else {

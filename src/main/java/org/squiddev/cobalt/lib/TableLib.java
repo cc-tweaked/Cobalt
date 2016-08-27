@@ -48,7 +48,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  */
 public class TableLib implements LuaLibrary {
 	@Override
-	public LuaTable add(LuaState state, LuaValue env) {
+	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(state, t, TableLib1.class, new String[]{"getn", "maxn",});
 		LibFunction.bind(state, t, TableLibV.class, new String[]{
