@@ -484,14 +484,13 @@ public final class OperationHelper {
 	 * @param t     {@link LuaValue} on which value is being set, typically a table or something with the metatag {@link Constants#NEWINDEX} defined
 	 * @param key   {@link LuaValue} naming the field to assign
 	 * @param value {@link LuaValue} the new value to assign to {@code key}
-	 * @return true if assignment or metatag processing succeeded, false otherwise
 	 * @throws LuaError if there is a loop in metatag processing
 	 */
-	public static boolean setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value) {
-		return setTable(state, t, key, value, -1);
+	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value) {
+		setTable(state, t, key, value, -1);
 	}
 
-	public static boolean setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value, int stack) {
+	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value, int stack) {
 		LuaValue tm;
 		int loop = 0;
 		do {
@@ -502,14 +501,14 @@ public final class OperationHelper {
 				key.checkValidKey();
 				if (!t.rawget(key).isNil() || (tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
 					t.rawset(key, value);
-					return true;
+					return;
 				}
 			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 			if (tm.isFunction()) {
 				((LuaFunction) tm).call(state, t, key, value);
-				return true;
+				return;
 			}
 			t = tm;
 			stack = -1;
