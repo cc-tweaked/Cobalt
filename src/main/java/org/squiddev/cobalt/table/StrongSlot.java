@@ -9,17 +9,20 @@ import org.squiddev.cobalt.Varargs;
  */
 public interface StrongSlot extends Slot {
 	/**
-	 * Return first entry's key
+	 * Returns first entry's key
+	 * @return The first entry's value
 	 */
 	LuaValue key();
 
 	/**
-	 * Return first entry's value
+	 * Returns first entry's value
+	 * @return The first entry's value
 	 */
 	LuaValue value();
 
 	/**
-	 * Return varargsOf(key(), value()) or equivalent
+	 * Creates a pair with key and value
+	 * @return A pair of key and value, stored as a varargs
 	 */
 	Varargs toVarargs();
 }

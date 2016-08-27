@@ -205,7 +205,7 @@ public abstract class LibFunction extends LuaFunction {
 	 * @param firstopcode the first opcode to use
 	 * @param ownerClass  The owner's class
 	 * @param owner       The owner. This will be passed as the first argument
-	 * @see #bind(LuaState, LuaValue, Class, String[], Class, Object)
+	 * @see #bind(LuaState, LuaTable, Class, String[], Class, Object)
 	 */
 	public static void bindOffset(LuaState state, LuaTable env, Class<? extends LibFunction> factory, String[] names, int firstopcode, Class<?> ownerClass, Object owner) {
 		try {

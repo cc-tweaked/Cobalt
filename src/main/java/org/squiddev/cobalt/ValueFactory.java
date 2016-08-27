@@ -358,7 +358,10 @@ public class ValueFactory {
 	}
 
 	/**
-	 * Construct a Metatable instance from the given LuaValue
+	 * Construct a Metatable instance from the given table. This handles strong and weak values.
+	 *
+	 * @param mt The table to construct it from.
+	 * @return The constructed metatable
 	 */
 	public static Metatable metatableOf(LuaTable mt) {
 		if (mt != null) {
@@ -371,7 +374,7 @@ public class ValueFactory {
 					return new WeakMetatable(weakkeys, weakvalues, mt);
 				}
 			}
-			return (LuaTable) mt;
+			return mt;
 		} else {
 			return null;
 		}

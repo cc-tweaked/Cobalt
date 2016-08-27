@@ -33,33 +33,50 @@ import org.squiddev.cobalt.LuaValue;
  */
 public interface Metatable {
 	/**
-	 * Return whether or not this table's keys are weak.
+	 * Returns whether or not this table's keys are weak.
+	 *
+	 * @return Whether this table's keys are weak.
 	 */
 	boolean useWeakKeys();
 
 	/**
-	 * Return whether or not this table's values are weak.
+	 * Returns whether or not this table's values are weak.
+	 *
+	 * @return Whether this table's values are weak.
 	 */
 	boolean useWeakValues();
 
 	/**
-	 * Return this metatable as a LuaValue.
+	 * Returns this metatable as a LuaValue.
+	 *
+	 * @return This metatable as a LuaValue
 	 */
 	LuaTable toLuaValue();
 
 	/**
-	 * Return an instance of Slot appropriate for the given key and value.
+	 * Builts a slot appropriate for the given key and value.
+	 *
+	 * @param key   The new slot's key
+	 * @param value The new slot's value
+	 * @return The built instance
 	 */
 	Slot entry(LuaValue key, LuaValue value);
 
 	/**
-	 * Returns the given value wrapped in a weak reference if appropriate.
+	 * Wraps the given value in a weak reference if appropriate.
+	 *
+	 * @param value The value to wrap
+	 * @return The wrapped value
 	 */
 	LuaValue wrap(LuaValue value);
 
 	/**
 	 * Returns the value at the given index in the array, or null if it is a weak reference that
 	 * has been dropped.
+	 *
+	 * @param array The array to get it from
+	 * @param index The index to get the value from
+	 * @return The value at this point or {@code null} if it is no longer there.
 	 */
 	LuaValue arrayGet(LuaValue[] array, int index);
 }
