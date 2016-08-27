@@ -305,7 +305,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		DebugState ds = DebugHandler.getDebugState(thread);
 		DebugFrame di = ds.getDebugInfo(level - 1);
 		LuaString name = (di != null ? di.getLocalName(local) : null);
-		if (name != null) {
+		if (name != null && di.stack != null) {
 			LuaValue value = di.stack[local - 1];
 			return varargsOf(name, value);
 		} else {
@@ -325,7 +325,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		DebugState ds = DebugHandler.getDebugState(thread);
 		DebugFrame di = ds.getDebugInfo(level - 1);
 		LuaString name = (di != null ? di.getLocalName(local) : null);
-		if (name != null) {
+		if (name != null && di.stack != null) {
 			di.stack[local - 1] = value;
 			return name;
 		} else {
