@@ -87,9 +87,8 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
+	public void setMetatable(LuaState state, LuaValue metatable) {
 		this.metatable = metatable;
-		return this;
 	}
 
 	@Override

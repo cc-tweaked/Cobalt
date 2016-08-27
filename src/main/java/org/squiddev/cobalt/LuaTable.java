@@ -242,9 +242,8 @@ public final class LuaTable extends LuaValue implements Metatable {
 		return metatable != null ? metatable.toLuaValue() : null;
 	}
 
-	public LuaValue setMetatable(LuaValue metatable) {
+	public void setMetatable(LuaValue metatable) {
 		useMetatable(metatableOf(metatable));
-		return this;
 	}
 
 	public void useMetatable(Metatable metatable) {
@@ -259,8 +258,8 @@ public final class LuaTable extends LuaValue implements Metatable {
 	}
 
 	@Override
-	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
-		return setMetatable(metatable);
+	public void setMetatable(LuaState state, LuaValue metatable) {
+		setMetatable(metatable);
 	}
 
 	@Override

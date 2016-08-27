@@ -1257,9 +1257,8 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @param state     The current lua state
 	 * @param metatable {@link LuaValue} instance to serve as the metatable, or null to reset it.
-	 * @return {@code this} to allow chaining of Java function calls
 	 */
-	public LuaValue setMetatable(LuaState state, LuaValue metatable) {
+	public void setMetatable(LuaState state, LuaValue metatable) {
 		throw ErrorFactory.argError(this, "table");
 	}
 

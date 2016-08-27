@@ -89,9 +89,9 @@ public class MetatableTest {
 		assertEquals(null, table.getMetatable(state));
 		assertEquals(null, userdata.getMetatable(state));
 		assertEquals(table, userdatamt.getMetatable(state));
-		assertEquals(table, table.setMetatable(state, mt));
-		assertEquals(userdata, userdata.setMetatable(state, mt));
-		assertEquals(userdatamt, userdatamt.setMetatable(state, mt));
+		table.setMetatable(state, mt);
+		userdata.setMetatable(state, mt);
+		userdatamt.setMetatable(state, mt);
 		assertEquals(mt, table.getMetatable(state));
 		assertEquals(mt, userdata.getMetatable(state));
 		assertEquals(mt, userdatamt.getMetatable(state));
@@ -140,17 +140,17 @@ public class MetatableTest {
 
 	@Test
 	public void testMetatableIndex() {
-		assertEquals(table, table.setMetatable(state, null));
-		assertEquals(userdata, userdata.setMetatable(state, null));
-		assertEquals(userdatamt, userdatamt.setMetatable(state, null));
+		table.setMetatable(state, null);
+		userdata.setMetatable(state, null);
+		userdatamt.setMetatable(state, null);
 		assertEquals(Constants.NIL, table.get(state, 1));
 		assertEquals(Constants.NIL, userdata.get(state, 1));
 		assertEquals(Constants.NIL, userdatamt.get(state, 1));
 
 		// empty metatable
 		LuaValue mt = ValueFactory.tableOf();
-		assertEquals(table, table.setMetatable(state, mt));
-		assertEquals(userdata, userdata.setMetatable(state, mt));
+		table.setMetatable(state, mt);
+		userdata.setMetatable(state, mt);
 		state.booleanMetatable = mt;
 		state.functionMetatable = mt;
 		state.nilMetatable = mt;
@@ -201,8 +201,8 @@ public class MetatableTest {
 	public void testMetatableNewIndex() {
 		// empty metatable
 		LuaValue mt = ValueFactory.tableOf();
-		assertEquals(table, table.setMetatable(state, mt));
-		assertEquals(userdata, userdata.setMetatable(state, mt));
+		table.setMetatable(state, mt);
+		userdata.setMetatable(state, mt);
 		state.booleanMetatable = mt;
 		state.functionMetatable = mt;
 		state.nilMetatable = mt;

@@ -100,9 +100,8 @@ public abstract class IoLib implements LuaLibrary {
 		}
 
 		@Override
-		public LuaValue setMetatable(LuaState state, LuaValue metatable) {
+		public void setMetatable(LuaState state, LuaValue metatable) {
 			this.metatable = metatable;
-			return this;
 		}
 
 		// displays as "file" type

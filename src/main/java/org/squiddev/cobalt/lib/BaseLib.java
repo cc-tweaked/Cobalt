@@ -291,7 +291,8 @@ public class BaseLib implements LuaLibrary {
 						throw new LuaError("cannot change a protected metatable");
 					}
 					final LuaValue mt = args.checkValue(2);
-					return t.setMetatable(state, mt.isNil() ? null : mt.checkTable());
+					t.setMetatable(state, mt.isNil() ? null : mt.checkTable());
+					return t;
 				}
 				case 17: { // "tostring", // (e) -> value
 					LuaValue arg = args.checkValue(1);
