@@ -50,8 +50,8 @@ public class MathLib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable(0, 30);
-		t.set(state, "pi", ValueFactory.valueOf(Math.PI));
-		t.set(state, "huge", LuaDouble.POSINF);
+		t.rawset("pi", ValueFactory.valueOf(Math.PI));
+		t.rawset("huge", LuaDouble.POSINF);
 		LibFunction.bind(state, t, MathLib1.class, new String[]{
 			"abs", "ceil", "cos", "deg",
 			"exp", "floor", "rad", "sin",
@@ -68,14 +68,14 @@ public class MathLib implements LuaLibrary {
 			"randomseed", "random",});
 		t.rawset("mod", t.rawget("fmod"));
 
-		env.set(state, "math", t);
-		state.loadedPackages.set(state, "math", t);
+		env.rawset("math", t);
+		state.loadedPackages.rawset("math", t);
 		return t;
 	}
 
 	private static final class MathLib1 extends OneArgFunction {
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
 				case 0:
 					return valueOf(Math.abs(arg.checkDouble()));
@@ -122,7 +122,7 @@ public class MathLib implements LuaLibrary {
 
 	private static final class MathLib2 extends TwoArgFunction {
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 			switch (opcode) {
 				case 0: { // fmod
 					double x = arg1.checkDouble();
@@ -148,7 +148,7 @@ public class MathLib implements LuaLibrary {
 
 	private static final class MathLibV extends VarArgFunction {
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case 0: { // frexp
 					double x = args.arg(1).checkDouble();

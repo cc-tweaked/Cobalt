@@ -22,7 +22,7 @@ public final class ProfilerStack {
 	 *
 	 * @return The created info
 	 */
-	private ProfilerFrame nextFrame() {
+	private ProfilerFrame nextFrame() throws LuaError {
 		int top = this.top + 1;
 
 		ProfilerFrame[] frames = stack;
@@ -66,7 +66,7 @@ public final class ProfilerStack {
 		}
 	}
 
-	public void enter(DebugFrame dFrame) {
+	public void enter(DebugFrame dFrame) throws LuaError {
 		long time = System.nanoTime();
 		int top = this.top;
 		if (top >= 0) {

@@ -1,6 +1,7 @@
 package org.squiddev.cobalt;
 
 
+import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
@@ -116,7 +117,7 @@ public class PerformanceRunner {
 		}
 	}
 
-	public static void executeCobalt() {
+	public static void executeCobalt() throws CompileException, LuaError {
 		System.out.println("Cobalt");
 		LuaState state = new LuaState(new FileResourceManipulator());
 		LuaTable globals = JsePlatform.debugGlobals(state);

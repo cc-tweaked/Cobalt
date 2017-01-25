@@ -4,8 +4,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
 import java.io.IOException;
@@ -43,7 +44,7 @@ public class ProtectionTest {
 			private long time = System.currentTimeMillis();
 
 			@Override
-			public void poll() {
+			public void poll() throws LuaError {
 				if (System.currentTimeMillis() > time + 500) {
 					time = System.currentTimeMillis();
 					throw new LuaError("Timed out");
@@ -51,7 +52,7 @@ public class ProtectionTest {
 			}
 
 			@Override
-			public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) {
+			public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError {
 				poll();
 				super.onInstruction(ds, di, pc, extras, top);
 			}
@@ -59,7 +60,7 @@ public class ProtectionTest {
 	}
 
 	@Test(timeout = 3000)
-	public void run() throws IOException {
+	public void run() throws IOException, CompileException, LuaError {
 		helpers.loadScript(name).call(helpers.state);
 	}
 }

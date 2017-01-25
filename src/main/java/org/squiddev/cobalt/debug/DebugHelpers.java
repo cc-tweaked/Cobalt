@@ -120,7 +120,10 @@ public final class DebugHelpers {
 				case Lua.OP_GETGLOBAL: {
 					int g = Lua.GETARG_Bx(i); /* global index */
 					// lua_assert(p.k[g].isString());
-					return new LuaString[]{p.k[g].strvalue(), GLOBAL};
+					LuaValue value = p.k[g];
+					LuaValue stringed = value.toLuaString();
+					LuaString string = stringed instanceof LuaString ? (LuaString) stringed : valueOf(value.toString());
+					return new LuaString[]{string, GLOBAL};
 				}
 				case Lua.OP_MOVE: {
 					int a = Lua.GETARG_A(i);
@@ -324,7 +327,7 @@ public final class DebugHelpers {
 		return pt.code[last];
 	}
 
-	static boolean precheck(Prototype pt) {
+	private static boolean precheck(Prototype pt) {
 		if (!(pt.maxstacksize <= Constants.MAXSTACK)) return false;
 		lua_assert(pt.numparams + (pt.is_vararg & Lua.VARARG_HASARG) <= pt.maxstacksize);
 		lua_assert((pt.is_vararg & Lua.VARARG_NEEDSARG) == 0
@@ -369,13 +372,13 @@ public final class DebugHelpers {
 
 	private static LuaString constantName(Prototype proto, int index) {
 		if (Lua.ISK(index) && proto.k[Lua.INDEXK(index)].isString()) {
-			return proto.k[Lua.INDEXK(index)].strvalue();
+			return (LuaString) proto.k[Lua.INDEXK(index)].toLuaString();
 		} else {
 			return DebugLib.QMARK;
 		}
 	}
 
-	public static void lua_assert(boolean x) {
+	private static void lua_assert(boolean x) {
 		if (!x) throw new RuntimeException("lua_assert failed");
 	}
 }

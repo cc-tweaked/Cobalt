@@ -90,11 +90,11 @@ public final class DebugState {
 		this.handler = state.debug;
 	}
 
-	public void onCall(LuaFunction func) {
+	public void onCall(LuaFunction func) throws LuaError {
 		handler.onCall(this, func);
 	}
 
-	public void onReturn() {
+	public void onReturn() throws LuaError {
 		handler.onReturn(this);
 	}
 
@@ -103,7 +103,7 @@ public final class DebugState {
 	 *
 	 * @return The created info
 	 */
-	protected DebugFrame pushInfo() {
+	protected DebugFrame pushInfo() throws LuaError {
 		int top = this.top + 1;
 
 		DebugFrame[] frames = stack;
@@ -201,7 +201,7 @@ public final class DebugState {
 		return thread != null ? DebugHelpers.traceback(thread, 0) : "orphaned thread";
 	}
 
-	public void hookCall(DebugFrame frame) {
+	public void hookCall(DebugFrame frame) throws LuaError {
 		if (inhook || hookfunc == null) return;
 
 		inhook = true;
@@ -216,7 +216,7 @@ public final class DebugState {
 		}
 	}
 
-	public void hookReturn() {
+	public void hookReturn() throws LuaError {
 		if (inhook || hookfunc == null) return;
 
 		inhook = true;
@@ -231,14 +231,12 @@ public final class DebugState {
 		}
 	}
 
-	public void hookInstruction(DebugFrame frame) {
+	public void hookInstruction(DebugFrame frame) throws LuaError {
 		if (inhook || hookfunc == null) return;
 
 		inhook = true;
 		try {
 			hookfunc.onCount(state, this, frame);
-		} catch (LuaError e) {
-			throw e;
 		} catch (RuntimeException e) {
 			throw new LuaError(e);
 		} finally {
@@ -246,14 +244,12 @@ public final class DebugState {
 		}
 	}
 
-	public void hookLine(DebugFrame frame, int oldLine, int newLine) {
+	public void hookLine(DebugFrame frame, int oldLine, int newLine) throws LuaError {
 		if (inhook || hookfunc == null) return;
 
 		inhook = true;
 		try {
 			hookfunc.onLine(state, this, frame, oldLine, newLine);
-		} catch (LuaError e) {
-			throw e;
 		} catch (RuntimeException e) {
 			throw new LuaError(e);
 		} finally {

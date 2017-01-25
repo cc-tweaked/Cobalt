@@ -32,9 +32,8 @@ import java.io.OutputStream;
  * Analog of Process that pipes input and output to client-specified streams.
  */
 public class JseProcess {
-
-	final Process process;
-	final Thread input, output, error;
+	private final Process process;
+	private final Thread input, output, error;
 
 	/**
 	 * Construct a process around a command, with specified streams to redirect input and output to.

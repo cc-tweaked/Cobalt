@@ -94,14 +94,14 @@ public class BaseLib implements LuaLibrary {
 
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
-		env.set(state, "_G", env);
-		env.set(state, "_VERSION", valueOf(Lua._VERSION));
+		env.rawset("_G", env);
+		env.rawset("_VERSION", valueOf(Lua._VERSION));
 		LibFunction.bind(state, env, BaseLib2.class, LIB2_KEYS);
 		LibFunction.bind(state, env, BaseLibV.class, LIBV_KEYS, BaseLib.class, this);
 
 		// remember next, and inext for use in pairs and ipairs
-		next = env.get(state, "next");
-		inext = env.get(state, "__inext");
+		next = env.rawget("next");
+		inext = env.rawget("__inext");
 
 		env.rawset("_VERSION", valueOf("Lua 5.1"));
 
@@ -110,7 +110,7 @@ public class BaseLib implements LuaLibrary {
 
 	private static final class BaseLib2 extends TwoArgFunction {
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 			switch (opcode) {
 				case 0: // "collectgarbage", // ( opt [,arg] ) -> value
 					String s = arg1.optString("collect");
@@ -143,7 +143,7 @@ public class BaseLib implements LuaLibrary {
 		}
 	}
 
-	private static LuaValue getfenvobj(LuaState state, LuaValue arg) {
+	private static LuaValue getfenvobj(LuaState state, LuaValue arg) throws LuaError {
 		if (arg.isFunction()) {
 			return arg;
 		}
@@ -165,7 +165,7 @@ public class BaseLib implements LuaLibrary {
 		}
 
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case 0: // "assert", // ( v [,message] ) -> v, message | ERR
 					if (!args.first().toBoolean()) {
@@ -398,11 +398,22 @@ public class BaseLib implements LuaLibrary {
 		@Override
 		public int read() throws IOException {
 			if (remaining <= 0) {
-				LuaValue s = OperationHelper.call(state, func);
+				LuaValue s;
+				try {
+					s = OperationHelper.call(state, func);
+				} catch (LuaError e) {
+					throw new IOException(e);
+				}
+
 				if (s.isNil()) {
 					return -1;
 				}
-				LuaString ls = s.strvalue();
+				LuaString ls;
+				try {
+					ls = s.strvalue();
+				} catch (LuaError e) {
+					throw new IOException(e);
+				}
 				bytes = ls.bytes;
 				offset = ls.offset;
 				remaining = ls.length;

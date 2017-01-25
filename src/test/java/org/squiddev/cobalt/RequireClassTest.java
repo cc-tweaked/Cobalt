@@ -18,14 +18,14 @@ public class RequireClassTest {
 	private LuaState state;
 
 	@Before
-	public void setup() {
+	public void setup() throws LuaError {
 		state = new LuaState(new FileResourceManipulator());
 		LuaTable globals = JsePlatform.standardGlobals(state);
-		require = (LuaFunction)globals.get(state, "require");
+		require = (LuaFunction) globals.get(state, "require");
 	}
 
 	@Test
-	public void testRequireClassSuccess() {
+	public void testRequireClassSuccess() throws LuaError {
 		LuaValue result = require.call(state, ValueFactory.valueOf("org.squiddev.cobalt.require.RequireSampleSuccess"));
 		assertEquals("require-sample-success", result.toString());
 		result = require.call(state, ValueFactory.valueOf("org.squiddev.cobalt.require.RequireSampleSuccess"));
@@ -61,7 +61,10 @@ public class RequireClassTest {
 			assertEquals(
 				"sample-load-runtime-exception",
 				le.getMessage());
+		} catch (LuaError e) {
+			fail(e.getMessage());
 		}
+
 		try {
 			LuaValue result = require.call(state, ValueFactory.valueOf(RequireSampleLoadRuntimeExcep.class.getName()));
 			fail("incorrectly loaded class that threw runtime exception");

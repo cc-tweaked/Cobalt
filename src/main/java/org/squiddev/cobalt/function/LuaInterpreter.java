@@ -126,14 +126,14 @@ public class LuaInterpreter extends LuaClosure {
 	}
 
 	@Override
-	public final LuaValue call(LuaState state) {
+	public final LuaValue call(LuaState state) throws LuaError {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(Constants.NILS, 0, stack, 0, p.maxstacksize);
 		return execute(state, stack, Constants.NONE).eval(state).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) {
+	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(Constants.NILS, 0, stack, 0, p.maxstacksize);
 		switch (p.numparams) {
@@ -146,7 +146,7 @@ public class LuaInterpreter extends LuaClosure {
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(Constants.NILS, 0, stack, 0, p.maxstacksize);
 		switch (p.numparams) {
@@ -163,7 +163,7 @@ public class LuaInterpreter extends LuaClosure {
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(Constants.NILS, 0, stack, 0, p.maxstacksize);
 		switch (p.numparams) {
@@ -185,12 +185,12 @@ public class LuaInterpreter extends LuaClosure {
 	}
 
 	@Override
-	public final Varargs invoke(LuaState state, Varargs varargs) {
+	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
 		return onInvoke(state, varargs).eval(state);
 	}
 
 	@Override
-	public Varargs onInvoke(LuaState state, Varargs varargs) {
+	public Varargs onInvoke(LuaState state, Varargs varargs) throws LuaError {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(Constants.NILS, 0, stack, 0, p.maxstacksize);
 		for (int i = 0; i < p.numparams; i++) {
@@ -200,7 +200,7 @@ public class LuaInterpreter extends LuaClosure {
 	}
 
 
-	protected Varargs execute(LuaState state, LuaValue[] stack, Varargs varargs) {
+	protected Varargs execute(LuaState state, LuaValue[] stack, Varargs varargs) throws LuaError {
 		// loop through instructions
 		int i, a, b, c, pc = 0, top = 0;
 		LuaValue o;

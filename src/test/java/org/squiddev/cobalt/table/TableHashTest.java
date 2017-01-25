@@ -44,7 +44,7 @@ public class TableHashTest {
 	}
 
 	@Test
-	public void testSetRemove() {
+	public void testSetRemove() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		assertEquals(0, t.getHashLength());
@@ -99,7 +99,7 @@ public class TableHashTest {
 	}
 
 	@Test
-	public void testIndexMetatag() {
+	public void testIndexMetatag() throws LuaError {
 		LuaTable t = new LuaTable();
 		LuaTable mt = new LuaTable();
 		LuaTable fb = new LuaTable();
@@ -157,7 +157,7 @@ public class TableHashTest {
 	}
 
 	@Test
-	public void testIndexFunction() {
+	public void testIndexFunction() throws LuaError {
 		final LuaTable t = new LuaTable();
 		final LuaTable mt = new LuaTable();
 
@@ -214,7 +214,7 @@ public class TableHashTest {
 	}
 
 	@Test
-	public void testNext() {
+	public void testNext() throws LuaError {
 		final LuaTable t = new LuaTable();
 		assertEquals(Constants.NIL, t.next(Constants.NIL));
 

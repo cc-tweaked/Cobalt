@@ -205,13 +205,13 @@ public class LuaString extends LuaValue {
 
 	// get is delegated to the string library
 	@Override
-	public LuaValue get(LuaState state, LuaValue key) {
+	public LuaValue get(LuaState state, LuaValue key) throws LuaError {
 		return OperationHelper.getTable(state, this, key);
 	}
 
 	// string comparison
 	@Override
-	public int strcmp(LuaValue lhs) {
+	public int strcmp(LuaValue lhs) throws LuaError {
 		return -lhs.strcmp(this);
 	}
 
@@ -229,7 +229,7 @@ public class LuaString extends LuaValue {
 	 * Check for number in arithmetic, or throw aritherror
 	 */
 	@Override
-	public double checkArith() {
+	public double checkArith() throws LuaError {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			throw ErrorFactory.arithError(this);
@@ -238,22 +238,22 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public int checkInteger() {
+	public int checkInteger() throws LuaError {
 		return (int) (long) checkDouble();
 	}
 
 	@Override
-	public LuaInteger checkLuaInteger() {
+	public LuaInteger checkLuaInteger() throws LuaError {
 		return ValueFactory.valueOf(checkInteger());
 	}
 
 	@Override
-	public long checkLong() {
+	public long checkLong() throws LuaError {
 		return (long) checkDouble();
 	}
 
 	@Override
-	public double checkDouble() {
+	public double checkDouble() throws LuaError {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			throw ErrorFactory.argError(this, "number");
@@ -262,12 +262,12 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public LuaNumber checkNumber() {
+	public LuaNumber checkNumber() throws LuaError {
 		return ValueFactory.valueOf(checkDouble());
 	}
 
 	@Override
-	public LuaNumber checkNumber(String msg) {
+	public LuaNumber checkNumber(String msg) throws LuaError {
 		double d = scannumber(10);
 		if (Double.isNaN(d)) {
 			throw new LuaError(msg);
@@ -322,27 +322,27 @@ public class LuaString extends LuaValue {
 	}
 
 	@Override
-	public double optDouble(double defval) {
+	public double optDouble(double defval) throws LuaError {
 		return checkNumber().checkDouble();
 	}
 
 	@Override
-	public int optInteger(int defval) {
+	public int optInteger(int defval) throws LuaError {
 		return checkNumber().checkInteger();
 	}
 
 	@Override
-	public LuaInteger optLuaInteger(LuaInteger defval) {
+	public LuaInteger optLuaInteger(LuaInteger defval) throws LuaError {
 		return checkNumber().checkLuaInteger();
 	}
 
 	@Override
-	public long optLong(long defval) {
+	public long optLong(long defval) throws LuaError {
 		return checkNumber().checkLong();
 	}
 
 	@Override
-	public LuaNumber optNumber(LuaNumber defval) {
+	public LuaNumber optNumber(LuaNumber defval) throws LuaError {
 		return checkNumber().checkNumber();
 	}
 

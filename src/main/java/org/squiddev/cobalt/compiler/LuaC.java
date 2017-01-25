@@ -82,9 +82,10 @@ public class LuaC implements LuaCompiler {
 		state.compiler = instance;
 	}
 
-	protected static void _assert(boolean b) {
+	protected static void _assert(boolean b) throws CompileException {
 		if (!b) {
-			throw new LuaError("compiler assert failed");
+			// So technically this should fire a runtime exception but...
+			throw new CompileException("compiler assert failed");
 		}
 	}
 
@@ -194,14 +195,14 @@ public class LuaC implements LuaCompiler {
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
 	@Override
-	public LuaFunction load(InputStream stream, LuaString name, LuaTable env) throws IOException {
+	public LuaFunction load(InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
 		Prototype p = compile(stream, name);
 		LuaInterpreter closure = new LuaInterpreter(p, env);
 		closure.nilUpvalues();
 		return closure;
 	}
 
-	public static Prototype compile(InputStream stream, String name) throws IOException {
+	public static Prototype compile(InputStream stream, String name) throws IOException, CompileException {
 		return compile(stream, valueOf(name));
 	}
 
@@ -213,7 +214,7 @@ public class LuaC implements LuaCompiler {
 	 * @return The compiled code
 	 * @throws IOException On stream read errors
 	 */
-	public static Prototype compile(InputStream stream, LuaString name) throws IOException {
+	public static Prototype compile(InputStream stream, LuaString name) throws IOException, CompileException {
 		int firstByte = stream.read();
 		return (firstByte == '\033') ?
 			LoadState.loadBinaryChunk(firstByte, stream, name) :
@@ -223,7 +224,7 @@ public class LuaC implements LuaCompiler {
 	/**
 	 * Parse the input
 	 */
-	private Prototype luaY_parser(int firstByte, InputStream z, LuaString name) {
+	private Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
 		LexState lexstate = new LexState(this, z);
 		FuncState funcstate = new FuncState();
 		// lexstate.buff = buff;

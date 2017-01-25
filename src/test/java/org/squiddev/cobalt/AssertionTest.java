@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.squiddev.cobalt.compiler.CompileException;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ public class AssertionTest {
 	}
 
 	@Test
-	public void run() throws IOException {
+	public void run() throws IOException, CompileException, LuaError {
 		helpers.loadScript(name).call(helpers.state);
 	}
 }

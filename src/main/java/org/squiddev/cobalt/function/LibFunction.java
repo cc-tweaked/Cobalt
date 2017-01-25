@@ -25,7 +25,6 @@
 
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
@@ -220,7 +219,7 @@ public abstract class LibFunction extends LuaFunction {
 				env.set(state, f.name, f);
 			}
 		} catch (Exception e) {
-			throw new LuaError("bind failed: " + e);
+			throw new IllegalStateException("Binding failed", e);
 		}
 	}
 }

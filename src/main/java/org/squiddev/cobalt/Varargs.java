@@ -81,7 +81,7 @@ public abstract class Varargs {
 	 * @param state The current lua state
 	 * @return the evaluated tail call result
 	 */
-	public Varargs eval(LuaState state) {
+	public Varargs eval(LuaState state) throws LuaError {
 		return this;
 	}
 
@@ -137,7 +137,7 @@ public abstract class Varargs {
 	 * @return LuaValue value if the argument exists
 	 * @throws LuaError if the argument does not exist.
 	 */
-	public LuaValue checkValue(int i) {
+	public LuaValue checkValue(int i) throws LuaError {
 		if (i <= count()) {
 			return arg(i);
 		} else {
@@ -152,7 +152,7 @@ public abstract class Varargs {
 	 * @return LuaValue value if the argument is not nil
 	 * @throws LuaError if the argument doesn't exist or evaluates to nil.
 	 */
-	public LuaValue checkNotNil(int i) {
+	public LuaValue checkNotNil(int i) throws LuaError {
 		return arg(i).checkNotNil();
 	}
 
@@ -164,7 +164,7 @@ public abstract class Varargs {
 	 * @param msg  the error message to use when the test fails
 	 * @throws LuaError if the the value of {@code test} is {@code false}
 	 */
-	public static void argCheck(boolean test, int i, String msg) {
+	public static void argCheck(boolean test, int i, String msg) throws LuaError {
 		if (!test) {
 			throw ErrorFactory.argError(i, msg);
 		}

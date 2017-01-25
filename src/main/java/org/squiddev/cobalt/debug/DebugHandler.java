@@ -54,7 +54,7 @@ public class DebugHandler {
 	 * @param ds   The current debug state
 	 * @param func the function called
 	 */
-	public void onCall(DebugState ds, LuaFunction func) {
+	public void onCall(DebugState ds, LuaFunction func) throws LuaError {
 		DebugFrame di = ds.pushInfo();
 		di.setFunction(func);
 
@@ -70,7 +70,7 @@ public class DebugHandler {
 	 * @param stack The current lua stack
 	 * @return The pushed info
 	 */
-	public DebugFrame onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack) {
+	public DebugFrame onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack) throws LuaError {
 		DebugFrame di = ds.pushInfo();
 		di.setFunction(func, args, stack);
 
@@ -91,7 +91,7 @@ public class DebugHandler {
 	 *
 	 * @param ds Debug state
 	 */
-	public void onReturn(DebugState ds) {
+	public void onReturn(DebugState ds) throws LuaError {
 		try {
 			if (!ds.inhook && ds.hookrtrn) ds.hookReturn();
 		} finally {
@@ -108,7 +108,7 @@ public class DebugHandler {
 	 * @param extras Extra arguments
 	 * @param top    The top of the callstack
 	 */
-	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) {
+	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError {
 		Prototype prototype = ds.inhook || di.closure == null ? null : di.closure.getPrototype();
 		int oldPc = di.pc;
 
@@ -143,6 +143,6 @@ public class DebugHandler {
 	 * Called within long running processes (such as pattern matching)
 	 * to allow terminating the process.
 	 */
-	public void poll() {
+	public void poll() throws LuaError {
 	}
 }

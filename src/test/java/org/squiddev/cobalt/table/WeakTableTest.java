@@ -84,7 +84,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testWeakValuesTable() {
+		public void testWeakValuesTable() throws LuaError {
 			LuaTable t = new_Table();
 
 			Object obj = new Object();
@@ -128,7 +128,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testChangeMode() {
+		public void testChangeMode() throws LuaError {
 			LuaTable table = new LuaTable();
 
 			table.set(state, 1, new LuaTable());
@@ -142,7 +142,7 @@ public abstract class WeakTableTest {
 
 	public static class WeakKeyTableTest extends WeakTableTest {
 		@Test
-		public void testWeakKeysTable() {
+		public void testWeakKeysTable() throws LuaError {
 			LuaTable t = ValueFactory.weakTable(true, false);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -176,7 +176,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testNext() {
+		public void testNext() throws LuaError {
 			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -208,7 +208,7 @@ public abstract class WeakTableTest {
 
 	public static class WeakKeyValueTableTest extends WeakTableTest {
 		@Test
-		public void testWeakKeysValuesTable() {
+		public void testWeakKeysValuesTable() throws LuaError {
 			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -262,7 +262,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testReplace() {
+		public void testReplace() throws LuaError {
 			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -291,7 +291,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testChangeArrayMode() {
+		public void testChangeArrayMode() throws LuaError {
 			LuaTable table = new LuaTable();
 
 			table.set(state, 1, new LuaTable());
@@ -303,7 +303,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testChangeHashMode() {
+		public void testChangeHashMode() throws LuaError {
 			LuaTable table = new LuaTable();
 
 			table.set(state, "foo", new LuaTable());

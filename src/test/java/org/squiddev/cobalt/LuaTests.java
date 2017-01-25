@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
 
@@ -60,11 +61,11 @@ public class LuaTests {
 	}
 
 	@Before
-	public void setup() {
+	public void setup() throws LuaError {
 		helpers.setup();
 		helpers.globals.rawset("mkdir", new OneArgFunction() {
 			@Override
-			public LuaValue call(LuaState state, LuaValue arg) {
+			public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 				return valueOf(new File(arg.checkString()).mkdirs());
 			}
 		});
@@ -78,7 +79,7 @@ public class LuaTests {
 	}
 
 	@Test()
-	public void run() throws IOException {
+	public void run() throws IOException, CompileException, LuaError {
 		helpers.loadScript(name).call(helpers.state);
 	}
 }

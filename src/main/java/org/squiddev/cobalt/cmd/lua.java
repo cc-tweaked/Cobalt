@@ -195,7 +195,7 @@ public class lua {
 		}
 	}
 
-	private static Varargs setGlobalArg(LuaState state, String[] args, int i) {
+	private static Varargs setGlobalArg(LuaState state, String[] args, int i) throws LuaError {
 		LuaTable arg = tableOf();
 		for (int j = 0; j < args.length; j++) {
 			arg.set(state, j - i, valueOf(args[j]));

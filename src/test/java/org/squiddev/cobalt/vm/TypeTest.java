@@ -72,6 +72,9 @@ public class TypeTest {
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);
 
+	public TypeTest() throws LuaError {
+	}
+
 	public static final class MyData {
 		public MyData() {
 		}
@@ -505,7 +508,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptBoolean() {
+	public void testOptBoolean() throws LuaError {
 		assertEquals(true, somenil.optBoolean(true));
 		assertEquals(false, somenil.optBoolean(false));
 		assertEquals(true, sometrue.optBoolean(false));
@@ -527,7 +530,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptClosure() {
+	public void testOptClosure() throws LuaError {
 		assertEquals(someclosure, somenil.optClosure(someclosure));
 		assertEquals(null, somenil.optClosure(null));
 		throwsError(sometrue, "optClosure", LuaClosure.class, someclosure);
@@ -550,7 +553,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptDouble() {
+	public void testOptDouble() throws LuaError {
 		assertDoubleEquals(33., somenil.optDouble(33.));
 		throwsError(sometrue, "optDouble", double.class, 33.);
 		throwsError(somefalse, "optDouble", double.class, 33.);
@@ -571,7 +574,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptFunction() {
+	public void testOptFunction() throws LuaError {
 		assertEquals(somefunc, somenil.optFunction(somefunc));
 		assertEquals(null, somenil.optFunction(null));
 		throwsError(sometrue, "optFunction", LuaFunction.class, somefunc);
@@ -595,7 +598,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptInt() {
+	public void testOptInt() throws LuaError {
 		assertEquals(33, somenil.optInteger(33));
 		throwsError(sometrue, "optInteger", int.class, 33);
 		throwsError(somefalse, "optInteger", int.class, 33);
@@ -616,7 +619,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptInteger() {
+	public void testOptInteger() throws LuaError {
 		assertEquals(valueOf(33), somenil.optLuaInteger(valueOf(33)));
 		throwsError(sometrue, "optLuaInteger", LuaInteger.class, valueOf(33));
 		throwsError(somefalse, "optLuaInteger", LuaInteger.class, valueOf(33));
@@ -637,7 +640,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptLong() {
+	public void testOptLong() throws LuaError {
 		assertEquals(33L, somenil.optLong(33));
 		throwsError(sometrue, "optLong", long.class, (long) 33);
 		throwsError(somefalse, "optLong", long.class, (long) 33);
@@ -658,7 +661,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptNumber() {
+	public void testOptNumber() throws LuaError {
 		assertEquals(valueOf(33), somenil.optNumber(valueOf(33)));
 		throwsError(sometrue, "optNumber", LuaNumber.class, valueOf(33));
 		throwsError(somefalse, "optNumber", LuaNumber.class, valueOf(33));
@@ -679,7 +682,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptTable() {
+	public void testOptTable() throws LuaError {
 		assertEquals(table, somenil.optTable(table));
 		assertEquals(null, somenil.optTable(null));
 		throwsError(sometrue, "optTable", LuaTable.class, table);
@@ -702,7 +705,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptThread() {
+	public void testOptThread() throws LuaError {
 		assertEquals(thread, somenil.optThread(thread));
 		assertEquals(null, somenil.optThread(null));
 		throwsError(sometrue, "optThread", LuaThread.class, thread);
@@ -725,7 +728,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptJavaString() {
+	public void testOptJavaString() throws LuaError {
 		assertEquals("xyz", somenil.optString("xyz"));
 		assertEquals(null, somenil.optString(null));
 		throwsError(sometrue, "optString", String.class, "xyz");
@@ -747,7 +750,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptLuaString() {
+	public void testOptLuaString() throws LuaError {
 		assertEquals(valueOf("xyz"), somenil.optLuaString(valueOf("xyz")));
 		assertEquals(null, somenil.optLuaString(null));
 		throwsError(sometrue, "optLuaString", LuaString.class, valueOf("xyz"));
@@ -769,7 +772,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptUserdata() {
+	public void testOptUserdata() throws LuaError {
 		assertEquals(sampleobject, somenil.optUserdata(sampleobject));
 		assertEquals(sampledata, somenil.optUserdata(sampledata));
 		assertEquals(null, somenil.optUserdata(null));
@@ -807,7 +810,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptUserdataClass() {
+	public void testOptUserdataClass() throws LuaError {
 		assertEquals(sampledata, somenil.optUserdata(MyData.class, sampledata));
 		assertEquals(sampleobject, somenil.optUserdata(Object.class, sampleobject));
 		assertEquals(null, somenil.optUserdata(null));
@@ -879,7 +882,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckBoolean() {
+	public void testCheckBoolean() throws LuaError {
 		throwsErrorReq(somenil, "checkBoolean");
 		assertEquals(true, sometrue.checkBoolean());
 		assertEquals(false, somefalse.checkBoolean());
@@ -922,7 +925,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckDouble() {
+	public void testCheckDouble() throws LuaError {
 		throwsErrorReq(somenil, "checkDouble");
 		throwsErrorReq(sometrue, "checkDouble");
 		throwsErrorReq(somefalse, "checkDouble");
@@ -966,7 +969,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckInt() {
+	public void testCheckInt() throws LuaError {
 		throwsErrorReq(somenil, "checkInteger");
 		throwsErrorReq(sometrue, "checkInteger");
 		throwsErrorReq(somefalse, "checkInteger");
@@ -987,7 +990,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckInteger() {
+	public void testCheckInteger() throws LuaError {
 		throwsErrorReq(somenil, "checkLuaInteger");
 		throwsErrorReq(sometrue, "checkLuaInteger");
 		throwsErrorReq(somefalse, "checkLuaInteger");
@@ -1008,7 +1011,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckLong() {
+	public void testCheckLong() throws LuaError {
 		throwsErrorReq(somenil, "checkLong");
 		throwsErrorReq(sometrue, "checkLong");
 		throwsErrorReq(somefalse, "checkLong");
@@ -1029,7 +1032,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckNumber() {
+	public void testCheckNumber() throws LuaError {
 		throwsErrorReq(somenil, "checkNumber");
 		throwsErrorReq(sometrue, "checkNumber");
 		throwsErrorReq(somefalse, "checkNumber");
@@ -1094,7 +1097,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckJavaString() {
+	public void testCheckJavaString() throws LuaError {
 		throwsErrorReq(somenil, "checkString");
 		throwsErrorReq(sometrue, "checkString");
 		throwsErrorReq(somefalse, "checkString");
@@ -1115,7 +1118,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckLuaString() {
+	public void testCheckLuaString() throws LuaError {
 		throwsErrorReq(somenil, "checkLuaString");
 		throwsErrorReq(sometrue, "checkLuaString");
 		throwsErrorReq(somefalse, "checkLuaString");
@@ -1172,7 +1175,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckUserdataClass() {
+	public void testCheckUserdataClass() throws LuaError {
 		throwsErrorReqCheckUserdataClass(somenil, Object.class);
 		throwsErrorReqCheckUserdataClass(somenil, MyData.class);
 		throwsErrorReqCheckUserdataClass(sometrue, Object.class);
@@ -1204,7 +1207,7 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testCheckValue() {
+	public void testCheckValue() throws LuaError {
 		throwsErrorReq(somenil, "checkNotNil");
 		assertEquals(sometrue, sometrue.checkNotNil());
 		assertEquals(somefalse, somefalse.checkNotNil());

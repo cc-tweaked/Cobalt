@@ -77,12 +77,12 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public LuaValue checkNotNil() {
+	public LuaValue checkNotNil() throws LuaError {
 		throw ErrorFactory.argError(this, "value");
 	}
 
 	@Override
-	public LuaValue checkValidKey() {
+	public LuaValue checkValidKey() throws LuaError {
 		throw ErrorFactory.typeError(this, "table index");
 	}
 

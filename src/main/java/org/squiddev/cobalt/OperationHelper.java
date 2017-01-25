@@ -37,11 +37,11 @@ public final class OperationHelper {
 	}
 
 	//region Binary
-	public static LuaValue add(LuaState state, LuaValue left, LuaValue right) {
+	public static LuaValue add(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		return add(state, left, right, -1, -1);
 	}
 
-	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
+	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return valueOf(left.checkArith() + right.checkArith());
@@ -50,11 +50,11 @@ public final class OperationHelper {
 		return arithMetatable(state, Constants.ADD, left, right, leftIdx, rightIdx);
 	}
 
-	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right) {
+	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		return sub(state, left, right, -1, -1);
 	}
 
-	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
+	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return valueOf(left.checkArith() - right.checkArith());
@@ -63,11 +63,11 @@ public final class OperationHelper {
 		return arithMetatable(state, Constants.SUB, left, right, leftIdx, rightIdx);
 	}
 
-	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right) {
+	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		return mul(state, left, right, -1, -1);
 	}
 
-	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
+	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return valueOf(left.checkArith() * right.checkArith());
@@ -76,11 +76,11 @@ public final class OperationHelper {
 		return arithMetatable(state, Constants.MUL, left, right, leftIdx, rightIdx);
 	}
 
-	public static LuaValue div(LuaState state, LuaValue left, LuaValue right) {
+	public static LuaValue div(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		return div(state, left, right, -1, -1);
 	}
 
-	public static LuaValue div(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
+	public static LuaValue div(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return ValueFactory.valueOf(div(left.checkArith(), right.checkArith()));
@@ -89,11 +89,11 @@ public final class OperationHelper {
 		return arithMetatable(state, Constants.DIV, left, right, leftIdx, rightIdx);
 	}
 
-	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right) {
+	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		return mod(state, left, right, -1, -1);
 	}
 
-	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
+	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return ValueFactory.valueOf(mod(left.checkArith(), right.checkArith()));
@@ -102,11 +102,11 @@ public final class OperationHelper {
 		return arithMetatable(state, Constants.MOD, left, right, leftIdx, rightIdx);
 	}
 
-	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right) {
+	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		return pow(state, left, right, -1, -1);
 	}
 
-	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) {
+	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
 		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
 			return ValueFactory.valueOf(Math.pow(left.checkArith(), right.checkArith()));
@@ -153,7 +153,7 @@ public final class OperationHelper {
 	 * @return {@link LuaValue} resulting from metatag processing
 	 * @throws LuaError if metatag was not defined for either operand
 	 */
-	protected static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) {
+	protected static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
 		LuaValue h = left.metatag(state, tag);
 		if (h.isNil()) {
 			h = right.metatag(state, tag);
@@ -180,11 +180,11 @@ public final class OperationHelper {
 	 * @return {@link LuaValue} resulting from metatag processing for {@link Constants#CONCAT} metatag.
 	 * @throws LuaError if metatag was not defined for either operand
 	 */
-	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right) {
+	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		return concat(state, left, right, -1, -1);
 	}
 
-	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right, int leftStack, int rightStack) {
+	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
 		if (left.isString() && right.isString()) {
 			return concat(left.checkLuaString(), right.checkLuaString());
 		} else {
@@ -201,7 +201,7 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaString concat(LuaString left, LuaString right) {
+	public static LuaString concat(LuaString left, LuaString right) throws LuaError {
 		byte[] b = new byte[left.length + right.length];
 		System.arraycopy(left.bytes, left.offset, b, 0, left.length);
 		System.arraycopy(right.bytes, right.offset, b, left.length, right.length);
@@ -210,7 +210,7 @@ public final class OperationHelper {
 	//endregion
 
 	//region Compare
-	public static boolean lt(LuaState state, LuaValue left, LuaValue right) {
+	public static boolean lt(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
 			throw ErrorFactory.compareError(left, right);
@@ -230,7 +230,7 @@ public final class OperationHelper {
 		}
 	}
 
-	public static boolean le(LuaState state, LuaValue left, LuaValue right) {
+	public static boolean le(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		int tLeft = left.type();
 		if (tLeft != right.type()) {
 			throw ErrorFactory.compareError(left, right);
@@ -255,7 +255,7 @@ public final class OperationHelper {
 		}
 	}
 
-	public static boolean eq(LuaState state, LuaValue left, LuaValue right) {
+	public static boolean eq(LuaState state, LuaValue left, LuaValue right) throws LuaError {
 		int tLeft = left.type();
 		if (tLeft != right.type()) return false;
 
@@ -297,11 +297,11 @@ public final class OperationHelper {
 	 * @return length as defined by the lua # operator or metatag processing result
 	 * @throws LuaError if {@code value} is not a table or string, and has no {@link Constants#LEN} metatag
 	 */
-	public static LuaValue length(LuaState state, LuaValue value) {
+	public static LuaValue length(LuaState state, LuaValue value) throws LuaError {
 		return length(state, value, -1);
 	}
 
-	public static LuaValue length(LuaState state, LuaValue value, int stack) {
+	public static LuaValue length(LuaState state, LuaValue value, int stack) throws LuaError {
 		switch (value.type()) {
 			case Constants.TTABLE:
 				return valueOf(((LuaTable) value).length());
@@ -325,11 +325,11 @@ public final class OperationHelper {
 	 * @return numeric inverse as {@link LuaNumber} if numeric, or metatag processing result if {@link Constants#UNM} metatag is defined
 	 * @throws LuaError if {@code value} is not a table or string, and has no {@link Constants#UNM} metatag
 	 */
-	public static LuaValue neg(LuaState state, LuaValue value) {
+	public static LuaValue neg(LuaState state, LuaValue value) throws LuaError {
 		return neg(state, value, -1);
 	}
 
-	public static LuaValue neg(LuaState state, LuaValue value, int stack) {
+	public static LuaValue neg(LuaState state, LuaValue value, int stack) throws LuaError {
 		int tValue = value.type();
 		if (tValue == Constants.TNUMBER) {
 			return valueOf(-value.checkArith());
@@ -348,11 +348,11 @@ public final class OperationHelper {
 	//endregion
 
 	//region Calling
-	public static LuaValue call(LuaState state, LuaValue function) {
+	public static LuaValue call(LuaState state, LuaValue function) throws LuaError {
 		return call(state, function, -1);
 	}
 
-	public static LuaValue call(LuaState state, LuaValue function, int stack) {
+	public static LuaValue call(LuaState state, LuaValue function, int stack) throws LuaError {
 		if (function.isFunction()) {
 			return ((LuaFunction) function).call(state);
 		} else {
@@ -363,11 +363,11 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg) {
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg) throws LuaError {
 		return call(state, function, arg, -1);
 	}
 
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg, int stack) {
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg, int stack) throws LuaError {
 		if (function.isFunction()) {
 			return ((LuaFunction) function).call(state, arg);
 		} else {
@@ -378,11 +378,11 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2) {
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2) throws LuaError {
 		return call(state, function, arg1, arg2, -1);
 	}
 
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, int stack) {
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, int stack) throws LuaError {
 		if (function.isFunction()) {
 			return ((LuaFunction) function).call(state, arg1, arg2);
 		} else {
@@ -393,11 +393,11 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return call(state, function, arg1, arg2, arg3, -1);
 	}
 
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int stack) {
+	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int stack) throws LuaError {
 		if (function.isFunction()) {
 			return ((LuaFunction) function).call(state, arg1, arg2, arg3);
 		} else {
@@ -408,11 +408,11 @@ public final class OperationHelper {
 		}
 	}
 
-	public static Varargs invoke(LuaState state, LuaValue function, Varargs args) {
+	public static Varargs invoke(LuaState state, LuaValue function, Varargs args) throws LuaError {
 		return invoke(state, function, args, -1);
 	}
 
-	public static Varargs invoke(LuaState state, LuaValue function, Varargs args, int stack) {
+	public static Varargs invoke(LuaState state, LuaValue function, Varargs args, int stack) throws LuaError {
 		if (function.isFunction()) {
 			return ((LuaFunction) function).invoke(state, args);
 		} else {
@@ -423,11 +423,11 @@ public final class OperationHelper {
 		}
 	}
 
-	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args) {
+	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args) throws LuaError {
 		return onInvoke(state, function, args, -1);
 	}
 
-	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args, int stack) {
+	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args, int stack) throws LuaError {
 		if (function.isFunction()) {
 			return ((LuaFunction) function).onInvoke(state, args);
 		} else {
@@ -451,11 +451,11 @@ public final class OperationHelper {
 	 * @return {@link LuaValue} for the {@code key} if it exists, or {@link Constants#NIL}
 	 * @throws LuaError if there is a loop in metatag processing
 	 */
-	public static LuaValue getTable(LuaState state, LuaValue t, LuaValue key) {
+	public static LuaValue getTable(LuaState state, LuaValue t, LuaValue key) throws LuaError {
 		return getTable(state, t, key, -1);
 	}
 
-	public static LuaValue getTable(LuaState state, LuaValue t, LuaValue key, int stack) {
+	public static LuaValue getTable(LuaState state, LuaValue t, LuaValue key, int stack) throws LuaError {
 		LuaValue tm;
 		int loop = 0;
 		do {
@@ -486,11 +486,11 @@ public final class OperationHelper {
 	 * @param value {@link LuaValue} the new value to assign to {@code key}
 	 * @throws LuaError if there is a loop in metatag processing
 	 */
-	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value) {
+	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value) throws LuaError {
 		setTable(state, t, key, value, -1);
 	}
 
-	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value, int stack) {
+	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value, int stack) throws LuaError {
 		LuaValue tm;
 		int loop = 0;
 		do {

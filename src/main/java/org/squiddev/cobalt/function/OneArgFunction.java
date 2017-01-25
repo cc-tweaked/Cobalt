@@ -54,7 +54,7 @@ import org.squiddev.cobalt.*;
 public abstract class OneArgFunction extends LibFunction {
 
 	@Override
-	public abstract LuaValue call(LuaState state, LuaValue arg);
+	public abstract LuaValue call(LuaState state, LuaValue arg) throws LuaError;
 
 	/**
 	 * Default constructor
@@ -72,22 +72,22 @@ public abstract class OneArgFunction extends LibFunction {
 	}
 
 	@Override
-	public final LuaValue call(LuaState state) {
+	public final LuaValue call(LuaState state) throws LuaError {
 		return call(state, Constants.NIL);
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		return call(state, arg1);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return call(state, arg1);
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs varargs) {
+	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
 		return call(state, varargs.first());
 	}
 }

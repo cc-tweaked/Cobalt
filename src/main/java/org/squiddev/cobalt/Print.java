@@ -413,7 +413,7 @@ public class Print {
 			} else {
 				switch (v.type()) {
 					case Constants.TSTRING:
-						LuaString s = v.checkLuaString();
+						LuaString s = (LuaString) v;
 						ps.print(s.length() < 48 ?
 							s.toString() :
 							s.substring(0, 32).toString() + "...+" + (s.length() - 32) + "b");

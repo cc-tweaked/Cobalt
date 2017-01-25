@@ -2,6 +2,7 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.OperationHelper;
@@ -25,7 +26,7 @@ public class StringTest {
 	}
 
 	@Test
-	public void testToInputStream() throws IOException {
+	public void testToInputStream() throws IOException, LuaError {
 		LuaString str = LuaString.valueOf("Hello");
 
 		InputStream is = str.toInputStream();

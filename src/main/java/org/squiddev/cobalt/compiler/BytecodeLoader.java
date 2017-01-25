@@ -309,9 +309,9 @@ public final class BytecodeLoader {
 	 *
 	 * @throws IOException if an i/o exception occurs.
 	 */
-	public void loadHeader() throws IOException {
+	public void loadHeader() throws IOException, CompileException {
 		int luacVersion = is.readByte();
-		if (luacVersion != LUAC_VERSION) throw new LuaError("unsupported luac version");
+		if (luacVersion != LUAC_VERSION) throw new CompileException("unsupported luac version");
 
 		int luacFormat = is.readByte();
 		luacLittleEndian = (0 != is.readByte());
@@ -328,7 +328,7 @@ public final class BytecodeLoader {
 			case NUMBER_FORMAT_NUM_PATCH_INT32:
 				break;
 			default:
-				throw new LuaError("unsupported int size");
+				throw new CompileException("unsupported int size");
 		}
 	}
 }

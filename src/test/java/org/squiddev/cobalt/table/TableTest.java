@@ -44,11 +44,11 @@ public class TableTest {
 		state = new LuaState(new FileResourceManipulator());
 	}
 
-	private int keyCount(LuaTable t) {
+	private int keyCount(LuaTable t) throws LuaError {
 		return keys(t).length;
 	}
 
-	private LuaValue[] keys(LuaTable t) {
+	private LuaValue[] keys(LuaTable t) throws LuaError {
 		ArrayList<LuaValue> l = new ArrayList<>();
 		LuaValue k = Constants.NIL;
 		while (true) {
@@ -63,7 +63,7 @@ public class TableTest {
 
 
 	@Test
-	public void testInOrderIntegerKeyInsertion() {
+	public void testInOrderIntegerKeyInsertion() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -72,7 +72,11 @@ public class TableTest {
 
 		// Ensure all keys are still there.
 		for (int i = 1; i <= 32; ++i) {
-			assertEquals("Test Value! " + i, t.get(state, i).toString());
+			try {
+				assertEquals("Test Value! " + i, t.get(state, i).toString());
+			} catch (LuaError luaError) {
+				luaError.printStackTrace();
+			}
 		}
 
 		// Ensure capacities make sense
@@ -81,7 +85,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRekeyCount() {
+	public void testRekeyCount() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		// NOTE: This order of insertion is important.
@@ -101,7 +105,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testOutOfOrderIntegerKeyInsertion() {
+	public void testOutOfOrderIntegerKeyInsertion() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 32; i > 0; --i) {
@@ -120,7 +124,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testStringAndIntegerKeys() {
+	public void testStringAndIntegerKeys() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 0; i < 10; ++i) {
@@ -162,7 +166,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testBadInitialCapacity() {
+	public void testBadInitialCapacity() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
 		t.set(state, "test", valueOf("foo"));
@@ -171,7 +175,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRemove0() {
+	public void testRemove0() throws LuaError {
 		LuaTable t = new LuaTable(2, 0);
 
 		t.set(state, 1, valueOf("foo"));
@@ -189,7 +193,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRemove1() {
+	public void testRemove1() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
 		t.set(state, "test", valueOf("foo"));
@@ -205,7 +209,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRemove2() {
+	public void testRemove2() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
 		t.set(state, "test", valueOf("foo"));
@@ -230,7 +234,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testInOrderLuaLength() {
+	public void testInOrderLuaLength() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -241,7 +245,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testOutOfOrderLuaLength() {
+	public void testOutOfOrderLuaLength() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int j = 8; j < 32; j += 8) {
@@ -254,7 +258,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testStringKeysLuaLength() {
+	public void testStringKeysLuaLength() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -265,7 +269,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testMixedKeysLuaLength() {
+	public void testMixedKeysLuaLength() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -276,7 +280,7 @@ public class TableTest {
 		}
 	}
 
-	private void compareLists(LuaTable t, Vector<LuaString> v) {
+	private void compareLists(LuaTable t, Vector<LuaString> v) throws LuaError {
 		int n = v.size();
 		assertEquals(v.size(), OperationHelper.length(state, t).toInteger());
 		for (int j = 0; j < n; j++) {
@@ -288,7 +292,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testInsertBeginningOfList() {
+	public void testInsertBeginningOfList() throws LuaError {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 
@@ -301,7 +305,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testInsertEndOfList() {
+	public void testInsertEndOfList() throws LuaError {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 
@@ -314,7 +318,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testInsertMiddleOfList() {
+	public void testInsertMiddleOfList() throws LuaError {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 
@@ -336,7 +340,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRemoveBeginningOfList() {
+	public void testRemoveBeginningOfList() throws LuaError {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
@@ -348,7 +352,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRemoveEndOfList() {
+	public void testRemoveEndOfList() throws LuaError {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
@@ -360,7 +364,7 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRemoveMiddleOfList() {
+	public void testRemoveMiddleOfList() throws LuaError {
 		LuaTable t = new LuaTable();
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);

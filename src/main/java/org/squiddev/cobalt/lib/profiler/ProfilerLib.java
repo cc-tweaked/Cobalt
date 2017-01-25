@@ -72,12 +72,12 @@ public class ProfilerLib implements LuaLibrary {
 		}
 
 		@Override
-		public void onCall(LuaState state, DebugState ds, DebugFrame frame) {
+		public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
 			stack.enter(frame);
 		}
 
 		@Override
-		public void onReturn(LuaState state, DebugState ds, DebugFrame dFrame) {
+		public void onReturn(LuaState state, DebugState ds, DebugFrame dFrame) throws LuaError {
 			ProfilerFrame frame = stack.leave(false);
 			if (frame != null) {
 				count++;
@@ -106,7 +106,7 @@ public class ProfilerLib implements LuaLibrary {
 			state.setHook(null, false, false, false, -1);
 		}
 
-		public long close() {
+		public long close() throws LuaError {
 			try {
 				writer.close();
 			} catch (IOException e) {
@@ -125,7 +125,7 @@ public class ProfilerLib implements LuaLibrary {
 		}
 
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
 				case 0: // milliTime
 					return valueOf(System.currentTimeMillis());

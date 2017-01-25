@@ -25,10 +25,7 @@
 
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.*;
 
 /**
  * Abstract base class for Java function implementations that take no arguments and
@@ -55,7 +52,7 @@ import org.squiddev.cobalt.Varargs;
 public abstract class ZeroArgFunction extends LibFunction {
 
 	@Override
-	public abstract LuaValue call(LuaState state);
+	public abstract LuaValue call(LuaState state) throws LuaError;
 
 	/**
 	 * Default constructor
@@ -73,22 +70,22 @@ public abstract class ZeroArgFunction extends LibFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
+	public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 		return call(state);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		return call(state);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return call(state);
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs varargs) {
+	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
 		return call(state);
 	}
 }

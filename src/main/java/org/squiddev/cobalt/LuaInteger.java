@@ -192,7 +192,7 @@ public class LuaInteger extends LuaNumber {
 
 	// string comparison
 	@Override
-	public int strcmp(LuaString rhs) {
+	public int strcmp(LuaString rhs) throws LuaError {
 		throw ErrorFactory.typeError(this, "attempt to compare number with string");
 	}
 

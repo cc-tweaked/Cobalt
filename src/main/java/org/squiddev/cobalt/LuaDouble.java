@@ -166,7 +166,7 @@ public class LuaDouble extends LuaNumber {
 
 	// string comparison
 	@Override
-	public int strcmp(LuaString rhs) {
+	public int strcmp(LuaString rhs) throws LuaError {
 		throw ErrorFactory.typeError(this, "attempt to compare number with string");
 	}
 
@@ -254,7 +254,7 @@ public class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public LuaValue checkValidKey() {
+	public LuaValue checkValidKey() throws LuaError {
 		if (Double.isNaN(v)) {
 			throw new LuaError("table index expected, got nan");
 		}

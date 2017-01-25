@@ -114,7 +114,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs args) {
+	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 		switch (opcode) {
 			case DEBUG:
 				return _debug(args);
@@ -153,11 +153,11 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 
 	// j2se subclass may wish to override and provide actual console here.
 	// j2me platform has not System.in to provide console.
-	static Varargs _debug(Varargs args) {
+	private static Varargs _debug(Varargs args) {
 		return NONE;
 	}
 
-	private static Varargs _gethook(LuaState state, Varargs args) {
+	private static Varargs _gethook(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		DebugState ds = DebugHandler.getDebugState(thread);
@@ -176,7 +176,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 			valueOf(ds.hookcount));
 	}
 
-	private static Varargs _sethook(LuaState state, Varargs args) {
+	private static Varargs _sethook(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
@@ -205,20 +205,20 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return NONE;
 	}
 
-	private static Varargs _getfenv(Varargs args) {
+	private static Varargs _getfenv(Varargs args) throws LuaError {
 		LuaValue object = args.first();
 		LuaValue env = object.getfenv();
 		return env != null ? env : NIL;
 	}
 
-	private static Varargs _setfenv(Varargs args) {
+	private static Varargs _setfenv(Varargs args) throws LuaError {
 		LuaValue object = args.first();
 		LuaTable table = args.arg(2).checkTable();
 		object.setfenv(table);
 		return object;
 	}
 
-	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) {
+	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		LuaValue func = args.arg(a++);
@@ -294,7 +294,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return info;
 	}
 
-	private static Varargs _getlocal(LuaState state, Varargs args) {
+	private static Varargs _getlocal(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
@@ -313,7 +313,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		}
 	}
 
-	private static Varargs _setlocal(LuaState state, Varargs args) {
+	private static Varargs _setlocal(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
@@ -384,7 +384,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		}
 	}
 
-	private static Varargs _getupvalue(Varargs args) {
+	private static Varargs _getupvalue(Varargs args) throws LuaError {
 		LuaValue func = args.arg(1).checkFunction();
 		int up = args.arg(2).checkInteger();
 		if (func instanceof LuaClosure) {
@@ -397,7 +397,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return NIL;
 	}
 
-	private static LuaValue _setupvalue(Varargs args) {
+	private static LuaValue _setupvalue(Varargs args) throws LuaError {
 		LuaValue func = args.arg(1).checkFunction();
 		int up = args.arg(2).checkInteger();
 		LuaValue value = args.arg(3);
@@ -412,7 +412,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return NIL;
 	}
 
-	private static LuaValue _traceback(LuaState state, Varargs args) {
+	private static LuaValue _traceback(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;

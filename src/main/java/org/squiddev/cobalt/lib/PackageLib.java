@@ -48,22 +48,22 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public class PackageLib implements LuaLibrary {
 	public static final String DEFAULT_LUA_PATH = "?.lua";
 
-	public LuaTable PACKAGE;
+	private LuaTable PACKAGE;
 
 	/**
 	 * Loader that loads from preload table if found there
 	 */
-	public LuaValue preload_loader;
+	private LuaValue preload_loader;
 
 	/**
 	 * Loader that loads as a lua script using the LUA_PATH
 	 */
-	public LuaValue lua_loader;
+	private LuaValue lua_loader;
 
 	/**
 	 * Loader that loads as a Java class.  Class must have public constructor and be a LuaValue
 	 */
-	public LuaValue java_loader;
+	private LuaValue java_loader;
 
 	private static final LuaString _M = ValueFactory.valueOf("_M");
 	private static final LuaString _NAME = ValueFactory.valueOf("_NAME");
@@ -87,9 +87,9 @@ public class PackageLib implements LuaLibrary {
 
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
-		env.set(state, "require", new PkgLib1(env, "require", OP_REQUIRE, this));
-		env.set(state, "module", new PkgLibV(env, "module", OP_MODULE, this));
-		env.set(state, "package", PACKAGE = ValueFactory.tableOf(new LuaValue[]{
+		env.rawset("require", new PkgLib1(env, "require", OP_REQUIRE, this));
+		env.rawset("module", new PkgLibV(env, "module", OP_MODULE, this));
+		env.rawset("package", PACKAGE = ValueFactory.tableOf(new LuaValue[]{
 			_LOADED, state.loadedPackages,
 			_PRELOAD, ValueFactory.tableOf(),
 			_PATH, ValueFactory.valueOf(DEFAULT_LUA_PATH),
@@ -100,7 +100,7 @@ public class PackageLib implements LuaLibrary {
 			lua_loader = new PkgLibV(env, "lua_loader", OP_LUA_LOADER, this),
 			java_loader = new PkgLibV(env, "java_loader", OP_JAVA_LOADER, this),
 		})}));
-		state.loadedPackages.set(state, "package", PACKAGE);
+		state.loadedPackages.rawset("package", PACKAGE);
 		return env;
 	}
 
@@ -115,7 +115,7 @@ public class PackageLib implements LuaLibrary {
 		}
 
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
 				case OP_REQUIRE:
 					return lib.require(state, arg);
@@ -144,7 +144,7 @@ public class PackageLib implements LuaLibrary {
 		}
 
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case OP_MODULE:
 					return lib.module(state, args);
@@ -171,12 +171,12 @@ public class PackageLib implements LuaLibrary {
 	 * @param name  Name of package
 	 * @param value Value of package
 	 */
-	public void setIsLoaded(LuaState state, String name, LuaTable value) {
-		state.loadedPackages.set(state, name, value);
+	public static void setIsLoaded(LuaState state, String name, LuaTable value) {
+		state.loadedPackages.rawset(name, value);
 	}
 
 	public void setLuaPath(LuaState state, String newLuaPath) {
-		PACKAGE.set(state, _PATH, ValueFactory.valueOf(newLuaPath));
+		PACKAGE.rawset(_PATH, ValueFactory.valueOf(newLuaPath));
 	}
 
 	@Override
@@ -212,13 +212,13 @@ public class PackageLib implements LuaLibrary {
 	 * @param args  The arguments to set it up with
 	 * @return {@link Constants#NONE}
 	 */
-	public Varargs module(LuaState state, Varargs args) {
+	public Varargs module(LuaState state, Varargs args) throws LuaError {
 		LuaString modname = args.arg(1).checkLuaString();
 		int n = args.count();
 		LuaValue value = state.loadedPackages.get(state, modname);
 		LuaTable module;
 		if (!value.isTable()) { /* not found? */
-		    /* try global variable (and create one if it does not exist) */
+			/* try global variable (and create one if it does not exist) */
 			LuaTable globals = state.getCurrentThread().getfenv();
 			module = findtable(state, globals, modname);
 			if (module == null) {
@@ -261,7 +261,7 @@ public class PackageLib implements LuaLibrary {
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
 	 */
-	private static LuaTable findtable(LuaState state, LuaTable table, LuaString fname) {
+	private static LuaTable findtable(LuaState state, LuaTable table, LuaString fname) throws LuaError {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
@@ -283,7 +283,7 @@ public class PackageLib implements LuaLibrary {
 		return table;
 	}
 
-	private static void modinit(LuaState state, LuaValue module, LuaString modname) {
+	private static void modinit(LuaState state, LuaValue module, LuaString modname) throws LuaError {
 		/* module._M = module */
 		module.set(state, _M, module);
 		int e = modname.lastIndexOf(_DOT);
@@ -321,7 +321,7 @@ public class PackageLib implements LuaLibrary {
 	 * @param arg   Module name
 	 * @return The loaded value
 	 */
-	public LuaValue require(LuaState state, LuaValue arg) {
+	public LuaValue require(LuaState state, LuaValue arg) throws LuaError {
 		LuaString name = arg.checkLuaString();
 		LuaValue loaded = state.loadedPackages.get(state, name);
 		if (loaded.toBoolean()) {
@@ -362,12 +362,12 @@ public class PackageLib implements LuaLibrary {
 		return result;
 	}
 
-	public static Varargs loadlib(Varargs args) {
+	public static Varargs loadlib(Varargs args) throws LuaError {
 		args.arg(1).checkLuaString();
 		return varargsOf(Constants.NIL, ValueFactory.valueOf("dynamic libraries not enabled"), ValueFactory.valueOf("absent"));
 	}
 
-	LuaValue loader_preload(LuaState state, Varargs args) {
+	LuaValue loader_preload(LuaState state, Varargs args) throws LuaError {
 		LuaString name = args.arg(1).checkLuaString();
 		LuaValue preload = PACKAGE.get(state, _PRELOAD).checkTable();
 		LuaValue val = preload.get(state, name);
@@ -376,7 +376,7 @@ public class PackageLib implements LuaLibrary {
 			val;
 	}
 
-	LuaValue loader_Lua(LuaState state, Varargs args) {
+	LuaValue loader_Lua(LuaState state, Varargs args) throws LuaError {
 		String name = args.arg(1).checkString();
 
 		// get package path
@@ -419,7 +419,7 @@ public class PackageLib implements LuaLibrary {
 		return ValueFactory.valueOf(sb.toString());
 	}
 
-	private LuaValue loader_Java(Varargs args, LuaTable env) {
+	private LuaValue loader_Java(Varargs args, LuaTable env) throws LuaError {
 		String name = args.arg(1).checkString();
 		String classname = toClassname(name);
 		try {

@@ -105,7 +105,7 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
 	 * @see #invoke(LuaState, Varargs)
 	 */
-	public abstract LuaValue call(LuaState state);
+	public abstract LuaValue call(LuaState state) throws LuaError;
 
 	/**
 	 * Call {@code this} with 1 argument, including metatag processing,
@@ -129,7 +129,7 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
 	 * @see #invoke(LuaState, Varargs)
 	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg);
+	public abstract LuaValue call(LuaState state, LuaValue arg) throws LuaError;
 
 	/**
 	 * Call {@code this} with 2 arguments, including metatag processing,
@@ -153,7 +153,7 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @see #call(LuaState, LuaValue)
 	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
 	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2);
+	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError;
 
 	/**
 	 * Call {@code this} with 3 arguments, including metatag processing,
@@ -178,7 +178,7 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @see #call(LuaState, LuaValue)
 	 * @see #call(LuaState, LuaValue, LuaValue)
 	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3);
+	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError;
 
 	/**
 	 * Call {@code this} with variable arguments, including metatag processing,
@@ -198,7 +198,7 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @see ValueFactory#varargsOf(LuaValue[])
 	 * @see #call(LuaState, LuaValue)
 	 */
-	public abstract Varargs invoke(LuaState state, Varargs args);
+	public abstract Varargs invoke(LuaState state, Varargs args) throws LuaError;
 
 	/**
 	 * Callback used during tail call processing to invoke the function once.
@@ -211,27 +211,27 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @param args  the arguments to the call invocation.
 	 * @return Varargs the return values, possible a TailcallVarargs.
 	 */
-	public Varargs onInvoke(LuaState state, Varargs args) {
+	public Varargs onInvoke(LuaState state, Varargs args) throws LuaError {
 		return invoke(state, args);
 	}
 
 	@Override
-	public void onCall(LuaState state, DebugState ds, DebugFrame frame) {
+	public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
 		call(state, CALL);
 	}
 
 	@Override
-	public void onReturn(LuaState state, DebugState ds, DebugFrame frame) {
+	public void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
 		call(state, RETURN);
 	}
 
 	@Override
-	public void onCount(LuaState state, DebugState ds, DebugFrame frame) {
+	public void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
 		call(state, COUNT);
 	}
 
 	@Override
-	public void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine) {
+	public void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine) throws LuaError {
 		call(state, LINE, ValueFactory.valueOf(newLine));
 	}
 }

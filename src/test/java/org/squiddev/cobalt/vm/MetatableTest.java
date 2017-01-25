@@ -53,6 +53,9 @@ public class MetatableTest {
 	private final LuaUserdata userdata = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatamt = ValueFactory.userdataOf(sampledata, table);
 
+	public MetatableTest() throws LuaError {
+	}
+
 	@Before
 	public void setup() throws Exception {
 		// needed for metatable ops to work on strings
@@ -139,7 +142,7 @@ public class MetatableTest {
 	}
 
 	@Test
-	public void testMetatableIndex() {
+	public void testMetatableIndex() throws LuaError {
 		table.setMetatable(state, null);
 		userdata.setMetatable(state, null);
 		userdatamt.setMetatable(state, null);
@@ -198,7 +201,7 @@ public class MetatableTest {
 
 
 	@Test
-	public void testMetatableNewIndex() {
+	public void testMetatableNewIndex() throws LuaError {
 		// empty metatable
 		LuaTable mt = ValueFactory.tableOf();
 		table.setMetatable(state, mt);
@@ -262,7 +265,7 @@ public class MetatableTest {
 
 	private void checkTable(LuaTable t,
 	                        LuaValue aa, LuaValue bb, LuaValue cc, LuaValue dd, LuaValue ee, LuaValue ff, LuaValue gg,
-	                        LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) {
+	                        LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) throws LuaError {
 		assertEquals(aa, t.get(state, "aa"));
 		assertEquals(bb, t.get(state, "bb"));
 		assertEquals(cc, t.get(state, "cc"));
@@ -287,7 +290,7 @@ public class MetatableTest {
 	}
 
 	@Test
-	public void testRawsetMetatableSet() {
+	public void testRawsetMetatableSet() throws LuaError {
 		// set up tables
 		LuaTable m = makeTable("aa", "aaa", "bb", "bbb");
 		m.set(state, Constants.INDEX, m);

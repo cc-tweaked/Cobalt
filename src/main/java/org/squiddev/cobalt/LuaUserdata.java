@@ -74,7 +74,7 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public Object optUserdata(Class<?> c, Object defval) {
+	public Object optUserdata(Class<?> c, Object defval) throws LuaError {
 		if (!c.isAssignableFrom(instance.getClass())) {
 			throw ErrorFactory.typeError(this, c.getName());
 		}
@@ -97,7 +97,7 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public Object checkUserdata(Class<?> c) {
+	public Object checkUserdata(Class<?> c) throws LuaError {
 		if (c.isAssignableFrom(instance.getClass())) {
 			return instance;
 		}
@@ -105,12 +105,12 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public LuaValue get(LuaState state, LuaValue key) {
+	public LuaValue get(LuaState state, LuaValue key) throws LuaError {
 		return metatable != null ? OperationHelper.getTable(state, this, key) : Constants.NIL;
 	}
 
 	@Override
-	public void set(LuaState state, LuaValue key, LuaValue value) {
+	public void set(LuaState state, LuaValue key, LuaValue value) throws LuaError {
 		if (metatable == null) {
 			throw new LuaError("cannot set " + key + " for userdata");
 		} else {

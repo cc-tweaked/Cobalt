@@ -415,7 +415,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 * @param j   the last element index, inclusive
 	 * @return {@link LuaString} value of the concatenation
 	 */
-	public LuaValue concat(LuaString sep, int i, int j) {
+	public LuaValue concat(LuaString sep, int i, int j) throws LuaError {
 		Buffer sb = new Buffer();
 		if (i <= j) {
 			sb.append(rawget(i).checkLuaString());
@@ -515,7 +515,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 * @see Varargs#arg(int)
 	 * @see #isNil()
 	 */
-	public Varargs next(LuaValue key) {
+	public Varargs next(LuaValue key) throws LuaError {
 		int i = 0;
 		do {
 			// find current key index
@@ -602,7 +602,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 * @see Varargs#arg(int)
 	 * @see #isNil()
 	 */
-	public Varargs inext(LuaValue key) {
+	public Varargs inext(LuaValue key) throws LuaError {
 		int k = key.checkInteger() + 1;
 		LuaValue v = rawget(k);
 		return v.isNil() ? NONE : varargsOf(LuaInteger.valueOf(k), v);
@@ -615,7 +615,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 * @param func  The function to call
 	 * @return {@link Constants#NIL}
 	 */
-	public LuaValue foreach(LuaState state, LuaValue func) {
+	public LuaValue foreach(LuaState state, LuaValue func) throws LuaError {
 		Varargs n;
 		LuaValue k = NIL;
 		LuaValue v;
@@ -635,7 +635,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 * @param func  The function to call
 	 * @return {@link Constants#NIL}
 	 */
-	public LuaValue foreachi(LuaState state, LuaValue func) {
+	public LuaValue foreachi(LuaState state, LuaValue func) throws LuaError {
 		LuaValue v, r;
 		for (int k = 0; !(v = rawget(++k)).isNil(); ) {
 			if (!(r = OperationHelper.call(state, func, valueOf(k), v)).isNil()) {
@@ -1055,7 +1055,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 * @param state      Current lua state
 	 * @param comparator {@link LuaValue} to be called to compare elements.
 	 */
-	public void sort(LuaState state, LuaValue comparator) {
+	public void sort(LuaState state, LuaValue comparator) throws LuaError {
 		if (metatable != null && metatable.useWeakValues()) {
 			dropWeakArrayValues();
 		}
@@ -1068,7 +1068,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 		}
 	}
 
-	private void heapSort(LuaState state, int count, LuaValue cmpfunc) {
+	private void heapSort(LuaState state, int count, LuaValue cmpfunc) throws LuaError {
 		heapify(state, count, cmpfunc);
 		for (int end = count - 1; end > 0; ) {
 			swap(end, 0);
@@ -1076,13 +1076,13 @@ public final class LuaTable extends LuaValue implements Metatable {
 		}
 	}
 
-	private void heapify(LuaState state, int count, LuaValue cmpfunc) {
+	private void heapify(LuaState state, int count, LuaValue cmpfunc) throws LuaError {
 		for (int start = count / 2 - 1; start >= 0; --start) {
 			siftDown(state, start, count - 1, cmpfunc);
 		}
 	}
 
-	private void siftDown(LuaState state, int start, int end, LuaValue cmpfunc) {
+	private void siftDown(LuaState state, int start, int end, LuaValue cmpfunc) throws LuaError {
 		for (int root = start; root * 2 + 1 <= end; ) {
 			int child = root * 2 + 1;
 			if (child < end && compare(state, child, child + 1, cmpfunc)) {
@@ -1097,7 +1097,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 		}
 	}
 
-	private boolean compare(LuaState state, int i, int j, LuaValue cmpfunc) {
+	private boolean compare(LuaState state, int i, int j, LuaValue cmpfunc) throws LuaError {
 		LuaValue a, b;
 		if (metatable == null) {
 			a = array[i];
@@ -1128,7 +1128,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 *
 	 * @return count of keys in the table
 	 */
-	public int keyCount() {
+	public int keyCount() throws LuaError {
 		LuaValue k = NIL;
 		for (int i = 0; true; i++) {
 			Varargs n = next(k);
@@ -1144,7 +1144,7 @@ public final class LuaTable extends LuaValue implements Metatable {
 	 *
 	 * @return array of keys in the table
 	 */
-	public LuaValue[] keys() {
+	public LuaValue[] keys() throws LuaError {
 		List<LuaValue> l = new ArrayList<LuaValue>();
 		LuaValue k = NIL;
 		while (true) {

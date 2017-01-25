@@ -60,22 +60,22 @@ public abstract class VarArgFunction extends LibFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaState state) {
+	public LuaValue call(LuaState state) throws LuaError {
 		return invoke(state, Constants.NONE).first();
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) {
+	public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 		return invoke(state, arg).first();
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2)).first();
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
 	}
 
@@ -90,7 +90,7 @@ public abstract class VarArgFunction extends LibFunction {
 	 * @param args  the arguments to the function call.
 	 */
 	@Override
-	public Varargs invoke(LuaState state, Varargs args) {
+	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 		DebugState ds = state.debug.getDebugState();
 		ds.onCall(this);
 		try {
@@ -109,7 +109,7 @@ public abstract class VarArgFunction extends LibFunction {
 	 * @param args  the arguments to the function call.
 	 */
 	@Override
-	public Varargs onInvoke(LuaState state, Varargs args) {
+	public Varargs onInvoke(LuaState state, Varargs args) throws LuaError {
 		return invoke(state, args);
 	}
 

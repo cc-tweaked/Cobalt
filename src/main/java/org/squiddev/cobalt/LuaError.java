@@ -37,7 +37,7 @@ import org.squiddev.cobalt.debug.DebugHelpers;
  * be thrown on almost any luaj Java operation.
  * This is analagous to the fact that any lua script can throw a lua error at any time.
  */
-public final class LuaError extends RuntimeException {
+public final class LuaError extends Exception {
 	private static final long serialVersionUID = 3065540200206862088L;
 
 	/**

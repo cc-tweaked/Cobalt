@@ -24,7 +24,10 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.LuaTable;
+import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpreter;
@@ -80,7 +83,7 @@ public final class LoadState {
 		 * @return The loaded function
 		 * @throws IOException On stream read error
 		 */
-		LuaFunction load(InputStream stream, LuaString filename, LuaTable env) throws IOException;
+		LuaFunction load(InputStream stream, LuaString filename, LuaTable env) throws IOException, CompileException;
 	}
 
 	/**
@@ -94,7 +97,7 @@ public final class LoadState {
 	public static final LuaString SOURCE_BINARY_STRING = valueOf("binary string");
 
 
-	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException {
+	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException, CompileException {
 		return load(state, stream, valueOf(name), env);
 	}
 
@@ -109,13 +112,13 @@ public final class LoadState {
 	 * @throws IllegalArgumentException if the signature is bac
 	 * @throws IOException              if an IOException occurs
 	 */
-	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException {
+	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
 		if (state.compiler != null) {
 			return state.compiler.load(stream, name, env);
 		} else {
 			int firstByte = stream.read();
 			if (firstByte != LUA_SIGNATURE[0]) {
-				throw new LuaError("no compiler");
+				throw new CompileException("no compiler");
 			}
 			Prototype p = loadBinaryChunk(firstByte, stream, name);
 			LuaInterpreter closure = new LuaInterpreter(p, env);
@@ -134,7 +137,7 @@ public final class LoadState {
 	 * @throws IllegalArgumentException if the signature is bac
 	 * @throws IOException              if an IOException occurs
 	 */
-	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, LuaString name) throws IOException {
+	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, LuaString name) throws IOException, CompileException {
 		name = getSourceName(name);
 		// check rest of signature
 		if (firstByte != LUA_SIGNATURE[0]

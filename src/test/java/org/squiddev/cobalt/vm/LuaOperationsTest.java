@@ -128,7 +128,7 @@ public class LuaOperationsTest {
 	}
 
 	@Test
-	public void testLength() {
+	public void testLength() throws LuaError {
 		throwsLuaError("length", somenil);
 		throwsLuaError("length", sometrue);
 		throwsLuaError("length", somefalse);
@@ -210,7 +210,7 @@ public class LuaOperationsTest {
 	}
 
 	@Test
-	public void testFunctionClosureThreadEnv() {
+	public void testFunctionClosureThreadEnv() throws LuaError {
 		// set up suitable environments for execution
 		LuaValue aaa = valueOf("aaa");
 		LuaValue eee = valueOf("eee");
@@ -227,7 +227,7 @@ public class LuaOperationsTest {
 		{
 			LuaFunction f = new ZeroArgFunction(_G) {
 				@Override
-				public LuaValue call(LuaState state) {
+				public LuaValue call(LuaState state) throws LuaError {
 					return env.get(state, "a");
 				}
 			};

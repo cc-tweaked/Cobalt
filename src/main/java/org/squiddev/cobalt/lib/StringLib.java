@@ -63,16 +63,16 @@ public class StringLib implements LuaLibrary {
 			"sub"});
 
 		t.rawset("gfind", t.rawget("gmatch"));
-		env.set(state, "string", t);
+		env.rawset("string", t);
 
 		state.stringMetatable = tableOf(INDEX, t);
-		state.loadedPackages.set(state, "string", t);
+		state.loadedPackages.rawset("string", t);
 		return t;
 	}
 
 	static final class StringLib1 extends OneArgFunction {
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
 				case 0:
 					return dump(arg); // dump (function)
@@ -91,7 +91,7 @@ public class StringLib implements LuaLibrary {
 
 	static final class StringLibV extends VarArgFunction {
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case 0:
 					return StringLib.byte_(args);
@@ -127,7 +127,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * @param args the calling args
 	 */
-	static Varargs byte_(Varargs args) {
+	static Varargs byte_(Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int l = s.length;
 		int posi = posrelat(args.arg(2).optInteger(1), l);
@@ -159,7 +159,7 @@ public class StringLib implements LuaLibrary {
 	 * @param args the calling VM
 	 * @return The characters for this string
 	 */
-	public static Varargs char_(Varargs args) {
+	public static Varargs char_(Varargs args) throws LuaError {
 		int n = args.count();
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
@@ -179,7 +179,7 @@ public class StringLib implements LuaLibrary {
 	 * so that a later loadstring on this string returns a copy of the function.
 	 * function must be a Lua function without upvalues.
 	 */
-	static LuaValue dump(LuaValue arg) {
+	static LuaValue dump(LuaValue arg) throws LuaError {
 		LuaValue f = arg.checkFunction();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
@@ -210,7 +210,7 @@ public class StringLib implements LuaLibrary {
 	 * If the pattern has captures, then in a successful match the captured values
 	 * are also returned, after the two indices.
 	 */
-	static Varargs find(LuaState state, Varargs args) {
+	static Varargs find(LuaState state, Varargs args) throws LuaError {
 		return str_find_aux(state, args, true);
 	}
 
@@ -237,7 +237,7 @@ public class StringLib implements LuaLibrary {
 	 * This function does not accept string values containing embedded zeros,
 	 * except as arguments to the q option.
 	 */
-	static Varargs format(Varargs args) {
+	static Varargs format(Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
 		final int n = fmt.length();
 		Buffer result = new Buffer(n);
@@ -347,7 +347,7 @@ public class StringLib implements LuaLibrary {
 		public final int conversion;
 		public final int length;
 
-		public FormatDesc(Varargs args, LuaString strfrmt, final int start) {
+		public FormatDesc(Varargs args, LuaString strfrmt, final int start) throws LuaError {
 			int p = start, n = strfrmt.length();
 			int c = 0;
 
@@ -555,7 +555,7 @@ public class StringLib implements LuaLibrary {
 	 * For this function, a '^' at the start of a pattern does not work as an anchor,
 	 * as this would prevent the iteration.
 	 */
-	static Varargs gmatch(LuaState state, Varargs args) {
+	static Varargs gmatch(LuaState state, Varargs args) throws LuaError {
 		LuaString src = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
 		return new GMatchAux(state, args, src, pat);
@@ -573,7 +573,7 @@ public class StringLib implements LuaLibrary {
 		}
 
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			for (; soffset < srclen; soffset++) {
 				ms.reset();
 				int res = ms.match(soffset, 0);
@@ -634,7 +634,7 @@ public class StringLib implements LuaLibrary {
 	 * x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
 	 * --> x="lua-5.1.tar.gz"
 	 */
-	static Varargs gsub(LuaState state, Varargs args) {
+	static Varargs gsub(LuaState state, Varargs args) throws LuaError {
 		LuaString src = args.arg(1).checkLuaString();
 		final int srclen = src.length();
 		LuaString p = args.arg(2).checkLuaString();
@@ -675,7 +675,7 @@ public class StringLib implements LuaLibrary {
 	 * Receives a string and returns its length. The empty string "" has length 0.
 	 * Embedded zeros are counted, so "a\000bc\000" has length 5.
 	 */
-	static LuaValue len(LuaValue arg) {
+	static LuaValue len(LuaValue arg) throws LuaError {
 		return valueOf(arg.checkLuaString().length());
 	}
 
@@ -686,7 +686,7 @@ public class StringLib implements LuaLibrary {
 	 * changed to lowercase. All other characters are left unchanged.
 	 * The definition of what an uppercase letter is depends on the current locale.
 	 */
-	static LuaValue lower(LuaValue arg) {
+	static LuaValue lower(LuaValue arg) throws LuaError {
 		return valueOf(arg.checkString().toLowerCase());
 	}
 
@@ -699,7 +699,7 @@ public class StringLib implements LuaLibrary {
 	 * A third, optional numerical argument init specifies where to start the
 	 * search; its default value is 1 and may be negative.
 	 */
-	static Varargs match(LuaState state, Varargs args) {
+	static Varargs match(LuaState state, Varargs args) throws LuaError {
 		return str_find_aux(state, args, false);
 	}
 
@@ -708,7 +708,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * Returns a string that is the concatenation of n copies of the string s.
 	 */
-	static Varargs rep(Varargs args) {
+	static Varargs rep(Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int n = args.arg(2).checkInteger();
 		int len = s.length();
@@ -731,7 +731,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * Returns a string that is the string s reversed.
 	 */
-	static LuaValue reverse(LuaValue arg) {
+	static LuaValue reverse(LuaValue arg) throws LuaError {
 		LuaString s = arg.checkLuaString();
 		int n = s.length();
 		byte[] b = new byte[n];
@@ -752,7 +752,7 @@ public class StringLib implements LuaLibrary {
 	 * string.sub(s, -i)
 	 * returns a suffix of s with length i.
 	 */
-	static Varargs sub(Varargs args) {
+	static Varargs sub(Varargs args) throws LuaError {
 		final LuaString s = args.arg(1).checkLuaString();
 		final int l = s.length();
 
@@ -781,14 +781,14 @@ public class StringLib implements LuaLibrary {
 	 * changed to uppercase. All other characters are left unchanged.
 	 * The definition of what a lowercase letter is depends on the current locale.
 	 */
-	static LuaValue upper(LuaValue arg) {
+	static LuaValue upper(LuaValue arg) throws LuaError {
 		return valueOf(arg.checkString().toUpperCase());
 	}
 
 	/**
 	 * This utility method implements both string.find and string.match.
 	 */
-	static Varargs str_find_aux(LuaState state, Varargs args, boolean find) {
+	static Varargs str_find_aux(LuaState state, Varargs args, boolean find) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
 		int init = args.arg(3).optInteger(1);
@@ -911,7 +911,7 @@ public class StringLib implements LuaLibrary {
 			level = 0;
 		}
 
-		private void add_s(Buffer lbuf, LuaString news, int soff, int e) {
+		private void add_s(Buffer lbuf, LuaString news, int soff, int e) throws LuaError {
 			int l = news.length();
 			for (int i = 0; i < l; ++i) {
 				byte b = (byte) news.luaByte(i);
@@ -931,7 +931,7 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 
-		public void add_value(LuaState state, Buffer lbuf, int soffset, int end, LuaValue repl) {
+		public void add_value(LuaState state, Buffer lbuf, int soffset, int end, LuaValue repl) throws LuaError {
 			switch (repl.type()) {
 				case TSTRING:
 				case TNUMBER:
@@ -959,7 +959,7 @@ public class StringLib implements LuaLibrary {
 			lbuf.append(repl.strvalue());
 		}
 
-		Varargs push_captures(boolean wholeMatch, int soff, int end) {
+		Varargs push_captures(boolean wholeMatch, int soff, int end) throws LuaError {
 			int nlevels = (this.level == 0 && wholeMatch) ? 1 : this.level;
 			switch (nlevels) {
 				case 0:
@@ -974,7 +974,7 @@ public class StringLib implements LuaLibrary {
 			return varargsOf(v);
 		}
 
-		private LuaValue push_onecapture(int i, int soff, int end) {
+		private LuaValue push_onecapture(int i, int soff, int end) throws LuaError {
 			if (i >= this.level) {
 				if (i == 0) {
 					return s.substring(soff, end);
@@ -995,7 +995,7 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 
-		private int check_capture(int l) {
+		private int check_capture(int l) throws LuaError {
 			l -= '1';
 			if (l < 0 || l >= level || this.clen[l] == CAP_UNFINISHED) {
 				throw new LuaError("invalid capture index");
@@ -1003,7 +1003,7 @@ public class StringLib implements LuaLibrary {
 			return l;
 		}
 
-		private int capture_to_close() {
+		private int capture_to_close() throws LuaError {
 			int level = this.level;
 			for (level--; level >= 0; level--) {
 				if (clen[level] == CAP_UNFINISHED) {
@@ -1013,7 +1013,7 @@ public class StringLib implements LuaLibrary {
 			throw new LuaError("invalid pattern capture");
 		}
 
-		int classend(int poffset) {
+		int classend(int poffset) throws LuaError {
 			switch (p.luaByte(poffset++)) {
 				case L_ESC:
 					if (poffset == p.length()) {
@@ -1118,7 +1118,7 @@ public class StringLib implements LuaLibrary {
 		 * Perform pattern matching. If there is a match, returns offset into s
 		 * where match ends, otherwise returns -1.
 		 */
-		int match(int soffset, int poffset) {
+		int match(int soffset, int poffset) throws LuaError {
 			while (true) {
 				handler.poll();
 
@@ -1205,7 +1205,7 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 
-		int max_expand(int soff, int poff, int ep) {
+		int max_expand(int soff, int poff, int ep) throws LuaError {
 			int i = 0;
 			while (soff + i < s.length() &&
 				singlematch(s.luaByte(soff + i), poff, ep)) {
@@ -1221,7 +1221,7 @@ public class StringLib implements LuaLibrary {
 			return -1;
 		}
 
-		int min_expand(int soff, int poff, int ep) {
+		int min_expand(int soff, int poff, int ep) throws LuaError {
 			for (; ; ) {
 				int res = match(soff, ep + 1);
 				if (res != -1) {
@@ -1234,7 +1234,7 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 
-		int start_capture(int soff, int poff, int what) {
+		int start_capture(int soff, int poff, int what) throws LuaError {
 			int res;
 			int level = this.level;
 			if (level >= MAX_CAPTURES) {
@@ -1249,7 +1249,7 @@ public class StringLib implements LuaLibrary {
 			return res;
 		}
 
-		int end_capture(int soff, int poff) {
+		int end_capture(int soff, int poff) throws LuaError {
 			int l = capture_to_close();
 			int res;
 			clen[l] = soff - cinit[l];
@@ -1259,7 +1259,7 @@ public class StringLib implements LuaLibrary {
 			return res;
 		}
 
-		int match_capture(int soff, int l) {
+		int match_capture(int soff, int l) throws LuaError {
 			l = check_capture(l);
 			int len = clen[l];
 			if ((s.length() - soff) >= len &&
@@ -1270,7 +1270,7 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 
-		int matchbalance(int soff, int poff) {
+		int matchbalance(int soff, int poff) throws LuaError {
 			final int plen = p.length();
 			if (poff == plen || poff + 1 == plen) {
 				throw new LuaError("unbalanced pattern");

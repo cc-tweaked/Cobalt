@@ -60,7 +60,7 @@ public class TailcallVarargs extends Varargs {
 	}
 
 	@Override
-	public Varargs eval(LuaState state) {
+	public Varargs eval(LuaState state) throws LuaError {
 		while (result == null) {
 			Varargs r = OperationHelper.onInvoke(state, func, args);
 			if (r.isTailcall()) {

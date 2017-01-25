@@ -228,9 +228,13 @@ public abstract class IoLib implements LuaLibrary {
 		LibFunction.bind(state, t, IoLibV.class, IO_NAMES, IoLib.class, this);
 
 		// setup streams
-		t.rawset(STDIN, input(state));
-		t.rawset(STDOUT, output(state));
-		t.rawset(STDERR, errput(state));
+		try {
+			t.rawset(STDIN, input(state));
+			t.rawset(STDOUT, output(state));
+			t.rawset(STDERR, errput(state));
+		} catch (LuaError e) {
+			throw new IllegalStateException(e);
+		}
 
 		// create file methods table
 		filemethods = new LuaTable();
@@ -240,8 +244,8 @@ public abstract class IoLib implements LuaLibrary {
 		filemethods.rawset("__index", filemethods);
 
 		// return the table
-		env.set(state, "io", t);
-		state.loadedPackages.set(state, "io", t);
+		env.rawset("io", t);
+		state.loadedPackages.rawset("io", t);
 		return t;
 	}
 
@@ -253,7 +257,7 @@ public abstract class IoLib implements LuaLibrary {
 		}
 
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			try {
 				switch (opcode) {
 					case IO_FLUSH:
@@ -301,12 +305,12 @@ public abstract class IoLib implements LuaLibrary {
 		}
 	}
 
-	private File input(LuaState state) {
+	private File input(LuaState state) throws LuaError {
 		return infile != null ? infile : (infile = ioopenfile(state, "-", "r"));
 	}
 
 	//	io.flush() -> bool
-	public Varargs _io_flush(LuaState state) throws IOException {
+	public Varargs _io_flush(LuaState state) throws IOException, LuaError {
 		checkopen(output(state));
 		outfile.flush();
 		return TRUE;
@@ -318,14 +322,14 @@ public abstract class IoLib implements LuaLibrary {
 	}
 
 	//	io.close([file]) -> void
-	public Varargs _io_close(LuaState state, LuaValue file) throws IOException {
+	public Varargs _io_close(LuaState state, LuaValue file) throws IOException, LuaError {
 		File f = file.isNil() ? output(state) : checkfile(file);
 		checkopen(f);
 		return ioclose(f);
 	}
 
 	//	io.input([file]) -> file
-	public Varargs _io_input(LuaState state, LuaValue file) {
+	public Varargs _io_input(LuaState state, LuaValue file) throws LuaError {
 		if (file.isNil()) {
 			return input(state);
 		} else {
@@ -334,7 +338,7 @@ public abstract class IoLib implements LuaLibrary {
 	}
 
 	// io.output(filename) -> file
-	public Varargs _io_output(LuaState state, LuaValue filename) {
+	public Varargs _io_output(LuaState state, LuaValue filename) throws LuaError {
 		if (filename.isNil()) {
 			return output(state);
 		} else {
@@ -361,7 +365,7 @@ public abstract class IoLib implements LuaLibrary {
 	}
 
 	//	io.lines(filename) -> iterator
-	public Varargs _io_lines(LuaState state, String filename) {
+	public Varargs _io_lines(LuaState state, String filename) throws LuaError {
 		if (filename == null) {
 			File file = input(state);
 			checkopen(file);
@@ -374,63 +378,63 @@ public abstract class IoLib implements LuaLibrary {
 	}
 
 	//	io.read(...) -> (...)
-	public Varargs _io_read(LuaState state, Varargs args) throws IOException {
+	public Varargs _io_read(LuaState state, Varargs args) throws IOException, LuaError {
 		checkopen(input(state));
 		return ioread(infile, args);
 	}
 
 	//	io.write(...) -> void
-	public Varargs _io_write(LuaState state, Varargs args) throws IOException {
+	public Varargs _io_write(LuaState state, Varargs args) throws IOException, LuaError {
 		checkopen(output(state));
 		return iowrite(outfile, args);
 	}
 
 	// file:close() -> void
-	public Varargs _file_close(LuaValue file) throws IOException {
+	public Varargs _file_close(LuaValue file) throws IOException, LuaError {
 		return ioclose(checkfile(file));
 	}
 
 	// file:flush() -> void
-	public Varargs _file_flush(LuaValue file) throws IOException {
+	public Varargs _file_flush(LuaValue file) throws IOException, LuaError {
 		checkfile(file).flush();
 		return TRUE;
 	}
 
 	// file:setvbuf(mode,[size]) -> void
-	public Varargs _file_setvbuf(LuaValue file, String mode, int size) {
+	public Varargs _file_setvbuf(LuaValue file, String mode, int size) throws LuaError {
 		checkfile(file).setvbuf(mode, size);
 		return TRUE;
 	}
 
 	// file:lines() -> iterator
-	public Varargs _file_lines(LuaValue file) {
+	public Varargs _file_lines(LuaValue file) throws LuaError {
 		return lines(checkfile(file), false);
 	}
 
 	//	file:read(...) -> (...)
-	public Varargs _file_read(LuaValue file, Varargs subargs) throws IOException {
+	public Varargs _file_read(LuaValue file, Varargs subargs) throws IOException, LuaError {
 		return ioread(checkfile(file), subargs);
 	}
 
 	//  file:seek([whence][,offset]) -> pos | nil,error
-	public Varargs _file_seek(LuaValue file, String whence, int offset) throws IOException {
+	public Varargs _file_seek(LuaValue file, String whence, int offset) throws IOException, LuaError {
 		return valueOf(checkfile(file).seek(whence, offset));
 	}
 
 	//	file:write(...) -> void
-	public Varargs _file_write(LuaValue file, Varargs subargs) throws IOException {
+	public Varargs _file_write(LuaValue file, Varargs subargs) throws IOException, LuaError {
 		return iowrite(checkfile(file), subargs);
 	}
 
-	private File output(LuaState state) {
+	private File output(LuaState state) throws LuaError {
 		return outfile != null ? outfile : (outfile = ioopenfile(state, "-", "w"));
 	}
 
-	private File errput(LuaState state) {
+	private File errput(LuaState state) throws LuaError {
 		return errfile != null ? errfile : (errfile = ioopenfile(state, "-", "w"));
 	}
 
-	private File ioopenfile(LuaState state, String filename, String mode) {
+	private File ioopenfile(LuaState state, String filename, String mode) throws LuaError {
 		try {
 			return rawopenfile(state, filename, mode);
 		} catch (Exception e) {
@@ -464,7 +468,7 @@ public abstract class IoLib implements LuaLibrary {
 		return new VarArgFunction() {
 
 			@Override
-			public Varargs invoke(LuaState state, Varargs args) {
+			public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 				//	lines iterator(s,var) -> var'
 				checkopen(f);
 
@@ -479,14 +483,14 @@ public abstract class IoLib implements LuaLibrary {
 		};
 	}
 
-	private static Varargs iowrite(File f, Varargs args) throws IOException {
+	private static Varargs iowrite(File f, Varargs args) throws IOException, LuaError {
 		for (int i = 1, n = args.count(); i <= n; i++) {
 			f.write(args.arg(i).checkLuaString());
 		}
 		return TRUE;
 	}
 
-	private Varargs ioread(File f, Varargs args) throws IOException {
+	private Varargs ioread(File f, Varargs args) throws IOException, LuaError {
 		int i, n = args.count();
 		if (n == 0) {
 			return freadline(f);
@@ -526,7 +530,7 @@ public abstract class IoLib implements LuaLibrary {
 		return i == 0 ? NIL : varargsOf(v, 0, i);
 	}
 
-	private static File checkfile(LuaValue val) {
+	private static File checkfile(LuaValue val) throws LuaError {
 		File f = optfile(val);
 		if (f == null) {
 			throw ErrorFactory.argError(1, "file");
@@ -539,7 +543,7 @@ public abstract class IoLib implements LuaLibrary {
 		return (val instanceof File) ? (File) val : null;
 	}
 
-	private static File checkopen(File file) {
+	private static File checkopen(File file) throws LuaError {
 		if (file.isclosed()) {
 			throw new LuaError("attempt to use a closed file");
 		}

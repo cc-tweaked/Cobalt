@@ -15,7 +15,7 @@ public class CompileTestHelper {
 	 * @param file The path of the file to use
 	 * @throws IOException
 	 */
-	public static void compareResults(String dir, String file) throws IOException {
+	public static void compareResults(String dir, String file) throws IOException, CompileException {
 		// Compile in memory
 		String sourceBytecode = protoToString(LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), "@" + file + ".lua"));
 
@@ -63,7 +63,7 @@ public class CompileTestHelper {
 	 * @param script The name of the file to use
 	 * @return A Prototype from the compiled bytecode
 	 */
-	private static Prototype loadFromBytes(byte[] bytes, String script) throws IOException {
+	private static Prototype loadFromBytes(byte[] bytes, String script) throws IOException, CompileException {
 		InputStream is = new ByteArrayInputStream(bytes);
 		return LoadState.loadBinaryChunk(is.read(), is, valueOf(script));
 	}

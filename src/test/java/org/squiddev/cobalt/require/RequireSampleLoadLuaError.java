@@ -15,7 +15,7 @@ public class RequireSampleLoadLuaError extends ZeroArgFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaState state) {
+	public LuaValue call(LuaState state) throws LuaError {
 		throw new LuaError("sample-load-lua-error");
 	}
 }

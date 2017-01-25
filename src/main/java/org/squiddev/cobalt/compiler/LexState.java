@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt.compiler;
 
-
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
 
@@ -34,15 +33,15 @@ import java.util.Hashtable;
 
 public class LexState {
 
-	protected static final String RESERVED_LOCAL_VAR_FOR_CONTROL = "(for control)";
-	protected static final String RESERVED_LOCAL_VAR_FOR_STATE = "(for state)";
-	protected static final String RESERVED_LOCAL_VAR_FOR_GENERATOR = "(for generator)";
-	protected static final String RESERVED_LOCAL_VAR_FOR_STEP = "(for step)";
-	protected static final String RESERVED_LOCAL_VAR_FOR_LIMIT = "(for limit)";
-	protected static final String RESERVED_LOCAL_VAR_FOR_INDEX = "(for index)";
+	private static final String RESERVED_LOCAL_VAR_FOR_CONTROL = "(for control)";
+	private static final String RESERVED_LOCAL_VAR_FOR_STATE = "(for state)";
+	private static final String RESERVED_LOCAL_VAR_FOR_GENERATOR = "(for generator)";
+	private static final String RESERVED_LOCAL_VAR_FOR_STEP = "(for step)";
+	private static final String RESERVED_LOCAL_VAR_FOR_LIMIT = "(for limit)";
+	private static final String RESERVED_LOCAL_VAR_FOR_INDEX = "(for index)";
 
 	// keywords array
-	protected static final String[] RESERVED_LOCAL_VAR_KEYWORDS = new String[]{
+	private static final String[] RESERVED_LOCAL_VAR_KEYWORDS = new String[]{
 		RESERVED_LOCAL_VAR_FOR_CONTROL,
 		RESERVED_LOCAL_VAR_FOR_GENERATOR,
 		RESERVED_LOCAL_VAR_FOR_INDEX,
@@ -134,21 +133,21 @@ public class LexState {
 		}
 	}
 
-	int current;  /* current character (charint) */
-	int linenumber;  /* input line counter */
+	private int current;  /* current character (charint) */
+	private int linenumber;  /* input line counter */
 	int lastline;  /* line of last token `consumed' */
-	final Token t = new Token();  /* current token */
-	final Token lookahead = new Token();  /* look ahead token */
+	private final Token t = new Token();  /* current token */
+	private final Token lookahead = new Token();  /* look ahead token */
 	FuncState fs;  /* `FuncState' is private to the parser */
-	LuaC L;
-	InputStream z;  /* input stream */
-	byte[] buff;  /* buffer for tokens */
-	int nbuff; /* length of buffer */
-	LuaString source;  /* current source name */
-	byte decpoint;  /* locale decimal point */
+	private LuaC L;
+	private InputStream z;  /* input stream */
+	private byte[] buff;  /* buffer for tokens */
+	private int nbuff; /* length of buffer */
+	private LuaString source;  /* current source name */
+	private byte decpoint;  /* locale decimal point */
 
 	/* ORDER RESERVED */
-	final static String luaX_tokens[] = {
+	private final static String luaX_tokens[] = {
 		"and", "break", "do", "else", "elseif",
 		"end", "false", "for", "function", "if",
 		"in", "local", "nil", "not", "or", "repeat",
@@ -167,10 +166,10 @@ public class LexState {
 	TK_CONCAT = 278, TK_DOTS = 279, TK_EQ = 280, TK_GE = 281, TK_LE = 282, TK_NE = 283,
 		TK_NUMBER = 284, TK_NAME = 285, TK_STRING = 286, TK_EOS = 287;
 
-	final static int FIRST_RESERVED = TK_AND;
-	final static int NUM_RESERVED = TK_WHILE + 1 - FIRST_RESERVED;
+	private final static int FIRST_RESERVED = TK_AND;
+	private final static int NUM_RESERVED = TK_WHILE + 1 - FIRST_RESERVED;
 
-	final static Hashtable<LuaString, Integer> RESERVED = new Hashtable<LuaString, Integer>();
+	private final static Hashtable<LuaString, Integer> RESERVED = new Hashtable<LuaString, Integer>();
 
 	static {
 		for (int i = 0; i < NUM_RESERVED; i++) {
@@ -207,7 +206,7 @@ public class LexState {
 		this.L = state;
 	}
 
-	void nextChar() {
+	private void nextChar() {
 		try {
 			current = z.read();
 		} catch (IOException e) {
@@ -216,16 +215,16 @@ public class LexState {
 		}
 	}
 
-	boolean currIsNewline() {
+	private boolean currIsNewline() {
 		return current == '\n' || current == '\r';
 	}
 
-	void save_and_next() {
+	private void save_and_next() {
 		save(current);
 		nextChar();
 	}
 
-	void save(int c) {
+	private void save(int c) {
 		if (buff == null || nbuff + 1 > buff.length) {
 			buff = LuaC.realloc(buff, nbuff * 2 + 1);
 		}
@@ -233,7 +232,7 @@ public class LexState {
 	}
 
 
-	String token2str(int token) {
+	private String token2str(int token) {
 		if (token < FIRST_RESERVED) {
 			return iscntrl(token) ?
 				L.pushfstring("char(" + token + ")") :
@@ -247,7 +246,7 @@ public class LexState {
 		return token < ' ';
 	}
 
-	String txtToken(int token) {
+	private String txtToken(int token) {
 		switch (token) {
 			case TK_NAME:
 			case TK_STRING:
@@ -258,13 +257,13 @@ public class LexState {
 		}
 	}
 
-	LuaError lexerror(String msg, int token) {
+	CompileException lexerror(String msg, int token) {
 		String cid = chunkid(source.toString()); // TODO: get source name from source
 		L.pushfstring(cid + ":" + linenumber + ": " + msg);
 		if (token != 0) {
 			L.pushfstring("syntax error: " + msg + " near " + txtToken(token));
 		}
-		return new LuaError(cid + ":" + linenumber + ": " + msg);
+		return new CompileException(cid + ":" + linenumber + ": " + msg);
 	}
 
 	String chunkid(String source) {
@@ -285,21 +284,21 @@ public class LexState {
 		return source + end;
 	}
 
-	LuaError syntaxerror(String msg) {
+	CompileException syntaxerror(String msg) {
 		return lexerror(msg, t.token);
 	}
 
 	// only called by new_localvarliteral() for var names.
-	LuaString newstring(String s) {
+	private LuaString newstring(String s) {
 		byte[] b = s.getBytes();
 		return L.newTString(b, 0, b.length);
 	}
 
-	LuaString newstring(byte[] bytes, int offset, int len) {
+	private LuaString newstring(byte[] bytes, int offset, int len) throws CompileException {
 		return L.newTString(bytes, offset, len);
 	}
 
-	void inclinenumber() {
+	private void inclinenumber() throws CompileException {
 		int old = current;
 		LuaC._assert(currIsNewline());
 		nextChar(); /* skip '\n' or '\r' */
@@ -342,7 +341,7 @@ public class LexState {
 	*/
 
 
-	boolean check_next(String set) {
+	private boolean check_next(String set) {
 		if (set.indexOf(current) < 0) {
 			return false;
 		}
@@ -350,7 +349,7 @@ public class LexState {
 		return true;
 	}
 
-	void buffreplace(byte from, byte to) {
+	private void buffreplace(byte from, byte to) {
 		int n = nbuff;
 		byte[] p = buff;
 		while ((--n) >= 0) {
@@ -360,7 +359,7 @@ public class LexState {
 		}
 	}
 
-	boolean str2d(String str, SemInfo seminfo) {
+	private boolean str2d(String str, SemInfo seminfo) {
 		double d;
 		str = str.trim(); // TODO: get rid of this
 		if (str.startsWith("0x")) {
@@ -395,13 +394,13 @@ public class LexState {
 			Number n = nf.parse(str);
 			double d = n.doubleValue();
 			seminfo.r = new LDouble(d);
-		} catch (ParseException e) {
+		} catch (CompileException e) {
 			lexerror("malformed number", TK_NUMBER);
 		}
 	}
 	*/
 
-	void read_numeral(SemInfo seminfo) {
+	private void read_numeral(SemInfo seminfo) throws CompileException {
 		LuaC._assert(isdigit(current));
 		do {
 			save_and_next();
@@ -420,7 +419,7 @@ public class LexState {
 		str2d(str, seminfo);
 	}
 
-	int skip_sep() {
+	private int skip_sep() throws CompileException {
 		int count = 0;
 		int s = current;
 		LuaC._assert(s == '[' || s == ']');
@@ -432,7 +431,7 @@ public class LexState {
 		return (current == s) ? count : (-count) - 1;
 	}
 
-	void read_long_string(SemInfo seminfo, int sep) {
+	private void read_long_string(SemInfo seminfo, int sep) throws CompileException {
 		int cont = 0;
 		save_and_next(); /* skip 2nd `[' */
 		if (currIsNewline()) /* string starts with a newline? */ {
@@ -492,7 +491,7 @@ public class LexState {
 		}
 	}
 
-	void read_string(int del, SemInfo seminfo) {
+	private void read_string(int del, SemInfo seminfo) throws CompileException {
 		save_and_next();
 		while (current != del) {
 			switch (current) {
@@ -563,7 +562,7 @@ public class LexState {
 		seminfo.ts = newstring(buff, 1, nbuff - 2);
 	}
 
-	int llex(SemInfo seminfo) {
+	private int llex(SemInfo seminfo) throws CompileException {
 		nbuff = 0;
 		while (true) {
 			switch (current) {
@@ -694,7 +693,7 @@ public class LexState {
 		}
 	}
 
-	void next() {
+	void next() throws CompileException {
 		lastline = linenumber;
 		if (lookahead.token != TK_EOS) { /* is there a look-ahead token? */
 			t.set(lookahead); /* use this one */
@@ -704,7 +703,7 @@ public class LexState {
 		}
 	}
 
-	void lookahead() {
+	private void lookahead() throws CompileException {
 		LuaC._assert(lookahead.token == TK_EOS);
 		lookahead.token = llex(lookahead.seminfo);
 	}
@@ -767,7 +766,7 @@ public class LexState {
 		}
 	}
 
-	boolean hasmultret(int k) {
+	private boolean hasmultret(int k) {
 		return ((k) == VCALL || (k) == VVARARG);
 	}
 
@@ -779,11 +778,11 @@ public class LexState {
 	 * * prototypes for recursive non-terminal functions
 	 */
 
-	void error_expected(int token) {
+	private void error_expected(int token) throws CompileException {
 		throw syntaxerror(L.pushfstring(LUA_QS(token2str(token)) + " expected"));
 	}
 
-	boolean testnext(int c) {
+	private boolean testnext(int c) throws CompileException {
 		if (t.token == c) {
 			next();
 			return true;
@@ -792,25 +791,25 @@ public class LexState {
 		}
 	}
 
-	void check(int c) {
+	void check(int c) throws CompileException {
 		if (t.token != c) {
 			error_expected(c);
 		}
 	}
 
-	void checknext(int c) {
+	private void checknext(int c) throws CompileException {
 		check(c);
 		next();
 	}
 
-	void check_condition(boolean c, String msg) {
+	private void check_condition(boolean c, String msg) throws CompileException {
 		if (!(c)) {
 			throw syntaxerror(msg);
 		}
 	}
 
 
-	void check_match(int what, int who, int where) {
+	private void check_match(int what, int who, int where) throws CompileException {
 		if (!testnext(what)) {
 			if (where == linenumber) {
 				error_expected(what);
@@ -822,7 +821,7 @@ public class LexState {
 		}
 	}
 
-	LuaString str_checkname() {
+	private LuaString str_checkname() throws CompileException {
 		LuaString ts;
 		check(TK_NAME);
 		ts = t.seminfo.ts;
@@ -830,16 +829,16 @@ public class LexState {
 		return ts;
 	}
 
-	void codestring(expdesc e, LuaString s) {
+	private void codestring(expdesc e, LuaString s) {
 		e.init(VK, fs.stringK(s));
 	}
 
-	void checkname(expdesc e) {
+	private void checkname(expdesc e) throws CompileException {
 		codestring(e, str_checkname());
 	}
 
 
-	int registerlocalvar(LuaString varname) {
+	private int registerlocalvar(LuaString varname) {
 		FuncState fs = this.fs;
 		Prototype f = fs.f;
 		if (f.locvars == null || fs.nlocvars + 1 > f.locvars.length) {
@@ -854,18 +853,18 @@ public class LexState {
 //	#define new_localvarliteral(ls,v,n) \
 //	  this.new_localvar(luaX_newstring(ls, "" v, (sizeof(v)/sizeof(char))-1), n)
 //
-	void new_localvarliteral(String v, int n) {
+	private void new_localvarliteral(String v, int n) throws CompileException {
 		LuaString ts = newstring(v);
 		new_localvar(ts, n);
 	}
 
-	void new_localvar(LuaString name, int n) {
+	private void new_localvar(LuaString name, int n) throws CompileException {
 		FuncState fs = this.fs;
 		fs.checklimit(fs.nactvar + n + 1, LuaC.LUAI_MAXVARS, "local variables");
 		fs.actvar[fs.nactvar + n] = (short) registerlocalvar(name);
 	}
 
-	void adjustlocalvars(int nvars) {
+	private void adjustlocalvars(int nvars) {
 		FuncState fs = this.fs;
 		fs.nactvar = (short) (fs.nactvar + nvars);
 		for (; nvars > 0; nvars--) {
@@ -880,15 +879,15 @@ public class LexState {
 		}
 	}
 
-	void singlevar(expdesc var) {
-		LuaString varname = this.str_checkname();
+	private void singlevar(expdesc var) throws CompileException {
+		LuaString varname = str_checkname();
 		FuncState fs = this.fs;
 		if (fs.singlevaraux(varname, var, 1) == VGLOBAL) {
 			var.u.s.info = fs.stringK(varname); /* info points to global name */
 		}
 	}
 
-	void adjust_assign(int nvars, int nexps, expdesc e) {
+	private void adjust_assign(int nvars, int nexps, expdesc e) throws CompileException {
 		FuncState fs = this.fs;
 		int extra = nvars - nexps;
 		if (hasmultret(e.k)) {
@@ -915,17 +914,17 @@ public class LexState {
 		}
 	}
 
-	void enterlevel() {
+	private void enterlevel() throws CompileException {
 		if (++L.nCcalls > LUAI_MAXCCALLS) {
 			throw lexerror("chunk has too many syntax levels", 0);
 		}
 	}
 
-	void leavelevel() {
+	private void leavelevel() {
 		L.nCcalls--;
 	}
 
-	void pushclosure(FuncState func, expdesc v) {
+	private void pushclosure(FuncState func, expdesc v) throws CompileException {
 		FuncState fs = this.fs;
 		Prototype f = fs.f;
 		if (f.p == null || fs.np + 1 > f.p.length) {
@@ -965,7 +964,7 @@ public class LexState {
 		fs.htable = new Hashtable<LuaValue, Integer>();
 	}
 
-	void close_func() {
+	void close_func() throws CompileException {
 		FuncState fs = this.fs;
 		Prototype f = fs.f;
 		this.removevars(0);
@@ -991,7 +990,7 @@ public class LexState {
 	/* GRAMMAR RULES */
 	/*============================================================*/
 
-	void field(expdesc v) {
+	private void field(expdesc v) throws CompileException {
 		/* field -> ['.' | ':'] NAME */
 		FuncState fs = this.fs;
 		expdesc key = new expdesc();
@@ -1001,7 +1000,7 @@ public class LexState {
 		fs.indexed(v, key);
 	}
 
-	void yindex(expdesc v) {
+	private void yindex(expdesc v) throws CompileException {
 		/* index -> '[' expr ']' */
 		this.next(); /* skip the '[' */
 		this.expr(v);
@@ -1026,7 +1025,7 @@ public class LexState {
 	}
 
 
-	void recfield(ConsControl cc) {
+	private void recfield(ConsControl cc) throws CompileException {
 		/* recfield -> (NAME | `['exp1`]') = exp1 */
 		FuncState fs = this.fs;
 		int reg = this.fs.freereg;
@@ -1048,7 +1047,7 @@ public class LexState {
 		fs.freereg = reg; /* free registers */
 	}
 
-	void listfield(ConsControl cc) {
+	private void listfield(ConsControl cc) throws CompileException {
 		this.expr(cc.v);
 		fs.checklimit(cc.na, MAX_INT, "items in a constructor");
 		cc.na++;
@@ -1056,7 +1055,7 @@ public class LexState {
 	}
 
 
-	void constructor(expdesc t) {
+	private void constructor(expdesc t) throws CompileException {
 		/* constructor -> ?? */
 		FuncState fs = this.fs;
 		int line = this.linenumber;
@@ -1106,7 +1105,7 @@ public class LexState {
 	** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
 	** eeeee != 0 and (xxx) otherwise.
 	*/
-	static int luaO_int2fb(int x) {
+	private static int luaO_int2fb(int x) {
 		int e = 0;  /* expoent */
 		while (x >= 16) {
 			x = (x + 1) >> 1;
@@ -1122,7 +1121,7 @@ public class LexState {
 
 	/* }====================================================================== */
 
-	void parlist() {
+	private void parlist() throws CompileException {
 	  /* parlist -> [ param { `,' param } ] */
 		FuncState fs = this.fs;
 		Prototype f = fs.f;
@@ -1156,7 +1155,7 @@ public class LexState {
 	}
 
 
-	void body(expdesc e, boolean needself, int line) {
+	private void body(expdesc e, boolean needself, int line) throws CompileException {
 		/* body -> `(' parlist `)' chunk END */
 		FuncState new_fs = new FuncState();
 		open_func(new_fs);
@@ -1175,7 +1174,7 @@ public class LexState {
 		this.pushclosure(new_fs, e);
 	}
 
-	int explist1(expdesc v) {
+	private int explist1(expdesc v) throws CompileException {
 		/* explist1 -> expr { `,' expr } */
 		int n = 1; /* at least one expression */
 		this.expr(v);
@@ -1188,7 +1187,7 @@ public class LexState {
 	}
 
 
-	void funcargs(expdesc f) {
+	private void funcargs(expdesc f) throws CompileException {
 		FuncState fs = this.fs;
 		expdesc args = new expdesc();
 		int base, nparams;
@@ -1244,7 +1243,7 @@ public class LexState {
 	** =======================================================================
 	*/
 
-	void prefixexp(expdesc v) {
+	private void prefixexp(expdesc v) throws CompileException {
 		/* prefixexp -> NAME | '(' expr ')' */
 		switch (this.t.token) {
 			case '(': {
@@ -1266,7 +1265,7 @@ public class LexState {
 	}
 
 
-	void primaryexp(expdesc v) {
+	private void primaryexp(expdesc v) throws CompileException {
 		/*
 		 * primaryexp -> prefixexp { `.' NAME | `[' exp `]' | `:' NAME funcargs |
 		 * funcargs }
@@ -1308,7 +1307,7 @@ public class LexState {
 	}
 
 
-	void simpleexp(expdesc v) {
+	private void simpleexp(expdesc v) throws CompileException {
 		/*
 		 * simpleexp -> NUMBER | STRING | NIL | true | false | ... | constructor |
 		 * FUNCTION body | primaryexp
@@ -1361,7 +1360,7 @@ public class LexState {
 	}
 
 
-	int getunopr(int op) {
+	private int getunopr(int op) {
 		switch (op) {
 			case TK_NOT:
 				return OPR_NOT;
@@ -1375,7 +1374,7 @@ public class LexState {
 	}
 
 
-	int getbinopr(int op) {
+	private int getbinopr(int op) {
 		switch (op) {
 			case '+':
 				return OPR_ADD;
@@ -1423,7 +1422,7 @@ public class LexState {
 		}
 	}
 
-	static Priority[] priority = {  /* ORDER OPR */
+	private static Priority[] priority = {  /* ORDER OPR */
 		new Priority(6, 6), new Priority(6, 6), new Priority(7, 7), new Priority(7, 7), new Priority(7, 7),  /* `+' `-' `/' `%' */
 		new Priority(10, 9), new Priority(5, 4),                 /* power and concat (right associative) */
 		new Priority(3, 3), new Priority(3, 3),                  /* equality and inequality */
@@ -1431,14 +1430,14 @@ public class LexState {
 		new Priority(2, 2), new Priority(1, 1)                   /* logical (and/or) */
 	};
 
-	static final int UNARY_PRIORITY = 8;  /* priority for unary operators */
+	private static final int UNARY_PRIORITY = 8;  /* priority for unary operators */
 
 
 	/*
 	** subexpr -> (simpleexp | unop subexpr) { binop subexpr }
 	** where `binop' is any binary operator with a priority higher than `limit'
 	*/
-	int subexpr(expdesc v, int limit) {
+	private int subexpr(expdesc v, int limit) throws CompileException {
 		int op;
 		int uop;
 		this.enterlevel();
@@ -1466,7 +1465,7 @@ public class LexState {
 		return op; /* return first untreated operator */
 	}
 
-	void expr(expdesc v) {
+	private void expr(expdesc v) throws CompileException {
 		this.subexpr(v, 0);
 	}
 
@@ -1481,7 +1480,7 @@ public class LexState {
 	*/
 
 
-	boolean block_follow(int token) {
+	private boolean block_follow(int token) {
 		switch (token) {
 			case TK_ELSE:
 			case TK_ELSEIF:
@@ -1495,7 +1494,7 @@ public class LexState {
 	}
 
 
-	void block() {
+	private void block() throws CompileException {
 	  /* block -> chunk */
 		FuncState fs = this.fs;
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
@@ -1523,7 +1522,7 @@ public class LexState {
 	** local value in a safe place and use this safe copy in the previous
 	** assignment.
 	*/
-	void check_conflict(LHS_assign lh, expdesc v) {
+	private void check_conflict(LHS_assign lh, expdesc v) throws CompileException {
 		FuncState fs = this.fs;
 		int extra = fs.freereg;  /* eventual position to save local variable */
 		boolean conflict = false;
@@ -1546,7 +1545,7 @@ public class LexState {
 	}
 
 
-	void assignment(LHS_assign lh, int nvars) {
+	private void assignment(LHS_assign lh, int nvars) throws CompileException {
 		expdesc e = new expdesc();
 		this.check_condition(VLOCAL <= lh.v.k && lh.v.k <= VINDEXED,
 			"syntax error");
@@ -1578,7 +1577,7 @@ public class LexState {
 	}
 
 
-	int cond() {
+	private int cond() throws CompileException {
 		/* cond -> exp */
 		expdesc v = new expdesc();
 		/* read condition */
@@ -1592,7 +1591,7 @@ public class LexState {
 	}
 
 
-	void breakstat() {
+	private void breakstat() throws CompileException {
 		FuncState fs = this.fs;
 		FuncState.BlockCnt bl = fs.bl;
 		boolean upval = false;
@@ -1610,7 +1609,7 @@ public class LexState {
 	}
 
 
-	void whilestat(int line) {
+	private void whilestat(int line) throws CompileException {
 		/* whilestat -> WHILE cond DO block END */
 		FuncState fs = this.fs;
 		int whileinit;
@@ -1628,7 +1627,7 @@ public class LexState {
 		fs.patchtohere(condexit);  /* false conditions finish the loop */
 	}
 
-	void repeatstat(int line) {
+	private void repeatstat(int line) throws CompileException {
 		/* repeatstat -> REPEAT block UNTIL cond */
 		int condexit;
 		FuncState fs = this.fs;
@@ -1654,7 +1653,7 @@ public class LexState {
 	}
 
 
-	int exp1() {
+	private int exp1() throws CompileException {
 		expdesc e = new expdesc();
 		int k;
 		this.expr(e);
@@ -1664,7 +1663,7 @@ public class LexState {
 	}
 
 
-	void forbody(int base, int line, int nvars, boolean isnum) {
+	private void forbody(int base, int line, int nvars, boolean isnum) throws CompileException {
 		/* forbody -> DO block */
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
 		FuncState fs = this.fs;
@@ -1685,7 +1684,7 @@ public class LexState {
 	}
 
 
-	void fornum(LuaString varname, int line) {
+	private void fornum(LuaString varname, int line) throws CompileException {
 		/* fornum -> NAME = exp1,exp1[,exp1] forbody */
 		FuncState fs = this.fs;
 		int base = fs.freereg;
@@ -1707,7 +1706,7 @@ public class LexState {
 	}
 
 
-	void forlist(LuaString indexname) {
+	private void forlist(LuaString indexname) throws CompileException {
 		/* forlist -> NAME {,NAME} IN explist1 forbody */
 		FuncState fs = this.fs;
 		expdesc e = new expdesc();
@@ -1731,7 +1730,7 @@ public class LexState {
 	}
 
 
-	void forstat(int line) {
+	private void forstat(int line) throws CompileException {
 		/* forstat -> FOR (fornum | forlist) END */
 		FuncState fs = this.fs;
 		LuaString varname;
@@ -1755,7 +1754,7 @@ public class LexState {
 	}
 
 
-	int test_then_block() {
+	private int test_then_block() throws CompileException {
 		/* test_then_block -> [IF | ELSEIF] cond THEN block */
 		int condexit;
 		this.next(); /* skip IF or ELSEIF */
@@ -1766,7 +1765,7 @@ public class LexState {
 	}
 
 
-	void ifstat(int line) {
+	private void ifstat(int line) throws CompileException {
 		/* ifstat -> IF cond THEN block {ELSEIF cond THEN block} [ELSE block]
 		 * END */
 		FuncState fs = this.fs;
@@ -1790,7 +1789,7 @@ public class LexState {
 		this.check_match(TK_END, TK_IF, line);
 	}
 
-	void localfunc() {
+	private void localfunc() throws CompileException {
 		expdesc v = new expdesc();
 		expdesc b = new expdesc();
 		FuncState fs = this.fs;
@@ -1805,7 +1804,7 @@ public class LexState {
 	}
 
 
-	void localstat() {
+	private void localstat() throws CompileException {
 		/* stat -> LOCAL NAME {`,' NAME} [`=' explist1] */
 		int nvars = 0;
 		int nexps;
@@ -1824,7 +1823,7 @@ public class LexState {
 	}
 
 
-	boolean funcname(expdesc v) {
+	private boolean funcname(expdesc v) throws CompileException {
 		/* funcname -> NAME {field} [`:' NAME] */
 		boolean needself = false;
 		this.singlevar(v);
@@ -1839,7 +1838,7 @@ public class LexState {
 	}
 
 
-	void funcstat(int line) {
+	private void funcstat(int line) throws CompileException {
 		/* funcstat -> FUNCTION funcname body */
 		boolean needself;
 		expdesc v = new expdesc();
@@ -1852,7 +1851,7 @@ public class LexState {
 	}
 
 
-	void exprstat() {
+	private void exprstat() throws CompileException {
 		/* stat -> func | assignment */
 		FuncState fs = this.fs;
 		LHS_assign v = new LHS_assign();
@@ -1865,7 +1864,7 @@ public class LexState {
 		}
 	}
 
-	void retstat() {
+	private void retstat() throws CompileException {
 		/* stat -> RETURN explist */
 		FuncState fs = this.fs;
 		expdesc e = new expdesc();
@@ -1897,7 +1896,7 @@ public class LexState {
 	}
 
 
-	boolean statement() {
+	private boolean statement() throws CompileException {
 		int line = this.linenumber; /* may be needed for error messages */
 		switch (this.t.token) {
 			case TK_IF: { /* stat -> ifstat */
@@ -1951,7 +1950,7 @@ public class LexState {
 		}
 	}
 
-	void chunk() {
+	void chunk() throws CompileException {
 		/* chunk -> { stat [`;'] } */
 		boolean islast = false;
 		this.enterlevel();

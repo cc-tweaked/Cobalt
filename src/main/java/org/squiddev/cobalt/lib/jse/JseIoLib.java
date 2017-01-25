@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt.lib.jse;
 
-import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.IoLib;
@@ -147,7 +146,7 @@ public class JseIoLib extends IoLib {
 			} else if (file != null) {
 				file.write(s.bytes, s.offset, s.length);
 			} else {
-				throw new LuaError("not implemented");
+				throw new IOException("not implemented");
 			}
 			if (nobuffer) {
 				flush();
@@ -171,7 +170,7 @@ public class JseIoLib extends IoLib {
 				}
 				return (int) file.getFilePointer();
 			}
-			throw new LuaError("not implemented");
+			throw new IOException("not implemented");
 		}
 
 		@Override
@@ -199,7 +198,7 @@ public class JseIoLib extends IoLib {
 				file.seek(fp);
 				return c;
 			}
-			throw new LuaError("not implemented");
+			throw new IOException("not implemented");
 		}
 
 		// return char if read, -1 if eof, throw IOException on other exception
@@ -210,7 +209,7 @@ public class JseIoLib extends IoLib {
 			} else if (file != null) {
 				return file.read();
 			}
-			throw new LuaError("not implemented");
+			throw new IOException("not implemented");
 		}
 
 		// return number of bytes read if positive, -1 if eof, throws IOException
@@ -221,7 +220,7 @@ public class JseIoLib extends IoLib {
 			} else if (is != null) {
 				return is.read(bytes, offset, length);
 			} else {
-				throw new LuaError("not implemented");
+				throw new IOException("not implemented");
 			}
 		}
 	}

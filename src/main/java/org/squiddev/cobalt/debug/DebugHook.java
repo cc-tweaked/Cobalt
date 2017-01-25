@@ -25,6 +25,7 @@
 
 package org.squiddev.cobalt.debug;
 
+import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaString;
 
@@ -47,7 +48,7 @@ public interface DebugHook {
 	 * @param ds    The current debug state
 	 * @param frame The current frame
 	 */
-	void onCall(LuaState state, DebugState ds, DebugFrame frame);
+	void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
 
 	/**
 	 * Called before exiting a function
@@ -56,7 +57,7 @@ public interface DebugHook {
 	 * @param ds    The current debug state
 	 * @param frame The current frame
 	 */
-	void onReturn(LuaState state, DebugState ds, DebugFrame frame);
+	void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
 
 	/**
 	 * Called before ever 'n' instructions
@@ -65,7 +66,7 @@ public interface DebugHook {
 	 * @param ds    The current debug state
 	 * @param frame The current frame
 	 */
-	void onCount(LuaState state, DebugState ds, DebugFrame frame);
+	void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
 
 	/**
 	 * Called before each line changes
@@ -76,5 +77,5 @@ public interface DebugHook {
 	 * @param oldLine The previous line
 	 * @param newLine The new new line
 	 */
-	void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine);
+	void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine) throws LuaError;
 }

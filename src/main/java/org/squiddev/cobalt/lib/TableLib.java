@@ -24,10 +24,7 @@
  */
 package org.squiddev.cobalt.lib;
 
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
@@ -53,15 +50,15 @@ public class TableLib implements LuaLibrary {
 		LibFunction.bind(state, t, TableLib1.class, new String[]{"getn", "maxn",});
 		LibFunction.bind(state, t, TableLibV.class, new String[]{
 			"remove", "concat", "insert", "sort", "foreach", "foreachi",});
-		env.set(state, "table", t);
-		state.loadedPackages.set(state, "table", t);
+		env.rawset("table", t);
+		state.loadedPackages.rawset("table", t);
 		return t;
 	}
 
 	private static final class TableLib1 extends OneArgFunction {
 
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg) {
+		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
 				case 0:  // "getn" (table) -> number
 					return arg.checkTable().getn();
@@ -74,7 +71,7 @@ public class TableLib implements LuaLibrary {
 
 	private static final class TableLibV extends VarArgFunction {
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) {
+		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case 0: { // "remove" (table [, pos]) -> removed-ele
 					LuaTable table = args.arg(1).checkTable();

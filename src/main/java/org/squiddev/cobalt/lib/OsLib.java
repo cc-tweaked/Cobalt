@@ -81,13 +81,13 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(state, t, getClass(), NAMES);
-		env.set(state, "os", t);
-		state.loadedPackages.set(state, "os", t);
+		env.rawset("os", t);
+		state.loadedPackages.rawset("os", t);
 		return t;
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs args) {
+	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 		try {
 			switch (opcode) {
 				case CLOCK:
@@ -217,7 +217,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 	 * cannot be honored.
 	 */
 	protected String setlocale(String locale, String category) {
-		if(locale == null || locale.equals("C")) return "C";
+		if (locale == null || locale.equals("C")) return "C";
 		return null;
 	}
 
