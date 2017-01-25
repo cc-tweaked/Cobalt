@@ -568,7 +568,7 @@ public class LuaInterpreter extends LuaClosure {
 		} catch (Exception e) {
 			throw new LuaError(e).fillTraceback(state);
 		} finally {
-			ds.onReturn();
+			handler.onReturn(ds);
 			if (openups != null) {
 				for (int u = openups.length; --u >= 0; ) {
 					if (openups[u] != null) {

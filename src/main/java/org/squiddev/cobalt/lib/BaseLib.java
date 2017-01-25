@@ -26,6 +26,7 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.TwoArgFunction;
@@ -214,22 +215,24 @@ public class BaseLib implements LuaLibrary {
 				case 7: // "pcall", // (f, arg1, ...) -> status, result1, ...
 				{
 					LuaValue func = args.checkValue(1);
-					DebugState ds = state.debug.getDebugState();
-					ds.onCall(this);
+					DebugHandler handler = state.debug;
+					DebugState ds = handler.getDebugState();
+					handler.onCall(ds, this);
 					try {
 						return pcall(state, func, args.subargs(2), null);
 					} finally {
-						ds.onReturn();
+						handler.onReturn(ds);
 					}
 				}
 				case 8: // "xpcall", // (f, err) -> result1, ...
 				{
-					DebugState ds = state.debug.getDebugState();
-					ds.onCall(this);
+					DebugHandler handler = state.debug;
+					DebugState ds = handler.getDebugState();
+					handler.onCall(ds, this);
 					try {
 						return pcall(state, args.first(), Constants.NONE, args.checkValue(2));
 					} finally {
-						ds.onReturn();
+						handler.onReturn(ds);
 					}
 				}
 				case 9: // "print", // (...) -> void

@@ -26,6 +26,7 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
 /**
@@ -91,12 +92,13 @@ public abstract class VarArgFunction extends LibFunction {
 	 */
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-		DebugState ds = state.debug.getDebugState();
-		ds.onCall(this);
+		DebugHandler handler = state.debug;
+		DebugState ds = handler.getDebugState();
+		handler.onCall(ds, this);
 		try {
 			return this.onInvoke(state, args).eval(state);
 		} finally {
-			ds.onReturn();
+			handler.onReturn(ds);
 		}
 	}
 

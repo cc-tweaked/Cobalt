@@ -90,14 +90,6 @@ public final class DebugState {
 		this.handler = state.debug;
 	}
 
-	public void onCall(LuaFunction func) throws LuaError {
-		handler.onCall(this, func);
-	}
-
-	public void onReturn() throws LuaError {
-		handler.onReturn(this);
-	}
-
 	/**
 	 * Push a new debug info onto the stack
 	 *
