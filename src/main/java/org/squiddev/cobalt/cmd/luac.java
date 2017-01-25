@@ -1,7 +1,7 @@
-package org.squiddev.cobalt.cmd;/*
+/*
  * ****************************************************************************
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2016 SquidDev
+ * Modifications: Copyright (c) 2015-2017 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@ package org.squiddev.cobalt.cmd;/*
  * THE SOFTWARE.
  * ****************************************************************************
  */
+
+package org.squiddev.cobalt.cmd;
 
 import org.squiddev.cobalt.Lua;
 import org.squiddev.cobalt.LuaState;
