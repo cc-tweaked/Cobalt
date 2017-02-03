@@ -218,6 +218,8 @@ public abstract class LibFunction extends LuaFunction {
 				f.env = env;
 				env.set(state, f.name, f);
 			}
+		} catch (RuntimeException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new IllegalStateException("Binding failed", e);
 		}
