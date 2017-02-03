@@ -104,7 +104,7 @@ public class DeadSlot implements Slot {
 			next = next.remove(target);
 			return this;
 		} else {
-			return next;
+			return next.remove(target);
 		}
 	}
 
