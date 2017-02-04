@@ -78,7 +78,7 @@ public class LuaTests {
 		});
 	}
 
-	@Test()
+	@Test(timeout = 10000)
 	public void run() throws IOException, CompileException, LuaError {
 		helpers.loadScript(name).call(helpers.state);
 	}

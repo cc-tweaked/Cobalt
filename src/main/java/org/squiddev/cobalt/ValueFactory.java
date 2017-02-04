@@ -26,8 +26,6 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.table.Metatable;
-import org.squiddev.cobalt.table.WeakMetatable;
 
 public class ValueFactory {
 	/**
@@ -357,36 +355,9 @@ public class ValueFactory {
 		return new TailcallVarargs(func, args);
 	}
 
-	/**
-	 * Construct a Metatable instance from the given table. This handles strong and weak values.
-	 *
-	 * @param mt The table to construct it from.
-	 * @return The constructed metatable
-	 */
-	public static Metatable metatableOf(LuaTable mt) {
-		if (mt != null) {
-			LuaValue mode = mt.rawget(Constants.MODE);
-			if (mode.isString()) {
-				String m = mode.toString();
-				boolean weakkeys = m.indexOf('k') >= 0;
-				boolean weakvalues = m.indexOf('v') >= 0;
-				if (weakkeys || weakvalues) {
-					return new WeakMetatable(weakkeys, weakvalues, mt);
-				}
-			}
-			return mt;
-		} else {
-			return null;
-		}
-	}
-
-	public static Metatable weakMetatable(boolean weakKeys, boolean weakValues) {
-		return new WeakMetatable(weakKeys, weakValues, new LuaTable());
-	}
-
 	public static LuaTable weakTable(boolean weakKeys, boolean weakValues) {
 		LuaTable table = new LuaTable();
-		table.useMetatable(weakMetatable(weakKeys, weakValues));
+		table.useWeak(weakKeys, weakValues);
 		return table;
 	}
 }
