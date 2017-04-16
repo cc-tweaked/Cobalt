@@ -362,7 +362,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public double toDouble() {
-		return 0;
+		return Double.NaN;
 	}
 
 	/**
