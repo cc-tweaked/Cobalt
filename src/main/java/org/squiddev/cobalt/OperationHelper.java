@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LuaFunction;
 
+import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
@@ -43,8 +44,12 @@ public final class OperationHelper {
 
 	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return valueOf(left.checkArith() + right.checkArith());
+		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
+			double dLeft = left.toDouble();
+			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
+				double dRight = right.toDouble();
+				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(dLeft + dRight);
+			}
 		}
 
 		return arithMetatable(state, Constants.ADD, left, right, leftIdx, rightIdx);
@@ -56,8 +61,12 @@ public final class OperationHelper {
 
 	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return valueOf(left.checkArith() - right.checkArith());
+		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
+			double dLeft = left.toDouble();
+			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
+				double dRight = right.toDouble();
+				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(dLeft - dRight);
+			}
 		}
 
 		return arithMetatable(state, Constants.SUB, left, right, leftIdx, rightIdx);
@@ -69,8 +78,12 @@ public final class OperationHelper {
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return valueOf(left.checkArith() * right.checkArith());
+		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
+			double dLeft = left.toDouble();
+			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
+				double dRight = right.toDouble();
+				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(dLeft * dRight);
+			}
 		}
 
 		return arithMetatable(state, Constants.MUL, left, right, leftIdx, rightIdx);
@@ -82,8 +95,12 @@ public final class OperationHelper {
 
 	public static LuaValue div(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return ValueFactory.valueOf(div(left.checkArith(), right.checkArith()));
+		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
+			double dLeft = left.toDouble();
+			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
+				double dRight = right.toDouble();
+				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(div(dLeft, dRight));
+			}
 		}
 
 		return arithMetatable(state, Constants.DIV, left, right, leftIdx, rightIdx);
@@ -95,8 +112,12 @@ public final class OperationHelper {
 
 	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
-			return ValueFactory.valueOf(mod(left.checkArith(), right.checkArith()));
+		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
+			double dLeft = left.toDouble();
+			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
+				double dRight = right.toDouble();
+				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(mod(dLeft, dRight));
+			}
 		}
 
 		return arithMetatable(state, Constants.MOD, left, right, leftIdx, rightIdx);
@@ -108,7 +129,7 @@ public final class OperationHelper {
 
 	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == Constants.TNUMBER || tLeft == Constants.TSTRING) && (tRight == Constants.TNUMBER || tRight == Constants.TSTRING)) {
+		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
 			return ValueFactory.valueOf(Math.pow(left.checkArith(), right.checkArith()));
 		}
 
@@ -153,7 +174,7 @@ public final class OperationHelper {
 	 * @return {@link LuaValue} resulting from metatag processing
 	 * @throws LuaError if metatag was not defined for either operand
 	 */
-	protected static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
+	private static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
 		LuaValue h = left.metatag(state, tag);
 		if (h.isNil()) {
 			h = right.metatag(state, tag);
@@ -191,10 +212,10 @@ public final class OperationHelper {
 			LuaValue h = left.metatag(state, Constants.CONCAT);
 			if (h.isNil() && (h = right.metatag(state, Constants.CONCAT)).isNil()) {
 				if (left.isString()) {
-					left = right;
-					leftStack = rightStack;
+					throw ErrorFactory.operandError(state, right, "concatenate", rightStack);
+				} else {
+					throw ErrorFactory.operandError(state, left, "concatenate", leftStack);
 				}
-				throw ErrorFactory.operandError(state, left, "concatenate", leftStack);
 			}
 
 			return OperationHelper.call(state, h, left, right);
@@ -216,9 +237,9 @@ public final class OperationHelper {
 			throw ErrorFactory.compareError(left, right);
 		}
 		switch (tLeft) {
-			case Constants.TNUMBER:
+			case TNUMBER:
 				return left.toDouble() < right.toDouble();
-			case Constants.TSTRING:
+			case TSTRING:
 				return left.strcmp(right) < 0;
 			default:
 				LuaValue h = left.metatag(state, Constants.LT);
@@ -236,9 +257,9 @@ public final class OperationHelper {
 			throw ErrorFactory.compareError(left, right);
 		}
 		switch (tLeft) {
-			case Constants.TNUMBER:
+			case TNUMBER:
 				return left.toDouble() <= right.toDouble();
-			case Constants.TSTRING:
+			case TSTRING:
 				return left.strcmp(right) <= 0;
 			default:
 				LuaValue h = left.metatag(state, Constants.LE);
@@ -260,16 +281,16 @@ public final class OperationHelper {
 		if (tLeft != right.type()) return false;
 
 		switch (tLeft) {
-			case Constants.TNIL:
+			case TNIL:
 				return true;
-			case Constants.TNUMBER:
+			case TNUMBER:
 				return left.toDouble() == right.toDouble();
-			case Constants.TBOOLEAN:
+			case TBOOLEAN:
 				return left.toBoolean() == right.toBoolean();
-			case Constants.TSTRING:
+			case TSTRING:
 				return left == right || left.raweq(right);
-			case Constants.TUSERDATA:
-			case Constants.TTABLE: {
+			case TUSERDATA:
+			case TTABLE: {
 				if (left == right || left.raweq(right)) return true;
 
 				LuaTable leftMeta = left.getMetatable(state);
@@ -305,7 +326,7 @@ public final class OperationHelper {
 		switch (value.type()) {
 			case Constants.TTABLE:
 				return valueOf(((LuaTable) value).length());
-			case Constants.TSTRING:
+			case TSTRING:
 				return valueOf(((LuaString) value).length());
 			default: {
 				LuaValue h = value.metatag(state, Constants.LEN);
@@ -331,9 +352,9 @@ public final class OperationHelper {
 
 	public static LuaValue neg(LuaState state, LuaValue value, int stack) throws LuaError {
 		int tValue = value.type();
-		if (tValue == Constants.TNUMBER) {
+		if (tValue == TNUMBER) {
 			return valueOf(-value.checkArith());
-		} else if (tValue == Constants.TSTRING) {
+		} else if (tValue == TSTRING) {
 			double res = value.toDouble();
 			if (!Double.isNaN(res)) return valueOf(-res);
 		}

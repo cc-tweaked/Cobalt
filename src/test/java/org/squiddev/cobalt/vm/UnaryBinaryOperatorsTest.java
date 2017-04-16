@@ -542,6 +542,7 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue fal = Constants.FALSE;
 		LuaValue tbl = new LuaTable();
 		LuaValue tbl2 = new LuaTable();
+		LuaTable stringMt = state.stringMetatable;
 		try {
 			try {
 				OperationHelper.add(state, tru, tbl);
@@ -785,9 +786,25 @@ public class UnaryBinaryOperatorsTest {
 			} catch (LuaError ignored) {
 			}
 
+			// Ensures string arithmetic work as expected
+			state.stringMetatable = tableOf(Constants.ADD, new TwoArgFunction() {
+				@Override
+				public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+					return OperationHelper.concat(valueOf(arg1.toString()), valueOf(arg2.toString()));
+				}
+			});
 
+			assertEquals(valueOf("ab"), OperationHelper.add(state, valueOf("a"), valueOf("b")));
+			assertEquals(valueOf("a2"), OperationHelper.add(state, valueOf("a"), valueOf("2")));
+			assertEquals(valueOf("a2"), OperationHelper.add(state, valueOf("a"), valueOf(2)));
+			assertEquals(valueOf("2b"), OperationHelper.add(state, valueOf("2"), valueOf("b")));
+			assertEquals(valueOf("2b"), OperationHelper.add(state, valueOf(2), valueOf("b")));
+			assertEquals(valueOf(4), OperationHelper.add(state, valueOf("2"), valueOf("2")));
+			assertEquals(valueOf(4), OperationHelper.add(state, valueOf("2"), valueOf(2)));
+			assertEquals(valueOf(4), OperationHelper.add(state, valueOf(2), valueOf("2")));
 		} finally {
 			state.booleanMetatable = null;
+			state.stringMetatable = stringMt;
 		}
 	}
 
