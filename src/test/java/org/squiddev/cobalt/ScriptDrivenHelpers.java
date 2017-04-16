@@ -30,10 +30,7 @@ import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -49,6 +46,20 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 
 	public void setup() {
 		state = new LuaState(this);
+		globals = JsePlatform.debugGlobals(state);
+	}
+
+	public void setupQuiet() {
+		state = new LuaState(this);
+		state.stdout = new PrintStream(new OutputStream() {
+			@Override
+			public void write(int b) throws IOException {
+			}
+
+			@Override
+			public void write(byte[] b, int off, int len) throws IOException {
+			}
+		});
 		globals = JsePlatform.debugGlobals(state);
 	}
 

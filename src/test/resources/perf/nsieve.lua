@@ -22,7 +22,7 @@ local function nsieve(m, isPrime)
 end
 
 
-local n = tonumber(arg and arg[1]) or 1
+local n = 9 -- normally 12
 local flags = {}
 
 local m = (2 ^ n) * 10000

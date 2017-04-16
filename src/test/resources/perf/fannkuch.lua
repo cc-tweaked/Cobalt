@@ -47,5 +47,5 @@ local function fannkuch(n)
 	until false
 end
 
-local n = tonumber(arg and arg[1]) or 1
+local n = 10 -- normally 12
 io.write("Pfannkuchen(", n, ") = ", fannkuch(n), "\n")
