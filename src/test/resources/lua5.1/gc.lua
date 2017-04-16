@@ -147,9 +147,6 @@ for n in pairs(a) do error 'cannot be here' end
 for i = 1, lim do a[i] = i end
 for i = 1, lim do assert(a[i] == i) end
 
---FIXME: STOP HERE: Everything beyond is broken or semi-broken
-do return end
-
 print('weak tables')
 a = {}; setmetatable(a, { __mode = 'k' });
 -- fill a with some `collectable' indices
@@ -187,7 +184,7 @@ a[string.rep('$', 11)] = string.rep('$', 11)
 -- fill a with some `collectable' values
 for i = 4, lim do a[i] = {} end
 for i = 1, lim do a[{}] = i end
-for i = 1, lim do local t = {}; a[t] = t end
+for i = 1, lim do local t = {}; a[t] = t t = nil end
 collectgarbage()
 assert(next(a) ~= nil)
 local i = 0
@@ -202,6 +199,8 @@ x, y, z = nil
 collectgarbage()
 assert(next(a) == string.rep('$', 11))
 
+--FIXME: STOP HERE: Everything beyond is broken or semi-broken
+do return end
 
 -- testing userdata
 collectgarbage("stop") -- stop collection

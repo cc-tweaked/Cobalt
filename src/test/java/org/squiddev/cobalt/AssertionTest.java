@@ -29,6 +29,7 @@ public class AssertionTest {
 			{"baseIssues"},
 			{"stringIssues"},
 			{"debug"},
+			{"gc"}
 		};
 
 		return Arrays.asList(tests);

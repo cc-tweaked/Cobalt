@@ -35,7 +35,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.userdataOf;
-import static org.squiddev.cobalt.ValueFactory.weakMetatable;
 
 public abstract class WeakTableTest {
 	protected LuaState state;
@@ -134,7 +133,7 @@ public abstract class WeakTableTest {
 			table.set(state, 1, new LuaTable());
 			assertThat(table.get(state, 1), instanceOf(LuaTable.class));
 
-			table.useMetatable(weakMetatable(false, true));
+			table.useWeak(false, true);
 			collectGarbage();
 			assertThat(table.get(state, 1), instanceOf(LuaNil.class));
 		}
@@ -297,7 +296,7 @@ public abstract class WeakTableTest {
 			table.set(state, 1, new LuaTable());
 			assertThat(table.get(state, 1), instanceOf(LuaTable.class));
 
-			table.useMetatable(weakMetatable(true, true));
+			table.useWeak(true, true);
 			collectGarbage();
 			assertThat(table.get(state, 1), instanceOf(LuaNil.class));
 		}
@@ -309,7 +308,7 @@ public abstract class WeakTableTest {
 			table.set(state, "foo", new LuaTable());
 			assertThat(table.get(state, "foo"), instanceOf(LuaTable.class));
 
-			table.useMetatable(weakMetatable(true, true));
+			table.useWeak(true, true);
 			collectGarbage();
 			assertThat(table.get(state, "foo"), instanceOf(LuaNil.class));
 		}

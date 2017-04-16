@@ -1332,16 +1332,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Return this value as a strong reference, or {@link Constants#NIL} if it was weak and is no longer referenced.
-	 *
-	 * @return {@link LuaValue} referred to, or {@link Constants#NIL} if it was weak and is no longer referenced.
-	 * @see org.squiddev.cobalt.table.WeakMetatable
-	 */
-	public LuaValue strongvalue() {
-		return this;
-	}
-
-	/**
 	 * Get particular metatag, or return {@link Constants#NIL} if it doesn't exist
 	 *
 	 * @param state The current lua state

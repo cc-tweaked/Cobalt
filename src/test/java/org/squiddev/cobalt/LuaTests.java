@@ -78,7 +78,7 @@ public class LuaTests {
 		});
 	}
 
-	@Test()
+	@Test
 	public void run() throws IOException, CompileException, LuaError {
 		helpers.loadScript(name).call(helpers.state);
 	}
