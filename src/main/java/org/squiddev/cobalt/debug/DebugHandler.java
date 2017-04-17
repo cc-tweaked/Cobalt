@@ -53,6 +53,7 @@ public class DebugHandler {
 	 *
 	 * @param ds   The current debug state
 	 * @param func the function called
+	 * @throws LuaError On a runtime error.
 	 */
 	public void onCall(DebugState ds, LuaFunction func) throws LuaError {
 		DebugFrame di = ds.pushInfo();
@@ -69,6 +70,7 @@ public class DebugHandler {
 	 * @param args  The arguments to this function
 	 * @param stack The current lua stack
 	 * @return The pushed info
+	 * @throws LuaError On a runtime error.
 	 */
 	public DebugFrame onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack) throws LuaError {
 		DebugFrame di = ds.pushInfo();
@@ -90,6 +92,7 @@ public class DebugHandler {
 	 * Called by Closures and recursing java functions on return
 	 *
 	 * @param ds Debug state
+	 * @throws LuaError On a runtime error.
 	 */
 	public void onReturn(DebugState ds) throws LuaError {
 		try {
@@ -107,6 +110,7 @@ public class DebugHandler {
 	 * @param pc     Current program counter
 	 * @param extras Extra arguments
 	 * @param top    The top of the callstack
+	 * @throws LuaError On a runtime error.
 	 */
 	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError {
 		Prototype prototype = ds.inhook || di.closure == null ? null : di.closure.getPrototype();
@@ -142,6 +146,8 @@ public class DebugHandler {
 	/**
 	 * Called within long running processes (such as pattern matching)
 	 * to allow terminating the process.
+	 *
+	 * @throws LuaError On a runtime error.
 	 */
 	public void poll() throws LuaError {
 	}

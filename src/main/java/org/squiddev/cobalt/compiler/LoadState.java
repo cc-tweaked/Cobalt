@@ -81,7 +81,8 @@ public final class LoadState {
 		 * @param filename Name of chunk
 		 * @param env      Environment to load
 		 * @return The loaded function
-		 * @throws IOException On stream read error
+		 * @throws IOException      On stream read error
+		 * @throws CompileException If the stream cannot be loaded.
 		 */
 		LuaFunction load(InputStream stream, LuaString filename, LuaTable env) throws IOException, CompileException;
 	}
@@ -109,8 +110,9 @@ public final class LoadState {
 	 * @param name   Name to apply to the loaded chunk
 	 * @param env    Environment to load into
 	 * @return {@link Prototype} that was loaded
-	 * @throws IllegalArgumentException if the signature is bac
-	 * @throws IOException              if an IOException occurs
+	 * @throws IllegalArgumentException If the signature is bac
+	 * @throws IOException              If an IOException occurs
+	 * @throws CompileException         If the stream cannot be loaded.
 	 */
 	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
 		if (state.compiler != null) {
@@ -134,8 +136,9 @@ public final class LoadState {
 	 * @param stream    InputStream to read, after having read the first byte already
 	 * @param name      Name to apply to the loaded chunk
 	 * @return {@link Prototype} that was loaded
-	 * @throws IllegalArgumentException if the signature is bac
-	 * @throws IOException              if an IOException occurs
+	 * @throws IllegalArgumentException If the signature is bac
+	 * @throws IOException              If an IOException occurs
+	 * @throws CompileException         If the stream cannot be loaded.
 	 */
 	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, LuaString name) throws IOException, CompileException {
 		name = getSourceName(name);

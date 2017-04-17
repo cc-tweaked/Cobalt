@@ -210,6 +210,7 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @param state The current lua state
 	 * @param args  the arguments to the call invocation.
 	 * @return Varargs the return values, possible a TailcallVarargs.
+	 * @throws LuaError On a runtime error.
 	 */
 	public Varargs onInvoke(LuaState state, Varargs args) throws LuaError {
 		return invoke(state, args);

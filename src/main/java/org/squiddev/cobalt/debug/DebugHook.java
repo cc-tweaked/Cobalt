@@ -47,6 +47,7 @@ public interface DebugHook {
 	 * @param state Current lua state
 	 * @param ds    The current debug state
 	 * @param frame The current frame
+	 * @throws LuaError On a runtime error.
 	 */
 	void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
 
@@ -56,6 +57,7 @@ public interface DebugHook {
 	 * @param state Current lua state
 	 * @param ds    The current debug state
 	 * @param frame The current frame
+	 * @throws LuaError On a runtime error.
 	 */
 	void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
 
@@ -65,6 +67,7 @@ public interface DebugHook {
 	 * @param state Current lua state
 	 * @param ds    The current debug state
 	 * @param frame The current frame
+	 * @throws LuaError On a runtime error.
 	 */
 	void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
 
@@ -76,6 +79,7 @@ public interface DebugHook {
 	 * @param frame   The current frame
 	 * @param oldLine The previous line
 	 * @param newLine The new new line
+	 * @throws LuaError On a runtime error.
 	 */
 	void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine) throws LuaError;
 }

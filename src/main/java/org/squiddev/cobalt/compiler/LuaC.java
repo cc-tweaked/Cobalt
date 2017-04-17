@@ -213,6 +213,7 @@ public class LuaC implements LuaCompiler {
 	 * @param name   Name of the chunk
 	 * @return The compiled code
 	 * @throws IOException On stream read errors
+	 * @throws CompileException If there is a syntax error.
 	 */
 	public static Prototype compile(InputStream stream, LuaString name) throws IOException, CompileException {
 		int firstByte = stream.read();

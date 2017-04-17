@@ -158,6 +158,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * @param args the calling VM
 	 * @return The characters for this string
+	 * @throws LuaError If the argument is not a number or is out of bounds.
 	 */
 	public static Varargs char_(Varargs args) throws LuaError {
 		int n = args.count();
@@ -178,6 +179,8 @@ public class StringLib implements LuaLibrary {
 	 * Returns a string containing a binary representation of the given function,
 	 * so that a later loadstring on this string returns a copy of the function.
 	 * function must be a Lua function without upvalues.
+	 *
+	 * @throws LuaError If the function cannot be dumped.
 	 */
 	static LuaValue dump(LuaValue arg) throws LuaError {
 		LuaValue f = arg.checkFunction();
@@ -209,6 +212,8 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * If the pattern has captures, then in a successful match the captured values
 	 * are also returned, after the two indices.
+	 *
+	 * @throws LuaError On invalid arguments.
 	 */
 	static Varargs find(LuaState state, Varargs args) throws LuaError {
 		return str_find_aux(state, args, true);
@@ -236,6 +241,8 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * This function does not accept string values containing embedded zeros,
 	 * except as arguments to the q option.
+	 *
+	 * @throws LuaError On invalid arguments.
 	 */
 	static Varargs format(Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
@@ -788,7 +795,7 @@ public class StringLib implements LuaLibrary {
 	/**
 	 * This utility method implements both string.find and string.match.
 	 */
-	static Varargs str_find_aux(LuaState state, Varargs args, boolean find) throws LuaError {
+	private static Varargs str_find_aux(LuaState state, Varargs args, boolean find) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
 		int init = args.arg(3).optInteger(1);

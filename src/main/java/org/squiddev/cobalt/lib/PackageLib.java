@@ -211,6 +211,7 @@ public class PackageLib implements LuaLibrary {
 	 * @param state The current lua state
 	 * @param args  The arguments to set it up with
 	 * @return {@link Constants#NONE}
+	 * @throws LuaError If there is a name conflict.
 	 */
 	public Varargs module(LuaState state, Varargs args) throws LuaError {
 		LuaString modname = args.arg(1).checkLuaString();
@@ -320,6 +321,7 @@ public class PackageLib implements LuaLibrary {
 	 * @param state The current lua state
 	 * @param arg   Module name
 	 * @return The loaded value
+	 * @throws LuaError If the module cannot be loaded.
 	 */
 	public LuaValue require(LuaState state, LuaValue arg) throws LuaError {
 		LuaString name = arg.checkLuaString();

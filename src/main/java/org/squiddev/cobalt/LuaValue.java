@@ -944,6 +944,7 @@ public abstract class LuaValue extends Varargs {
 	 * and there may be differences in number formatting.
 	 *
 	 * @return String representation of the value
+	 * @throws LuaError If this is not a string
 	 * @see #checkLuaString()
 	 * @see #optString(String)
 	 * @see #toString()
@@ -1174,6 +1175,7 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @param state     The current lua state
 	 * @param metatable {@link LuaValue} instance to serve as the metatable, or null to reset it.
+	 * @throws LuaError If the metatable cannot be set.
 	 */
 	public void setMetatable(LuaState state, LuaTable metatable) throws LuaError {
 		throw ErrorFactory.argError(this, "table");
@@ -1183,6 +1185,7 @@ public abstract class LuaValue extends Varargs {
 	 * Get the environment for an instance.
 	 *
 	 * @return {@link LuaValue} currently set as the instances environent.
+	 * @throws LuaError If this has no environment.
 	 */
 	public LuaTable getfenv() throws LuaError {
 		throw ErrorFactory.typeError(this, "function or thread");
@@ -1197,6 +1200,7 @@ public abstract class LuaValue extends Varargs {
 	 * values to implement {@link #get(LuaState, LuaValue)} to provide the environment values.
 	 *
 	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
+	 * @throws LuaError If this has no environment.
 	 * @see JsePlatform
 	 */
 	public void setfenv(LuaTable env) throws LuaError {

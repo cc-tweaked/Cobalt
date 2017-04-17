@@ -94,6 +94,7 @@ public final class DebugState {
 	 * Push a new debug info onto the stack
 	 *
 	 * @return The created info
+	 * @throws LuaError On a stack overflow.
 	 */
 	protected DebugFrame pushInfo() throws LuaError {
 		int top = this.top + 1;

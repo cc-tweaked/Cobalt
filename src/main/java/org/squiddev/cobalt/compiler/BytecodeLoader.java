@@ -307,7 +307,8 @@ public final class BytecodeLoader {
 	/**
 	 * Load the lua chunk header values.
 	 *
-	 * @throws IOException if an i/o exception occurs.
+	 * @throws IOException      if an i/o exception occurs.
+	 * @throws CompileException If the bytecode is invalid.
 	 */
 	public void loadHeader() throws IOException, CompileException {
 		int luacVersion = is.readByte();

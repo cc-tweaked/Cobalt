@@ -80,6 +80,7 @@ public abstract class Varargs {
 	 *
 	 * @param state The current lua state
 	 * @return the evaluated tail call result
+	 * @throws LuaError On a runtime error.
 	 */
 	public Varargs eval(LuaState state) throws LuaError {
 		return this;

@@ -123,7 +123,7 @@ public class LuaThread extends LuaValue {
 	 * @param func     The function to execute
 	 * @param env      The environment to apply to the thread
 	 */
-	public LuaThread(LuaState luaState, LuaFunction func, LuaTable env){
+	public LuaThread(LuaState luaState, LuaFunction func, LuaTable env) {
 		super(Constants.TTHREAD);
 		if (func == null) throw new IllegalArgumentException("function cannot be null");
 
@@ -213,6 +213,7 @@ public class LuaThread extends LuaValue {
 	 * @param state The current lua state
 	 * @param args  The arguments to send as return values to {@link #resume(Varargs)}
 	 * @return {@link Varargs} provided as arguments to {@link #resume(Varargs)}
+	 * @throws LuaError If attempting to yield the main thread.
 	 */
 	public static Varargs yield(LuaState state, Varargs args) throws LuaError {
 		State s = state.currentThread.state;

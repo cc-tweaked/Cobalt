@@ -312,6 +312,7 @@ public final class LuaTable extends LuaValue {
 	 * @param i   the first element index
 	 * @param j   the last element index, inclusive
 	 * @return {@link LuaString} value of the concatenation
+	 * @throws LuaError When a value is not a string.
 	 */
 	public LuaValue concat(LuaString sep, int i, int j) throws LuaError {
 		Buffer sb = new Buffer();
@@ -495,6 +496,7 @@ public final class LuaTable extends LuaValue {
 	 * @param state The current lua state
 	 * @param func  The function to call
 	 * @return {@link Constants#NIL}
+	 * @throws LuaError On a runtime error.
 	 */
 	public LuaValue foreach(LuaState state, LuaValue func) throws LuaError {
 		Varargs n;
@@ -515,6 +517,7 @@ public final class LuaTable extends LuaValue {
 	 * @param state The current lua state
 	 * @param func  The function to call
 	 * @return {@link Constants#NIL}
+	 * @throws LuaError On a runtime error.
 	 */
 	public LuaValue foreachi(LuaState state, LuaValue func) throws LuaError {
 		LuaValue v, r;
@@ -687,6 +690,7 @@ public final class LuaTable extends LuaValue {
 	 *
 	 * @param state      Current lua state
 	 * @param comparator {@link LuaValue} to be called to compare elements.
+	 * @throws LuaError On a runtime error.
 	 */
 	public void sort(LuaState state, LuaValue comparator) throws LuaError {
 		if (weakValues) dropWeakArrayValues();
@@ -756,6 +760,7 @@ public final class LuaTable extends LuaValue {
 	 * It is recommended to count via iteration over next() instead
 	 *
 	 * @return count of keys in the table
+	 * @throws LuaError If iterating the table fails.
 	 */
 	public int keyCount() throws LuaError {
 		LuaValue k = NIL;
@@ -772,6 +777,7 @@ public final class LuaTable extends LuaValue {
 	 * It is recommended to use next() instead
 	 *
 	 * @return array of keys in the table
+	 * @throws LuaError If iterating the table fails.
 	 */
 	public LuaValue[] keys() throws LuaError {
 		List<LuaValue> l = new ArrayList<LuaValue>();
@@ -1014,7 +1020,6 @@ public final class LuaTable extends LuaValue {
 			return null;
 		}
 
-		int mainPos = hashSlot(key);
 		Node mainNode = nodes[hashSlot(key)];
 		LuaValue mainKey = mainNode.key();
 		if (!mainKey.isNil() && !mainNode.value().isNil()) {
@@ -1065,7 +1070,6 @@ public final class LuaTable extends LuaValue {
 				// Insert after the main node
 				mainNode.next = freePos;
 
-				mainPos = freePos;
 				mainNode = freeNode;
 			}
 		}
@@ -1176,7 +1180,7 @@ public final class LuaTable extends LuaValue {
 	 * @param value value to convert
 	 * @return {@link LuaValue} that is a strong or weak reference, depending on type of {@code value}
 	 */
-	static Object weaken(LuaValue value) {
+	private static Object weaken(LuaValue value) {
 		switch (value.type()) {
 			case TFUNCTION:
 			case TTHREAD:
