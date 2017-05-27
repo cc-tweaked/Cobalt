@@ -877,7 +877,7 @@ public final class LuaTable extends LuaValue {
 			int lsize = log2(size);
 			size = 1 << lsize;
 			Node[] nodes = this.nodes = new Node[size];
-			for (int i = 0; i < size; i++) nodes[i] = new Node(weakValues);
+			for (int i = 0; i < size; i++) nodes[i] = new Node(weakKeys, weakValues);
 
 			// All positions are free
 			lastFree = size - 1;
@@ -993,7 +993,7 @@ public final class LuaTable extends LuaValue {
 		if (nodes.length == 0) return -1;
 		while (lastFree >= 0) {
 			Node last = nodes[lastFree--];
-			if (last.value().isNil()) {
+			if (last.key == NIL) {
 				return lastFree + 1;
 			}
 		}
@@ -1246,12 +1246,14 @@ public final class LuaTable extends LuaValue {
 	 * Represents a node in the hash element of the table.
 	 */
 	private static final class Node {
+		private final boolean weakKey;
 		private final boolean weakValue;
-		public Object value = NIL;
-		public Object key = NIL;
-		public int next = -1;
+		Object value = NIL;
+		Object key = NIL;
+		int next = -1;
 
-		private Node(boolean weakValue) {
+		Node(boolean weakKey, boolean weakValue) {
+			this.weakKey = weakKey;
 			this.weakValue = weakValue;
 		}
 
@@ -1269,14 +1271,12 @@ public final class LuaTable extends LuaValue {
 		 *
 		 * @return The entry's key.
 		 */
-		private LuaValue key() {
+		LuaValue key() {
 			Object key = this.key;
+			if (key == NIL || !weakKey) return (LuaValue) key;
+
 			LuaValue strengthened = strengthen(key);
-			if (key != NIL && strengthened.isNil()) {
-				// Clear value too
-				this.key = NIL;
-				this.value = NIL;
-			}
+			if (strengthened.isNil()) this.value = NIL; // We preserve the key so we can check it is nil
 
 			return strengthened;
 		}
@@ -1286,12 +1286,12 @@ public final class LuaTable extends LuaValue {
 		 *
 		 * @return The entry's value.
 		 */
-		private LuaValue value() {
+		LuaValue value() {
 			Object value = this.value;
-			if (!weakValue) return (LuaValue) value;
+			if (value == NIL || !weakValue) return (LuaValue) value;
 
 			LuaValue strengthened = strengthen(value);
-			if (value != NIL && strengthened.isNil()) this.value = NIL;
+			if (strengthened.isNil()) this.value = NIL;
 			return strengthened;
 		}
 	}

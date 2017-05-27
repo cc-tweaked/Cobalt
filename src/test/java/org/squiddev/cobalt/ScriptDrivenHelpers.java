@@ -37,10 +37,10 @@ import static org.junit.Assert.fail;
 
 public class ScriptDrivenHelpers extends FileResourceManipulator {
 	private final String subdir;
-	protected LuaState state;
-	protected LuaTable globals;
+	public LuaState state;
+	public LuaTable globals;
 
-	protected ScriptDrivenHelpers(String subdir) {
+	public ScriptDrivenHelpers(String subdir) {
 		this.subdir = subdir;
 	}
 
