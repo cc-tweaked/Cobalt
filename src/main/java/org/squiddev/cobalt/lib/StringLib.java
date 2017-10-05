@@ -1029,11 +1029,10 @@ public class StringLib implements LuaLibrary {
 					return poffset + 1;
 
 				case '[':
+					if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
 					if (p.luaByte(poffset) == '^') poffset++;
 					do {
-						if (poffset == p.length()) {
-							throw new LuaError("malformed pattern (missing ])");
-						}
+						if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
 						if (p.luaByte(poffset++) == L_ESC && poffset != p.length()) {
 							poffset++;
 						}
@@ -1156,8 +1155,8 @@ public class StringLib implements LuaLibrary {
 								continue;
 							case 'f': {
 								poffset += 2;
-								if (p.luaByte(poffset) != '[') {
-									throw new LuaError("Missing [ after %f in pattern");
+								if (poffset == p.length() || p.luaByte(poffset) != '[') {
+									throw new LuaError("missing '[' after '%f' in pattern");
 								}
 								int ep = classend(poffset);
 								int previous = (soffset == 0) ? 0 : s.luaByte(soffset - 1);
@@ -1280,7 +1279,7 @@ public class StringLib implements LuaLibrary {
 		int matchbalance(int soff, int poff) throws LuaError {
 			final int plen = p.length();
 			if (poff == plen || poff + 1 == plen) {
-				throw new LuaError("unbalanced pattern");
+				throw new LuaError("malformed pattern (missing arguments to '%b')");
 			}
 			if (soff >= s.length() || s.luaByte(soff) != p.luaByte(poff)) {
 				return -1;

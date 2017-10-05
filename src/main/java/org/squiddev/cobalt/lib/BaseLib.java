@@ -346,9 +346,11 @@ public class BaseLib implements LuaLibrary {
 			LuaThread.setErrorFunc(state, olderr);
 			return varargsOf(Constants.FALSE, le.value);
 		} catch (Exception e) {
+			LuaError le = new LuaError(e);
+			le.fillTraceback(state);
+
 			LuaThread.setErrorFunc(state, olderr);
-			String m = e.getMessage();
-			return varargsOf(Constants.FALSE, valueOf(m != null ? m : e.toString()));
+			return varargsOf(Constants.FALSE, le.value);
 		}
 	}
 

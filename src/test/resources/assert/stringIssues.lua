@@ -71,6 +71,24 @@ assert(out[1] == "THE")
 assert(out[2] == "QUICK")
 assert(out[3] == "JUMPS")
 
+-- Malformed patterns
+local function assertPtrnError(ptrn, err)
+	local ok, msg = pcall(string.find, "", ptrn)
+	if ok then
+		error(("Expected failure for %q"):format(ptrn), 0)
+	end
+	if not msg:find(err, 1, true) then
+		error(("Expected %q got %q, for %q"):format(err, msg, ptrn), 0)
+	end
+end
+
+assertPtrnError("[", "malformed pattern (missing ']')")
+assertPtrnError("[^", "malformed pattern (missing ']')")
+assertPtrnError("(", "unfinished capture")
+assertPtrnError("%", "malformed pattern (ends with '%')")
+assertPtrnError("%f", "missing '[' after '%f' in pattern")
+assertPtrnError("%b", "malformed pattern (missing arguments to '%b')")
+
 -- Historically rounded to a float, resulting in Infinity
 assert(tostring(1e38) == "1e+38", "Got " .. tostring(1e38))
 assert(tostring(1e39) == "1e+39", "Got " .. tostring(1e39))
