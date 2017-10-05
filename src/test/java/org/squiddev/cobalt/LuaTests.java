@@ -7,6 +7,7 @@ import org.junit.runners.Parameterized;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
+import org.squiddev.cobalt.lib.Bit32Lib;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,7 @@ public class LuaTests {
 			// {"api"}, // Used to test C API.
 			{"attrib"},
 			// {"big"},
+			{"bitwise"},
 			{"calls"},
 			{"checktable"},
 			{"closure"},
@@ -63,6 +65,7 @@ public class LuaTests {
 	@Before
 	public void setup() throws LuaError {
 		helpers.setup();
+		helpers.globals.load(helpers.state, new Bit32Lib());
 		helpers.globals.rawset("mkdir", new OneArgFunction() {
 			@Override
 			public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
