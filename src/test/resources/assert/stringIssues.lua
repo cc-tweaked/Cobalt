@@ -74,3 +74,7 @@ assert(out[3] == "JUMPS")
 -- Historically rounded to a float, resulting in Infinity
 assert(tostring(1e38) == "1e+38", "Got " .. tostring(1e38))
 assert(tostring(1e39) == "1e+39", "Got " .. tostring(1e39))
+
+-- Tiny bits of string concatination
+local x, y, z = "foo", "bar", "baz"
+assert(x .. y .. z == table.concat { x, y, z })

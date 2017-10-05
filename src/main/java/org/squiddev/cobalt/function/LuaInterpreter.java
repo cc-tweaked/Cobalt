@@ -323,21 +323,14 @@ public class LuaInterpreter extends LuaClosure {
 						stack[a] = OperationHelper.length(state, stack[b = i >>> 23], b);
 						continue;
 
-					case Lua.OP_CONCAT: /*	A B C	R(A):= R(B).. ... ..R(C)			*/
+					case Lua.OP_CONCAT: /*	A B C	R(A):= R(B).. ... ..R(C)			*/ {
 						b = i >>> 23;
 						c = (i >> 14) & 0x1ff;
-					{
-						int count = c - b + 1;
 
-						if (count > 1) {
-							LuaValue buffer = stack[c];
-							while (--c >= b) {
-								buffer = OperationHelper.concat(state, stack[c], buffer);
-							}
-							stack[a] = buffer;
-						} else {
-							stack[a] = OperationHelper.concat(state, stack[c - 1], stack[c]);
-						}
+						top = c + 1;
+						concat(state, stack, top, c - b + 1);
+						stack[a] = stack[b];
+						top = b;
 					}
 					continue;
 
@@ -597,5 +590,55 @@ public class LuaInterpreter extends LuaClosure {
 	@Override
 	public String debugName() {
 		return getPrototype().sourceShort() + ":" + getPrototype().linedefined;
+	}
+
+
+	private static void concat(LuaState state, LuaValue[] stack, int top, int total) throws LuaError {
+		do {
+			LuaValue left = stack[top - 2];
+			LuaValue right = stack[top - 1];
+			LuaString lString, rString;
+			int n = 2;
+			if (!left.isString() || !right.isString()) {
+				// If one of these isn't convertible to a string then use the metamethod
+				stack[top - 2] = OperationHelper.concat(state, left, right, top - 2, top - 1);
+			} else if ((rString = right.checkLuaString()).length == 0) {
+				stack[top - 2] = left.checkLuaString();
+			} else if ((lString = left.checkLuaString()).length == 0) {
+				stack[top - 2] = rString;
+			} else {
+				int length = rString.length + lString.length;
+				stack[top - 2] = lString;
+				stack[top - 1] = rString;
+
+				for (; n < total; n++) {
+					LuaValue value = stack[top - n - 1];
+					if (!value.isString()) break;
+
+					LuaString string = value.checkLuaString();
+
+					// Ensure we don't get a string which is too long
+					if (string.length > Integer.MAX_VALUE - length) throw new LuaError("string length overflow");
+
+					// Otherwise increment the length and store this converted string
+					stack[top - n - 1] = string;
+					length += string.length;
+				}
+
+				byte[] buffer = new byte[length];
+				length = 0;
+				for (int j = n; j > 0; j--) {
+					LuaString string = (LuaString) stack[top - j];
+					System.arraycopy(string.bytes, string.offset, buffer, length, string.length);
+					length += string.length;
+				}
+
+				stack[top - n] = LuaString.valueOf(buffer);
+			}
+
+			// Got "n" strings and created one new one
+			total -= n - 1;
+			top -= n - 1;
+		} while (total > 1);
 	}
 }
