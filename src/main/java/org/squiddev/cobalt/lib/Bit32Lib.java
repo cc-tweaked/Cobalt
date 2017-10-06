@@ -44,7 +44,7 @@ public class Bit32Lib implements LuaLibrary {
 		bind(state, t, Bit32LibV.class, new String[]{"band", "bnot", "bor", "btest", "bxor", "extract", "replace"});
 		bind(state, t, Bit32Lib2.class, new String[]{"arshift", "lrotate", "lshift", "rrotate", "rshift"});
 		env.rawset("bit32", t);
-		state.loadedPackages.rawset("debug", t);
+		state.loadedPackages.rawset("bit32", t);
 		return t;
 	}
 
