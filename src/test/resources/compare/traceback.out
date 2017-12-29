@@ -1,7 +1,7 @@
 false	traceback.lua:3: assertion failed!
 stack traceback:
 	traceback.lua:3: in function <traceback.lua:2>
-	xpcall: in function 'xpcall'
+	[C]: in function 'xpcall'
 	traceback.lua:2: in main chunk
 msg
 pcall: msg

@@ -56,7 +56,7 @@ public final class DebugHelpers {
 		sb.append("stack traceback:");
 		for (DebugFrame di; (di = state.getDebugInfo(level++)) != null; ) {
 			sb.append("\n\t");
-			sb.append(di.closure == null ? di.func.debugName() : di.closure.getPrototype().sourceShort());
+			sb.append(di.closure == null ? "[C]" : di.closure.getPrototype().sourceShort());
 			sb.append(':');
 			if (di.currentLine() > 0) {
 				sb.append(di.currentLine()).append(":");

@@ -32,6 +32,7 @@ import org.squiddev.cobalt.lib.CoroutineLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
@@ -63,7 +64,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {
-	private static int coroutineCount = 0;
+	private static final AtomicInteger coroutineCount = new AtomicInteger();
 
 	/**
 	 * Interval at which to check for lua threads that are no longer referenced.
@@ -293,7 +294,7 @@ public class LuaThread extends LuaValue {
 				this.args = args;
 				if (status == STATUS_INITIAL) {
 					status = STATUS_RUNNING;
-					new Thread(this, "Coroutine-" + (++coroutineCount)).start();
+					new Thread(this, "Coroutine-" + coroutineCount.getAndIncrement()).start();
 				} else {
 					notify();
 				}
