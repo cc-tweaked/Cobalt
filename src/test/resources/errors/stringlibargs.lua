@@ -46,17 +46,17 @@ checkallerrors('string.find', { somestring, notastring }, 'bad argument')
 checkallerrors('string.find', { somestring, somestring, nonnumber }, 'bad argument')
 
 -- string.format
---local numfmts = {'%c','%d','%E','%e','%f','%g','%G','%i','%o','%u','%X','%x'}
-local numfmts = { '%c', '%d', '%i', '%o', '%u', '%X', '%x' }
+local numfmts = {'%c','%d','%E','%e','%f','%g','%G','%i','%o','%u','%X','%x'}
 local strfmts = { '%q', '%s' }
-local badfmts = { '%w' }
 banner('string.format')
 checkallpass('string.format', { somestring, anylua })
 checkallpass('string.format', { numfmts, somenumber })
 checkallpass('string.format', { strfmts, somestring })
 checkallerrors('string.format', { numfmts, notanumber }, 'bad argument')
 checkallerrors('string.format', { strfmts, notastring }, 'bad argument')
-checkallerrors('string.format', { badfmts, somestring }, "invalid option '%w'")
+checkallerrors('string.format', { { '%w' }, somestring }, "invalid option '%w'")
+checkallerrors('string.format', { { '%' }, somestring }, "invalid option '%'")
+checkallerrors('string.format', { { '%######s' }, somestring }, "invalid format (repeated flags)")
 
 -- string.gmatch
 banner('string.gmatch')

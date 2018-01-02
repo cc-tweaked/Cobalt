@@ -108,7 +108,7 @@ public final class Buffer {
 	 * @return value as a {@link LuaValue}, converting as necessary
 	 */
 	public LuaValue value() {
-		return value != null ? value : this.tostring();
+		return value != null ? value : this.toLuaString();
 	}
 
 	/**
@@ -129,7 +129,7 @@ public final class Buffer {
 	 *
 	 * @return the value as a {@link LuaString}
 	 */
-	public final LuaString tostring() {
+	public final LuaString toLuaString() {
 		realloc(length, 0);
 		return LuaString.valueOf(bytes, offset, length);
 	}
@@ -151,8 +151,34 @@ public final class Buffer {
 	 * @return {@code this} to allow call chaining
 	 */
 	public final Buffer append(byte b) {
-		makeroom(0, 1);
+		makeRoom(0, 1);
 		bytes[offset + length++] = b;
+		return this;
+	}
+
+	/**
+	 * Append a single character to the buffer.
+	 *
+	 * @param c The byte to append
+	 * @return {@code this} to allow call chaining
+	 */
+	public final Buffer append(char c) {
+		makeRoom(0, 1);
+		bytes[offset + length++] = c < 256 ? (byte) c : 63;
+		return this;
+	}
+
+	/**
+	 * Append a character array to the buffer.
+	 *
+	 * @param chars The byte to append
+	 * @return {@code this} to allow call chaining
+	 */
+	public final Buffer append(char[] chars) {
+		final int n = chars.length;
+		makeRoom(0, n);
+		LuaString.encode(chars, bytes, offset + length);
+		length += n;
 		return this;
 	}
 
@@ -164,7 +190,7 @@ public final class Buffer {
 	 */
 	public final Buffer append(LuaString str) {
 		final int n = str.length;
-		makeroom(0, n);
+		makeRoom(0, n);
 		str.copyTo(0, bytes, offset + length, n);
 		length += n;
 		return this;
@@ -180,7 +206,7 @@ public final class Buffer {
 	 */
 	public final Buffer append(String str) {
 		final int n = str.length();
-		makeroom(0, n);
+		makeRoom(0, n);
 		LuaString.encode(str, bytes, offset + length);
 		length += n;
 		return this;
@@ -194,7 +220,7 @@ public final class Buffer {
 	 */
 	public Buffer prepend(LuaString s) {
 		int n = s.length;
-		makeroom(n, 0);
+		makeRoom(n, 0);
 		System.arraycopy(s.bytes, s.offset, bytes, offset - n, n);
 		offset -= n;
 		length += n;
@@ -208,7 +234,7 @@ public final class Buffer {
 	 * @param nbefore number of unused bytes which must precede the data after this completes
 	 * @param nafter  number of unused bytes which must follow the data after this completes
 	 */
-	public final void makeroom(int nbefore, int nafter) {
+	public final void makeRoom(int nbefore, int nafter) {
 		if (value != null) {
 			LuaString s = value;
 			value = null;

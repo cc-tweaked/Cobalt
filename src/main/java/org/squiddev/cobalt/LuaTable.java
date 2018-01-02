@@ -323,7 +323,7 @@ public final class LuaTable extends LuaValue {
 				sb.append(rawget(i).checkLuaString());
 			}
 		}
-		return sb.tostring();
+		return sb.toLuaString();
 	}
 
 	@Override

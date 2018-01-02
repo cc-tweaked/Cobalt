@@ -261,21 +261,19 @@ public class StringLib implements LuaLibrary {
 					break;
 				case L_ESC:
 					if (i < n) {
-						if ((c = fmt.luaByte(i)) == L_ESC) {
+						if (fmt.luaByte(i) == L_ESC) {
 							++i;
 							result.append((byte) L_ESC);
 						} else {
 							arg++;
-							FormatDesc fdsc = new FormatDesc(args, fmt, i);
+							FormatDesc fdsc = new FormatDesc(fmt, i);
 							i += fdsc.length;
 							switch (fdsc.conversion) {
 								case 'c':
-									fdsc.format(result, (byte) args.arg(arg).checkInteger());
+									fdsc.format(result, (byte) args.arg(arg).checkLong());
 									break;
 								case 'i':
 								case 'd':
-									fdsc.format(result, args.arg(arg).checkInteger());
-									break;
 								case 'o':
 								case 'u':
 								case 'x':
@@ -305,11 +303,13 @@ public class StringLib implements LuaLibrary {
 									throw new LuaError("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
 							}
 						}
+					} else {
+						throw new LuaError("invalid option '%' to 'format'");
 					}
 			}
 		}
 
-		return result.tostring();
+		return result.toLuaString();
 	}
 
 	private static void addquoted(Buffer buf, LuaString s) {
@@ -335,207 +335,6 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 		buf.append((byte) '"');
-	}
-
-	private static final String FLAGS = "-+ #0";
-
-	static class FormatDesc {
-
-		private boolean leftAdjust;
-		private boolean zeroPad;
-		private boolean explicitPlus;
-		private boolean space;
-		private boolean alternateForm;
-		private static final int MAX_FLAGS = 5;
-
-		private int width;
-		private int precision;
-
-		public final int conversion;
-		public final int length;
-
-		public FormatDesc(Varargs args, LuaString strfrmt, final int start) throws LuaError {
-			int p = start, n = strfrmt.length();
-			int c = 0;
-
-			boolean moreFlags = true;
-			while (moreFlags) {
-				switch (c = ((p < n) ? strfrmt.luaByte(p++) : 0)) {
-					case '-':
-						leftAdjust = true;
-						break;
-					case '+':
-						explicitPlus = true;
-						break;
-					case ' ':
-						space = true;
-						break;
-					case '#':
-						alternateForm = true;
-						break;
-					case '0':
-						zeroPad = true;
-						break;
-					default:
-						moreFlags = false;
-						break;
-				}
-			}
-			if (p - start > MAX_FLAGS) {
-				throw new LuaError("invalid format (repeated flags)");
-			}
-
-			width = -1;
-			if (Character.isDigit((char) c)) {
-				width = c - '0';
-				c = ((p < n) ? strfrmt.luaByte(p++) : 0);
-				if (Character.isDigit((char) c)) {
-					width = width * 10 + (c - '0');
-					c = ((p < n) ? strfrmt.luaByte(p++) : 0);
-				}
-			}
-
-			precision = -1;
-			if (c == '.') {
-				c = ((p < n) ? strfrmt.luaByte(p++) : 0);
-				if (Character.isDigit((char) c)) {
-					precision = c - '0';
-					c = ((p < n) ? strfrmt.luaByte(p++) : 0);
-					if (Character.isDigit((char) c)) {
-						precision = precision * 10 + (c - '0');
-						c = ((p < n) ? strfrmt.luaByte(p++) : 0);
-					}
-				} else {
-					precision = 0;
-				}
-			}
-
-			if (Character.isDigit((char) c)) {
-				throw new LuaError("invalid format (width or precision too long)");
-			}
-
-			zeroPad &= !leftAdjust; // '-' overrides '0'
-			conversion = c;
-			length = p - start;
-		}
-
-		public void format(Buffer buf, byte c) {
-			// TODO: not clear that any of width, precision, or flags apply here.
-			buf.append(c);
-		}
-
-		public void format(Buffer buf, long number) {
-			String digits;
-
-			if (number == 0 && precision == 0) {
-				digits = "";
-			} else {
-				int radix;
-				switch (conversion) {
-					case 'x':
-					case 'X':
-						radix = 16;
-						break;
-					case 'o':
-						radix = 8;
-						break;
-					default:
-						radix = 10;
-						break;
-				}
-				digits = Long.toString(number, radix);
-				if (conversion == 'X') {
-					digits = digits.toUpperCase();
-				}
-			}
-
-			int minwidth = digits.length();
-			int ndigits = minwidth;
-			int nzeros;
-
-			if (number < 0) {
-				ndigits--;
-			} else if (explicitPlus || space) {
-				minwidth++;
-			}
-
-			if (precision > ndigits) {
-				nzeros = precision - ndigits;
-			} else if (precision == -1 && zeroPad && width > minwidth) {
-				nzeros = width - minwidth;
-			} else {
-				nzeros = 0;
-			}
-
-			minwidth += nzeros;
-			int nspaces = width > minwidth ? width - minwidth : 0;
-
-			if (!leftAdjust) {
-				pad(buf, ' ', nspaces);
-			}
-
-			if (number < 0) {
-				if (nzeros > 0) {
-					buf.append((byte) '-');
-					digits = digits.substring(1);
-				}
-			} else if (explicitPlus) {
-				buf.append((byte) '+');
-			} else if (space) {
-				buf.append((byte) ' ');
-			}
-
-			if (nzeros > 0) {
-				pad(buf, '0', nzeros);
-			}
-
-			buf.append(digits);
-
-			if (leftAdjust) {
-				pad(buf, ' ', nspaces);
-			}
-		}
-
-		public void format(Buffer buf, double number) {
-			StringBuilder format = new StringBuilder("%");
-			if (explicitPlus) format.append("+");
-			if (space) format.append(" ");
-			if (width >= 0) {
-				if (leftAdjust) format.append("-");
-				if (zeroPad) format.append("0");
-				format.append(width);
-			}
-
-			format.append('.').append(precision >= 0 ? precision : 6);
-			format.append((char) conversion);
-
-			buf.append(String.format(format.toString(), number));
-		}
-
-		public void format(Buffer buf, LuaString s) {
-			int nullindex = s.indexOf((byte) '\0', 0);
-			if (nullindex != -1) {
-				s = s.substring(0, nullindex);
-			}
-			if (precision >= 0 && s.length() > precision) {
-				s = s.substring(0, precision);
-			}
-
-			int minwidth = s.length();
-			int nspaces = width > minwidth ? width - minwidth : 0;
-			if (!leftAdjust) pad(buf, ' ', nspaces);
-
-			buf.append(s);
-
-			if (leftAdjust) pad(buf, ' ', nspaces);
-		}
-
-		public static void pad(Buffer buf, char c, int n) {
-			byte b = (byte) c;
-			while (n-- > 0) {
-				buf.append(b);
-			}
-		}
 	}
 
 	/**
@@ -673,7 +472,7 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 		lbuf.append(src.substring(soffset, srclen));
-		return varargsOf(lbuf.tostring(), valueOf(n));
+		return varargsOf(lbuf.toLuaString(), valueOf(n));
 	}
 
 	/**

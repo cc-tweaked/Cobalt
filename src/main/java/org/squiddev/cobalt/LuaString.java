@@ -604,6 +604,25 @@ public class LuaString extends LuaValue {
 		}
 	}
 
+	/**
+	 * Encode the given character array with characters limited to the 0-255 range,
+	 * writing the result to bytes starting at offset.
+	 *
+	 * The string should be measured first with lengthAsUtf8
+	 * to make sure the given byte array is large enough.
+	 *
+	 * @param string Array of characters to be encoded
+	 * @param bytes  byte array to hold the result
+	 * @param off    offset into the byte array to start writing
+	 * @see #decode(byte[], int, int)
+	 */
+	public static void encode(char[] string, byte[] bytes, int off) {
+		for (int i = 0; i < string.length; i++) {
+			int c = string[i];
+			bytes[i + off] = (c < 256 ? (byte) c : 63);
+		}
+	}
+
 	//region UTF8
 
 	/**
