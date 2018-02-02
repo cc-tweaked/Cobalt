@@ -96,3 +96,6 @@ assert(tostring(1e39) == "1e+39", "Got " .. tostring(1e39))
 -- Tiny bits of string concatination
 local x, y, z = "foo", "bar", "baz"
 assert(x .. y .. z == table.concat { x, y, z })
+
+-- Whitespace on large characters
+assert(tonumber(("\128")) == nil)

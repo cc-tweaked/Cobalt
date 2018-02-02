@@ -663,7 +663,7 @@ public class StringLib implements LuaLibrary {
 	private static final byte[] CHAR_TABLE;
 
 	public static boolean isWhitespace(byte b) {
-		return (CHAR_TABLE[b] & MASK_SPACE) != 0;
+		return (CHAR_TABLE[b & 0xFF] & MASK_SPACE) != 0;
 	}
 
 	static {
