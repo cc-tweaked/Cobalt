@@ -32,6 +32,7 @@ import org.squiddev.cobalt.function.TwoArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
+import java.security.SecureRandom;
 import java.util.Random;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -58,7 +59,7 @@ public class MathLib implements LuaLibrary {
 			"sqrt", "tan",
 			"acos", "asin", "atan", "cosh",
 			"exp", "log", "log10", "sinh",
-			"tanh"
+			"tanh", "securerandom"
 		});
 		LibFunction.bind(state, t, MathLib2.class, new String[]{
 			"fmod", "ldexp", "pow", "atan2"
@@ -115,6 +116,18 @@ public class MathLib implements LuaLibrary {
 					return ValueFactory.valueOf(Math.sinh(arg.checkDouble()));
 				case 18:
 					return ValueFactory.valueOf(Math.tanh(arg.checkDouble()));
+				case 19: {
+					int x = arg.checkInteger();
+					SecureRandom srandom = new SecureRandom();
+					byte[] bytes_array = new byte[x];
+					LuaTable bytes_table = new LuaTable();
+					srandom.nextBytes(bytes_array);
+					// We need to use a workaround, normal conversion will convert a byte[] to a string!
+					for(byte b : bytes_array) {
+						bytes_table.insert(0, LuaInteger.valueOf(b));
+					}
+					return bytes_table;
+				}
 			}
 			return Constants.NIL;
 		}
