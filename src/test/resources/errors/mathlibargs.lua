@@ -15,7 +15,7 @@ local nonnumber = { astring, aboolean, afunction, atable }
 
 local singleargfunctions = {
 	'abs', 'acos', 'asin', 'atan', 'cos', 'cosh', 'deg', 'exp', 'floor',
-	'rad', 'randomseed', 'sin', 'sinh', 'tan', 'tanh', 'frexp',
+	'rad', 'randomseed', 'sin', 'sinh', 'tan', 'tanh', 'frexp', 'securerandom'
 }
 
 local singleargposdomain = {
