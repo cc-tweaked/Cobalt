@@ -78,10 +78,10 @@ repeat
 	assert(g.what == "Lua" and g.func == f and g.namewhat == "" and not g.name)
 
 	function f(x, name) -- local!
-	name = name or 'f'
-	local a = debug.getinfo(1)
-	assert(a.name == name and a.namewhat == 'local')
-	return x
+		name = name or 'f'
+		local a = debug.getinfo(1)
+		assert(a.name == name and a.namewhat == 'local')
+		return x
 	end
 
 	-- breaks in different conditions
@@ -92,7 +92,7 @@ repeat
 	if 3 > 4 then return math.sin(1) end; f()
 	a = 3 < 4; f()
 	a = 3 < 4 or 1; f()
-repeat local x = 20; if 4 > 3 then f() else break end; f() until 1
+	repeat local x = 20; if 4 > 3 then f() else break end; f() until 1
 	g = {}
 	f(g).x = f(2) and f(10) + f(9)
 	assert(g.x == f(19))
@@ -159,6 +159,25 @@ end
 
 
 print '+'
+
+-- invalid levels in [gs]etlocal
+assert(not pcall(debug.getlocal, 20, 1))
+assert(not pcall(debug.setlocal, -1, 1, 10))
+
+
+-- parameter names
+local function foo(a, b, ...) local d, e end
+
+local co = coroutine.create(foo)
+
+assert(debug.getlocal(foo, 1) == 'a')
+assert(debug.getlocal(foo, 2) == 'b')
+assert(debug.getlocal(foo, 3) == nil)
+assert(debug.getlocal(co, foo, 1) == 'a')
+assert(debug.getlocal(co, foo, 2) == 'b')
+assert(debug.getlocal(co, foo, 3) == nil)
+
+assert(debug.getlocal(print, 1) == nil)
 
 a = {}; L = nil
 local glob = 1
@@ -401,6 +420,16 @@ assert(string.find(debug.traceback("hi"), "^hi\n"))
 assert(not string.find(debug.traceback("hi"), "'traceback'"))
 --assert(string.find(debug.traceback("hi", 0), "'traceback'")) -- Debug.traceback isn't pushed
 assert(string.find(debug.traceback(), "^stack traceback:\n"))
+
+-- testing nparams, nups e isvararg
+local t = debug.getinfo(print, "u")
+assert(t.isvararg == true and t.nparams == 0 and t.nups == 0)
+
+t = debug.getinfo(function(a, b, c) end, "u")
+assert(t.isvararg == false and t.nparams == 3 and t.nups == 0)
+
+t = debug.getinfo(function(a, b, ...) return t[a] end, "u")
+assert(t.isvararg == true and t.nparams == 2 and t.nups == 1)
 
 -- testing debugging of coroutines
 

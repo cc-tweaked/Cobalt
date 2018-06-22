@@ -30,10 +30,7 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.debug.DebugState;
-import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
+import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -103,6 +100,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString LASTLINEDEFINED = valueOf("lastlinedefined");
 	private static final LuaString CURRENTLINE = valueOf("currentline");
 	private static final LuaString ACTIVELINES = valueOf("activelines");
+	private static final LuaString NPARAMS = valueOf("nparams");
+	private static final LuaString ISVARARG = valueOf("isvararg");
 
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
@@ -219,11 +218,10 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	}
 
 	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) throws LuaError {
-		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
-		LuaValue func = args.arg(a++);
-		int i1 = a++;
-		String what = args.arg(i1).optString("nSluf");
+		int arg = 1;
+		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
+		LuaValue func = args.arg(arg);
+		String what = args.arg(arg + 1).optString("nSluf");
 
 		// find the stack info
 		DebugState ds = DebugHandler.getDebugState(thread);
@@ -267,6 +265,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 				}
 				case 'u': {
 					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().nups : 0));
+					info.rawset(NPARAMS, valueOf(c != null ? c.getPrototype().numparams : 0));
+					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().is_vararg > 0));
 					break;
 				}
 				case 'n': {
@@ -295,42 +295,48 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	}
 
 	private static Varargs _getlocal(LuaState state, Varargs args) throws LuaError {
-		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
-		int i1 = a++;
-		int level = args.arg(i1).checkInteger();
-		int i = a++;
-		int local = args.arg(i).checkInteger();
+		int arg = 1;
+		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 
-		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugFrame di = ds.getDebugInfo(level - 1);
-		LuaString name = (di != null ? di.getLocalName(local) : null);
-		if (name != null && di.stack != null) {
+		int local = args.arg(arg + 1).checkInteger();
+		if (args.arg(arg).isFunction()) {
+			LuaFunction function = args.arg(arg).checkFunction();
+			if (!function.isClosure()) return NIL;
+
+			Prototype proto = function.checkClosure().getPrototype();
+			LocalVariable[] variables = proto.locvars;
+			return variables != null && local > 0 && local <= variables.length && local <= proto.numparams
+				? variables[local - 1].name : NIL;
+		} else {
+			int level = args.arg(arg).checkInteger();
+			DebugState ds = DebugHandler.getDebugState(thread);
+			DebugFrame di = ds.getDebugInfo(level - 1);
+			if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
+
+			LuaString name = di.getLocalName(local);
+			if (name == null || di.stack == null) return NIL;
+
 			LuaValue value = di.stack[local - 1];
 			return varargsOf(name, value);
-		} else {
-			return NIL;
 		}
 	}
 
 	private static Varargs _setlocal(LuaState state, Varargs args) throws LuaError {
-		int a = 1;
-		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
-		int i1 = a++;
-		int level = args.arg(i1).checkInteger();
-		int i = a++;
-		int local = args.arg(i).checkInteger();
-		LuaValue value = args.arg(a++);
+		int arg = 1;
+		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
+		int level = args.arg(arg).checkInteger();
+		int local = args.arg(arg + 1).checkInteger();
+		LuaValue value = args.arg(arg + 2);
 
 		DebugState ds = DebugHandler.getDebugState(thread);
 		DebugFrame di = ds.getDebugInfo(level - 1);
-		LuaString name = (di != null ? di.getLocalName(local) : null);
-		if (name != null && di.stack != null) {
-			di.stack[local - 1] = value;
-			return name;
-		} else {
-			return NIL;
-		}
+		if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
+
+		LuaString name = di.getLocalName(local);
+		if (name == null || di.stack == null) return NIL;
+
+		di.stack[local - 1] = value;
+		return name;
 	}
 
 	private static LuaValue _getmetatable(LuaState state, Varargs args) {
