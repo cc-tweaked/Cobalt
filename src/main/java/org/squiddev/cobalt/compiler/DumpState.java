@@ -87,7 +87,7 @@ public class DumpState {
 	public static final int NUMBER_FORMAT_DEFAULT = NUMBER_FORMAT_FLOATS_OR_DOUBLES;
 
 	// header fields
-	private boolean IS_LITTLE_ENDIAN = false;
+	private boolean IS_LITTLE_ENDIAN = true;
 	private int NUMBER_FORMAT = NUMBER_FORMAT_DEFAULT;
 	private int SIZEOF_LUA_NUMBER = 8;
 	private static final int SIZEOF_INT = 4;

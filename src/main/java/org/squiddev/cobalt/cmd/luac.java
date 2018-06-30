@@ -53,7 +53,7 @@ public class luac {
 			"  -o name  output to file 'name' (default is \"org.squiddev.cobalt.cmd.luac.out\")\n" +
 			"  -p       parse only\n" +
 			"  -s       strip debug information\n" +
-			"  -e       little endian format for numbers\n" +
+			"  -E       big endian format for numbers\n" +
 			"  -i<n>    number format 'n', (n=0,1 or 4, default=" + DumpState.NUMBER_FORMAT_DEFAULT + ")\n" +
 			"  -v       show version information\n" +
 			"  --       stop handling options\n";
@@ -64,10 +64,10 @@ public class luac {
 	}
 
 	private boolean list = false;
-	private String output = "org.squiddev.cobalt.cmd.luac.out";
+	private String output = "luac.out";
 	private boolean parseonly = false;
 	private boolean stripdebug = false;
-	private boolean littleendian = false;
+	private boolean littleendian = true;
 	private int numberformat = DumpState.NUMBER_FORMAT_DEFAULT;
 	private boolean versioninfo = false;
 	private boolean processing = true;
@@ -103,8 +103,8 @@ public class luac {
 						case 's':
 							stripdebug = true;
 							break;
-						case 'e':
-							littleendian = true;
+						case 'E':
+							littleendian = false;
 							break;
 						case 'i':
 							if (args[i].length() <= 2) {
@@ -142,8 +142,7 @@ public class luac {
 				processing = true;
 				for (int i = 0; i < args.length; i++) {
 					if (!processing || !args[i].startsWith("-")) {
-						String chunkname = args[i].substring(0, args[i].length() - 4);
-						processScript(new FileInputStream(args[i]), chunkname, fos);
+						processScript(new FileInputStream(args[i]), "@" + args[i], fos);
 					} else if (args[i].length() <= 1) {
 						processScript(System.in, "=stdin", fos);
 					} else {
