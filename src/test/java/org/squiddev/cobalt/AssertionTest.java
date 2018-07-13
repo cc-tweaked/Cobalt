@@ -29,6 +29,7 @@ public class AssertionTest {
 			{"baseIssues"},
 			{"stringIssues"},
 			{"debug"},
+			{"debug-coroutine-hook"},
 			{"gc"}
 		};
 

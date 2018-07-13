@@ -128,17 +128,11 @@ public class LuaThread extends LuaValue {
 		super(Constants.TTHREAD);
 		if (func == null) throw new IllegalArgumentException("function cannot be null");
 
-		LuaThread current = luaState.currentThread;
-		if (current != null && current.state.status == STATUS_RUNNING && current.debugState != null) {
-			DebugState state = current.debugState;
-			if (state.hookfunc != null) DebugHandler.getDebugState(this).setHook(current.debugState);
-		}
-
-		luaState.threads.add(this);
 		this.luaState = luaState;
 		this.env = env;
+		this.state = new State(this, func);
 
-		state = new State(this, func);
+		luaState.threads.add(this);
 	}
 
 	@Override
