@@ -64,8 +64,8 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public Object toUserdata(Class<?> c) {
-		return c.isAssignableFrom(instance.getClass()) ? instance : null;
+	public <T> T toUserdata(Class<T> c) {
+		return c.isAssignableFrom(instance.getClass()) ? c.cast(instance) : null;
 	}
 
 	@Override
@@ -74,11 +74,9 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public Object optUserdata(Class<?> c, Object defval) throws LuaError {
-		if (!c.isAssignableFrom(instance.getClass())) {
-			throw ErrorFactory.typeError(this, c.getName());
-		}
-		return instance;
+	public <T> T optUserdata(Class<T> c, T defval) throws LuaError {
+		if (!c.isAssignableFrom(instance.getClass())) throw ErrorFactory.typeError(this, c.getName());
+		return c.cast(instance);
 	}
 
 	@Override
@@ -97,11 +95,9 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public Object checkUserdata(Class<?> c) throws LuaError {
-		if (c.isAssignableFrom(instance.getClass())) {
-			return instance;
-		}
-		throw ErrorFactory.typeError(this, c.getName());
+	public <T> T checkUserdata(Class<T> c) throws LuaError {
+		if (!c.isAssignableFrom(instance.getClass())) throw ErrorFactory.typeError(this, c.getName());
+		return c.cast(instance);
 	}
 
 	@Override

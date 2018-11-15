@@ -436,7 +436,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isUserdata(Class)
 	 * @see Constants#TUSERDATA
 	 */
-	public Object toUserdata(Class<?> c) {
+	public <T> T toUserdata(Class<T> c) {
 		return null;
 	}
 
@@ -745,7 +745,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optUserdata(Object)
 	 * @see Constants#TUSERDATA
 	 */
-	public Object optUserdata(Class<?> c, Object defval) throws LuaError {
+	public <T> T optUserdata(Class<T> c, T defval) throws LuaError {
 		throw ErrorFactory.argError(this, c.getName());
 	}
 
@@ -1025,7 +1025,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see #checkUserdata()
 	 * @see Constants#TUSERDATA
 	 */
-	public Object checkUserdata(Class<?> c) throws LuaError {
+	public <T> T checkUserdata(Class<T> c) throws LuaError {
 		throw ErrorFactory.argError(this, "userdata");
 	}
 

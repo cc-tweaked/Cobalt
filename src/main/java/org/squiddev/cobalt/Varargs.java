@@ -160,7 +160,7 @@ public abstract class Varargs {
 	/**
 	 * Throw an error if {@code test} fails
 	 *
-	 * @param test user supplied assertion to test against
+	 * @param test user	 supplied assertion to test against
 	 * @param i    the index to report in any error message
 	 * @param msg  the error message to use when the test fails
 	 * @throws LuaError if the the value of {@code test} is {@code false}

@@ -153,7 +153,7 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public Object optUserdata(Class<?> c, Object defval) {
+	public <T> T optUserdata(Class<T> c, T defval) {
 		return defval;
 	}
 
