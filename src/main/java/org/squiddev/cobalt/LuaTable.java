@@ -780,7 +780,7 @@ public final class LuaTable extends LuaValue {
 	 * @throws LuaError If iterating the table fails.
 	 */
 	public LuaValue[] keys() throws LuaError {
-		List<LuaValue> l = new ArrayList<LuaValue>();
+		List<LuaValue> l = new ArrayList<>();
 		LuaValue k = NIL;
 		while (true) {
 			Varargs n = next(k);
@@ -1185,7 +1185,7 @@ public final class LuaTable extends LuaValue {
 			case TFUNCTION:
 			case TTHREAD:
 			case TTABLE:
-				return new WeakReference<LuaValue>(value);
+				return new WeakReference<>(value);
 			case TUSERDATA:
 				return new WeakUserdata((LuaUserdata) value);
 			default:
@@ -1221,8 +1221,8 @@ public final class LuaTable extends LuaValue {
 		private final LuaTable mt;
 
 		private WeakUserdata(LuaUserdata value) {
-			ref = new WeakReference<LuaValue>(value);
-			ob = new WeakReference<Object>(value.instance);
+			ref = new WeakReference<>(value);
+			ob = new WeakReference<>(value.instance);
 			mt = value.metatable;
 		}
 
@@ -1233,7 +1233,7 @@ public final class LuaTable extends LuaValue {
 			Object o = ob.get();
 			if (o != null) {
 				LuaValue ud = userdataOf(o, mt);
-				ref = new WeakReference<LuaValue>(ud);
+				ref = new WeakReference<>(ud);
 				return ud;
 			} else {
 				return NIL;

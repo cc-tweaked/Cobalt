@@ -85,7 +85,7 @@ public final class DebugState {
 	public int hookcodes;
 
 	public DebugState(LuaThread thread) {
-		this.thread = new WeakReference<LuaThread>(thread);
+		this.thread = new WeakReference<>(thread);
 		this.state = thread.luaState;
 		this.handler = state.debug;
 	}

@@ -92,7 +92,7 @@ public class lua {
 							if (++i >= args.length) {
 								usageExit();
 							}
-							if (libs == null) libs = new ArrayList<String>();
+							if (libs == null) libs = new ArrayList<>();
 							libs.add(args[i]);
 							break;
 						case 'i':

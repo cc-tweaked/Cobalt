@@ -7,7 +7,7 @@ apply plugin: 'maven-publish'
 group = 'org.squiddev'
 version = '0.3.2'
 
-targetCompatibility = sourceCompatibility = 1.6
+targetCompatibility = sourceCompatibility = 1.8
 compileTestJava.sourceCompatibility = compileTestJava.targetCompatibility = 1.8
 
 repositories {

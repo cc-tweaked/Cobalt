@@ -37,7 +37,7 @@ public class ProfilerStream {
 	private final byte CALL_PROTO = 0x01;
 	private final byte CALL_FUNC = 0x02;
 
-	private final HashMap<Prototype, Short> prototypes = new HashMap<Prototype, Short>();
+	private final HashMap<Prototype, Short> prototypes = new HashMap<>();
 	private short id = -1;
 	private final DataOutputStream stream;
 

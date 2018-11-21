@@ -219,7 +219,7 @@ public class LuaC implements LuaCompiler {
 		int firstByte = stream.read();
 		return (firstByte == '\033') ?
 			LoadState.loadBinaryChunk(firstByte, stream, name) :
-			(new LuaC(new Hashtable<LuaString, LuaString>())).luaY_parser(firstByte, stream, name);
+			(new LuaC(new Hashtable<>())).luaY_parser(firstByte, stream, name);
 	}
 
 	/**
