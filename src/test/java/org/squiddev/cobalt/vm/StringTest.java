@@ -7,7 +7,6 @@ import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.OperationHelper;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +20,7 @@ public class StringTest {
 
 	@Before
 	public void setup() throws Exception {
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 		JsePlatform.standardGlobals(state);
 	}
 

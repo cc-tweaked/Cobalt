@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.TwoArgFunction;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -39,7 +38,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * Tests of basic unary and binary operators on main value types.
  */
 public class UnaryBinaryOperatorsTest {
-	private LuaState state = new LuaState(new FileResourceManipulator());
+	private LuaState state = new LuaState();
 
 	@Test
 	public void testEqualsBool() throws LuaError {

@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import org.squiddev.cobalt.require.RequireSampleClassCastExcep;
 import org.squiddev.cobalt.require.RequireSampleLoadLuaError;
 import org.squiddev.cobalt.require.RequireSampleLoadRuntimeExcep;
@@ -19,7 +18,7 @@ public class RequireClassTest {
 
 	@Before
 	public void setup() throws LuaError {
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 		LuaTable globals = JsePlatform.standardGlobals(state);
 		require = (LuaFunction) globals.get(state, "require");
 	}

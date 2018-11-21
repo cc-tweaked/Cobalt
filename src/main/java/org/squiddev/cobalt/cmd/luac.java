@@ -32,7 +32,6 @@ import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.compiler.DumpState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 
@@ -138,7 +137,7 @@ public class luac {
 			// process input files
 			OutputStream fos = new FileOutputStream(output);
 			try {
-				JsePlatform.standardGlobals(new LuaState(new FileResourceManipulator()));
+				JsePlatform.standardGlobals(new LuaState());
 				processing = true;
 				for (int i = 0; i < args.length; i++) {
 					if (!processing || !args[i].startsWith("-")) {

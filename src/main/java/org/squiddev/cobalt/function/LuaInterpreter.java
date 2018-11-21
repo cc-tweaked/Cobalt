@@ -51,7 +51,7 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * To construct it directly, the {@link Prototype} is typically created via a compiler such as {@link LuaC}:
  * <pre> {@code
  * InputStream is = new ByteArrayInputStream("print('hello,world').getBytes());
- * Prototype p = LuaC.instance.compile(is, "script");
+ * Prototype p = LuaC.INSTANCE.compile(is, "script");
  * LuaValue _G = JsePlatform.standardGlobals()
  * LuaClosure f = new LuaClosure(p, _G);
  * }</pre>
@@ -59,7 +59,7 @@ import static org.squiddev.cobalt.Constants.TRUE;
  * To construct it indirectly, the {@link LuaC} compiler may be used,
  * which implements the {@link LoadState.LuaCompiler} interface:
  * <pre> {@code
- * LuaFunction f = LuaC.instance.load(is, "script", _G);
+ * LuaFunction f = LuaC.INSTANCE.load(is, "script", _G);
  * }</pre>
  *
  * Typically, a closure that has just been loaded needs to be initialized by executing it,
@@ -217,8 +217,8 @@ public class LuaInterpreter extends LuaClosure {
 		}
 
 		// debug wants args to this function
+		DebugState ds = DebugHandler.getDebugState(state);
 		DebugHandler handler = state.debug;
-		DebugState ds = handler.getDebugState();
 		DebugFrame di = handler.onCall(ds, this, varargs, stack);
 
 		// process instructions

@@ -4,7 +4,6 @@ import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import org.squiddev.cobalt.lib.profiler.ProfilerLib;
 
 import java.io.IOException;
@@ -17,7 +16,7 @@ import static org.junit.Assert.fail;
  */
 public class ProfilerTest {
 	public static void main(String[] args) throws IOException, CompileException, LuaError {
-		LuaState state = new LuaState(new FileResourceManipulator());
+		LuaState state = new LuaState();
 		LuaTable env = JsePlatform.debugGlobals(state);
 		env.load(state, new ProfilerLib(new ProfilerLib.FileOutputProvider()));
 

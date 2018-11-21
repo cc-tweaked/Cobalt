@@ -6,7 +6,6 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
 
@@ -29,7 +28,7 @@ public class DumpLoadEndianIntTest {
 
 	@Before
 	public void setup() throws Exception {
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 		_G = JsePlatform.standardGlobals(state);
 		DumpState.ALLOW_INTEGER_CASTING = false;
 	}
@@ -83,7 +82,7 @@ public class DumpLoadEndianIntTest {
 	}
 
 	public void doTest(boolean littleEndian, int numberFormat, boolean stripDebug,
-	                   String script, String expectedPriorDump, String expectedPostDump, boolean shouldPass) throws LuaError, CompileException {
+					   String script, String expectedPriorDump, String expectedPostDump, boolean shouldPass) throws LuaError, CompileException {
 		try {
 
 			// compile into prototype

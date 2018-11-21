@@ -32,7 +32,6 @@ import org.squiddev.cobalt.lib.CoroutineLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.lang.ref.WeakReference;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
@@ -64,8 +63,6 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {
-	private static final AtomicInteger coroutineCount = new AtomicInteger();
-
 	/**
 	 * Interval at which to check for lua threads that are no longer referenced.
 	 * This can be changed by Java startup code if desired.
@@ -247,7 +244,7 @@ public class LuaThread extends LuaValue {
 		return state.resume(this, args);
 	}
 
-	private static class State implements Runnable {
+	private static final class State implements Runnable {
 		private final LuaState state;
 		private final WeakReference<LuaThread> thread;
 		private final LuaFunction function;
@@ -259,7 +256,7 @@ public class LuaThread extends LuaValue {
 
 		private State(LuaThread thread, LuaFunction function) {
 			this.state = thread.luaState;
-			this.thread = new WeakReference<LuaThread>(thread);
+			this.thread = new WeakReference<>(thread);
 			this.function = function;
 		}
 
@@ -281,14 +278,14 @@ public class LuaThread extends LuaValue {
 			}
 		}
 
-		protected synchronized Varargs resume(LuaThread newThread, Varargs args) {
+		synchronized Varargs resume(LuaThread newThread, Varargs args) {
 			LuaThread previous = state.currentThread;
 			try {
 				state.currentThread = newThread;
 				this.args = args;
 				if (status == STATUS_INITIAL) {
 					status = STATUS_RUNNING;
-					new Thread(this, "Coroutine-" + coroutineCount.getAndIncrement()).start();
+					state.getCoroutineExecutor().execute(this);
 				} else {
 					notify();
 				}
@@ -333,7 +330,7 @@ public class LuaThread extends LuaValue {
 			}
 		}
 
-		protected synchronized void abandon() {
+		synchronized void abandon() {
 			LuaThread currentThread = state.currentThread;
 			try {
 				currentThread.state.status = STATUS_NORMAL;

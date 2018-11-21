@@ -215,8 +215,8 @@ public class BaseLib implements LuaLibrary {
 				case 7: // "pcall", // (f, arg1, ...) -> status, result1, ...
 				{
 					LuaValue func = args.checkValue(1);
+					DebugState ds = DebugHandler.getDebugState(state);
 					DebugHandler handler = state.debug;
-					DebugState ds = handler.getDebugState();
 					handler.onCall(ds, this);
 					try {
 						return pcall(state, func, args.subargs(2), null);
@@ -226,8 +226,8 @@ public class BaseLib implements LuaLibrary {
 				}
 				case 8: // "xpcall", // (f, err) -> result1, ...
 				{
+					DebugState ds = DebugHandler.getDebugState(state);
 					DebugHandler handler = state.debug;
-					DebugState ds = handler.getDebugState();
 					handler.onCall(ds, this);
 					try {
 						return pcall(state, args.first(), Constants.NONE, args.checkValue(2));

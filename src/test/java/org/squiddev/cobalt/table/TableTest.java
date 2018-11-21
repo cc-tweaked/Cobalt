@@ -26,7 +26,6 @@ package org.squiddev.cobalt.table;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.util.ArrayList;
 import java.util.Vector;
@@ -41,7 +40,7 @@ public class TableTest {
 
 	@Before
 	public void setup() {
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 	}
 
 	private int keyCount(LuaTable t) throws LuaError {

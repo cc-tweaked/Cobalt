@@ -8,7 +8,6 @@ import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -21,15 +20,15 @@ public class SimpleTests {
 	private LuaTable _G;
 
 	@Before
-	public void setup() throws Exception {
-		state = new LuaState(new FileResourceManipulator());
+	public void setup() {
+		state = new LuaState();
 		_G = JsePlatform.standardGlobals(state);
 	}
 
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF8"));
-			LuaFunction c = LuaC.instance.load(is, valueOf("script"), _G);
+			LuaFunction c = LuaC.INSTANCE.load(is, valueOf("script"), _G);
 			c.call(state);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);

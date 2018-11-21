@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.StringLib;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,7 +46,7 @@ public class MetatableTest {
 			return Constants.NONE;
 		}
 	};
-	private final LuaState state = new LuaState(new FileResourceManipulator());
+	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, function, table);
 	private final LuaClosure closure = new LuaInterpreter();
 	private final LuaUserdata userdata = ValueFactory.userdataOf(sampleobject);
@@ -264,8 +263,8 @@ public class MetatableTest {
 
 
 	private void checkTable(LuaTable t,
-	                        LuaValue aa, LuaValue bb, LuaValue cc, LuaValue dd, LuaValue ee, LuaValue ff, LuaValue gg,
-	                        LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) throws LuaError {
+							LuaValue aa, LuaValue bb, LuaValue cc, LuaValue dd, LuaValue ee, LuaValue ff, LuaValue gg,
+							LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) throws LuaError {
 		assertEquals(aa, t.get(state, "aa"));
 		assertEquals(bb, t.get(state, "bb"));
 		assertEquals(cc, t.get(state, "cc"));

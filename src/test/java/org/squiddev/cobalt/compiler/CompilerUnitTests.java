@@ -6,7 +6,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,7 +20,7 @@ public class CompilerUnitTests {
 
 	@Before
 	public void setup() throws Exception {
-		LuaState state = new LuaState(new FileResourceManipulator());
+		LuaState state = new LuaState();
 		JsePlatform.standardGlobals(state);
 	}
 

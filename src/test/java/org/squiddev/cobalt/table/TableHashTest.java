@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.TwoArgFunction;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,7 +39,7 @@ public class TableHashTest {
 
 	@Before
 	public void setup() throws Exception {
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 	}
 
 	@Test
@@ -53,7 +52,7 @@ public class TableHashTest {
 
 		String[] keys = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "wxy", "z01",
 			"cd", "ef", "g", "hi", "jk", "lm", "no", "pq", "rs",};
-		int[] capacities = { 0, 1, 2, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 32, 32, 32 };
+		int[] capacities = {0, 1, 2, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 32, 32, 32};
 		for (int i = 0; i < keys.length; ++i) {
 			assertEquals(capacities[i], t.getHashLength());
 			String si = "Test Value! " + i;

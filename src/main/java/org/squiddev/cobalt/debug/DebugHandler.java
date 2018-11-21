@@ -33,19 +33,18 @@ import org.squiddev.cobalt.function.LuaFunction;
  * The main handler for debugging
  */
 public class DebugHandler {
-	private final LuaState state;
-
-	public DebugHandler(LuaState state) {
-		this.state = state;
-	}
+	public static final DebugHandler INSTANCE = new DebugHandler();
 
 	public static DebugState getDebugState(LuaThread thread) {
 		if (thread.debugState == null) thread.debugState = new DebugState(thread);
 		return thread.debugState;
 	}
 
-	public final DebugState getDebugState() {
+	public static DebugState getDebugState(LuaState state) {
 		return getDebugState(state.getCurrentThread());
+	}
+
+	protected DebugHandler() {
 	}
 
 	/**

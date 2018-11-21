@@ -68,19 +68,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see Prototype
  */
 public class LuaC implements LuaCompiler {
-
-	public static final LuaC instance = new LuaC();
-
-	/**
-	 * Install the compiler so that LoadState will first
-	 * try to use it when handed bytes that are
-	 * not already a compiled lua chunk.
-	 *
-	 * @param state The lua state to install into
-	 */
-	public static void install(LuaState state) {
-		state.compiler = instance;
-	}
+	public static final LuaC INSTANCE = new LuaC();
 
 	protected static void _assert(boolean b) throws CompileException {
 		if (!b) {
@@ -212,7 +200,7 @@ public class LuaC implements LuaCompiler {
 	 * @param stream The stream to read
 	 * @param name   Name of the chunk
 	 * @return The compiled code
-	 * @throws IOException On stream read errors
+	 * @throws IOException      On stream read errors
 	 * @throws CompileException If there is a syntax error.
 	 */
 	public static Prototype compile(InputStream stream, LuaString name) throws IOException, CompileException {

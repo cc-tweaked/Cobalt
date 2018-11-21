@@ -120,7 +120,7 @@ public class lua {
 			}
 
 			// new org.squiddev.cobalt.cmd.lua state
-			LuaState state = new LuaState(new FileResourceManipulator());
+			LuaState state = new LuaState();
 			_G = JsePlatform.debugGlobals(state);
 			_G.load(state, new ProfilerLib(new ProfilerLib.FileOutputProvider()));
 			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++) {

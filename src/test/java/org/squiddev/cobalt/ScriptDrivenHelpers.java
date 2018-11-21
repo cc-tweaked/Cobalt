@@ -31,6 +31,7 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -45,21 +46,30 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 	}
 
 	public void setup() {
-		state = new LuaState(this);
+		setup(x -> {
+		});
+	}
+
+	public void setup(Consumer<LuaState.Builder> extend) {
+		LuaState.Builder builder = LuaState.builder().resourceManipulator(this);
+		extend.accept(builder);
+		state = builder.build();
 		globals = JsePlatform.debugGlobals(state);
 	}
 
 	public void setupQuiet() {
-		state = new LuaState(this);
-		state.stdout = new PrintStream(new OutputStream() {
-			@Override
-			public void write(int b) throws IOException {
-			}
+		state = LuaState.builder()
+			.resourceManipulator(this)
+			.stdout(new PrintStream(new OutputStream() {
+				@Override
+				public void write(int b) {
+				}
 
-			@Override
-			public void write(byte[] b, int off, int len) throws IOException {
-			}
-		});
+				@Override
+				public void write(byte[] b, int off, int len) {
+				}
+			}))
+			.build();
 		globals = JsePlatform.debugGlobals(state);
 	}
 
@@ -119,7 +129,7 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 		}
 	}
 
-	private String getExpectedOutput(final String name) throws IOException, InterruptedException {
+	private String getExpectedOutput(final String name) throws IOException {
 		InputStream output = this.findResource(name + ".out");
 		if (output == null) fail("Failed to get comparison output for " + name);
 		try {

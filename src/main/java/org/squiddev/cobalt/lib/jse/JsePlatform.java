@@ -91,7 +91,6 @@ public class JsePlatform {
 		_G.load(state, new MathLib());
 		_G.load(state, new JseIoLib());
 		_G.load(state, new OsLib());
-		LuaC.install(state);
 		return _G;
 	}
 

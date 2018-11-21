@@ -26,7 +26,6 @@ package org.squiddev.cobalt.table;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.util.Vector;
 
@@ -42,7 +41,7 @@ public class TableArrayTest {
 
 	@Before
 	public void setup() throws Exception {
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 	}
 
 	@Test

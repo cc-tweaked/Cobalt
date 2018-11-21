@@ -31,7 +31,6 @@ import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -69,7 +68,7 @@ public class LuaOperationsTest {
 			return Constants.NONE;
 		}
 	};
-	private final LuaState state = new LuaState(new FileResourceManipulator());
+	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
 	private final Prototype proto = new Prototype();
 	private final LuaClosure someclosure = new LuaInterpreter(proto, table);

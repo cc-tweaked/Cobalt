@@ -92,8 +92,8 @@ public abstract class VarArgFunction extends LibFunction {
 	 */
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
+		DebugState ds = DebugHandler.getDebugState(state);
 		DebugHandler handler = state.debug;
-		DebugState ds = handler.getDebugState();
 		handler.onCall(ds, this);
 		try {
 			return this.onInvoke(state, args).eval(state);

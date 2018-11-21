@@ -31,7 +31,6 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.ByteArrayInputStream;
 import java.lang.ref.WeakReference;
@@ -50,7 +49,7 @@ public class OrphanedThreadTest {
 	@Before
 	public void setup() throws Exception {
 		LuaThread.threadOrphanCheckInterval = 5;
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 		env = JsePlatform.standardGlobals(state);
 	}
 

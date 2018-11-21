@@ -5,6 +5,7 @@ import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHook;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
@@ -141,7 +142,7 @@ public class ProfilerLib implements LuaLibrary {
 						throw new LuaError(e);
 					}
 					ProfilerHook hook = lib.hook = new ProfilerHook(new ProfilerStack(), writer);
-					hook.setHook(state.debug.getDebugState());
+					hook.setHook(DebugHandler.getDebugState(state));
 					return NONE;
 				}
 				case 3: // stop
@@ -149,7 +150,7 @@ public class ProfilerLib implements LuaLibrary {
 					ProfilerHook hook = lib.hook;
 					if (hook == null) throw new LuaError("Not profiling");
 					long count = hook.close();
-					hook.clearHook(state.debug.getDebugState());
+					hook.clearHook(DebugHandler.getDebugState(state));
 					lib.hook = null;
 					return valueOf(count);
 				}

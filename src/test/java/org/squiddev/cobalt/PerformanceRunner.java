@@ -6,7 +6,6 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +28,7 @@ public class PerformanceRunner {
 
 		// Ugly parse arguments
 		if (args.length > 0) {
-			Queue<String> arg = new ArrayDeque<String>(Arrays.asList(args));
+			Queue<String> arg = new ArrayDeque<>(Arrays.asList(args));
 			String next;
 			while ((next = arg.poll()) != null) {
 				if (next.startsWith("--")) {
@@ -119,7 +118,7 @@ public class PerformanceRunner {
 
 	public static void executeCobalt() throws CompileException, LuaError {
 		System.out.println("Cobalt");
-		LuaState state = new LuaState(new FileResourceManipulator());
+		LuaState state = new LuaState();
 		LuaTable globals = JsePlatform.debugGlobals(state);
 
 		if (QUIET) {

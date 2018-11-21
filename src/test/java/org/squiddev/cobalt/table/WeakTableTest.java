@@ -26,7 +26,6 @@ package org.squiddev.cobalt.table;
 import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.lang.ref.WeakReference;
 
@@ -41,7 +40,7 @@ public abstract class WeakTableTest {
 
 	@Before
 	public void setup() throws Exception {
-		state = new LuaState(new FileResourceManipulator());
+		state = new LuaState();
 	}
 
 	public static class MyData {
@@ -198,7 +197,7 @@ public abstract class WeakTableTest {
 			// table should have 2 entries
 			int size = 0;
 			for (LuaValue k = t.next(NIL).first(); !k.isNil();
-			     k = t.next(k).first()) {
+				 k = t.next(k).first()) {
 				size++;
 			}
 			assertEquals(2, size);
@@ -282,8 +281,8 @@ public abstract class WeakTableTest {
 			// table should have 3 entries
 			int size = 0;
 			for (LuaValue k = t.next(NIL).first();
-			     !k.isNil() && size < 1000;
-			     k = t.next(k).first()) {
+				 !k.isNil() && size < 1000;
+				 k = t.next(k).first()) {
 				size++;
 			}
 			assertEquals(3, size);

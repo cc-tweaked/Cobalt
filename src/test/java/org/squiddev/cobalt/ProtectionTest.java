@@ -38,9 +38,7 @@ public class ProtectionTest {
 
 	@Before
 	public void setup() {
-		helpers.setup();
-
-		helpers.state.debug = new DebugHandler(helpers.state) {
+		helpers.setup(s -> s.debug(new DebugHandler() {
 			private long time = System.currentTimeMillis();
 
 			@Override
@@ -56,7 +54,7 @@ public class ProtectionTest {
 				poll();
 				super.onInstruction(ds, di, pc, extras, top);
 			}
-		};
+		}));
 	}
 
 	@Test(timeout = 3000)
