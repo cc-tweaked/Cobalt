@@ -25,11 +25,13 @@
 
 package org.squiddev.cobalt.debug;
 
+import org.squiddev.cobalt.Constants;
 import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.Upvalue;
 
 /**
  * Each thread will get a DebugState attached to it by the debug library
@@ -51,6 +53,11 @@ public final class DebugFrame {
 	 */
 	public LuaValue[] stack;
 
+	/**
+	 * The {@link Upvalue} equivalent of {@link #stack}
+	 */
+	public Upvalue[] stackUpvalues;
+
 	public final DebugFrame previous;
 
 
@@ -68,11 +75,12 @@ public final class DebugFrame {
 		setFunction(func);
 	}
 
-	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack) {
+	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack, Upvalue[] stackUpvalues) {
 		this.func = closure;
 		this.closure = closure;
 		this.varargs = varargs;
 		this.stack = stack;
+		this.stackUpvalues = stackUpvalues;
 	}
 
 	public void setFunction(LuaFunction func) {
@@ -84,6 +92,7 @@ public final class DebugFrame {
 		func = null;
 		closure = null;
 		stack = null;
+		stackUpvalues = null;
 		varargs = extras = null;
 		pc = top = -1;
 	}

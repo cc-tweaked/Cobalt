@@ -28,6 +28,7 @@ package org.squiddev.cobalt.debug;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.Upvalue;
 
 /**
  * The main handler for debugging
@@ -71,9 +72,9 @@ public class DebugHandler {
 	 * @return The pushed info
 	 * @throws LuaError On a runtime error.
 	 */
-	public DebugFrame onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack) throws LuaError {
+	public DebugFrame onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack, Upvalue[] stackUpvalues) throws LuaError {
 		DebugFrame di = ds.pushInfo();
-		di.setFunction(func, args, stack);
+		di.setFunction(func, args, stack, stackUpvalues);
 
 		if (!ds.inhook && ds.hookcall) {
 			// Pretend we are at the first instruction for the hook.

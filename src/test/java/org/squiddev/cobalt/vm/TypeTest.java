@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.LuaInterpreter;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
 
 import java.lang.reflect.InvocationTargetException;
@@ -67,7 +67,7 @@ public class TypeTest {
 		}
 	};
 	private final LuaThread thread = new LuaThread(new LuaState(), somefunc, table);
-	private final LuaClosure someclosure = new LuaInterpreter();
+	private final LuaClosure someclosure = new LuaInterpretedFunction(new Prototype());
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);
 

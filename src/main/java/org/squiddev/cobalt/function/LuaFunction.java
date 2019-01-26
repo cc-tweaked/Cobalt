@@ -35,12 +35,12 @@ import org.squiddev.cobalt.debug.DebugState;
  *
  * Direct subclass include {@link LibFunction} which is the base class for
  * all built-in library functions coded in Java,
- * and {@link LuaInterpreter}, which represents a lua closure
+ * and {@link LuaInterpretedFunction}, which represents a lua closure
  * whose bytecode is interpreted when the function is invoked.
  *
  * @see LuaValue
  * @see LibFunction
- * @see LuaInterpreter
+ * @see LuaInterpretedFunction
  */
 public abstract class LuaFunction extends LuaValue implements DebugHook {
 	protected LuaTable env;
