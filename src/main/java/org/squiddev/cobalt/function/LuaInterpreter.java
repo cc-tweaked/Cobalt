@@ -32,6 +32,7 @@ import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.Constants.FALSE;
 import static org.squiddev.cobalt.Constants.TRUE;
+import static org.squiddev.cobalt.Lua.*;
 
 /**
  * The main interpreter for {@link LuaInterpretedFunction}s.
@@ -118,7 +119,7 @@ public final class LuaInterpreter {
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack) throws LuaError {
 		Prototype p = function.p;
 		Upvalue[] upvalues = p.p.length > 0 ? new Upvalue[stack.length] : null;
-		if (p.is_vararg >= Lua.VARARG_NEEDSARG) stack[p.numparams] = new LuaTable(varargs);
+		if (p.is_vararg >= VARARG_NEEDSARG) stack[p.numparams] = new LuaTable(varargs);
 
 		DebugFrame frame = state.debug.onCall(DebugHandler.getDebugState(state), function, varargs, stack, upvalues);
 		frame.top = 0;
@@ -130,10 +131,6 @@ public final class LuaInterpreter {
 		// debug wants args to this function
 		DebugState ds = DebugHandler.getDebugState(state);
 		DebugHandler handler = state.debug;
-
-		// loop through instructions
-		int i, a, b, c;
-		LuaValue o;
 
 		// Fetch all info from the function
 		Prototype p = function.p;
@@ -157,186 +154,235 @@ public final class LuaInterpreter {
 				handler.onInstruction(ds, di, pc, v, top);
 
 				// pull out instruction
-				i = code[pc++];
-				a = ((i >> 6) & 0xff);
+				int i = code[pc++];
+				int a = ((i >> POS_A) & MAXARG_A);
 
 				// process the op code
-				switch (i & 0x3f) {
-					case Lua.OP_MOVE: // A B: R(A):= R(B)
-						stack[a] = stack[i >>> 23];
-						continue;
+				switch (((i >> POS_OP) & MASK_OP)) {
+					case OP_MOVE: // A B: R(A):= R(B)
+						stack[a] = stack[(i >>> POS_B) & MAXARG_B];
+						break;
 
-					case Lua.OP_LOADK: // A Bx: R(A):= Kst(Bx)
-						stack[a] = k[i >>> 14];
-						continue;
+					case OP_LOADK: // A Bx: R(A):= Kst(Bx)
+						stack[a] = k[(i >>> POS_Bx) & MAXARG_Bx];
+						break;
 
-					case Lua.OP_LOADBOOL: // A B C: R(A):= (Bool)B: if (C) pc++
-						stack[a] = (i >>> 23 != 0) ? Constants.TRUE : Constants.FALSE;
-						if ((i & (0x1ff << 14)) != 0) {
-							pc++; /* skip next instruction (if C) */
-						}
-						continue;
+					case OP_LOADBOOL: // A B C: R(A):= (Bool)B: if (C) pc++
+						stack[a] = ((i >>> POS_B) & MAXARG_B) != 0 ? Constants.TRUE : Constants.FALSE;
+						if (((i >>> POS_C) & MAXARG_C) != 0) pc++; // skip next instruction (if C)
+						break;
 
-					case Lua.OP_LOADNIL: // A B: R(A):= ...:= R(B):= nil
-						for (b = i >>> 23; a <= b; ) {
-							stack[a++] = Constants.NIL;
-						}
-						continue;
+					case OP_LOADNIL: { // A B: R(A):= ...:= R(B):= nil
+						int b = ((i >>> POS_B) & MAXARG_B);
+						do {
+							stack[b--] = Constants.NIL;
+						} while (b >= a);
+						break;
+					}
 
-					case Lua.OP_GETUPVAL: // A B: R(A):= UpValue[B]
-						stack[a] = upvalues[i >>> 23].getValue();
-						continue;
+					case OP_GETUPVAL: // A B: R(A):= UpValue[B]
+						stack[a] = upvalues[((i >>> POS_B) & MAXARG_B)].getValue();
+						break;
 
-					case Lua.OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
-						stack[a] = function.env.get(state, k[i >>> 14]);
-						continue;
+					case OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
+						stack[a] = function.env.get(state, k[(i >>> POS_Bx) & MAXARG_Bx]);
+						break;
 
-					case Lua.OP_GETTABLE: // A B C: R(A):= R(B)[RK(C)]
-						stack[a] = OperationHelper.getTable(state, stack[b = i >>> 23], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b);
-						continue;
+					case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >>> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.getTable(state, stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], b);
+						break;
+					}
 
-					case Lua.OP_SETGLOBAL: // A Bx: Gbl[Kst(Bx)]:= R(A)
-						function.env.set(state, k[i >>> 14], stack[a]);
-						continue;
+					case OP_SETGLOBAL: // A Bx: Gbl[Kst(Bx)]:= R(A)
+						function.env.set(state, k[(i >>> POS_Bx) & MAXARG_Bx], stack[a]);
+						break;
 
-					case Lua.OP_SETUPVAL: // A B: UpValue[B]:= R(A)
-						upvalues[i >>> 23].setValue(stack[a]);
-						continue;
+					case OP_SETUPVAL: // A B: UpValue[B]:= R(A)
+						upvalues[(i >>> POS_B) & MAXARG_B].setValue(stack[a]);
+						break;
 
-					case Lua.OP_SETTABLE: // A B C: R(A)[RK(B)]:= RK(C)
-						OperationHelper.setTable(state, stack[a], ((b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b]), (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], a);
-						continue;
+					case OP_SETTABLE: { // A B C: R(A)[RK(B)]:= RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >>> POS_C) & MAXARG_C;
+						OperationHelper.setTable(state, stack[a], b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], a);
+						break;
+					}
 
-					case Lua.OP_NEWTABLE: // A B C: R(A):= {} (size = B,C)
-						stack[a] = new LuaTable(i >>> 23, (i >> 14) & 0x1ff);
-						continue;
+					case OP_NEWTABLE: // A B C: R(A):= {} (size = B,C)
+						stack[a] = new LuaTable((i >>> POS_B) & MAXARG_B, (i >>> POS_C) & MAXARG_C);
+						break;
 
-					case Lua.OP_SELF: // A B C: R(A+1):= R(B): R(A):= R(B)[RK(C)]
-						stack[a + 1] = (o = stack[b = i >>> 23]);
-						stack[a] = OperationHelper.getTable(state, o, (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b);
-						continue;
+					case OP_SELF: { // A B C: R(A+1):= R(B): R(A):= R(B)[RK(C)]
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						LuaValue o = stack[a + 1] = stack[b];
+						stack[a] = OperationHelper.getTable(state, o, c > 0xff ? k[c & 0x0ff] : stack[c], b);
+						break;
+					}
 
-					case Lua.OP_ADD: // A B C: R(A):= RK(B) + RK(C)
-						stack[a] = OperationHelper.add(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
-						continue;
+					case OP_ADD: { // A B C: R(A):= RK(B) + RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.add(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], b, c);
+						break;
+					}
 
-					case Lua.OP_SUB: // A B C: R(A):= RK(B) - RK(C)
-						stack[a] = OperationHelper.sub(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
-						continue;
+					case OP_SUB: { // A B C: R(A):= RK(B) - RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.sub(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], b, c);
+						break;
+					}
 
-					case Lua.OP_MUL: // A B C: R(A):= RK(B) * RK(C)
-						stack[a] = OperationHelper.mul(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
-						continue;
+					case OP_MUL: { // A B C: R(A):= RK(B) * RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.mul(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], b, c);
+						break;
+					}
 
-					case Lua.OP_DIV: // A B C: R(A):= RK(B) / RK(C)
-						stack[a] = OperationHelper.div(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
-						continue;
+					case OP_DIV: { // A B C: R(A):= RK(B) / RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.div(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], b, c);
+						break;
+					}
 
-					case Lua.OP_MOD: // A B C: R(A):= RK(B) % RK(C)
-						stack[a] = OperationHelper.mod(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
-						continue;
+					case OP_MOD: { // A B C: R(A):= RK(B) % RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.mod(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], b, c);
+						break;
+					}
 
-					case Lua.OP_POW: // A B C: R(A):= RK(B) ^ RK(C)
-						stack[a] = OperationHelper.pow(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c], b, c);
-						continue;
+					case OP_POW: { // A B C: R(A):= RK(B) ^ RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.pow(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], b, c);
+						break;
+					}
 
-					case Lua.OP_UNM: // A B: R(A):= -R(B)
-						stack[a] = OperationHelper.neg(state, stack[b = i >>> 23], b);
-						continue;
+					case OP_UNM: { // A B: R(A):= -R(B)
+						int b = (i >>> POS_B) & MAXARG_B;
+						stack[a] = OperationHelper.neg(state, stack[b], b);
+						break;
+					}
 
-					case Lua.OP_NOT: // A B: R(A):= not R(B)
-						stack[a] = stack[i >>> 23].toBoolean() ? FALSE : TRUE;
-						continue;
+					case OP_NOT: // A B: R(A):= not R(B)
+						stack[a] = stack[(i >>> POS_B) & MAXARG_B].toBoolean() ? FALSE : TRUE;
+						break;
 
-					case Lua.OP_LEN: // A B: R(A):= length of R(B)
-						stack[a] = OperationHelper.length(state, stack[b = i >>> 23], b);
-						continue;
+					case OP_LEN: { // A B: R(A):= length of R(B)
+						int b = (i >>> POS_B) & MAXARG_B;
+						stack[a] = OperationHelper.length(state, stack[b], b);
+						break;
+					}
 
-					case Lua.OP_CONCAT: { // A B C: R(A):= R(B).. ... ..R(C)
-						b = i >>> 23;
-						c = (i >> 14) & 0x1ff;
+					case OP_CONCAT: { // A B C: R(A):= R(B).. ... ..R(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
 
 						top = c + 1;
 						concat(state, stack, top, c - b + 1);
 						stack[a] = stack[b];
 						top = b;
-						continue;
+						break;
 					}
 
-					case Lua.OP_JMP: // sBx: pc+=sBx
-						pc += (i >>> 14) - 0x1ffff;
-						continue;
+					case OP_JMP: // sBx: pc+=sBx
+						pc += ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
+						break;
 
-					case Lua.OP_EQ: // A B C: if ((RK(B) == RK(C)) ~= A) then pc++
-						if (OperationHelper.eq(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
-							++pc;
+					case OP_EQ: { // A B C: if ((RK(B) == RK(C)) ~= A) then pc++
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						if (OperationHelper.eq(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c]) == (a != 0)) {
+							// We assume the next instruction is a jump and read the branch from there.
+							pc += ((code[pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 						}
-						continue;
+						pc++;
+						break;
+					}
 
-					case Lua.OP_LT: // A B C: if ((RK(B) <  RK(C)) ~= A) then pc++
-						if (OperationHelper.lt(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
-							++pc;
+					case OP_LT: { // A B C: if ((RK(B) <  RK(C)) ~= A) then pc++
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						if (OperationHelper.lt(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c]) == (a != 0)) {
+							pc += ((code[pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 						}
-						continue;
+						pc++;
+						break;
+					}
 
-					case Lua.OP_LE: // A B C: if ((RK(B) <= RK(C)) ~= A) then pc++
-						if (OperationHelper.le(state, (b = i >>> 23) > 0xff ? k[b & 0x0ff] : stack[b], (c = (i >> 14) & 0x1ff) > 0xff ? k[c & 0x0ff] : stack[c]) == (a == 0)) {
-							++pc;
+					case OP_LE: { // A B C: if ((RK(B) <= RK(C)) ~= A) then pc++
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						if (OperationHelper.le(state, b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c]) == (a != 0)) {
+							pc += ((code[pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 						}
-						continue;
+						pc++;
+						break;
+					}
 
-					case Lua.OP_TEST: // A C: if not (R(A) <=> C) then pc++
-						if (stack[a].toBoolean() == ((i & (0x1ff << 14)) == 0)) {
-							++pc;
+					case OP_TEST: // A C: if not (R(A) <=> C) then pc++
+						if (stack[a].toBoolean() == (((i >> POS_C) & MAXARG_C) != 0)) {
+							pc += ((code[pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 						}
-						continue;
+						pc++;
+						break;
 
-					case Lua.OP_TESTSET: // A B C: if (R(B) <=> C) then R(A):= R(B) else pc++
+					case OP_TESTSET: { // A B C: if (R(B) <=> C) then R(A):= R(B) else pc++
 						/* note: doc appears to be reversed */
-						if ((o = stack[i >>> 23]).toBoolean() == ((i & (0x1ff << 14)) == 0)) {
-							++pc;
-						} else {
-							stack[a] = o; // TODO: should be sBx?
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						LuaValue val = stack[b];
+						if (val.toBoolean() == (c != 0)) {
+							stack[a] = val;
+							pc += ((code[pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 						}
-						continue;
+						pc++;
+						break;
+					}
 
-					case Lua.OP_CALL: // A B C: R(A), ... ,R(A+C-2):= R(A)(R(A+1), ... ,R(A+B-1)) */
-						switch (i & (Lua.MASK_B | Lua.MASK_C)) {
-							case (1 << Lua.POS_B) | (0 << Lua.POS_C):
+					case OP_CALL: // A B C: R(A), ... ,R(A+C-2):= R(A)(R(A+1), ... ,R(A+B-1)) */
+						switch (i & (MASK_B | MASK_C)) {
+							case (1 << POS_B) | (0 << POS_C):
 								v = OperationHelper.invoke(state, stack[a], Constants.NONE, a);
 								top = a + v.count();
-								continue;
-							case (2 << Lua.POS_B) | (0 << Lua.POS_C):
+								break;
+							case (2 << POS_B) | (0 << POS_C):
 								v = OperationHelper.invoke(state, stack[a], stack[a + 1], a);
 								top = a + v.count();
-								continue;
-							case (1 << Lua.POS_B) | (1 << Lua.POS_C):
+								break;
+							case (1 << POS_B) | (1 << POS_C):
 								OperationHelper.call(state, stack[a], a);
-								continue;
-							case (2 << Lua.POS_B) | (1 << Lua.POS_C):
+								break;
+							case (2 << POS_B) | (1 << POS_C):
 								OperationHelper.call(state, stack[a], stack[a + 1], a);
-								continue;
-							case (3 << Lua.POS_B) | (1 << Lua.POS_C):
+								break;
+							case (3 << POS_B) | (1 << POS_C):
 								OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], a);
-								continue;
-							case (4 << Lua.POS_B) | (1 << Lua.POS_C):
+								break;
+							case (4 << POS_B) | (1 << POS_C):
 								OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], stack[a + 3], a);
-								continue;
-							case (1 << Lua.POS_B) | (2 << Lua.POS_C):
+								break;
+							case (1 << POS_B) | (2 << POS_C):
 								stack[a] = OperationHelper.call(state, stack[a], a);
-								continue;
-							case (2 << Lua.POS_B) | (2 << Lua.POS_C):
+								break;
+							case (2 << POS_B) | (2 << POS_C):
 								stack[a] = OperationHelper.call(state, stack[a], stack[a + 1], a);
-								continue;
-							case (3 << Lua.POS_B) | (2 << Lua.POS_C):
+								break;
+							case (3 << POS_B) | (2 << POS_C):
 								stack[a] = OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], a);
-								continue;
-							case (4 << Lua.POS_B) | (2 << Lua.POS_C):
+								break;
+							case (4 << POS_B) | (2 << POS_C):
 								stack[a] = OperationHelper.call(state, stack[a], stack[a + 1], stack[a + 2], stack[a + 3], a);
-								continue;
-							default:
-								b = i >>> 23;
-								c = (i >> 14) & 0x1ff;
+								break;
+							default: {
+								int b = (i >>> POS_B) & MAXARG_B;
+								int c = (i >> POS_C) & MAXARG_C;
 								v = b > 0 ?
 									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
 									ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
@@ -349,29 +395,32 @@ public final class LuaInterpreter {
 								} else {
 									top = a + v.count();
 								}
-								continue;
+								break;
+							}
 						}
+						break;
 
-					case Lua.OP_TAILCALL: // A B C: return R(A)(R(A+1), ... ,R(A+B-1))
-						switch (i & Lua.MASK_B) {
-							case (1 << Lua.POS_B):
+					case OP_TAILCALL: // A B C: return R(A)(R(A+1), ... ,R(A+B-1))
+						switch (i & MASK_B) {
+							case (1 << POS_B):
 								return new TailcallVarargs(stack[a], Constants.NONE);
-							case (2 << Lua.POS_B):
+							case (2 << POS_B):
 								return new TailcallVarargs(stack[a], stack[a + 1]);
-							case (3 << Lua.POS_B):
+							case (3 << POS_B):
 								return new TailcallVarargs(stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]));
-							case (4 << Lua.POS_B):
+							case (4 << POS_B):
 								return new TailcallVarargs(stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2], stack[a + 3]));
-							default:
-								b = i >>> 23;
+							default: {
+								int b = (i >>> POS_B) & MAXARG_B;
 								v = b > 0 ?
 									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
 									ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
 								return new TailcallVarargs(stack[a], v);
+							}
 						}
 
-					case Lua.OP_RETURN: // A B: return R(A), ... ,R(A+B-2) (see note)
-						b = i >>> 23;
+					case OP_RETURN: { // A B: return R(A), ... ,R(A+B-2) (see note)
+						int b = (i >>> POS_B) & MAXARG_B;
 						switch (b) {
 							case 0:
 								return ValueFactory.varargsOf(stack, a, top - v.count() - a, v);
@@ -382,56 +431,60 @@ public final class LuaInterpreter {
 							default:
 								return ValueFactory.varargsOf(stack, a, b - 1);
 						}
+					}
 
-					case Lua.OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
+					case OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
 						LuaValue limit = stack[a + 1];
 						LuaValue step = stack[a + 2];
 						LuaValue idx = OperationHelper.add(state, step, stack[a]);
 						if (OperationHelper.lt(state, Constants.ZERO, step) ? OperationHelper.le(state, idx, limit) : OperationHelper.le(state, limit, idx)) {
 							stack[a] = idx;
 							stack[a + 3] = idx;
-							pc += (i >>> 14) - 0x1ffff;
+							pc += ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 						}
 					}
-					continue;
+					break;
 
-					case Lua.OP_FORPREP: { // A sBx: R(A)-=R(A+2): pc+=sBx
+					case OP_FORPREP: { // A sBx: R(A)-=R(A+2): pc+=sBx
 						LuaValue init = stack[a].checkNumber("'for' initial value must be a number");
 						LuaValue limit = stack[a + 1].checkNumber("'for' limit must be a number");
 						LuaValue step = stack[a + 2].checkNumber("'for' step must be a number");
 						stack[a] = OperationHelper.sub(state, init, step);
 						stack[a + 1] = limit;
 						stack[a + 2] = step;
-						pc += (i >>> 14) - 0x1ffff;
+						pc += ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 					}
-					continue;
+					break;
 
-					case Lua.OP_TFORLOOP:
+					case OP_TFORLOOP: {
 						/*
-						A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
-						R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
-						else pc++
+							A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
+							R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
+							else pc++
 						*/
 						// TODO: stack call on for loop body, such as:   stack[a].call(ci);
 						v = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
-						if ((o = v.first()).isNil()) {
-							++pc;
+						LuaValue val = v.first();
+						if (val.isNil()) {
+							pc++;
 						} else {
-							stack[a + 2] = stack[a + 3] = o;
-							for (c = (i >> 14) & 0x1ff; c > 1; --c) {
+							stack[a + 2] = stack[a + 3] = val;
+							for (int c = (i >> POS_C) & MAXARG_C; c > 1; --c) {
 								stack[a + 2 + c] = v.arg(c);
 							}
 							v = Constants.NONE; // todo: necessary?
 						}
-						continue;
+						break;
+					}
 
-					case Lua.OP_SETLIST: { // A B C: R(A)[(C-1)*FPF+i]:= R(A+i), 1 <= i <= B
-						if ((c = (i >> 14) & 0x1ff) == 0) {
-							c = code[pc++];
-						}
-						int offset = (c - 1) * Lua.LFIELDS_PER_FLUSH;
+					case OP_SETLIST: { // A B C: R(A)[(C-1)*FPF+i]:= R(A+i), 1 <= i <= B
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >> POS_C) & MAXARG_C;
+						if (c == 0) c = code[pc++];
+
+						int offset = (c - 1) * LFIELDS_PER_FLUSH;
 						LuaTable tbl = stack[a].checkTable();
-						if ((b = i >>> 23) == 0) {
+						if (b == 0) {
 							b = top - a - 1;
 							int m = b - v.count();
 							int j = 1;
@@ -447,43 +500,45 @@ public final class LuaInterpreter {
 								tbl.rawset(offset + j, stack[a + j]);
 							}
 						}
-						continue;
+						break;
 					}
 
-					case Lua.OP_CLOSE: // A : close all variables in the stack up to (>=) R(A)
-						for (b = openups.length; --b >= a; ) {
-							if (openups[b] != null) {
-								openups[b].close();
-								openups[b] = null;
+					case OP_CLOSE: { // A : close all variables in the stack up to (>=) R(A)
+						for (int x = openups.length; --x >= a; ) {
+							Upvalue upvalue = openups[x];
+							if (upvalue != null) {
+								upvalue.close();
+								openups[x] = null;
 							}
 						}
-						continue;
+						break;
+					}
 
-					case Lua.OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
-						Prototype newp = p.p[i >>> 14];
+					case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
+						Prototype newp = p.p[(i >>> POS_Bx) & MAXARG_Bx];
 						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, function.env);
 						for (int j = 0, nup = newp.nups; j < nup; ++j) {
 							i = code[pc++];
-							//b = B(i);
-							b = i >>> 23;
-							newcl.upvalues[j] = (i & 4) != 0 ?
-								upvalues[b] :
-								openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b));
+							int b = (i >>> POS_B) & MAXARG_B;
+							newcl.upvalues[j] = (i & 4) != 0
+								? upvalues[b] // OP_GETUPVAL
+								: openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b)); // OP_MOVE
 						}
 						stack[a] = newcl;
-						continue;
+						break;
 					}
 
-					case Lua.OP_VARARG: // A B: R(A), R(A+1), ..., R(A+B-1) = vararg
-						b = i >>> 23;
+					case OP_VARARG: { // A B: R(A), R(A+1), ..., R(A+B-1) = vararg
+						int b = (i >>> POS_B) & MAXARG_B;
 						if (b == 0) {
-							top = a + (b = varargs.count());
+							top = a + varargs.count();
 							v = varargs;
 						} else {
 							for (int j = 1; j < b; ++j) {
 								stack[a + j - 1] = varargs.arg(j);
 							}
 						}
+					}
 				}
 			}
 		} catch (LuaError le) {
