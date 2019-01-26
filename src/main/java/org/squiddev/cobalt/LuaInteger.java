@@ -41,7 +41,7 @@ package org.squiddev.cobalt;
  * @see ValueFactory#valueOf(int)
  * @see ValueFactory#valueOf(double)
  */
-public class LuaInteger extends LuaNumber {
+public final class LuaInteger extends LuaNumber {
 
 	private static final LuaInteger[] intValues = new LuaInteger[512];
 

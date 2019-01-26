@@ -14,6 +14,9 @@ import java.util.Collection;
 
 @RunWith(Parameterized.class)
 public class PerformanceTest {
+	private static final int TOTAL = 6;
+	private static final int DISCARD = 1;
+
 	private final String name;
 	private final ScriptDrivenHelpers helpers = new ScriptDrivenHelpers("/perf/");
 
@@ -22,7 +25,7 @@ public class PerformanceTest {
 	}
 
 	@Before
-	public void setup() throws LuaError {
+	public void setup() {
 		helpers.setupQuiet();
 	}
 
@@ -42,13 +45,14 @@ public class PerformanceTest {
 	public void run() throws IOException, CompileException, LuaError {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 
-		long start = bean.getCurrentThreadCpuTime();
-
-		helpers.loadScript(name).call(helpers.state);
-
-		long finish = bean.getCurrentThreadCpuTime();
-
 		System.out.println("[" + name + "]");
-		System.out.println("  Took " + (finish - start) / 1.0e9);
+
+		for (int i = 0; i < TOTAL; i++) {
+			long start = bean.getCurrentThreadCpuTime();
+			helpers.loadScript(name).call(helpers.state);
+			long finish = bean.getCurrentThreadCpuTime();
+
+			if (i >= DISCARD) System.out.println("  Took " + (finish - start) / 1.0e9);
+		}
 	}
 }

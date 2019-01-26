@@ -52,8 +52,6 @@ public final class DebugState {
 	 */
 	private final LuaState state;
 
-	private final DebugHandler handler;
-
 	/**
 	 * The top function
 	 */
@@ -87,7 +85,6 @@ public final class DebugState {
 	public DebugState(LuaThread thread) {
 		this.thread = new WeakReference<>(thread);
 		this.state = thread.luaState;
-		this.handler = state.debug;
 	}
 
 	/**
@@ -164,6 +161,15 @@ public final class DebugState {
 	}
 
 	/**
+	 * Get the top debug info
+	 *
+	 * @return The top debug info or {@code null}
+	 */
+	public DebugFrame getStackUnsafe() {
+		return stack[top];
+	}
+
+	/**
 	 * Get the debug info at a particular level
 	 *
 	 * @param level The level to get at
@@ -200,8 +206,6 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onCall(state, this, frame);
-		} catch (LuaError e) {
-			throw e;
 		} catch (RuntimeException e) {
 			throw new LuaError(e);
 		} finally {
@@ -215,8 +219,6 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onReturn(state, this, getStack());
-		} catch (LuaError e) {
-			throw e;
 		} catch (RuntimeException e) {
 			throw new LuaError(e);
 		} finally {

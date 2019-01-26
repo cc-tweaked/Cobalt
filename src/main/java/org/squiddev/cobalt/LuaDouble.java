@@ -46,7 +46,7 @@ import java.util.Locale;
  * @see ValueFactory#valueOf(int)
  * @see ValueFactory#valueOf(double)
  */
-public class LuaDouble extends LuaNumber {
+public final class LuaDouble extends LuaNumber {
 	/**
 	 * Constant LuaDouble representing NaN (not a number)
 	 */
@@ -80,11 +80,15 @@ public class LuaDouble extends LuaNumber {
 	/**
 	 * The value being held by this instance.
 	 */
-	private final double v;
+	public final double v;
 
 	public static LuaNumber valueOf(double d) {
 		int id = (int) d;
 		return d == id ? LuaInteger.valueOf(id) : new LuaDouble(d);
+	}
+
+	public static LuaNumber valueOfDirect(double d) {
+		return new LuaDouble(d);
 	}
 
 	/**
