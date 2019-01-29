@@ -25,7 +25,6 @@
 
 package org.squiddev.cobalt.debug;
 
-import org.squiddev.cobalt.Constants;
 import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
@@ -72,10 +71,11 @@ public final class DebugFrame {
 	public DebugFrame(LuaFunction func) {
 		pc = -1;
 		previous = null;
-		setFunction(func);
+		this.func = func;
+		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
 	}
 
-	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack, Upvalue[] stackUpvalues) {
+	void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack, Upvalue[] stackUpvalues) {
 		this.func = closure;
 		this.closure = closure;
 		this.varargs = varargs;
@@ -83,12 +83,11 @@ public final class DebugFrame {
 		this.stackUpvalues = stackUpvalues;
 	}
 
-	public void setFunction(LuaFunction func) {
+	void setFunction(LuaFunction func) {
 		this.func = func;
-		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
 	}
 
-	public void clear() {
+	void clear() {
 		func = null;
 		closure = null;
 		stack = null;
@@ -97,7 +96,7 @@ public final class DebugFrame {
 		pc = top = -1;
 	}
 
-	public void bytecode(int pc, Varargs extras, int top) {
+	void bytecode(int pc, Varargs extras, int top) {
 		this.pc = pc;
 		this.top = top;
 		this.extras = extras;

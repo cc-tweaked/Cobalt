@@ -39,11 +39,25 @@ assertEquals(-1, info.currentline, "currentline")
 
 testing()
 
-local function overflow() overflow() end
-local co = coroutine.create(overflow)
-local result, message = coroutine.resume(co)
-assert(not result)
-assert(message == "debug.lua:42: stack overflow", message)
+do -- Test Lua call stack
+	local n = 0
+	local function overflow() n = n + 1 overflow() end
+	local co = coroutine.create(overflow)
+	local result, message = coroutine.resume(co)
+	assert(not result)
+	assert(message == "debug.lua:44: stack overflow", message)
+	assert(n == 32767, ("Called %d times"):format(n))
+end
+
+do -- Test Java call stack
+	local n = 0
+	local function overflow() n = n + 1 local _, err = pcall(overflow) error(err, 0) end
+	local co = coroutine.create(overflow)
+	local result, message = coroutine.resume(co)
+	assert(not result)
+	assert(message == "debug.lua:54: stack overflow", message)
+	assert(n == 201, ("Called %d times"):format(n))
+end
 
 -- Check correct getfenv levels
 local function foo()
@@ -55,10 +69,10 @@ foo()
 
 local function tracebackVerbose(x)
 	if x then
-		assertLine(1, 58)
-		assertLine(2, 63)
-		assertLine(3, 68)
-		assertLine(4, 71)
+		assertLine(1, 72)
+		assertLine(2, 77)
+		assertLine(3, 82)
+		assertLine(4, 85)
 	else
 		tracebackVerbose(true)
 	end

@@ -14,8 +14,8 @@ import java.util.Collection;
 
 @RunWith(Parameterized.class)
 public class PerformanceTest {
-	private static final int TOTAL = 6;
-	private static final int DISCARD = 1;
+	private static final int TOTAL = Integer.parseInt(System.getProperty("cobalt.perfTotal", "1"));
+	private static final int DISCARD = Integer.parseInt(System.getProperty("cobalt.perfDiscard", "0"));
 
 	private final String name;
 	private final ScriptDrivenHelpers helpers = new ScriptDrivenHelpers("/perf/");
