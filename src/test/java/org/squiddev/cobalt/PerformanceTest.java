@@ -36,6 +36,7 @@ public class PerformanceTest {
 			{"fannkuch"},
 			{"nbody"},
 			{"nsieve"},
+			{"primes"},
 		};
 
 		return Arrays.asList(tests);

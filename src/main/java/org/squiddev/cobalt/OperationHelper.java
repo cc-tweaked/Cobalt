@@ -45,10 +45,9 @@ public final class OperationHelper {
 
 	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		if (left instanceof LuaInteger && right instanceof LuaInteger) {
-			try {
-				return valueOf(Math.addExact(((LuaInteger) left).v, ((LuaInteger) right).v));
-			} catch (ArithmeticException ignored) {
-			}
+			int x = ((LuaInteger) left).v, y = ((LuaInteger) right).v;
+			int r = x + y;
+			if (((x ^ r) & (y ^ r)) >= 0) return valueOf(r);
 		}
 
 		double dLeft, dRight;
@@ -65,10 +64,9 @@ public final class OperationHelper {
 
 	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
 		if (left instanceof LuaInteger && right instanceof LuaInteger) {
-			try {
-				return valueOf(Math.subtractExact(((LuaInteger) left).v, ((LuaInteger) right).v));
-			} catch (ArithmeticException ignored) {
-			}
+			int x = ((LuaInteger) left).v, y = ((LuaInteger) right).v;
+			int r = x - y;
+			if (((x ^ r) & (y ^ r)) >= 0) return valueOf(r);
 		}
 
 		double dLeft, dRight;
@@ -84,13 +82,6 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
-		if (left instanceof LuaInteger && right instanceof LuaInteger) {
-			try {
-				return valueOf(Math.multiplyExact(((LuaInteger) left).v, ((LuaInteger) right).v));
-			} catch (ArithmeticException ignored) {
-			}
-		}
-
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(dLeft * dRight);
@@ -375,10 +366,8 @@ public final class OperationHelper {
 		int type = value.type();
 		if (type == TNUMBER) {
 			if (value instanceof LuaInteger) {
-				try {
-					return valueOf(Math.negateExact(((LuaInteger) value).v));
-				} catch (ArithmeticException ignored) {
-				}
+				int x = ((LuaInteger) value).v;
+				if (x != Integer.MIN_VALUE) return valueOf(-x);
 			}
 
 			return valueOf(-value.toDouble());
