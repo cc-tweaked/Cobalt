@@ -87,10 +87,6 @@ public final class LuaDouble extends LuaNumber {
 		return d == id ? LuaInteger.valueOf(id) : new LuaDouble(d);
 	}
 
-	public static LuaNumber valueOfDirect(double d) {
-		return new LuaDouble(d);
-	}
-
 	/**
 	 * Don't allow ints to be boxed by DoubleValues
 	 */

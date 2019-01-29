@@ -29,7 +29,6 @@ import org.squiddev.cobalt.function.LuaFunction;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
-import static org.squiddev.cobalt.LuaDouble.valueOfDirect;
 import static org.squiddev.cobalt.LuaInteger.valueOf;
 
 /**
@@ -382,7 +381,7 @@ public final class OperationHelper {
 				}
 			}
 
-			return valueOfDirect(-value.toDouble());
+			return valueOf(-value.toDouble());
 		} else if (type == TSTRING) {
 			double res = value.toDouble();
 			if (!Double.isNaN(res)) return valueOf(-res);
