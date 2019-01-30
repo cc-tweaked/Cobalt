@@ -82,6 +82,10 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
+		if (left instanceof LuaInteger && right instanceof LuaInteger) {
+			return valueOf((long) ((LuaInteger) left).v * (long) ((LuaInteger) right).v);
+		}
+
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(dLeft * dRight);
