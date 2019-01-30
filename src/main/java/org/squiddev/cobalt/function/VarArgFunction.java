@@ -26,8 +26,6 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugState;
 
 /**
  * Abstract base class for Java function implementations that takes varaiable arguments and
