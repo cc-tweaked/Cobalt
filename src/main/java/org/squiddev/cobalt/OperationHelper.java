@@ -465,21 +465,6 @@ public final class OperationHelper {
 		}
 	}
 
-	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args) throws LuaError {
-		return onInvoke(state, function, args, -1);
-	}
-
-	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args, int stack) throws LuaError {
-		if (function.isFunction()) {
-			return ((LuaFunction) function).onInvoke(state, args);
-		} else {
-			LuaValue meta = function.metatag(state, Constants.CALL);
-			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
-
-			return ((LuaFunction) meta).onInvoke(state, ValueFactory.varargsOf(function, args));
-		}
-	}
-
 	//endregion
 
 	//region Tables

@@ -124,31 +124,26 @@ public class LuaInterpretedFunction extends LuaClosure {
 
 	@Override
 	public final LuaValue call(LuaState state) throws LuaError {
-		return execute(state, this, setupCall(state, this)).eval(state).first();
+		return execute(state, this, setupCall(state, this)).first();
 	}
 
 	@Override
 	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-		return execute(state, this, setupCall(state, this, arg)).eval(state).first();
+		return execute(state, this, setupCall(state, this, arg)).first();
 	}
 
 	@Override
 	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
-		return execute(state, this, setupCall(state, this, arg1, arg2)).eval(state).first();
+		return execute(state, this, setupCall(state, this, arg1, arg2)).first();
 	}
 
 	@Override
 	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
-		return execute(state, this, setupCall(state, this, arg1, arg2, arg3)).eval(state).first();
+		return execute(state, this, setupCall(state, this, arg1, arg2, arg3)).first();
 	}
 
 	@Override
 	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
-		return onInvoke(state, varargs).eval(state);
-	}
-
-	@Override
-	public Varargs onInvoke(LuaState state, Varargs varargs) throws LuaError {
 		return execute(state, this, setupCall(state, this, varargs));
 	}
 

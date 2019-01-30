@@ -200,22 +200,6 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 */
 	public abstract Varargs invoke(LuaState state, Varargs args) throws LuaError;
 
-	/**
-	 * Callback used during tail call processing to invoke the function once.
-	 *
-	 * This may return a {@link TailcallVarargs} to be evaluated by the client.
-	 *
-	 * This should not be called directly, instead use on of the call invocation functions.
-	 *
-	 * @param state The current lua state
-	 * @param args  the arguments to the call invocation.
-	 * @return Varargs the return values, possible a TailcallVarargs.
-	 * @throws LuaError On a runtime error.
-	 */
-	public Varargs onInvoke(LuaState state, Varargs args) throws LuaError {
-		return invoke(state, args);
-	}
-
 	@Override
 	public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
 		call(state, CALL);

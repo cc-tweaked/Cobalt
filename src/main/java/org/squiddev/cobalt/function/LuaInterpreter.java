@@ -477,7 +477,7 @@ public final class LuaInterpreter {
 								continue newFrame;
 							} else if (--depth < 0) {
 								// We're at the bottom of the stack: return a tailcall
-								return new TailcallVarargs(val, args);
+								return OperationHelper.invoke(state, val, args, a);
 							} else {
 								// Execute this function as normal
 								Varargs ret = OperationHelper.invoke(state, val, args, a);
