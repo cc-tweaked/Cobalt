@@ -32,6 +32,7 @@ import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua.*;
+import static org.squiddev.cobalt.LuaDouble.valueOf;
 
 /**
  * The main interpreter for {@link LuaInterpretedFunction}s.
@@ -430,10 +431,8 @@ public final class LuaInterpreter {
 										ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
 									v = OperationHelper.invoke(state, val, args, a);
 									if (c > 0) {
-										while (--c > 0) {
-											stack[a + c - 1] = v.arg(c);
-										}
-										v = NONE; // TODO: necessary?
+										while (--c > 0) stack[a + c - 1] = v.arg(c);
+										v = NONE;
 									} else {
 										top = a + v.count();
 									}
@@ -522,22 +521,22 @@ public final class LuaInterpreter {
 						}
 
 						case OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
-							LuaValue limit = stack[a + 1];
-							LuaValue step = stack[a + 2];
-							LuaValue idx = OperationHelper.add(state, step, stack[a]);
-							if (OperationHelper.lt(state, ZERO, step) ? OperationHelper.le(state, idx, limit) : OperationHelper.le(state, limit, idx)) {
-								stack[a] = idx;
-								stack[a + 3] = idx;
+							double limit = stack[a + 1].checkDouble();
+							double step = stack[a + 2].checkDouble();
+							double value = stack[a].checkDouble();
+							double idx = step + value;
+							if (0 < step ? idx <= limit : limit <= idx) {
+								stack[a + 3] = stack[a] = valueOf(idx);
 								pc += ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 							}
 						}
 						break;
 
 						case OP_FORPREP: { // A sBx: R(A)-=R(A+2): pc+=sBx
-							LuaValue init = stack[a].checkNumber("'for' initial value must be a number");
-							LuaValue limit = stack[a + 1].checkNumber("'for' limit must be a number");
-							LuaValue step = stack[a + 2].checkNumber("'for' step must be a number");
-							stack[a] = OperationHelper.sub(state, init, step);
+							LuaNumber init = stack[a].checkNumber("'for' initial value must be a number");
+							LuaNumber limit = stack[a + 1].checkNumber("'for' limit must be a number");
+							LuaNumber step = stack[a + 2].checkNumber("'for' step must be a number");
+							stack[a] = valueOf(init.toDouble() - step.toDouble());
 							stack[a + 1] = limit;
 							stack[a + 2] = step;
 							pc += ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
@@ -545,12 +544,11 @@ public final class LuaInterpreter {
 						break;
 
 						case OP_TFORLOOP: {
-						/*
-							A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
-							R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
-							else pc++
-						*/
-							// TODO: stack call on for loop body, such as:   stack[a].call(ci);
+							/*
+								A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
+								R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
+								else pc++
+							*/
 							v = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
 							LuaValue val = v.first();
 							if (val.isNil()) {
@@ -560,7 +558,7 @@ public final class LuaInterpreter {
 								for (int c = (i >> POS_C) & MAXARG_C; c > 1; --c) {
 									stack[a + 2 + c] = v.arg(c);
 								}
-								v = NONE; // todo: necessary?
+								v = NONE;
 							}
 							break;
 						}
@@ -631,17 +629,27 @@ public final class LuaInterpreter {
 				}
 			}
 		} catch (LuaError le) {
-			throw le.fillTraceback(state);
-		} catch (Exception e) {
-			throw new LuaError(e).fillTraceback(state);
-		} finally {
-			// TODO: Only do on errors
+			le.fillTraceback(state);
+
 			while (depth-- >= 0 && di != null) {
 				closeAll(di.stackUpvalues);
 				handler.onReturn(ds);
 
 				di = ds.getStack();
 			}
+
+			throw le;
+		} catch (Exception e) {
+			LuaError le = new LuaError(e).fillTraceback(state);
+
+			while (depth-- >= 0 && di != null) {
+				closeAll(di.stackUpvalues);
+				handler.onReturn(ds);
+
+				di = ds.getStack();
+			}
+
+			throw le;
 		}
 	}
 
@@ -720,11 +728,6 @@ public final class LuaInterpreter {
 					di.pc += ((p.code[di.pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 				}
 				di.pc++;
-				break;
-			}
-
-			case OP_CONCAT: {
-				// TODO
 				break;
 			}
 
