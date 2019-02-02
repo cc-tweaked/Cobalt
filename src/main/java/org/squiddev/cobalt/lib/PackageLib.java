@@ -343,7 +343,7 @@ public class PackageLib implements LuaLibrary {
 				throw new LuaError("module '" + name + "' not found: " + name + sb);
 			}
 
-		    /* call loader with module name as argument */
+			/* call loader with module name as argument */
 			chunk = OperationHelper.call(state, loader, name);
 			if (chunk.isFunction()) {
 				break;

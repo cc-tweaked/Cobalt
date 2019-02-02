@@ -75,26 +75,6 @@ public abstract class Varargs {
 	 */
 	public abstract LuaValue first();
 
-	/**
-	 * Evaluate any pending tail call and return result.
-	 *
-	 * @param state The current lua state
-	 * @return the evaluated tail call result
-	 * @throws LuaError On a runtime error.
-	 */
-	public Varargs eval(LuaState state) throws LuaError {
-		return this;
-	}
-
-	/**
-	 * Return true if this is a TailcallVarargs
-	 *
-	 * @return true if a tail call, false otherwise
-	 */
-	public boolean isTailcall() {
-		return false;
-	}
-
 	// -----------------------------------------------------------------------
 	// utilities to get specific arguments and type-check them.
 	// -----------------------------------------------------------------------

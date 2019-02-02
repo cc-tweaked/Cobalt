@@ -52,7 +52,7 @@ import static org.squiddev.cobalt.Constants.NIL;
  * @see ValueFactory#valueOf(String)
  * @see ValueFactory#valueOf(byte[])
  */
-public class LuaString extends LuaValue {
+public final class LuaString extends LuaValue {
 	/**
 	 * Size of cache of recent short strings. This is the maximum number of LuaStrings that
 	 * will be retained in the cache of recent short strings.

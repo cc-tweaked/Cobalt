@@ -336,25 +336,6 @@ public class ValueFactory {
 		}
 	}
 
-	/**
-	 * Construct a {@link TailcallVarargs} around a function and arguments.
-	 *
-	 * The tail call is not yet called or processing until the client invokes
-	 * {@link Varargs#eval(LuaState)} which performs the tail call processing.
-	 *
-	 * This method is typically not used directly by client code.
-	 * Instead use one of the function invocation methods.
-	 *
-	 * @param func {@link LuaFunction} to be called as a tail call
-	 * @param args {@link Varargs} containing the arguments to the call
-	 * @return {@link TailcallVarargs} to be used in tailcall oprocessing.
-	 * @see LuaFunction#call(LuaState)
-	 * @see LuaFunction#invoke(LuaState, Varargs)
-	 */
-	public static Varargs tailcallOf(LuaValue func, Varargs args) {
-		return new TailcallVarargs(func, args);
-	}
-
 	public static LuaTable weakTable(boolean weakKeys, boolean weakValues) {
 		LuaTable table = new LuaTable();
 		table.useWeak(weakKeys, weakValues);

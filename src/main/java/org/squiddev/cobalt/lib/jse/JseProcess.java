@@ -103,9 +103,11 @@ public class JseProcess {
 	/**
 	 * Create a thread to copy bytes from input to output.
 	 */
-	private Thread copyBytes(final InputStream input,
-	                         final OutputStream output, final InputStream ownedInput,
-	                         final OutputStream ownedOutput) {
+	private Thread copyBytes(
+		final InputStream input,
+		final OutputStream output, final InputStream ownedInput,
+		final OutputStream ownedOutput
+	) {
 		Thread t = (new Thread() {
 			@Override
 			public void run() {

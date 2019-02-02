@@ -29,7 +29,7 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState.LuaCompiler;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.LuaInterpreter;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -44,7 +44,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  *
  * Compiles lua source files into lua bytecode within a {@link Prototype},
  * loads lua binary files directly into a{@link Prototype},
- * and optionaly instantiates a {@link LuaInterpreter} around the result
+ * and optionaly instantiates a {@link LuaInterpretedFunction} around the result
  * using a user-supplied environment.
  *
  * Implements the {@link LuaCompiler} interface for loading
@@ -185,7 +185,7 @@ public class LuaC implements LuaCompiler {
 	@Override
 	public LuaFunction load(InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
 		Prototype p = compile(stream, name);
-		LuaInterpreter closure = new LuaInterpreter(p, env);
+		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
 		closure.nilUpvalues();
 		return closure;
 	}
@@ -251,6 +251,6 @@ public class LuaC implements LuaCompiler {
 	}
 
 	public LuaFunction load(Prototype p, LuaTable env) {
-		return new LuaInterpreter(p, env);
+		return new LuaInterpretedFunction(p, env);
 	}
 }

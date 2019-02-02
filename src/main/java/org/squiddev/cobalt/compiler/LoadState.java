@@ -30,7 +30,7 @@ import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.LuaInterpreter;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.IOException;
@@ -123,7 +123,7 @@ public final class LoadState {
 				throw new CompileException("no compiler");
 			}
 			Prototype p = loadBinaryChunk(firstByte, stream, name);
-			LuaInterpreter closure = new LuaInterpreter(p, env);
+			LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
 			closure.nilUpvalues();
 			return closure;
 		}

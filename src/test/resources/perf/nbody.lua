@@ -120,7 +120,7 @@ local function offsetMomentum(b, nbody)
 	b[1].vz = -pz / SOLAR_MASS
 end
 
-local N = 500000 -- normally 50000000
+local N = tonumber((...)) or 500000 -- normally 50000000
 local bodies = { Sun, Jupiter, Saturn, Uranus, Neptune }
 local nbody = table.getn(bodies)
 

@@ -1,0 +1,169 @@
+/*
+ * ****************************************************************************
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2017 SquidDev
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ * ****************************************************************************
+ */
+
+package org.squiddev.cobalt.function;
+
+import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.compiler.LuaC;
+
+import static org.squiddev.cobalt.function.LuaInterpreter.execute;
+import static org.squiddev.cobalt.function.LuaInterpreter.setupCall;
+
+/**
+ * Extension of {@link LuaFunction} which executes lua bytecode.
+ *
+ * A {@link LuaInterpretedFunction} is a combination of a {@link Prototype}
+ * and a {@link LuaValue} to use as an environment for execution.
+ *
+ * There are three main ways {@link LuaInterpretedFunction} instances are created:
+ * <ul>
+ * <li>Construct an instance using {@link #LuaInterpretedFunction(Prototype, LuaTable)}</li>
+ * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, LuaString, LuaTable)}
+ * <li>Execute the lua bytecode {@link Lua#OP_CLOSURE} as part of bytecode processing
+ * </ul>
+ *
+ * To construct it directly, the {@link Prototype} is typically created via a compiler such as {@link LuaC}:
+ * <pre> {@code
+ * InputStream is = new ByteArrayInputStream("print('hello,world').getBytes());
+ * Prototype p = LuaC.INSTANCE.compile(is, "script");
+ * LuaValue _G = JsePlatform.standardGlobals()
+ * LuaClosure f = new LuaClosure(p, _G);
+ * }</pre>
+ *
+ * To construct it indirectly, the {@link LuaC} compiler may be used,
+ * which implements the {@link LoadState.LuaCompiler} interface:
+ * <pre> {@code
+ * LuaFunction f = LuaC.INSTANCE.load(is, "script", _G);
+ * }</pre>
+ *
+ * Typically, a closure that has just been loaded needs to be initialized by executing it,
+ * and its return value can be saved if needed:
+ * <pre> {@code
+ * LuaValue r = f.call();
+ * _G.set( "mypkg", r )
+ * }</pre>
+ *
+ * In the preceding, the loaded value is typed as {@link LuaFunction}
+ * to allow for the possibility of other compilers such as LuaJC
+ * producing {@link LuaFunction} directly without
+ * creating a {@link Prototype} or {@link LuaInterpretedFunction}.
+ *
+ * Since a {@link LuaInterpretedFunction} is a {@link LuaFunction} which is a {@link LuaValue},
+ * all the value operations can be used directly such as:
+ * <ul>
+ * <li>{@link LuaValue#setfenv(LuaTable)}</li>
+ * <li>{@link LuaFunction#call(LuaState)}</li>
+ * <li>{@link LuaFunction#call(LuaState, LuaValue)}</li>
+ * <li>{@link LuaFunction#invoke(LuaState, Varargs)}</li>
+ * <li>{@link LuaFunction#invoke(LuaState, Varargs)}</li>
+ * <li> ...</li>
+ * </ul>
+ *
+ * @see LuaValue
+ * @see LuaFunction
+ * @see LuaValue#isClosure()
+ * @see LuaValue#checkClosure()
+ * @see LuaValue#optClosure(LuaClosure)
+ * @see LoadState
+ */
+public class LuaInterpretedFunction extends LuaClosure {
+	private static final Upvalue[] NO_UPVALUES = new Upvalue[0];
+
+	public final Prototype p;
+	public final Upvalue[] upvalues;
+
+	public LuaInterpretedFunction(Prototype p) {
+		this.p = p;
+		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+	}
+
+	/**
+	 * Supply the initial environment
+	 *
+	 * @param p   The prototype to run
+	 * @param env The environement to run in
+	 */
+	public LuaInterpretedFunction(Prototype p, LuaTable env) {
+		super(env);
+		this.p = p;
+		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+	}
+
+	public void nilUpvalues() {
+		int nups = p.nups;
+		if (nups > 0) {
+			Upvalue[] upvalues = this.upvalues;
+			for (int i = 0; i < nups; i++) {
+				upvalues[i] = new Upvalue(Constants.NIL);
+			}
+		}
+	}
+
+	@Override
+	public final LuaValue call(LuaState state) throws LuaError {
+		return execute(state, this, setupCall(state, this)).first();
+	}
+
+	@Override
+	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+		return execute(state, this, setupCall(state, this, arg)).first();
+	}
+
+	@Override
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return execute(state, this, setupCall(state, this, arg1, arg2)).first();
+	}
+
+	@Override
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+		return execute(state, this, setupCall(state, this, arg1, arg2, arg3)).first();
+	}
+
+	@Override
+	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
+		return execute(state, this, setupCall(state, this, varargs));
+	}
+
+	@Override
+	public LuaValue getUpvalue(int i) {
+		return upvalues[i].getValue();
+	}
+
+	@Override
+	public void setUpvalue(int i, LuaValue v) {
+		upvalues[i].setValue(v);
+	}
+
+	@Override
+	public Prototype getPrototype() {
+		return p;
+	}
+
+	@Override
+	public String debugName() {
+		return getPrototype().sourceShort() + ":" + getPrototype().linedefined;
+	}
+}

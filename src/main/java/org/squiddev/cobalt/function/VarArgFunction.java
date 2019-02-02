@@ -26,8 +26,6 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugState;
 
 /**
  * Abstract base class for Java function implementations that takes varaiable arguments and
@@ -79,40 +77,4 @@ public abstract class VarArgFunction extends LibFunction {
 	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
 	}
-
-	/**
-	 * Override and implement for the best performance.
-	 * May not have expected behavior for tail calls.
-	 * Should not be used if either:
-	 * - function needs to be used as a module
-	 * - function has a possibility of returning a TailcallVarargs
-	 *
-	 * @param state The current lua state
-	 * @param args  the arguments to the function call.
-	 */
-	@Override
-	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-		DebugState ds = DebugHandler.getDebugState(state);
-		DebugHandler handler = state.debug;
-		handler.onCall(ds, this);
-		try {
-			return this.onInvoke(state, args).eval(state);
-		} finally {
-			handler.onReturn(ds);
-		}
-	}
-
-	/**
-	 * Override to provide a call implementation that runs in an environment
-	 * that can participate in setfenv, and behaves as expected
-	 * when returning TailcallVarargs.
-	 *
-	 * @param state The current lua state
-	 * @param args  the arguments to the function call.
-	 */
-	@Override
-	public Varargs onInvoke(LuaState state, Varargs args) throws LuaError {
-		return invoke(state, args);
-	}
-
 }

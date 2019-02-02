@@ -30,6 +30,7 @@ import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.Upvalue;
 
 /**
  * Each thread will get a DebugState attached to it by the debug library
@@ -51,6 +52,11 @@ public final class DebugFrame {
 	 */
 	public LuaValue[] stack;
 
+	/**
+	 * The {@link Upvalue} equivalent of {@link #stack}
+	 */
+	public Upvalue[] stackUpvalues;
+
 	public final DebugFrame previous;
 
 
@@ -65,30 +71,32 @@ public final class DebugFrame {
 	public DebugFrame(LuaFunction func) {
 		pc = -1;
 		previous = null;
-		setFunction(func);
-	}
-
-	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack) {
-		this.func = closure;
-		this.closure = closure;
-		this.varargs = varargs;
-		this.stack = stack;
-	}
-
-	public void setFunction(LuaFunction func) {
 		this.func = func;
 		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
 	}
 
-	public void clear() {
+	void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack, Upvalue[] stackUpvalues) {
+		this.func = closure;
+		this.closure = closure;
+		this.varargs = varargs;
+		this.stack = stack;
+		this.stackUpvalues = stackUpvalues;
+	}
+
+	void setFunction(LuaFunction func) {
+		this.func = func;
+	}
+
+	void clear() {
 		func = null;
 		closure = null;
 		stack = null;
+		stackUpvalues = null;
 		varargs = extras = null;
 		pc = top = -1;
 	}
 
-	public void bytecode(int pc, Varargs extras, int top) {
+	void bytecode(int pc, Varargs extras, int top) {
 		this.pc = pc;
 		this.top = top;
 		this.extras = extras;

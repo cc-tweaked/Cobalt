@@ -160,9 +160,9 @@ public final class DebugHelpers {
 		int pc;
 		int last; /* stores position of last instruction that changed `reg' */
 		last = pt.code.length - 1; /*
-									 * points to final return (a `neutral'
-									 * instruction)
-									 */
+		 * points to final return (a `neutral'
+		 * instruction)
+		 */
 		if (!(precheck(pt))) return 0;
 		for (pc = 0; pc < lastpc; pc++) {
 			int i = pt.code[pc];
@@ -193,7 +193,7 @@ public final class DebugHelpers {
 						int dest = pc + 1 + b;
 						if (!(0 <= dest && dest < pt.code.length)) return 0;
 						if (dest > 0) {
-						/* cannot jump to a setlist count */
+							/* cannot jump to a setlist count */
 							int d = pt.code[dest - 1];
 							if ((Lua.GET_OPCODE(d) == Lua.OP_SETLIST && Lua.GETARG_C(d) == 0)) return 0;
 						}
@@ -253,10 +253,10 @@ public final class DebugHelpers {
 				case Lua.OP_FORLOOP:
 				case Lua.OP_FORPREP:
 					if (!checkRegister(pt, a + 3)) return 0;
-				/* go through */
+					/* go through */
 				case Lua.OP_JMP: {
 					int dest = pc + 1 + b;
-				/* not full check and jump is forward and do not skip `lastpc'? */
+					/* not full check and jump is forward and do not skip `lastpc'? */
 					if (reg != Lua.NO_REG && pc < dest && dest <= lastpc) {
 						pc += b; /* do the jump */
 					}

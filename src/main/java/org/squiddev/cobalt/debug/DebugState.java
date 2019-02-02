@@ -36,7 +36,15 @@ import java.lang.ref.WeakReference;
  * DebugState is associated with a Thread
  */
 public final class DebugState {
-	public static final int MAX_SIZE = 256;
+	/**
+	 * The maximum size the Lua stack can be
+	 */
+	public static final int MAX_SIZE = 32767;
+
+	/**
+	 * The maximum number of "Java" calls.
+	 */
+	public static final int MAX_JAVA_SIZE = 200;
 
 	public static final int DEFAULT_SIZE = 8;
 
@@ -52,12 +60,19 @@ public final class DebugState {
 	 */
 	private final LuaState state;
 
-	private final DebugHandler handler;
-
 	/**
-	 * The top function
+	 * The top function.
+	 *
+	 * This is limited by {@link #MAX_SIZE}.
 	 */
 	public int top = -1;
+
+	/**
+	 * The number of non-interpreter functions on the stack.
+	 *
+	 * This is limited by {@link #MAX_JAVA_SIZE}.
+	 */
+	public int javaTop = -1;
 
 	/**
 	 * The stack of debug info
@@ -87,7 +102,21 @@ public final class DebugState {
 	public DebugState(LuaThread thread) {
 		this.thread = new WeakReference<>(thread);
 		this.state = thread.luaState;
-		this.handler = state.debug;
+	}
+
+	/**
+	 * Push a new Java debug info onto the stack.
+	 *
+	 * @return The created info
+	 * @throws LuaError On a stack overflow
+	 */
+	protected DebugFrame pushJavaInfo() throws LuaError {
+		int javaTop = this.javaTop + 1;
+		if (javaTop >= MAX_JAVA_SIZE) throw new LuaError("stack overflow");
+
+		DebugFrame frame = pushInfo();
+		this.javaTop = javaTop;
+		return frame;
 	}
 
 	/**
@@ -103,8 +132,7 @@ public final class DebugState {
 		int length = frames.length;
 		if (top >= length) {
 			if (top >= MAX_SIZE) throw new LuaError("stack overflow");
-
-			int newSize = length == 0 ? DEFAULT_SIZE : length + (length / 2);
+			int newSize = length == 0 ? DEFAULT_SIZE : Math.min(MAX_SIZE, length + (length / 2));
 			DebugFrame[] f = new DebugFrame[newSize];
 			System.arraycopy(frames, 0, f, 0, frames.length);
 			for (int i = frames.length; i < newSize; ++i) {
@@ -121,7 +149,9 @@ public final class DebugState {
 	 * Pop a debug info off the stack
 	 */
 	protected void popInfo() {
-		stack[top--].clear();
+		DebugFrame frame = stack[top--];
+		frame.clear();
+		if (frame.closure == null) javaTop--;
 	}
 
 	/**
@@ -164,6 +194,15 @@ public final class DebugState {
 	}
 
 	/**
+	 * Get the top debug info
+	 *
+	 * @return The top debug info or {@code null}
+	 */
+	public DebugFrame getStackUnsafe() {
+		return stack[top];
+	}
+
+	/**
 	 * Get the debug info at a particular level
 	 *
 	 * @param level The level to get at
@@ -200,8 +239,6 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onCall(state, this, frame);
-		} catch (LuaError e) {
-			throw e;
 		} catch (RuntimeException e) {
 			throw new LuaError(e);
 		} finally {
@@ -215,8 +252,6 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onReturn(state, this, getStack());
-		} catch (LuaError e) {
-			throw e;
 		} catch (RuntimeException e) {
 			throw new LuaError(e);
 		} finally {

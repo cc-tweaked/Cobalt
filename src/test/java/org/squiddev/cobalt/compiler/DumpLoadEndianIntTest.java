@@ -4,7 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.LuaInterpreter;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.*;
@@ -90,7 +90,7 @@ public class DumpLoadEndianIntTest {
 			Prototype p = LuaC.compile(is, "script");
 
 			// double check script result before dumping
-			LuaFunction f = new LuaInterpreter(p, _G);
+			LuaFunction f = new LuaInterpretedFunction(p, _G);
 			LuaValue r = f.call(state);
 			String actual = r.toString();
 			assertEquals(expectedPriorDump, actual);

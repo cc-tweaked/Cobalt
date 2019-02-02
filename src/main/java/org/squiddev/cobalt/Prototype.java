@@ -25,7 +25,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LocalVariable;
-import org.squiddev.cobalt.function.LuaInterpreter;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
 
 import static org.squiddev.cobalt.compiler.LoadState.getShortName;
 
@@ -35,10 +35,10 @@ import static org.squiddev.cobalt.compiler.LoadState.getShortName;
  * This is both a straight translation of the corresponding C type,
  * and the main data structure for execution of compiled lua bytecode.
  *
- * See documentatation on {@link LuaInterpreter} for information on how to load
+ * See documentatation on {@link LuaInterpretedFunction} for information on how to load
  * and execute a {@link Prototype}.
  *
- * @see LuaInterpreter
+ * @see LuaInterpretedFunction
  */
 public final class Prototype {
 	/* constants used by the function */

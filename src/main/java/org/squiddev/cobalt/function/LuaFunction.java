@@ -35,12 +35,12 @@ import org.squiddev.cobalt.debug.DebugState;
  *
  * Direct subclass include {@link LibFunction} which is the base class for
  * all built-in library functions coded in Java,
- * and {@link LuaInterpreter}, which represents a lua closure
+ * and {@link LuaInterpretedFunction}, which represents a lua closure
  * whose bytecode is interpreted when the function is invoked.
  *
  * @see LuaValue
  * @see LibFunction
- * @see LuaInterpreter
+ * @see LuaInterpretedFunction
  */
 public abstract class LuaFunction extends LuaValue implements DebugHook {
 	protected LuaTable env;
@@ -199,22 +199,6 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @see #call(LuaState, LuaValue)
 	 */
 	public abstract Varargs invoke(LuaState state, Varargs args) throws LuaError;
-
-	/**
-	 * Callback used during tail call processing to invoke the function once.
-	 *
-	 * This may return a {@link TailcallVarargs} to be evaluated by the client.
-	 *
-	 * This should not be called directly, instead use on of the call invocation functions.
-	 *
-	 * @param state The current lua state
-	 * @param args  the arguments to the call invocation.
-	 * @return Varargs the return values, possible a TailcallVarargs.
-	 * @throws LuaError On a runtime error.
-	 */
-	public Varargs onInvoke(LuaState state, Varargs args) throws LuaError {
-		return invoke(state, args);
-	}
 
 	@Override
 	public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {

@@ -29,6 +29,7 @@ import org.squiddev.cobalt.*;
 
 import java.util.Vector;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.*;
 import static org.squiddev.cobalt.Matchers.between;

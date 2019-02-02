@@ -28,7 +28,8 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.function.LuaFunction;
 
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.LuaDouble.valueOf;
+import static org.squiddev.cobalt.LuaInteger.valueOf;
 
 /**
  * Handles arithmetic operations
@@ -43,16 +44,18 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
-		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
-			double dLeft = left.toDouble();
-			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
-				double dRight = right.toDouble();
-				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(dLeft + dRight);
-			}
+		if (left instanceof LuaInteger && right instanceof LuaInteger) {
+			int x = ((LuaInteger) left).v, y = ((LuaInteger) right).v;
+			int r = x + y;
+			if (((x ^ r) & (y ^ r)) >= 0) return valueOf(r);
 		}
 
-		return arithMetatable(state, Constants.ADD, left, right, leftIdx, rightIdx);
+		double dLeft, dRight;
+		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
+			return valueOf(dLeft + dRight);
+		} else {
+			return arithMetatable(state, ADD, left, right, leftIdx, rightIdx);
+		}
 	}
 
 	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right) throws LuaError {
@@ -60,16 +63,18 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
-		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
-			double dLeft = left.toDouble();
-			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
-				double dRight = right.toDouble();
-				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(dLeft - dRight);
-			}
+		if (left instanceof LuaInteger && right instanceof LuaInteger) {
+			int x = ((LuaInteger) left).v, y = ((LuaInteger) right).v;
+			int r = x - y;
+			if (((x ^ r) & (y ^ r)) >= 0) return valueOf(r);
 		}
 
-		return arithMetatable(state, Constants.SUB, left, right, leftIdx, rightIdx);
+		double dLeft, dRight;
+		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
+			return valueOf(dLeft - dRight);
+		} else {
+			return arithMetatable(state, SUB, left, right, leftIdx, rightIdx);
+		}
 	}
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right) throws LuaError {
@@ -77,16 +82,16 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
-		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
-			double dLeft = left.toDouble();
-			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
-				double dRight = right.toDouble();
-				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(dLeft * dRight);
-			}
+		if (left instanceof LuaInteger && right instanceof LuaInteger) {
+			return valueOf((long) ((LuaInteger) left).v * (long) ((LuaInteger) right).v);
 		}
 
-		return arithMetatable(state, Constants.MUL, left, right, leftIdx, rightIdx);
+		double dLeft, dRight;
+		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
+			return valueOf(dLeft * dRight);
+		} else {
+			return arithMetatable(state, MUL, left, right, leftIdx, rightIdx);
+		}
 	}
 
 	public static LuaValue div(LuaState state, LuaValue left, LuaValue right) throws LuaError {
@@ -94,16 +99,12 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue div(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
-		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
-			double dLeft = left.toDouble();
-			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
-				double dRight = right.toDouble();
-				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(div(dLeft, dRight));
-			}
+		double dLeft, dRight;
+		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
+			return valueOf(div(dLeft, dRight));
+		} else {
+			return arithMetatable(state, DIV, left, right, leftIdx, rightIdx);
 		}
-
-		return arithMetatable(state, Constants.DIV, left, right, leftIdx, rightIdx);
 	}
 
 	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right) throws LuaError {
@@ -111,16 +112,12 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
-		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
-			double dLeft = left.toDouble();
-			if (tLeft == TNUMBER || !Double.isNaN(dLeft)) {
-				double dRight = right.toDouble();
-				if (tRight == TNUMBER || !Double.isNaN(dRight)) return valueOf(mod(dLeft, dRight));
-			}
+		double dLeft, dRight;
+		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
+			return valueOf(mod(dLeft, dRight));
+		} else {
+			return arithMetatable(state, MOD, left, right, leftIdx, rightIdx);
 		}
-
-		return arithMetatable(state, Constants.MOD, left, right, leftIdx, rightIdx);
 	}
 
 	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right) throws LuaError {
@@ -128,12 +125,12 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError {
-		int tLeft = left.type(), tRight = right.type();
-		if ((tLeft == TNUMBER || tLeft == TSTRING) && (tRight == TNUMBER || tRight == TSTRING)) {
-			return ValueFactory.valueOf(Math.pow(left.checkArith(), right.checkArith()));
+		double dLeft, dRight;
+		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
+			return valueOf(Math.pow(dLeft, dRight));
+		} else {
+			return arithMetatable(state, POW, left, right, leftIdx, rightIdx);
 		}
-
-		return arithMetatable(state, Constants.POW, left, right, leftIdx, rightIdx);
 	}
 
 	/**
@@ -174,7 +171,26 @@ public final class OperationHelper {
 	 * @return {@link LuaValue} resulting from metatag processing
 	 * @throws LuaError if metatag was not defined for either operand
 	 */
-	private static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
+	public static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
+		return call(state, getMetatable(state, tag, left, right, leftStack, rightStack), left, right);
+	}
+
+	/**
+	 * Perform metatag processing for arithmetic operations.
+	 *
+	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
+	 * or throws {@link LuaError} if neither is defined.
+	 *
+	 * @param state      The current lua state
+	 * @param tag        The metatag to look up
+	 * @param left       The left operand value to perform the operation with
+	 * @param right      The other operand value to perform the operation with
+	 * @param leftStack  Stack index of the LHS
+	 * @param rightStack Stack index of the RHS
+	 * @return {@link LuaValue} resulting from metatag processing
+	 * @throws LuaError if metatag was not defined for either operand
+	 */
+	public static LuaValue getMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
 		LuaValue h = left.metatag(state, tag);
 		if (h.isNil()) {
 			h = right.metatag(state, tag);
@@ -186,7 +202,7 @@ public final class OperationHelper {
 				throw ErrorFactory.operandError(state, left, "perform arithmetic on", leftStack);
 			}
 		}
-		return OperationHelper.call(state, h, left, right);
+		return h;
 	}
 
 	/**
@@ -222,11 +238,11 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaString concat(LuaString left, LuaString right) throws LuaError {
+	public static LuaString concat(LuaString left, LuaString right) {
 		byte[] b = new byte[left.length + right.length];
 		System.arraycopy(left.bytes, left.offset, b, 0, left.length);
 		System.arraycopy(right.bytes, right.offset, b, left.length, right.length);
-		return ValueFactory.valueOf(b);
+		return LuaString.valueOf(b);
 	}
 	//endregion
 
@@ -351,10 +367,15 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue neg(LuaState state, LuaValue value, int stack) throws LuaError {
-		int tValue = value.type();
-		if (tValue == TNUMBER) {
-			return valueOf(-value.checkArith());
-		} else if (tValue == TSTRING) {
+		int type = value.type();
+		if (type == TNUMBER) {
+			if (value instanceof LuaInteger) {
+				int x = ((LuaInteger) value).v;
+				if (x != Integer.MIN_VALUE) return valueOf(-x);
+			}
+
+			return valueOf(-value.toDouble());
+		} else if (type == TSTRING) {
 			double res = value.toDouble();
 			if (!Double.isNaN(res)) return valueOf(-res);
 		}
@@ -365,6 +386,10 @@ public final class OperationHelper {
 		}
 
 		return OperationHelper.call(state, meta, value);
+	}
+
+	private static boolean checkNumber(LuaValue lua, double value) {
+		return lua.type() == TNUMBER || !Double.isNaN(value);
 	}
 	//endregion
 
@@ -441,21 +466,6 @@ public final class OperationHelper {
 			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
 
 			return ((LuaFunction) meta).invoke(state, ValueFactory.varargsOf(function, args));
-		}
-	}
-
-	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args) throws LuaError {
-		return onInvoke(state, function, args, -1);
-	}
-
-	public static Varargs onInvoke(LuaState state, LuaValue function, Varargs args, int stack) throws LuaError {
-		if (function.isFunction()) {
-			return ((LuaFunction) function).onInvoke(state, args);
-		} else {
-			LuaValue meta = function.metatag(state, Constants.CALL);
-			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
-
-			return ((LuaFunction) meta).onInvoke(state, ValueFactory.varargsOf(function, args));
 		}
 	}
 
