@@ -25,6 +25,10 @@
 
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.compiler.LuaC;
+
+import java.util.Arrays;
+
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
@@ -205,26 +209,20 @@ public class Constants {
 	 * LuaString constant with value ""
 	 */
 	public static final LuaString EMPTYSTRING = valueOf("");
+
 	/**
 	 * Constant limiting metatag loop processing
 	 */
 	public static final int MAXTAGLOOP = 100;
 
 	/**
-	 * Limit on lua stack size
-	 */
-	public static final int MAXSTACK = 250;
-
-	/**
 	 * Array of {@link #NIL} values to optimize filling stacks using System.arraycopy().
 	 * Must not be modified.
 	 */
-	public static final LuaValue[] NILS = new LuaValue[MAXSTACK];
+	public static final LuaValue[] NILS = new LuaValue[LuaC.MAXSTACK];
 
 	static {
-		for (int i = 0; i < MAXSTACK; i++) {
-			NILS[i] = NIL;
-		}
+		Arrays.fill(NILS, NIL);
 	}
 
 	/**

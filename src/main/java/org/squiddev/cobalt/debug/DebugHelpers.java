@@ -26,6 +26,7 @@
 package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.DebugLib;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -328,7 +329,7 @@ public final class DebugHelpers {
 	}
 
 	private static boolean precheck(Prototype pt) {
-		if (!(pt.maxstacksize <= Constants.MAXSTACK)) return false;
+		if (!(pt.maxstacksize <= LuaC.MAXSTACK)) return false;
 		lua_assert(pt.numparams + (pt.is_vararg & Lua.VARARG_HASARG) <= pt.maxstacksize);
 		lua_assert((pt.is_vararg & Lua.VARARG_NEEDSARG) == 0
 			|| (pt.is_vararg & Lua.VARARG_HASARG) != 0);

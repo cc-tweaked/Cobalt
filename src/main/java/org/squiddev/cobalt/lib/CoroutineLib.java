@@ -70,7 +70,7 @@ public class CoroutineLib extends VarArgFunction implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		bind(state, t, CoroutineLib.class, new String[]{"create", "resume", "running", "status", "yield", "wrap"});
+		bind(t, CoroutineLib.class, new String[]{"create", "resume", "running", "status", "yield", "wrap"});
 		env.rawset("coroutine", t);
 		state.loadedPackages.rawset("coroutine", t);
 		return t;

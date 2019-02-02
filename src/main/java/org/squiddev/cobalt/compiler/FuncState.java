@@ -35,7 +35,6 @@ import java.util.Hashtable;
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.compiler.LuaC.*;
-import static org.squiddev.cobalt.compiler.LuaC.MAXSTACK;
 
 public class FuncState {
 	class upvaldesc {

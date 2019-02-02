@@ -163,14 +163,13 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = 0, second with 1, etc.
 	 *
-	 * @param state   The current lua state
 	 * @param env     The environment to apply to each bound function
 	 * @param factory the Class to instantiate for each bound function
 	 * @param names   array of String names, one for each function.
-	 * @see #bindOffset(LuaState, LuaTable, Class, String[], int, Class, Object)
+	 * @see #bindOffset(LuaTable, Class, String[], int, Class, Object)
 	 */
-	public static void bind(LuaState state, LuaTable env, Class<? extends LibFunction> factory, String[] names) {
-		bindOffset(state, env, factory, names, 0, null, null);
+	public static void bind(LuaTable env, Class<? extends LibFunction> factory, String[] names) {
+		bindOffset(env, factory, names, 0, null, null);
 	}
 
 	/**
@@ -179,16 +178,15 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = 0, second with 1, etc.
 	 *
-	 * @param state      The current lua state
 	 * @param env        The environment to apply to each bound function
 	 * @param factory    the Class to instantiate for each bound function
 	 * @param names      array of String names, one for each function.
 	 * @param ownerClass The owner's class
 	 * @param owner      The owner. This will be passed as the first argument
-	 * @see #bindOffset(LuaState, LuaTable, Class, String[], int, Class, Object)
+	 * @see #bindOffset(LuaTable, Class, String[], int, Class, Object)
 	 */
-	public static void bind(LuaState state, LuaTable env, Class<? extends LibFunction> factory, String[] names, Class<?> ownerClass, Object owner) {
-		bindOffset(state, env, factory, names, 0, ownerClass, owner);
+	public static void bind(LuaTable env, Class<? extends LibFunction> factory, String[] names, Class<?> ownerClass, Object owner) {
+		bindOffset(env, factory, names, 0, ownerClass, owner);
 	}
 
 	/**
@@ -197,16 +195,15 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = {@code firstopcode}, second with {@code firstopcode+1}, etc.
 	 *
-	 * @param state       The current lua state
 	 * @param env         The environment to apply to each bound function
 	 * @param factory     the Class to instantiate for each bound function
 	 * @param names       array of String names, one for each function.
 	 * @param firstopcode the first opcode to use
 	 * @param ownerClass  The owner's class
 	 * @param owner       The owner. This will be passed as the first argument
-	 * @see #bind(LuaState, LuaTable, Class, String[], Class, Object)
+	 * @see #bind(LuaTable, Class, String[], Class, Object)
 	 */
-	public static void bindOffset(LuaState state, LuaTable env, Class<? extends LibFunction> factory, String[] names, int firstopcode, Class<?> ownerClass, Object owner) {
+	public static void bindOffset(LuaTable env, Class<? extends LibFunction> factory, String[] names, int firstopcode, Class<?> ownerClass, Object owner) {
 		try {
 			Constructor<? extends LibFunction> constructor = ownerClass == null ? factory.getDeclaredConstructor() : factory.getDeclaredConstructor(ownerClass);
 			constructor.setAccessible(true);
@@ -216,11 +213,9 @@ public abstract class LibFunction extends LuaFunction {
 				f.opcode = firstopcode + i;
 				f.name = names[i];
 				f.env = env;
-				env.set(state, f.name, f);
+				env.rawset(f.name, f);
 			}
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (Exception e) {
+		} catch (ReflectiveOperationException e) {
 			throw new IllegalStateException("Binding failed", e);
 		}
 	}

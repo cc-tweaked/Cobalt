@@ -256,8 +256,8 @@ public class DumpState {
 	}
 
 	/*
-	** dump Lua function as precompiled chunk
-	*/
+	 * Dump Lua function as precompiled chunk
+	 */
 	public static int dump(Prototype f, OutputStream w, boolean strip) throws IOException {
 		DumpState D = new DumpState(w, strip);
 		D.dumpHeader();

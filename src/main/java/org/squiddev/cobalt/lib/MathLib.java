@@ -52,7 +52,7 @@ public class MathLib implements LuaLibrary {
 		LuaTable t = new LuaTable(0, 30);
 		t.rawset("pi", ValueFactory.valueOf(Math.PI));
 		t.rawset("huge", LuaDouble.POSINF);
-		LibFunction.bind(state, t, MathLib1.class, new String[]{
+		LibFunction.bind(t, MathLib1.class, new String[]{
 			"abs", "ceil", "cos", "deg",
 			"exp", "floor", "rad", "sin",
 			"sqrt", "tan",
@@ -60,10 +60,10 @@ public class MathLib implements LuaLibrary {
 			"exp", "log", "log10", "sinh",
 			"tanh"
 		});
-		LibFunction.bind(state, t, MathLib2.class, new String[]{
+		LibFunction.bind(t, MathLib2.class, new String[]{
 			"fmod", "ldexp", "pow", "atan2"
 		});
-		LibFunction.bind(state, t, MathLibV.class, new String[]{
+		LibFunction.bind(t, MathLibV.class, new String[]{
 			"frexp", "max", "min", "modf",
 			"randomseed", "random",});
 		t.rawset("mod", t.rawget("fmod"));

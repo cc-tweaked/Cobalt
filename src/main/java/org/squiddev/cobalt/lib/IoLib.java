@@ -225,7 +225,7 @@ public abstract class IoLib implements LuaLibrary {
 
 		// io lib functions
 		LuaTable t = new LuaTable();
-		LibFunction.bind(state, t, IoLibV.class, IO_NAMES, IoLib.class, this);
+		LibFunction.bind(t, IoLibV.class, IO_NAMES, IoLib.class, this);
 
 		// setup streams
 		try {
@@ -238,7 +238,7 @@ public abstract class IoLib implements LuaLibrary {
 
 		// create file methods table
 		filemethods = new LuaTable();
-		LibFunction.bindOffset(state, filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE, IoLib.class, this);
+		LibFunction.bindOffset(filemethods, IoLibV.class, FILE_NAMES, FILE_CLOSE, IoLib.class, this);
 
 		// setup library and index
 		filemethods.rawset("__index", filemethods);

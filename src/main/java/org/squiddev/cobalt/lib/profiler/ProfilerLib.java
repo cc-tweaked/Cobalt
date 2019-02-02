@@ -54,7 +54,7 @@ public class ProfilerLib implements LuaLibrary {
 		environment.rawset("profiler", profiler);
 
 		LibFunction.bind(
-			state, profiler, Profiler1.class,
+			profiler, Profiler1.class,
 			new String[]{"milliTime", "nanoTime", "start", "stop", "pause", "resume"},
 			ProfilerLib.class, this
 		);

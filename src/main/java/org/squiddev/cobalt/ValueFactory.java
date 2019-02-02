@@ -25,8 +25,6 @@
 
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.function.LuaFunction;
-
 public class ValueFactory {
 	/**
 	 * Convert java boolean to a {@link LuaValue}.
