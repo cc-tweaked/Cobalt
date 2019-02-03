@@ -266,6 +266,7 @@ public class LuaThread extends LuaValue {
 				args = Constants.NONE;
 				result = function.invoke(state, a);
 			} catch (LuaError e) {
+				e.fillTraceback(state);
 				error = e.value;
 			} catch (StackOverflowError e) {
 				error = valueOf("stack overflow");
@@ -274,6 +275,16 @@ public class LuaThread extends LuaValue {
 			} finally {
 				markDead();
 				notify();
+
+				LuaThread thread = this.thread.get();
+				if (thread != null) {
+					DebugState ds = DebugHandler.getDebugState(thread);
+					for (int i = 0; ; i++) {
+						DebugFrame di = ds.getDebugInfo(i);
+						if (di == null) break;
+						di.cleanup();
+					}
+				}
 			}
 		}
 

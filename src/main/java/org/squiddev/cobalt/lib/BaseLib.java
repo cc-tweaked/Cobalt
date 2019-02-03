@@ -26,6 +26,7 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
@@ -217,23 +218,19 @@ public class BaseLib implements LuaLibrary {
 					LuaValue func = args.checkValue(1);
 					DebugState ds = DebugHandler.getDebugState(state);
 					DebugHandler handler = state.debug;
-					handler.onCall(ds, this);
-					try {
-						return pcall(state, func, args.subargs(2), null);
-					} finally {
-						handler.onReturn(ds);
-					}
+					DebugFrame di = handler.onCall(ds, this);
+					Varargs res = pcall(state, di, func, args.subargs(2), null);
+					handler.onReturn(ds);
+					return res;
 				}
 				case 8: // "xpcall", // (f, err) -> result1, ...
 				{
 					DebugState ds = DebugHandler.getDebugState(state);
 					DebugHandler handler = state.debug;
-					handler.onCall(ds, this);
-					try {
-						return pcall(state, args.first(), Constants.NONE, args.checkValue(2));
-					} finally {
-						handler.onReturn(ds);
-					}
+					DebugFrame di = handler.onCall(ds, this);
+					Varargs res = pcall(state, di, args.first(), Constants.NONE, args.checkValue(2));
+					handler.onReturn(ds);
+					return res;
 				}
 				case 9: // "print", // (...) -> void
 				{
@@ -334,7 +331,7 @@ public class BaseLib implements LuaLibrary {
 		}
 	}
 
-	public static Varargs pcall(LuaState state, LuaValue func, Varargs args, LuaValue errfunc) {
+	public static Varargs pcall(LuaState state, DebugFrame di, LuaValue func, Varargs args, LuaValue errfunc) {
 		LuaValue olderr = state.getCurrentThread().setErrorFunc(errfunc);
 		try {
 			Varargs result = varargsOf(Constants.TRUE, OperationHelper.invoke(state, func, args));
@@ -342,15 +339,28 @@ public class BaseLib implements LuaLibrary {
 			return result;
 		} catch (LuaError le) {
 			le.fillTraceback(state);
+			closeUntil(state, di);
 
 			state.getCurrentThread().setErrorFunc(olderr);
 			return varargsOf(Constants.FALSE, le.value);
 		} catch (Exception e) {
 			LuaError le = new LuaError(e);
 			le.fillTraceback(state);
+			closeUntil(state, di);
 
 			state.getCurrentThread().setErrorFunc(olderr);
 			return varargsOf(Constants.FALSE, le.value);
+		}
+	}
+
+	private static void closeUntil(LuaState state, DebugFrame top) {
+		DebugState ds = DebugHandler.getDebugState(state);
+		DebugHandler handler = state.debug;
+
+		DebugFrame current;
+		while ((current = ds.getStackUnsafe()) != top) {
+			current.cleanup();
+			handler.onReturnError(ds);
 		}
 	}
 

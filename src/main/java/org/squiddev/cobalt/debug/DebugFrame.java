@@ -30,6 +30,7 @@ import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Varargs;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpreter;
 import org.squiddev.cobalt.function.Upvalue;
 
 /**
@@ -85,6 +86,10 @@ public final class DebugFrame {
 
 	void setFunction(LuaFunction func) {
 		this.func = func;
+	}
+
+	public void cleanup() {
+		LuaInterpreter.closeAll(stackUpvalues);
 	}
 
 	void clear() {

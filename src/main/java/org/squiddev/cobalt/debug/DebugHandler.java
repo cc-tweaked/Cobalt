@@ -58,11 +58,13 @@ public class DebugHandler {
 	 * @param func the function called
 	 * @throws LuaError On a runtime error.
 	 */
-	public void onCall(DebugState ds, LuaFunction func) throws LuaError {
+	public DebugFrame onCall(DebugState ds, LuaFunction func) throws LuaError {
 		DebugFrame di = ds.pushJavaInfo();
 		di.setFunction(func);
 
 		if (!ds.inhook && ds.hookcall) ds.hookCall(di);
+
+		return di;
 	}
 
 	/**
@@ -92,10 +94,10 @@ public class DebugHandler {
 	}
 
 	/**
-	 * Called by Closures and recursing java functions on return
+	 * Called by Closures and recurring Java functions on return
 	 *
 	 * @param ds Debug state
-	 * @throws LuaError On a runtime error.
+	 * @throws LuaError On a runtime error within the hook.
 	 */
 	public void onReturn(DebugState ds) throws LuaError {
 		try {
@@ -103,6 +105,16 @@ public class DebugHandler {
 		} finally {
 			ds.popInfo();
 		}
+	}
+
+	/**
+	 * Called by Closures and recurring Java functions on return when a runtime error
+	 * occurred (and thus the hook should not be called).
+	 *
+	 * @param ds Debug state
+	 */
+	public void onReturnError(DebugState ds) {
+		ds.popInfo();
 	}
 
 	/**
