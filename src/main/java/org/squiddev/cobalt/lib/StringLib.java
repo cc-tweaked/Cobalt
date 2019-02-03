@@ -76,14 +76,44 @@ public class StringLib implements LuaLibrary {
 			switch (opcode) {
 				case 0:
 					return dump(arg); // dump (function)
-				case 1:
-					return StringLib.len(arg); // len (function)
-				case 2:
-					return lower(arg); // lower (function)
-				case 3:
-					return reverse(arg); // reverse (function)
-				case 4:
-					return upper(arg); // upper (function)
+
+				case 1: // len (function)
+					return valueOf(arg.checkLuaString().length());
+
+				case 2: { // lower (function)
+					LuaString string = arg.checkLuaString();
+					if (string.length == 0) return EMPTYSTRING;
+
+					byte[] value = new byte[string.length];
+					System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+					for (int i = 0; i < value.length; i++) {
+						byte c = value[i];
+						if (c >= 'A' && c <= 'Z') value[i] = (byte) (c | 0x20);
+					}
+					return valueOf(value);
+				}
+
+				case 3: { // reverse (function)
+					LuaString s = arg.checkLuaString();
+					int n = s.length();
+					byte[] b = new byte[n];
+					for (int i = 0, j = n - 1; i < n; i++, j--) {
+						b[j] = (byte) s.luaByte(i);
+					}
+					return LuaString.valueOf(b);
+				}
+				case 4: { // upper (function)
+					LuaString string = arg.checkLuaString();
+					if (string.length == 0) return EMPTYSTRING;
+
+					byte[] value = new byte[string.length];
+					System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+					for (int i = 0; i < value.length; i++) {
+						byte c = value[i];
+						if (c >= 'a' && c <= 'z') value[i] = (byte) (c & ~0x20);
+					}
+					return valueOf(value);
+				}
 			}
 			return NIL;
 		}
@@ -130,8 +160,8 @@ public class StringLib implements LuaLibrary {
 	static Varargs byte_(Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int l = s.length;
-		int posi = posrelat(args.arg(2).optInteger(1), l);
-		int pose = posrelat(args.arg(3).optInteger(posi), l);
+		int posi = posRelative(args.arg(2).optInteger(1), l);
+		int pose = posRelative(args.arg(3).optInteger(posi), l);
 		int n, i;
 		if (posi <= 0) posi = 1;
 		if (pose > l) pose = l;
@@ -476,27 +506,6 @@ public class StringLib implements LuaLibrary {
 	}
 
 	/**
-	 * string.len (s)
-	 *
-	 * Receives a string and returns its length. The empty string "" has length 0.
-	 * Embedded zeros are counted, so "a\000bc\000" has length 5.
-	 */
-	static LuaValue len(LuaValue arg) throws LuaError {
-		return valueOf(arg.checkLuaString().length());
-	}
-
-	/**
-	 * string.lower (s)
-	 *
-	 * Receives a string and returns a copy of this string with all uppercase letters
-	 * changed to lowercase. All other characters are left unchanged.
-	 * The definition of what an uppercase letter is depends on the current locale.
-	 */
-	static LuaValue lower(LuaValue arg) throws LuaError {
-		return valueOf(arg.checkString().toLowerCase());
-	}
-
-	/**
 	 * string.match (s, pattern [, init])
 	 *
 	 * Looks for the first match of pattern in the string s. If it finds one,
@@ -533,21 +542,6 @@ public class StringLib implements LuaLibrary {
 	}
 
 	/**
-	 * string.reverse (s)
-	 *
-	 * Returns a string that is the string s reversed.
-	 */
-	static LuaValue reverse(LuaValue arg) throws LuaError {
-		LuaString s = arg.checkLuaString();
-		int n = s.length();
-		byte[] b = new byte[n];
-		for (int i = 0, j = n - 1; i < n; i++, j--) {
-			b[j] = (byte) s.luaByte(i);
-		}
-		return LuaString.valueOf(b);
-	}
-
-	/**
 	 * string.sub (s, i [, j])
 	 *
 	 * Returns the substring of s that starts at i and continues until j;
@@ -562,33 +556,17 @@ public class StringLib implements LuaLibrary {
 		final LuaString s = args.arg(1).checkLuaString();
 		final int l = s.length();
 
-		int start = posrelat(args.arg(2).checkInteger(), l);
+		int start = posRelative(args.arg(2).checkInteger(), l);
 		int defval = -1;
-		int end = posrelat(args.arg(3).optInteger(defval), l);
+		int end = posRelative(args.arg(3).optInteger(defval), l);
 
-		if (start < 1) {
-			start = 1;
-		}
-		if (end > l) {
-			end = l;
-		}
-
+		if (start < 1) start = 1;
+		if (end > l) end = l;
 		if (start <= end) {
 			return s.substring(start - 1, end);
 		} else {
 			return EMPTYSTRING;
 		}
-	}
-
-	/**
-	 * string.upper (s)
-	 *
-	 * Receives a string and returns a copy of this string with all lowercase letters
-	 * changed to uppercase. All other characters are left unchanged.
-	 * The definition of what a lowercase letter is depends on the current locale.
-	 */
-	static LuaValue upper(LuaValue arg) throws LuaError {
-		return valueOf(arg.checkString().toUpperCase());
 	}
 
 	/**
@@ -638,8 +616,8 @@ public class StringLib implements LuaLibrary {
 		return NIL;
 	}
 
-	private static int posrelat(int pos, int len) {
-		return (pos >= 0) ? pos : len + pos + 1;
+	private static int posRelative(int pos, int len) {
+		return pos >= 0 ? pos : len + pos + 1;
 	}
 
 	// Pattern matching implementation
