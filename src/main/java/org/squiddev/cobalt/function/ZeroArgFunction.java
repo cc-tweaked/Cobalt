@@ -25,7 +25,10 @@
 
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Varargs;
 
 /**
  * Abstract base class for Java function implementations that take no arguments and
@@ -50,42 +53,23 @@ import org.squiddev.cobalt.*;
  * @see VarArgFunction
  */
 public abstract class ZeroArgFunction extends LibFunction {
-
 	@Override
-	public abstract LuaValue call(LuaState state) throws LuaError;
-
-	/**
-	 * Default constructor
-	 */
-	public ZeroArgFunction() {
-	}
-
-	/**
-	 * Constructor with specific environment
-	 *
-	 * @param env The environment to apply during constructon.
-	 */
-	public ZeroArgFunction(LuaTable env) {
-		this.env = env;
-	}
-
-	@Override
-	public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 		return call(state);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		return call(state);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return call(state);
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
+	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
 		return call(state);
 	}
 }

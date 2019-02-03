@@ -51,30 +51,23 @@ import org.squiddev.cobalt.*;
  * @see ThreeArgFunction
  */
 public abstract class VarArgFunction extends LibFunction {
-	public VarArgFunction() {
-	}
-
-	public VarArgFunction(LuaTable env) {
-		this.env = env;
-	}
-
 	@Override
-	public LuaValue call(LuaState state) throws LuaError {
+	public final LuaValue call(LuaState state) throws LuaError {
 		return invoke(state, Constants.NONE).first();
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 		return invoke(state, arg).first();
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2)).first();
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
 	}
 }

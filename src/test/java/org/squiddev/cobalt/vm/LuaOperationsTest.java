@@ -62,7 +62,11 @@ public class LuaOperationsTest {
 	private final LuaValue stringlong = valueOf(samplestringlong);
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
 	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
-	private final LuaFunction somefunc = new ZeroArgFunction(table) {
+	private final LuaFunction somefunc = new ZeroArgFunction() {
+		{
+			env = table;
+		}
+
 		@Override
 		public LuaValue call(LuaState state) {
 			return Constants.NONE;
@@ -224,7 +228,11 @@ public class LuaOperationsTest {
 
 		// function tests
 		{
-			LuaFunction f = new ZeroArgFunction(_G) {
+			LuaFunction f = new ZeroArgFunction() {
+				{
+					env = _G;
+				}
+
 				@Override
 				public LuaValue call(LuaState state) throws LuaError {
 					return env.get(state, "a");

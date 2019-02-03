@@ -52,25 +52,6 @@ import org.squiddev.cobalt.*;
  * @see VarArgFunction
  */
 public abstract class OneArgFunction extends LibFunction {
-
-	@Override
-	public abstract LuaValue call(LuaState state, LuaValue arg) throws LuaError;
-
-	/**
-	 * Default constructor
-	 */
-	public OneArgFunction() {
-	}
-
-	/**
-	 * Constructor with specific environment
-	 *
-	 * @param env The environment to apply during constructon.
-	 */
-	public OneArgFunction(LuaTable env) {
-		this.env = env;
-	}
-
 	@Override
 	public final LuaValue call(LuaState state) throws LuaError {
 		return call(state, Constants.NIL);
@@ -82,12 +63,12 @@ public abstract class OneArgFunction extends LibFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return call(state, arg1);
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
+	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
 		return call(state, varargs.first());
 	}
 }
