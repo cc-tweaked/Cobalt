@@ -56,34 +56,34 @@ public class TableHashTest {
 		for (int i = 0; i < keys.length; ++i) {
 			assertEquals(capacities[i], t.getHashLength());
 			String si = "Test Value! " + i;
-			t.set(state, keys[i], ValueFactory.valueOf(si));
+			OperationHelper.setTable(state, t, ValueFactory.valueOf(keys[i]), ValueFactory.valueOf(si));
 			assertEquals(0, t.length());
 			assertEquals(i + 1, t.keyCount());
 		}
 		assertEquals(capacities[keys.length], t.getHashLength());
 		for (int i = 0; i < keys.length; ++i) {
 			LuaValue vi = LuaString.valueOf("Test Value! " + i);
-			assertEquals(vi, t.get(state, keys[i]));
-			assertEquals(vi, t.get(state, LuaString.valueOf(keys[i])));
+			assertEquals(vi, OperationHelper.getTable(state, t, ValueFactory.valueOf(keys[i])));
+			assertEquals(vi, OperationHelper.getTable(state, t, LuaString.valueOf(keys[i])));
 			assertEquals(vi, t.rawget(keys[i]));
 			assertEquals(vi, t.rawget(keys[i]));
 		}
 
 		// replace with new values
 		for (int i = 0; i < keys.length; ++i) {
-			t.set(state, keys[i], LuaString.valueOf("Replacement Value! " + i));
+			OperationHelper.setTable(state, t, ValueFactory.valueOf(keys[i]), LuaString.valueOf("Replacement Value! " + i));
 			assertEquals(0, t.length());
 			assertEquals(keys.length, t.keyCount());
 			assertEquals(capacities[keys.length], t.getHashLength());
 		}
 		for (int i = 0; i < keys.length; ++i) {
 			LuaValue vi = LuaString.valueOf("Replacement Value! " + i);
-			assertEquals(vi, t.get(state, keys[i]));
+			assertEquals(vi, OperationHelper.getTable(state, t, ValueFactory.valueOf(keys[i])));
 		}
 
 		// remove
 		for (int i = 0; i < keys.length; ++i) {
-			t.set(state, keys[i], Constants.NIL);
+			OperationHelper.setTable(state, t, ValueFactory.valueOf(keys[i]), Constants.NIL);
 			assertEquals(0, t.length());
 			assertEquals(keys.length - i - 1, t.keyCount());
 			if (i < keys.length - 1) {
@@ -93,7 +93,7 @@ public class TableHashTest {
 			}
 		}
 		for (String key : keys) {
-			assertEquals(Constants.NIL, t.get(state, key));
+			assertEquals(Constants.NIL, OperationHelper.getTable(state, t, ValueFactory.valueOf(key)));
 		}
 	}
 
@@ -104,55 +104,55 @@ public class TableHashTest {
 		LuaTable fb = new LuaTable();
 
 		// set basic values
-		t.set(state, "ppp", ValueFactory.valueOf("abc"));
-		t.set(state, 123, ValueFactory.valueOf("def"));
-		mt.set(state, Constants.INDEX, fb);
-		fb.set(state, "qqq", ValueFactory.valueOf("ghi"));
-		fb.set(state, 456, ValueFactory.valueOf("jkl"));
+		OperationHelper.setTable(state, t, ValueFactory.valueOf("ppp"), ValueFactory.valueOf("abc"));
+		OperationHelper.setTable(state, t, ValueFactory.valueOf(123), ValueFactory.valueOf("def"));
+		OperationHelper.setTable(state, mt, Constants.INDEX, fb);
+		OperationHelper.setTable(state, fb, ValueFactory.valueOf("qqq"), ValueFactory.valueOf("ghi"));
+		OperationHelper.setTable(state, fb, ValueFactory.valueOf(456), ValueFactory.valueOf("jkl"));
 
 		// check before setting metatable
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("nil", t.get(state, "qqq").toString());
-		assertEquals("nil", t.get(state, 456).toString());
-		assertEquals("nil", fb.get(state, "ppp").toString());
-		assertEquals("nil", fb.get(state, 123).toString());
-		assertEquals("ghi", fb.get(state, "qqq").toString());
-		assertEquals("jkl", fb.get(state, 456).toString());
-		assertEquals("nil", mt.get(state, "ppp").toString());
-		assertEquals("nil", mt.get(state, 123).toString());
-		assertEquals("nil", mt.get(state, "qqq").toString());
-		assertEquals("nil", mt.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, fb, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, fb, ValueFactory.valueOf(123)).toString());
+		assertEquals("ghi", OperationHelper.getTable(state, fb, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("jkl", OperationHelper.getTable(state, fb, ValueFactory.valueOf(456)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf(123)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf(456)).toString());
 
 		// check before setting metatable
 		t.setMetatable(state, mt);
 		assertEquals(mt, t.getMetatable(state));
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("ghi", t.get(state, "qqq").toString());
-		assertEquals("jkl", t.get(state, 456).toString());
-		assertEquals("nil", fb.get(state, "ppp").toString());
-		assertEquals("nil", fb.get(state, 123).toString());
-		assertEquals("ghi", fb.get(state, "qqq").toString());
-		assertEquals("jkl", fb.get(state, 456).toString());
-		assertEquals("nil", mt.get(state, "ppp").toString());
-		assertEquals("nil", mt.get(state, 123).toString());
-		assertEquals("nil", mt.get(state, "qqq").toString());
-		assertEquals("nil", mt.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("ghi", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("jkl", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, fb, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, fb, ValueFactory.valueOf(123)).toString());
+		assertEquals("ghi", OperationHelper.getTable(state, fb, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("jkl", OperationHelper.getTable(state, fb, ValueFactory.valueOf(456)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf(123)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, mt, ValueFactory.valueOf(456)).toString());
 
 		// set metatable to metatable without values
 		t.setMetatable(state, fb);
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("nil", t.get(state, "qqq").toString());
-		assertEquals("nil", t.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
 
 		// set metatable to null
 		t.setMetatable(state, null);
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("nil", t.get(state, "qqq").toString());
-		assertEquals("nil", t.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
 	}
 
 	@Test
@@ -169,47 +169,47 @@ public class TableHashTest {
 		};
 
 		// set basic values
-		t.set(state, "ppp", ValueFactory.valueOf("abc"));
-		t.set(state, 123, ValueFactory.valueOf("def"));
-		mt.set(state, Constants.INDEX, fb);
+		OperationHelper.setTable(state, t, ValueFactory.valueOf("ppp"), ValueFactory.valueOf("abc"));
+		OperationHelper.setTable(state, t, ValueFactory.valueOf(123), ValueFactory.valueOf("def"));
+		OperationHelper.setTable(state, mt, Constants.INDEX, fb);
 
 		// check before setting metatable
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("nil", t.get(state, "qqq").toString());
-		assertEquals("nil", t.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
 
 
 		// check before setting metatable
 		t.setMetatable(state, mt);
 		assertEquals(mt, t.getMetatable(state));
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("from mt: qqq", t.get(state, "qqq").toString());
-		assertEquals("from mt: 456", t.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("from mt: qqq", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("from mt: 456", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
 
 		// use raw set
 		t.rawset("qqq", ValueFactory.valueOf("alt-qqq"));
 		t.rawset(456, ValueFactory.valueOf("alt-456"));
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("alt-qqq", t.get(state, "qqq").toString());
-		assertEquals("alt-456", t.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("alt-qqq", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("alt-456", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
 
 		// remove using raw set
 		t.rawset("qqq", Constants.NIL);
 		t.rawset(456, Constants.NIL);
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("from mt: qqq", t.get(state, "qqq").toString());
-		assertEquals("from mt: 456", t.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("from mt: qqq", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("from mt: 456", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
 
 		// set metatable to null
 		t.setMetatable(state, null);
-		assertEquals("abc", t.get(state, "ppp").toString());
-		assertEquals("def", t.get(state, 123).toString());
-		assertEquals("nil", t.get(state, "qqq").toString());
-		assertEquals("nil", t.get(state, 456).toString());
+		assertEquals("abc", OperationHelper.getTable(state, t, ValueFactory.valueOf("ppp")).toString());
+		assertEquals("def", OperationHelper.getTable(state, t, ValueFactory.valueOf(123)).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf("qqq")).toString());
+		assertEquals("nil", OperationHelper.getTable(state, t, ValueFactory.valueOf(456)).toString());
 	}
 
 	@Test
@@ -218,11 +218,11 @@ public class TableHashTest {
 		assertEquals(Constants.NIL, t.next(Constants.NIL));
 
 		// insert array elements
-		t.set(state, 1, ValueFactory.valueOf("one"));
+		OperationHelper.setTable(state, t, ValueFactory.valueOf(1), ValueFactory.valueOf("one"));
 		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
 		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
 		assertEquals(Constants.NIL, t.next(Constants.ONE));
-		t.set(state, 2, ValueFactory.valueOf("two"));
+		OperationHelper.setTable(state, t, ValueFactory.valueOf(2), ValueFactory.valueOf("two"));
 		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
 		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
 		assertEquals(ValueFactory.valueOf(2), t.next(Constants.ONE).arg(1));
@@ -230,7 +230,7 @@ public class TableHashTest {
 		assertEquals(Constants.NIL, t.next(ValueFactory.valueOf(2)));
 
 		// insert hash elements
-		t.set(state, "aa", ValueFactory.valueOf("aaa"));
+		OperationHelper.setTable(state, t, ValueFactory.valueOf("aa"), ValueFactory.valueOf("aaa"));
 		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
 		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
 		assertEquals(ValueFactory.valueOf(2), t.next(Constants.ONE).arg(1));
@@ -238,7 +238,7 @@ public class TableHashTest {
 		assertEquals(ValueFactory.valueOf("aa"), t.next(ValueFactory.valueOf(2)).arg(1));
 		assertEquals(ValueFactory.valueOf("aaa"), t.next(ValueFactory.valueOf(2)).arg(2));
 		assertEquals(Constants.NIL, t.next(ValueFactory.valueOf("aa")));
-		t.set(state, "bb", ValueFactory.valueOf("bbb"));
+		OperationHelper.setTable(state, t, ValueFactory.valueOf("bb"), ValueFactory.valueOf("bbb"));
 		assertEquals(ValueFactory.valueOf(1), t.next(Constants.NIL).arg(1));
 		assertEquals(ValueFactory.valueOf("one"), t.next(Constants.NIL).arg(2));
 		assertEquals(ValueFactory.valueOf(2), t.next(Constants.ONE).arg(1));

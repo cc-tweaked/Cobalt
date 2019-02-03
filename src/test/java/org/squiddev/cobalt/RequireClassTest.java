@@ -20,7 +20,7 @@ public class RequireClassTest {
 	public void setup() throws LuaError {
 		state = new LuaState();
 		LuaTable globals = JsePlatform.standardGlobals(state);
-		require = (LuaFunction) globals.get(state, "require");
+		require = (LuaFunction) OperationHelper.getTable(state, globals, ValueFactory.valueOf("require"));
 	}
 
 	@Test

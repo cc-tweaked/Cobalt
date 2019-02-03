@@ -223,8 +223,8 @@ public class LuaOperationsTest {
 			valueOf("b"), valueOf("bbb"),});
 		LuaTable mt = ValueFactory.tableOf(new LuaValue[]{Constants.INDEX, _G});
 		newenv.setMetatable(state, mt);
-		_G.set(state, "a", aaa);
-		newenv.set(state, "a", eee);
+		OperationHelper.setTable(state, _G, valueOf("a"), aaa);
+		OperationHelper.setTable(state, newenv, valueOf("a"), eee);
 
 		// function tests
 		{
@@ -235,7 +235,7 @@ public class LuaOperationsTest {
 
 				@Override
 				public LuaValue call(LuaState state) throws LuaError {
-					return env.get(state, "a");
+					return OperationHelper.getTable(state, env, valueOf("a"));
 				}
 			};
 			assertEquals(aaa, f.call(state));

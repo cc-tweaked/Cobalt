@@ -125,7 +125,7 @@ public class PackageLib implements LuaLibrary {
 					if (m == null) {
 						t.setMetatable(state, m = ValueFactory.tableOf());
 					}
-					m.set(state, Constants.INDEX, state.getCurrentThread().getfenv());
+					OperationHelper.setTable(state, m, Constants.INDEX, state.getCurrentThread().getfenv());
 					return Constants.NONE;
 				}
 			}
@@ -216,7 +216,7 @@ public class PackageLib implements LuaLibrary {
 	public Varargs module(LuaState state, Varargs args) throws LuaError {
 		LuaString modname = args.arg(1).checkLuaString();
 		int n = args.count();
-		LuaValue value = state.loadedPackages.get(state, modname);
+		LuaValue value = OperationHelper.getTable(state, state.loadedPackages, modname);
 		LuaTable module;
 		if (!value.isTable()) { /* not found? */
 			/* try global variable (and create one if it does not exist) */
@@ -225,14 +225,14 @@ public class PackageLib implements LuaLibrary {
 			if (module == null) {
 				throw new LuaError("name conflict for module '" + modname + "'");
 			}
-			state.loadedPackages.set(state, modname, module);
+			OperationHelper.setTable(state, state.loadedPackages, modname, module);
 		} else {
 			module = (LuaTable) value;
 		}
 
 
 		/* check whether table already has a _NAME field */
-		LuaValue name = module.get(state, _NAME);
+		LuaValue name = OperationHelper.getTable(state, module, _NAME);
 		if (name.isNil()) {
 			modinit(state, module, modname);
 		}
@@ -273,7 +273,7 @@ public class PackageLib implements LuaLibrary {
 			LuaValue val = table.rawget(key);
 			if (val.isNil()) { /* no such field? */
 				LuaTable field = new LuaTable(); /* new table for field */
-				table.set(state, key, field);
+				OperationHelper.setTable(state, table, key, field);
 				table = field;
 			} else if (!val.isTable()) {  /* field has a non-table value? */
 				return null;
@@ -286,10 +286,11 @@ public class PackageLib implements LuaLibrary {
 
 	private static void modinit(LuaState state, LuaValue module, LuaString modname) throws LuaError {
 		/* module._M = module */
-		module.set(state, _M, module);
+		OperationHelper.setTable(state, module, _M, module);
 		int e = modname.lastIndexOf(_DOT);
-		module.set(state, _NAME, modname);
-		module.set(state, _PACKAGE, (e < 0 ? Constants.EMPTYSTRING : modname.substring(0, e + 1)));
+		OperationHelper.setTable(state, module, _NAME, modname);
+		LuaValue value = (e < 0 ? Constants.EMPTYSTRING : modname.substring(0, e + 1));
+		OperationHelper.setTable(state, module, _PACKAGE, value);
 	}
 
 	/**
@@ -325,7 +326,7 @@ public class PackageLib implements LuaLibrary {
 	 */
 	public LuaValue require(LuaState state, LuaValue arg) throws LuaError {
 		LuaString name = arg.checkLuaString();
-		LuaValue loaded = state.loadedPackages.get(state, name);
+		LuaValue loaded = OperationHelper.getTable(state, state.loadedPackages, name);
 		if (loaded.toBoolean()) {
 			if (loaded == _SENTINEL) {
 				throw new LuaError("loop or previous error loading module '" + name + "'");
@@ -334,7 +335,7 @@ public class PackageLib implements LuaLibrary {
 		}
 
 		/* else must load it; iterate over available loaders */
-		LuaTable tbl = PACKAGE.get(state, _LOADERS).checkTable();
+		LuaTable tbl = OperationHelper.getTable(state, PACKAGE, _LOADERS).checkTable();
 		StringBuilder sb = new StringBuilder();
 		LuaValue chunk;
 		for (int i = 1; true; i++) {
@@ -354,12 +355,13 @@ public class PackageLib implements LuaLibrary {
 		}
 
 		// load the module using the loader
-		state.loadedPackages.set(state, name, _SENTINEL);
+		OperationHelper.setTable(state, state.loadedPackages, name, _SENTINEL);
 		LuaValue result = OperationHelper.call(state, chunk, name);
 		if (!result.isNil()) {
-			state.loadedPackages.set(state, name, result);
-		} else if ((result = state.loadedPackages.get(state, name)) == _SENTINEL) {
-			state.loadedPackages.set(state, name, result = Constants.TRUE);
+			OperationHelper.setTable(state, state.loadedPackages, name, result);
+		} else if ((result = OperationHelper.getTable(state, state.loadedPackages, name)) == _SENTINEL) {
+			LuaValue value = result = Constants.TRUE;
+			OperationHelper.setTable(state, state.loadedPackages, name, value);
 		}
 		return result;
 	}
@@ -371,8 +373,8 @@ public class PackageLib implements LuaLibrary {
 
 	LuaValue loader_preload(LuaState state, Varargs args) throws LuaError {
 		LuaString name = args.arg(1).checkLuaString();
-		LuaValue preload = PACKAGE.get(state, _PRELOAD).checkTable();
-		LuaValue val = preload.get(state, name);
+		LuaValue preload = OperationHelper.getTable(state, PACKAGE, _PRELOAD).checkTable();
+		LuaValue val = OperationHelper.getTable(state, preload, name);
 		return val.isNil() ?
 			ValueFactory.valueOf("\n\tno field package.preload['" + name + "']") :
 			val;
@@ -382,7 +384,7 @@ public class PackageLib implements LuaLibrary {
 		String name = args.arg(1).checkString();
 
 		// get package path
-		LuaValue pp = PACKAGE.get(state, _PATH);
+		LuaValue pp = OperationHelper.getTable(state, PACKAGE, _PATH);
 		if (!pp.isString()) {
 			return ValueFactory.valueOf("package.path is not a string");
 		}

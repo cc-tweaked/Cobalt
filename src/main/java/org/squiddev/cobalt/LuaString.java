@@ -203,12 +203,6 @@ public final class LuaString extends LuaValue {
 		return decode(bytes, offset, length);
 	}
 
-	// get is delegated to the string library
-	@Override
-	public LuaValue get(LuaState state, LuaValue key) throws LuaError {
-		return OperationHelper.getTable(state, this, key);
-	}
-
 	// string comparison
 	@Override
 	public int strcmp(LuaValue lhs) throws LuaError {

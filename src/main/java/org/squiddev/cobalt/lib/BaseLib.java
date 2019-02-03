@@ -237,7 +237,7 @@ public class BaseLib implements LuaLibrary {
 				}
 				case 9: // "print", // (...) -> void
 				{
-					LuaValue tostring = state.getCurrentThread().getfenv().get(state, "tostring");
+					LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
 					for (int i = 1, n = args.count(); i <= n; i++) {
 						if (i > 1) state.stdout.write('\t');
 						LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
@@ -335,21 +335,21 @@ public class BaseLib implements LuaLibrary {
 	}
 
 	public static Varargs pcall(LuaState state, LuaValue func, Varargs args, LuaValue errfunc) {
-		LuaValue olderr = LuaThread.setErrorFunc(state, errfunc);
+		LuaValue olderr = state.getCurrentThread().setErrorFunc(errfunc);
 		try {
 			Varargs result = varargsOf(Constants.TRUE, OperationHelper.invoke(state, func, args));
-			LuaThread.setErrorFunc(state, olderr);
+			state.getCurrentThread().setErrorFunc(olderr);
 			return result;
 		} catch (LuaError le) {
 			le.fillTraceback(state);
 
-			LuaThread.setErrorFunc(state, olderr);
+			state.getCurrentThread().setErrorFunc(olderr);
 			return varargsOf(Constants.FALSE, le.value);
 		} catch (Exception e) {
 			LuaError le = new LuaError(e);
 			le.fillTraceback(state);
 
-			LuaThread.setErrorFunc(state, olderr);
+			state.getCurrentThread().setErrorFunc(olderr);
 			return varargsOf(Constants.FALSE, le.value);
 		}
 	}

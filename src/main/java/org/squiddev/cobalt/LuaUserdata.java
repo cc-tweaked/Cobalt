@@ -100,20 +100,6 @@ public class LuaUserdata extends LuaValue {
 		return c.cast(instance);
 	}
 
-	@Override
-	public LuaValue get(LuaState state, LuaValue key) throws LuaError {
-		return metatable != null ? OperationHelper.getTable(state, this, key) : Constants.NIL;
-	}
-
-	@Override
-	public void set(LuaState state, LuaValue key, LuaValue value) throws LuaError {
-		if (metatable == null) {
-			throw new LuaError("cannot set " + key + " for userdata");
-		} else {
-			OperationHelper.setTable(state, this, key, value);
-		}
-	}
-
 	public boolean equals(Object val) {
 		if (this == val) {
 			return true;

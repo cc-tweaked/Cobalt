@@ -750,7 +750,7 @@ public class StringLib implements LuaLibrary {
 
 				case TTABLE:
 					// Need to call push_onecapture here for the error checking
-					repl = repl.get(state, push_onecapture(0, soffset, end));
+					repl = OperationHelper.getTable(state, repl, push_onecapture(0, soffset, end));
 					break;
 
 				default:

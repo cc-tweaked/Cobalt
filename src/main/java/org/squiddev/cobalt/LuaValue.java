@@ -1053,90 +1053,6 @@ public abstract class LuaValue extends Varargs {
 	}
 	//endregion
 
-	/**
-	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
-	 *
-	 * @param state The current lua state
-	 * @param key   the key to look up, must not be {@link Constants#NIL} or null
-	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found and no metatag
-	 * @throws LuaError if {@code this} is not a table,
-	 *                  or there is no {@link Constants#INDEX} metatag,
-	 *                  or key is {@link Constants#NIL}
-	 * @see #get(LuaState, int)
-	 * @see #get(LuaState, String)
-	 */
-	public LuaValue get(LuaState state, LuaValue key) throws LuaError {
-		return OperationHelper.getTable(state, this, key);
-	}
-
-	/**
-	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
-	 *
-	 * @param state The current lua state
-	 * @param key   the key to look up
-	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
-	 * @throws LuaError if {@code this} is not a table,
-	 *                  or there is no {@link Constants#INDEX} metatag
-	 * @see #get(LuaState, LuaValue)
-	 */
-	public LuaValue get(LuaState state, int key) throws LuaError {
-		return get(state, LuaInteger.valueOf(key));
-	}
-
-	/**
-	 * Get a value in a table including metatag processing using {@link Constants#INDEX}.
-	 *
-	 * @param state The current lua state
-	 * @param key   the key to look up, must not be null
-	 * @return {@link LuaValue} for that key, or {@link Constants#NIL} if not found
-	 * @throws LuaError if {@code this} is not a table,
-	 *                  or there is no {@link Constants#INDEX} metatag
-	 * @see #get(LuaState, LuaValue)
-	 */
-	public LuaValue get(LuaState state, String key) throws LuaError {
-		return get(state, ValueFactory.valueOf(key));
-	}
-
-	/**
-	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
-	 *
-	 * @param state The current lua state
-	 * @param key   the key to use, must not be {@link Constants#NIL} or null
-	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
-	 * @throws LuaError if {@code this} is not a table,
-	 *                  or key is {@link Constants#NIL},
-	 *                  or there is no {@link Constants#NEWINDEX} metatag
-	 */
-	public void set(LuaState state, LuaValue key, LuaValue value) throws LuaError {
-		OperationHelper.setTable(state, this, key, value);
-	}
-
-	/**
-	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
-	 *
-	 * @param state The current lua state
-	 * @param key   the key to use
-	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
-	 * @throws LuaError if {@code this} is not a table,
-	 *                  or there is no {@link Constants#NEWINDEX} metatag
-	 */
-	public void set(LuaState state, int key, LuaValue value) throws LuaError {
-		set(state, LuaInteger.valueOf(key), value);
-	}
-
-	/**
-	 * Set a value in a table without metatag processing using {@link Constants#NEWINDEX}.
-	 *
-	 * @param state The current lua state
-	 * @param key   the key to use, must not be {@link Constants#NIL} or null
-	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
-	 * @throws LuaError if {@code this} is not a table,
-	 *                  or there is no {@link Constants#NEWINDEX} metatag
-	 */
-	public void set(LuaState state, String key, LuaValue value) throws LuaError {
-		set(state, ValueFactory.valueOf(key), value);
-	}
-
 	// varargs references
 	@Override
 	public LuaValue arg(int index) {
@@ -1197,7 +1113,8 @@ public abstract class LuaValue extends Varargs {
 	 * Typically the environment is created once per application via a platform
 	 * helper method such as {@link JsePlatform#standardGlobals(LuaState)}
 	 * However, any object can serve as an environment if it contains suitable metatag
-	 * values to implement {@link #get(LuaState, LuaValue)} to provide the environment values.
+	 * values to implement {@link OperationHelper#getTable(LuaState, LuaValue, LuaValue)} to provide the environment
+	 * values.
 	 *
 	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
 	 * @throws LuaError If this has no environment.

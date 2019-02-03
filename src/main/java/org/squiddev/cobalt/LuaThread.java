@@ -187,15 +187,14 @@ public class LuaThread extends LuaValue {
 	}
 
 	/**
-	 * Replace the error function of the currently running thread.
+	 * Replace the error function of this thread.
 	 *
-	 * @param state   The current lua state
-	 * @param errfunc the new error function to use.
+	 * @param errFunc the new error function to use.
 	 * @return the previous error function.
 	 */
-	public static LuaValue setErrorFunc(LuaState state, LuaValue errfunc) {
-		LuaValue prev = state.currentThread.err;
-		state.currentThread.err = errfunc;
+	public LuaValue setErrorFunc(LuaValue errFunc) {
+		LuaValue prev = err;
+		err = errFunc;
 		return prev;
 	}
 

@@ -165,7 +165,7 @@ public class lua {
 		LuaValue slibname = valueOf(libname);
 		try {
 			// load via plain require
-			OperationHelper.call(state, _G.get(state, "require"), slibname);
+			OperationHelper.call(state, OperationHelper.getTable(state, _G, valueOf("require")), slibname);
 		} catch (Exception e) {
 			try {
 				// load as java class
@@ -188,7 +188,7 @@ public class lua {
 			}
 			Varargs scriptargs = (args != null ? setGlobalArg(state, args, firstarg) : NONE);
 			Varargs result = c.invoke(state, scriptargs);
-			if (printValue && result != NONE) OperationHelper.invoke(state, _G.get(state, "print"), result);
+			if (printValue && result != NONE) OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("print")), result);
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}
@@ -197,10 +197,10 @@ public class lua {
 	private static Varargs setGlobalArg(LuaState state, String[] args, int i) throws LuaError {
 		LuaTable arg = tableOf();
 		for (int j = 0; j < args.length; j++) {
-			arg.set(state, j - i, valueOf(args[j]));
+			arg.rawset(j - i, valueOf(args[j]));
 		}
-		_G.set(state, "arg", arg);
-		return OperationHelper.invoke(state, _G.get(state, "unpack"), arg);
+		_G.rawset("arg", arg);
+		return OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("unpack")), arg);
 	}
 
 	private static void interactiveMode(LuaState state) throws IOException {

@@ -201,7 +201,7 @@ public final class LuaInterpreter {
 							break;
 
 						case OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
-							stack[a] = function.env.get(state, k[(i >>> POS_Bx) & MAXARG_Bx]);
+							stack[a] = OperationHelper.getTable(state, function.env, k[(i >>> POS_Bx) & MAXARG_Bx]);
 							break;
 
 						case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
@@ -212,7 +212,7 @@ public final class LuaInterpreter {
 						}
 
 						case OP_SETGLOBAL: // A Bx: Gbl[Kst(Bx)]:= R(A)
-							function.env.set(state, k[(i >>> POS_Bx) & MAXARG_Bx], stack[a]);
+							OperationHelper.setTable(state, function.env, k[(i >>> POS_Bx) & MAXARG_Bx], stack[a]);
 							break;
 
 						case OP_SETUPVAL: // A B: UpValue[B]:= R(A)

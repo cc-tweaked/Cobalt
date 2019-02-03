@@ -92,26 +92,26 @@ public abstract class WeakTableTest {
 			LuaTable tableValue2 = new LuaTable();
 			LuaString stringValue = LuaString.valueOf("this is a test");
 
-			t.set(state, "table", tableValue);
-			t.set(state, "userdata", userdataOf(obj, null));
-			t.set(state, "string", stringValue);
-			t.set(state, "string2", LuaString.valueOf("another string"));
-			t.set(state, 1, tableValue2);
+			OperationHelper.setTable(state, t, ValueFactory.valueOf("table"), tableValue);
+			OperationHelper.setTable(state, t, ValueFactory.valueOf("userdata"), userdataOf(obj, null));
+			OperationHelper.setTable(state, t, ValueFactory.valueOf("string"), stringValue);
+			OperationHelper.setTable(state, t, ValueFactory.valueOf("string2"), LuaString.valueOf("another string"));
+			OperationHelper.setTable(state, t, ValueFactory.valueOf(1), tableValue2);
 			assertThat("table must have at least 4 elements", t.getHashLength(), greaterThanOrEqualTo(4));
 			assertThat("array part must have 1 element", t.getArrayLength(), greaterThanOrEqualTo(1));
 
 			// check that table can be used to get elements
-			assertEquals(tableValue, t.get(state, "table"));
-			assertEquals(stringValue, t.get(state, "string"));
-			assertEquals(obj, t.get(state, "userdata").checkUserdata());
+			assertEquals(tableValue, OperationHelper.getTable(state, t, ValueFactory.valueOf("table")));
+			assertEquals(stringValue, OperationHelper.getTable(state, t, ValueFactory.valueOf("string")));
+			assertEquals(obj, OperationHelper.getTable(state, t, ValueFactory.valueOf("userdata")).checkUserdata());
 
 			// nothing should be collected, since we have strong references here
 			collectGarbage();
 
 			// check that elements are still there
-			assertEquals(tableValue, t.get(state, "table"));
-			assertEquals(stringValue, t.get(state, "string"));
-			assertEquals(obj, t.get(state, "userdata").checkUserdata());
+			assertEquals(tableValue, OperationHelper.getTable(state, t, ValueFactory.valueOf("table")));
+			assertEquals(stringValue, OperationHelper.getTable(state, t, ValueFactory.valueOf("string")));
+			assertEquals(obj, OperationHelper.getTable(state, t, ValueFactory.valueOf("userdata")).checkUserdata());
 
 			// drop our strong references
 			obj = null;
@@ -122,21 +122,21 @@ public abstract class WeakTableTest {
 			collectGarbage();
 
 			// check that they are dropped
-			assertEquals(NIL, t.get(state, "table"));
-			assertEquals(NIL, t.get(state, "userdata"));
-			assertFalse("strings should not be in weak references", t.get(state, "string").isNil());
+			assertEquals(NIL, OperationHelper.getTable(state, t, ValueFactory.valueOf("table")));
+			assertEquals(NIL, OperationHelper.getTable(state, t, ValueFactory.valueOf("userdata")));
+			assertFalse("strings should not be in weak references", OperationHelper.getTable(state, t, ValueFactory.valueOf("string")).isNil());
 		}
 
 		@Test
 		public void testChangeMode() throws LuaError {
 			LuaTable table = new LuaTable();
 
-			table.set(state, 1, new LuaTable());
-			assertThat(table.get(state, 1), instanceOf(LuaTable.class));
+			OperationHelper.setTable(state, table, ValueFactory.valueOf(1), new LuaTable());
+			assertThat(OperationHelper.getTable(state, table, ValueFactory.valueOf(1)), instanceOf(LuaTable.class));
 
 			table.useWeak(false, true);
 			collectGarbage();
-			assertThat(table.get(state, 1), instanceOf(LuaNil.class));
+			assertThat(OperationHelper.getTable(state, table, ValueFactory.valueOf(1)), instanceOf(LuaNil.class));
 		}
 	}
 
@@ -149,10 +149,10 @@ public abstract class WeakTableTest {
 			LuaValue val = userdataOf(new MyData(222));
 
 			// set up the table
-			t.set(state, key, val);
-			assertEquals(val, t.get(state, key));
+			OperationHelper.setTable(state, t, key, val);
+			assertEquals(val, OperationHelper.getTable(state, t, key));
 			System.gc();
-			assertEquals(val, t.get(state, key));
+			assertEquals(val, OperationHelper.getTable(state, t, key));
 
 			// drop key and value references, replace them with new ones
 			WeakReference<LuaValue> origkey = new WeakReference<>(key);
@@ -163,14 +163,14 @@ public abstract class WeakTableTest {
 			// new key and value should be interchangeable (feature of this test class)
 			assertEquals(key, origkey.get());
 			assertEquals(val, origval.get());
-			assertEquals(val, t.get(state, key));
-			assertEquals(val, t.get(state, origkey.get()));
-			assertEquals(origval.get(), t.get(state, key));
+			assertEquals(val, OperationHelper.getTable(state, t, key));
+			assertEquals(val, OperationHelper.getTable(state, t, origkey.get()));
+			assertEquals(origval.get(), OperationHelper.getTable(state, t, key));
 
 			// value should not be reachable after gc
 			collectGarbage();
 			assertEquals(null, origkey.get());
-			assertEquals(NIL, t.get(state, key));
+			assertEquals(NIL, OperationHelper.getTable(state, t, key));
 			collectGarbage();
 			assertEquals(null, origval.get());
 		}
@@ -187,9 +187,9 @@ public abstract class WeakTableTest {
 			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
-			t.set(state, key, val);
-			t.set(state, key2, val2);
-			t.set(state, key3, val3);
+			OperationHelper.setTable(state, t, key, val);
+			OperationHelper.setTable(state, t, key2, val2);
+			OperationHelper.setTable(state, t, key3, val3);
 
 			// forget one of the keys
 			key2 = null;
@@ -219,16 +219,16 @@ public abstract class WeakTableTest {
 			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
-			t.set(state, key, val);
-			t.set(state, key2, val2);
-			t.set(state, key3, val3);
-			assertEquals(val, t.get(state, key));
-			assertEquals(val2, t.get(state, key2));
-			assertEquals(val3, t.get(state, key3));
+			OperationHelper.setTable(state, t, key, val);
+			OperationHelper.setTable(state, t, key2, val2);
+			OperationHelper.setTable(state, t, key3, val3);
+			assertEquals(val, OperationHelper.getTable(state, t, key));
+			assertEquals(val2, OperationHelper.getTable(state, t, key2));
+			assertEquals(val3, OperationHelper.getTable(state, t, key3));
 			System.gc();
-			assertEquals(val, t.get(state, key));
-			assertEquals(val2, t.get(state, key2));
-			assertEquals(val3, t.get(state, key3));
+			assertEquals(val, OperationHelper.getTable(state, t, key));
+			assertEquals(val2, OperationHelper.getTable(state, t, key2));
+			assertEquals(val3, OperationHelper.getTable(state, t, key3));
 
 			// drop key and value references, replace them with new ones
 			WeakReference<LuaValue> origkey = new WeakReference<>(key);
@@ -249,9 +249,9 @@ public abstract class WeakTableTest {
 			assertEquals(null, origval.get());
 			assertEquals(null, origkey2.get());
 			assertEquals(null, origval3.get());
-			assertEquals(NIL, t.get(state, key));
-			assertEquals(NIL, t.get(state, key2));
-			assertEquals(NIL, t.get(state, key3));
+			assertEquals(NIL, OperationHelper.getTable(state, t, key));
+			assertEquals(NIL, OperationHelper.getTable(state, t, key2));
+			assertEquals(NIL, OperationHelper.getTable(state, t, key3));
 
 			// all originals should be gone after gc, then access
 			val2 = null;
@@ -273,12 +273,12 @@ public abstract class WeakTableTest {
 			LuaValue val3 = userdataOf(new MyData(666));
 
 			// set up the table
-			t.set(state, key, val);
-			t.set(state, key2, val2);
-			t.set(state, key3, val3);
+			OperationHelper.setTable(state, t, key, val);
+			OperationHelper.setTable(state, t, key2, val2);
+			OperationHelper.setTable(state, t, key3, val3);
 
 			LuaValue val4 = userdataOf(new MyData(777));
-			t.set(state, key2, val4);
+			OperationHelper.setTable(state, t, key2, val4);
 
 			// table should have 3 entries
 			int size = 0;
@@ -294,24 +294,24 @@ public abstract class WeakTableTest {
 		public void testChangeArrayMode() throws LuaError {
 			LuaTable table = new LuaTable();
 
-			table.set(state, 1, new LuaTable());
-			assertThat(table.get(state, 1), instanceOf(LuaTable.class));
+			OperationHelper.setTable(state, table, ValueFactory.valueOf(1), new LuaTable());
+			assertThat(OperationHelper.getTable(state, table, ValueFactory.valueOf(1)), instanceOf(LuaTable.class));
 
 			table.useWeak(true, true);
 			collectGarbage();
-			assertThat(table.get(state, 1), instanceOf(LuaNil.class));
+			assertThat(OperationHelper.getTable(state, table, ValueFactory.valueOf(1)), instanceOf(LuaNil.class));
 		}
 
 		@Test
 		public void testChangeHashMode() throws LuaError {
 			LuaTable table = new LuaTable();
 
-			table.set(state, "foo", new LuaTable());
-			assertThat(table.get(state, "foo"), instanceOf(LuaTable.class));
+			OperationHelper.setTable(state, table, ValueFactory.valueOf("foo"), new LuaTable());
+			assertThat(OperationHelper.getTable(state, table, ValueFactory.valueOf("foo")), instanceOf(LuaTable.class));
 
 			table.useWeak(true, true);
 			collectGarbage();
-			assertThat(table.get(state, "foo"), instanceOf(LuaNil.class));
+			assertThat(OperationHelper.getTable(state, table, ValueFactory.valueOf("foo")), instanceOf(LuaNil.class));
 		}
 	}
 }

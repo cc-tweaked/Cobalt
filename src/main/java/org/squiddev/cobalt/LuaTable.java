@@ -44,14 +44,13 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * {@link #checkTable()}, or
  * {@link #optTable(LuaTable)}
  *
- * The main table operations are defined on {@link LuaValue}
+ * The main table operations are defined on {@link OperationHelper} and {@link LuaTable}
  * for getting and setting values with and without metatag processing:
  * <ul>
- * <li>{@link LuaValue#get(LuaState, LuaValue)}</li>
- * <li>{@link LuaValue#set(LuaState, LuaValue, LuaValue)}</li>
+ * <li>{@link OperationHelper#getTable(LuaState, LuaValue, LuaValue)}</li>
+ * <li>{@link OperationHelper#setTable(LuaState, LuaValue, LuaValue, LuaValue)}</li>
  * <li>{@link LuaTable#rawget(LuaValue)}</li>
  * <li>{@link LuaTable#rawset(LuaValue, LuaValue)}</li>
- * <li>plus overloads such as {@link LuaValue#get(LuaState, String)}, {@link LuaValue#get(LuaState, int)}, and so on</li>
  * </ul>
  *
  * To iterate over key-value pairs from Java, use

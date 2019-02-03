@@ -31,6 +31,8 @@ import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.StringLib;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class MetatableTest {
 
@@ -38,7 +40,7 @@ public class MetatableTest {
 	private final Object sampleobject = new Object();
 	private final TypeTest.MyData sampledata = new TypeTest.MyData();
 
-	private final LuaValue string = ValueFactory.valueOf(samplestring);
+	private final LuaValue string = valueOf(samplestring);
 	private final LuaTable table = ValueFactory.tableOf();
 	private final LuaFunction function = new ZeroArgFunction() {
 		@Override
@@ -123,7 +125,7 @@ public class MetatableTest {
 		assertEquals(null, closure.getMetatable(state));
 		state.numberMetatable = mt;
 		assertEquals(mt, Constants.ONE.getMetatable(state));
-		assertEquals(mt, ValueFactory.valueOf(1.25).getMetatable(state));
+		assertEquals(mt, valueOf(1.25).getMetatable(state));
 //		assertEquals( null, string.getmetatable() );
 		assertEquals(null, function.getMetatable(state));
 		assertEquals(null, thread.getMetatable(state));
@@ -145,9 +147,9 @@ public class MetatableTest {
 		table.setMetatable(state, null);
 		userdata.setMetatable(state, null);
 		userdatamt.setMetatable(state, null);
-		assertEquals(Constants.NIL, table.get(state, 1));
-		assertEquals(Constants.NIL, userdata.get(state, 1));
-		assertEquals(Constants.NIL, userdatamt.get(state, 1));
+		assertEquals(Constants.NIL, OperationHelper.getTable(state, table, valueOf(1)));
+		assertThrows(LuaError.class, () -> OperationHelper.getTable(state, userdata, valueOf(1)));
+		assertThrows(LuaError.class, () -> OperationHelper.getTable(state, userdatamt, valueOf(1)));
 
 		// empty metatable
 		LuaTable mt = ValueFactory.tableOf();
@@ -157,45 +159,50 @@ public class MetatableTest {
 		state.functionMetatable = mt;
 		state.nilMetatable = mt;
 		state.numberMetatable = mt;
-//		LuaString.s_metatable = mt;
+		state.stringMetatable = mt;
 		state.threadMetatable = mt;
+		userdata.metatable = mt;
+		userdatamt.metatable = mt;
+
 		assertEquals(mt, table.getMetatable(state));
 		assertEquals(mt, userdata.getMetatable(state));
 		assertEquals(mt, Constants.NIL.getMetatable(state));
 		assertEquals(mt, Constants.TRUE.getMetatable(state));
 		assertEquals(mt, Constants.ONE.getMetatable(state));
-// 		assertEquals( StringLib.instance, string.getmetatable() );
+		assertEquals(mt, string.getMetatable(state));
 		assertEquals(mt, function.getMetatable(state));
 		assertEquals(mt, thread.getMetatable(state));
 
 		// plain metatable
-		LuaValue abc = ValueFactory.valueOf("abc");
-		mt.set(state, Constants.INDEX, ValueFactory.listOf(new LuaValue[]{abc}));
-		assertEquals(abc, table.get(state, 1));
-		assertEquals(abc, userdata.get(state, 1));
-		assertEquals(abc, Constants.NIL.get(state, 1));
-		assertEquals(abc, Constants.TRUE.get(state, 1));
-		assertEquals(abc, Constants.ONE.get(state, 1));
-// 		assertEquals( abc, string.get(1) );
-		assertEquals(abc, function.get(state, 1));
-		assertEquals(abc, thread.get(state, 1));
+		LuaValue abc = valueOf("abc");
+		OperationHelper.setTable(state, mt, Constants.INDEX, ValueFactory.listOf(new LuaValue[]{abc}));
+		assertEquals(abc, OperationHelper.getTable(state, table, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, userdata, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, Constants.NIL, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, Constants.TRUE, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, Constants.ONE, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, Constants.EMPTYSTRING, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, function, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, thread, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, userdata, valueOf(1)));
+		assertEquals(abc, OperationHelper.getTable(state, userdatamt, valueOf(1)));
 
 		// plain metatable
-		mt.set(state, Constants.INDEX, new TwoArgFunction() {
+		OperationHelper.setTable(state, mt, Constants.INDEX, new TwoArgFunction() {
 			@Override
-			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) {
-				return ValueFactory.valueOf(arg1.typeName() + "[" + arg2.toString() + "]=xyz");
+			public LuaValue call(LuaState state1, LuaValue arg1, LuaValue arg2) {
+				return valueOf(arg1.typeName() + "[" + arg2.toString() + "]=xyz");
 			}
 
 		});
-		assertEquals("table[1]=xyz", table.get(state, 1).toString());
-		assertEquals("userdata[1]=xyz", userdata.get(state, 1).toString());
-		assertEquals("nil[1]=xyz", Constants.NIL.get(state, 1).toString());
-		assertEquals("boolean[1]=xyz", Constants.TRUE.get(state, 1).toString());
-		assertEquals("number[1]=xyz", Constants.ONE.get(state, 1).toString());
-		//	assertEquals( "string[1]=xyz",   string.get(1).toString() );
-		assertEquals("function[1]=xyz", function.get(state, 1).toString());
-		assertEquals("thread[1]=xyz", thread.get(state, 1).toString());
+		assertEquals("table[1]=xyz", OperationHelper.getTable(state, table, valueOf(1)).toString());
+		assertEquals("userdata[1]=xyz", OperationHelper.getTable(state, userdata, valueOf(1)).toString());
+		assertEquals("nil[1]=xyz", OperationHelper.getTable(state, Constants.NIL, valueOf(1)).toString());
+		assertEquals("boolean[1]=xyz", OperationHelper.getTable(state, Constants.TRUE, valueOf(1)).toString());
+		assertEquals("number[1]=xyz", OperationHelper.getTable(state, Constants.ONE, valueOf(1)).toString());
+		assertEquals("string[1]=xyz", OperationHelper.getTable(state, Constants.EMPTYSTRING, valueOf(1)).toString());
+		assertEquals("function[1]=xyz", OperationHelper.getTable(state, function, valueOf(1)).toString());
+		assertEquals("thread[1]=xyz", OperationHelper.getTable(state, thread, valueOf(1)).toString());
 	}
 
 
@@ -214,64 +221,64 @@ public class MetatableTest {
 
 		// plain metatable
 		final LuaTable fallback = ValueFactory.tableOf();
-		LuaValue abc = ValueFactory.valueOf("abc");
-		mt.set(state, Constants.NEWINDEX, fallback);
-		table.set(state, 2, abc);
-		userdata.set(state, 3, abc);
-		Constants.NIL.set(state, 4, abc);
-		Constants.TRUE.set(state, 5, abc);
-		Constants.ONE.set(state, 6, abc);
-// 		string.set(7,abc);
-		function.set(state, 8, abc);
-		thread.set(state, 9, abc);
-		assertEquals(abc, fallback.get(state, 2));
-		assertEquals(abc, fallback.get(state, 3));
-		assertEquals(abc, fallback.get(state, 4));
-		assertEquals(abc, fallback.get(state, 5));
-		assertEquals(abc, fallback.get(state, 6));
+		LuaValue abc = valueOf("abc");
+		OperationHelper.setTable(state, mt, Constants.NEWINDEX, fallback);
+		OperationHelper.setTable(state, table, valueOf(2), abc);
+		OperationHelper.setTable(state, userdata, valueOf(3), abc);
+		OperationHelper.setTable(state, Constants.NIL, valueOf(4), abc);
+		OperationHelper.setTable(state, Constants.TRUE, valueOf(5), abc);
+		OperationHelper.setTable(state, Constants.ONE, valueOf(6), abc);
+		// 		string.set(7,abc);
+		OperationHelper.setTable(state, function, valueOf(8), abc);
+		OperationHelper.setTable(state, thread, valueOf(9), abc);
+		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(2)));
+		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(3)));
+		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(4)));
+		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(5)));
+		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(6)));
 // 		assertEquals( abc, StringLib.instance.get(7) );
-		assertEquals(abc, fallback.get(state, 8));
-		assertEquals(abc, fallback.get(state, 9));
+		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(8)));
+		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(9)));
 
 		// metatable with function call
-		mt.set(state, Constants.NEWINDEX, new ThreeArgFunction() {
+		OperationHelper.setTable(state, mt, Constants.NEWINDEX, new ThreeArgFunction() {
 			@Override
-			public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-				fallback.rawset(arg2, ValueFactory.valueOf("via-func-" + arg3));
+			public LuaValue call(LuaState state1, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
+				fallback.rawset(arg2, valueOf("via-func-" + arg3));
 				return Constants.NONE;
 			}
 
 		});
-		table.set(state, 12, abc);
-		userdata.set(state, 13, abc);
-		Constants.NIL.set(state, 14, abc);
-		Constants.TRUE.set(state, 15, abc);
-		Constants.ONE.set(state, 16, abc);
-// 		string.set(17,abc);
-		function.set(state, 18, abc);
-		thread.set(state, 19, abc);
-		LuaValue via = ValueFactory.valueOf("via-func-abc");
-		assertEquals(via, fallback.get(state, 12));
-		assertEquals(via, fallback.get(state, 13));
-		assertEquals(via, fallback.get(state, 14));
-		assertEquals(via, fallback.get(state, 15));
-		assertEquals(via, fallback.get(state, 16));
+		OperationHelper.setTable(state, table, valueOf(12), abc);
+		OperationHelper.setTable(state, userdata, valueOf(13), abc);
+		OperationHelper.setTable(state, Constants.NIL, valueOf(14), abc);
+		OperationHelper.setTable(state, Constants.TRUE, valueOf(15), abc);
+		OperationHelper.setTable(state, Constants.ONE, valueOf(16), abc);
+		// 		string.set(17,abc);
+		OperationHelper.setTable(state, function, valueOf(18), abc);
+		OperationHelper.setTable(state, thread, valueOf(19), abc);
+		LuaValue via = valueOf("via-func-abc");
+		assertEquals(via, OperationHelper.getTable(state, fallback, valueOf(12)));
+		assertEquals(via, OperationHelper.getTable(state, fallback, valueOf(13)));
+		assertEquals(via, OperationHelper.getTable(state, fallback, valueOf(14)));
+		assertEquals(via, OperationHelper.getTable(state, fallback, valueOf(15)));
+		assertEquals(via, OperationHelper.getTable(state, fallback, valueOf(16)));
 //		assertEquals( via, StringLib.instance.get(17) );
-		assertEquals(via, fallback.get(state, 18));
-		assertEquals(via, fallback.get(state, 19));
+		assertEquals(via, OperationHelper.getTable(state, fallback, valueOf(18)));
+		assertEquals(via, OperationHelper.getTable(state, fallback, valueOf(19)));
 	}
 
 
 	private void checkTable(LuaTable t,
 							LuaValue aa, LuaValue bb, LuaValue cc, LuaValue dd, LuaValue ee, LuaValue ff, LuaValue gg,
 							LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) throws LuaError {
-		assertEquals(aa, t.get(state, "aa"));
-		assertEquals(bb, t.get(state, "bb"));
-		assertEquals(cc, t.get(state, "cc"));
-		assertEquals(dd, t.get(state, "dd"));
-		assertEquals(ee, t.get(state, "ee"));
-		assertEquals(ff, t.get(state, "ff"));
-		assertEquals(gg, t.get(state, "gg"));
+		assertEquals(aa, OperationHelper.getTable(state, t, valueOf("aa")));
+		assertEquals(bb, OperationHelper.getTable(state, t, valueOf("bb")));
+		assertEquals(cc, OperationHelper.getTable(state, t, valueOf("cc")));
+		assertEquals(dd, OperationHelper.getTable(state, t, valueOf("dd")));
+		assertEquals(ee, OperationHelper.getTable(state, t, valueOf("ee")));
+		assertEquals(ff, OperationHelper.getTable(state, t, valueOf("ff")));
+		assertEquals(gg, OperationHelper.getTable(state, t, valueOf("gg")));
 		assertEquals(ra, t.rawget("aa"));
 		assertEquals(rb, t.rawget("bb"));
 		assertEquals(rc, t.rawget("cc"));
@@ -283,8 +290,8 @@ public class MetatableTest {
 
 	private LuaTable makeTable(String key1, String val1, String key2, String val2) {
 		return ValueFactory.tableOf(
-			ValueFactory.valueOf(key1), ValueFactory.valueOf(val1),
-			ValueFactory.valueOf(key2), ValueFactory.valueOf(val2)
+			valueOf(key1), valueOf(val1),
+			valueOf(key2), valueOf(val2)
 		);
 	}
 
@@ -292,24 +299,24 @@ public class MetatableTest {
 	public void testRawsetMetatableSet() throws LuaError {
 		// set up tables
 		LuaTable m = makeTable("aa", "aaa", "bb", "bbb");
-		m.set(state, Constants.INDEX, m);
-		m.set(state, Constants.NEWINDEX, m);
+		OperationHelper.setTable(state, m, Constants.INDEX, m);
+		OperationHelper.setTable(state, m, Constants.NEWINDEX, m);
 		LuaTable s = makeTable("cc", "ccc", "dd", "ddd");
 		LuaTable t = makeTable("cc", "ccc", "dd", "ddd");
 		t.setMetatable(state, m);
-		LuaValue aaa = ValueFactory.valueOf("aaa");
-		LuaValue bbb = ValueFactory.valueOf("bbb");
-		LuaValue ccc = ValueFactory.valueOf("ccc");
-		LuaValue ddd = ValueFactory.valueOf("ddd");
-		LuaValue ppp = ValueFactory.valueOf("ppp");
-		LuaValue qqq = ValueFactory.valueOf("qqq");
-		LuaValue rrr = ValueFactory.valueOf("rrr");
-		LuaValue sss = ValueFactory.valueOf("sss");
-		LuaValue ttt = ValueFactory.valueOf("ttt");
-		LuaValue www = ValueFactory.valueOf("www");
-		LuaValue xxx = ValueFactory.valueOf("xxx");
-		LuaValue yyy = ValueFactory.valueOf("yyy");
-		LuaValue zzz = ValueFactory.valueOf("zzz");
+		LuaValue aaa = valueOf("aaa");
+		LuaValue bbb = valueOf("bbb");
+		LuaValue ccc = valueOf("ccc");
+		LuaValue ddd = valueOf("ddd");
+		LuaValue ppp = valueOf("ppp");
+		LuaValue qqq = valueOf("qqq");
+		LuaValue rrr = valueOf("rrr");
+		LuaValue sss = valueOf("sss");
+		LuaValue ttt = valueOf("ttt");
+		LuaValue www = valueOf("www");
+		LuaValue xxx = valueOf("xxx");
+		LuaValue yyy = valueOf("yyy");
+		LuaValue zzz = valueOf("zzz");
 		LuaValue nil = Constants.NIL;
 
 		// check initial values
@@ -337,23 +344,23 @@ public class MetatableTest {
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);
 
 		// set() invoking metatables
-		s.set(state, "ee", ppp);
+		OperationHelper.setTable(state, s, valueOf("ee"), ppp);
 		checkTable(s, www, nil, xxx, ddd, ppp, nil, nil, www, nil, xxx, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, zzz, nil, nil, nil, nil, yyy, ccc, zzz, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);
-		s.set(state, "cc", qqq);
+		OperationHelper.setTable(state, s, valueOf("cc"), qqq);
 		checkTable(s, www, nil, qqq, ddd, ppp, nil, nil, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, zzz, nil, nil, nil, nil, yyy, ccc, zzz, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, nil, nil, aaa, bbb, nil, nil, nil, nil, nil);
-		t.set(state, "ff", rrr);
+		OperationHelper.setTable(state, t, valueOf("ff"), rrr);
 		checkTable(s, www, nil, qqq, ddd, ppp, nil, nil, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, zzz, nil, rrr, nil, nil, yyy, ccc, zzz, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, nil, aaa, bbb, nil, nil, nil, rrr, nil);
-		t.set(state, "dd", sss);
+		OperationHelper.setTable(state, t, valueOf("dd"), sss);
 		checkTable(s, www, nil, qqq, ddd, ppp, nil, nil, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, sss, nil, rrr, nil, nil, yyy, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, nil, aaa, bbb, nil, nil, nil, rrr, nil);
-		m.set(state, "gg", ttt);
+		OperationHelper.setTable(state, m, valueOf("gg"), ttt);
 		checkTable(s, www, nil, qqq, ddd, ppp, nil, nil, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, sss, nil, rrr, ttt, nil, yyy, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, ttt, aaa, bbb, nil, nil, nil, rrr, ttt);
@@ -363,19 +370,19 @@ public class MetatableTest {
 		checkTable(s, www, yyy, qqq, ddd, ppp, rrr, ttt, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, sss, nil, rrr, ttt, nil, yyy, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, ttt, aaa, bbb, nil, nil, nil, rrr, ttt);
-		s.set(state, "aa", www);
+		OperationHelper.setTable(state, s, valueOf("aa"), www);
 		checkTable(s, www, yyy, qqq, ddd, ppp, rrr, ttt, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, yyy, ccc, sss, nil, rrr, ttt, nil, yyy, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, ttt, aaa, bbb, nil, nil, nil, rrr, ttt);
-		s.set(state, "bb", zzz);
+		OperationHelper.setTable(state, s, valueOf("bb"), zzz);
 		checkTable(s, www, zzz, qqq, ddd, ppp, rrr, ttt, www, nil, qqq, ddd, ppp, nil, nil);
 		checkTable(t, aaa, zzz, ccc, sss, nil, rrr, ttt, nil, zzz, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, ttt, aaa, bbb, nil, nil, nil, rrr, ttt);
-		s.set(state, "ee", xxx);
+		OperationHelper.setTable(state, s, valueOf("ee"), xxx);
 		checkTable(s, www, zzz, qqq, ddd, xxx, rrr, ttt, www, nil, qqq, ddd, xxx, nil, nil);
 		checkTable(t, aaa, zzz, ccc, sss, nil, rrr, ttt, nil, zzz, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, rrr, ttt, aaa, bbb, nil, nil, nil, rrr, ttt);
-		s.set(state, "ff", yyy);
+		OperationHelper.setTable(state, s, valueOf("ff"), yyy);
 		checkTable(s, www, zzz, qqq, ddd, xxx, yyy, ttt, www, nil, qqq, ddd, xxx, nil, nil);
 		checkTable(t, aaa, zzz, ccc, sss, nil, yyy, ttt, nil, zzz, ccc, sss, nil, nil, nil);
 		checkTable(m, aaa, bbb, nil, nil, nil, yyy, ttt, aaa, bbb, nil, nil, nil, yyy, ttt);
