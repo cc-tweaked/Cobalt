@@ -25,7 +25,7 @@ public class ProfilerTest {
 		if (script == null) fail("Could not load script for test case: " + name);
 		try {
 			LuaFunction function = LoadState.load(state, script, "@" + name, env);
-			function.call(state);
+			LuaThread.runMain(state, function);
 		} finally {
 			script.close();
 		}

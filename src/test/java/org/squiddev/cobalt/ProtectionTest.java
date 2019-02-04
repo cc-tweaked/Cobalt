@@ -59,6 +59,6 @@ public class ProtectionTest {
 
 	@Test(timeout = 3000)
 	public void run() throws IOException, CompileException, LuaError {
-		helpers.loadScript(name).call(helpers.state);
+		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 }

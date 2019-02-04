@@ -27,22 +27,22 @@ public class PerformanceBenchmark {
 
 	@Benchmark
 	public void binarytrees(ScriptScope scope) throws Exception {
-		scope.helpers.loadScript("binarytrees").call(scope.helpers.state, valueOf(10));
+		LuaThread.runMain(scope.helpers.state, scope.helpers.loadScript("binarytrees"), valueOf(10));
 	}
 
 	@Benchmark
 	public void fannkuch(ScriptScope scope) throws Exception {
-		scope.helpers.loadScript("fannkuch").call(scope.helpers.state, valueOf(8));
+		LuaThread.runMain(scope.helpers.state, scope.helpers.loadScript("fannkuch"), valueOf(8));
 	}
 
 	@Benchmark
 	public void nbody(ScriptScope scope) throws Exception {
-		scope.helpers.loadScript("nbody").call(scope.helpers.state, valueOf(50000));
+		LuaThread.runMain(scope.helpers.state, scope.helpers.loadScript("nbody"), valueOf(50000));
 	}
 
 	@Benchmark
 	public void nsieve(ScriptScope scope) throws Exception {
-		scope.helpers.loadScript("nsieve").call(scope.helpers.state, valueOf(8));
+		LuaThread.runMain(scope.helpers.state, scope.helpers.loadScript("nsieve"), valueOf(8));
 	}
 
 	public static void main(String... args) throws RunnerException {

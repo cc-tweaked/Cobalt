@@ -32,6 +32,7 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -53,9 +54,9 @@ public class FragmentsTest {
 		try {
 			String name = this.name.getMethodName();
 			LuaTable _G = JsePlatform.standardGlobals(state);
-			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
+			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
 			LuaFunction chunk = LuaC.INSTANCE.load(is, valueOf(name), _G);
-			Varargs actual = chunk.invoke(state, NONE);
+			Varargs actual = LuaThread.runMain(state, chunk);
 			assertEquals(expected.count(), actual.count());
 			for (int i = 1; i <= actual.count(); i++) {
 				assertEquals(expected.arg(i), actual.arg(i));

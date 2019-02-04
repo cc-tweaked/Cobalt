@@ -2,10 +2,7 @@ package org.squiddev.cobalt.compiler;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.squiddev.cobalt.LuaInteger;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -29,7 +26,7 @@ public class SimpleTests {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF8"));
 			LuaFunction c = LuaC.INSTANCE.load(is, valueOf("script"), _G);
-			c.call(state);
+			LuaThread.runMain(state, c);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);
 		}

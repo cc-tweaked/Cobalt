@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaThread;
 import org.squiddev.cobalt.ScriptDrivenHelpers;
 import org.squiddev.cobalt.compiler.CompileException;
 
@@ -43,6 +44,6 @@ public class TableLuaTest {
 
 	@Test
 	public void run() throws IOException, CompileException, LuaError {
-		helpers.loadScript(name).call(helpers.state);
+		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 }

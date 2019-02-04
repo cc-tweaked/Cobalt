@@ -243,6 +243,28 @@ public class LuaThread extends LuaValue {
 		return state.resume(this, args);
 	}
 
+	public static Varargs runMain(LuaState state, LuaFunction function) throws LuaError {
+		return runMain(state, function, Constants.NONE);
+	}
+
+	public static Varargs runMain(LuaState state, LuaFunction function, Varargs args) throws LuaError {
+		try {
+			return function.invoke(state, args);
+		} catch (LuaError error) {
+			throw error.fillTraceback(state);
+		} catch (StackOverflowError e) {
+			throw new LuaError("stack overflow").fillTraceback(state);
+		} finally {
+			DebugHandler debug = state.debug;
+			DebugState ds = DebugHandler.getDebugState(state);
+			DebugFrame di;
+			while ((di = ds.getStack()) != null) {
+				di.cleanup();
+				debug.onReturnError(ds);
+			}
+		}
+	}
+
 	private static final class State implements Runnable {
 		private final LuaState state;
 		private final WeakReference<LuaThread> thread;

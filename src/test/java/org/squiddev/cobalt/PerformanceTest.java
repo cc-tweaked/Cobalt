@@ -50,7 +50,7 @@ public class PerformanceTest {
 
 		for (int i = 0; i < TOTAL; i++) {
 			long start = bean.getCurrentThreadCpuTime();
-			helpers.loadScript(name).call(helpers.state);
+			LuaThread.runMain(helpers.state, helpers.loadScript(name));
 			long finish = bean.getCurrentThreadCpuTime();
 
 			if (i >= DISCARD) System.out.println("  Took " + (finish - start) / 1.0e9);

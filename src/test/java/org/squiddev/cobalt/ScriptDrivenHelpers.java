@@ -94,7 +94,7 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 
 		// Run the script
 		try {
-			loadScript(testName).call(state);
+			LuaThread.runMain(state, loadScript(testName));
 
 			ps.flush();
 			String actualOutput = new String(output.toByteArray());
