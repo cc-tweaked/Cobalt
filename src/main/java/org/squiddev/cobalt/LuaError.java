@@ -129,9 +129,31 @@ public final class LuaError extends Exception {
 		return traceback != null ? traceback : rawToString(value);
 	}
 
-	public LuaError fillTraceback(LuaState state) {
-		if (traceback != null) return this;
+	public void fillTracebackNoHandler(LuaState state) {
+		if (traceback != null) return;
+		fillTracebackImpl(state);
 
+		LuaThread thread = state.getCurrentThread();
+		if (thread.errFunc != null) throw new IllegalStateException("Thread has no error function");
+	}
+
+	public void fillTraceback(LuaState state) throws UnwindThrowable {
+		if (traceback != null) return;
+		fillTracebackImpl(state);
+
+		LuaThread thread = state.getCurrentThread();
+		if (thread.errFunc != null) {
+			LuaValue errFunc = thread.setErrorFunc(null);
+			try {
+				value = OperationHelper.call(state, errFunc, value);
+			} catch (Exception t) {
+				value = ValueFactory.valueOf("error in error handling");
+				thread.errFunc = errFunc;
+			}
+		}
+	}
+
+	private void fillTracebackImpl(LuaState state) {
 		LuaThread thread = state.getCurrentThread();
 		if (level > 0 && value.isString()) {
 			String fileLine;
@@ -143,21 +165,7 @@ public final class LuaError extends Exception {
 			if (fileLine != null) value = ValueFactory.valueOf(fileLine + ": " + value.toString());
 		}
 
-		traceback = getMessage() + "\n" + DebugHelpers.traceback(thread, level);
-
-		if (thread.err != null) {
-			LuaValue errfunc = thread.err;
-			thread.err = null;
-			try {
-				value = OperationHelper.call(state, errfunc, value);
-			} catch (Throwable t) {
-				value = ValueFactory.valueOf("error in error handling");
-			} finally {
-				thread.err = errfunc;
-			}
-		}
-
-		return this;
+		traceback = getMessage() + "\n" + DebugHelpers.traceback(thread, level - 1);
 	}
 
 	private static String rawToString(LuaValue value) {

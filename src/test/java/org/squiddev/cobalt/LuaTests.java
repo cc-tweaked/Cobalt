@@ -63,7 +63,7 @@ public class LuaTests {
 	}
 
 	@Before
-	public void setup() throws LuaError {
+	public void setup() throws LuaError, UnwindThrowable {
 		helpers.setup();
 		helpers.globals.load(helpers.state, new Bit32Lib());
 		helpers.globals.rawset("mkdir", new OneArgFunction() {

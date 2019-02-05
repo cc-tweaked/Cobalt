@@ -41,7 +41,7 @@ public class UnaryBinaryOperatorsTest {
 	private LuaState state = new LuaState();
 
 	@Test
-	public void testEqualsBool() throws LuaError {
+	public void testEqualsBool() throws LuaError, UnwindThrowable {
 		Assert.assertEquals(Constants.FALSE, Constants.FALSE);
 		Assert.assertEquals(Constants.TRUE, Constants.TRUE);
 		assertTrue(Constants.FALSE.equals(Constants.FALSE));
@@ -69,7 +69,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testNeg() throws LuaError {
+	public void testNeg() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(-4);
 		LuaValue da = valueOf(.25), db = valueOf(-.5);
 		LuaValue sa = valueOf("1.5"), sb = valueOf("-2.0");
@@ -155,7 +155,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testEqInt() throws LuaError {
+	public void testEqInt() throws LuaError, UnwindThrowable {
 		LuaValue ia = LuaInteger.valueOf(345), ib = LuaInteger.valueOf(345), ic = LuaInteger.valueOf(-123);
 		LuaValue sa = LuaString.valueOf("345"), sb = LuaString.valueOf("345"), sc = LuaString.valueOf("-345");
 
@@ -180,7 +180,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testEqDouble() throws LuaError {
+	public void testEqDouble() throws LuaError, UnwindThrowable {
 		LuaValue da = LuaDouble.valueOf(345.5), db = LuaDouble.valueOf(345.5), dc = LuaDouble.valueOf(-345.5);
 		LuaValue sa = LuaString.valueOf("345.5"), sb = LuaString.valueOf("345.5"), sc = LuaString.valueOf("-345.5");
 
@@ -220,7 +220,7 @@ public class UnaryBinaryOperatorsTest {
 
 
 	@Test
-	public void testEqualsMetatag() throws LuaError {
+	public void testEqualsMetatag() throws LuaError, UnwindThrowable {
 		LuaValue tru = Constants.TRUE;
 		LuaValue fal = Constants.FALSE;
 		LuaValue zer = Constants.ZERO;
@@ -358,7 +358,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testAdd() throws LuaError {
+	public void testAdd() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(111), ib = valueOf(44);
 		LuaValue da = valueOf(55.25), db = valueOf(3.5);
 		LuaValue sa = valueOf("22.125"), sb = valueOf("7.25");
@@ -386,7 +386,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testSub() throws LuaError {
+	public void testSub() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(111), ib = valueOf(44);
 		LuaValue da = valueOf(55.25), db = valueOf(3.5);
 		LuaValue sa = valueOf("22.125"), sb = valueOf("7.25");
@@ -406,7 +406,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testMul() throws LuaError {
+	public void testMul() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
@@ -426,7 +426,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testDiv() throws LuaError {
+	public void testDiv() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
@@ -446,7 +446,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testPow() throws LuaError {
+	public void testPow() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(4.), db = valueOf(.5);
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
@@ -470,7 +470,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testMod() throws LuaError {
+	public void testMod() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(-4);
 		LuaValue da = valueOf(.25), db = valueOf(-.5);
 		LuaValue sa = valueOf("1.5"), sb = valueOf("-2.0");
@@ -536,7 +536,7 @@ public class UnaryBinaryOperatorsTest {
 	};
 
 	@Test
-	public void testArithMetatag() throws LuaError {
+	public void testArithMetatag() throws LuaError, UnwindThrowable {
 		LuaValue tru = Constants.TRUE;
 		LuaValue fal = Constants.FALSE;
 		LuaValue tbl = new LuaTable();
@@ -808,7 +808,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testArithMetatagNumberTable() throws LuaError {
+	public void testArithMetatagNumberTable() throws LuaError, UnwindThrowable {
 		LuaValue zero = Constants.ZERO;
 		LuaValue one = Constants.ONE;
 		LuaValue tbl = new LuaTable();
@@ -911,7 +911,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testCompareStrings() throws LuaError {
+	public void testCompareStrings() throws LuaError, UnwindThrowable {
 		// these are lexical compare!
 		LuaValue sa = valueOf("-1.5");
 		LuaValue sb = valueOf("-2.0");
@@ -937,7 +937,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testLt() throws LuaError {
+	public void testLt() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
@@ -951,7 +951,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testLtEq() throws LuaError {
+	public void testLtEq() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
@@ -965,7 +965,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testGt() throws LuaError {
+	public void testGt() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
@@ -979,7 +979,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testGtEq() throws LuaError {
+	public void testGtEq() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 
@@ -993,7 +993,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testNotEq() throws LuaError {
+	public void testNotEq() throws LuaError, UnwindThrowable {
 		LuaValue ia = valueOf(3), ib = valueOf(4);
 		LuaValue da = valueOf(.25), db = valueOf(.5);
 		LuaValue sa = valueOf("1.5"), sb = valueOf("2.0");
@@ -1054,7 +1054,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testCompareMetatag() throws LuaError {
+	public void testCompareMetatag() throws LuaError, UnwindThrowable {
 		LuaValue tbl = new LuaTable();
 		LuaValue tbl2 = new LuaTable();
 		LuaValue tbl3 = new LuaTable();
@@ -1139,7 +1139,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testLexicalComparison() throws LuaError {
+	public void testLexicalComparison() throws LuaError, UnwindThrowable {
 		LuaValue aaa = valueOf("aaa");
 		LuaValue baa = valueOf("baa");
 		LuaValue Aaa = valueOf("Aaa");
@@ -1266,7 +1266,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testConcat() throws LuaError {
+	public void testConcat() throws LuaError, UnwindThrowable {
 		LuaValue abc = valueOf("abcdefghi").substring(0, 3);
 		LuaValue def = valueOf("abcdefghi").substring(3, 6);
 		LuaValue ghi = valueOf("abcdefghi").substring(6, 9);
@@ -1285,7 +1285,7 @@ public class UnaryBinaryOperatorsTest {
 	}
 
 	@Test
-	public void testConcatMetatag() throws LuaError {
+	public void testConcatMetatag() throws LuaError, UnwindThrowable {
 		LuaValue def = valueOf("abcdefghi").substring(3, 6);
 		LuaValue ghi = valueOf("abcdefghi").substring(6, 9);
 		LuaValue tru = Constants.TRUE;

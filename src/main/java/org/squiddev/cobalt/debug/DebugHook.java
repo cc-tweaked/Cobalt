@@ -28,6 +28,7 @@ package org.squiddev.cobalt.debug;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.UnwindThrowable;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
@@ -49,7 +50,7 @@ public interface DebugHook {
 	 * @param frame The current frame
 	 * @throws LuaError On a runtime error.
 	 */
-	void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
+	void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Called before exiting a function
@@ -59,7 +60,7 @@ public interface DebugHook {
 	 * @param frame The current frame
 	 * @throws LuaError On a runtime error.
 	 */
-	void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
+	void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Called before ever 'n' instructions
@@ -69,7 +70,7 @@ public interface DebugHook {
 	 * @param frame The current frame
 	 * @throws LuaError On a runtime error.
 	 */
-	void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError;
+	void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Called before each line changes
@@ -77,9 +78,8 @@ public interface DebugHook {
 	 * @param state   Current lua state
 	 * @param ds      The current debug state
 	 * @param frame   The current frame
-	 * @param oldLine The previous line
 	 * @param newLine The new new line
 	 * @throws LuaError On a runtime error.
 	 */
-	void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine) throws LuaError;
+	void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable;
 }

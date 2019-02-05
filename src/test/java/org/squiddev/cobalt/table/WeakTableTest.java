@@ -84,7 +84,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testWeakValuesTable() throws LuaError {
+		public void testWeakValuesTable() throws LuaError, UnwindThrowable {
 			LuaTable t = new_Table();
 
 			Object obj = new Object();
@@ -128,7 +128,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testChangeMode() throws LuaError {
+		public void testChangeMode() throws LuaError, UnwindThrowable {
 			LuaTable table = new LuaTable();
 
 			OperationHelper.setTable(state, table, ValueFactory.valueOf(1), new LuaTable());
@@ -142,7 +142,7 @@ public abstract class WeakTableTest {
 
 	public static class WeakKeyTableTest extends WeakTableTest {
 		@Test
-		public void testWeakKeysTable() throws LuaError {
+		public void testWeakKeysTable() throws LuaError, UnwindThrowable {
 			LuaTable t = ValueFactory.weakTable(true, false);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -176,7 +176,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testNext() throws LuaError {
+		public void testNext() throws LuaError, UnwindThrowable {
 			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -208,7 +208,7 @@ public abstract class WeakTableTest {
 
 	public static class WeakKeyValueTableTest extends WeakTableTest {
 		@Test
-		public void testWeakKeysValuesTable() throws LuaError {
+		public void testWeakKeysValuesTable() throws LuaError, UnwindThrowable {
 			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -262,7 +262,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testReplace() throws LuaError {
+		public void testReplace() throws LuaError, UnwindThrowable {
 			LuaTable t = ValueFactory.weakTable(true, true);
 
 			LuaValue key = userdataOf(new MyData(111));
@@ -291,7 +291,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testChangeArrayMode() throws LuaError {
+		public void testChangeArrayMode() throws LuaError, UnwindThrowable {
 			LuaTable table = new LuaTable();
 
 			OperationHelper.setTable(state, table, ValueFactory.valueOf(1), new LuaTable());
@@ -303,7 +303,7 @@ public abstract class WeakTableTest {
 		}
 
 		@Test
-		public void testChangeHashMode() throws LuaError {
+		public void testChangeHashMode() throws LuaError, UnwindThrowable {
 			LuaTable table = new LuaTable();
 
 			OperationHelper.setTable(state, table, ValueFactory.valueOf("foo"), new LuaTable());

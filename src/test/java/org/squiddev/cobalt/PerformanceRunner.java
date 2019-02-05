@@ -150,7 +150,7 @@ public class PerformanceRunner {
 
 			System.out.printf("\n\tCompilation: %1$f\n\tRunning: %2$f\n", (compiled - start) / 1e9, (finished - compiled) / 1e9);
 			System.out.flush();
-		} catch (IOException e) {
+		} catch (UnwindThrowable | IOException e) {
 			throw new RuntimeException(e);
 		}
 	}

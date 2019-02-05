@@ -55,7 +55,7 @@ public final class DebugHelpers {
 		DebugState state = DebugHandler.getDebugState(thread);
 		StringBuilder sb = new StringBuilder();
 		sb.append("stack traceback:");
-		for (DebugFrame di; (di = state.getDebugInfo(level++)) != null; ) {
+		for (DebugFrame di; (di = state.getFrame(level++)) != null; ) {
 			sb.append("\n\t");
 			sb.append(di.closure == null ? "[C]" : di.closure.getPrototype().sourceShort());
 			sb.append(':');
@@ -90,7 +90,7 @@ public final class DebugHelpers {
 		DebugState ds = DebugHandler.getDebugState(thread);
 		DebugFrame di;
 		for (int i = 0, n = ds.top; i < n; i++) {
-			di = ds.getDebugInfo(i);
+			di = ds.getFrame(i);
 			if (di != null && di.closure != null) {
 				return di.sourceLine();
 			}
@@ -100,7 +100,7 @@ public final class DebugHelpers {
 
 	public static String fileLine(LuaThread thread, int level) {
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugFrame di = ds.getDebugInfo(level);
+		DebugFrame di = ds.getFrame(level);
 		return di != null ? di.sourceLine() : null;
 	}
 
@@ -157,7 +157,7 @@ public final class DebugHelpers {
 	}
 
 	// return last instruction, or 0 if error
-	static int symbexec(Prototype pt, int lastpc, int reg) {
+	private static int symbexec(Prototype pt, int lastpc, int reg) {
 		int pc;
 		int last; /* stores position of last instruction that changed `reg' */
 		last = pt.code.length - 1; /*
@@ -254,7 +254,7 @@ public final class DebugHelpers {
 				case Lua.OP_FORLOOP:
 				case Lua.OP_FORPREP:
 					if (!checkRegister(pt, a + 3)) return 0;
-					/* go through */
+					// fallthrough
 				case Lua.OP_JMP: {
 					int dest = pc + 1 + b;
 					/* not full check and jump is forward and do not skip `lastpc'? */

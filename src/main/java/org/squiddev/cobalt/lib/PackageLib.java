@@ -31,6 +31,7 @@ import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 
+import static org.squiddev.cobalt.OperationHelper.noYield;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
@@ -118,14 +119,15 @@ public class PackageLib implements LuaLibrary {
 		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
 				case OP_REQUIRE:
-					return lib.require(state, arg);
+					return noYield(state, () -> lib.require(state, arg));
 				case OP_SEEALL: {
 					LuaTable t = arg.checkTable();
 					LuaTable m = t.getMetatable(state);
 					if (m == null) {
 						t.setMetatable(state, m = ValueFactory.tableOf());
 					}
-					OperationHelper.setTable(state, m, Constants.INDEX, state.getCurrentThread().getfenv());
+					LuaTable mt = m;
+					noYield(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
 					return Constants.NONE;
 				}
 			}
@@ -147,14 +149,14 @@ public class PackageLib implements LuaLibrary {
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case OP_MODULE:
-					return lib.module(state, args);
+					return noYield(state, () -> lib.module(state, args));
 				case OP_LOADLIB:
 					return loadlib(args);
 				case OP_PRELOAD_LOADER: {
-					return lib.loader_preload(state, args);
+					return noYield(state, () -> lib.loader_preload(state, args));
 				}
 				case OP_LUA_LOADER: {
-					return lib.loader_Lua(state, args);
+					return noYield(state, () -> lib.loader_Lua(state, args));
 				}
 				case OP_JAVA_LOADER: {
 					return lib.loader_Java(args, getfenv());
@@ -213,7 +215,7 @@ public class PackageLib implements LuaLibrary {
 	 * @return {@link Constants#NONE}
 	 * @throws LuaError If there is a name conflict.
 	 */
-	public Varargs module(LuaState state, Varargs args) throws LuaError {
+	Varargs module(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		LuaString modname = args.arg(1).checkLuaString();
 		int n = args.count();
 		LuaValue value = OperationHelper.getTable(state, state.loadedPackages, modname);
@@ -262,7 +264,7 @@ public class PackageLib implements LuaLibrary {
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
 	 */
-	private static LuaTable findtable(LuaState state, LuaTable table, LuaString fname) throws LuaError {
+	private static LuaTable findtable(LuaState state, LuaTable table, LuaString fname) throws LuaError, UnwindThrowable {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
@@ -284,7 +286,7 @@ public class PackageLib implements LuaLibrary {
 		return table;
 	}
 
-	private static void modinit(LuaState state, LuaValue module, LuaString modname) throws LuaError {
+	private static void modinit(LuaState state, LuaValue module, LuaString modname) throws LuaError, UnwindThrowable {
 		/* module._M = module */
 		OperationHelper.setTable(state, module, _M, module);
 		int e = modname.lastIndexOf(_DOT);
@@ -324,7 +326,7 @@ public class PackageLib implements LuaLibrary {
 	 * @return The loaded value
 	 * @throws LuaError If the module cannot be loaded.
 	 */
-	public LuaValue require(LuaState state, LuaValue arg) throws LuaError {
+	LuaValue require(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
 		LuaString name = arg.checkLuaString();
 		LuaValue loaded = OperationHelper.getTable(state, state.loadedPackages, name);
 		if (loaded.toBoolean()) {
@@ -371,7 +373,7 @@ public class PackageLib implements LuaLibrary {
 		return varargsOf(Constants.NIL, ValueFactory.valueOf("dynamic libraries not enabled"), ValueFactory.valueOf("absent"));
 	}
 
-	LuaValue loader_preload(LuaState state, Varargs args) throws LuaError {
+	LuaValue loader_preload(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		LuaString name = args.arg(1).checkLuaString();
 		LuaValue preload = OperationHelper.getTable(state, PACKAGE, _PRELOAD).checkTable();
 		LuaValue val = OperationHelper.getTable(state, preload, name);
@@ -380,7 +382,7 @@ public class PackageLib implements LuaLibrary {
 			val;
 	}
 
-	LuaValue loader_Lua(LuaState state, Varargs args) throws LuaError {
+	LuaValue loader_Lua(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		String name = args.arg(1).checkString();
 
 		// get package path

@@ -1060,6 +1060,11 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	@Override
+	public Varargs asImmutable() {
+		return this;
+	}
+
+	@Override
 	public int count() {
 		return 1;
 	}
@@ -1311,6 +1316,12 @@ public abstract class LuaValue extends Varargs {
 		public LuaValue first() {
 			return v.length > 0 ? v[0] : r.first();
 		}
+
+		@Override
+		public Varargs asImmutable() {
+			Varargs rClone = r.asImmutable();
+			return rClone == r ? this : r;
+		}
 	}
 
 	/**
@@ -1379,6 +1390,13 @@ public abstract class LuaValue extends Varargs {
 		public LuaValue first() {
 			return length > 0 ? v[offset] : more.first();
 		}
+
+		@Override
+		public Varargs asImmutable() {
+			LuaValue[] values = new LuaValue[length];
+			System.arraycopy(v, offset, values, 0, length);
+			return new ArrayVarargs(values, more.asImmutable());
+		}
 	}
 
 	/**
@@ -1421,6 +1439,12 @@ public abstract class LuaValue extends Varargs {
 		@Override
 		public LuaValue first() {
 			return v1;
+		}
+
+		@Override
+		public Varargs asImmutable() {
+			Varargs vClone = v2.asImmutable();
+			return vClone == v2 ? this : new PairVarargs(v1, vClone);
 		}
 	}
 }

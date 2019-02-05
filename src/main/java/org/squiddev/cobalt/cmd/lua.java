@@ -28,6 +28,7 @@ package org.squiddev.cobalt.cmd;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.lib.LuaLibrary;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.profiler.ProfilerLib;
 
@@ -36,8 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.squiddev.cobalt.Constants.NONE;
-import static org.squiddev.cobalt.ValueFactory.tableOf;
-import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.*;
 
 /**
  * org.squiddev.cobalt.cmd.lua command for use in java se environments.
@@ -165,13 +165,13 @@ public class lua {
 		LuaValue slibname = valueOf(libname);
 		try {
 			// load via plain require
-			OperationHelper.call(state, OperationHelper.getTable(state, _G, valueOf("require")), slibname);
+			OperationHelper.noYield(state, () ->
+				OperationHelper.call(state, OperationHelper.getTable(state, _G, valueOf("require")), slibname));
 		} catch (Exception e) {
 			try {
 				// load as java class
-				LuaValue v = (LuaValue) Class.forName(libname).newInstance();
-				v.setfenv(_G);
-				OperationHelper.call(state, v, slibname, _G);
+				LuaLibrary v = Class.forName(libname).asSubclass(LuaLibrary.class).newInstance();
+				v.add(state, _G);
 			} catch (Exception f) {
 				throw new IOException("loadLibrary(" + libname + ") failed: " + e + "," + f);
 			}
@@ -186,21 +186,32 @@ public class lua {
 			} finally {
 				script.close();
 			}
-			Varargs scriptargs = (args != null ? setGlobalArg(state, args, firstarg) : NONE);
-			Varargs result = c.invoke(state, scriptargs);
-			if (printValue && result != NONE) OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("print")), result);
+			Varargs scriptargs = (args != null ? setGlobalArg(args, firstarg) : NONE);
+			Varargs result = LuaThread.runMain(state, c, scriptargs);
+
+			try {
+				state.getCurrentThread().disableYield();
+				if (printValue && result != NONE)
+					OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("print")), result);
+			} catch (UnwindThrowable e) {
+				throw new NonResumableException("Cannot yield within print", e);
+			} finally {
+				state.getCurrentThread().enableYield();
+			}
 		} catch (Exception e) {
-			e.printStackTrace(System.err);
+			System.out.println();
+			e.printStackTrace(System.out);
 		}
 	}
 
-	private static Varargs setGlobalArg(LuaState state, String[] args, int i) throws LuaError {
+	private static Varargs setGlobalArg(String[] args, int i) {
 		LuaTable arg = tableOf();
+		LuaValue[] values = new LuaValue[args.length];
 		for (int j = 0; j < args.length; j++) {
-			arg.rawset(j - i, valueOf(args[j]));
+			arg.rawset(j - i, values[j] = valueOf(args[j]));
 		}
 		_G.rawset("arg", arg);
-		return OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("unpack")), arg);
+		return varargsOf(values);
 	}
 
 	private static void interactiveMode(LuaState state) throws IOException {

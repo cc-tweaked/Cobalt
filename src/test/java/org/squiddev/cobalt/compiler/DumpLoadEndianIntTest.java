@@ -34,19 +34,19 @@ public class DumpLoadEndianIntTest {
 	}
 
 	@Test
-	public void testBigDoubleCompile() throws LuaError, CompileException {
+	public void testBigDoubleCompile() throws LuaError, CompileException, UnwindThrowable {
 		doTest(false, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(false, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	@Test
-	public void testLittleDoubleCompile() throws LuaError, CompileException {
+	public void testLittleDoubleCompile() throws LuaError, CompileException, UnwindThrowable {
 		doTest(true, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(true, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	@Test
-	public void testBigIntCompile() throws LuaError, CompileException {
+	public void testBigIntCompile() throws LuaError, CompileException, UnwindThrowable {
 		DumpState.ALLOW_INTEGER_CASTING = true;
 		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
 		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDPASS);
@@ -58,7 +58,7 @@ public class DumpLoadEndianIntTest {
 	}
 
 	@Test
-	public void testLittleIntCompile() throws LuaError, CompileException {
+	public void testLittleIntCompile() throws LuaError, CompileException, UnwindThrowable {
 		DumpState.ALLOW_INTEGER_CASTING = true;
 		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
 		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDPASS);
@@ -70,19 +70,19 @@ public class DumpLoadEndianIntTest {
 	}
 
 	@Test
-	public void testBigNumpatchCompile() throws LuaError, CompileException {
+	public void testBigNumpatchCompile() throws LuaError, CompileException, UnwindThrowable {
 		doTest(false, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(false, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	@Test
-	public void testLittleNumpatchCompile() throws LuaError, CompileException {
+	public void testLittleNumpatchCompile() throws LuaError, CompileException, UnwindThrowable {
 		doTest(true, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 		doTest(true, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	public void doTest(boolean littleEndian, int numberFormat, boolean stripDebug,
-					   String script, String expectedPriorDump, String expectedPostDump, boolean shouldPass) throws LuaError, CompileException {
+					   String script, String expectedPriorDump, String expectedPostDump, boolean shouldPass) throws LuaError, CompileException, UnwindThrowable {
 		try {
 
 			// compile into prototype

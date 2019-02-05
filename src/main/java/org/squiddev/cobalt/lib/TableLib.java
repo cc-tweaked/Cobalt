@@ -25,9 +25,8 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.OneArgFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
+import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -48,8 +47,8 @@ public class TableLib implements LuaLibrary {
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(t, TableLib1.class, new String[]{"getn", "maxn",});
-		LibFunction.bind(t, TableLibV.class, new String[]{
-			"remove", "concat", "insert", "sort", "foreach", "foreachi",});
+		LibFunction.bind(t, TableLibV.class, new String[]{"remove", "concat", "insert"});
+		LibFunction.bind(t, TableLibR.class, new String[]{"sort", "foreach", "foreachi"});
 		env.rawset("table", t);
 		state.loadedPackages.rawset("table", t);
 		return t;
@@ -92,20 +91,257 @@ public class TableLib implements LuaLibrary {
 					table.insert(pos, value);
 					return NONE;
 				}
-				case 3: { // "sort" (table [, comp]) -> void
+				default:
+					return NONE;
+			}
+		}
+	}
+
+	private static final class TableLibR extends ResumableVarArgFunction<Object> {
+		@Override
+		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+			switch (opcode) {
+				case 0: { // "sort" (table [, comp]) -> void
 					LuaTable table = args.arg(1).checkTable();
-					LuaValue compare = (args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction());
-					table.sort(state, compare);
+					LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
+					int n = table.prepSort();
+					if (n > 1) {
+						SortState res = new SortState(table, n, compare);
+						di.state = res;
+						heapSort(state, table, n, compare, res, 0, n / 2 - 1);
+					}
 					return NONE;
 				}
-				case 4: { // (table, func) -> void
-					return args.arg(1).checkTable().foreach(state, args.arg(2).checkFunction());
+				case 1: { // "foreach" (table, func) -> void
+					LuaTable table = args.arg(1).checkTable();
+					LuaFunction function = args.arg(2).checkFunction();
+
+					ForEachState res = new ForEachState(table, function);
+					di.state = res;
+					return foreach(state, table, function, res);
 				}
-				case 5: { // "foreachi" (table, func) -> void
-					return args.arg(1).checkTable().foreachi(state, args.arg(2).checkFunction());
+				case 2: { // "foreachi" (table, func) -> void
+					LuaTable table = args.arg(1).checkTable();
+					LuaFunction function = args.arg(2).checkFunction();
+
+					ForEachIState res = new ForEachIState(table, function);
+					di.state = res;
+					return foreachi(state, table, function, res);
+				}
+				default:
+					return NONE;
+			}
+		}
+
+		@Override
+		protected Varargs resumeThis(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
+			switch (opcode) {
+				case 0: { // "sort" (table [, comp]) -> void
+					SortState res = (SortState) object;
+					LuaTable table = res.table;
+					LuaValue compare = res.compare;
+					int count = res.count;
+
+					// We attempt to recover from sifting the state
+					if (res.siftState != -1) {
+						int root = stateSiftDown(state, table, compare, res, value.first().toBoolean());
+						res.siftState = -1;
+
+						// Continue sifting here
+						if (root != -1) normalSiftDown(state, table, root, res.end, compare, res);
+					}
+
+					// And continue sorting
+					heapSort(state, table, count, compare, res, res.sortState, res.counter);
+					return NONE;
+				}
+
+				case 1: { // "foreach" (table, func) -> void
+					ForEachState res = (ForEachState) object;
+					return foreach(state, res.table, res.func, res);
+				}
+
+				case 2: { // "foreachi" (table, func) -> void
+					ForEachIState res = (ForEachIState) object;
+					return foreachi(state, res.table, res.func, res);
+				}
+
+				default:
+					throw new NonResumableException("Cannot resume " + debugName());
+			}
+		}
+	}
+
+	static final class ForEachState {
+		public LuaValue k = NIL;
+		public final LuaTable table;
+		public final LuaValue func;
+
+		ForEachState(LuaTable table, LuaValue func) {
+			this.table = table;
+			this.func = func;
+		}
+	}
+
+	/**
+	 * Call the supplied function once for each key-value pair
+	 *
+	 * @param state The current lua state
+	 * @param func  The function to call
+	 * @return {@link Constants#NIL}
+	 */
+	private static LuaValue foreach(LuaState state, LuaTable table, LuaValue func, ForEachState res) throws LuaError, UnwindThrowable {
+		Varargs n;
+		LuaValue k = res.k;
+		while (!(res.k = k = ((n = table.next(k)).first())).isNil()) {
+			LuaValue r = OperationHelper.call(state, func, k, n.arg(2));
+			if (!r.isNil()) return r;
+		}
+		return NIL;
+	}
+
+	static final class ForEachIState {
+		int k = 0;
+		final LuaTable table;
+		final LuaValue func;
+
+		ForEachIState(LuaTable table, LuaValue func) {
+			this.table = table;
+			this.func = func;
+		}
+	}
+
+	/**
+	 * Call the supplied function once for each key-value pair
+	 * in the contiguous array part
+	 *
+	 * @param state The current lua state
+	 * @param func  The function to call
+	 * @return {@link Constants#NIL}
+	 */
+	private static LuaValue foreachi(LuaState state, LuaTable table, LuaValue func, ForEachIState res) throws LuaError, UnwindThrowable {
+		LuaValue v;
+		int k = res.k;
+		while (!(v = table.rawget(res.k = ++k)).isNil()) {
+			LuaValue r = OperationHelper.call(state, func, valueOf(k), v);
+			if (!r.isNil()) return r;
+		}
+		return NIL;
+	}
+
+	private static final class SortState {
+		final LuaTable table;
+		final int count;
+		final LuaValue compare;
+
+		// Top level state
+		int sortState = 0;
+		int counter = -1;
+
+		int siftState = -1;
+		int root;
+		int child;
+		int end;
+
+		private SortState(LuaTable table, int count, LuaValue compare) {
+			this.table = table;
+			this.count = count;
+			this.compare = compare;
+		}
+	}
+
+	private static void heapSort(LuaState state, LuaTable table, int count, LuaValue compare, SortState res, int sortState, int counter) throws LuaError, UnwindThrowable {
+		switch (sortState) {
+			case 0: {
+				int start = counter;
+				try {
+					for (; start >= 0; --start) {
+						normalSiftDown(state, table, start, count - 1, compare, res);
+					}
+				} catch (UnwindThrowable e) {
+					res.sortState = 0;
+					res.counter = start - 1;
+					throw e;
+				}
+
+				// Allow explicit fall-through into the next state
+				// Therefore we want to reset all the various counters.
+				counter = count - 1;
+			}
+
+			case 1: {
+				int end = counter;
+				try {
+					for (; end > 0; ) {
+						table.swap(end, 0);
+						normalSiftDown(state, table, 0, --end, compare, res);
+					}
+				} catch (UnwindThrowable e) {
+					res.sortState = 1;
+					res.counter = end;
+					throw e;
 				}
 			}
-			return NONE;
+		}
+	}
+
+	private static void normalSiftDown(LuaState state, LuaTable table, int root, int end, LuaValue compare, SortState res) throws LuaError, UnwindThrowable {
+		int siftState = -1, child = -1;
+		try {
+			for (; root * 2 + 1 <= end; ) {
+				siftState = 0;
+
+				child = root * 2 + 1;
+				if (child < end && table.compare(state, child, child + 1, compare)) {
+					++child;
+				}
+
+				siftState = 1;
+
+				if (table.compare(state, root, child, compare)) {
+					table.swap(root, child);
+					root = child;
+				} else {
+					return;
+				}
+			}
+		} catch (UnwindThrowable e) {
+			res.root = root;
+			res.child = child;
+			res.siftState = siftState;
+			res.end = end;
+			throw e;
+		}
+	}
+
+	private static int stateSiftDown(LuaState state, LuaTable table, LuaValue compare, SortState res, boolean value) throws LuaError, UnwindThrowable {
+		int siftState = res.siftState;
+		int child = res.child;
+		int root = res.root;
+
+		switch (siftState) {
+			case 0:
+				if (value) child++;
+
+				// This is technically state 1 now, but we care about the exit
+				// point rather than the entry point
+				try {
+					value = table.compare(state, root, child, compare);
+				} catch (UnwindThrowable e) {
+					res.child = child;
+					res.siftState = 1;
+					throw e;
+				}
+				// Allow fall through
+			case 1:
+				if (value) {
+					table.swap(root, child);
+					return child;
+				} else {
+					return -1;
+				}
+			default:
+				throw new IllegalStateException("No such state " + siftState);
 		}
 	}
 }

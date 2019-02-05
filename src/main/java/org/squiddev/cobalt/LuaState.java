@@ -33,10 +33,7 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Collections;
 import java.util.Random;
-import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -109,11 +106,8 @@ public final class LuaState {
 	 */
 	public Random random;
 
-	private final Executor coroutineExecutor;
-
 	LuaThread currentThread;
 	LuaThread mainThread;
-	Set<LuaThread> threads = Collections.newSetFromMap(new WeakHashMap<>());
 
 	public LuaState() {
 		this(new LuaState.Builder());
@@ -132,17 +126,6 @@ public final class LuaState {
 		this.compiler = builder.compiler;
 		this.random = builder.random;
 		this.debug = builder.debug;
-		this.coroutineExecutor = builder.coroutineExecutor;
-	}
-
-	/**
-	 * The executor for coroutines
-	 *
-	 * @return Gets this state's coroutine executor.
-	 * @see LuaThread#resume(Varargs)
-	 */
-	public Executor getCoroutineExecutor() {
-		return coroutineExecutor;
 	}
 
 	/**
@@ -182,23 +165,6 @@ public final class LuaState {
 		LuaThread thread = new LuaThread(this, environment);
 		mainThread = thread;
 		currentThread = thread;
-	}
-
-	/**
-	 * Abandon all threads but the main one
-	 */
-	public void abandon() {
-		next:
-		while (true) {
-			for (LuaThread thread : threads) {
-				if (thread != mainThread) {
-					thread.abandon();
-					continue next;
-				}
-			}
-
-			break;
-		}
 	}
 
 	public static LuaState.Builder builder() {

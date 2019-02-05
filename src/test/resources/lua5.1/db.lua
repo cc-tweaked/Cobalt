@@ -149,12 +149,12 @@ test([[for i=1,3 do
 end
 ]], { 1, 2, 1, 2, 1, 2, 1, 3 })
 
---test([[for i,v in pairs{'a','b'} do
---  a=i..v
---end
---]], { 1, 2, 1, 2, 1, 3 })
+--[=[test([[for i,v in pairs{'a','b'} do
+  a=i..v
+end
+]], { 1, 2, 1, 2, 1, 3 })--]=]
 
---test([[for i=1,4 do a=1 end]], { 1, 1, 1, 1, 1 })
+test([[for i=1,4 do a=1 end]], { 1, 1, 1, 1, 1 })
 
 
 
@@ -435,8 +435,8 @@ assert(t.isvararg == true and t.nparams == 2 and t.nups == 1)
 
 local function checktraceback(co, p)
 	local tb = debug.traceback(co)
-	local i = 0
-	for l in string.gmatch(tb, "[^\n]+\n?") do
+	local i = 0 print("==" .. tb .. "==" .. table.concat(p, "||") .. "==")
+	for l in string.gmatch(tb, "[^\n]+\n?") do print(i, l:gsub("\n", "\\n"), p[i])
 		assert(i == 0 or string.find(l, p[i] or error("Nil for line " .. l)))
 		i = i + 1
 	end
@@ -503,13 +503,13 @@ function f(i) if i == 0 then error(i) else coroutine.yield(); f(i - 1) end end
 
 co = coroutine.create(function(x) f(x) end)
 a, b = coroutine.resume(co, 3)
-t = { --[["'yield'",]] "'f'", "in function <" }
+t = { "'yield'", "'f'", "in function <" }
 while coroutine.status(co) == "suspended" do
 	checktraceback(co, t)
 	a, b = coroutine.resume(co)
 	table.insert(t, 2, "'f'") -- one more recursive call to 'f'
 end
--- t[1] = "'error'"
+table.remove(t, 1) -- t[1] = "'error'"
 checktraceback(co, t)
 
 

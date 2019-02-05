@@ -97,15 +97,14 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 *
 	 * @param state The current lua state
 	 * @return First return value {@code (this())}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
+	 * @throws LuaError        If the invoked function throws an error.
+	 * @throws UnwindThrowable If this function transfers control to another coroutine.
 	 * @see #call(LuaState, LuaValue)
 	 * @see #call(LuaState, LuaValue, LuaValue)
 	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
 	 * @see #invoke(LuaState, Varargs)
 	 */
-	public abstract LuaValue call(LuaState state) throws LuaError;
+	public abstract LuaValue call(LuaState state) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Call {@code this} with 1 argument, including metatag processing,
@@ -121,15 +120,14 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @param state The current lua state
 	 * @param arg   First argument to supply to the called function
 	 * @return First return value {@code (this(arg))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
+	 * @throws LuaError        If the invoked function throws an error.
+	 * @throws UnwindThrowable If this function transfers control to another coroutine.
 	 * @see #call(LuaState)
 	 * @see #call(LuaState, LuaValue, LuaValue)
 	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
 	 * @see #invoke(LuaState, Varargs)
 	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg) throws LuaError;
+	public abstract LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Call {@code this} with 2 arguments, including metatag processing,
@@ -146,14 +144,13 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @param arg1  First argument to supply to the called function
 	 * @param arg2  Second argument to supply to the called function
 	 * @return First return value {@code (this(arg1, arg2))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
+	 * @throws LuaError        If the invoked function throws an error.
+	 * @throws UnwindThrowable If this function transfers control to another coroutine.
 	 * @see #call(LuaState)
 	 * @see #call(LuaState, LuaValue)
 	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
 	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError;
+	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Call {@code this} with 3 arguments, including metatag processing,
@@ -171,14 +168,13 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @param arg2  Second argument to supply to the called function
 	 * @param arg3  Second argument to supply to the called function
 	 * @return First return value {@code (this(arg1, arg2, arg3))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
+	 * @throws LuaError        If the invoked function throws an error.
+	 * @throws UnwindThrowable If this function transfers control to another coroutine.
 	 * @see #call(LuaState)
 	 * @see #call(LuaState, LuaValue)
 	 * @see #call(LuaState, LuaValue, LuaValue)
 	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError;
+	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Call {@code this} with variable arguments, including metatag processing,
@@ -192,31 +188,30 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @param state The current lua state
 	 * @param args  Varargs containing the arguments to supply to the called function
 	 * @return All return values as a {@link Varargs} instance.
-	 * @throws LuaError if not a function and {@link Constants#CALL} is not defined,
-	 *                  or the invoked function throws a {@link LuaError}
-	 *                  or the invoked closure throw a lua {@code error}
+	 * @throws LuaError        If the invoked function throws an error.
+	 * @throws UnwindThrowable If this function transfers control to another coroutine.
 	 * @see ValueFactory#varargsOf(LuaValue[])
 	 * @see #call(LuaState, LuaValue)
 	 */
-	public abstract Varargs invoke(LuaState state, Varargs args) throws LuaError;
+	public abstract Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
 
 	@Override
-	public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
+	public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
 		call(state, CALL);
 	}
 
 	@Override
-	public void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
+	public void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
 		call(state, RETURN);
 	}
 
 	@Override
-	public void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError {
+	public void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
 		call(state, COUNT);
 	}
 
 	@Override
-	public void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine) throws LuaError {
+	public void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable {
 		call(state, LINE, ValueFactory.valueOf(newLine));
 	}
 }

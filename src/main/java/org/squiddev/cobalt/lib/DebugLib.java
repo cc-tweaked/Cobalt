@@ -228,7 +228,13 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		DebugFrame di;
 		if (func.isNumber()) {
 			int level = func.checkInteger();
-			di = level > 0 ? ds.getDebugInfo(level - 1) : new DebugFrame(level0func.checkFunction());
+
+			// So if we're getting info on the current thread then we fake a debug.getinfo function
+			if (thread == state.getCurrentThread()) {
+				di = level > 0 ? ds.getFrame(level - 1) : new DebugFrame(level0func.checkFunction());
+			} else {
+				di = ds.getFrame(level);
+			}
 		} else {
 			di = ds.findDebugInfo(func.checkFunction());
 		}
@@ -309,13 +315,14 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 				? variables[local - 1].name : NIL;
 		} else {
 			int level = args.arg(arg).checkInteger();
+			if (thread == state.getCurrentThread()) level--;
+
 			DebugState ds = DebugHandler.getDebugState(thread);
-			DebugFrame di = ds.getDebugInfo(level - 1);
+			DebugFrame di = ds.getFrame(level);
 			if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
 
 			LuaString name = di.getLocalName(local);
 			if (name == null || di.stack == null) return NIL;
-
 			LuaValue value = di.stack[local - 1];
 			return varargsOf(name, value);
 		}
@@ -329,7 +336,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		LuaValue value = args.arg(arg + 2);
 
 		DebugState ds = DebugHandler.getDebugState(thread);
-		DebugFrame di = ds.getDebugInfo(level - 1);
+		if (thread == state.getCurrentThread()) level--;
+		DebugFrame di = ds.getFrame(level);
 		if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
 
 		LuaString name = di.getLocalName(local);
@@ -421,13 +429,12 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static LuaValue _traceback(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
-		int i1 = a++;
-		LuaValue messageValue = args.arg(i1);
+		LuaValue messageValue = args.arg(a++);
 		if (messageValue != NIL && !messageValue.isString()) return messageValue;
 		String message = messageValue.optString(null);
-		int i = a++;
-		int level = args.arg(i).optInteger(1);
-		String tb = DebugHelpers.traceback(thread, level - 1);
+		int level = args.arg(a).optInteger(1) - 1;
+		// if (thread == state.getCurrentThread()) level--;
+		String tb = DebugHelpers.traceback(thread, level);
 		return valueOf(message != null ? message + "\n" + tb : tb);
 	}
 }

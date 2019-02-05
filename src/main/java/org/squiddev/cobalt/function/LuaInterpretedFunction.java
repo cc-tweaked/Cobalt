@@ -28,9 +28,12 @@ package org.squiddev.cobalt.function;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugState;
 
-import static org.squiddev.cobalt.function.LuaInterpreter.execute;
-import static org.squiddev.cobalt.function.LuaInterpreter.setupCall;
+import static org.squiddev.cobalt.debug.DebugFrame.*;
+import static org.squiddev.cobalt.function.LuaInterpreter.*;
 
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
@@ -89,7 +92,7 @@ import static org.squiddev.cobalt.function.LuaInterpreter.setupCall;
  * @see LuaValue#optClosure(LuaClosure)
  * @see LoadState
  */
-public class LuaInterpretedFunction extends LuaClosure {
+public final class LuaInterpretedFunction extends LuaClosure implements Resumable<Object> {
 	private static final Upvalue[] NO_UPVALUES = new Upvalue[0];
 
 	public final Prototype p;
@@ -123,28 +126,28 @@ public class LuaInterpretedFunction extends LuaClosure {
 	}
 
 	@Override
-	public final LuaValue call(LuaState state) throws LuaError {
-		return execute(state, this, setupCall(state, this)).first();
+	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
+		return execute(state, setupCall(state, this, FLAG_FRESH), this).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-		return execute(state, this, setupCall(state, this, arg)).first();
+	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
+		return execute(state, setupCall(state, this, arg, FLAG_FRESH), this).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
-		return execute(state, this, setupCall(state, this, arg1, arg2)).first();
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
+		return execute(state, setupCall(state, this, arg1, arg2, FLAG_FRESH), this).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
-		return execute(state, this, setupCall(state, this, arg1, arg2, arg3)).first();
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
+		return execute(state, setupCall(state, this, arg1, arg2, arg3, FLAG_FRESH), this).first();
 	}
 
 	@Override
-	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
-		return execute(state, this, setupCall(state, this, varargs));
+	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
+		return execute(state, setupCall(state, this, varargs, FLAG_FRESH), this);
 	}
 
 	@Override
@@ -165,5 +168,32 @@ public class LuaInterpretedFunction extends LuaClosure {
 	@Override
 	public String debugName() {
 		return getPrototype().sourceShort() + ":" + getPrototype().linedefined;
+	}
+
+	@Override
+	public Varargs resume(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
+		DebugState ds = DebugHandler.getDebugState(state);
+		DebugFrame di = ds.getStackUnsafe();
+
+		if ((di.flags & FLAG_HOOKED) != 0) {
+			// We're resuming in from a hook
+			ds.inhook = false;
+			di.flags ^= FLAG_HOOKED;
+
+			if ((di.flags & FLAG_HOOKYIELD) != 0) {
+				// Yielded within instruction hook, do nothing
+			} else if (di.top != -1) {
+				// Yielded while returning. This one's pretty simple, but verbose due to how returns are
+				// implemented
+				return resumeReturn(state, ds, di, this);
+			} else {
+				// Yielded while calling. Finish off setupCall
+				di.pc = di.top = 0;
+			}
+		} else {
+			LuaInterpreter.resume(state, di, this, value);
+		}
+
+		return execute(state, di, this);
 	}
 }

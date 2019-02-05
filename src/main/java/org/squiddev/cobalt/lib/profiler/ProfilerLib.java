@@ -96,7 +96,7 @@ public class ProfilerLib implements LuaLibrary {
 		}
 
 		@Override
-		public void onLine(LuaState state, DebugState ds, DebugFrame frame, int oldLine, int newLine) {
+		public void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) {
 		}
 
 		public void setHook(DebugState state) {

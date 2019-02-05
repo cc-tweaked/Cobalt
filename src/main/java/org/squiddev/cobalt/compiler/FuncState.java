@@ -893,7 +893,7 @@ public class FuncState {
 					r = null;
 					break;
 			}
-		} catch (LuaError e) {
+		} catch (UnwindThrowable | LuaError e) {
 			return false;
 		}
 

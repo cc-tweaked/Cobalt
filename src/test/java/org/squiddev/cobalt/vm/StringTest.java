@@ -2,10 +2,7 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.OperationHelper;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.IOException;
@@ -25,7 +22,7 @@ public class StringTest {
 	}
 
 	@Test
-	public void testToInputStream() throws IOException, LuaError {
+	public void testToInputStream() throws IOException, LuaError, UnwindThrowable {
 		LuaString str = LuaString.valueOf("Hello");
 
 		InputStream is = str.toInputStream();

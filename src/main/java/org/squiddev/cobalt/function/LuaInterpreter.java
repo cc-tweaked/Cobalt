@@ -33,90 +33,92 @@ import org.squiddev.cobalt.debug.DebugState;
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_FRESH;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_LEQ;
 
 /**
  * The main interpreter for {@link LuaInterpretedFunction}s.
  */
 public final class LuaInterpreter {
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function) throws LuaError {
+	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
 
-		return setupCall(state, function, NONE, stack);
+		return setupCall(state, function, NONE, stack, flags);
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg) throws LuaError {
+	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
 
 		switch (p.numparams) {
 			case 0:
-				return setupCall(state, function, arg, stack);
+				return setupCall(state, function, arg, stack, flags);
 
 			default:
 				stack[0] = arg;
-				return setupCall(state, function, NONE, stack);
+				return setupCall(state, function, NONE, stack, flags);
 		}
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2) throws LuaError {
+	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
 
 		switch (p.numparams) {
 			case 0:
-				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack);
+				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
 
 			case 1:
 				stack[0] = arg1;
-				return setupCall(state, function, arg2, stack);
+				return setupCall(state, function, arg2, stack, flags);
 
 			default:
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return setupCall(state, function, NONE, stack);
+				return setupCall(state, function, NONE, stack, flags);
 		}
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
 
 		switch (p.numparams) {
 			case 0:
-				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack);
+				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
 
 			case 1:
 				stack[0] = arg1;
-				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack);
+				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
 
 			case 2:
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return setupCall(state, function, arg3, stack);
+				return setupCall(state, function, arg3, stack, flags);
 
 			default:
 				stack[0] = arg1;
 				stack[1] = arg2;
 				stack[2] = arg3;
-				return setupCall(state, function, NONE, stack);
+				return setupCall(state, function, NONE, stack, flags);
 		}
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs) throws LuaError {
+	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
 		for (int i = 0; i < p.numparams; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCall(state, function, p.is_vararg != 0 ? varargs.subargs(p.numparams + 1) : NONE, stack);
+		return setupCall(state, function, p.is_vararg != 0 ? varargs.subargs(p.numparams + 1) : NONE, stack, flags);
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize, Varargs varargs) throws LuaError {
+	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize, Varargs varargs, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
@@ -125,25 +127,33 @@ public final class LuaInterpreter {
 		varargs = ValueFactory.varargsOf(args, argStart, argSize, varargs);
 		for (int i = 0; i < p.numparams; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCall(state, function, p.is_vararg != 0 ? varargs.subargs(p.numparams + 1) : NONE, stack);
+		return setupCall(state, function, p.is_vararg != 0 ? varargs.subargs(p.numparams + 1) : NONE, stack, flags);
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack) throws LuaError {
+	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		Upvalue[] upvalues = p.p.length > 0 ? new Upvalue[stack.length] : null;
 		if (p.is_vararg >= VARARG_NEEDSARG) stack[p.numparams] = new LuaTable(varargs);
 
-		DebugFrame frame = state.debug.onCall(DebugHandler.getDebugState(state), function, varargs, stack, upvalues);
-		frame.top = 0;
-		frame.extras = NONE;
-		return frame;
+		DebugState ds = DebugHandler.getDebugState(state);
+		DebugFrame di = state.debug.setupCall(ds, function, varargs, stack, upvalues);
+		di.flags = flags;
+		di.extras = NONE;
+		di.pc = 0;
+
+		if (!ds.inhook && ds.hookcall) {
+			// Pretend we are at the first instruction for the hook.
+			ds.hookCall(di);
+		}
+
+		di.top = 0;
+		return di;
 	}
 
-	static Varargs execute(final LuaState state, LuaInterpretedFunction function, DebugFrame di) throws LuaError {
+	static Varargs execute(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
 		final DebugState ds = DebugHandler.getDebugState(state);
 		final DebugHandler handler = state.debug;
 
-		int depth = 0;
 		newFrame:
 		while (true) {
 			// Fetch all info from the function
@@ -159,9 +169,6 @@ public final class LuaInterpreter {
 
 			int pc = di.pc, top = di.top;
 			Varargs v = di.extras;
-
-			// If we're an initial call, then ensure the PC is actually at 0.
-			if (pc == -1) pc = 0;
 
 			// process instructions
 			vm:
@@ -300,7 +307,7 @@ public final class LuaInterpreter {
 						int c = (i >> POS_C) & MAXARG_C;
 
 						top = c + 1;
-						concat(state, stack, top, c - b + 1);
+						concat(state, di, stack, top, c - b + 1);
 						stack[a] = stack[b];
 						top = b;
 						break;
@@ -370,24 +377,23 @@ public final class LuaInterpreter {
 							function = (LuaInterpretedFunction) val;
 							switch (b) {
 								case 1:
-									di = setupCall(state, function);
+									di = setupCall(state, function, 0);
 									break;
 								case 2:
-									di = setupCall(state, function, stack[a + 1]);
+									di = setupCall(state, function, stack[a + 1], 0);
 									break;
 								case 3:
-									di = setupCall(state, function, stack[a + 1], stack[a + 2]);
+									di = setupCall(state, function, stack[a + 1], stack[a + 2], 0);
 									break;
 								case 4:
-									di = setupCall(state, function, stack[a + 1], stack[a + 2], stack[a + 3]);
+									di = setupCall(state, function, stack[a + 1], stack[a + 2], stack[a + 3], 0);
 									break;
 								default:
 									di = b > 0
-										? setupCall(state, function, stack, a + 1, b - 1, NONE) // exact arg count
-										: setupCall(state, function, stack, a + 1, top - v.count() - (a + 1), v); // from prev top
+										? setupCall(state, function, stack, a + 1, b - 1, NONE, 0) // exact arg count
+										: setupCall(state, function, stack, a + 1, top - v.count() - (a + 1), v, 0); // from prev top
 							}
 
-							depth++;
 							continue newFrame;
 						}
 
@@ -450,7 +456,8 @@ public final class LuaInterpreter {
 						//  tail return events when popping the last function.
 						// Technically we shouldn't do any of this when calling a C function, but LuaJ allows it,
 						// and thus some CC programs make assumptions about them being tail called.
-						handler.onReturn(ds);
+						int flags = di.flags;
+						handler.onReturn(ds, di);
 
 						LuaValue val = stack[a];
 						Varargs args;
@@ -470,10 +477,10 @@ public final class LuaInterpreter {
 						if (val instanceof LuaInterpretedFunction) {
 							// Replace the current frame with a new one.
 							function = (LuaInterpretedFunction) val;
-							di = setupCall(state, (LuaInterpretedFunction) val, args);
+							di = setupCall(state, function, args, flags & FLAG_FRESH);
 
 							continue newFrame;
-						} else if (--depth < 0) {
+						} else if ((flags & FLAG_FRESH) != 0) {
 							// We're at the bottom of the stack: return a tailcall
 							return OperationHelper.invoke(state, val, args, a);
 						} else {
@@ -482,7 +489,7 @@ public final class LuaInterpreter {
 
 							di = ds.getStackUnsafe();
 							function = (LuaInterpretedFunction) di.closure;
-							resume(di, function, ret);
+							resume(state, di, function, ret);
 							continue newFrame;
 						}
 					}
@@ -490,8 +497,9 @@ public final class LuaInterpreter {
 					case OP_RETURN: { // A B: return R(A), ... ,R(A+B-2) (see note)
 						int b = (i >>> POS_B) & MAXARG_B;
 
+						int flags = di.flags;
 						closeAll(openups);
-						handler.onReturn(ds);
+						handler.onReturn(ds, di);
 
 						Varargs ret;
 						switch (b) {
@@ -509,12 +517,13 @@ public final class LuaInterpreter {
 								break;
 						}
 
-						if (--depth < 0) {
+						if ((flags & FLAG_FRESH) != 0) {
+							// If we're a fresh invocation then return to the parent.
 							return ret;
 						} else {
 							di = ds.getStackUnsafe();
 							function = (LuaInterpretedFunction) di.closure;
-							resume(di, function, ret);
+							resume(state, di, function, ret);
 							continue newFrame;
 						}
 					}
@@ -629,53 +638,62 @@ public final class LuaInterpreter {
 		}
 	}
 
-	private static void concat(LuaState state, LuaValue[] stack, int top, int total) throws LuaError {
-		do {
-			LuaValue left = stack[top - 2];
-			LuaValue right = stack[top - 1];
-			LuaString lString, rString;
-			int n = 2;
-			if (!left.isString() || !right.isString()) {
-				// If one of these isn't convertible to a string then use the metamethod
-				stack[top - 2] = OperationHelper.concat(state, left, right, top - 2, top - 1);
-			} else if ((rString = right.checkLuaString()).length == 0) {
-				stack[top - 2] = left.checkLuaString();
-			} else if ((lString = left.checkLuaString()).length == 0) {
-				stack[top - 2] = rString;
-			} else {
-				int length = rString.length + lString.length;
-				stack[top - 2] = lString;
-				stack[top - 1] = rString;
+	private static void concat(LuaState state, DebugFrame frame, LuaValue[] stack, int top, int total) throws LuaError, UnwindThrowable {
+		try {
+			do {
+				LuaValue left = stack[top - 2];
+				LuaValue right = stack[top - 1];
 
-				for (; n < total; n++) {
-					LuaValue value = stack[top - n - 1];
-					if (!value.isString()) break;
+				LuaString lString, rString;
 
-					LuaString string = value.checkLuaString();
+				int n = 2;
 
-					// Ensure we don't get a string which is too long
-					if (string.length > Integer.MAX_VALUE - length) throw new LuaError("string length overflow");
+				if (!left.isString() || !right.isString()) {
+					// If one of these isn't convertible to a string then use the metamethod
+					stack[top - 2] = OperationHelper.concatNonStrings(state, left, right, top - 2, top - 1);
+				} else if ((rString = right.checkLuaString()).length == 0) {
+					stack[top - 2] = left.checkLuaString();
+				} else if ((lString = left.checkLuaString()).length == 0) {
+					stack[top - 2] = rString;
+				} else {
+					int length = rString.length + lString.length;
+					stack[top - 2] = lString;
+					stack[top - 1] = rString;
 
-					// Otherwise increment the length and store this converted string
-					stack[top - n - 1] = string;
-					length += string.length;
+					for (; n < total; n++) {
+						LuaValue value = stack[top - n - 1];
+						if (!value.isString()) break;
+
+						LuaString string = value.checkLuaString();
+
+						// Ensure we don't get a string which is too long
+						if (string.length > Integer.MAX_VALUE - length) throw new LuaError("string length overflow");
+
+						// Otherwise increment the length and store this converted string
+						stack[top - n - 1] = string;
+						length += string.length;
+					}
+
+					byte[] buffer = new byte[length];
+					length = 0;
+					for (int j = n; j > 0; j--) {
+						LuaString string = (LuaString) stack[top - j];
+						System.arraycopy(string.bytes, string.offset, buffer, length, string.length);
+						length += string.length;
+					}
+
+					stack[top - n] = LuaString.valueOf(buffer);
+
 				}
 
-				byte[] buffer = new byte[length];
-				length = 0;
-				for (int j = n; j > 0; j--) {
-					LuaString string = (LuaString) stack[top - j];
-					System.arraycopy(string.bytes, string.offset, buffer, length, string.length);
-					length += string.length;
-				}
-
-				stack[top - n] = LuaString.valueOf(buffer);
-			}
-
-			// Got "n" strings and created one new one
-			total -= n - 1;
-			top -= n - 1;
-		} while (total > 1);
+				// Got "n" strings and created one new one
+				total -= n - 1;
+				top -= n - 1;
+			} while (total > 1);
+		} catch (UnwindThrowable e) {
+			frame.top = top;
+			throw e;
+		}
 	}
 
 	public static void closeAll(Upvalue[] upvalues) {
@@ -683,7 +701,7 @@ public final class LuaInterpreter {
 		for (Upvalue upvalue : upvalues) if (upvalue != null) upvalue.close();
 	}
 
-	private static void resume(DebugFrame di, LuaInterpretedFunction function, Varargs varargs) {
+	public static void resume(LuaState state, DebugFrame di, LuaInterpretedFunction function, Varargs varargs) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		int i = p.code[di.pc++];
 
@@ -697,7 +715,11 @@ public final class LuaInterpreter {
 			case OP_LE: case OP_LT: case OP_EQ: {
 				boolean res = varargs.first().toBoolean();
 
-				// TODO: Need to handle the case of <= instead of <
+				// If we should negate this result (due to using lt rather than le)
+				if ((di.flags & FLAG_LEQ) != 0) {
+					res = !res;
+					di.flags ^= FLAG_LEQ;
+				}
 
 				if (res == (((i >> POS_A) & MAXARG_A) != 0)) {
 					// We assume the next instruction is a jump and read the branch from there.
@@ -723,9 +745,134 @@ public final class LuaInterpreter {
 				break;
 			}
 
-			case OP_SETTABLE: case OP_SETGLOBAL:
+			case OP_TAILCALL: case OP_SETTABLE: case OP_SETGLOBAL:
 				// Nothing to be done here
 				break;
+
+			case OP_TFORLOOP: {
+				LuaValue o = varargs.first();
+				if (o.isNil()) {
+					di.pc++;
+				} else {
+					int a = (i >>> POS_A) & MAXARG_A;
+					LuaValue[] stack = di.stack;
+					stack[a + 2] = stack[a + 3] = o;
+					for (int c = (i >>> POS_C) & MAXARG_C; c > 1; --c) {
+						stack[a + 2 + c] = varargs.arg(c);
+					}
+					di.extras = Constants.NONE;
+				}
+				break;
+			}
+			case OP_CONCAT: {
+				int a = (i >>> POS_A) & MAXARG_A;
+				int b = (i >>> POS_B) & MAXARG_B;
+
+				LuaValue[] stack = di.stack;
+				int top = di.top - 1;
+
+				stack[top - 1] = varargs.first();
+				int total = top - b;
+				if (total > 1) {
+					// Rewind time, we may end up executing this instruction multiple times.
+					di.pc--;
+					concat(state, di, stack, top, total);
+					di.pc++;
+				}
+				stack[a] = stack[b];
+				di.top = top;
+
+				break;
+			}
+
+			default:
+				throw new IllegalStateException("Resuming from unknown instruction");
+		}
+	}
+
+	public static Varargs resumeReturn(LuaState state, DebugState ds, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
+		int i = function.p.code[di.pc];
+		DebugHandler handler = state.debug;
+
+		switch (((i >> POS_OP) & MAX_OP)) {
+			case OP_RETURN: {
+				int a = (i >>> POS_B) & MAXARG_B;
+				int b = (i >>> POS_B) & MAXARG_B;
+
+				Varargs ret;
+				switch (b) {
+					case 0:
+						ret = ValueFactory.varargsOf(di.stack, a, di.top - di.extras.count() - a, di.extras);
+						break;
+					case 1:
+						ret = NONE;
+						break;
+					case 2:
+						ret = di.stack[a];
+						break;
+					default:
+						ret = ValueFactory.varargsOf(di.stack, a, b - 1);
+						break;
+				}
+
+				int flags = di.flags;
+				handler.onReturnError(ds);
+
+				if ((flags & FLAG_FRESH) != 0) {
+					// If we're a fresh invocation then return to the parent.
+					return ret;
+				} else {
+					di = ds.getStackUnsafe();
+					function = (LuaInterpretedFunction) di.closure;
+					resume(state, di, function, ret);
+					return execute(state, di, function);
+				}
+			}
+
+			case OP_TAILCALL: {
+				int a = (i >>> POS_A) & MAXARG_A;
+				int b = (i >>> POS_B) & MAXARG_B;
+
+				LuaValue[] stack = di.stack;
+				LuaValue val = stack[a];
+				Varargs args;
+				switch ((i >>> POS_B) & MAXARG_B) {
+					case 1:
+						args = NONE;
+						break;
+					case 2:
+						args = stack[a + 1];
+						break;
+					default:
+						args = b > 0 ?
+							ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
+							ValueFactory.varargsOf(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
+				}
+
+				int flags = di.flags;
+				handler.onReturnError(ds);
+
+				if (val instanceof LuaInterpretedFunction) {
+					// Replace the current frame with a new one.
+					function = (LuaInterpretedFunction) val;
+					return execute(state, setupCall(state, function, args, flags & FLAG_FRESH), function);
+				} else if ((flags & FLAG_FRESH) != 0) {
+					// We're at the bottom of the stack: just execute it
+					return OperationHelper.invoke(state, val, args, a);
+				} else {
+					// Execute this function as normal
+					Varargs ret = OperationHelper.invoke(state, val, args, a);
+
+					di = ds.getStackUnsafe();
+					function = (LuaInterpretedFunction) di.closure;
+					resume(state, di, function, ret);
+					return execute(state, di, function);
+				}
+			}
+
+			default:
+				Print.printCode(function.p);
+				throw new IllegalStateException("Cannot resume on this opcode (pc=" + di.pc + ")");
 		}
 	}
 }

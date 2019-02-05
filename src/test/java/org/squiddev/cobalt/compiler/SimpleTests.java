@@ -22,7 +22,7 @@ public class SimpleTests {
 		_G = JsePlatform.standardGlobals(state);
 	}
 
-	private void doTest(String script) {
+	private void doTest(String script) throws UnwindThrowable {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes("UTF8"));
 			LuaFunction c = LuaC.INSTANCE.load(is, valueOf("script"), _G);
@@ -33,20 +33,20 @@ public class SimpleTests {
 	}
 
 	@Test
-	public void testTrivial() {
+	public void testTrivial() throws UnwindThrowable {
 		String s = "print( 2 )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testAlmostTrivial() {
+	public void testAlmostTrivial() throws UnwindThrowable {
 		String s = "print( 2 )\n" +
 			"print( 3 )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testSimple() {
+	public void testSimple() throws UnwindThrowable {
 		String s = "print( 'hello, world' )\n" +
 			"for i = 2,4 do\n" +
 			"	print( 'i', i )\n" +
@@ -55,7 +55,7 @@ public class SimpleTests {
 	}
 
 	@Test
-	public void testBreak() {
+	public void testBreak() throws UnwindThrowable {
 		String s = "a=1\n" +
 			"while true do\n" +
 			"  if a>10 then\n" +
@@ -68,21 +68,21 @@ public class SimpleTests {
 	}
 
 	@Test
-	public void testShebang() {
+	public void testShebang() throws UnwindThrowable {
 		String s = "#!../lua\n" +
 			"print( 2 )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testInlineTable() {
+	public void testInlineTable() throws UnwindThrowable {
 		String s = "A = {g=10}\n" +
 			"print( A )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testEqualsAnd() {
+	public void testEqualsAnd() throws UnwindThrowable {
 		String s = "print( 1 == b and b )\n";
 		doTest(s);
 	}

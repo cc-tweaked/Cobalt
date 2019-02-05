@@ -52,22 +52,22 @@ import org.squiddev.cobalt.*;
  */
 public abstract class VarArgFunction extends LibFunction {
 	@Override
-	public final LuaValue call(LuaState state) throws LuaError {
+	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return invoke(state, Constants.NONE).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
 		return invoke(state, arg).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2)).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
 	}
 }

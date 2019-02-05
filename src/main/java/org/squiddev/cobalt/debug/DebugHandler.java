@@ -30,6 +30,9 @@ import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.Upvalue;
 
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD_LINE;
+
 /**
  * The main handler for debugging
  */
@@ -49,21 +52,19 @@ public class DebugHandler {
 	}
 
 	/**
-	 * Called by Java functions on entry.
+	 * Called by recurring java functions on entry
 	 *
-	 * Note, this only needs to be called by functions which call user-provided code (such
-	 * as {@code pcall} or {@code string.gsub}.
-	 *
-	 * @param ds   The current debug state
-	 * @param func the function called
-	 * @throws LuaError On a runtime error.
+	 * @param ds    The current debug state
+	 * @param func  the function called
+	 * @param state The state which will be used when resuming the function.
+	 * @param <S>   The type of the state used when resuming the function.
+	 * @param <T>   The type of the function
+	 * @return The pushed debug frame for this function.
+	 * @throws LuaError On a stack overflow
 	 */
-	public DebugFrame onCall(DebugState ds, LuaFunction func) throws LuaError {
+	public <S, T extends LuaFunction & Resumable<S>> DebugFrame setupCall(DebugState ds, T func, S state) throws LuaError {
 		DebugFrame di = ds.pushJavaInfo();
-		di.setFunction(func);
-
-		if (!ds.inhook && ds.hookcall) ds.hookCall(di);
-
+		di.setFunction(func, state);
 		return di;
 	}
 
@@ -74,22 +75,12 @@ public class DebugHandler {
 	 * @param func  the function called
 	 * @param args  The arguments to this function
 	 * @param stack The current lua stack
-	 * @return The pushed info
-	 * @throws LuaError On a runtime error.
+	 * @return The pushed debug frame for this function.
+	 * @throws LuaError On a stack overflow
 	 */
-	public DebugFrame onCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack, Upvalue[] stackUpvalues) throws LuaError {
+	public DebugFrame setupCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack, Upvalue[] stackUpvalues) throws LuaError {
 		DebugFrame di = ds.pushInfo();
 		di.setFunction(func, args, stack, stackUpvalues);
-
-		if (!ds.inhook && ds.hookcall) {
-			// Pretend we are at the first instruction for the hook.
-			try {
-				di.pc++;
-				ds.hookCall(di);
-			} finally {
-				di.pc--;
-			}
-		}
 		return di;
 	}
 
@@ -97,14 +88,18 @@ public class DebugHandler {
 	 * Called by Closures and recurring Java functions on return
 	 *
 	 * @param ds Debug state
+	 * @param di The head debug frame
 	 * @throws LuaError On a runtime error within the hook.
 	 */
-	public void onReturn(DebugState ds) throws LuaError {
+	public void onReturn(DebugState ds, DebugFrame di) throws LuaError, UnwindThrowable {
 		try {
-			if (!ds.inhook && ds.hookrtrn) ds.hookReturn();
-		} finally {
+			if (!ds.inhook && ds.hookrtrn) ds.hookReturn(di);
+		} catch (LuaError | RuntimeException e) {
 			ds.popInfo();
+			throw e;
 		}
+
+		ds.popInfo();
 	}
 
 	/**
@@ -127,34 +122,45 @@ public class DebugHandler {
 	 * @param top    The top of the callstack
 	 * @throws LuaError On a runtime error.
 	 */
-	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError {
-		Prototype prototype = ds.inhook || di.closure == null ? null : di.closure.getPrototype();
-		int oldPc = di.pc;
-
-		di.bytecode(pc, extras, top);
+	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError, UnwindThrowable {
+		di.pc = pc;
+		di.top = top;
+		di.extras = extras;
 
 		if (!ds.inhook) {
-			if (ds.hookcount > 0) {
-				if (++ds.hookcodes >= ds.hookcount) {
+			// See traceexec for some of the ideas behind this.
+
+			// If the HOOKYIELD flag is set, we've definitely executed the instruction
+			// hook, and so should skip it.
+			if ((di.flags & FLAG_HOOKYIELD) == 0) {
+				if (ds.hookcount > 0 && ++ds.hookcodes >= ds.hookcount) {
 					ds.hookcodes = 0;
 					ds.hookInstruction(di);
 				}
+			} else {
+				di.flags &= ~FLAG_HOOKYIELD;
 			}
 
-			if (ds.hookline && prototype != null) {
-				int[] lineInfo = prototype.lineinfo;
-				if (lineInfo != null && pc >= 0 && pc < lineInfo.length) {
-					int oldLine = oldPc >= 0 && oldPc < lineInfo.length ? lineInfo[oldPc] : -1;
-					int newLine = lineInfo[pc];
+			// If the HOOKYIELD_LINE flag is set, we've executed the line hook too, and so
+			// should skip it.
+			if ((di.flags & FLAG_HOOKYIELD_LINE) == 0) {
+				if (ds.hookline && di.closure != null) {
+					Prototype prototype = di.closure.getPrototype();
+					int[] lineInfo = prototype.lineinfo;
+					int newLine = lineInfo != null && pc >= 0 && pc < lineInfo.length ? lineInfo[pc] : -1;
+					int oldPc = di.oldPc;
 
-					if (oldLine != newLine) {
-						int c = prototype.code[pc];
-						if ((c & 0x3f) != Lua.OP_JMP || ((c >>> 14) - 0x1ffff) >= 0) {
-							ds.hookLine(di, oldLine, newLine);
-						}
+					// call linehook when enter a new function, when jump back (loop), or when enter a new line
+					if (oldPc == -1 || pc <= oldPc
+						|| newLine != (lineInfo != null && oldPc >= 0 && oldPc < lineInfo.length ? lineInfo[oldPc] : -1)) {
+						ds.hookLine(di, newLine);
 					}
 				}
+			} else {
+				di.flags &= ~FLAG_HOOKYIELD_LINE;
 			}
+
+			di.oldPc = pc;
 		}
 	}
 

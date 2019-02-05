@@ -489,44 +489,6 @@ public final class LuaTable extends LuaValue {
 		return v.isNil() ? NONE : varargsOf(LuaInteger.valueOf(k), v);
 	}
 
-	/**
-	 * Call the supplied function once for each key-value pair
-	 *
-	 * @param state The current lua state
-	 * @param func  The function to call
-	 * @return {@link Constants#NIL}
-	 * @throws LuaError On a runtime error.
-	 */
-	public LuaValue foreach(LuaState state, LuaValue func) throws LuaError {
-		Varargs n;
-		LuaValue k = NIL;
-		LuaValue v;
-		while (!(k = ((n = next(k)).first())).isNil()) {
-			if (!(v = OperationHelper.call(state, func, k, n.arg(2))).isNil()) {
-				return v;
-			}
-		}
-		return NIL;
-	}
-
-	/**
-	 * Call the supplied function once for each key-value pair
-	 * in the contiguous array part
-	 *
-	 * @param state The current lua state
-	 * @param func  The function to call
-	 * @return {@link Constants#NIL}
-	 * @throws LuaError On a runtime error.
-	 */
-	public LuaValue foreachi(LuaState state, LuaValue func) throws LuaError {
-		LuaValue v, r;
-		for (int k = 0; !(v = rawget(++k)).isNil(); ) {
-			if (!(r = OperationHelper.call(state, func, valueOf(k), v)).isNil()) {
-				return r;
-			}
-		}
-		return NIL;
-	}
 
 	private static int hashpow2(int hashCode, int mask) {
 		return hashCode & mask;
@@ -685,54 +647,22 @@ public final class LuaTable extends LuaValue {
 	//
 
 	/**
-	 * Sort the table using a comparator.
+	 * Prepare the table for being sorted. Trimming unused values
 	 *
-	 * @param state      Current lua state
-	 * @param comparator {@link LuaValue} to be called to compare elements.
+	 * @return The length of this array.
 	 * @throws LuaError On a runtime error.
 	 */
-	public void sort(LuaState state, LuaValue comparator) throws LuaError {
+	public int prepSort() throws LuaError {
 		if (weakValues) dropWeakArrayValues();
-
 		int n = array.length;
 		while (n > 0 && array[n - 1] == NIL) {
 			--n;
 		}
-		if (n > 1) {
-			heapSort(state, n, comparator);
-		}
+
+		return n;
 	}
 
-	private void heapSort(LuaState state, int count, LuaValue cmpfunc) throws LuaError {
-		heapify(state, count, cmpfunc);
-		for (int end = count - 1; end > 0; ) {
-			swap(end, 0);
-			siftDown(state, 0, --end, cmpfunc);
-		}
-	}
-
-	private void heapify(LuaState state, int count, LuaValue cmpfunc) throws LuaError {
-		for (int start = count / 2 - 1; start >= 0; --start) {
-			siftDown(state, start, count - 1, cmpfunc);
-		}
-	}
-
-	private void siftDown(LuaState state, int start, int end, LuaValue cmpfunc) throws LuaError {
-		for (int root = start; root * 2 + 1 <= end; ) {
-			int child = root * 2 + 1;
-			if (child < end && compare(state, child, child + 1, cmpfunc)) {
-				++child;
-			}
-			if (compare(state, root, child, cmpfunc)) {
-				swap(root, child);
-				root = child;
-			} else {
-				return;
-			}
-		}
-	}
-
-	private boolean compare(LuaState state, int i, int j, LuaValue cmpfunc) throws LuaError {
+	public boolean compare(LuaState state, int i, int j, LuaValue cmpfunc) throws LuaError, UnwindThrowable {
 		LuaValue a, b;
 
 		a = strengthen(array[i]);
@@ -748,7 +678,7 @@ public final class LuaTable extends LuaValue {
 		}
 	}
 
-	private void swap(int i, int j) {
+	public void swap(int i, int j) {
 		Object a = array[i];
 		array[i] = array[j];
 		array[j] = a;

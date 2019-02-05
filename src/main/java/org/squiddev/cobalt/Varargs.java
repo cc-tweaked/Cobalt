@@ -75,6 +75,15 @@ public abstract class Varargs {
 	 */
 	public abstract LuaValue first();
 
+	/**
+	 * Convert this varargs to an immutable variant.
+	 *
+	 * This ensures that we don't mutate the varargs when copying to/from the Lua stack.
+	 *
+	 * @return The immutable variant
+	 */
+	public abstract Varargs asImmutable();
+
 	// -----------------------------------------------------------------------
 	// utilities to get specific arguments and type-check them.
 	// -----------------------------------------------------------------------
@@ -191,7 +200,7 @@ public abstract class Varargs {
 			case 1:
 				return new LuaValue.PairVarargs(arg(start), arg(end));
 		}
-		return end < start ? (Varargs) Constants.NONE : new SubVarargs(this, start, end);
+		return end < start ? Constants.NONE : new SubVarargs(this, start, end);
 	}
 
 	/**
@@ -219,6 +228,12 @@ public abstract class Varargs {
 		@Override
 		public LuaValue first() {
 			return v.arg(start);
+		}
+
+		@Override
+		public Varargs asImmutable() {
+			Varargs vClone = v.asImmutable();
+			return vClone == v ? this : new SubVarargs(vClone, start, end);
 		}
 
 		@Override
