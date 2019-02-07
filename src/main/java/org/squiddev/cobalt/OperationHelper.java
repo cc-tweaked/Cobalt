@@ -172,7 +172,8 @@ public final class OperationHelper {
 	 * @param leftStack  Stack index of the LHS
 	 * @param rightStack Stack index of the RHS
 	 * @return {@link LuaValue} resulting from metatag processing
-	 * @throws LuaError if metatag was not defined for either operand
+	 * @throws LuaError        if metatag was not defined for either operand or the underlying operator errored.
+	 * @throws UnwindThrowable If calling the metatable function yielded.
 	 */
 	public static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError, UnwindThrowable {
 		return call(state, getMetatable(state, tag, left, right, leftStack, rightStack), left, right);

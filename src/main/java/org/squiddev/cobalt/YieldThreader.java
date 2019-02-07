@@ -6,8 +6,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class YieldThreader implements Executor {
-	boolean abandoned;
-
 	private final Executor executor;
 	final Lock lock = new ReentrantLock();
 	final Condition loop = lock.newCondition();
@@ -25,7 +23,7 @@ public final class YieldThreader implements Executor {
 		executor.execute(command);
 	}
 
-	public Varargs unpack() throws LuaError {
+	Varargs unpack() throws LuaError {
 		// And extract the arguments again
 		Varargs result = args;
 		Throwable error = this.error;
@@ -40,12 +38,12 @@ public final class YieldThreader implements Executor {
 		return result;
 	}
 
-	public void set(Throwable error) {
+	void set(Throwable error) {
 		this.args = null;
 		this.error = error;
 	}
 
-	public void set(Varargs args) {
+	void set(Varargs args) {
 		this.args = args;
 		this.error = null;
 	}

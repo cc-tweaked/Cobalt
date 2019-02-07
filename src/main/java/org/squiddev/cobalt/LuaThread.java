@@ -284,7 +284,8 @@ public class LuaThread extends LuaValue {
 	 * @param state The current lua state
 	 * @param args  The arguments to send as return values to {@link #resume(LuaState, LuaThread, Varargs)}
 	 * @return The values this coroutine was resumed with
-	 * @throws LuaError If this thread cannot be yielded.
+	 * @throws LuaError             If this thread cannot be yielded.
+	 * @throws InterruptedException If this thread was terminated when yielding.
 	 */
 	public static Varargs yieldBlocking(LuaState state, Varargs args) throws LuaError, InterruptedException {
 		Objects.requireNonNull(args, "args cannot be null");
@@ -298,7 +299,10 @@ public class LuaThread extends LuaValue {
 		}
 		if (thread.isMainThread()) throw new LuaError("cannot yield main thread");
 
+		// Mark the parent coroutine as "active", and yield.
+		state.currentThread = thread.previousThread;
 		thread.status = STATUS_SUSPENDED;
+		thread.previousThread = null;
 
 		// Construct a lock to wait on.
 		if (thread.resumeLock == null) thread.resumeLock = threader.lock.newCondition();
@@ -311,8 +315,9 @@ public class LuaThread extends LuaValue {
 			threader.loop.signal();
 
 			// Wait for us to be resumed.
+			// TODO: Should we switch back to LuaThreads, so we can do WeakReferences too?
 			while (thread.resumeLock.awaitNanos(orphanCheckInterval) <= 0) {
-				if (threader.abandoned) throw new InterruptedException("Abandoned thread");
+				if (state.abandoned) throw new InterruptedException("Abandoned thread");
 			}
 
 			return threader.unpack();
@@ -376,6 +381,7 @@ public class LuaThread extends LuaValue {
 			}
 		}
 
+
 		threader.lock.lock();
 		try {
 			// First, set up the initial state
@@ -396,7 +402,7 @@ public class LuaThread extends LuaValue {
 							LuaFunction function = func;
 							func = null;
 
-							Varargs res = loop(state, state.currentThread, function, threader.args);
+							Varargs res = loop(state, state.currentThread, function, threader.unpack());
 
 							// Loop returned a value, which means the top-level coroutine yielded or terminated.
 							threader.set(res);
@@ -419,14 +425,15 @@ public class LuaThread extends LuaValue {
 				}
 			};
 
-			while (threader.running) {
+			while (threader.running && state.currentThread != null) {
 				threader.execute(task);
 				threader.loop.await();
 			}
 
 			return threader.unpack();
 		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
+			Thread.currentThread().interrupt();
+			throw new RuntimeException("Interrupted while waiting for coroutine", e);
 		} finally {
 			threader.lock.unlock();
 		}

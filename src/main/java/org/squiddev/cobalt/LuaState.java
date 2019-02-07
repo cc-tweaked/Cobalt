@@ -122,6 +122,13 @@ public final class LuaState {
 	 */
 	final YieldThreader threader;
 
+	/**
+	 * If this state has been abandoned, and threads should be cleaned up.
+	 *
+	 * @see LuaThread#orphanCheckInterval
+	 */
+	boolean abandoned;
+
 	public LuaState() {
 		this(new LuaState.Builder());
 	}
@@ -140,6 +147,16 @@ public final class LuaState {
 		this.random = builder.random;
 		this.debug = builder.debug;
 		this.threader = builder.coroutineExecutor == null ? null : new YieldThreader(builder.coroutineExecutor);
+	}
+
+	/**
+	 * Abandon this state, instructing any pending thread to terminate.
+	 *
+	 * Note, this only has an effect if a {@link Builder#yieldThreader()} is active
+	 * for this state.
+	 */
+	public void abandon() {
+		abandoned = true;
 	}
 
 	/**

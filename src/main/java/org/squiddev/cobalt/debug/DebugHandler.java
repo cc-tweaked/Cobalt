@@ -70,10 +70,11 @@ public class DebugHandler {
 	/**
 	 * Called by closures
 	 *
-	 * @param ds    The current debug state
-	 * @param func  the function called
-	 * @param args  The arguments to this function
-	 * @param stack The current lua stack
+	 * @param ds            The current debug state
+	 * @param func          the function called
+	 * @param args          The arguments to this function
+	 * @param stack         The current lua stack
+	 * @param stackUpvalues The upvalue equivalent of this stack
 	 * @return The pushed debug frame for this function.
 	 * @throws LuaError On a stack overflow
 	 */
@@ -88,7 +89,8 @@ public class DebugHandler {
 	 *
 	 * @param ds Debug state
 	 * @param di The head debug frame
-	 * @throws LuaError On a runtime error within the hook.
+	 * @throws LuaError        On a runtime error within the hook.
+	 * @throws UnwindThrowable If the hook transfers control to another coroutine.
 	 */
 	public void onReturn(DebugState ds, DebugFrame di) throws LuaError, UnwindThrowable {
 		try {
@@ -119,7 +121,8 @@ public class DebugHandler {
 	 * @param pc     Current program counter
 	 * @param extras Extra arguments
 	 * @param top    The top of the callstack
-	 * @throws LuaError On a runtime error.
+	 * @throws LuaError        On a runtime error.
+	 * @throws UnwindThrowable If the hook transfers control to another coroutine.
 	 */
 	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError, UnwindThrowable {
 		di.pc = pc;

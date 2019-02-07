@@ -428,7 +428,8 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Convert to userdata instance if specific type, or null.
 	 *
-	 * @param c Use this class to create userdata
+	 * @param <T> The type of this userdata.
+	 * @param c   Use this class to create userdata
 	 * @return userdata instance if is a userdata whose instance derives from {@code c},
 	 * or null if not {@link LuaUserdata}
 	 * @see #optUserdata(Class, Object)
@@ -734,6 +735,7 @@ public abstract class LuaValue extends Varargs {
 	 * Check that optional argument is a userdata whose instance is of a type
 	 * and return the Object instance
 	 *
+	 * @param <T> The type of this userdata.
 	 * @param c      Class to test userdata instance against
 	 * @param defval Object to return if {@code this} is nil or none
 	 * @return Object instance of the userdata if a {@link LuaUserdata} and instance is assignable to {@code c},
@@ -1017,6 +1019,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Check that this is a {@link LuaUserdata}, or throw {@link LuaError} if it is not
 	 *
+	 * @param <T> The type of this userdata.
 	 * @param c The class of userdata to convert to
 	 * @return {@code this} if it is a {@link LuaUserdata}
 	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
