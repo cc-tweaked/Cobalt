@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Random;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -106,8 +107,20 @@ public final class LuaState {
 	 */
 	public Random random;
 
+	/**
+	 * The currently executing thread
+	 */
 	LuaThread currentThread;
-	LuaThread mainThread;
+
+	/**
+	 * The currently executing main thread
+	 */
+	private LuaThread mainThread;
+
+	/**
+	 * The currently active {@link YieldThreader}.
+	 */
+	final YieldThreader threader;
 
 	public LuaState() {
 		this(new LuaState.Builder());
@@ -126,6 +139,7 @@ public final class LuaState {
 		this.compiler = builder.compiler;
 		this.random = builder.random;
 		this.debug = builder.debug;
+		this.threader = builder.coroutineExecutor == null ? null : new YieldThreader(builder.coroutineExecutor);
 	}
 
 	/**
@@ -176,8 +190,8 @@ public final class LuaState {
 	 */
 	public static class Builder {
 		private static final AtomicInteger coroutineCount = new AtomicInteger();
-		private static final Executor defaultCoroutineExecutor = command ->
-			new Thread(command, "Coroutine-" + coroutineCount.getAndIncrement()).start();
+		private static final Executor defaultCoroutineExecutor = Executors.newCachedThreadPool(command ->
+			new Thread(command, "Coroutine-" + coroutineCount.getAndIncrement()));
 
 		private InputStream stdin = System.in;
 		private PrintStream stdout = System.out;
@@ -191,7 +205,7 @@ public final class LuaState {
 		private LoadState.LuaCompiler compiler = LuaC.INSTANCE;
 		private Random random = new Random();
 		private DebugHandler debug = DebugHandler.INSTANCE;
-		private Executor coroutineExecutor = defaultCoroutineExecutor;
+		private Executor coroutineExecutor = null;
 
 		/**
 		 * Build a Lua state from this builder
@@ -350,9 +364,14 @@ public final class LuaState {
 		 * @param coroutineExecutor The new executor
 		 * @return This builder
 		 */
-		public Builder coroutineFactory(Executor coroutineExecutor) {
+		public Builder yieldThreader(Executor coroutineExecutor) {
 			if (coroutineExecutor == null) throw new NullPointerException("coroutineExecutor cannot be null");
 			this.coroutineExecutor = coroutineExecutor;
+			return this;
+		}
+
+		public Builder yieldThreader() {
+			this.coroutineExecutor = defaultCoroutineExecutor;
 			return this;
 		}
 	}

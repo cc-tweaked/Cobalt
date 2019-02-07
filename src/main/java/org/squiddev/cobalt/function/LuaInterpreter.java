@@ -123,7 +123,6 @@ public final class LuaInterpreter {
 		LuaValue[] stack = new LuaValue[p.maxstacksize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
 
-		// TODO: Optimise this
 		varargs = ValueFactory.varargsOf(args, argStart, argSize, varargs);
 		for (int i = 0; i < p.numparams; i++) stack[i] = varargs.arg(i + 1);
 
@@ -136,7 +135,7 @@ public final class LuaInterpreter {
 		if (p.is_vararg >= VARARG_NEEDSARG) stack[p.numparams] = new LuaTable(varargs);
 
 		DebugState ds = DebugHandler.getDebugState(state);
-		DebugFrame di = state.debug.setupCall(ds, function, varargs, stack, upvalues);
+		DebugFrame di = state.debug.setupCall(ds, function, varargs.asImmutable(), stack, upvalues);
 		di.flags = flags;
 		di.extras = NONE;
 		di.pc = 0;
@@ -434,7 +433,7 @@ public final class LuaInterpreter {
 								Varargs args = b > 0 ?
 									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
 									ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
-								v = OperationHelper.invoke(state, val, args, a);
+								v = OperationHelper.invoke(state, val, args.asImmutable(), a);
 								if (c > 0) {
 									while (--c > 0) stack[a + c - 1] = v.arg(c);
 									v = NONE;
@@ -482,10 +481,10 @@ public final class LuaInterpreter {
 							continue newFrame;
 						} else if ((flags & FLAG_FRESH) != 0) {
 							// We're at the bottom of the stack: return a tailcall
-							return OperationHelper.invoke(state, val, args, a);
+							return OperationHelper.invoke(state, val, args.asImmutable(), a);
 						} else {
 							// Execute this function as normal
-							Varargs ret = OperationHelper.invoke(state, val, args, a);
+							Varargs ret = OperationHelper.invoke(state, val, args.asImmutable(), a);
 
 							di = ds.getStackUnsafe();
 							function = (LuaInterpretedFunction) di.closure;
@@ -504,7 +503,7 @@ public final class LuaInterpreter {
 						Varargs ret;
 						switch (b) {
 							case 0:
-								ret = ValueFactory.varargsOf(stack, a, top - v.count() - a, v);
+								ret = ValueFactory.varargsOf(stack, a, top - v.count() - a, v).asImmutable();
 								break;
 							case 1:
 								ret = NONE;
@@ -513,7 +512,7 @@ public final class LuaInterpreter {
 								ret = stack[a];
 								break;
 							default:
-								ret = ValueFactory.varargsOf(stack, a, b - 1);
+								ret = ValueFactory.varargsOf(stack, a, b - 1).asImmutable();
 								break;
 						}
 
@@ -734,9 +733,7 @@ public final class LuaInterpreter {
 				int c = (i >>> POS_C) & MAXARG_C;
 				if (c > 0) {
 					LuaValue[] stack = di.stack;
-					while (--c > 0) {
-						stack[a + c - 1] = varargs.arg(c);
-					}
+					while (--c > 0) stack[a + c - 1] = varargs.arg(c);
 					di.extras = NONE;
 				} else {
 					di.extras = varargs;
@@ -802,7 +799,7 @@ public final class LuaInterpreter {
 				Varargs ret;
 				switch (b) {
 					case 0:
-						ret = ValueFactory.varargsOf(di.stack, a, di.top - di.extras.count() - a, di.extras);
+						ret = ValueFactory.varargsOf(di.stack, a, di.top - di.extras.count() - a, di.extras).asImmutable();
 						break;
 					case 1:
 						ret = NONE;
@@ -811,7 +808,7 @@ public final class LuaInterpreter {
 						ret = di.stack[a];
 						break;
 					default:
-						ret = ValueFactory.varargsOf(di.stack, a, b - 1);
+						ret = ValueFactory.varargsOf(di.stack, a, b - 1).asImmutable();
 						break;
 				}
 
@@ -858,10 +855,10 @@ public final class LuaInterpreter {
 					return execute(state, setupCall(state, function, args, flags & FLAG_FRESH), function);
 				} else if ((flags & FLAG_FRESH) != 0) {
 					// We're at the bottom of the stack: just execute it
-					return OperationHelper.invoke(state, val, args, a);
+					return OperationHelper.invoke(state, val, args.asImmutable(), a);
 				} else {
 					// Execute this function as normal
-					Varargs ret = OperationHelper.invoke(state, val, args, a);
+					Varargs ret = OperationHelper.invoke(state, val, args.asImmutable(), a);
 
 					di = ds.getStackUnsafe();
 					function = (LuaInterpretedFunction) di.closure;

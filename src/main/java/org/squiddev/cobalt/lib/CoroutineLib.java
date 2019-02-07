@@ -87,7 +87,7 @@ public class CoroutineLib extends ResumableVarArgFunction<Object> implements Lua
 				return new LuaThread(state, func, state.getCurrentThread().getfenv());
 			}
 			case RESUME: {
-				di.flags |= FLAG_YPCALL; // TODO: Think this through
+				di.flags |= FLAG_YPCALL;
 				LuaThread thread = args.arg(1).checkThread();
 				try {
 					throw LuaThread.resume(state, thread, args.subargs(2));

@@ -1334,6 +1334,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
 	protected static final class ArrayPartVarargs extends Varargs {
+		private Varargs immutable;
 		private final int offset;
 		private final LuaValue[] v;
 		private final int length;
@@ -1393,9 +1394,10 @@ public abstract class LuaValue extends Varargs {
 
 		@Override
 		public Varargs asImmutable() {
+			if (this.immutable != null) return this.immutable;
 			LuaValue[] values = new LuaValue[length];
 			System.arraycopy(v, offset, values, 0, length);
-			return new ArrayVarargs(values, more.asImmutable());
+			return this.immutable = new ArrayVarargs(values, more.asImmutable());
 		}
 	}
 

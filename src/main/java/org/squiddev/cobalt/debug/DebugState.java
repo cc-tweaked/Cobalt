@@ -54,11 +54,6 @@ public final class DebugState {
 	private static final DebugFrame[] EMPTY = new DebugFrame[0];
 
 	/**
-	 * The thread that owns this object
-	 */
-	private final WeakReference<LuaThread> thread;
-
-	/**
 	 * The thread's lua state
 	 */
 	private final LuaState state;
@@ -102,9 +97,8 @@ public final class DebugState {
 	 */
 	public int hookcodes;
 
-	public DebugState(LuaThread thread) {
-		this.thread = thread.getReference();
-		this.state = thread.luaState;
+	public DebugState(LuaState state) {
+		this.state = state;
 	}
 
 	/**
@@ -215,12 +209,6 @@ public final class DebugState {
 			}
 		}
 		return new DebugFrame(func);
-	}
-
-	@Override
-	public String toString() {
-		LuaThread thread = this.thread.get();
-		return thread != null ? DebugHelpers.traceback(thread, 0) : "orphaned thread";
 	}
 
 	public void hookCall(DebugFrame frame) throws LuaError, UnwindThrowable {

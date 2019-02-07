@@ -2,12 +2,13 @@
 run(function()
 	local counts, depth = {}, 0
 	debug.sethook(function(kind)
+		counts[kind] = (counts[kind] or 0) + 1
+
 		if kind == "return" then depth = depth - 1 end
-		print(("%s%-6s %s"):format(("  "):rep(depth), kind, debug.getinfo(2).source))
+		print(("%s%-10s %s"):format(("  "):rep(depth), kind .. " (" .. counts[kind] .. ")", debug.getinfo(2).source))
 		if kind == "call" then depth = depth + 1 end
 
 		assertEquals(kind, coroutine.yield(kind))
-		counts[kind] = (counts[kind] or 0) + 1
 	end, "crl", 1)
 
 	assertEquals("zyz", (string.gsub("xyz", "x", "z")))

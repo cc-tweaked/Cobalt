@@ -1,7 +1,6 @@
 package org.squiddev.cobalt;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -9,6 +8,7 @@ import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.function.ResumableVarArgFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
 
 import java.io.ByteArrayOutputStream;
@@ -48,15 +48,33 @@ public class CoroutineTest {
 		return Arrays.asList(tests);
 	}
 
-	@Before
-	public void setup() {
-		helpers.setup();
+	private void setup() {
 		helpers.state.stdout = new CapturingPrintStream();
 		helpers.globals.load(helpers.state, new CoroutineFunctions());
 	}
 
 	@Test
-	public void run() throws IOException, CompileException, LuaError {
+	public void runNormal() throws IOException, CompileException, LuaError {
+		helpers.setup();
+		setup();
+		LuaThread.runMain(helpers.state, helpers.loadScript(name));
+	}
+
+	@Test(timeout = 1_000L)
+	public void runBlocking() throws IOException, CompileException, LuaError {
+		helpers.setup(LuaState.Builder::yieldThreader);
+		setup();
+		((LuaTable) helpers.globals.rawget("coroutine")).rawset("yield", new VarArgFunction() {
+			@Override
+			public Varargs invoke(LuaState state, Varargs args) throws LuaError {
+				try {
+					return LuaThread.yieldBlocking(state, args);
+				} catch (InterruptedException e) {
+					throw new OrphanedThread();
+				}
+			}
+		});
+
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 
@@ -93,7 +111,7 @@ public class CoroutineTest {
 	private static class CoroutineFunctions extends ResumableVarArgFunction<LuaThread> implements LuaLibrary {
 		@Override
 		public LuaValue add(LuaState state, LuaTable environment) {
-			bind(environment, CoroutineFunctions.class, new String[]{"suspend", "run", "assertEquals", "fail", "getOutput"});
+			bind(environment, CoroutineFunctions.class, new String[]{"suspend", "run", "assertEquals", "fail", "getOutput", "id"});
 			return environment;
 		}
 
@@ -120,6 +138,8 @@ public class CoroutineTest {
 				case 4: {
 					return valueOf(((CapturingPrintStream) state.stdout).getOutput());
 				}
+				case 5:
+					return args;
 				default:
 					return Constants.NONE;
 			}
@@ -132,7 +152,7 @@ public class CoroutineTest {
 					return value;
 				case 1:
 					if (!thread.isAlive()) return value;
-					throw LuaThread.resume(state, thread, value.asImmutable());
+					throw LuaThread.resume(state, thread, value);
 				default:
 					throw new NonResumableException("Cannot resume " + debugName());
 			}

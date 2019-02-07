@@ -40,12 +40,11 @@ public class DebugHandler {
 	public static final DebugHandler INSTANCE = new DebugHandler();
 
 	public static DebugState getDebugState(LuaThread thread) {
-		if (thread.debugState == null) thread.debugState = new DebugState(thread);
 		return thread.debugState;
 	}
 
 	public static DebugState getDebugState(LuaState state) {
-		return getDebugState(state.getCurrentThread());
+		return state.getCurrentThread().debugState;
 	}
 
 	protected DebugHandler() {
