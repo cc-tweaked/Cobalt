@@ -43,7 +43,7 @@ public class PerformanceTest {
 	}
 
 	@Test()
-	public void run() throws IOException, CompileException, LuaError {
+	public void run() throws IOException, CompileException, LuaError, UnwindThrowable {
 		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
 
 		System.out.println("[" + name + "]");

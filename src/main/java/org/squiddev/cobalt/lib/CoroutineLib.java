@@ -26,12 +26,15 @@ package org.squiddev.cobalt.lib;
 
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
+import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code coroutine}
@@ -48,7 +51,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.2">http://www.lua.org/manual/5.1/manual.html#5.2</a>
  */
-public class CoroutineLib extends VarArgFunction implements LuaLibrary {
+public class CoroutineLib extends ResumableVarArgFunction<Object> implements LuaLibrary {
 	private static final int CREATE = 0;
 	private static final int RESUME = 1;
 	private static final int RUNNING = 2;
@@ -77,15 +80,20 @@ public class CoroutineLib extends VarArgFunction implements LuaLibrary {
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
+	public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		switch (opcode) {
 			case CREATE: {
 				final LuaFunction func = args.arg(1).checkFunction();
 				return new LuaThread(state, func, state.getCurrentThread().getfenv());
 			}
 			case RESUME: {
-				final LuaThread t = args.arg(1).checkThread();
-				return t.resume(args.subargs(2));
+				di.flags |= FLAG_YPCALL;
+				LuaThread thread = args.arg(1).checkThread();
+				try {
+					throw LuaThread.resume(state, thread, args.subargs(2));
+				} catch (LuaError le) {
+					return varargsOf(Constants.FALSE, le.value);
+				}
 			}
 			case RUNNING: {
 				final LuaThread r = state.getCurrentThread();
@@ -94,9 +102,8 @@ public class CoroutineLib extends VarArgFunction implements LuaLibrary {
 			case STATUS: {
 				return valueOf(args.arg(1).checkThread().getStatus());
 			}
-			case YIELD: {
-				return LuaThread.yield(state, args);
-			}
+			case YIELD:
+				throw LuaThread.yield(state, args);
 			case WRAP: {
 				final LuaFunction func = args.arg(1).checkFunction();
 				final LuaTable env = func.getfenv();
@@ -108,15 +115,33 @@ public class CoroutineLib extends VarArgFunction implements LuaLibrary {
 				return cl;
 			}
 			case WRAPPED: {
-				final Varargs result = thread.resume(args);
-				if (result.first().toBoolean()) {
-					return result.subargs(2);
-				} else {
-					throw new LuaError(result.arg(2));
-				}
+				throw LuaThread.resume(state, thread, args);
 			}
 			default:
 				return Constants.NONE;
+		}
+	}
+
+	@Override
+	public Varargs resumeThis(LuaState state, Object object, Varargs value) {
+		switch (opcode) {
+			case YIELD:
+			case WRAPPED:
+				return value;
+			case RESUME:
+				return varargsOf(Constants.TRUE, value);
+			default:
+				throw new NonResumableException("Cannot resume " + debugName());
+		}
+	}
+
+	@Override
+	public Varargs resumeErrorThis(LuaState state, Object object, LuaError error) {
+		switch (opcode) {
+			case RESUME:
+				return varargsOf(Constants.FALSE, error.value);
+			default:
+				throw new NonResumableException("Cannot resume " + debugName());
 		}
 	}
 }

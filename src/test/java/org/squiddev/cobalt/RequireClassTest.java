@@ -17,14 +17,14 @@ public class RequireClassTest {
 	private LuaState state;
 
 	@Before
-	public void setup() throws LuaError {
+	public void setup() throws LuaError, UnwindThrowable {
 		state = new LuaState();
 		LuaTable globals = JsePlatform.standardGlobals(state);
 		require = (LuaFunction) OperationHelper.getTable(state, globals, ValueFactory.valueOf("require"));
 	}
 
 	@Test
-	public void testRequireClassSuccess() throws LuaError {
+	public void testRequireClassSuccess() throws LuaError, UnwindThrowable {
 		LuaValue result = require.call(state, ValueFactory.valueOf("org.squiddev.cobalt.require.RequireSampleSuccess"));
 		assertEquals("require-sample-success", result.toString());
 		result = require.call(state, ValueFactory.valueOf("org.squiddev.cobalt.require.RequireSampleSuccess"));
@@ -32,7 +32,7 @@ public class RequireClassTest {
 	}
 
 	@Test
-	public void testRequireClassLoadLuaError() {
+	public void testRequireClassLoadLuaError() throws UnwindThrowable {
 		try {
 			LuaValue result = require.call(state, ValueFactory.valueOf(RequireSampleLoadLuaError.class.getName()));
 			fail("incorrectly loaded class that threw lua error");
@@ -52,7 +52,7 @@ public class RequireClassTest {
 	}
 
 	@Test
-	public void testRequireClassLoadRuntimeException() {
+	public void testRequireClassLoadRuntimeException() throws UnwindThrowable {
 		try {
 			LuaValue result = require.call(state, ValueFactory.valueOf(RequireSampleLoadRuntimeExcep.class.getName()));
 			fail("incorrectly loaded class that threw runtime exception");
@@ -75,7 +75,7 @@ public class RequireClassTest {
 	}
 
 	@Test
-	public void testRequireClassClassCastException() {
+	public void testRequireClassClassCastException() throws UnwindThrowable {
 		try {
 			LuaValue result = require.call(state, ValueFactory.valueOf(RequireSampleClassCastExcep.class.getName()));
 			fail("incorrectly loaded class that threw class cast exception");

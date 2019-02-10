@@ -131,7 +131,7 @@ public class LuaOperationsTest {
 	}
 
 	@Test
-	public void testLength() throws LuaError {
+	public void testLength() throws LuaError, UnwindThrowable {
 		throwsLuaError("length", somenil);
 		throwsLuaError("length", sometrue);
 		throwsLuaError("length", somefalse);
@@ -213,7 +213,7 @@ public class LuaOperationsTest {
 	}
 
 	@Test
-	public void testFunctionClosureThreadEnv() throws LuaError {
+	public void testFunctionClosureThreadEnv() throws LuaError, UnwindThrowable {
 		// set up suitable environments for execution
 		LuaValue aaa = valueOf("aaa");
 		LuaValue eee = valueOf("eee");
@@ -235,7 +235,7 @@ public class LuaOperationsTest {
 
 				@Override
 				public LuaValue call(LuaState state) throws LuaError {
-					return OperationHelper.getTable(state, env, valueOf("a"));
+					return OperationHelper.noYield(state, () -> OperationHelper.getTable(state, env, valueOf("a")));
 				}
 			};
 			assertEquals(aaa, f.call(state));
@@ -259,9 +259,8 @@ public class LuaOperationsTest {
 		Prototype p2 = createPrototype("return loadstring('return a')", "threadtester");
 		{
 			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p2, _G), _G);
-			Varargs v = t.resume(Constants.NONE);
-			assertEquals(Constants.TRUE, v.arg(1));
-			LuaValue f = v.arg(2);
+			Varargs v = LuaThread.run(t, Constants.NONE);
+			LuaValue f = v.arg(1);
 			assertEquals(Constants.TFUNCTION, f.type());
 			assertEquals(aaa, OperationHelper.call(state, f));
 			assertEquals(_G, f.getfenv());
@@ -270,9 +269,8 @@ public class LuaOperationsTest {
 			// change the thread environment after creation!
 			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p2, _G), _G);
 			t.setfenv(newenv);
-			Varargs v = t.resume(Constants.NONE);
-			assertEquals(Constants.TRUE, v.arg(1));
-			LuaValue f = v.arg(2);
+			Varargs v = LuaThread.run(t, Constants.NONE);
+			LuaValue f = v.arg(1);
 			assertEquals(Constants.TFUNCTION, f.type());
 			assertEquals(eee, OperationHelper.call(state, f));
 			assertEquals(newenv, f.getfenv());
@@ -281,9 +279,8 @@ public class LuaOperationsTest {
 			// let the closure have a different environment from the thread
 			Prototype p3 = createPrototype("return function() return a end", "envtester");
 			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p3, newenv), _G);
-			Varargs v = t.resume(Constants.NONE);
-			assertEquals(Constants.TRUE, v.arg(1));
-			LuaValue f = v.arg(2);
+			Varargs v = LuaThread.run(t, Constants.NONE);
+			LuaValue f = v.arg(1);
 			assertEquals(Constants.TFUNCTION, f.type());
 			assertEquals(eee, OperationHelper.call(state, f));
 			assertEquals(newenv, f.getfenv());

@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.squiddev.cobalt.compiler.CompileException;
+import org.squiddev.cobalt.function.VarArgFunction;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -30,7 +31,8 @@ public class AssertionTest {
 			{"stringIssues"},
 			{"debug"},
 			{"debug-coroutine-hook"},
-			{"gc"}
+			{"gc"},
+			{"immutable"},
 		};
 
 		return Arrays.asList(tests);
@@ -39,6 +41,12 @@ public class AssertionTest {
 	@Before
 	public void setup() {
 		helpers.setup();
+		helpers.globals.rawset("id_", new VarArgFunction() {
+			@Override
+			public Varargs invoke(LuaState state, Varargs args) {
+				return args;
+			}
+		});
 	}
 
 	@Test

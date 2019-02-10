@@ -25,10 +25,7 @@
 
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.*;
 
 import static org.squiddev.cobalt.Constants.NIL;
 
@@ -58,22 +55,22 @@ import static org.squiddev.cobalt.Constants.NIL;
  */
 public abstract class TwoArgFunction extends LibFunction {
 	@Override
-	public final LuaValue call(LuaState state) throws LuaError {
+	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return call(state, NIL, NIL);
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
 		return call(state, arg, NIL);
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
 		return call(state, arg1, arg2);
 	}
 
 	@Override
-	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
+	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
 		return call(state, varargs.first(), varargs.arg(2));
 	}
 }

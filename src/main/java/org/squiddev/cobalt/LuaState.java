@@ -33,11 +33,9 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Collections;
 import java.util.Random;
-import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -109,11 +107,27 @@ public final class LuaState {
 	 */
 	public Random random;
 
-	private final Executor coroutineExecutor;
-
+	/**
+	 * The currently executing thread
+	 */
 	LuaThread currentThread;
-	LuaThread mainThread;
-	Set<LuaThread> threads = Collections.newSetFromMap(new WeakHashMap<>());
+
+	/**
+	 * The currently executing main thread
+	 */
+	private LuaThread mainThread;
+
+	/**
+	 * The currently active {@link YieldThreader}.
+	 */
+	final YieldThreader threader;
+
+	/**
+	 * If this state has been abandoned, and threads should be cleaned up.
+	 *
+	 * @see LuaThread#orphanCheckInterval
+	 */
+	boolean abandoned;
 
 	public LuaState() {
 		this(new LuaState.Builder());
@@ -132,17 +146,17 @@ public final class LuaState {
 		this.compiler = builder.compiler;
 		this.random = builder.random;
 		this.debug = builder.debug;
-		this.coroutineExecutor = builder.coroutineExecutor;
+		this.threader = builder.coroutineExecutor == null ? null : new YieldThreader(builder.coroutineExecutor);
 	}
 
 	/**
-	 * The executor for coroutines
+	 * Abandon this state, instructing any pending thread to terminate.
 	 *
-	 * @return Gets this state's coroutine executor.
-	 * @see LuaThread#resume(Varargs)
+	 * Note, this only has an effect if a {@link Builder#yieldThreader()} is active
+	 * for this state.
 	 */
-	public Executor getCoroutineExecutor() {
-		return coroutineExecutor;
+	public void abandon() {
+		abandoned = true;
 	}
 
 	/**
@@ -184,23 +198,6 @@ public final class LuaState {
 		currentThread = thread;
 	}
 
-	/**
-	 * Abandon all threads but the main one
-	 */
-	public void abandon() {
-		next:
-		while (true) {
-			for (LuaThread thread : threads) {
-				if (thread != mainThread) {
-					thread.abandon();
-					continue next;
-				}
-			}
-
-			break;
-		}
-	}
-
 	public static LuaState.Builder builder() {
 		return new LuaState.Builder();
 	}
@@ -210,8 +207,8 @@ public final class LuaState {
 	 */
 	public static class Builder {
 		private static final AtomicInteger coroutineCount = new AtomicInteger();
-		private static final Executor defaultCoroutineExecutor = command ->
-			new Thread(command, "Coroutine-" + coroutineCount.getAndIncrement()).start();
+		private static final Executor defaultCoroutineExecutor = Executors.newCachedThreadPool(command ->
+			new Thread(command, "Coroutine-" + coroutineCount.getAndIncrement()));
 
 		private InputStream stdin = System.in;
 		private PrintStream stdout = System.out;
@@ -225,7 +222,7 @@ public final class LuaState {
 		private LoadState.LuaCompiler compiler = LuaC.INSTANCE;
 		private Random random = new Random();
 		private DebugHandler debug = DebugHandler.INSTANCE;
-		private Executor coroutineExecutor = defaultCoroutineExecutor;
+		private Executor coroutineExecutor = null;
 
 		/**
 		 * Build a Lua state from this builder
@@ -384,9 +381,14 @@ public final class LuaState {
 		 * @param coroutineExecutor The new executor
 		 * @return This builder
 		 */
-		public Builder coroutineFactory(Executor coroutineExecutor) {
+		public Builder yieldThreader(Executor coroutineExecutor) {
 			if (coroutineExecutor == null) throw new NullPointerException("coroutineExecutor cannot be null");
 			this.coroutineExecutor = coroutineExecutor;
+			return this;
+		}
+
+		public Builder yieldThreader() {
+			this.coroutineExecutor = defaultCoroutineExecutor;
 			return this;
 		}
 	}

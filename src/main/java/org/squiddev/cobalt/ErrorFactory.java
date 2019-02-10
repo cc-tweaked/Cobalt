@@ -104,7 +104,7 @@ public class ErrorFactory {
 		String type = operand.typeName();
 		LuaString[] kind = null;
 		if (stack >= 0) {
-			DebugFrame info = DebugHandler.getDebugState(state.getCurrentThread()).getStack();
+			DebugFrame info = DebugHandler.getDebugState(state).getStack();
 			if (info != null && info.closure != null) {
 				if (stack < info.closure.getPrototype().maxstacksize) {
 					kind = DebugHelpers.getobjname(info, stack);

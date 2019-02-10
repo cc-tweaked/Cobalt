@@ -50,9 +50,9 @@ public class ProtectionTest {
 			}
 
 			@Override
-			public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError {
+			public void onInstruction(DebugState ds, DebugFrame di, int pc) throws LuaError, UnwindThrowable {
 				poll();
-				super.onInstruction(ds, di, pc, extras, top);
+				super.onInstruction(ds, di, pc);
 			}
 		}));
 	}

@@ -428,7 +428,8 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Convert to userdata instance if specific type, or null.
 	 *
-	 * @param c Use this class to create userdata
+	 * @param <T> The type of this userdata.
+	 * @param c   Use this class to create userdata
 	 * @return userdata instance if is a userdata whose instance derives from {@code c},
 	 * or null if not {@link LuaUserdata}
 	 * @see #optUserdata(Class, Object)
@@ -734,6 +735,7 @@ public abstract class LuaValue extends Varargs {
 	 * Check that optional argument is a userdata whose instance is of a type
 	 * and return the Object instance
 	 *
+	 * @param <T> The type of this userdata.
 	 * @param c      Class to test userdata instance against
 	 * @param defval Object to return if {@code this} is nil or none
 	 * @return Object instance of the userdata if a {@link LuaUserdata} and instance is assignable to {@code c},
@@ -1017,6 +1019,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Check that this is a {@link LuaUserdata}, or throw {@link LuaError} if it is not
 	 *
+	 * @param <T> The type of this userdata.
 	 * @param c The class of userdata to convert to
 	 * @return {@code this} if it is a {@link LuaUserdata}
 	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
@@ -1057,6 +1060,11 @@ public abstract class LuaValue extends Varargs {
 	@Override
 	public LuaValue arg(int index) {
 		return index == 1 ? this : Constants.NIL;
+	}
+
+	@Override
+	public Varargs asImmutable() {
+		return this;
 	}
 
 	@Override
@@ -1311,6 +1319,12 @@ public abstract class LuaValue extends Varargs {
 		public LuaValue first() {
 			return v.length > 0 ? v[0] : r.first();
 		}
+
+		@Override
+		public Varargs asImmutable() {
+			Varargs rClone = r.asImmutable();
+			return rClone == r ? this : r;
+		}
 	}
 
 	/**
@@ -1323,6 +1337,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
 	protected static final class ArrayPartVarargs extends Varargs {
+		private Varargs immutable;
 		private final int offset;
 		private final LuaValue[] v;
 		private final int length;
@@ -1379,6 +1394,14 @@ public abstract class LuaValue extends Varargs {
 		public LuaValue first() {
 			return length > 0 ? v[offset] : more.first();
 		}
+
+		@Override
+		public Varargs asImmutable() {
+			if (this.immutable != null) return this.immutable;
+			LuaValue[] values = new LuaValue[length];
+			System.arraycopy(v, offset, values, 0, length);
+			return this.immutable = new ArrayVarargs(values, more.asImmutable());
+		}
 	}
 
 	/**
@@ -1421,6 +1444,12 @@ public abstract class LuaValue extends Varargs {
 		@Override
 		public LuaValue first() {
 			return v1;
+		}
+
+		@Override
+		public Varargs asImmutable() {
+			Varargs vClone = v2.asImmutable();
+			return vClone == v2 ? this : new PairVarargs(v1, vClone);
 		}
 	}
 }

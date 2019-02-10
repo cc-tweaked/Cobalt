@@ -28,9 +28,12 @@ package org.squiddev.cobalt.debug;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaThread;
+import org.squiddev.cobalt.UnwindThrowable;
 import org.squiddev.cobalt.function.LuaFunction;
 
 import java.lang.ref.WeakReference;
+
+import static org.squiddev.cobalt.debug.DebugFrame.*;
 
 /**
  * DebugState is associated with a Thread
@@ -51,11 +54,6 @@ public final class DebugState {
 	private static final DebugFrame[] EMPTY = new DebugFrame[0];
 
 	/**
-	 * The thread that owns this object
-	 */
-	private final WeakReference<LuaThread> thread;
-
-	/**
 	 * The thread's lua state
 	 */
 	private final LuaState state;
@@ -65,14 +63,14 @@ public final class DebugState {
 	 *
 	 * This is limited by {@link #MAX_SIZE}.
 	 */
-	public int top = -1;
+	int top = -1;
 
 	/**
 	 * The number of non-interpreter functions on the stack.
 	 *
 	 * This is limited by {@link #MAX_JAVA_SIZE}.
 	 */
-	public int javaTop = -1;
+	private int javaTop = -1;
 
 	/**
 	 * The stack of debug info
@@ -99,9 +97,8 @@ public final class DebugState {
 	 */
 	public int hookcodes;
 
-	public DebugState(LuaThread thread) {
-		this.thread = new WeakReference<>(thread);
-		this.state = thread.luaState;
+	public DebugState(LuaState state) {
+		this.state = state;
 	}
 
 	/**
@@ -134,7 +131,7 @@ public final class DebugState {
 			if (top >= MAX_SIZE) throw new LuaError("stack overflow");
 			int newSize = length == 0 ? DEFAULT_SIZE : Math.min(MAX_SIZE, length + (length / 2));
 			DebugFrame[] f = new DebugFrame[newSize];
-			System.arraycopy(frames, 0, f, 0, frames.length);
+			System.arraycopy(frames, 0, f, 0, length);
 			for (int i = frames.length; i < newSize; ++i) {
 				f[i] = new DebugFrame(i > 0 ? f[i - 1] : null);
 			}
@@ -172,19 +169,6 @@ public final class DebugState {
 	}
 
 	/**
-	 * Copy hooks from another debug state
-	 *
-	 * @param other The state to copy from
-	 */
-	public void setHook(DebugState other) {
-		this.hookcount = other.hookcount;
-		this.hookcall = other.hookcall;
-		this.hookline = other.hookline;
-		this.hookrtrn = other.hookrtrn;
-		this.hookfunc = other.hookfunc;
-	}
-
-	/**
 	 * Get the top debug info
 	 *
 	 * @return The top debug info or {@code null}
@@ -208,7 +192,7 @@ public final class DebugState {
 	 * @param level The level to get at
 	 * @return The debug info or {@code null}
 	 */
-	public DebugFrame getDebugInfo(int level) {
+	public DebugFrame getFrame(int level) {
 		return level >= 0 && level <= top ? stack[top - level] : null;
 	}
 
@@ -227,61 +211,61 @@ public final class DebugState {
 		return new DebugFrame(func);
 	}
 
-	@Override
-	public String toString() {
-		LuaThread thread = this.thread.get();
-		return thread != null ? DebugHelpers.traceback(thread, 0) : "orphaned thread";
-	}
-
-	public void hookCall(DebugFrame frame) throws LuaError {
-		if (inhook || hookfunc == null) return;
-
+	public void hookCall(DebugFrame frame) throws LuaError, UnwindThrowable {
 		inhook = true;
 		try {
 			hookfunc.onCall(state, this, frame);
-		} catch (RuntimeException e) {
-			throw new LuaError(e);
-		} finally {
+		} catch (LuaError e) {
 			inhook = false;
+			throw e;
+		} catch (UnwindThrowable e) {
+			frame.flags |= FLAG_HOOKED;
+			throw e;
 		}
+
+		inhook = false;
 	}
 
-	public void hookReturn() throws LuaError {
-		if (inhook || hookfunc == null) return;
-
+	void hookReturn(DebugFrame frame) throws LuaError, UnwindThrowable {
 		inhook = true;
 		try {
-			hookfunc.onReturn(state, this, getStack());
-		} catch (RuntimeException e) {
-			throw new LuaError(e);
-		} finally {
+			hookfunc.onReturn(state, this, frame);
+		} catch (LuaError e) {
 			inhook = false;
+			throw e;
+		} catch (UnwindThrowable e) {
+			frame.flags |= FLAG_HOOKED;
+			throw e;
 		}
+
+		inhook = false;
 	}
 
-	public void hookInstruction(DebugFrame frame) throws LuaError {
-		if (inhook || hookfunc == null) return;
-
+	void hookInstruction(DebugFrame frame) throws LuaError, UnwindThrowable {
 		inhook = true;
 		try {
 			hookfunc.onCount(state, this, frame);
-		} catch (RuntimeException e) {
-			throw new LuaError(e);
-		} finally {
+		} catch (LuaError e) {
 			inhook = false;
+			throw e;
+		} catch (UnwindThrowable e) {
+			frame.flags |= FLAG_HOOKED | FLAG_HOOKYIELD;
+			throw e;
 		}
+		inhook = false;
 	}
 
-	public void hookLine(DebugFrame frame, int oldLine, int newLine) throws LuaError {
-		if (inhook || hookfunc == null) return;
-
+	void hookLine(DebugFrame frame, int newLine) throws LuaError, UnwindThrowable {
 		inhook = true;
 		try {
-			hookfunc.onLine(state, this, frame, oldLine, newLine);
-		} catch (RuntimeException e) {
-			throw new LuaError(e);
-		} finally {
+			hookfunc.onLine(state, this, frame, newLine);
+		} catch (LuaError e) {
 			inhook = false;
+			throw e;
+		} catch (UnwindThrowable e) {
+			frame.flags |= FLAG_HOOKED | FLAG_HOOKYIELD | FLAG_HOOKYIELD_LINE;
+			throw e;
 		}
+		inhook = false;
 	}
 }

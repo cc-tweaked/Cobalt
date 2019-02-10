@@ -25,19 +25,77 @@
 
 package org.squiddev.cobalt.debug;
 
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.LuaInterpreter;
-import org.squiddev.cobalt.function.Upvalue;
+import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.*;
 
 /**
  * Each thread will get a DebugState attached to it by the debug library
  * which will track function calls, hook functions, etc.
  */
 public final class DebugFrame {
+
+	/**
+	 * Whether this function is currently within a debug hook.
+	 *
+	 * @see #flags
+	 * @see DebugState#hookCall(DebugFrame) and other {@code hook*} functions.
+	 * @see org.squiddev.cobalt.function.ResumableVarArgFunction
+	 * @see org.squiddev.cobalt.function.LuaInterpretedFunction
+	 */
+	public static final int FLAG_HOOKED = 1 << 2;
+
+	/**
+	 * This is a fresh instance of a {@link LuaInterpreter}. The interpreter
+	 * loop should not continue beyond functions marked with this flag.
+	 */
+	public static final int FLAG_FRESH = 1 << 3;
+
+	/**
+	 * If this function is a yielded, protected call. Namely, if one can
+	 * {@link Resumable#resumeError(LuaState, Object, LuaError)} into it.
+	 *
+	 * @see #flags
+	 * @see org.squiddev.cobalt.lib.CoroutineLib {@code coroutine.resume} sets this, in order to receive errors from the
+	 * child coroutine.
+	 * @see org.squiddev.cobalt.lib.BaseLib {@code pcall}/{@code xpcall} set this for obvious reasons.
+	 */
+	public static final int FLAG_YPCALL = 1 << 4;
+
+	/**
+	 * Whether this function is currently within a line/instruction debug hook.
+	 *
+	 * @see #flags
+	 * @see DebugState#hookInstruction(DebugFrame)
+	 * @see org.squiddev.cobalt.function.LuaInterpretedFunction#resume(LuaState, Object, Varargs)
+	 */
+	public static final int FLAG_HOOKYIELD = 1 << 6;
+
+	/**
+	 * If the result should be inverted  (due to using lt rather than le).
+	 *
+	 * @see #flags
+	 * @see OperationHelper#le(LuaState, LuaValue, LuaValue)
+	 * @see LuaInterpreter#resume(LuaState, DebugFrame, LuaInterpretedFunction, Varargs)
+	 */
+	public static final int FLAG_LEQ = 1 << 7;
+
+	/**
+	 * If this function errored. This is a really gross hack to ensure we don't resume into errored
+	 * functions again.
+	 *
+	 * @see #flags
+	 * @see org.squiddev.cobalt.lib.BaseLib and the xpcall implementation.
+	 */
+	public static final int FLAG_ERROR = 1 << 10;
+
+	/**
+	 * Whether this function is currently within line debug hook.
+	 *
+	 * @see #flags
+	 * @see DebugState#hookInstruction(DebugFrame)
+	 */
+	public static final int FLAG_HOOKYIELD_LINE = 1 << 11;
+
 	/**
 	 * The debug info's function
 	 */
@@ -58,11 +116,13 @@ public final class DebugFrame {
 	 */
 	public Upvalue[] stackUpvalues;
 
+	public Object state;
+
 	public final DebugFrame previous;
 
-
 	public Varargs varargs, extras;
-	public int pc, top;
+	public int pc = -1, oldPc = -1, top = -1;
+	public int flags;
 
 	public DebugFrame(DebugFrame previous) {
 		this.previous = previous;
@@ -70,7 +130,6 @@ public final class DebugFrame {
 	}
 
 	public DebugFrame(LuaFunction func) {
-		pc = -1;
 		previous = null;
 		this.func = func;
 		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
@@ -84,8 +143,10 @@ public final class DebugFrame {
 		this.stackUpvalues = stackUpvalues;
 	}
 
-	void setFunction(LuaFunction func) {
+	public <S, T extends LuaFunction & Resumable<S>> void setFunction(T func, S state) {
 		this.func = func;
+		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
+		this.state = state;
 	}
 
 	public void cleanup() {
@@ -97,14 +158,10 @@ public final class DebugFrame {
 		closure = null;
 		stack = null;
 		stackUpvalues = null;
+		state = null;
 		varargs = extras = null;
-		pc = top = -1;
-	}
-
-	void bytecode(int pc, Varargs extras, int top) {
-		this.pc = pc;
-		this.top = top;
-		this.extras = extras;
+		flags = 0;
+		oldPc = pc = top = -1;
 	}
 
 	/**
@@ -139,5 +196,23 @@ public final class DebugFrame {
 	public LuaString getLocalName(int index) {
 		if (closure == null) return null;
 		return closure.getPrototype().getlocalname(index, pc);
+	}
+
+	@SuppressWarnings("unchecked")
+	public Varargs resume(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+		if (func instanceof Resumable<?>) {
+			return ((Resumable<Object>) func).resume(state, this.state, args);
+		} else {
+			throw new NonResumableException(func == null ? "null" : func.debugName());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public Varargs resumeError(LuaState state, LuaError error) throws LuaError, UnwindThrowable {
+		if (func instanceof Resumable<?>) {
+			return ((Resumable<Object>) func).resumeError(state, this.state, error);
+		} else {
+			throw new NonResumableException(func == null ? "null" : func.debugName());
+		}
 	}
 }

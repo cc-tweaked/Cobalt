@@ -143,7 +143,7 @@ public class MetatableTest {
 	}
 
 	@Test
-	public void testMetatableIndex() throws LuaError {
+	public void testMetatableIndex() throws LuaError, UnwindThrowable {
 		table.setMetatable(state, null);
 		userdata.setMetatable(state, null);
 		userdatamt.setMetatable(state, null);
@@ -207,7 +207,7 @@ public class MetatableTest {
 
 
 	@Test
-	public void testMetatableNewIndex() throws LuaError {
+	public void testMetatableNewIndex() throws LuaError, UnwindThrowable {
 		// empty metatable
 		LuaTable mt = ValueFactory.tableOf();
 		table.setMetatable(state, mt);
@@ -271,7 +271,7 @@ public class MetatableTest {
 
 	private void checkTable(LuaTable t,
 							LuaValue aa, LuaValue bb, LuaValue cc, LuaValue dd, LuaValue ee, LuaValue ff, LuaValue gg,
-							LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) throws LuaError {
+							LuaValue ra, LuaValue rb, LuaValue rc, LuaValue rd, LuaValue re, LuaValue rf, LuaValue rg) throws LuaError, UnwindThrowable {
 		assertEquals(aa, OperationHelper.getTable(state, t, valueOf("aa")));
 		assertEquals(bb, OperationHelper.getTable(state, t, valueOf("bb")));
 		assertEquals(cc, OperationHelper.getTable(state, t, valueOf("cc")));
@@ -296,7 +296,7 @@ public class MetatableTest {
 	}
 
 	@Test
-	public void testRawsetMetatableSet() throws LuaError {
+	public void testRawsetMetatableSet() throws LuaError, UnwindThrowable {
 		// set up tables
 		LuaTable m = makeTable("aa", "aaa", "bb", "bbb");
 		OperationHelper.setTable(state, m, Constants.INDEX, m);

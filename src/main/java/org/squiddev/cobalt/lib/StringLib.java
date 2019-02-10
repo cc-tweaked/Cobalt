@@ -27,11 +27,9 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.DumpState;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.OneArgFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
+import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
@@ -59,8 +57,8 @@ public class StringLib implements LuaLibrary {
 			"dump", "len", "lower", "reverse", "upper",});
 		LibFunction.bind(t, StringLibV.class, new String[]{
 			"byte", "char", "find", "format",
-			"gmatch", "gsub", "match", "rep",
-			"sub"});
+			"gmatch", "match", "rep", "sub"});
+		LibFunction.bind(t, StringLibR.class, new String[]{"gsub"});
 
 		t.rawset("gfind", t.rawget("gmatch"));
 		env.rawset("string", t);
@@ -134,17 +132,46 @@ public class StringLib implements LuaLibrary {
 				case 4:
 					return StringLib.gmatch(state, args);
 				case 5:
-					return StringLib.gsub(state, args);
-				case 6:
 					return StringLib.match(state, args);
-				case 7:
+				case 6:
 					return StringLib.rep(args);
-				case 8:
+				case 7:
 					return StringLib.sub(args);
 			}
 			return NONE;
 		}
 	}
+
+	static final class StringLibR extends ResumableVarArgFunction<Object> {
+		@Override
+		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+			switch (opcode) {
+				case 0: { // gsub
+					LuaString src = args.arg(1).checkLuaString();
+					LuaString p = args.arg(2).checkLuaString();
+					LuaValue replace = args.arg(3);
+					int maxS = args.arg(4).optInteger(src.length() + 1);
+
+					GSubState gsub = new GSubState(state, src, p, replace, maxS);
+					di.state = gsub;
+					return StringLib.gsubRun(state, gsub, null);
+				}
+				default:
+					return NONE;
+			}
+		}
+
+		// @Override
+		public Varargs resumeThis(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
+			switch (opcode) {
+				case 0: // gsub
+					return StringLib.gsubRun(state, (GSubState) object, value.first());
+				default:
+					throw new NonResumableException("Cannot resume " + debugName());
+			}
+		}
+	}
+
 
 	/**
 	 * string.byte (s [, i [, j]])
@@ -394,7 +421,7 @@ public class StringLib implements LuaLibrary {
 	static Varargs gmatch(LuaState state, Varargs args) throws LuaError {
 		LuaString src = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
-		return new GMatchAux(state, args, src, pat);
+		return new GMatchAux(state, src, pat);
 	}
 
 	static class GMatchAux extends VarArgFunction {
@@ -402,9 +429,9 @@ public class StringLib implements LuaLibrary {
 		private final MatchState ms;
 		private int soffset;
 
-		public GMatchAux(LuaState state, Varargs args, LuaString src, LuaString pat) {
+		public GMatchAux(LuaState state, LuaString src, LuaString pat) {
 			this.srclen = src.length();
-			this.ms = new MatchState(state.debug, args, src, pat);
+			this.ms = new MatchState(state.debug, src, pat);
 			this.soffset = 0;
 		}
 
@@ -470,26 +497,39 @@ public class StringLib implements LuaLibrary {
 	 * x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
 	 * --> x="lua-5.1.tar.gz"
 	 */
-	static Varargs gsub(LuaState state, Varargs args) throws LuaError {
-		LuaString src = args.arg(1).checkLuaString();
+	static Varargs gsubRun(LuaState state, GSubState gsub, Varargs result) throws LuaError, UnwindThrowable {
+		LuaString src = gsub.string;
 		final int srclen = src.length();
-		LuaString p = args.arg(2).checkLuaString();
-		LuaValue repl = args.arg(3);
-		int max_s = args.arg(4).optInteger(srclen + 1);
+		LuaString p = gsub.pattern;
+		LuaValue repl = gsub.replace;
+		int max_s = gsub.maxS;
 		final boolean anchor = p.length() > 0 && p.charAt(0) == '^';
 
-		Buffer lbuf = new Buffer(srclen);
-		MatchState ms = new MatchState(state.debug, args, src, p);
+		Buffer lbuf = gsub.buffer;
+		MatchState ms = gsub.ms;
 
 		int soffset = 0;
-		int n = 0;
-		while (n < max_s) {
+		while (gsub.n < max_s) {
 			ms.reset();
-			int res = ms.match(soffset, anchor ? 1 : 0);
-			if (res != -1) {
-				n++;
-				ms.add_value(state, lbuf, soffset, res, repl);
+			int res;
+
+			if (gsub.count == GSubState.EMPTY) {
+				// We haven't matched so we'll match here
+				gsub.count = res = ms.match(soffset, anchor ? 1 : 0);
+
+				if (res != -1) {
+					gsub.n++;
+					ms.add_value(state, lbuf, soffset, res, repl);
+				}
+			} else {
+				// Otherwise we've yielded so "finish" this replacement
+				res = gsub.count;
+				ms.finishAddValue(lbuf, soffset, res, result.first());
 			}
+
+			// And reset that state
+			gsub.count = GSubState.EMPTY;
+
 			if (res != -1 && res > soffset) {
 				soffset = res;
 			} else if (soffset < srclen) {
@@ -502,7 +542,32 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 		lbuf.append(src.substring(soffset, srclen));
-		return varargsOf(lbuf.toLuaString(), valueOf(n));
+		return varargsOf(lbuf.toLuaString(), valueOf(gsub.n));
+	}
+
+	private static final class GSubState {
+		static final int EMPTY = -2;
+
+		final Buffer buffer;
+		final LuaString string;
+		final LuaString pattern;
+		final LuaValue replace;
+		final int maxS;
+		int n;
+
+		MatchState ms;
+		int count;
+
+		GSubState(LuaState state, LuaString src, LuaString pattern, LuaValue replace, int maxS) {
+			this.buffer = new Buffer(src.length);
+			this.string = src;
+			this.pattern = pattern;
+			this.replace = replace;
+			this.maxS = maxS;
+
+			ms = new MatchState(state.debug, src, pattern);
+			count = EMPTY;
+		}
 	}
 
 	/**
@@ -591,7 +656,7 @@ public class StringLib implements LuaLibrary {
 				return varargsOf(valueOf(result + 1), valueOf(result + pat.length()));
 			}
 		} else {
-			MatchState ms = new MatchState(state.debug, args, s, pat);
+			MatchState ms = new MatchState(state.debug, s, pat);
 
 			boolean anchor = false;
 			int poff = 0;
@@ -676,16 +741,14 @@ public class StringLib implements LuaLibrary {
 		private final DebugHandler handler;
 		final LuaString s;
 		final LuaString p;
-		final Varargs args;
 		int level;
 		int[] cinit;
 		int[] clen;
 
-		MatchState(DebugHandler handler, Varargs args, LuaString s, LuaString pattern) {
+		MatchState(DebugHandler handler, LuaString s, LuaString pattern) {
 			this.handler = handler;
 			this.s = s;
 			this.p = pattern;
-			this.args = args;
 			this.level = 0;
 			this.cinit = new int[MAX_CAPTURES];
 			this.clen = new int[MAX_CAPTURES];
@@ -715,7 +778,8 @@ public class StringLib implements LuaLibrary {
 			}
 		}
 
-		public void add_value(LuaState state, Buffer lbuf, int soffset, int end, LuaValue repl) throws LuaError {
+		public void add_value(LuaState state, Buffer lbuf, int soffset, int end, LuaValue repl) throws LuaError, UnwindThrowable {
+			LuaValue replace;
 			switch (repl.type()) {
 				case TSTRING:
 				case TNUMBER:
@@ -723,18 +787,24 @@ public class StringLib implements LuaLibrary {
 					return;
 
 				case TFUNCTION:
-					repl = OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first();
+					// TODO: Ensure yields are handled correctly
+					replace = OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first();
 					break;
 
-				case TTABLE:
+				case TTABLE: {
 					// Need to call push_onecapture here for the error checking
-					repl = OperationHelper.getTable(state, repl, push_onecapture(0, soffset, end));
+					replace = OperationHelper.getTable(state, repl, push_onecapture(0, soffset, end));
 					break;
+				}
 
 				default:
 					throw new LuaError("bad argument: string/function/table expected");
 			}
 
+			finishAddValue(lbuf, soffset, end, replace);
+		}
+
+		public void finishAddValue(Buffer lbuf, int soffset, int end, LuaValue repl) throws LuaError {
 			if (!repl.toBoolean()) {
 				repl = s.substring(soffset, end);
 			} else if (!repl.isString()) {
