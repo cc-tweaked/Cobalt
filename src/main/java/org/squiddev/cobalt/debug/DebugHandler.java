@@ -116,18 +116,14 @@ public class DebugHandler {
 	/**
 	 * Called by Closures on bytecode execution
 	 *
-	 * @param ds     Debug state
-	 * @param di     Debug info
-	 * @param pc     Current program counter
-	 * @param extras Extra arguments
-	 * @param top    The top of the callstack
+	 * @param ds Debug state
+	 * @param di Debug info
+	 * @param pc
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If the hook transfers control to another coroutine.
 	 */
-	public void onInstruction(DebugState ds, DebugFrame di, int pc, Varargs extras, int top) throws LuaError, UnwindThrowable {
+	public void onInstruction(DebugState ds, DebugFrame di, int pc) throws LuaError, UnwindThrowable {
 		di.pc = pc;
-		di.top = top;
-		di.extras = extras;
 
 		if (!ds.inhook) {
 			// See traceexec for some of the ideas behind this.

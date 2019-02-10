@@ -166,13 +166,11 @@ public final class LuaInterpreter {
 			final Upvalue[] openups = di.stackUpvalues;
 			final Varargs varargs = di.varargs;
 
-			int pc = di.pc, top = di.top;
-			Varargs v = di.extras;
+			int pc = di.pc;
 
 			// process instructions
-			vm:
 			while (true) {
-				handler.onInstruction(ds, di, pc, v, top);
+				handler.onInstruction(ds, di, pc);
 
 				// pull out instruction
 				int i = code[pc++];
@@ -305,10 +303,10 @@ public final class LuaInterpreter {
 						int b = (i >>> POS_B) & MAXARG_B;
 						int c = (i >> POS_C) & MAXARG_C;
 
-						top = c + 1;
-						concat(state, di, stack, top, c - b + 1);
+						di.top = c + 1;
+						concat(state, di, stack, di.top, c - b + 1);
 						stack[a] = stack[b];
-						top = b;
+						di.top = b;
 						break;
 					}
 
@@ -390,21 +388,23 @@ public final class LuaInterpreter {
 								default:
 									di = b > 0
 										? setupCall(state, function, stack, a + 1, b - 1, NONE, 0) // exact arg count
-										: setupCall(state, function, stack, a + 1, top - v.count() - (a + 1), v, 0); // from prev top
+										: setupCall(state, function, stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras, 0); // from prev top
 							}
 
 							continue newFrame;
 						}
 
 						switch (i & (MASK_B | MASK_C)) {
-							case (1 << POS_B) | (0 << POS_C):
-								v = OperationHelper.invoke(state, val, NONE, a);
-								top = a + v.count();
+							case (1 << POS_B) | (0 << POS_C): {
+								Varargs v = di.extras = OperationHelper.invoke(state, val, NONE, a);
+								di.top = a + v.count();
 								break;
-							case (2 << POS_B) | (0 << POS_C):
-								v = OperationHelper.invoke(state, val, stack[a + 1], a);
-								top = a + v.count();
+							}
+							case (2 << POS_B) | (0 << POS_C): {
+								Varargs v = di.extras = OperationHelper.invoke(state, val, stack[a + 1], a);
+								di.top = a + v.count();
 								break;
+							}
 							case (1 << POS_B) | (1 << POS_C):
 								OperationHelper.call(state, val, a);
 								break;
@@ -432,13 +432,14 @@ public final class LuaInterpreter {
 							default: {
 								Varargs args = b > 0 ?
 									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-									ValueFactory.varargsOf(stack, a + 1, top - v.count() - (a + 1), v); // from prev top
-								v = OperationHelper.invoke(state, val, args.asImmutable(), a);
+									ValueFactory.varargsOf(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
+								Varargs v = OperationHelper.invoke(state, val, args.asImmutable(), a);
 								if (c > 0) {
 									while (--c > 0) stack[a + c - 1] = v.arg(c);
 									v = NONE;
 								} else {
-									top = a + v.count();
+									di.top = a + v.count();
+									di.extras = v;
 								}
 								break;
 							}
@@ -455,7 +456,8 @@ public final class LuaInterpreter {
 						//  tail return events when popping the last function.
 						// Technically we shouldn't do any of this when calling a C function, but LuaJ allows it,
 						// and thus some CC programs make assumptions about them being tail called.
-						int flags = di.flags;
+						int flags = di.flags, top = di.top;
+						Varargs v = di.extras;
 						handler.onReturn(ds, di);
 
 						LuaValue val = stack[a];
@@ -496,7 +498,8 @@ public final class LuaInterpreter {
 					case OP_RETURN: { // A B: return R(A), ... ,R(A+B-2) (see note)
 						int b = (i >>> POS_B) & MAXARG_B;
 
-						int flags = di.flags;
+						int flags = di.flags, top = di.top;
+						Varargs v = di.extras;
 						closeAll(openups);
 						handler.onReturn(ds, di);
 
@@ -556,7 +559,7 @@ public final class LuaInterpreter {
 								R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
 								else pc++
 							*/
-						v = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
+						Varargs v = di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
 						LuaValue val = v.first();
 						if (val.isNil()) {
 							pc++;
@@ -565,7 +568,7 @@ public final class LuaInterpreter {
 							for (int c = (i >> POS_C) & MAXARG_C; c > 1; --c) {
 								stack[a + 2 + c] = v.arg(c);
 							}
-							v = NONE;
+							di.extras = NONE;
 						}
 						break;
 					}
@@ -578,14 +581,14 @@ public final class LuaInterpreter {
 						int offset = (c - 1) * LFIELDS_PER_FLUSH;
 						LuaTable tbl = stack[a].checkTable();
 						if (b == 0) {
-							b = top - a - 1;
-							int m = b - v.count();
+							b = di.top - a - 1;
+							int m = b - di.extras.count();
 							int j = 1;
 							for (; j <= m; j++) {
 								tbl.rawset(offset + j, stack[a + j]);
 							}
 							for (; j <= b; j++) {
-								tbl.rawset(offset + j, v.arg(j - m));
+								tbl.rawset(offset + j, di.extras.arg(j - m));
 							}
 						} else {
 							tbl.presize(offset + b);
@@ -624,8 +627,8 @@ public final class LuaInterpreter {
 					case OP_VARARG: { // A B: R(A), R(A+1), ..., R(A+B-1) = vararg
 						int b = (i >>> POS_B) & MAXARG_B;
 						if (b == 0) {
-							top = a + varargs.count();
-							v = varargs;
+							di.top = a + varargs.count();
+							di.extras = varargs;
 						} else {
 							for (int j = 1; j < b; ++j) {
 								stack[a + j - 1] = varargs.arg(j);
