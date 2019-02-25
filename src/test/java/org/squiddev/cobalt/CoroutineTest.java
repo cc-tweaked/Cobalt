@@ -16,14 +16,11 @@ import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
-import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
 
@@ -60,8 +57,7 @@ public class CoroutineTest {
 	}
 
 	private void setup() {
-		helpers.state.stdout = new CapturingPrintStream();
-		helpers.globals.load(helpers.state, new CoroutineFunctions());
+		helpers.globals.load(helpers.state, new Functions());
 	}
 
 	private void setBlockingYield() {
@@ -121,67 +117,34 @@ public class CoroutineTest {
 		assertEquals("dead", helpers.state.getMainThread().getStatus());
 	}
 
-	private static final class CapturingPrintStream extends PrintStream {
-		private final ByteArrayOutputStream output;
-
-		CapturingPrintStream() {
-			super(new ByteArrayOutputStream());
-			output = (ByteArrayOutputStream) out;
-		}
-
-		@Override
-		public void println() {
-			super.println();
-		}
-
-		@Override
-		public void write(int b) {
-			super.write(b);
-			System.out.write(b);
-		}
-
-		@Override
-		public void write(byte[] buf, int off, int len) {
-			super.write(buf, off, len);
-			System.out.write(buf, off, len);
-		}
-
-		public String getOutput() {
-			return output.toString().replace("\r\n", "\n").replace('\r', '\n');
-		}
-	}
-
-	private static class CoroutineFunctions extends ResumableVarArgFunction<LuaThread> implements LuaLibrary {
+	private static class Functions extends ResumableVarArgFunction<LuaThread> implements LuaLibrary {
 		@Override
 		public LuaValue add(LuaState state, LuaTable environment) {
-			bind(environment, CoroutineFunctions.class, new String[]{"suspend", "run", "assertEquals", "fail", "getOutput", "id"});
+			bind(environment, Functions.class, new String[]{"suspend", "run", "assertEquals", "fail", "id"});
 			return environment;
 		}
 
 		@Override
 		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			switch (opcode) {
-				case 0:
+				case 0: // suspend
 					throw UnwindThrowable.suspend();
-				case 1: {
+				case 1: { // run
 					LuaThread thread = new LuaThread(state, args.first().checkFunction(), getfenv());
 					di.state = thread;
 					throw LuaThread.resume(state, thread, Constants.NONE);
 				}
-				case 2: {
+				case 2: { // asssertEquals
 					String traceback = DebugHelpers.traceback(state.getCurrentThread(), 0);
 					Assert.assertEquals(traceback, args.arg(1), args.arg(2));
 					return Constants.NONE;
 				}
-				case 3: {
+				case 3: { // fail
 					String traceback = DebugHelpers.traceback(state.getCurrentThread(), 0);
 					Assert.fail(args.first().toString() + ":\n" + traceback);
 					return Constants.NONE;
 				}
-				case 4: {
-					return valueOf(((CapturingPrintStream) state.stdout).getOutput());
-				}
-				case 5:
+				case 4: // id
 					return args;
 				default:
 					return Constants.NONE;

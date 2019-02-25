@@ -51,21 +51,6 @@ public class PackageLib implements LuaLibrary {
 
 	private LuaTable PACKAGE;
 
-	/**
-	 * Loader that loads from preload table if found there
-	 */
-	private LuaValue preload_loader;
-
-	/**
-	 * Loader that loads as a lua script using the LUA_PATH
-	 */
-	private LuaValue lua_loader;
-
-	/**
-	 * Loader that loads as a Java class.  Class must have public constructor and be a LuaValue
-	 */
-	private LuaValue java_loader;
-
 	private static final LuaString _M = ValueFactory.valueOf("_M");
 	private static final LuaString _NAME = ValueFactory.valueOf("_NAME");
 	private static final LuaString _PACKAGE = ValueFactory.valueOf("_PACKAGE");
@@ -97,9 +82,9 @@ public class PackageLib implements LuaLibrary {
 			_LOADLIB, new PkgLibV(env, "loadlib", OP_LOADLIB, this),
 			_SEEALL, new PkgLib1(env, "seeall", OP_SEEALL, this),
 			_LOADERS, ValueFactory.listOf(new LuaValue[]{
-			preload_loader = new PkgLibV(env, "preload_loader", OP_PRELOAD_LOADER, this),
-			lua_loader = new PkgLibV(env, "lua_loader", OP_LUA_LOADER, this),
-			java_loader = new PkgLibV(env, "java_loader", OP_JAVA_LOADER, this),
+			new PkgLibV(env, "preload_loader", OP_PRELOAD_LOADER, this),
+			new PkgLibV(env, "lua_loader", OP_LUA_LOADER, this),
+			new PkgLibV(env, "java_loader", OP_JAVA_LOADER, this),
 		})}));
 		state.loadedPackages.rawset("package", PACKAGE);
 		return env;
@@ -215,7 +200,7 @@ public class PackageLib implements LuaLibrary {
 	 * @return {@link Constants#NONE}
 	 * @throws LuaError If there is a name conflict.
 	 */
-	Varargs module(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private Varargs module(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		LuaString modname = args.arg(1).checkLuaString();
 		int n = args.count();
 		LuaValue value = OperationHelper.getTable(state, state.loadedPackages, modname);

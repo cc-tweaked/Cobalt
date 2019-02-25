@@ -118,7 +118,7 @@ public class DebugHandler {
 	 *
 	 * @param ds Debug state
 	 * @param di Debug info
-	 * @param pc
+	 * @param pc The current program counter
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If the hook transfers control to another coroutine.
 	 */

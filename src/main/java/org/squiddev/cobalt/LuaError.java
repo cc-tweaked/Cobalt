@@ -124,6 +124,13 @@ public final class LuaError extends Exception {
 		value = message;
 	}
 
+	/**
+	 * Convert an {@link Exception} in a {@link LuaError}. This will return the original error if it is some Lua error,
+	 * or a wrapped version otherwise.
+	 *
+	 * @param error The error to convert
+	 * @return The converted error
+	 */
 	public static LuaError wrap(Exception error) {
 		if (error instanceof LuaError) return (LuaError) error;
 		return new LuaError(error);

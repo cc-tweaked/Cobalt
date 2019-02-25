@@ -851,8 +851,8 @@ public final class LuaString extends LuaValue {
 			c[i - start] = (char) bytes[i];
 		}
 		try {
-			return Double.parseDouble(new String(c));
-		} catch (Exception e) {
+			return Double.parseDouble(String.valueOf(c));
+		} catch (NumberFormatException e) {
 			return Double.NaN;
 		}
 	}
