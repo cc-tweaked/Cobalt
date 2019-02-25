@@ -31,7 +31,7 @@ import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 
-import static org.squiddev.cobalt.OperationHelper.noYield;
+import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
@@ -119,7 +119,7 @@ public class PackageLib implements LuaLibrary {
 		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
 				case OP_REQUIRE:
-					return noYield(state, () -> lib.require(state, arg));
+					return OperationHelper.noUnwind(state, () -> lib.require(state, arg));
 				case OP_SEEALL: {
 					LuaTable t = arg.checkTable();
 					LuaTable m = t.getMetatable(state);
@@ -127,7 +127,7 @@ public class PackageLib implements LuaLibrary {
 						t.setMetatable(state, m = ValueFactory.tableOf());
 					}
 					LuaTable mt = m;
-					noYield(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
+					noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
 					return Constants.NONE;
 				}
 			}
@@ -149,14 +149,14 @@ public class PackageLib implements LuaLibrary {
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case OP_MODULE:
-					return noYield(state, () -> lib.module(state, args));
+					return OperationHelper.noUnwind(state, () -> lib.module(state, args));
 				case OP_LOADLIB:
 					return loadlib(args);
 				case OP_PRELOAD_LOADER: {
-					return noYield(state, () -> lib.loader_preload(state, args));
+					return OperationHelper.noUnwind(state, () -> lib.loader_preload(state, args));
 				}
 				case OP_LUA_LOADER: {
-					return noYield(state, () -> lib.loader_Lua(state, args));
+					return OperationHelper.noUnwind(state, () -> lib.loader_Lua(state, args));
 				}
 				case OP_JAVA_LOADER: {
 					return lib.loader_Java(args, getfenv());

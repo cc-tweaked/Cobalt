@@ -165,7 +165,7 @@ public class lua {
 		LuaValue slibname = valueOf(libname);
 		try {
 			// load via plain require
-			OperationHelper.noYield(state, () ->
+			OperationHelper.noUnwind(state, () ->
 				OperationHelper.call(state, OperationHelper.getTable(state, _G, valueOf("require")), slibname));
 		} catch (Exception e) {
 			try {
@@ -189,14 +189,9 @@ public class lua {
 			Varargs scriptargs = (args != null ? setGlobalArg(args, firstarg) : NONE);
 			Varargs result = LuaThread.runMain(state, c, scriptargs);
 
-			try {
-				state.getCurrentThread().disableYield();
-				if (printValue && result != NONE)
-					OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("print")), result);
-			} catch (UnwindThrowable e) {
-				throw new NonResumableException("Cannot yield within print", e);
-			} finally {
-				state.getCurrentThread().enableYield();
+			if (printValue && result != NONE) {
+				OperationHelper.noUnwind(state, () ->
+					OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("print")), result));
 			}
 		} catch (Exception e) {
 			System.out.println();

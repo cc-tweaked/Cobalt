@@ -223,7 +223,7 @@ public class BaseLib implements LuaLibrary {
 				}
 				case 7: // "print", // (...) -> void
 				{
-					return OperationHelper.noYield(state, () -> {
+					return OperationHelper.noUnwind(state, () -> {
 						LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
 						for (int i = 1, n = args.count(); i <= n; i++) {
 							if (i > 1) state.stdout.write('\t');
@@ -474,14 +474,9 @@ public class BaseLib implements LuaLibrary {
 			if (remaining <= 0) {
 				LuaValue s;
 				try {
-					state.getCurrentThread().disableYield();
-					s = OperationHelper.call(state, func);
+					s = OperationHelper.noUnwind(state, () -> OperationHelper.call(state, func));
 				} catch (LuaError e) {
 					throw new IOException(e);
-				} catch (UnwindThrowable e) {
-					throw new UnsupportedOperationException(e);
-				} finally {
-					state.getCurrentThread().enableYield();
 				}
 
 				if (s.isNil()) {

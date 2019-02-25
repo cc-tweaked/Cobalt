@@ -574,25 +574,25 @@ public final class OperationHelper {
 		void run() throws LuaError, UnwindThrowable;
 	}
 
-	public static <T> T noYield(LuaState state, LuaRunnable<T> task) throws LuaError {
-		state.getCurrentThread().disableYield();
+	public static <T> T noUnwind(LuaState state, LuaRunnable<T> task) throws LuaError {
+		state.getCurrentThread().javaCount++;
 		try {
 			return task.run();
 		} catch (UnwindThrowable e) {
-			throw new NonResumableException("Cannot yield while disabled");
+			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
 		} finally {
-			state.getCurrentThread().enableYield();
+			state.getCurrentThread().javaCount--;
 		}
 	}
 
-	public static void noYield(LuaState state, LuaTask task) throws LuaError {
-		state.getCurrentThread().disableYield();
+	public static void noUnwind(LuaState state, LuaTask task) throws LuaError {
+		state.getCurrentThread().javaCount++;
 		try {
 			task.run();
 		} catch (UnwindThrowable e) {
-			throw new NonResumableException("Cannot yield while disabled");
+			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
 		} finally {
-			state.getCurrentThread().enableYield();
+			state.getCurrentThread().javaCount--;
 		}
 	}
 }

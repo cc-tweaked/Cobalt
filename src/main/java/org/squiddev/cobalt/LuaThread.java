@@ -132,7 +132,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * The depth of the Java blocks. Yielding/resuming is only allowed when this is 0.
 	 */
-	private int javaCount = 0;
+	int javaCount = 0;
 
 	/**
 	 * The lock to wait on while this coroutine is suspended as a thread
@@ -218,20 +218,6 @@ public class LuaThread extends LuaValue {
 
 	public boolean isAlive() {
 		return status != STATUS_DEAD;
-	}
-
-	/**
-	 * Prevent code from yielding
-	 */
-	public void disableYield() {
-		javaCount++;
-	}
-
-	/**
-	 * Allow code to yield again
-	 */
-	public void enableYield() {
-		javaCount--;
 	}
 
 	/**
