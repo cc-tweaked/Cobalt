@@ -403,7 +403,7 @@ public class BaseLib implements LuaLibrary {
 			// And mark us as being in the error handler.
 			pState.errored = true;
 
-			LuaError le = e instanceof LuaError ? (LuaError) e : new LuaError(e);
+			LuaError le = LuaError.wrap(e);
 			le.fillTraceback(state);
 
 			thread.setErrorFunc(oldErr);

@@ -124,6 +124,11 @@ public final class LuaError extends Exception {
 		value = message;
 	}
 
+	public static LuaError wrap(Exception error) {
+		if (error instanceof LuaError) return (LuaError) error;
+		return new LuaError(error);
+	}
+
 	@Override
 	public String getMessage() {
 		return traceback != null ? traceback : rawToString(value);

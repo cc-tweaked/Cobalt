@@ -448,7 +448,7 @@ public class LuaThread extends LuaValue {
 						args = toExecute.invoke(state, args);
 					} catch (Exception e) {
 						args = null;
-						le = e instanceof LuaError ? (LuaError) e : new LuaError(e);
+						le = LuaError.wrap(e);
 					}
 				} else if (thread.needsThreadedResume) {
 					// We only ever resume coroutines which have yielded, never those which have
@@ -496,7 +496,7 @@ public class LuaThread extends LuaValue {
 							}
 						} catch (Exception e) {
 							args = null;
-							le = e instanceof LuaError ? (LuaError) e : new LuaError(e);
+							le = LuaError.wrap(e);
 						}
 					}
 				}
