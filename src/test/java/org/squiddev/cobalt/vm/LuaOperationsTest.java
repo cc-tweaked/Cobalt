@@ -213,7 +213,7 @@ public class LuaOperationsTest {
 	}
 
 	@Test
-	public void testFunctionClosureThreadEnv() throws LuaError, UnwindThrowable {
+	public void testFunctionClosureThreadEnv() throws LuaError, UnwindThrowable, InterruptedException {
 		// set up suitable environments for execution
 		LuaValue aaa = valueOf("aaa");
 		LuaValue eee = valueOf("eee");

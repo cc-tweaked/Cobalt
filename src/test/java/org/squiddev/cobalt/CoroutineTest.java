@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
+import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
 
@@ -48,8 +49,10 @@ public class CoroutineTest {
 			{"gsub"},
 			{"ops"},
 			{"pcall"},
+			{"resume-boundary"},
 			{"table"},
 			{"tail"},
+			{"yield-boundary"},
 			{"xpcall"},
 		};
 
@@ -74,44 +77,44 @@ public class CoroutineTest {
 	}
 
 	@Test
-	public void run() throws IOException, CompileException, LuaError {
+	public void run() throws IOException, CompileException, LuaError, InterruptedException {
 		helpers.setup();
 		setup();
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 
 	@Test
-	public void runSuspend() throws IOException, CompileException, LuaError {
+	public void runSuspend() throws IOException, CompileException, LuaError, InterruptedException {
 		helpers.setup(x -> x.debug(new SuspendingDebug()));
 		setup();
 
 		LuaFunction function = helpers.loadScript(name);
-		while (!helpers.state.getMainThread().getStatus().equals("dead")) {
-			if (LuaThread.runMain(helpers.state, function) != null) break;
-			function = null;
+		Varargs result = LuaThread.runMain(helpers.state, function);
+		while (result == null && !helpers.state.getMainThread().getStatus().equals("dead")) {
+			result = LuaThread.run(helpers.state.getCurrentThread(), Constants.NONE);
 		}
 
 		assertEquals("dead", helpers.state.getMainThread().getStatus());
 	}
 
 	@Test
-	public void runBlocking() throws IOException, CompileException, LuaError {
-		helpers.setup(LuaState.Builder::yieldThreader);
+	public void runBlocking() throws IOException, CompileException, LuaError, InterruptedException {
+		helpers.setup();
 		setup();
 		setBlockingYield();
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 
 	@Test
-	public void runSuspendBlocking() throws IOException, CompileException, LuaError {
-		helpers.setup(x -> x.debug(new SuspendingDebug()).yieldThreader());
+	public void runSuspendBlocking() throws IOException, CompileException, LuaError, InterruptedException {
+		helpers.setup(x -> x.debug(new SuspendingDebug()));
 		setup();
 		setBlockingYield();
 
 		LuaFunction function = helpers.loadScript(name);
-		while (!helpers.state.getMainThread().getStatus().equals("dead")) {
-			if (LuaThread.runMain(helpers.state, function) != null) break;
-			function = null;
+		Varargs result = LuaThread.runMain(helpers.state, function);
+		while (result == null && !helpers.state.getMainThread().getStatus().equals("dead")) {
+			result = LuaThread.run(helpers.state.getCurrentThread(), Constants.NONE);
 		}
 
 		assertEquals("dead", helpers.state.getMainThread().getStatus());
@@ -120,7 +123,7 @@ public class CoroutineTest {
 	private static class Functions extends ResumableVarArgFunction<LuaThread> implements LuaLibrary {
 		@Override
 		public LuaValue add(LuaState state, LuaTable environment) {
-			bind(environment, Functions.class, new String[]{"suspend", "run", "assertEquals", "fail", "id"});
+			bind(environment, Functions.class, new String[]{"suspend", "run", "assertEquals", "fail", "id", "noUnwind"});
 			return environment;
 		}
 
@@ -128,11 +131,14 @@ public class CoroutineTest {
 		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			switch (opcode) {
 				case 0: // suspend
-					throw UnwindThrowable.suspend();
+					LuaThread.suspend(state);
+					return Constants.NONE;
 				case 1: { // run
 					LuaThread thread = new LuaThread(state, args.first().checkFunction(), getfenv());
 					di.state = thread;
-					throw LuaThread.resume(state, thread, Constants.NONE);
+					Varargs value = Constants.NONE;
+					while (thread.isAlive()) value = LuaThread.resume(state, thread, value);
+					return value;
 				}
 				case 2: { // asssertEquals
 					String traceback = DebugHelpers.traceback(state.getCurrentThread(), 0);
@@ -146,6 +152,8 @@ public class CoroutineTest {
 				}
 				case 4: // id
 					return args;
+				case 5: // noYield
+					return noUnwind(state, () -> args.first().checkFunction().call(state));
 				default:
 					return Constants.NONE;
 			}
@@ -155,10 +163,10 @@ public class CoroutineTest {
 		public Varargs resumeThis(LuaState state, LuaThread thread, Varargs value) throws LuaError, UnwindThrowable {
 			switch (opcode) {
 				case 0:
+					return Constants.NONE;
+				case 1: // run
+					while (thread.isAlive()) value = LuaThread.resume(state, thread, value);
 					return value;
-				case 1:
-					if (!thread.isAlive()) return value;
-					throw LuaThread.resume(state, thread, value);
 				default:
 					throw new NonResumableException("Cannot resume " + debugName());
 			}
@@ -185,16 +193,16 @@ public class CoroutineTest {
 
 				// We don't want to suspend next tick.
 				suspend = false;
-				throw UnwindThrowable.suspend();
-			} else {
-				// Restore the old state
-				ds.inhook = inHook;
-				di.flags = flags;
-				suspend = true;
-
-				// And continue as normal
-				super.onInstruction(ds, di, pc);
+				LuaThread.suspend(ds.getLuaState());
 			}
+
+			// Restore the old state
+			ds.inhook = inHook;
+			di.flags = flags;
+			suspend = true;
+
+			// And continue as normal
+			super.onInstruction(ds, di, pc);
 		}
 	}
 }

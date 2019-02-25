@@ -7,8 +7,6 @@ import org.junit.runners.Parameterized;
 import org.squiddev.cobalt.compiler.CompileException;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -43,15 +41,13 @@ public class PerformanceTest {
 	}
 
 	@Test()
-	public void run() throws IOException, CompileException, LuaError, UnwindThrowable {
-		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
-
+	public void run() throws IOException, CompileException, LuaError, InterruptedException {
 		System.out.println("[" + name + "]");
 
 		for (int i = 0; i < TOTAL; i++) {
-			long start = bean.getCurrentThreadCpuTime();
+			long start = System.nanoTime();
 			LuaThread.runMain(helpers.state, helpers.loadScript(name));
-			long finish = bean.getCurrentThreadCpuTime();
+			long finish = System.nanoTime();
 
 			if (i >= DISCARD) System.out.println("  Took " + (finish - start) / 1.0e9);
 		}

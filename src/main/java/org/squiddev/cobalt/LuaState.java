@@ -146,14 +146,11 @@ public final class LuaState {
 		this.compiler = builder.compiler;
 		this.random = builder.random;
 		this.debug = builder.debug;
-		this.threader = builder.coroutineExecutor == null ? null : new YieldThreader(builder.coroutineExecutor);
+		this.threader = new YieldThreader(builder.coroutineExecutor);
 	}
 
 	/**
 	 * Abandon this state, instructing any pending thread to terminate.
-	 *
-	 * Note, this only has an effect if a {@link Builder#yieldThreader()} is active
-	 * for this state.
 	 */
 	public void abandon() {
 		abandoned = true;
@@ -222,7 +219,7 @@ public final class LuaState {
 		private LoadState.LuaCompiler compiler = LuaC.INSTANCE;
 		private Random random = new Random();
 		private DebugHandler debug = DebugHandler.INSTANCE;
-		private Executor coroutineExecutor = null;
+		private Executor coroutineExecutor = defaultCoroutineExecutor;
 
 		/**
 		 * Build a Lua state from this builder
@@ -381,14 +378,9 @@ public final class LuaState {
 		 * @param coroutineExecutor The new executor
 		 * @return This builder
 		 */
-		public Builder yieldThreader(Executor coroutineExecutor) {
+		public Builder coroutineExecutor(Executor coroutineExecutor) {
 			if (coroutineExecutor == null) throw new NullPointerException("coroutineExecutor cannot be null");
 			this.coroutineExecutor = coroutineExecutor;
-			return this;
-		}
-
-		public Builder yieldThreader() {
-			this.coroutineExecutor = defaultCoroutineExecutor;
 			return this;
 		}
 	}

@@ -98,6 +98,10 @@ public final class DebugState {
 		this.state = state;
 	}
 
+	public LuaState getLuaState() {
+		return state;
+	}
+
 	/**
 	 * Push a new Java debug info onto the stack.
 	 *

@@ -90,7 +90,8 @@ public class CoroutineLib extends ResumableVarArgFunction<Object> implements Lua
 				di.flags |= FLAG_YPCALL;
 				LuaThread thread = args.arg(1).checkThread();
 				try {
-					throw LuaThread.resume(state, thread, args.subargs(2));
+					Varargs result = LuaThread.resume(state, thread, args.subargs(2));
+					return varargsOf(Constants.TRUE, result);
 				} catch (LuaError le) {
 					return varargsOf(Constants.FALSE, le.value);
 				}
@@ -103,7 +104,7 @@ public class CoroutineLib extends ResumableVarArgFunction<Object> implements Lua
 				return valueOf(args.arg(1).checkThread().getStatus());
 			}
 			case YIELD:
-				throw LuaThread.yield(state, args);
+				return LuaThread.yield(state, args);
 			case WRAP: {
 				final LuaFunction func = args.arg(1).checkFunction();
 				final LuaTable env = func.getfenv();
@@ -115,7 +116,7 @@ public class CoroutineLib extends ResumableVarArgFunction<Object> implements Lua
 				return cl;
 			}
 			case WRAPPED: {
-				throw LuaThread.resume(state, thread, args);
+				return LuaThread.resume(state, thread, args);
 			}
 			default:
 				return Constants.NONE;

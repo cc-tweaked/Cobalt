@@ -8,7 +8,6 @@ import java.util.Objects;
 public final class UnwindThrowable extends Throwable {
 	private static final long serialVersionUID = -197039276914556877L;
 
-	private static final UnwindThrowable emptyCache = new UnwindThrowable(Constants.NONE, null, false, true);
 	private static final UnwindThrowable suspendCache = new UnwindThrowable(Constants.NONE, null, true, true);
 
 	private final Varargs args;
@@ -24,21 +23,12 @@ public final class UnwindThrowable extends Throwable {
 	}
 
 	/**
-	 * Create a yield with no arguments
-	 *
-	 * @return The throwable to yield with
-	 */
-	public static UnwindThrowable empty() {
-		return emptyCache;
-	}
-
-	/**
 	 * Create a yield with the specified arguments
 	 *
 	 * @param args The arguments to yield with
 	 * @return The throwable to yield with
 	 */
-	public static UnwindThrowable yield(Varargs args) {
+	static UnwindThrowable yield(Varargs args) {
 		Objects.requireNonNull(args, "args cannot be null");
 		return new UnwindThrowable(args, null, false, true);
 	}
@@ -50,7 +40,7 @@ public final class UnwindThrowable extends Throwable {
 	 * @param args   The arguments to resume with
 	 * @return The throwable to resume with
 	 */
-	public static UnwindThrowable resume(LuaThread thread, Varargs args) {
+	static UnwindThrowable resume(LuaThread thread, Varargs args) {
 		return new UnwindThrowable(args, thread, false, false);
 	}
 
@@ -59,7 +49,7 @@ public final class UnwindThrowable extends Throwable {
 	 *
 	 * @return The throwable to yield with
 	 */
-	public static UnwindThrowable suspend() {
+	static UnwindThrowable suspend() {
 		return suspendCache;
 	}
 
