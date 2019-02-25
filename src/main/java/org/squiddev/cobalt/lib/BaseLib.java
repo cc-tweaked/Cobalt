@@ -33,7 +33,6 @@ import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 import static org.squiddev.cobalt.OperationHelper.noUnwind;
@@ -335,7 +334,7 @@ public class BaseLib implements LuaLibrary {
 								InputStream stream = new StringInputStream(state, function);
 								return LoadState.load(state, stream, chunkName, state.getCurrentThread().getfenv());
 							} catch (Exception e) {
-								throw new LuaError(e.getMessage());
+								throw LuaError.wrapMessage(e);
 							}
 						}
 					}, Constants.NONE, state.getCurrentThread().errFunc);
@@ -469,7 +468,7 @@ public class BaseLib implements LuaLibrary {
 			}
 			return LoadState.load(state, is, chunkname, state.getCurrentThread().getfenv());
 		} catch (Exception e) {
-			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
+			return varargsOf(Constants.NIL, LuaError.getMessage(e));
 		}
 	}
 
@@ -485,13 +484,13 @@ public class BaseLib implements LuaLibrary {
 		}
 
 		@Override
-		public int read() throws IOException {
+		public int read() {
 			if (remaining <= 0) {
 				LuaValue s;
 				try {
 					s = OperationHelper.noUnwind(state, () -> OperationHelper.call(state, func));
 				} catch (LuaError e) {
-					throw new IOException(e);
+					throw new UncheckedLuaError(e);
 				}
 
 				if (s.isNil()) {
@@ -501,7 +500,7 @@ public class BaseLib implements LuaLibrary {
 				try {
 					ls = s.strvalue();
 				} catch (LuaError e) {
-					throw new IOException(e);
+					throw new UncheckedLuaError(e);
 				}
 				bytes = ls.bytes;
 				offset = ls.offset;

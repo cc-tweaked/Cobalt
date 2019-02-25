@@ -27,11 +27,8 @@ package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaThread;
 import org.squiddev.cobalt.UnwindThrowable;
 import org.squiddev.cobalt.function.LuaFunction;
-
-import java.lang.ref.WeakReference;
 
 import static org.squiddev.cobalt.debug.DebugFrame.*;
 
@@ -215,7 +212,7 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onCall(state, this, frame);
-		} catch (LuaError e) {
+		} catch (LuaError | RuntimeException e) {
 			inhook = false;
 			throw e;
 		} catch (UnwindThrowable e) {
@@ -230,7 +227,7 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onReturn(state, this, frame);
-		} catch (LuaError e) {
+		} catch (LuaError | RuntimeException e) {
 			inhook = false;
 			throw e;
 		} catch (UnwindThrowable e) {
@@ -245,7 +242,7 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onCount(state, this, frame);
-		} catch (LuaError e) {
+		} catch (LuaError | RuntimeException e) {
 			inhook = false;
 			throw e;
 		} catch (UnwindThrowable e) {
@@ -259,7 +256,7 @@ public final class DebugState {
 		inhook = true;
 		try {
 			hookfunc.onLine(state, this, frame, newLine);
-		} catch (LuaError e) {
+		} catch (LuaError | RuntimeException e) {
 			inhook = false;
 			throw e;
 		} catch (UnwindThrowable e) {

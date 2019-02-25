@@ -25,6 +25,10 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugHelpers;
+import org.squiddev.cobalt.lib.UncheckedLuaError;
+
+import static org.squiddev.cobalt.Constants.NIL;
+import static org.squiddev.cobalt.LuaString.valueOf;
 
 /**
  * RuntimeException that is thrown and caught in response to a lua error.
@@ -133,7 +137,41 @@ public final class LuaError extends Exception {
 	 */
 	public static LuaError wrap(Exception error) {
 		if (error instanceof LuaError) return (LuaError) error;
+		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause();
 		return new LuaError(error);
+	}
+
+	/**
+	 * Convert an {@link Exception} in a {@link LuaError}. This will return the original error if it is some Lua error,
+	 * or an error with the same message as the orginal.
+	 *
+	 * @param error The error to convert
+	 * @return The converted error
+	 * @see #getMessage()
+	 */
+	public static LuaError wrapMessage(Exception error) {
+		if (error instanceof LuaError) return ((LuaError) error);
+		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause();
+
+		String message = error.getMessage();
+		return new LuaError(message == null ? NIL : valueOf(message));
+	}
+
+	/**
+	 * Extract the message from an {@link Exception} or {@link LuaError}.
+	 *
+	 * This is equivalent to using {@link #wrapMessage(Exception)}} and then {@link #value}.
+	 *
+	 * @param error The error to convert
+	 * @return The extracted message.
+	 * @see #wrapMessage(Exception)
+	 */
+	public static LuaValue getMessage(Exception error) {
+		if (error instanceof LuaError) return ((LuaError) error).value;
+		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause().value;
+
+		String message = error.getMessage();
+		return message == null ? NIL : valueOf(message);
 	}
 
 	@Override

@@ -126,7 +126,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 			}
 			return Constants.NONE;
 		} catch (IOException e) {
-			return varargsOf(Constants.NIL, ValueFactory.valueOf(e.getMessage()));
+			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
 		}
 	}
 
