@@ -33,6 +33,7 @@ public class AssertionTest {
 			{"debug-coroutine-hook"},
 			{"gc"},
 			{"immutable"},
+			{"no-unwind"},
 		};
 
 		return Arrays.asList(tests);
