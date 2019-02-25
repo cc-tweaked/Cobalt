@@ -30,7 +30,6 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.profiler.ProfilerLib;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -121,7 +120,6 @@ public class lua {
 			// new org.squiddev.cobalt.cmd.lua state
 			LuaState state = new LuaState();
 			_G = JsePlatform.debugGlobals(state);
-			_G.load(state, new ProfilerLib(new ProfilerLib.FileOutputProvider()));
 			for (int i = 0, n = libs != null ? libs.size() : 0; i < n; i++) {
 				loadLibrary(state, libs.get(i));
 			}
