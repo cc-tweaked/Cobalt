@@ -1,17 +1,19 @@
-plugins {
-	id "com.jfrog.bintray" version "1.4"
-}
 apply plugin: 'java'
 apply plugin: 'maven-publish'
+apply plugin: 'maven'
 
 group = 'org.squiddev'
-version = '0.5.0'
+version = '0.5.0-SNAPSHOT'
 
 targetCompatibility = sourceCompatibility = 1.8
 compileTestJava.sourceCompatibility = compileTestJava.targetCompatibility = 1.8
 
 repositories {
 	mavenCentral()
+}
+
+configurations {
+	deployerJars
 }
 
 dependencies {
@@ -21,6 +23,8 @@ dependencies {
 
 	testCompile 'org.openjdk.jmh:jmh-core:1.21'
 	testCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
+
+	deployerJars "org.apache.maven.wagon:wagon-ssh:3.3.1"
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -33,21 +37,42 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 	from javadoc.destinationDir
 }
 
-bintray {
-	user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
-	key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
-	publications = ['mavenJava']
-	publish = true
-	pkg {
-		repo = 'maven'
-		name = 'Cobalt'
-		licenses = ['MIT']
-		vcsUrl = 'https://github.com/SquidDev/Cobalt'
+uploadArchives {
+	repositories {
+		if(project.hasProperty('mavenUploadUrl')) {
+			mavenDeployer {
+				configuration = configurations.deployerJars
 
-		version {
-			name = project.version
-			desc = 'A reentrant fork of LuaJ for Lua 5.1'
-			released = new Date()
+				repository(url: project.property('mavenUploadUrl')) {
+					authentication(
+						userName: project.property('mavenUploadUser'),
+						privateKey: project.property('mavenUploadKey'))
+				}
+
+				pom.project {
+					name 'Cobalt'
+					packaging 'jar'
+					description 'A reentrant fork of LuaJ for Lua 5.1'
+					url 'https://github.com/SquidDev/Cobalt'
+
+					scm {
+						url 'https://github.com/SquidDev/Cobalt.git'
+					}
+
+					issueManagement {
+						system 'github'
+						url 'https://github.com/SquidDev/Cobalt/issues'
+					}
+
+					licenses {
+						license {
+							name 'MIT'
+							url 'https://github.com/SquidDev/Cobalt/blob/master/LICENSE'
+							distribution 'repo'
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -72,4 +97,3 @@ task executeProfile(type: JavaExec) {
 	main = "org.squiddev.cobalt.PerformanceRunner"
 	classpath = sourceSets.test.runtimeClasspath
 }
-
