@@ -347,20 +347,35 @@ public class LuaThread extends LuaValue {
 	public static void suspend(LuaState state) throws LuaError, UnwindThrowable {
 		LuaThread current = state.currentThread;
 		if (current.status != STATUS_RUNNING) {
-			throw new LuaError("cannot resume from a " + STATUS_NAMES[current.status] + " thread");
+			throw new LuaError("cannot suspend a " + STATUS_NAMES[current.status] + " thread");
 		}
 
 		if (current.javaCount == 0) {
 			throw UnwindThrowable.suspend();
 		} else {
-			try {
-				// Mark the child coroutine as "active", and transfer.
-				current.status = STATUS_SUSPENDED;
-				state.threader.running = false;
-				transferControl(state, current, null);
-			} catch (InterruptedException e) {
-				throw new InterruptedError(e);
-			}
+			suspendBlocking(state);
+		}
+	}
+
+	/**
+	 * Suspend the current thread and wait for it to be resumed.
+	 *
+	 * @param state The current lua state
+	 * @throws LuaError If this coroutine cannot be suspended.
+	 */
+	public static void suspendBlocking(LuaState state) throws LuaError {
+		LuaThread current = state.currentThread;
+		if (current.status != STATUS_RUNNING) {
+			throw new LuaError("cannot suspend a " + STATUS_NAMES[current.status] + " thread");
+		}
+
+		try {
+			// Mark the child coroutine as "active", and transfer.
+			current.status = STATUS_SUSPENDED;
+			state.threader.running = false;
+			transferControl(state, current, null);
+		} catch (InterruptedException e) {
+			throw new InterruptedError(e);
 		}
 	}
 
