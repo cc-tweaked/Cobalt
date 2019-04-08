@@ -83,11 +83,15 @@ local function assertPtrnError(ptrn, err)
 end
 
 assertPtrnError("[", "malformed pattern (missing ']')")
+assertPtrnError("[[", "malformed pattern (missing ']')")
+assertPtrnError("[]", "malformed pattern (missing ']')")
 assertPtrnError("[^", "malformed pattern (missing ']')")
 assertPtrnError("(", "unfinished capture")
 assertPtrnError("%", "malformed pattern (ends with '%')")
 assertPtrnError("%f", "missing '[' after '%f' in pattern")
 assertPtrnError("%b", "malformed pattern (missing arguments to '%b')")
+
+assert(("]"):find("[]]") == 1)
 
 -- Historically rounded to a float, resulting in Infinity
 assert(tostring(1e38) == "1e+38", "Got " .. tostring(1e38))

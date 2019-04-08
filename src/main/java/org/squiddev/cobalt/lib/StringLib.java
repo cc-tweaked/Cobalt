@@ -877,12 +877,15 @@ public class StringLib implements LuaLibrary {
 
 				case '[':
 					if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
-					if (p.luaByte(poffset) == '^') poffset++;
-					do {
+
+					if (p.luaByte(poffset) == '^') {
+						poffset++;
 						if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
-						if (p.luaByte(poffset++) == L_ESC && poffset != p.length()) {
-							poffset++;
-						}
+					}
+
+					do {
+						if (p.luaByte(poffset++) == L_ESC && poffset < p.length()) poffset++;
+						if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
 					} while (p.luaByte(poffset) != ']');
 					return poffset + 1;
 				default:
