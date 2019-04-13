@@ -106,7 +106,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		bind(t, DebugLib.class, NAMES);
+		bind(t, DebugLib::new, NAMES);
 		env.rawset("debug", t);
 		state.loadedPackages.rawset("debug", t);
 		return t;

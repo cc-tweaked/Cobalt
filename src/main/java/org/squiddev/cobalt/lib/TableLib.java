@@ -46,9 +46,9 @@ public class TableLib implements LuaLibrary {
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		LibFunction.bind(t, TableLib1.class, new String[]{"getn", "maxn",});
-		LibFunction.bind(t, TableLibV.class, new String[]{"remove", "concat", "insert"});
-		LibFunction.bind(t, TableLibR.class, new String[]{"sort", "foreach", "foreachi"});
+		LibFunction.bind(t, TableLib1::new, new String[]{"getn", "maxn",});
+		LibFunction.bind(t, TableLibV::new, new String[]{"remove", "concat", "insert"});
+		LibFunction.bind(t, TableLibR::new, new String[]{"sort", "foreach", "foreachi"});
 		env.rawset("table", t);
 		state.loadedPackages.rawset("table", t);
 		return t;

@@ -123,7 +123,7 @@ public class CoroutineTest {
 	private static class Functions extends ResumableVarArgFunction<LuaThread> implements LuaLibrary {
 		@Override
 		public LuaValue add(LuaState state, LuaTable environment) {
-			bind(environment, Functions.class, new String[]{"suspend", "run", "assertEquals", "fail", "id", "noUnwind"});
+			bind(environment, Functions::new, new String[]{"suspend", "run", "assertEquals", "fail", "id", "noUnwind"});
 			return environment;
 		}
 

@@ -100,9 +100,9 @@ public class BaseLib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		env.rawset("_G", env);
 		env.rawset("_VERSION", valueOf(Lua._VERSION));
-		LibFunction.bind(env, BaseLib2.class, LIB2_KEYS);
-		LibFunction.bind(env, BaseLibV.class, LIBV_KEYS, BaseLib.class, this);
-		LibFunction.bind(env, BaseLibR.class, LIBR_KEYS);
+		LibFunction.bind(env, BaseLib2::new, LIB2_KEYS);
+		LibFunction.bind(env, () -> new BaseLibV(this), LIBV_KEYS);
+		LibFunction.bind(env, BaseLibR::new, LIBR_KEYS);
 
 		// remember next, and inext for use in pairs and ipairs
 		next = env.rawget("next");

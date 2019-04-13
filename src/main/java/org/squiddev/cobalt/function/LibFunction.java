@@ -31,7 +31,7 @@ import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.TableLib;
 
-import java.lang.reflect.Constructor;
+import java.util.function.Supplier;
 
 /**
  * Subclass of {@link LuaFunction} common to Java functions exposed to lua.
@@ -78,21 +78,21 @@ import java.lang.reflect.Constructor;
  * 		library.set( "cosh", new cosh() );
  * 		env.set( "hyperbolic", library );
  * 		return library;
- * 	}
+ *  }
  *
  * 	static class sinh extends OneArgFunction {
  * 		public LuaValue call(LuaValue x) {
  * 			return LuaValue.valueOf(Math.sinh(x.checkdouble()));
- * 		}
- * 	}
+ *      }
+ *  }
  *
  * 	static class cosh extends OneArgFunction {
  * 		public LuaValue call(LuaValue x) {
  * 			return LuaValue.valueOf(Math.cosh(x.checkdouble()));
- * 		}
- * 	}
+ *      }
+ *  }
  * }
- * }</pre>
+ * </pre>
  * The default constructor is used to instantiate the library
  * in response to {@code require 'hyperbolic'} statement,
  * provided it is on Javas class path.
@@ -164,29 +164,12 @@ public abstract class LibFunction extends LuaFunction {
 	 * with opcode = 0, second with 1, etc.
 	 *
 	 * @param env     The environment to apply to each bound function
-	 * @param factory the Class to instantiate for each bound function
-	 * @param names   array of String names, one for each function.
-	 * @see #bindOffset(LuaTable, Class, String[], int, Class, Object)
+	 * @param factory The factory to provide a new instance each time
+	 * @param names   Array of function names
+	 * @see #bind(LuaTable, Supplier, String[], int)
 	 */
-	public static void bind(LuaTable env, Class<? extends LibFunction> factory, String[] names) {
-		bindOffset(env, factory, names, 0, null, null);
-	}
-
-	/**
-	 * Bind a set of library functions.
-	 *
-	 * An array of names is provided, and the first name is bound
-	 * with opcode = 0, second with 1, etc.
-	 *
-	 * @param env        The environment to apply to each bound function
-	 * @param factory    the Class to instantiate for each bound function
-	 * @param names      array of String names, one for each function.
-	 * @param ownerClass The owner's class
-	 * @param owner      The owner. This will be passed as the first argument
-	 * @see #bindOffset(LuaTable, Class, String[], int, Class, Object)
-	 */
-	public static void bind(LuaTable env, Class<? extends LibFunction> factory, String[] names, Class<?> ownerClass, Object owner) {
-		bindOffset(env, factory, names, 0, ownerClass, owner);
+	public static void bind(LuaTable env, Supplier<LibFunction> factory, String[] names) {
+		bind(env, factory, names, 0);
 	}
 
 	/**
@@ -196,27 +179,18 @@ public abstract class LibFunction extends LuaFunction {
 	 * with opcode = {@code firstopcode}, second with {@code firstopcode+1}, etc.
 	 *
 	 * @param env         The environment to apply to each bound function
-	 * @param factory     the Class to instantiate for each bound function
-	 * @param names       array of String names, one for each function.
-	 * @param firstopcode the first opcode to use
-	 * @param ownerClass  The owner's class
-	 * @param owner       The owner. This will be passed as the first argument
-	 * @see #bind(LuaTable, Class, String[], Class, Object)
+	 * @param factory     The factory to provide a new instance each time
+	 * @param names       Array of function names
+	 * @param firstOpcode The first opcode to use
+	 * @see #bind(LuaTable, Supplier, String[])
 	 */
-	public static void bindOffset(LuaTable env, Class<? extends LibFunction> factory, String[] names, int firstopcode, Class<?> ownerClass, Object owner) {
-		try {
-			Constructor<? extends LibFunction> constructor = ownerClass == null ? factory.getDeclaredConstructor() : factory.getDeclaredConstructor(ownerClass);
-			constructor.setAccessible(true);
-
-			for (int i = 0, n = names.length; i < n; i++) {
-				LibFunction f = owner == null ? constructor.newInstance() : constructor.newInstance(owner);
-				f.opcode = firstopcode + i;
-				f.name = names[i];
-				f.env = env;
-				env.rawset(f.name, f);
-			}
-		} catch (ReflectiveOperationException e) {
-			throw new IllegalStateException("Binding failed", e);
+	public static void bind(LuaTable env, Supplier<LibFunction> factory, String[] names, int firstOpcode) {
+		for (int i = 0; i < names.length; i++) {
+			LibFunction f = factory.get();
+			f.opcode = firstOpcode + i;
+			f.name = names[i];
+			f.env = env;
+			env.rawset(f.name, f);
 		}
 	}
 }
