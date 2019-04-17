@@ -575,24 +575,26 @@ public final class OperationHelper {
 	}
 
 	public static <T> T noUnwind(LuaState state, LuaRunnable<T> task) throws LuaError {
-		state.getCurrentThread().javaCount++;
+		LuaThread.State threadState = state.getCurrentThread().state;
+		threadState.javaCount++;
 		try {
 			return task.run();
 		} catch (UnwindThrowable e) {
 			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
 		} finally {
-			state.getCurrentThread().javaCount--;
+			threadState.javaCount--;
 		}
 	}
 
 	public static void noUnwind(LuaState state, LuaTask task) throws LuaError {
-		state.getCurrentThread().javaCount++;
+		LuaThread.State threadState = state.getCurrentThread().state;
+		threadState.javaCount++;
 		try {
 			task.run();
 		} catch (UnwindThrowable e) {
 			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
 		} finally {
-			state.getCurrentThread().javaCount--;
+			threadState.javaCount--;
 		}
 	}
 }

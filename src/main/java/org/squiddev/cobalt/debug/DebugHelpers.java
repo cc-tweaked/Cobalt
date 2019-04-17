@@ -52,7 +52,7 @@ public final class DebugHelpers {
 	 * @return String containing the stack trace.
 	 */
 	public static String traceback(LuaThread thread, int level) {
-		DebugState state = DebugHandler.getDebugState(thread);
+		DebugState state = thread.getDebugState();
 		StringBuilder sb = new StringBuilder();
 		sb.append("stack traceback:");
 		for (DebugFrame di; (di = state.getFrame(level++)) != null; ) {
@@ -87,7 +87,7 @@ public final class DebugHelpers {
 	 * or the function name of the Java call if no closure is being called.
 	 */
 	public static String fileLine(LuaThread thread) {
-		DebugState ds = DebugHandler.getDebugState(thread);
+		DebugState ds = thread.getDebugState();
 		DebugFrame di;
 		for (int i = 0, n = ds.top; i < n; i++) {
 			di = ds.getFrame(i);
@@ -99,7 +99,7 @@ public final class DebugHelpers {
 	}
 
 	public static String fileLine(LuaThread thread, int level) {
-		DebugState ds = DebugHandler.getDebugState(thread);
+		DebugState ds = thread.getDebugState();
 		DebugFrame di = ds.getFrame(level);
 		return di != null ? di.sourceLine() : null;
 	}

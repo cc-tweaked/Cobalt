@@ -39,12 +39,8 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD_LINE;
 public class DebugHandler {
 	public static final DebugHandler INSTANCE = new DebugHandler();
 
-	public static DebugState getDebugState(LuaThread thread) {
-		return thread.debugState;
-	}
-
 	public static DebugState getDebugState(LuaState state) {
-		return state.getCurrentThread().debugState;
+		return state.getCurrentThread().getDebugState();
 	}
 
 	protected DebugHandler() {

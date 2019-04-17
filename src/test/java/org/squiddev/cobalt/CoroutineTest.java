@@ -70,7 +70,7 @@ public class CoroutineTest {
 				try {
 					return LuaThread.yieldBlocking(state, args);
 				} catch (InterruptedException e) {
-					throw new OrphanedThread();
+					throw new InterruptedError(e);
 				}
 			}
 		});

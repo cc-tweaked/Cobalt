@@ -337,7 +337,7 @@ public class BaseLib implements LuaLibrary {
 								throw LuaError.wrapMessage(e);
 							}
 						}
-					}, Constants.NONE, state.getCurrentThread().errFunc);
+					}, Constants.NONE, state.getCurrentThread().getErrorFunc());
 
 					if (result.first().toBoolean()) {
 						return result.arg(2);
@@ -405,12 +405,11 @@ public class BaseLib implements LuaLibrary {
 		// Store this frame in the current state.
 		pState.frame = di;
 
-		LuaThread thread = state.getCurrentThread();
-		LuaValue oldErr = pState.oldErrorFunc = thread.setErrorFunc(errFunc);
+		LuaValue oldErr = pState.oldErrorFunc = state.getCurrentThread().setErrorFunc(errFunc);
 		try {
 			Varargs result = varargsOf(Constants.TRUE, OperationHelper.invoke(state, func, args));
 
-			thread.setErrorFunc(oldErr);
+			state.getCurrentThread().setErrorFunc(oldErr);
 			return result;
 		} catch (Exception e) {
 			// Mark this frame as errored, meaning it will not be resumed.
@@ -421,7 +420,7 @@ public class BaseLib implements LuaLibrary {
 			LuaError le = LuaError.wrap(e);
 			le.fillTraceback(state);
 
-			thread.setErrorFunc(oldErr);
+			state.getCurrentThread().setErrorFunc(oldErr);
 			closeUntil(state, di);
 			return varargsOf(Constants.FALSE, le.value);
 		}

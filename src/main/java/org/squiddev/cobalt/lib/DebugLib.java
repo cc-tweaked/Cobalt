@@ -27,7 +27,6 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.*;
@@ -159,7 +158,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static Varargs _gethook(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
-		DebugState ds = DebugHandler.getDebugState(thread);
+		DebugState ds = thread.getDebugState();
 
 		LuaValue hook;
 		if (ds.hookfunc == null) {
@@ -200,7 +199,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 				}
 			}
 		}
-		DebugHandler.getDebugState(thread).setHook(func, call, line, rtrn, count);
+		thread.getDebugState().setHook(func, call, line, rtrn, count);
 		return NONE;
 	}
 
@@ -224,7 +223,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		String what = args.arg(arg + 1).optString("nSluf");
 
 		// find the stack info
-		DebugState ds = DebugHandler.getDebugState(thread);
+		DebugState ds = thread.getDebugState();
 		DebugFrame di;
 		if (func.isNumber()) {
 			int level = func.checkInteger();
@@ -317,7 +316,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 			int level = args.arg(arg).checkInteger();
 			if (thread == state.getCurrentThread()) level--;
 
-			DebugState ds = DebugHandler.getDebugState(thread);
+			DebugState ds = thread.getDebugState();
 			DebugFrame di = ds.getFrame(level);
 			if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
 
@@ -335,7 +334,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		int local = args.arg(arg + 1).checkInteger();
 		LuaValue value = args.arg(arg + 2);
 
-		DebugState ds = DebugHandler.getDebugState(thread);
+		DebugState ds = thread.getDebugState();
 		if (thread == state.getCurrentThread()) level--;
 		DebugFrame di = ds.getFrame(level);
 		if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");

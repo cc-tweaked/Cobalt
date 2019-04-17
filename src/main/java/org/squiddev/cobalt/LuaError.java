@@ -183,22 +183,22 @@ public final class LuaError extends Exception {
 		if (traceback != null) return;
 		fillTracebackImpl(state);
 
-		LuaThread thread = state.getCurrentThread();
-		if (thread.errFunc != null) throw new IllegalStateException("Thread has no error function");
+		if (state.getCurrentThread().getErrorFunc() != null) {
+			throw new IllegalStateException("Thread has no error function");
+		}
 	}
 
 	public void fillTraceback(LuaState state) throws UnwindThrowable {
 		if (traceback != null) return;
 		fillTracebackImpl(state);
 
-		LuaThread thread = state.getCurrentThread();
-		if (thread.errFunc != null) {
-			LuaValue errFunc = thread.setErrorFunc(null);
+		if (state.getCurrentThread().getErrorFunc() != null) {
+			LuaValue errFunc = state.getCurrentThread().setErrorFunc(null);
 			try {
 				value = OperationHelper.call(state, errFunc, value);
 			} catch (Exception t) {
 				value = ValueFactory.valueOf("error in error handling");
-				thread.errFunc = errFunc;
+				state.getCurrentThread().setErrorFunc(errFunc);
 			}
 		}
 	}
