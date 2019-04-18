@@ -17,6 +17,16 @@ assert(("baz[foobar]"):find("%b[]"))
 assert(("[foobar]"):find("%b[]"))
 assert(("[foobar"):find("%b[]") == nil)
 assert(("[[[[foobar]]"):find("%b[]"))
+assert(("foo"):match("") == "")
+
+do
+	-- Empty matches
+	local s, e = ("foo"):find("")
+	assert(s == 1 and e == 0)
+
+	s, e = ("foo"):find("", 10)
+	assert(s == 4 and e == 3)
+end
 
 -- GMatch loops forever
 local text = [[
@@ -65,8 +75,12 @@ assert(("foobar"):rep(0) == "")
 
 -- Frontier pattern
 local out = {}
-string.gsub("THE (QUICK) brOWN FOx JUMPS", "%f[%a]%u+%f[%A]", function(x) table.insert(out, x) end)
-for k, v in pairs(out) do print(k, v) end
+string.gsub("THE (QUICK) brOWN FOx JUMPS", "%f[%a]%u+%f[%A]", function(x)
+	table.insert(out, x)
+end)
+for k, v in pairs(out) do
+	print(k, v)
+end
 assert(out[1] == "THE")
 assert(out[2] == "QUICK")
 assert(out[3] == "JUMPS")
@@ -89,7 +103,7 @@ assertPtrnError("[^", "malformed pattern (missing ']')")
 assertPtrnError("(", "unfinished capture")
 assertPtrnError("%", "malformed pattern (ends with '%')")
 assertPtrnError("%f", "missing '[' after '%f' in pattern")
-assertPtrnError("%b", "malformed pattern (missing arguments to '%b')")
+assertPtrnError("%b", "unbalanced pattern")
 
 assert(("]"):find("[]]") == 1)
 
@@ -97,7 +111,16 @@ assert(("]"):find("[]]") == 1)
 assert(tostring(1e38) == "1e+38", "Got " .. tostring(1e38))
 assert(tostring(1e39) == "1e+39", "Got " .. tostring(1e39))
 
--- Tiny bits of string concatination
+do
+	-- Malformed replace
+	local s, n = string.gsub("test", "%S", "A%")
+	assert(s == "A\0A\0A\0A\0" and n == 4)
+
+	s, n = string.gsub("test", "%S", "%A")
+	assert(s == "AAAA" and n == 4)
+end
+
+-- Tiny bits of string concatenation
 local x, y, z = "foo", "bar", "baz"
 assert(x .. y .. z == table.concat { x, y, z })
 

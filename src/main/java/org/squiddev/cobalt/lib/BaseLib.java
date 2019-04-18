@@ -263,7 +263,10 @@ public class BaseLib implements LuaLibrary {
 					return args.arg(1).checkTable().rawget(args.checkValue(2));
 				case 12: { // "rawset", // (table, index, value) -> table
 					LuaTable t = args.arg(1).checkTable();
-					t.rawset(args.checkNotNil(2), args.checkValue(3));
+					LuaValue k = args.checkValue(2);
+					LuaValue v = args.checkValue(3);
+					if (k.isNil()) throw new LuaError("table index is nil");
+					t.rawset(k.checkValidKey(), v);
 					return t;
 				}
 				case 13: { // "setmetatable", // (table, metatable) -> table

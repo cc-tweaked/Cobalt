@@ -660,7 +660,7 @@ public class StringLib implements LuaLibrary {
 
 			boolean anchor = false;
 			int poff = 0;
-			if (pat.luaByte(0) == '^') {
+			if (pat.length() > 0 && pat.luaByte(0) == '^') {
 				anchor = true;
 				poff = 1;
 			}
@@ -766,7 +766,7 @@ public class StringLib implements LuaLibrary {
 					lbuf.append(b);
 				} else {
 					++i; // skip ESC
-					b = (byte) news.luaByte(i);
+					b = i < l ? (byte) news.luaByte(i) : 0;
 					if (!Character.isDigit((char) b)) {
 						lbuf.append(b);
 					} else if (b == '0') {
@@ -1129,7 +1129,7 @@ public class StringLib implements LuaLibrary {
 		int matchbalance(int soff, int poff) throws LuaError {
 			final int plen = p.length();
 			if (poff == plen || poff + 1 == plen) {
-				throw new LuaError("malformed pattern (missing arguments to '%b')");
+				throw new LuaError("unbalanced pattern");
 			}
 			if (soff >= s.length() || s.luaByte(soff) != p.luaByte(poff)) {
 				return -1;

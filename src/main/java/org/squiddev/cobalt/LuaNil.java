@@ -83,10 +83,10 @@ public class LuaNil extends LuaValue {
 
 	@Override
 	public LuaValue checkValidKey() throws LuaError {
-		throw ErrorFactory.typeError(this, "table index");
+		throw new LuaError("table index is nil");
 	}
 
-	// optional argument conversions - nil alwas falls badk to default value
+	// optional argument conversions - nil always falls back to default value
 	@Override
 	public boolean optBoolean(boolean defval) {
 		return defval;

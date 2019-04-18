@@ -941,7 +941,7 @@ public final class LuaTable extends LuaValue {
 	 * @throws IllegalArgumentException If this key cannot be used.
 	 */
 	private Node newKey(LuaValue key) {
-		if (key.isNil()) throw new IllegalArgumentException("Table index is nil");
+		if (key.isNil()) throw new IllegalArgumentException("table index is nil");
 
 		// Rehash and let the rawgetter handle it
 		if (nodes.length == 0) {

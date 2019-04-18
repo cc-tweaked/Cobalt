@@ -255,9 +255,7 @@ public final class LuaDouble extends LuaNumber {
 
 	@Override
 	public LuaValue checkValidKey() throws LuaError {
-		if (Double.isNaN(v)) {
-			throw new LuaError("table index expected, got nan");
-		}
+		if (Double.isNaN(v)) throw new LuaError("table index is NaN");
 		return this;
 	}
 
