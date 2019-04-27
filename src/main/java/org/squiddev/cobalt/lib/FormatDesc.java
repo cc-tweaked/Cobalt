@@ -5,7 +5,7 @@ import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
 import sun.misc.FormattedFloatingDecimal;
 
-class FormatDesc {
+public class FormatDesc {
 	private boolean leftAdjust;
 	private boolean zeroPad;
 	private boolean explicitPlus;
@@ -18,6 +18,8 @@ class FormatDesc {
 
 	public final int conversion;
 	public final int length;
+
+	private static boolean useOracleFormatting = true;
 
 	public FormatDesc(LuaString strfrmt, final int start) throws LuaError {
 		int p = start, n = strfrmt.length();
@@ -205,60 +207,12 @@ class FormatDesc {
 			buf.append(Character.isUpperCase(conversion) ? "INF" : "inf");
 			if (leftAdjust) pad(buf, ' ', effectiveWidth - 3);
 		} else {
-			// Java handles %g all wrong: adding digits even when it shouldn't.
-			// To avoid that we have to write our own.
-			if (conversion == 'g' || conversion == 'G') {
+			if (useOracleFormatting) {
 				try {
-					int prec = precision;
-					if (precision == -1) prec = 6;
-					if (precision == 0) prec = 1;
-
-					char[] mantissa, exp;
-					int expRounded;
-					if (number == 0) {
-						mantissa = new char[]{'0'};
-						exp = null;
-						expRounded = 0;
-					} else {
-						FormattedFloatingDecimal fd = FormattedFloatingDecimal.valueOf(Math.abs(number), prec, FormattedFloatingDecimal.Form.GENERAL);
-						mantissa = fd.getMantissa();
-						exp = fd.getExponent();
-						expRounded = fd.getExponentRounded();
-					}
-
-					StringBuilder mantissaBuilder = new StringBuilder(mantissa.length);
-					mantissaBuilder.append(mantissa);
-					stripZeros(mantissaBuilder);
-					if (alternateForm) {
-						prec -= exp != null ? 1 : expRounded + 1;
-						addZeros(mantissaBuilder, prec);
-					}
-
-					// Calculate the effective width
-					effectiveWidth -= mantissaBuilder.length();
-					if (exp != null) effectiveWidth -= 1 + exp.length;
-					if (alternateForm && prec == 0) effectiveWidth--;
-
-					// Spaces must occur before the sign but 0s afterwards
-					if (!zeroPad && !leftAdjust) pad(buf, ' ', effectiveWidth);
-					appendSign(buf, number);
-					if (zeroPad && !leftAdjust) pad(buf, '0', effectiveWidth);
-
-					// Append required parts of the mantissa.
-					buf.append(mantissaBuilder.toString());
-
-					// If the precision is zero and the '#' flag is set, add the requested decimal point.
-					if (alternateForm && prec == 0) buf.append('.');
-
-					if (exp != null) {
-						buf.append(conversion == 'G' ? 'E' : 'e');
-						buf.append(exp);
-					}
-
-					if (leftAdjust) pad(buf, ' ', effectiveWidth);
-
+					formatWithOracle(buf, number, effectiveWidth);
 					return;
 				} catch (LinkageError ignored) {
+					useOracleFormatting = false;
 				}
 			}
 
@@ -276,6 +230,89 @@ class FormatDesc {
 
 			buf.append(String.format(format.toString(), number));
 		}
+	}
+
+	/**
+	 * Java's handling of format strings isn't entirely correct, so we attempt to roll our own.
+	 *
+	 * It's a little ugly, and depends on Oracle internals, so we have a fallback should the propritary APIs not be
+	 * available.
+	 *
+	 * @param buf            The buffer to write to
+	 * @param number         The number to write
+	 * @param effectiveWidth The width remaining after emitting the sign
+	 */
+	private void formatWithOracle(Buffer buf, double number, int effectiveWidth) {
+		char[] mantissa, exp;
+		int expRounded;
+		StringBuilder mantissaBuilder;
+
+		int precision = this.precision;
+		if (this.precision == -1) precision = 6;
+
+		if (conversion == 'g' || conversion == 'G') {
+			if (precision == 0) precision = 1;
+
+			if (number == 0) {
+				mantissa = new char[]{'0'};
+				exp = null;
+				expRounded = 0;
+			} else {
+				FormattedFloatingDecimal fd = FormattedFloatingDecimal.valueOf(Math.abs(number), precision, FormattedFloatingDecimal.Form.GENERAL);
+				mantissa = fd.getMantissa();
+				exp = fd.getExponent();
+				expRounded = fd.getExponentRounded();
+			}
+
+			mantissaBuilder = new StringBuilder(mantissa.length);
+			mantissaBuilder.append(mantissa);
+			stripZeros(mantissaBuilder);
+			if (alternateForm) {
+				precision -= exp != null ? 1 : expRounded + 1;
+				addZeros(mantissaBuilder, precision);
+			}
+		} else if (conversion == 'e' || conversion == 'E') {
+			FormattedFloatingDecimal fd = FormattedFloatingDecimal.valueOf(Math.abs(number), precision, FormattedFloatingDecimal.Form.SCIENTIFIC);
+			mantissa = fd.getMantissa();
+			exp = number == 0 ? new char[]{'+', '0', '0'} : fd.getExponent();
+
+			mantissaBuilder = new StringBuilder(mantissa.length);
+			mantissaBuilder.append(mantissa);
+			addZeros(mantissaBuilder, precision);
+		} else if (conversion == 'f') {
+			FormattedFloatingDecimal fd = FormattedFloatingDecimal.valueOf(Math.abs(number), precision, FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
+			mantissa = fd.getMantissa();
+			exp = null;
+
+			mantissaBuilder = new StringBuilder(mantissa.length);
+			mantissaBuilder.append(mantissa);
+			addZeros(mantissaBuilder, precision);
+		} else {
+			throw new IllegalStateException("Unknown converter " + conversion);
+		}
+
+		// Calculate the effective width
+		effectiveWidth -= mantissaBuilder.length();
+		if (exp != null) effectiveWidth -= 1 + exp.length;
+		if (alternateForm && precision == 0) effectiveWidth--;
+
+		// Spaces must occur before the sign but 0s afterwards
+		if (!zeroPad && !leftAdjust) pad(buf, ' ', effectiveWidth);
+		appendSign(buf, number);
+		if (zeroPad && !leftAdjust) pad(buf, '0', effectiveWidth);
+
+		// Append required parts of the mantissa.
+		buf.append(mantissaBuilder.toString());
+
+		// If the precision is zero and the '#' flag is set, add the requested decimal point.
+		if (alternateForm && precision == 0) buf.append('.');
+
+		if (exp != null) {
+			buf.append(conversion <= 'Z' ? 'E' : 'e');
+			buf.append(exp);
+		}
+
+		if (leftAdjust) pad(buf, ' ', effectiveWidth);
 	}
 
 	public void format(Buffer buf, LuaString s) {

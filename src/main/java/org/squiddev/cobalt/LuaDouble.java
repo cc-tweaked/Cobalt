@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt;
 
-import java.util.Locale;
+import org.squiddev.cobalt.lib.FormatDesc;
 
 /**
  * Extension of {@link LuaNumber} which can hold a Java double as its value.
@@ -65,17 +65,31 @@ public final class LuaDouble extends LuaNumber {
 	/**
 	 * Constant String representation for NaN (not a number), "nan"
 	 */
-	public static final String JSTR_NAN = "nan";
+	private static final String JSTR_NAN = "nan";
+
 
 	/**
 	 * Constant String representation for positive infinity, "inf"
 	 */
-	public static final String JSTR_POSINF = "inf";
+	private static final String JSTR_POSINF = "inf";
 
 	/**
 	 * Constant String representation for negative infinity, "-inf"
 	 */
-	public static final String JSTR_NEGINF = "-inf";
+	private static final String JSTR_NEGINF = "-inf";
+
+	private static final LuaString STR_NAN = ValueFactory.valueOf(JSTR_NAN);
+	private static final LuaString STR_POSINF = ValueFactory.valueOf(JSTR_POSINF);
+	private static final LuaString STR_NEGINF = ValueFactory.valueOf(JSTR_NEGINF);
+	private static final FormatDesc NUMBER_FORMAT;
+
+	static {
+		try {
+			NUMBER_FORMAT = new FormatDesc(ValueFactory.valueOf(".14g"), 0);
+		} catch (LuaError e) {
+			throw new IllegalStateException(e);
+		}
+	}
 
 	/**
 	 * The value being held by this instance.
@@ -177,50 +191,31 @@ public final class LuaDouble extends LuaNumber {
 		if (Double.isNaN(v)) return JSTR_NAN;
 		if (Double.isInfinite(v)) return v < 0 ? JSTR_NEGINF : JSTR_POSINF;
 
-		String formatted = String.format(Locale.ROOT, "%.14g", v);
-
-		// Attempt to trim 0s after the decimal point
-		int pos = formatted.indexOf('.');
-		if (pos < 0) return formatted;
-
-		// Strip all 0s between end and 0
-		int exp = formatted.indexOf('e');
-		if (exp < 0) {
-			int end = formatted.length() - 1;
-			for (; end > pos; end--) {
-				if (formatted.charAt(end) != '0') break;
-			}
-
-			// Trim trailing '.' if required
-			if (end == pos) end--;
-
-			return formatted.substring(0, end + 1);
-		} else {
-			int end = exp - 1;
-			for (; end > pos; end--) {
-				if (formatted.charAt(end) != '0') break;
-			}
-
-			// Trim trailing '.' if required
-			if (end == pos) end--;
-
-			return formatted.substring(0, end + 1) + formatted.substring(exp);
-		}
+		Buffer buffer = new Buffer(4);
+		NUMBER_FORMAT.format(buffer, v);
+		return buffer.toString();
 	}
 
 	@Override
 	public LuaString strvalue() {
-		return LuaString.valueOf(toString());
+		long l = (long) v;
+		if (l == v) return ValueFactory.valueOf(Long.toString(l));
+		if (Double.isNaN(v)) return STR_NAN;
+		if (Double.isInfinite(v)) return v < 0 ? STR_NEGINF : STR_POSINF;
+
+		Buffer buffer = new Buffer(4);
+		NUMBER_FORMAT.format(buffer, v);
+		return buffer.toLuaString();
 	}
 
 	@Override
 	public LuaString optLuaString(LuaString defval) {
-		return LuaString.valueOf(toString());
+		return strvalue();
 	}
 
 	@Override
 	public LuaValue toLuaString() {
-		return LuaString.valueOf(toString());
+		return strvalue();
 	}
 
 	@Override
@@ -250,7 +245,7 @@ public final class LuaDouble extends LuaNumber {
 
 	@Override
 	public LuaString checkLuaString() {
-		return LuaString.valueOf(toString());
+		return strvalue();
 	}
 
 	@Override
