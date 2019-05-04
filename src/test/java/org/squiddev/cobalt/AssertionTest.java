@@ -33,6 +33,7 @@ public class AssertionTest {
 			{"debug-coroutine-hook"},
 			{"gc"},
 			{"immutable"},
+			{"invalid-tailcall"},
 			{"load-error"},
 			{"no-unwind"},
 		};
