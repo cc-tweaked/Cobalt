@@ -275,7 +275,7 @@ else
 end
 
 print '+'
---[=[
+
 local t = os.time()
 T = os.date("*t", t)
 loadstring(os.date([[assert(T.year==%Y and T.month==%m and T.day==%d and
@@ -323,4 +323,3 @@ local s = os.date('%S')
 io.write(string.format('test done on %2.2d/%2.2d/%d', d, m, a))
 io.write(string.format(', at %2.2d:%2.2d:%2.2d\n', h, min, s))
 io.write(string.format('%s\n', _VERSION))
-]=]

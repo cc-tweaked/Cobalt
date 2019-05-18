@@ -72,12 +72,10 @@ public class LuaTests {
 				return valueOf(new File(arg.checkString()).mkdirs());
 			}
 		});
-		// Insert breakpoint here
-		// Insert breakpoint here
+
 		OperationHelper.setTable(helpers.state, helpers.globals.rawget("debug"), valueOf("debug"), new ZeroArgFunction() {
 			@Override
 			public LuaValue call(LuaState state) {
-				// Insert breakpoint here
 				return Constants.NONE;
 			}
 		});

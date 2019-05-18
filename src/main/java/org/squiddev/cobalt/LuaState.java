@@ -34,10 +34,10 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Random;
+import java.util.TimeZone;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 /**
  * Global lua state
@@ -104,6 +104,11 @@ public final class LuaState {
 	public final DebugHandler debug;
 
 	/**
+	 * The timezone for this state, as used by {@code os}.
+	 */
+	public final TimeZone timezone;
+
+	/**
 	 * The random instance for this state.
 	 */
 	public Random random;
@@ -147,6 +152,7 @@ public final class LuaState {
 		this.compiler = builder.compiler;
 		this.random = builder.random;
 		this.debug = builder.debug;
+		this.timezone = builder.timezone;
 		this.threader = new YieldThreader(builder.coroutineExecutor);
 	}
 
@@ -220,6 +226,7 @@ public final class LuaState {
 		private LoadState.LuaCompiler compiler = LuaC.INSTANCE;
 		private Random random = new Random();
 		private DebugHandler debug = DebugHandler.INSTANCE;
+		private TimeZone timezone = TimeZone.getDefault();
 		private Executor coroutineExecutor = defaultCoroutineExecutor;
 
 		/**
@@ -372,6 +379,19 @@ public final class LuaState {
 			this.debug = debug;
 			return this;
 		}
+
+		/**
+		 * Set the timezone for this Lua state.
+		 *
+		 * @param zone The new timezone
+		 * @return This builder
+		 */
+		public Builder timezone(TimeZone zone) {
+			if (zone == null) throw new NullPointerException("zone cannot be null");
+			this.timezone = zone;
+			return this;
+		}
+
 
 		/**
 		 * Set the coroutine executor for this state.

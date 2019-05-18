@@ -16,12 +16,12 @@ public class FormatDesc {
 	private int width;
 	int precision;
 
-	public final int conversion;
-	public final int length;
+	final int conversion;
+	final int length;
 
 	private static boolean useOracleFormatting = true;
 
-	public FormatDesc(LuaString strfrmt, final int start) throws LuaError {
+	FormatDesc(LuaString strfrmt, final int start) throws LuaError {
 		int p = start, n = strfrmt.length();
 		int c = 0;
 
@@ -86,6 +86,14 @@ public class FormatDesc {
 		space &= !explicitPlus;
 		conversion = c;
 		length = p - start;
+	}
+
+	public static FormatDesc ofUnsafe(String format) {
+		try {
+			return new FormatDesc(LuaString.valueOf(format), 0);
+		} catch (LuaError e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	public void format(Buffer buf, byte c) {

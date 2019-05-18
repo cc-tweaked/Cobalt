@@ -8,8 +8,10 @@ import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.function.VarArgFunction;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.TimeZone;
 
 /**
  * Lua driven assertion tests
@@ -36,6 +38,7 @@ public class AssertionTest {
 			{"invalid-tailcall"},
 			{"load-error"},
 			{"no-unwind"},
+			{"time"}
 		};
 
 		return Arrays.asList(tests);
@@ -43,6 +46,8 @@ public class AssertionTest {
 
 	@Before
 	public void setup() {
+		TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
+
 		helpers.setup();
 		helpers.globals.rawset("id_", new VarArgFunction() {
 			@Override

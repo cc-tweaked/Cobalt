@@ -81,15 +81,7 @@ public final class LuaDouble extends LuaNumber {
 	private static final LuaString STR_NAN = ValueFactory.valueOf(JSTR_NAN);
 	private static final LuaString STR_POSINF = ValueFactory.valueOf(JSTR_POSINF);
 	private static final LuaString STR_NEGINF = ValueFactory.valueOf(JSTR_NEGINF);
-	private static final FormatDesc NUMBER_FORMAT;
-
-	static {
-		try {
-			NUMBER_FORMAT = new FormatDesc(ValueFactory.valueOf(".14g"), 0);
-		} catch (LuaError e) {
-			throw new IllegalStateException(e);
-		}
-	}
+	private static final FormatDesc NUMBER_FORMAT = FormatDesc.ofUnsafe(".14g");
 
 	/**
 	 * The value being held by this instance.
