@@ -56,7 +56,22 @@ do -- Test Java call stack
 	local result, message = coroutine.resume(co)
 	assert(not result)
 	assert(message == "debug.lua:54: stack overflow", message)
-	assert(n == 201, ("Called %d times"):format(n))
+	assert(n == 100, ("Called %d times"):format(n))
+end
+
+do -- Test Java call stack, but doing something else first.
+	local n = 0
+	local function overflow() n = n + 1 local _, err = pcall(overflow) error(err, 0) end
+	local function fib(x) if x <= 2 then return 1 else return fib(x - 1) * fib(x - 2) end end
+	local co = coroutine.create(function()
+		fib(10)
+		overflow()
+	end)
+
+	local result, message = coroutine.resume(co)
+	assert(not result)
+	assert(message == "debug.lua:64: stack overflow", message)
+	assert(n == 100, ("Called %d times"):format(n))
 end
 
 -- Check correct getfenv levels
@@ -69,10 +84,10 @@ foo()
 
 local function tracebackVerbose(x)
 	if x then
-		assertLine(1, 72)
-		assertLine(2, 77)
-		assertLine(3, 82)
-		assertLine(4, 85)
+		assertLine(1, 87)
+		assertLine(2, 92)
+		assertLine(3, 97)
+		assertLine(4, 100)
 	else
 		tracebackVerbose(true)
 	end

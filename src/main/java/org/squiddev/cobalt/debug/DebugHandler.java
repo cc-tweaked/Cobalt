@@ -25,10 +25,10 @@
 
 package org.squiddev.cobalt.debug;
 
-import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.Upvalue;
+import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.UnwindThrowable;
 
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD_LINE;
@@ -44,40 +44,6 @@ public class DebugHandler {
 	}
 
 	protected DebugHandler() {
-	}
-
-	/**
-	 * Called by recurring java functions on entry
-	 *
-	 * @param ds    The current debug state
-	 * @param func  the function called
-	 * @param state The state which will be used when resuming the function.
-	 * @param <S>   The type of the state used when resuming the function.
-	 * @param <T>   The type of the function
-	 * @return The pushed debug frame for this function.
-	 * @throws LuaError On a stack overflow
-	 */
-	public <S, T extends LuaFunction & Resumable<S>> DebugFrame setupCall(DebugState ds, T func, S state) throws LuaError {
-		DebugFrame di = ds.pushJavaInfo();
-		di.setFunction(func, state);
-		return di;
-	}
-
-	/**
-	 * Called by closures
-	 *
-	 * @param ds            The current debug state
-	 * @param func          the function called
-	 * @param args          The arguments to this function
-	 * @param stack         The current lua stack
-	 * @param stackUpvalues The upvalue equivalent of this stack
-	 * @return The pushed debug frame for this function.
-	 * @throws LuaError On a stack overflow
-	 */
-	public DebugFrame setupCall(DebugState ds, LuaClosure func, Varargs args, LuaValue[] stack, Upvalue[] stackUpvalues) throws LuaError {
-		DebugFrame di = ds.pushInfo();
-		di.setFunction(func, args, stack, stackUpvalues);
-		return di;
 	}
 
 	/**

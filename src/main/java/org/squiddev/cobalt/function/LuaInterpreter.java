@@ -135,8 +135,9 @@ public final class LuaInterpreter {
 		if (p.is_vararg >= VARARG_NEEDSARG) stack[p.numparams] = new LuaTable(varargs);
 
 		DebugState ds = DebugHandler.getDebugState(state);
-		DebugFrame di = state.debug.setupCall(ds, function, varargs.asImmutable(), stack, upvalues);
-		di.flags = flags;
+		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
+		di.setFunction(function, varargs.asImmutable(), stack, upvalues);
+		di.flags |= flags;
 		di.extras = NONE;
 		di.pc = 0;
 

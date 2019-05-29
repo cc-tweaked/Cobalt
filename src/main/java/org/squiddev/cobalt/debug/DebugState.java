@@ -67,7 +67,7 @@ public final class DebugState {
 	 *
 	 * This is limited by {@link #MAX_JAVA_SIZE}.
 	 */
-	private int javaTop = -1;
+	private int javaCount = 0;
 
 	/**
 	 * The stack of debug info
@@ -103,17 +103,18 @@ public final class DebugState {
 	}
 
 	/**
-	 * Push a new Java debug info onto the stack.
+	 * Push a new debug frame onto the stack, marking it as also consuming one or more Java stack frames.
 	 *
-	 * @return The created info
+	 * @return The created info. This should be marked with {@link DebugFrame#FLAG_JAVA} or {
 	 * @throws LuaError On a stack overflow
+	 * @link DebugFrame#FLAG_FRESH} by the calling function.
 	 */
-	protected DebugFrame pushJavaInfo() throws LuaError {
-		int javaTop = this.javaTop + 1;
+	public DebugFrame pushJavaInfo() throws LuaError {
+		int javaTop = this.javaCount + 1;
 		if (javaTop >= MAX_JAVA_SIZE) throw new LuaError("stack overflow");
 
 		DebugFrame frame = pushInfo();
-		this.javaTop = javaTop;
+		this.javaCount = javaTop;
 		return frame;
 	}
 
@@ -123,7 +124,7 @@ public final class DebugState {
 	 * @return The created info
 	 * @throws LuaError On a stack overflow.
 	 */
-	protected DebugFrame pushInfo() throws LuaError {
+	public DebugFrame pushInfo() throws LuaError {
 		int top = this.top + 1;
 
 		DebugFrame[] frames = stack;
@@ -148,8 +149,9 @@ public final class DebugState {
 	 */
 	protected void popInfo() {
 		DebugFrame frame = stack[top--];
+		if ((frame.flags & (FLAG_JAVA | FLAG_FRESH)) != 0) javaCount--;
+		assert javaCount >= 0;
 		frame.clear();
-		if (frame.closure == null) javaTop--;
 	}
 
 	/**

@@ -6,6 +6,7 @@ import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_JAVA;
 
 public abstract class ResumableVarArgFunction<T> extends LibFunction implements Resumable<Object> {
 	private static final Object CALL_MARKER = new Object();
@@ -33,11 +34,12 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 
 	@Override
 	public final Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
-		DebugHandler debug = state.debug;
 		DebugState ds = DebugHandler.getDebugState(state);
 
 		// Push the frame
-		DebugFrame di = debug.setupCall(ds, this, null);
+		DebugFrame di = ds.pushJavaInfo();
+		di.setFunction(this, null);
+		di.flags |= FLAG_JAVA;
 		if (!ds.inhook && ds.hookcall) {
 			try {
 				ds.hookCall(di);
@@ -49,7 +51,7 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 		}
 
 		Varargs result = invoke(state, di, args);
-		onReturn(debug, ds, di, result);
+		onReturn(state.debug, ds, di, result);
 		return result;
 	}
 

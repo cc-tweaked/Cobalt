@@ -97,6 +97,14 @@ public final class DebugFrame {
 	public static final int FLAG_HOOKYIELD_LINE = 1 << 11;
 
 	/**
+	 * Whether this function contributes to the Java call stack
+	 *
+	 * @see #flags
+	 * @see DebugState#pushJavaInfo()
+	 */
+	public static final int FLAG_JAVA = 1 << 12;
+
+	/**
 	 * The debug info's function
 	 */
 	public LuaFunction func;
@@ -135,7 +143,15 @@ public final class DebugFrame {
 		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
 	}
 
-	void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack, Upvalue[] stackUpvalues) {
+	/**
+	 * Set this debug frame to hold some Lua closure
+	 *
+	 * @param closure       the function called
+	 * @param varargs       The arguments to this function
+	 * @param stack         The current lua stack
+	 * @param stackUpvalues The upvalues on this stack
+	 */
+	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack, Upvalue[] stackUpvalues) {
 		this.func = closure;
 		this.closure = closure;
 		this.varargs = varargs;
@@ -143,6 +159,14 @@ public final class DebugFrame {
 		this.stackUpvalues = stackUpvalues;
 	}
 
+	/**
+	 * Set this debug frame to hold some Java function.
+	 *
+	 * @param func  the function called
+	 * @param state The state which will be used when resuming the function.
+	 * @param <S>   The type of the state used when resuming the function.
+	 * @param <T>   The type of the function
+	 */
 	public <S, T extends LuaFunction & Resumable<S>> void setFunction(T func, S state) {
 		this.func = func;
 		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
