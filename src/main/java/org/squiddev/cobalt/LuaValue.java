@@ -582,7 +582,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public int optInteger(int defval) throws LuaError {
-		throw ErrorFactory.argError(this, "integer");
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
@@ -602,7 +602,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public LuaInteger optLuaInteger(LuaInteger defval) throws LuaError {
-		throw ErrorFactory.argError(this, "integer");
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
@@ -622,7 +622,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public long optLong(long defval) throws LuaError {
-		throw ErrorFactory.argError(this, "integer");
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
@@ -860,7 +860,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public int checkInteger() throws LuaError {
-		throw ErrorFactory.argError(this, "integer");
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
@@ -879,7 +879,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public LuaInteger checkLuaInteger() throws LuaError {
-		throw ErrorFactory.argError(this, "integer");
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
@@ -898,7 +898,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public long checkLong() throws LuaError {
-		throw ErrorFactory.argError(this, "integer");
+		throw ErrorFactory.argError(this, "number");
 	}
 
 	/**
