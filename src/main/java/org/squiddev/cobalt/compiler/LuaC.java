@@ -51,7 +51,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * initialized chunks, which is an interface common to
  * lua bytecode compiling and java bytecode compiling.
  *
- * Teh {@link LuaC} compiler is installed by default by the
+ * The {@link LuaC} compiler is installed by default by the
  * {@link JsePlatform} class
  * so in the following example, the default {@link LuaC} compiler
  * will be used:
