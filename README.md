@@ -1,4 +1,4 @@
-# Cobalt   [![Build Status](https://travis-ci.org/SquidDev/Cobalt.svg?branch=master)](https://travis-ci.org/SquidDev/Cobalt)
+# Cobalt [![Current build status](https://github.com/SquidDev/Cobalt/workflows/Build/badge.svg)](https://github.com/SquidDev/Cobalt/actions "Current build status")
 
 ## What?
 Cobalt is a fork of LuaJ 2.0 (Lua 5.1) with many features of LuaJ 3.0 backported.
