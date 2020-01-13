@@ -80,8 +80,8 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * @see LuaValue
  */
 public final class LuaTable extends LuaValue {
-	private Object[] EMPTY_ARRAY = new Object[0];
-	private Node[] EMPTY_NODES = new Node[0];
+	private static final Object[] EMPTY_ARRAY = new Object[0];
+	private static final Node[] EMPTY_NODES = new Node[0];
 	private static final LuaString N = valueOf("n");
 
 	private Object[] array = EMPTY_ARRAY;
