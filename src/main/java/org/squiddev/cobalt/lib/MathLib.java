@@ -57,11 +57,11 @@ public class MathLib implements LuaLibrary {
 			"exp", "floor", "rad", "sin",
 			"sqrt", "tan",
 			"acos", "asin", "atan", "cosh",
-			"exp", "log", "log10", "sinh",
+			"exp", "log10", "sinh",
 			"tanh"
 		});
 		LibFunction.bind(t, MathLib2::new, new String[]{
-			"fmod", "ldexp", "pow", "atan2"
+			"fmod", "ldexp", "pow", "atan2", "log"
 		});
 		LibFunction.bind(t, MathLibV::new, new String[]{
 			"frexp", "max", "min", "modf",
@@ -108,12 +108,10 @@ public class MathLib implements LuaLibrary {
 				case 14:
 					return ValueFactory.valueOf(Math.exp(arg.checkDouble()));
 				case 15:
-					return ValueFactory.valueOf(Math.log(arg.checkDouble()));
-				case 16:
 					return ValueFactory.valueOf(Math.log10(arg.checkDouble()));
-				case 17:
+				case 16:
 					return ValueFactory.valueOf(Math.sinh(arg.checkDouble()));
-				case 18:
+				case 17:
 					return ValueFactory.valueOf(Math.tanh(arg.checkDouble()));
 			}
 			return Constants.NIL;
@@ -141,6 +139,13 @@ public class MathLib implements LuaLibrary {
 					return ValueFactory.valueOf(Math.pow(arg1.checkDouble(), arg2.checkDouble()));
 				case 3:
 					return ValueFactory.valueOf(Math.atan2(arg1.checkDouble(), arg2.checkDouble()));
+				case 4: { // lua 5.>=2 log takes two arguments,
+					if (arg2.isNil()) {
+						return ValueFactory.valueOf(Math.log(arg1.checkDouble()));
+					} else {
+						return ValueFactory.valueOf(Math.log(arg1.checkDouble()) / Math.log(arg2.checkDouble()));
+					}
+				}
 			}
 			return Constants.NIL;
 		}
