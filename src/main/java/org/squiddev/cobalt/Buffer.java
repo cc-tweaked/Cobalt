@@ -157,6 +157,19 @@ public final class Buffer {
 	}
 
 	/**
+	 * Append an array of bytes to the buffer.
+	 *
+	 * @param b The bytes to append
+	 * @return {@code this} to allow call chaining
+	 */
+	public final Buffer append(byte[] b) {
+		makeRoom(0, b.length);
+		for(int i = 0; i < b.length; i++)
+			bytes[offset + length++] = b[i];
+		return this;
+	}
+
+	/**
 	 * Append a single character to the buffer.
 	 *
 	 * @param c The byte to append
