@@ -54,7 +54,7 @@ public class Utf8Lib implements LuaLibrary {
 					LuaNumber[] l = new LuaNumber[j - i + 1];
 
 					do {
-						c = decodeUtf8(s.bytes, i - 1, off);
+						c = decodeUtf8(s, i - 1, off);
 						if (c < 0) {
 							throw new LuaError("invalid UTF-8 byte sequence starting at index" + i);
 						}
@@ -70,7 +70,7 @@ public class Utf8Lib implements LuaLibrary {
 					int[] off = new int[1]; int n = 0;
 
 					do {
-						long c = decodeUtf8(s.bytes, i - 1, off);
+						long c = decodeUtf8(s, i - 1, off);
 						if (c < 0) {
 							return ValueFactory.varargsOf(Constants.FALSE, LuaInteger.valueOf(i));
 						}
@@ -121,6 +121,31 @@ public class Utf8Lib implements LuaLibrary {
 		}
 	}
 
+	private static long decodeUtf8(LuaString str, int n, int[] offset) {
+		int f = str.luaByte(n) & 0xFF;
+		if (f < 0x80) {
+			offset[0] = 1;
+			return str.luaByte(n);
+		} else if ((f & 0xe0) == 0xc0) {
+			offset[0] = 2;
+			return ((long)(str.luaByte(n) & 0x1f) <<  6) |
+					((long) (str.luaByte(n + 1) & 0x3f));
+		} else if ((str.luaByte(0) & 0xf0) == 0xe0) {
+			offset[0] = 3;
+			return ((long)(str.luaByte(n) & 0x0f) << 12) |
+					((long)(str.luaByte(n + 1) & 0x3f) <<  6) |
+					((long) (str.luaByte(n + 2) & 0x3f));
+		} else if ((f & 0xf8) == 0xf0 && (f <= 0xf4)) {
+			offset[0] = 4;
+			return ((long)(str.luaByte(n) & 0x07) << 18) |
+					((long)(str.luaByte(n + 1) & 0x3f) << 12) |
+					((long)(str.luaByte(n + 2) & 0x3f) <<  6) |
+					((long) (str.luaByte(n + 3) & 0x3f));
+		} else {
+			return -1;
+		}
+	}
+
 	private static long decodeUtf8(byte[] bytes, int n, int[] offset) {
 		int f = bytes[n] & 0xFF;
 		if (f < 0x80) {
@@ -155,7 +180,7 @@ public class Utf8Lib implements LuaLibrary {
 		return idx < s.length && (s[idx] & 0xC0) == 0x80;
 	}
 	private static boolean isCont(LuaString s, int idx) {
-		return isCont(s.bytes, idx);
+		return idx < s.length && (s.luaByte(idx) & 0xC0) == 0x80;
 	}
 
 
@@ -168,7 +193,7 @@ public class Utf8Lib implements LuaLibrary {
 			// Arg 1: invariant state (the string)
 			// Arg 2: byte offset + 1
 			// Returns: byte offset + 1, code point
-			byte[] s = args.arg(1).checkLuaString().bytes;
+			LuaString s = args.arg(1).checkLuaString();
 			int n = args.arg(2).checkInteger() - 1;
 			int[] off = new int[1];
 			if (n < 0) {
