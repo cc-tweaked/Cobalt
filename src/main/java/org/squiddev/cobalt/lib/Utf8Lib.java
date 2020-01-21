@@ -9,6 +9,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Utf8Lib implements LuaLibrary {
+
+	/**
+	 * Singleton for the utf8.codes() iterator. In lua 5.3 it always returns the same function reference,
+	 * so here we always return the same object reference.
+	 */
+	private VarArgFunction codesIter;
+
 	@Override
 	public LuaValue add(LuaState state, LuaTable environment) {
 		LuaTable t = new LuaTable(0, 6);
@@ -16,10 +23,11 @@ public class Utf8Lib implements LuaLibrary {
 		LibFunction.bind(t, Utf8Char::new, new String[]{ "char", "codes", "codepoint", "len", "offset" });
 		environment.rawset("utf8", t);
 		state.loadedPackages.rawset("utf8", t);
+		codesIter = new Utf8CodesIter();
 		return t;
 	}
 
-	private static class Utf8Char extends VarArgFunction {
+	private class Utf8Char extends VarArgFunction {
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 			switch(opcode) {
@@ -35,12 +43,9 @@ public class Utf8Lib implements LuaLibrary {
 					}
 					return sb.value();
 				}
-				case 1: {
-					LuaString s = args.arg(1).checkLuaString();
-					byte[] c = new byte[s.length];
-					s.copyTo(c, 0);
-					return ValueFactory.varargsOf(new Utf8CodesIter(c), Constants.NIL, ValueFactory.valueOf(0));
-				}
+				case 1:
+					return ValueFactory.varargsOf(codesIter, args.arg(1).checkLuaString(), ValueFactory.valueOf(0));
+
 				case 2: {
 					LuaString s = args.arg(1).checkLuaString();
 					int i = (args.arg(2).isNil()) ? 1 : args.arg(2).checkInteger();
@@ -149,26 +154,21 @@ public class Utf8Lib implements LuaLibrary {
 	private static boolean isCont(byte[] s, int idx) {
 		return idx < s.length && (s[idx] & 0xC0) == 0x80;
 	}
-
 	private static boolean isCont(LuaString s, int idx) {
 		return isCont(s.bytes, idx);
 	}
+
 
 	/* An iterator for use in implementing utf8.codes. We store the bytes in the closure instead of in the iterator's
 	*  invariant state in the hopes that this is the tiniest bit faster.
 	*/
 	private static class Utf8CodesIter extends VarArgFunction {
-		byte[] s;
-
-		protected Utf8CodesIter(byte[] bytes) {
-			s = bytes;
-		}
-
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
-			// Arg 1: invariant state (nil)
+			// Arg 1: invariant state (the string)
 			// Arg 2: byte offset + 1
 			// Returns: byte offset + 1, code point
+			byte[] s = args.arg(1).checkLuaString().bytes;
 			int n = args.arg(2).checkInteger() - 1;
 			int[] off = new int[1];
 			if (n < 0) {
