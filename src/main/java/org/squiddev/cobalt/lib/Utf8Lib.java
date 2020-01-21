@@ -170,6 +170,7 @@ public class Utf8Lib implements LuaLibrary {
 			// Arg 2: byte offset + 1
 			// Returns: byte offset + 1, code point
 			int n = args.arg(2).checkInteger() - 1;
+			int[] off = new int[1];
 			if (n < 0) {
 				n = 0;
 			} else if (n < s.length) {
@@ -179,7 +180,7 @@ public class Utf8Lib implements LuaLibrary {
 			if (n >= s.length) {
 				return ValueFactory.varargsOf();
 			} else {
-				long c = decodeUtf8(s, n, new int[0]);
+				long c = decodeUtf8(s, n, off);
 				return ValueFactory.varargsOf(LuaInteger.valueOf(n + 1), LuaInteger.valueOf(c));
 			}
 		}
