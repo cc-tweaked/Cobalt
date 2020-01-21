@@ -165,7 +165,6 @@ public final class Buffer {
 	public final Buffer append(byte[] b) {
 		makeRoom(0, b.length);
 		System.arraycopy(b, 0, bytes, offset, b.length);
-		offset += b.length;
 		length += b.length;
 		return this;
 	}
