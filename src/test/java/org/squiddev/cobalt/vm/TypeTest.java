@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt.vm;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
@@ -33,7 +33,7 @@ import org.squiddev.cobalt.function.ZeroArgFunction;
 
 import java.lang.reflect.InvocationTargetException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.*;
 

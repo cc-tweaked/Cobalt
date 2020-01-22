@@ -24,23 +24,23 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.require.RequireSampleClassCastExcep;
 import org.squiddev.cobalt.require.RequireSampleLoadLuaError;
 import org.squiddev.cobalt.require.RequireSampleLoadRuntimeExcep;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class RequireClassTest {
 
 	private LuaFunction require;
 	private LuaState state;
 
-	@Before
+	@BeforeEach
 	public void setup() throws LuaError, UnwindThrowable {
 		state = new LuaState();
 		LuaTable globals = JsePlatform.standardGlobals(state);

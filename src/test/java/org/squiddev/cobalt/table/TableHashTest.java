@@ -24,13 +24,13 @@
  */
 package org.squiddev.cobalt.table;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.TwoArgFunction;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for tables used as lists.
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class TableHashTest {
 	private LuaState state;
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		state = new LuaState();
 	}

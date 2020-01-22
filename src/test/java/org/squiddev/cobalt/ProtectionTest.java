@@ -24,44 +24,26 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 
 /**
- * Tests protection
+ * Tests that long running programs are terminated correctly.
  */
-@RunWith(Parameterized.class)
 public class ProtectionTest {
-	private final String name;
-	private ScriptDrivenHelpers helpers;
+	private ScriptHelper helpers;
 
-	public ProtectionTest(String name) {
-		this.name = name;
-		this.helpers = new ScriptDrivenHelpers("/protection/");
-	}
-
-	@Parameterized.Parameters(name = "{0}")
-	public static Collection<Object[]> getTests() {
-		Object[][] tests = {
-			{"string"},
-			{"loop"},
-		};
-
-		return Arrays.asList(tests);
-	}
-
-	@Before
+	@BeforeEach
 	public void setup() {
+		helpers = new ScriptHelper("/protection/");
 		helpers.setup(s -> s.debug(new DebugHandler() {
 			private long time = System.currentTimeMillis();
 
@@ -81,8 +63,10 @@ public class ProtectionTest {
 		}));
 	}
 
-	@Test(timeout = 3000)
-	public void run() throws IOException, CompileException, LuaError, InterruptedException {
+	@Timeout(3)
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {"string", "loop"})
+	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 }

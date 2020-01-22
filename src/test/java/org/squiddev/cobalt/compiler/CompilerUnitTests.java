@@ -24,64 +24,38 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.io.IOException;
 
-@RunWith(Parameterized.class)
+/**
+ * Compiles Lua's test files to bytecode and asserts that it is equal to a golden file produced by luac.
+ */
 public class CompilerUnitTests {
-	public String fileName;
-
-	public CompilerUnitTests(String file) {
-		fileName = file;
-	}
-
-	@Before
-	public void setup() throws Exception {
+	@BeforeEach
+	public void setup() {
 		LuaState state = new LuaState();
 		JsePlatform.standardGlobals(state);
 	}
 
-	@Test
-	public void compareBytecode() throws Exception {
-		CompileTestHelper.compareResults("/bytecode-compiler/", fileName);
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		"all", "api", "attrib", "big", "calls", "checktable", "closure", "code", "constructs", "db", "errors",
+		"events", "files", "gc", "literals", "locals", "main", "math", "nextvar", "pm", "sort", "strings", "vararg",
+	})
+	public void lua51(String filename) throws IOException, CompileException {
+		CompileTestHelper.compareResults("/bytecode-compiler/lua5.1/", filename);
 	}
 
-	@Parameterized.Parameters(name = "{0}")
-	public static Collection<Object[]> getTests() {
-		Object[][] tests = {
-			{"all"},
-			{"api"},
-			{"attrib"},
-			{"big"},
-			{"calls"},
-			{"checktable"},
-			{"closure"},
-			{"code"},
-			{"constructs"},
-			{"db"},
-			{"errors"},
-			{"events"},
-			{"files"},
-			{"gc"},
-			{"literals"},
-			{"locals"},
-			{"main"},
-			{"math"},
-			{"nextvar"},
-			{"pm"},
-			{"sort"},
-			{"strings"},
-			{"vararg"},
-			{"verybig"},
-		};
-
-		return Arrays.asList(tests);
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		"modulo", "construct", "bigattr", "controlchars", "comparators", "mathrandomseed", "varargs",
+	})
+	public void regression(String filename) throws IOException, CompileException {
+		CompileTestHelper.compareResults("/bytecode-compiler/regressions/", filename);
 	}
 }

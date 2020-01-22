@@ -24,39 +24,20 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.function.VarArgFunction;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 
 import static org.squiddev.cobalt.LuaString.valueOf;
 
-@RunWith(Parameterized.class)
 public class CoroutineLoopTest {
-	private final String name;
-
-	public CoroutineLoopTest(String name) {
-		this.name = name;
-	}
-
-	@Parameterized.Parameters(name = "{0}")
-	public static Collection<Object[]> getTests() {
-		Object[][] tests = {
-			{"nested"},
-			{"top"},
-		};
-
-		return Arrays.asList(tests);
-	}
-
-	@Test
-	public void run() throws IOException, CompileException, LuaError, InterruptedException {
-		ScriptDrivenHelpers helpers = new ScriptDrivenHelpers("/coroutine/loop-");
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {"nested", "top"})
+	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
+		ScriptHelper helpers = new ScriptHelper("/coroutine/loop-");
 		helpers.setup();
 		helpers.globals.rawset("yieldBlocking", new VarArgFunction() {
 			@Override

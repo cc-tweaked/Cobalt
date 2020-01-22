@@ -27,22 +27,25 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
+import java.time.ZoneOffset;
+import java.util.TimeZone;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class ScriptDrivenHelpers extends FileResourceManipulator {
+public class ScriptHelper extends FileResourceManipulator {
 	private final String subdir;
 	public LuaState state;
 	public LuaTable globals;
 
-	public ScriptDrivenHelpers(String subdir) {
+	public ScriptHelper(String subdir) {
 		this.subdir = subdir;
 	}
 
@@ -52,14 +55,20 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 	}
 
 	public void setup(Consumer<LuaState.Builder> extend) {
-		LuaState.Builder builder = LuaState.builder().resourceManipulator(this);
+		LuaState.Builder builder = LuaState.builder()
+			.resourceManipulator(this)
+			.stdin(new InputStream() {
+				@Override
+				public int read() {
+					return -1;
+				}
+			});
 		extend.accept(builder);
-		state = builder.build();
-		globals = JsePlatform.debugGlobals(state);
+		setupCommon(builder.build());
 	}
 
 	public void setupQuiet() {
-		state = LuaState.builder()
+		setupCommon(LuaState.builder()
 			.resourceManipulator(this)
 			.stdout(new PrintStream(new OutputStream() {
 				@Override
@@ -70,8 +79,19 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 				public void write(byte[] b, int off, int len) {
 				}
 			}))
-			.build();
+			.build());
+	}
+
+	private void setupCommon(LuaState state) {
+		this.state = state;
 		globals = JsePlatform.debugGlobals(state);
+		globals.rawset("id_", new VarArgFunction() {
+			@Override
+			public Varargs invoke(LuaState state, Varargs args) {
+				return args;
+			}
+		});
+		TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
 	}
 
 	@Override
@@ -85,7 +105,7 @@ public class ScriptDrivenHelpers extends FileResourceManipulator {
 	 *
 	 * @param testName The name of the test file to run
 	 */
-	public void runTest(String testName) throws Exception {
+	public void runComparisonTest(String testName) throws Exception {
 		// Override print()
 		final ByteArrayOutputStream output = new ByteArrayOutputStream();
 		final PrintStream oldps = state.stdout;

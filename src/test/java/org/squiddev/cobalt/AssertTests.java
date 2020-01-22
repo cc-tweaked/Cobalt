@@ -24,10 +24,8 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
@@ -35,59 +33,58 @@ import org.squiddev.cobalt.lib.Bit32Lib;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
- * Lua driven assertion tests
+ * Just runs various libraries in the main test suite
  */
-@RunWith(Parameterized.class)
-public class LuaTests {
-	private final String name;
-	private ScriptDrivenHelpers helpers;
-
-	public LuaTests(String name) {
-		this.name = name;
-		this.helpers = new ScriptDrivenHelpers("/lua5.1/");
+public class AssertTests {
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {"table-hash-01", "table-hash-02", "table-hash-03"})
+	public void tables(String name) throws IOException, CompileException, LuaError, InterruptedException {
+		ScriptHelper helpers = new ScriptHelper("/assert/table/");
+		helpers.setup();
+		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 
-	@Parameterized.Parameters(name = "{0}")
-	public static Collection<Object[]> getTests() {
-		Object[][] tests = {
-			// {"all"},
-			// {"api"}, // Used to test C API.
-			{"attrib"},
-			// {"big"},
-			{"bitwise"},
-			{"calls"},
-			{"checktable"},
-			{"closure"},
-			{"code"},
-			{"constructs"},
-			{"db"},
-			{"errors"},
-			{"events"},
-			{"files"},
-			{"gc"},
-			{"literals"},
-			{"locals"},
-			// {"main"}, // Tests Lua flags
-			{"math"},
-			{"nextvar"},
-			{"pm"},
-			{"sort"},
-			{"strings"},
-			{"vararg"},
-			{"verybig"},
-		};
-
-		return Arrays.asList(tests);
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		"base-issues", "string-issues", "debug", "debug-coroutine-hook", "gc", "immutable", "invalid-tailcall",
+		"load-error", "no-unwind", "time",
+	})
+	public void main(String name) throws IOException, CompileException, LuaError, InterruptedException {
+		ScriptHelper helpers = new ScriptHelper("/assert/");
+		helpers.setup();
+		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 
-	@Before
-	public void setup() throws LuaError, UnwindThrowable {
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		// Skip all, api, big and main
+		"attrib", "bitwise",
+		"calls",
+		"checktable",
+		"closure",
+		"code",
+		"constructs",
+		"db",
+		"errors",
+		"events",
+		"files",
+		"gc",
+		"literals",
+		"locals",
+		"math",
+		"nextvar",
+		"pm",
+		"sort",
+		"strings",
+		"vararg",
+		"verybig",
+	})
+	public void lua51(String name) throws Exception {
+		ScriptHelper helpers = new ScriptHelper("/assert/lua5.1/");
 		helpers.setup();
 		helpers.globals.load(helpers.state, new Bit32Lib());
 		helpers.globals.rawset("mkdir", new OneArgFunction() {
@@ -97,16 +94,14 @@ public class LuaTests {
 			}
 		});
 
-		OperationHelper.setTable(helpers.state, helpers.globals.rawget("debug"), valueOf("debug"), new ZeroArgFunction() {
+		// TODO: Move this into the debug library
+		((LuaTable) helpers.globals.rawget("debug")).rawset("debug", new ZeroArgFunction() {
 			@Override
 			public LuaValue call(LuaState state) {
 				return Constants.NONE;
 			}
 		});
-	}
 
-	@Test
-	public void run() throws IOException, CompileException, LuaError, InterruptedException {
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 }

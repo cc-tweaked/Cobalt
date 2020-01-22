@@ -24,31 +24,32 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class SimpleTests {
 	private LuaState state;
 	private LuaTable _G;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		state = new LuaState();
 		_G = JsePlatform.standardGlobals(state);
 	}
 
-	private void doTest(String script) throws UnwindThrowable {
+	private void doTest(String script) {
 		try {
-			InputStream is = new ByteArrayInputStream(script.getBytes("UTF8"));
+			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
 			LuaFunction c = LuaC.INSTANCE.load(is, valueOf("script"), _G);
 			LuaThread.runMain(state, c);
 		} catch (Exception e) {
@@ -57,20 +58,20 @@ public class SimpleTests {
 	}
 
 	@Test
-	public void testTrivial() throws UnwindThrowable {
+	public void testTrivial() {
 		String s = "print( 2 )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testAlmostTrivial() throws UnwindThrowable {
+	public void testAlmostTrivial() {
 		String s = "print( 2 )\n" +
 			"print( 3 )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testSimple() throws UnwindThrowable {
+	public void testSimple() {
 		String s = "print( 'hello, world' )\n" +
 			"for i = 2,4 do\n" +
 			"	print( 'i', i )\n" +
@@ -79,7 +80,7 @@ public class SimpleTests {
 	}
 
 	@Test
-	public void testBreak() throws UnwindThrowable {
+	public void testBreak() {
 		String s = "a=1\n" +
 			"while true do\n" +
 			"  if a>10 then\n" +
@@ -92,21 +93,21 @@ public class SimpleTests {
 	}
 
 	@Test
-	public void testShebang() throws UnwindThrowable {
+	public void testShebang() {
 		String s = "#!../lua\n" +
 			"print( 2 )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testInlineTable() throws UnwindThrowable {
+	public void testInlineTable() {
 		String s = "A = {g=10}\n" +
 			"print( A )\n";
 		doTest(s);
 	}
 
 	@Test
-	public void testEqualsAnd() throws UnwindThrowable {
+	public void testEqualsAnd() {
 		String s = "print( 1 == b and b )\n";
 		doTest(s);
 	}
@@ -128,7 +129,7 @@ public class SimpleTests {
 			LuaValue d = valueOf(diffhash[i + 1]);
 			int hc = c.hashCode();
 			int hd = d.hashCode();
-			assertTrue("hash codes are same: " + hc, hc != hd);
+			assertTrue(hc != hd, "hash codes are same: " + hc);
 		}
 	}
 }

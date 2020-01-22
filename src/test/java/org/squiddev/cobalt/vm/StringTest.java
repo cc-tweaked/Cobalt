@@ -24,21 +24,21 @@
  */
 package org.squiddev.cobalt.vm;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StringTest {
 	private final LuaState state = new LuaState();
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		JsePlatform.standardGlobals(state);
 	}

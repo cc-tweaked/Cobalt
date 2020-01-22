@@ -24,48 +24,28 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 
-@RunWith(Parameterized.class)
 public class PerformanceTest {
 	private static final int TOTAL = Integer.parseInt(System.getProperty("cobalt.perfTotal", "1"));
 	private static final int DISCARD = Integer.parseInt(System.getProperty("cobalt.perfDiscard", "0"));
 
-	private final String name;
-	private final ScriptDrivenHelpers helpers = new ScriptDrivenHelpers("/perf/");
+	private ScriptHelper helpers;
 
-	public PerformanceTest(String name) {
-		this.name = name;
-	}
-
-	@Before
+	@BeforeEach
 	public void setup() {
+		helpers = new ScriptHelper("/perf/");
 		helpers.setupQuiet();
 	}
 
-	@Parameterized.Parameters(name = "{0}")
-	public static Collection<Object[]> getTests() {
-		Object[][] tests = {
-			{"binarytrees"},
-			{"fannkuch"},
-			{"nbody"},
-			{"nsieve"},
-			{"primes"},
-		};
-
-		return Arrays.asList(tests);
-	}
-
-	@Test()
-	public void run() throws IOException, CompileException, LuaError, InterruptedException {
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {"binarytrees", "fannkuch", "nbody", "nsieve", "primes"})
+	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		System.out.println("[" + name + "]");
 
 		for (int i = 0; i < TOTAL; i++) {

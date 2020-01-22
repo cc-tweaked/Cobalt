@@ -29,7 +29,7 @@ import org.squiddev.cobalt.Prototype;
 
 import java.io.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class CompileTestHelper {

@@ -24,8 +24,7 @@
  */
 package org.squiddev.cobalt.table;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 
 import java.util.ArrayList;
@@ -33,17 +32,12 @@ import java.util.Vector;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.Matchers.between;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class TableTest {
-	private LuaState state;
-
-	@Before
-	public void setup() {
-		state = new LuaState();
-	}
+	private final LuaState state = new LuaState();
 
 	private int keyCount(LuaTable t) throws LuaError {
 		return keys(t).length;
@@ -144,14 +138,14 @@ public class TableTest {
 				final int ik = k.toInteger();
 				assertTrue(ik >= 0 && ik < 10);
 				final int mask = 1 << ik;
-				assertTrue((intKeys & mask) == 0);
+				assertEquals(0, intKeys & mask);
 				intKeys |= mask;
 			} else if (k instanceof LuaString) {
 				final int ik = Integer.parseInt(k.strvalue().toString());
 				assertEquals(String.valueOf(ik), k.strvalue().toString());
 				assertTrue(ik >= 0 && ik < 10);
 				final int mask = 1 << ik;
-				assertTrue("Key \"" + ik + "\" found more than once", (stringKeys & mask) == 0);
+				assertEquals(0, stringKeys & mask, "Key \"" + ik + "\" found more than once");
 				stringKeys |= mask;
 			} else {
 				fail("Unexpected type of key found");

@@ -24,15 +24,14 @@
  */
 package org.squiddev.cobalt.vm;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.StringLib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class MetatableTest {
@@ -58,13 +57,13 @@ public class MetatableTest {
 	public MetatableTest() throws LuaError {
 	}
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		// needed for metatable ops to work on strings
 		new StringLib();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		state.booleanMetatable = null;
 		state.functionMetatable = null;
@@ -76,23 +75,23 @@ public class MetatableTest {
 
 	@Test
 	public void testGetMetatable() {
-		assertEquals(null, Constants.NIL.getMetatable(state));
-		assertEquals(null, Constants.TRUE.getMetatable(state));
-		assertEquals(null, Constants.ONE.getMetatable(state));
+		assertNull(Constants.NIL.getMetatable(state));
+		assertNull(Constants.TRUE.getMetatable(state));
+		assertNull(Constants.ONE.getMetatable(state));
 //		assertEquals( null, string.getmetatable() );
-		assertEquals(null, table.getMetatable(state));
-		assertEquals(null, function.getMetatable(state));
-		assertEquals(null, thread.getMetatable(state));
-		assertEquals(null, closure.getMetatable(state));
-		assertEquals(null, userdata.getMetatable(state));
+		assertNull(table.getMetatable(state));
+		assertNull(function.getMetatable(state));
+		assertNull(thread.getMetatable(state));
+		assertNull(closure.getMetatable(state));
+		assertNull(userdata.getMetatable(state));
 		assertEquals(table, userdatamt.getMetatable(state));
 	}
 
 	@Test
 	public void testSetMetatable() {
 		LuaTable mt = ValueFactory.tableOf();
-		assertEquals(null, table.getMetatable(state));
-		assertEquals(null, userdata.getMetatable(state));
+		assertNull(table.getMetatable(state));
+		assertNull(userdata.getMetatable(state));
 		assertEquals(table, userdatamt.getMetatable(state));
 		table.setMetatable(state, mt);
 		userdata.setMetatable(state, mt);
@@ -102,43 +101,43 @@ public class MetatableTest {
 		assertEquals(mt, userdatamt.getMetatable(state));
 
 		// these all get metatable behind-the-scenes
-		assertEquals(null, Constants.NIL.getMetatable(state));
-		assertEquals(null, Constants.TRUE.getMetatable(state));
-		assertEquals(null, Constants.ONE.getMetatable(state));
+		assertNull(Constants.NIL.getMetatable(state));
+		assertNull(Constants.TRUE.getMetatable(state));
+		assertNull(Constants.ONE.getMetatable(state));
 //		assertEquals( null, string.getmetatable() );
-		assertEquals(null, function.getMetatable(state));
-		assertEquals(null, thread.getMetatable(state));
-		assertEquals(null, closure.getMetatable(state));
+		assertNull(function.getMetatable(state));
+		assertNull(thread.getMetatable(state));
+		assertNull(closure.getMetatable(state));
 		state.nilMetatable = mt;
 		assertEquals(mt, Constants.NIL.getMetatable(state));
-		assertEquals(null, Constants.TRUE.getMetatable(state));
-		assertEquals(null, Constants.ONE.getMetatable(state));
+		assertNull(Constants.TRUE.getMetatable(state));
+		assertNull(Constants.ONE.getMetatable(state));
 //		assertEquals( null, string.getmetatable() );
-		assertEquals(null, function.getMetatable(state));
-		assertEquals(null, thread.getMetatable(state));
-		assertEquals(null, closure.getMetatable(state));
+		assertNull(function.getMetatable(state));
+		assertNull(thread.getMetatable(state));
+		assertNull(closure.getMetatable(state));
 		state.booleanMetatable = mt;
 		assertEquals(mt, Constants.TRUE.getMetatable(state));
-		assertEquals(null, Constants.ONE.getMetatable(state));
+		assertNull(Constants.ONE.getMetatable(state));
 //		assertEquals( null, string.getmetatable() );
-		assertEquals(null, function.getMetatable(state));
-		assertEquals(null, thread.getMetatable(state));
-		assertEquals(null, closure.getMetatable(state));
+		assertNull(function.getMetatable(state));
+		assertNull(thread.getMetatable(state));
+		assertNull(closure.getMetatable(state));
 		state.numberMetatable = mt;
 		assertEquals(mt, Constants.ONE.getMetatable(state));
 		assertEquals(mt, valueOf(1.25).getMetatable(state));
 //		assertEquals( null, string.getmetatable() );
-		assertEquals(null, function.getMetatable(state));
-		assertEquals(null, thread.getMetatable(state));
-		assertEquals(null, closure.getMetatable(state));
+		assertNull(function.getMetatable(state));
+		assertNull(thread.getMetatable(state));
+		assertNull(closure.getMetatable(state));
 //		LuaString.s_metatable = mt;
 //		assertEquals( mt, string.getmetatable() );
-		assertEquals(null, function.getMetatable(state));
-		assertEquals(null, thread.getMetatable(state));
-		assertEquals(null, closure.getMetatable(state));
+		assertNull(function.getMetatable(state));
+		assertNull(thread.getMetatable(state));
+		assertNull(closure.getMetatable(state));
 		state.functionMetatable = mt;
 		assertEquals(mt, function.getMetatable(state));
-		assertEquals(null, thread.getMetatable(state));
+		assertNull(thread.getMetatable(state));
 		state.threadMetatable = mt;
 		assertEquals(mt, thread.getMetatable(state));
 	}
@@ -176,7 +175,7 @@ public class MetatableTest {
 
 		// plain metatable
 		LuaValue abc = valueOf("abc");
-		OperationHelper.setTable(state, mt, Constants.INDEX, ValueFactory.listOf(new LuaValue[]{abc}));
+		OperationHelper.setTable(state, mt, Constants.INDEX, ValueFactory.listOf(abc));
 		assertEquals(abc, OperationHelper.getTable(state, table, valueOf(1)));
 		assertEquals(abc, OperationHelper.getTable(state, userdata, valueOf(1)));
 		assertEquals(abc, OperationHelper.getTable(state, Constants.NIL, valueOf(1)));

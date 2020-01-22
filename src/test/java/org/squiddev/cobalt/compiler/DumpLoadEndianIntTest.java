@@ -24,8 +24,8 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
@@ -33,8 +33,8 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class DumpLoadEndianIntTest {
@@ -50,8 +50,8 @@ public class DumpLoadEndianIntTest {
 	private LuaTable _G;
 	private LuaState state;
 
-	@Before
-	public void setup() throws Exception {
+	@BeforeEach
+	public void setup() {
 		state = new LuaState();
 		_G = JsePlatform.standardGlobals(state);
 		DumpState.ALLOW_INTEGER_CASTING = false;

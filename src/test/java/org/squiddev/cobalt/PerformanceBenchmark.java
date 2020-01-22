@@ -41,7 +41,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 public class PerformanceBenchmark {
 	@State(Scope.Thread)
 	public static class ScriptScope {
-		final ScriptDrivenHelpers helpers = new ScriptDrivenHelpers("/perf/");
+		final ScriptHelper helpers = new ScriptHelper("/perf/");
 
 		@Setup(Level.Iteration)
 		public void setup() {

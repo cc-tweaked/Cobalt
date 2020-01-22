@@ -21,9 +21,10 @@ configurations {
 }
 
 dependencies {
-	testCompile 'org.luaj:luaj-jse:2.+'
-	testCompile 'junit:junit:4.+'
-	testCompile 'org.hamcrest:hamcrest-library:1.3'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+	testImplementation 'org.junit.jupiter:junit-jupiter-params:5.6.0'
+	testImplementation 'org.hamcrest:hamcrest-library:2.2'
+	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
 
 	testCompile 'org.openjdk.jmh:jmh-core:1.21'
 	testCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
@@ -105,4 +106,11 @@ gradle.projectsEvaluated {
 task executeProfile(type: JavaExec) {
 	main = "org.squiddev.cobalt.PerformanceRunner"
 	classpath = sourceSets.test.runtimeClasspath
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "skipped", "failed"
+    }
 }

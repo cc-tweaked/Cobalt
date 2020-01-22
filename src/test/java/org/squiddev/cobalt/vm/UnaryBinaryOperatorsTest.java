@@ -24,14 +24,13 @@
  */
 package org.squiddev.cobalt.vm;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.TwoArgFunction;
 
 import java.lang.reflect.InvocationTargetException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.ValueFactory.tableOf;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
@@ -43,12 +42,12 @@ public class UnaryBinaryOperatorsTest {
 
 	@Test
 	public void testEqualsBool() throws LuaError, UnwindThrowable {
-		Assert.assertEquals(Constants.FALSE, Constants.FALSE);
-		Assert.assertEquals(Constants.TRUE, Constants.TRUE);
-		assertTrue(Constants.FALSE.equals(Constants.FALSE));
-		assertTrue(Constants.TRUE.equals(Constants.TRUE));
-		assertTrue(!Constants.FALSE.equals(Constants.TRUE));
-		assertTrue(!Constants.TRUE.equals(Constants.FALSE));
+		assertEquals(Constants.FALSE, Constants.FALSE);
+		assertEquals(Constants.TRUE, Constants.TRUE);
+		assertEquals(Constants.FALSE, Constants.FALSE);
+		assertEquals(Constants.TRUE, Constants.TRUE);
+		assertFalse(Constants.FALSE.equals(Constants.TRUE));
+		assertFalse(Constants.TRUE.equals(Constants.FALSE));
 		assertTrue(OperationHelper.eq(state, Constants.FALSE, Constants.FALSE));
 		assertTrue(OperationHelper.eq(state, Constants.TRUE, Constants.TRUE));
 		assertFalse(OperationHelper.eq(state, Constants.FALSE, Constants.TRUE));
@@ -57,10 +56,10 @@ public class UnaryBinaryOperatorsTest {
 		assertEquals(Constants.TRUE, OperationHelper.eq(state, Constants.TRUE, Constants.TRUE) ? Constants.TRUE : Constants.FALSE);
 		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.FALSE, Constants.TRUE) ? Constants.TRUE : Constants.FALSE);
 		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.TRUE, Constants.FALSE) ? Constants.TRUE : Constants.FALSE);
-		assertFalse(!OperationHelper.eq(state, Constants.FALSE, Constants.FALSE));
-		assertFalse(!OperationHelper.eq(state, Constants.TRUE, Constants.TRUE));
-		assertTrue(!OperationHelper.eq(state, Constants.FALSE, Constants.TRUE));
-		assertTrue(!OperationHelper.eq(state, Constants.TRUE, Constants.FALSE));
+		assertTrue(OperationHelper.eq(state, Constants.FALSE, Constants.FALSE));
+		assertTrue(OperationHelper.eq(state, Constants.TRUE, Constants.TRUE));
+		assertFalse(OperationHelper.eq(state, Constants.FALSE, Constants.TRUE));
+		assertFalse(OperationHelper.eq(state, Constants.TRUE, Constants.FALSE));
 		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.FALSE, Constants.FALSE) ? Constants.FALSE : Constants.TRUE);
 		assertEquals(Constants.FALSE, OperationHelper.eq(state, Constants.TRUE, Constants.TRUE) ? Constants.FALSE : Constants.TRUE);
 		assertEquals(Constants.TRUE, OperationHelper.eq(state, Constants.FALSE, Constants.TRUE) ? Constants.FALSE : Constants.TRUE);
@@ -125,12 +124,12 @@ public class UnaryBinaryOperatorsTest {
 		// assert equals for same type
 		assertEquals(ia, ib);
 		assertEquals(sa, sb);
-		assertFalse(ia.equals(ic));
-		assertFalse(sa.equals(sc));
+		assertNotEquals(ia, ic);
+		assertNotEquals(sa, sc);
 
 		// check object equality for different types
-		assertFalse(ia.equals(sa));
-		assertFalse(sa.equals(ia));
+		assertNotEquals(ia, sa);
+		assertNotEquals(sa, ia);
 	}
 
 	@Test
@@ -147,12 +146,12 @@ public class UnaryBinaryOperatorsTest {
 		// assert equals for same type
 		assertEquals(da, db);
 		assertEquals(sa, sb);
-		assertFalse(da.equals(dc));
-		assertFalse(sa.equals(sc));
+		assertNotEquals(da, dc);
+		assertNotEquals(sa, sc);
 
 		// check object equality for different types
-		assertFalse(da.equals(sa));
-		assertFalse(sa.equals(da));
+		assertNotEquals(da, sa);
+		assertNotEquals(sa, da);
 	}
 
 	@Test
@@ -919,22 +918,22 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue sc = valueOf("1.5");
 		LuaValue sd = valueOf("2.0");
 
-		assertEquals(false, OperationHelper.lt(state, sa, sa));
-		assertEquals(true, OperationHelper.lt(state, sa, sb));
-		assertEquals(true, OperationHelper.lt(state, sa, sc));
-		assertEquals(true, OperationHelper.lt(state, sa, sd));
-		assertEquals(false, OperationHelper.lt(state, sb, sa));
-		assertEquals(false, OperationHelper.lt(state, sb, sb));
-		assertEquals(true, OperationHelper.lt(state, sb, sc));
-		assertEquals(true, OperationHelper.lt(state, sb, sd));
-		assertEquals(false, OperationHelper.lt(state, sc, sa));
-		assertEquals(false, OperationHelper.lt(state, sc, sb));
-		assertEquals(false, OperationHelper.lt(state, sc, sc));
-		assertEquals(true, OperationHelper.lt(state, sc, sd));
-		assertEquals(false, OperationHelper.lt(state, sd, sa));
-		assertEquals(false, OperationHelper.lt(state, sd, sb));
-		assertEquals(false, OperationHelper.lt(state, sd, sc));
-		assertEquals(false, OperationHelper.lt(state, sd, sd));
+		assertFalse(OperationHelper.lt(state, sa, sa));
+		assertTrue(OperationHelper.lt(state, sa, sb));
+		assertTrue(OperationHelper.lt(state, sa, sc));
+		assertTrue(OperationHelper.lt(state, sa, sd));
+		assertFalse(OperationHelper.lt(state, sb, sa));
+		assertFalse(OperationHelper.lt(state, sb, sb));
+		assertTrue(OperationHelper.lt(state, sb, sc));
+		assertTrue(OperationHelper.lt(state, sb, sd));
+		assertFalse(OperationHelper.lt(state, sc, sa));
+		assertFalse(OperationHelper.lt(state, sc, sb));
+		assertFalse(OperationHelper.lt(state, sc, sc));
+		assertTrue(OperationHelper.lt(state, sc, sd));
+		assertFalse(OperationHelper.lt(state, sd, sa));
+		assertFalse(OperationHelper.lt(state, sd, sb));
+		assertFalse(OperationHelper.lt(state, sd, sc));
+		assertFalse(OperationHelper.lt(state, sd, sd));
 	}
 
 	@Test
@@ -1068,8 +1067,8 @@ public class UnaryBinaryOperatorsTest {
 			state.booleanMetatable = mt;
 			tbl.setMetatable(state, mt);
 			tbl2.setMetatable(state, mt);
-			assertEquals(true, OperationHelper.lt(state, Constants.TRUE, Constants.FALSE));
-			assertEquals(false, OperationHelper.lt(state, Constants.FALSE, Constants.TRUE));
+			assertTrue(OperationHelper.lt(state, Constants.TRUE, Constants.FALSE));
+			assertFalse(OperationHelper.lt(state, Constants.FALSE, Constants.TRUE));
 			try {
 				OperationHelper.lt(state, tbl, tbl3);
 				fail("did not throw error");
@@ -1082,8 +1081,8 @@ public class UnaryBinaryOperatorsTest {
 			} catch (LuaError ignored) {
 			}
 
-			assertEquals(false, OperationHelper.le(state, Constants.TRUE, Constants.FALSE));
-			assertEquals(true, OperationHelper.le(state, Constants.FALSE, Constants.TRUE));
+			assertFalse(OperationHelper.le(state, Constants.TRUE, Constants.FALSE));
+			assertTrue(OperationHelper.le(state, Constants.FALSE, Constants.TRUE));
 			try {
 				OperationHelper.le(state, tbl, tbl3);
 				fail("did not throw error");
@@ -1105,8 +1104,8 @@ public class UnaryBinaryOperatorsTest {
 			state.booleanMetatable = mt;
 			tbl.setMetatable(state, mt);
 			tbl2.setMetatable(state, mt);
-			assertEquals(false, OperationHelper.lt(state, Constants.TRUE, Constants.FALSE));
-			assertEquals(true, OperationHelper.lt(state, Constants.FALSE, Constants.TRUE));
+			assertFalse(OperationHelper.lt(state, Constants.TRUE, Constants.FALSE));
+			assertTrue(OperationHelper.lt(state, Constants.FALSE, Constants.TRUE));
 			try {
 				OperationHelper.lt(state, tbl, tbl3);
 				fail("did not throw error");
@@ -1119,8 +1118,8 @@ public class UnaryBinaryOperatorsTest {
 			} catch (LuaError ignored) {
 			}
 
-			assertEquals(true, OperationHelper.le(state, Constants.TRUE, Constants.FALSE));
-			assertEquals(false, OperationHelper.le(state, Constants.FALSE, Constants.TRUE));
+			assertTrue(OperationHelper.le(state, Constants.TRUE, Constants.FALSE));
+			assertFalse(OperationHelper.le(state, Constants.FALSE, Constants.TRUE));
 			try {
 				OperationHelper.le(state, tbl, tbl3);
 				fail("did not throw error");
@@ -1148,56 +1147,56 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue aaaa = valueOf("aaaa");
 
 		// basics
-		assertEquals(true, OperationHelper.eq(state, aaa, aaa));
-		assertEquals(true, OperationHelper.lt(state, aaa, baa));
-		assertEquals(true, OperationHelper.le(state, aaa, baa));
-		assertEquals(false, OperationHelper.lt(state, baa, aaa));
-		assertEquals(false, OperationHelper.le(state, baa, aaa));
-		assertEquals(false, OperationHelper.lt(state, baa, aaa));
-		assertEquals(false, OperationHelper.le(state, baa, aaa));
-		assertEquals(true, OperationHelper.lt(state, aaa, baa));
-		assertEquals(true, OperationHelper.le(state, aaa, baa));
-		assertEquals(true, OperationHelper.le(state, aaa, aaa));
-		assertEquals(true, OperationHelper.le(state, aaa, aaa));
+		assertTrue(OperationHelper.eq(state, aaa, aaa));
+		assertTrue(OperationHelper.lt(state, aaa, baa));
+		assertTrue(OperationHelper.le(state, aaa, baa));
+		assertFalse(OperationHelper.lt(state, baa, aaa));
+		assertFalse(OperationHelper.le(state, baa, aaa));
+		assertFalse(OperationHelper.lt(state, baa, aaa));
+		assertFalse(OperationHelper.le(state, baa, aaa));
+		assertTrue(OperationHelper.lt(state, aaa, baa));
+		assertTrue(OperationHelper.le(state, aaa, baa));
+		assertTrue(OperationHelper.le(state, aaa, aaa));
+		assertTrue(OperationHelper.le(state, aaa, aaa));
 
 		// different case
-		assertEquals(true, OperationHelper.eq(state, Aaa, Aaa));
-		assertEquals(true, OperationHelper.lt(state, Aaa, aaa));
-		assertEquals(true, OperationHelper.le(state, Aaa, aaa));
-		assertEquals(false, OperationHelper.lt(state, aaa, Aaa));
-		assertEquals(false, OperationHelper.le(state, aaa, Aaa));
-		assertEquals(false, OperationHelper.lt(state, aaa, Aaa));
-		assertEquals(false, OperationHelper.le(state, aaa, Aaa));
-		assertEquals(true, OperationHelper.lt(state, Aaa, aaa));
-		assertEquals(true, OperationHelper.le(state, Aaa, aaa));
-		assertEquals(true, OperationHelper.le(state, Aaa, Aaa));
-		assertEquals(true, OperationHelper.le(state, Aaa, Aaa));
+		assertTrue(OperationHelper.eq(state, Aaa, Aaa));
+		assertTrue(OperationHelper.lt(state, Aaa, aaa));
+		assertTrue(OperationHelper.le(state, Aaa, aaa));
+		assertFalse(OperationHelper.lt(state, aaa, Aaa));
+		assertFalse(OperationHelper.le(state, aaa, Aaa));
+		assertFalse(OperationHelper.lt(state, aaa, Aaa));
+		assertFalse(OperationHelper.le(state, aaa, Aaa));
+		assertTrue(OperationHelper.lt(state, Aaa, aaa));
+		assertTrue(OperationHelper.le(state, Aaa, aaa));
+		assertTrue(OperationHelper.le(state, Aaa, Aaa));
+		assertTrue(OperationHelper.le(state, Aaa, Aaa));
 
 		// second letter differs
-		assertEquals(true, OperationHelper.eq(state, aaa, aaa));
-		assertEquals(true, OperationHelper.lt(state, aaa, aba));
-		assertEquals(true, OperationHelper.le(state, aaa, aba));
-		assertEquals(false, OperationHelper.lt(state, aba, aaa));
-		assertEquals(false, OperationHelper.le(state, aba, aaa));
-		assertEquals(false, OperationHelper.lt(state, aba, aaa));
-		assertEquals(false, OperationHelper.le(state, aba, aaa));
-		assertEquals(true, OperationHelper.lt(state, aaa, aba));
-		assertEquals(true, OperationHelper.le(state, aaa, aba));
-		assertEquals(true, OperationHelper.le(state, aaa, aaa));
-		assertEquals(true, OperationHelper.le(state, aaa, aaa));
+		assertTrue(OperationHelper.eq(state, aaa, aaa));
+		assertTrue(OperationHelper.lt(state, aaa, aba));
+		assertTrue(OperationHelper.le(state, aaa, aba));
+		assertFalse(OperationHelper.lt(state, aba, aaa));
+		assertFalse(OperationHelper.le(state, aba, aaa));
+		assertFalse(OperationHelper.lt(state, aba, aaa));
+		assertFalse(OperationHelper.le(state, aba, aaa));
+		assertTrue(OperationHelper.lt(state, aaa, aba));
+		assertTrue(OperationHelper.le(state, aaa, aba));
+		assertTrue(OperationHelper.le(state, aaa, aaa));
+		assertTrue(OperationHelper.le(state, aaa, aaa));
 
 		// longer
-		assertEquals(true, OperationHelper.eq(state, aaa, aaa));
-		assertEquals(true, OperationHelper.lt(state, aaa, aaaa));
-		assertEquals(true, OperationHelper.le(state, aaa, aaaa));
-		assertEquals(false, OperationHelper.lt(state, aaaa, aaa));
-		assertEquals(false, OperationHelper.le(state, aaaa, aaa));
-		assertEquals(false, OperationHelper.lt(state, aaaa, aaa));
-		assertEquals(false, OperationHelper.le(state, aaaa, aaa));
-		assertEquals(true, OperationHelper.lt(state, aaa, aaaa));
-		assertEquals(true, OperationHelper.le(state, aaa, aaaa));
-		assertEquals(true, OperationHelper.le(state, aaa, aaa));
-		assertEquals(true, OperationHelper.le(state, aaa, aaa));
+		assertTrue(OperationHelper.eq(state, aaa, aaa));
+		assertTrue(OperationHelper.lt(state, aaa, aaaa));
+		assertTrue(OperationHelper.le(state, aaa, aaaa));
+		assertFalse(OperationHelper.lt(state, aaaa, aaa));
+		assertFalse(OperationHelper.le(state, aaaa, aaa));
+		assertFalse(OperationHelper.lt(state, aaaa, aaa));
+		assertFalse(OperationHelper.le(state, aaaa, aaa));
+		assertTrue(OperationHelper.lt(state, aaa, aaaa));
+		assertTrue(OperationHelper.le(state, aaa, aaaa));
+		assertTrue(OperationHelper.le(state, aaa, aaa));
+		assertTrue(OperationHelper.le(state, aaa, aaa));
 	}
 
 	@Test
@@ -1295,7 +1294,7 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue uda = new LuaUserdata(new Object());
 		try {
 			// always use left argument
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.CONCAT, RETURN_LHS});
+			state.booleanMetatable = tableOf(Constants.CONCAT, RETURN_LHS);
 			assertEquals(tru, OperationHelper.concat(state, tru, tbl));
 			assertEquals(tbl, OperationHelper.concat(state, tbl, tru));
 			assertEquals(tru, OperationHelper.concat(state, tru, tbl));

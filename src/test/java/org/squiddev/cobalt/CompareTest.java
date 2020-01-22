@@ -24,62 +24,41 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.Arrays;
-import java.util.Collection;
 
-/**
- * Compatibility tests for the LuaJ VM
- *
- * Results are compared for exact match with
- * the installed C-based lua environment.
- */
-@RunWith(Parameterized.class)
-public class CompatibilityTest {
-	protected String name;
-	protected ScriptDrivenHelpers helpers;
-
-	public CompatibilityTest(String name) {
-		helpers = new ScriptDrivenHelpers("/compare/");
-		this.name = name;
-	}
-
-	@Parameterized.Parameters(name = "{0}")
-	public static Collection<Object[]> getTests() {
-		Object[][] tests = {
-			{"baselib"},
-			{"coroutinelib"},
-			{"debuglib"},
-			{"errors"},
-			{"iolib"},
-			{"format"},
-			{"functions"},
-			{"manyupvals"},
-			{"mathlib"},
-			{"metatags"},
-			{"oslib"},
-			{"stringlib"},
-			{"tablelib"},
-			{"tailcalls"},
-			{"traceback"},
-			{"upvalues"},
-			{"vm"},
-		};
-
-		return Arrays.asList(tests);
-	}
-
-	@Before
-	public void setup() {
+public class CompareTest {
+	/**
+	 * Test argument type check errors
+	 *
+	 * Results are compared for exact match with
+	 * the installed C-based lua environment.
+	 */
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		"baselibargs", "coroutinelibargs", "iolibargs", "mathlibargs", "modulelibargs", "operators", "stringlibargs", "tablelibargs",
+	})
+	public void errors(String name) throws Exception {
+		ScriptHelper helpers = new ScriptHelper("/compare/errors/");
 		helpers.setup();
+		helpers.runComparisonTest(name);
 	}
 
-	@Test
-	public void testOutput() throws Exception {
-		helpers.runTest(name);
+	/**
+	 * Compatibility tests for the LuaJ VM
+	 *
+	 * Results are compared for exact match with
+	 * the installed C-based lua environment.
+	 */
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		"baselib", "coroutinelib", "debuglib", "errors", "iolib", "format", "functions", "manyupvals", "mathlib",
+		"metatags", "oslib", "stringlib", "tablelib", "tailcalls", "traceback", "upvalues", "vm",
+	})
+	public void libs(String name) throws Exception {
+		ScriptHelper helpers = new ScriptHelper("/compare/");
+		helpers.setup();
+		helpers.runComparisonTest(name);
 	}
 }
