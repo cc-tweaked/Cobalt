@@ -330,8 +330,8 @@ public final class OperationHelper {
 				LuaTable rightMeta = right.getMetatable(state);
 				if (rightMeta == null) return false;
 
-				LuaValue h = leftMeta.rawget(Constants.EQ);
-				return !(h.isNil() || h != rightMeta.rawget(Constants.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
+				LuaValue h = leftMeta.rawget(CachedMetamethod.EQ);
+				return !(h.isNil() || h != rightMeta.rawget(CachedMetamethod.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
 			}
 			default:
 				return left == right || left.raweq(right);
@@ -361,7 +361,7 @@ public final class OperationHelper {
 			case TSTRING:
 				return valueOf(((LuaString) value).length());
 			default: {
-				LuaValue h = value.metatag(state, Constants.LEN);
+				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
 				if (h.isNil()) {
 					throw ErrorFactory.operandError(state, value, "get length of", stack);
 				}
@@ -510,10 +510,10 @@ public final class OperationHelper {
 		do {
 			if (t.isTable()) {
 				LuaValue res = ((LuaTable) t).rawget(key);
-				if (!res.isNil() || (tm = t.metatag(state, Constants.INDEX)).isNil()) {
+				if (!res.isNil() || (tm = t.metatag(state, CachedMetamethod.INDEX)).isNil()) {
 					return res;
 				}
-			} else if ((tm = t.metatag(state, Constants.INDEX)).isNil()) {
+			} else if ((tm = t.metatag(state, CachedMetamethod.INDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 			if (tm.isFunction()) {
@@ -547,11 +547,11 @@ public final class OperationHelper {
 			if (t.isTable()) {
 				LuaTable table = (LuaTable) t;
 				key.checkValidKey();
-				if (!table.rawget(key).isNil() || (tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
+				if (!table.rawget(key).isNil() || (tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
 					table.rawset(key, value);
 					return;
 				}
-			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
+			} else if ((tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 			if (tm.isFunction()) {
