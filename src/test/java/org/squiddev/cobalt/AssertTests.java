@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -128,41 +127,5 @@ public class AssertTests {
 		helpers.globals.load(helpers.state, new Utf8Lib());
 
 		helpers.runWithDump(name);
-	}
-
-	@Test
-	public void foo() {
-		Buffer sb = new Buffer(1);
-		byte[] buffer = new byte[8];
-		// 27721,23383,47,28450,23383
-		int codepoint = 23383;
-		if (codepoint < 0x80) {
-			sb.append((byte) codepoint);
-		} else {
-			int mfb = 0x3f;
-			int j = 1;
-			do {
-				buffer[8 - j++] = ((byte) (0x80 | (codepoint & 0x3f)));
-				codepoint >>= 6;
-				mfb >>= 1;
-			} while (codepoint > mfb);
-			buffer[8 - j] = (byte) ((~mfb << 1) | codepoint);
-			sb.append(buffer, 8 - j, j);
-		}
-
-		// 27721: 230     177     137
-		// 23383: 229     173     151
-		// 47   : 47
-		// 28450: 230     188     162
-		// 23383: 229     173     151
-		for (int i : buffer) System.out.printf("%d ", i & 0xFF);
-		System.out.println();
-
-		LuaString st = sb.toLuaString();
-		for (int i = 0; i < st.length; i++) System.out.printf("%d ", st.luaByte(i));
-		System.out.println();
-
-		System.out.println("\u5b57");
-		System.out.println(st.toString());
 	}
 }
