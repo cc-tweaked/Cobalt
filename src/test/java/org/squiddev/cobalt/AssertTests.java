@@ -27,7 +27,7 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
-import org.squiddev.cobalt.function.OneArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.Bit32Lib;
 import org.squiddev.cobalt.lib.Utf8Lib;
 
@@ -86,8 +86,7 @@ public class AssertTests {
 	public void lua51(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.1/");
 		helpers.setup();
-		helpers.globals.rawset("mkdir", new OneArgFunction((s, a) ->
-			valueOf(new File(a.checkString()).mkdirs())));
+		LibFunction.bind1(helpers.globals, "mkdir", (s, a) -> valueOf(new File(a.checkString()).mkdirs()));
 
 		helpers.runWithDump(name);
 	}

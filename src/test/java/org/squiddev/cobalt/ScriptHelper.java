@@ -28,8 +28,8 @@ import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
@@ -87,7 +87,7 @@ public class ScriptHelper extends FileResourceManipulator {
 	private void setupCommon(LuaState state) {
 		this.state = state;
 		globals = JsePlatform.debugGlobals(state);
-		globals.rawset("id_", new VarArgFunction((s, a) -> a));
+		LibFunction.bindV(globals, "id_", (s, a) -> a);
 		TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
 	}
 

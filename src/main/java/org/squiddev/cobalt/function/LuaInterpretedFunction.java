@@ -97,11 +97,6 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	public final Prototype p;
 	public final Upvalue[] upvalues;
 
-	public LuaInterpretedFunction(Prototype p) {
-		this.p = p;
-		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
-	}
-
 	/**
 	 * Supply the initial environment
 	 *

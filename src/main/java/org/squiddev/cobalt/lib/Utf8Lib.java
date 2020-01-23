@@ -1,7 +1,7 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.VarArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 
 import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.Constants.NONE;
@@ -23,9 +23,9 @@ public class Utf8Lib implements LuaLibrary {
 	});
 
 	@Override
-	public LuaValue add(LuaState state, LuaTable environment) {
+	public LuaValue add(LuaState state, LuaTable env) {
 		// Make codesIter a singleton, so we always return the same thing
-		VarArgFunction codesIter = new VarArgFunction(Utf8Lib::codeIter);
+		LibFunction codesIter = LibFunction.ofV(env, "codes", Utf8Lib::codeIter);
 
 		LuaTable t = new LuaTable(0, 6);
 		t.rawset("charpattern", PATTERN);
@@ -34,7 +34,7 @@ public class Utf8Lib implements LuaLibrary {
 		bindV(t, "codepoint", Utf8Lib::codepoint);
 		bindV(t, "len", Utf8Lib::len);
 		bind3(t, "offset", Utf8Lib::offset);
-		environment.rawset("utf8", t);
+		env.rawset("utf8", t);
 		state.loadedPackages.rawset("utf8", t);
 
 		return t;

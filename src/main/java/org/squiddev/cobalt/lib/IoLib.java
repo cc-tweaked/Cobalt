@@ -27,7 +27,6 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JseIoLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -208,7 +207,7 @@ public abstract class IoLib implements LuaLibrary {
 		bindIO(filemethods, "close", (s, args) -> fileClose(args.first()));
 		bindIO(filemethods, "flush", (s, args) -> fileFlush(args.first()));
 		bindIO(filemethods, "setvbuf", (s, args) -> fileSetBuf(args.first(), args.arg(2).checkString(), args.arg(3).optInteger(1024)));
-		bindIO(filemethods, "lines", (s, args) -> fileLines(args.first()));
+		bindIO(filemethods, "lines", (s, args) -> fileLines(s, args.first()));
 		bindIO(filemethods, "read", (s, args) -> fileRead(args.first(), args.subargs(2)));
 		bindIO(filemethods, "seek", (s, args) -> fileSeek(args.first(), args.arg(2).optString("cur"), args.arg(3).optInteger(0)));
 		bindIO(filemethods, "write", (s, args) -> fileWrite(args.first(), args.subargs(2)));
@@ -300,11 +299,11 @@ public abstract class IoLib implements LuaLibrary {
 		if (filename == null) {
 			File file = input(state);
 			checkopen(file);
-			return lines(file, false);
+			return lines(state, file, false);
 		} else {
 			File file = ioopenfile(state, filename, "r");
 			checkopen(file);
-			return lines(file, true);
+			return lines(state, file, true);
 		}
 	}
 
@@ -338,8 +337,8 @@ public abstract class IoLib implements LuaLibrary {
 	}
 
 	// file:lines() -> iterator
-	public Varargs fileLines(LuaValue file) throws LuaError {
-		return lines(checkfile(file), false);
+	public Varargs fileLines(LuaState state, LuaValue file) throws LuaError {
+		return lines(state, checkfile(file), false);
 	}
 
 	//	file:read(...) -> (...)
@@ -395,8 +394,8 @@ public abstract class IoLib implements LuaLibrary {
 		return varargsOf(NIL, valueOf(errortext), ZERO);
 	}
 
-	private Varargs lines(final File f, final boolean autoClose) {
-		return new VarArgFunction((state, args) -> {
+	private Varargs lines(LuaState st, final File f, final boolean autoClose) {
+		return LibFunction.ofV(LibFunction.getActiveEnv(st), "lines", (state, args) -> {
 			//	lines iterator(s,var) -> var'
 			checkopen(f);
 

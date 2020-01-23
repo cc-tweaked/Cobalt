@@ -35,7 +35,6 @@ import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
 
 import java.io.IOException;
@@ -68,14 +67,13 @@ public class CoroutineTest {
 	}
 
 	private void setBlockingYield() {
-		((LuaTable) helpers.globals.rawget("coroutine")).rawset("yield",
-			new VarArgFunction((state, args) -> {
-				try {
-					return LuaThread.yieldBlocking(state, args);
-				} catch (InterruptedException e) {
-					throw new InterruptedError(e);
-				}
-			}));
+		LibFunction.bindV(((LuaTable) helpers.globals.rawget("coroutine")), "yield", (state, args) -> {
+			try {
+				return LuaThread.yieldBlocking(state, args);
+			} catch (InterruptedException e) {
+				throw new InterruptedError(e);
+			}
+		});
 	}
 
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)

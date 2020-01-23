@@ -28,9 +28,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.OneArgFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayInputStream;
@@ -75,8 +74,8 @@ public class OrphanedThreadTest {
 
 		// And force coroutine.yield to actually be a blocking one.
 		env = JsePlatform.standardGlobals(state);
-		((LuaTable) env.rawget("coroutine")).rawset("yield", new VarArgFunction(
-			(state, args) -> OperationHelper.noUnwind(state, () -> LuaThread.yield(state, args))));
+		LibFunction.bindV(((LuaTable) env.rawget("coroutine")), "yield",
+			(state, args) -> OperationHelper.noUnwind(state, () -> LuaThread.yield(state, args)));
 	}
 
 	@AfterEach
@@ -86,19 +85,19 @@ public class OrphanedThreadTest {
 
 	@Test
 	public void testCollectOrphanedNormalThread() throws Exception {
-		function = new OneArgFunction(this::normalFunction);
+		function = LibFunction.of1(env, null, this::normalFunction);
 		doTest(true, ZERO);
 	}
 
 	@Test
 	public void testCollectOrphanedEarlyCompletionThread() throws Exception {
-		function = new OneArgFunction(this::earlyCompletionFunction);
+		function = LibFunction.of1(env, null, this::earlyCompletionFunction);
 		doTest(true, ZERO);
 	}
 
 	@Test
 	public void testCollectOrphanedAbnormalThread() throws Exception {
-		function = new OneArgFunction(this::abnormalFunction);
+		function = LibFunction.of1(env, null, this::abnormalFunction);
 		doTest(false, valueOf("abnormal condition"));
 	}
 

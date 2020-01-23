@@ -31,7 +31,6 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
@@ -386,7 +385,7 @@ public class StringLib implements LuaLibrary {
 	static Varargs gmatch(LuaState state, Varargs args) throws LuaError {
 		LuaString src = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
-		return new VarArgFunction(new GMatchAux(state, src, pat)::invoke);
+		return LibFunction.ofV(LibFunction.getActiveEnv(state), null, new GMatchAux(state, src, pat)::invoke);
 	}
 
 	static class GMatchAux {

@@ -27,38 +27,16 @@ package org.squiddev.cobalt.function;
 import org.squiddev.cobalt.*;
 
 /**
- * Abstract base class for Java function implementations that take one argument and
- * return one value.
+ * Wrapper class for Java function implementations that take one argument and return one value.
  *
- * Subclasses need only implement {@link LuaFunction#call(LuaState, LuaValue)} to complete this class,
- * simplifying development.
- * All other uses of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
- * are routed through this method by this class,
- * dropping or extending arguments with {@code nil} values as required.
- *
- * If more than one argument are required, or no arguments are required,
- * or variable argument or variable return values,
- * then use one of the related function
- * {@link ZeroArgFunction}, {@link TwoArgFunction}, {@link ThreeArgFunction}, or {@link VarArgFunction}.
- *
- * See {@link LibFunction} for more information on implementation libraries and library functions.
- *
- * @see LuaFunction#call(LuaState, LuaValue)
- * @see LibFunction
- * @see ZeroArgFunction
- * @see TwoArgFunction
- * @see ThreeArgFunction
- * @see VarArgFunction
+ * All usages of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
+ * are routed through the {@link OneArg#call(LuaState, LuaValue)}.
  */
-public final class OneArgFunction extends LibFunction {
-	private final Delegate delegate;
+final class OneArgFunction extends LibFunction {
+	private final OneArg delegate;
 
-	public OneArgFunction(String name, Delegate delegate) {
-		this.name = name;
-		this.delegate = delegate;
-	}
-
-	public OneArgFunction(Delegate delegate) {
+	OneArgFunction(LuaTable env, String name, OneArg delegate) {
+		super(env, name);
 		this.delegate = delegate;
 	}
 
@@ -85,10 +63,5 @@ public final class OneArgFunction extends LibFunction {
 	@Override
 	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
 		return delegate.call(state, varargs.first());
-	}
-
-	@FunctionalInterface
-	public interface Delegate {
-		LuaValue call(LuaState state, LuaValue arg) throws LuaError;
 	}
 }

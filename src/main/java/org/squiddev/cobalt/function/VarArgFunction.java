@@ -27,37 +27,16 @@ package org.squiddev.cobalt.function;
 import org.squiddev.cobalt.*;
 
 /**
- * Abstract base class for Java function implementations that takes varaiable arguments and
- * returns multiple return values.
+ * Wrapper class for Java function implementations that take any number of arguments and return any number of values.
  *
- * Subclasses need only implement {@link LuaFunction#invoke(LuaState, Varargs)} to complete this class,
- * simplifying development.
- * All other uses of {@link LuaFunction#call(LuaState, LuaValue)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
- * are routed through this method by this class,
- * converting arguments to {@link Varargs} and
- * dropping or extending return values with {@code nil} values as required.
- *
- * If between one and three arguments are required, and only one return value is returned,
- * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link ThreeArgFunction}.
- *
- * See {@link LibFunction} for more information on implementation libraries and library functions.
- *
- * @see LuaFunction#invoke(LuaState, Varargs)
- * @see LibFunction
- * @see ZeroArgFunction
- * @see OneArgFunction
- * @see TwoArgFunction
- * @see ThreeArgFunction
+ * All usages of {@link LuaFunction#call(LuaState)}, etc, are routed through the
+ * {@link AnyArgs#call(LuaState, Varargs)}.
  */
-public final class VarArgFunction extends LibFunction {
-	private final Delegate delegate;
+final class VarArgFunction extends LibFunction {
+	private final AnyArgs delegate;
 
-	public VarArgFunction(String name, Delegate delegate) {
-		this.name = name;
-		this.delegate = delegate;
-	}
-
-	public VarArgFunction(Delegate delegate) {
+	VarArgFunction(LuaTable env, String name, AnyArgs delegate) {
+		super(env, name);
 		this.delegate = delegate;
 	}
 
@@ -86,8 +65,4 @@ public final class VarArgFunction extends LibFunction {
 		return delegate.call(state, args);
 	}
 
-	@FunctionalInterface
-	public interface Delegate {
-		Varargs call(LuaState state, Varargs arg) throws LuaError;
-	}
 }

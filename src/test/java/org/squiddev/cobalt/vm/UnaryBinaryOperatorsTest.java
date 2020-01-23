@@ -26,7 +26,7 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.TwoArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -204,9 +204,9 @@ public class UnaryBinaryOperatorsTest {
 		assertEquals(OperationHelper.eq(state, Constants.NIL, da) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 	}
 
-	private static final TwoArgFunction RETURN_NIL = new TwoArgFunction((state, arg1, arg2) -> Constants.NIL);
+	private static final LibFunction RETURN_NIL = LibFunction.of2(null, null, (state, arg1, arg2) -> Constants.NIL);
 
-	private static final TwoArgFunction RETURN_ONE = new TwoArgFunction((state, arg1, arg2) -> Constants.ONE);
+	private static final LibFunction RETURN_ONE = LibFunction.of2(null, null, (state, arg1, arg2) -> Constants.ONE);
 
 	@Test
 	public void testEqualsMetatag() throws LuaError, UnwindThrowable {
@@ -510,9 +510,9 @@ public class UnaryBinaryOperatorsTest {
 		}
 	}
 
-	private static final TwoArgFunction RETURN_LHS = new TwoArgFunction((state, lhs, rhs) -> lhs);
+	private static final LibFunction RETURN_LHS = LibFunction.of2(null, null, (state, lhs, rhs) -> lhs);
 
-	private static final TwoArgFunction RETURN_RHS = new TwoArgFunction((state, lhs, rhs) -> rhs);
+	private static final LibFunction RETURN_RHS = LibFunction.of2(null, null, (state, lhs, rhs) -> rhs);
 
 	@Test
 	public void testArithMetatag() throws LuaError, UnwindThrowable {
@@ -765,7 +765,8 @@ public class UnaryBinaryOperatorsTest {
 			}
 
 			// Ensures string arithmetic work as expected
-			state.stringMetatable = tableOf(Constants.ADD, new TwoArgFunction(
+			state.stringMetatable = tableOf(Constants.ADD, LibFunction.of2(
+				LibFunction.getActiveEnv(state), null,
 				(state, arg1, arg2) -> OperationHelper.concat(valueOf(arg1.toString()), valueOf(arg2.toString()))
 			));
 

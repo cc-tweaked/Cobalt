@@ -26,10 +26,10 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
-import org.squiddev.cobalt.function.ZeroArgFunction;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -61,9 +61,9 @@ public class TypeTest {
 	private final LuaValue stringlong = valueOf(samplestringlong);
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
 	private final LuaTable table = tableOf();
-	private final LuaFunction somefunc = new ZeroArgFunction(state -> NIL);
+	private final LuaFunction somefunc = LibFunction.of0(table, null, state -> NIL);
 	private final LuaThread thread = new LuaThread(new LuaState(), somefunc, table);
-	private final LuaClosure someclosure = new LuaInterpretedFunction(new Prototype());
+	private final LuaClosure someclosure = new LuaInterpretedFunction(new Prototype(), table);
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);
 

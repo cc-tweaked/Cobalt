@@ -29,7 +29,6 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.ResumableFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -80,11 +79,8 @@ public class CoroutineLib implements LuaLibrary {
 		final LuaFunction func = arg.checkFunction();
 		final LuaTable env = func.getfenv();
 		final LuaThread thread = new LuaThread(state, func, env);
-		return new ResumableFunction<Object>(
-			(s, d, a) -> LuaThread.resume(s, thread, a),
-			ResumableFunction.defaultResume(),
-			ResumableFunction.defaultResumeError()
-		);
+		return LibFunction.ofR(LibFunction.getActiveEnv(state), "wrap",
+			(s, d, a) -> LuaThread.resume(s, thread, a));
 	}
 
 	static Varargs resume(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {

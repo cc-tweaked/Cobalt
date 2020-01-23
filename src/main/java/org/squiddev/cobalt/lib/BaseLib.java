@@ -30,7 +30,6 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
@@ -341,7 +340,7 @@ public class BaseLib implements LuaLibrary {
 		LuaValue function = args.arg(1).checkFunction();
 		LuaString chunkName = args.arg(2).optLuaString(FUNCTION_STR);
 
-		return pcall(state, di, true, new ZeroArgFunction(lState -> {
+		return pcall(state, di, true, LibFunction.of0(LibFunction.getActiveEnv(state), "load", lState -> {
 			try {
 				InputStream stream = new StringInputStream(lState, function);
 				return LoadState.load(lState, stream, chunkName, lState.getCurrentThread().getfenv());

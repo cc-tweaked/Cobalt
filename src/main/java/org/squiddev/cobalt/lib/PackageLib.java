@@ -28,7 +28,6 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 
 import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
@@ -66,19 +65,19 @@ public class PackageLib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		bind1(env, "require", (s, arg) -> OperationHelper.noUnwind(s, () -> require(s, arg)));
-		env.rawset("module", new VarArgFunction("module",
+		env.rawset("module", LibFunction.ofV(env, "module",
 			(s, a) -> OperationHelper.noUnwind(state, () -> module(s, a))));
 
 		env.rawset("package", PACKAGE = ValueFactory.tableOf(
 			_LOADED, state.loadedPackages,
 			_PRELOAD, ValueFactory.tableOf(),
 			_PATH, ValueFactory.valueOf(DEFAULT_LUA_PATH),
-			_LOADLIB, new VarArgFunction(PackageLib::loadlib),
-			_SEEALL, new VarArgFunction("seeall", PackageLib::seeall),
+			_LOADLIB, LibFunction.ofV(env, null, PackageLib::loadlib),
+			_SEEALL, LibFunction.ofV(env, "seeall", PackageLib::seeall),
 			_LOADERS, ValueFactory.listOf(
-				new VarArgFunction((s, a) -> OperationHelper.noUnwind(state, () -> loaderPreloader(s, a))),
-				new VarArgFunction((s, a) -> OperationHelper.noUnwind(state, () -> loaderLua(s, a))),
-				new VarArgFunction((s, a) -> OperationHelper.noUnwind(state, () -> loaderJava(s, a, env)))
+				LibFunction.ofV(env, null, (s, a) -> OperationHelper.noUnwind(state, () -> loaderPreloader(s, a))),
+				LibFunction.ofV(env, null, (s, a) -> OperationHelper.noUnwind(state, () -> loaderLua(s, a))),
+				LibFunction.ofV(env, null, (s, a) -> OperationHelper.noUnwind(state, () -> loaderJava(s, a, env)))
 			)
 		));
 		state.loadedPackages.rawset("package", PACKAGE);

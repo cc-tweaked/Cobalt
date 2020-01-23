@@ -24,46 +24,21 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.*;
 
 import static org.squiddev.cobalt.Constants.NIL;
 
 /**
- * Abstract base class for Java function implementations that take two arguments and
- * return one value.
+ * Wrapper class for Java function implementations that take three arguments and return one value.
  *
- * Subclasses need only implement {@link LuaFunction#call(LuaState, LuaValue, LuaValue, LuaValue)} to complete this class,
- * simplifying development.
- * All other uses of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
- * are routed through this method by this class,
- * dropping or extending arguments with {@code nil} values as required.
- *
- * If more or less than three arguments are required,
- * or variable argument or variable return values,
- * then use one of the related function
- * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link VarArgFunction}.
- *
- * See {@link LibFunction} for more information on implementation libraries and library functions.
- *
- * @see LuaFunction#call(LuaState, LuaValue, LuaValue, LuaValue)
- * @see LibFunction
- * @see ZeroArgFunction
- * @see OneArgFunction
- * @see TwoArgFunction
- * @see VarArgFunction
+ * All usages of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
+ * are routed through the {@link ThreeArgs#call(LuaState, LuaValue, LuaValue, LuaValue)}.
  */
-public final class ThreeArgFunction extends LibFunction {
-	private final Delegate delegate;
+final class ThreeArgFunction extends LibFunction {
+	private final ThreeArgs delegate;
 
-	public ThreeArgFunction(String name, Delegate delegate) {
-		this.name = name;
-		this.delegate = delegate;
-	}
-
-	public ThreeArgFunction(Delegate delegate) {
+	ThreeArgFunction(LuaTable env, String name, ThreeArgs delegate) {
+		super(env, name);
 		this.delegate = delegate;
 	}
 
@@ -90,10 +65,5 @@ public final class ThreeArgFunction extends LibFunction {
 	@Override
 	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
 		return delegate.call(state, varargs.first(), varargs.arg(2), varargs.arg(3));
-	}
-
-	@FunctionalInterface
-	public interface Delegate {
-		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError;
 	}
 }

@@ -32,36 +32,16 @@ import org.squiddev.cobalt.debug.DebugState;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_JAVA;
 
-public final class ResumableFunction<T> extends LibFunction implements Resumable<Object> {
+final class ResumableFunction<T> extends LibFunction implements Resumable<Object> {
 	private static final Object CALL_MARKER = new Object();
 	private static final Object RETURN_MARKER = new Object();
-	private static final Resume<?> DEFAULT_RESUME = (state, object, value) -> value;
-	public static final ResumeError<?> DEFAULT_ERROR = (state, object, error) -> {
-		throw error;
-	};
 
-	private final Invoke<T> invoke;
+	private final Resumable<T> invoke;
 	private final Resume<T> resume;
 	private final ResumeError<T> resumeError;
 
-	@SuppressWarnings("unchecked")
-	public static <T> Resume<T> defaultResume() {
-		return (Resume<T>) DEFAULT_RESUME;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> ResumeError<T> defaultResumeError() {
-		return (ResumeError<T>) DEFAULT_ERROR;
-	}
-
-	public ResumableFunction(Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
-		this.invoke = invoke;
-		this.resume = resume;
-		this.resumeError = resumeError;
-	}
-
-	public ResumableFunction(String name, Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
-		this.name = name;
+	ResumableFunction(LuaTable env, String name, Resumable<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
+		super(env, name);
 		this.invoke = invoke;
 		this.resume = resume;
 		this.resumeError = resumeError;
@@ -166,18 +146,4 @@ public final class ResumableFunction<T> extends LibFunction implements Resumable
 		}
 	}
 
-	@FunctionalInterface
-	public interface Invoke<T> {
-		Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable;
-	}
-
-	@FunctionalInterface
-	public interface Resume<T> {
-		Varargs resume(LuaState state, T object, Varargs args) throws LuaError, UnwindThrowable;
-	}
-
-	@FunctionalInterface
-	public interface ResumeError<T> {
-		Varargs resumeError(LuaState state, T obj, LuaError error) throws LuaError, UnwindThrowable;
-	}
 }

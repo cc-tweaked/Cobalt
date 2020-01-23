@@ -27,7 +27,7 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
-import org.squiddev.cobalt.function.VarArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 
 import java.io.IOException;
 
@@ -39,13 +39,13 @@ public class CoroutineLoopTest {
 	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/coroutine/loop-");
 		helpers.setup();
-		helpers.globals.rawset("yieldBlocking", new VarArgFunction((state, args) -> {
+		LibFunction.bindV(helpers.globals, "yieldBlocking", (state, args) -> {
 			try {
 				return LuaThread.yieldBlocking(state, args);
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
-		}));
+		});
 
 		LuaThread thread = new LuaThread(helpers.state, helpers.loadScript(name), helpers.globals);
 

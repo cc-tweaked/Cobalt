@@ -28,7 +28,7 @@ import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.ValueFactory;
-import org.squiddev.cobalt.function.ZeroArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
 
 /**
@@ -37,6 +37,6 @@ import org.squiddev.cobalt.lib.LuaLibrary;
 public class RequireSampleSuccess implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable environment) {
-		return new ZeroArgFunction(luaState -> ValueFactory.valueOf("require-sample-success"));
+		return LibFunction.of0(environment, null, luaState -> ValueFactory.valueOf("require-sample-success"));
 	}
 }

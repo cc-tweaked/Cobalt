@@ -44,11 +44,6 @@ import org.squiddev.cobalt.debug.DebugState;
 public abstract class LuaFunction extends LuaValue implements DebugHook {
 	protected LuaTable env;
 
-	public LuaFunction() {
-		super(Constants.TFUNCTION);
-		this.env = null;
-	}
-
 	public LuaFunction(LuaTable env) {
 		super(Constants.TFUNCTION);
 		this.env = env;
@@ -76,7 +71,7 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 
 	@Override
 	public void setfenv(LuaTable env) {
-		this.env = env != null ? env : null;
+		this.env = env;
 	}
 
 	public String debugName() {

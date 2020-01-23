@@ -24,42 +24,19 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.*;
 
 /**
- * Abstract base class for Java function implementations that take no arguments and
- * return one value.
+ * Wrapper class for Java function implementations that take no arguments and return one value.
  *
- * Subclasses need only implement {@link LuaFunction#call(LuaState)} to complete this class,
- * simplifying development.
- * All other uses of {@link LuaFunction#call(LuaState, LuaValue)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
- * are routed through this method by this class.
- *
- * If one or more arguments are required, or variable argument or variable return values,
- * then use one of the related function
- * {@link OneArgFunction}, {@link TwoArgFunction}, {@link ThreeArgFunction}, or {@link VarArgFunction}.
- *
- * See {@link LibFunction} for more information on implementation libraries and library functions.
- *
- * @see LuaFunction#call(LuaState)
- * @see LibFunction
- * @see OneArgFunction
- * @see TwoArgFunction
- * @see ThreeArgFunction
- * @see VarArgFunction
+ * All usages of {@link LuaFunction#call(LuaState, LuaValue)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
+ * are routed through the {@link ZeroArgs#call(LuaState)}.
  */
-public final class ZeroArgFunction extends LibFunction {
-	private final Delegate delegate;
+final class ZeroArgFunction extends LibFunction {
+	private final ZeroArgs delegate;
 
-	public ZeroArgFunction(String name, Delegate delegate) {
-		this.name = name;
-		this.delegate = delegate;
-	}
-
-	public ZeroArgFunction(Delegate delegate) {
+	ZeroArgFunction(LuaTable env, String name, ZeroArgs delegate) {
+		super(env, name);
 		this.delegate = delegate;
 	}
 
@@ -88,8 +65,4 @@ public final class ZeroArgFunction extends LibFunction {
 		return delegate.call(state);
 	}
 
-	@FunctionalInterface
-	public interface Delegate {
-		LuaValue call(LuaState state) throws LuaError;
-	}
 }

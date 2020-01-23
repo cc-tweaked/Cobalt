@@ -32,9 +32,6 @@ import org.squiddev.cobalt.Prototype;
  * A lua function that provides a coroutine.
  */
 public abstract class LuaClosure extends LuaFunction {
-	public LuaClosure() {
-	}
-
 	public LuaClosure(LuaTable env) {
 		super(env);
 	}

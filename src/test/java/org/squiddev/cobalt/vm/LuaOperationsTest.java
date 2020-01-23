@@ -27,10 +27,10 @@ package org.squiddev.cobalt.vm;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
-import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayInputStream;
@@ -63,8 +63,8 @@ public class LuaOperationsTest {
 	private final LuaValue stringint = valueOf(samplestringint);
 	private final LuaValue stringlong = valueOf(samplestringlong);
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
-	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
-	private final LuaFunction somefunc = new ZeroArgFunction(l -> Constants.NIL);
+	private final LuaTable table = ValueFactory.listOf(valueOf("aaa"), valueOf("bbb"));
+	private final LuaFunction somefunc = LibFunction.of0(null, null, l -> Constants.NIL);
 	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
 	private final Prototype proto = new Prototype();
@@ -224,7 +224,7 @@ public class LuaOperationsTest {
 
 		// function tests
 		{
-			LuaFunction f = new ZeroArgFunction(state -> Constants.NIL);
+			LuaFunction f = LibFunction.of0(LibFunction.getActiveEnv(state), null, state -> Constants.NIL);
 			f.setfenv(newenv);
 			assertEquals(newenv, f.getfenv());
 		}

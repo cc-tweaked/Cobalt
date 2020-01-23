@@ -24,13 +24,10 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.TableLib;
-
-import java.util.function.Supplier;
 
 /**
  * Subclass of {@link LuaFunction} common to Java functions exposed to lua.
@@ -130,25 +127,31 @@ import java.util.function.Supplier;
  * such as {@link BaseLib} or {@link TableLib} for other examples.
  */
 public abstract class LibFunction extends LuaFunction {
-
-	/**
-	 * User-defined opcode to differentiate between instances of the library function class.
-	 *
-	 * Subclass will typicall switch on this value to provide the specific behavior for each function.
-	 */
-	protected int opcode;
+	public static final ResumeError<?> DEFAULT_ERROR = (state, object, error) -> {
+		throw error;
+	};
+	private static final Resume<?> DEFAULT_RESUME = (state, object, value) -> value;
 
 	/**
 	 * The common name for this function, useful for debugging.
 	 *
 	 * Binding functions initialize this to the name to which it is bound.
 	 */
-	protected String name;
+	protected final String name;
 
-	/**
-	 * Default constructor for use by subclasses
-	 */
-	public LibFunction() {
+	LibFunction(LuaTable env, String name) {
+		super(env);
+		this.name = name;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Resume<T> defaultResume() {
+		return (Resume<T>) DEFAULT_RESUME;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> ResumeError<T> defaultResumeError() {
+		return (ResumeError<T>) DEFAULT_ERROR;
 	}
 
 	@Override
@@ -156,72 +159,118 @@ public abstract class LibFunction extends LuaFunction {
 		return name != null ? name : super.toString();
 	}
 
-	/**
-	 * Bind a set of library functions.
-	 *
-	 * An array of names is provided, and the first name is bound
-	 * with opcode = 0, second with 1, etc.
-	 *
-	 * @param env     The environment to apply to each bound function
-	 * @param factory The factory to provide a new instance each time
-	 * @param names   Array of function names
-	 * @see #bind(LuaTable, Supplier, String[], int)
-	 */
-	public static void bind(LuaTable env, Supplier<LibFunction> factory, String[] names) {
-		bind(env, factory, names, 0);
-	}
-
-	/**
-	 * Bind a set of library functions, with an offset
-	 *
-	 * An array of names is provided, and the first name is bound
-	 * with opcode = {@code firstopcode}, second with {@code firstopcode+1}, etc.
-	 *
-	 * @param env         The environment to apply to each bound function
-	 * @param factory     The factory to provide a new instance each time
-	 * @param names       Array of function names
-	 * @param firstOpcode The first opcode to use
-	 * @see #bind(LuaTable, Supplier, String[])
-	 */
-	public static void bind(LuaTable env, Supplier<LibFunction> factory, String[] names, int firstOpcode) {
-		for (int i = 0; i < names.length; i++) {
-			LibFunction f = factory.get();
-			f.opcode = firstOpcode + i;
-			f.name = names[i];
-			f.env = env;
-			env.rawset(f.name, f);
+	public static LuaTable getActiveEnv(LuaState state) {
+		LuaThread thread = state.getCurrentThread();
+		if (thread != null && thread.getStatus().equals("running")) {
+			DebugFrame frame = thread.getDebugState().getFrame(0);
+			if (frame != null) return frame.func.getfenv();
 		}
+
+		thread = state.getMainThread();
+		return thread == null ? null : thread.getfenv();
 	}
 
-	public static void bind0(LuaTable table, String name, ZeroArgFunction.Delegate func) {
-		table.rawset(name, new ZeroArgFunction(name, func));
+	public static LibFunction of0(LuaTable env, String name, ZeroArgs func) {
+		return new ZeroArgFunction(env, name, func);
 	}
 
-	public static void bind1(LuaTable table, String name, OneArgFunction.Delegate func) {
-		table.rawset(name, new OneArgFunction(name, func));
+	public static LibFunction of1(LuaTable env, String name, OneArg func) {
+		return new OneArgFunction(env, name, func);
 	}
 
-	public static void bind2(LuaTable table, String name, TwoArgFunction.Delegate func) {
-		table.rawset(name, new TwoArgFunction(name, func));
+	public static LibFunction of2(LuaTable env, String name, TwoArgs func) {
+		return new TwoArgFunction(env, name, func);
 	}
 
-	public static void bind3(LuaTable table, String name, ThreeArgFunction.Delegate func) {
-		table.rawset(name, new ThreeArgFunction(name, func));
+	public static LibFunction of3(LuaTable env, String name, ThreeArgs func) {
+		return new ThreeArgFunction(env, name, func);
 	}
 
-	public static void bindV(LuaTable table, String name, VarArgFunction.Delegate func) {
-		table.rawset(name, new VarArgFunction(name, func));
+	public static LibFunction ofV(LuaTable env, String name, AnyArgs func) {
+		return new VarArgFunction(env, name, func);
 	}
 
-	public static <T> void bindR(LuaTable table, String name, ResumableFunction.Invoke<T> func) {
-		table.rawset(name, new ResumableFunction<>(name, func, ResumableFunction.defaultResume(), ResumableFunction.defaultResumeError()));
+	public static <T> LibFunction ofR(LuaTable env, String name, Resumable<T> func) {
+		return new ResumableFunction<>(env, name, func, defaultResume(), defaultResumeError());
 	}
 
-	public static <T> void bindR(LuaTable table, String name, ResumableFunction.Invoke<T> func, ResumableFunction.Resume<T> resume) {
-		table.rawset(name, new ResumableFunction<>(name, func, resume, ResumableFunction.defaultResumeError()));
+	public static <T> LibFunction ofR(LuaTable env, String name, Resumable<T> func, Resume<T> resume) {
+		return new ResumableFunction<>(env, name, func, resume, defaultResumeError());
 	}
 
-	public static <T> void bindR(LuaTable table, String name, ResumableFunction.Invoke<T> func, ResumableFunction.Resume<T> resume, ResumableFunction.ResumeError<T> error) {
-		table.rawset(name, new ResumableFunction<T>(name, func, resume, error));
+	public static <T> LibFunction ofR(LuaTable env, String name, Resumable<T> func, Resume<T> resume, ResumableFunction.ResumeError<T> error) {
+		return new ResumableFunction<>(env, name, func, resume, error);
+	}
+
+	public static void bind0(LuaTable table, String name, ZeroArgs func) {
+		table.rawset(name, of0(table, name, func));
+	}
+
+	public static void bind1(LuaTable table, String name, OneArg func) {
+		table.rawset(name, of1(table, name, func));
+	}
+
+	public static void bind2(LuaTable table, String name, TwoArgs func) {
+		table.rawset(name, of2(table, name, func));
+	}
+
+	public static void bind3(LuaTable table, String name, ThreeArgs func) {
+		table.rawset(name, of3(table, name, func));
+	}
+
+	public static void bindV(LuaTable table, String name, AnyArgs func) {
+		table.rawset(name, ofV(table, name, func));
+	}
+
+	public static <T> void bindR(LuaTable table, String name, Resumable<T> func) {
+		table.rawset(name, ofR(table, name, func));
+	}
+
+	public static <T> void bindR(LuaTable table, String name, Resumable<T> func, Resume<T> resume) {
+		table.rawset(name, ofR(table, name, func, resume));
+	}
+
+	public static <T> void bindR(LuaTable table, String name, Resumable<T> func, Resume<T> resume, ResumeError<T> error) {
+		table.rawset(name, ofR(table, name, func, resume, error));
+	}
+
+	@FunctionalInterface
+	public interface ZeroArgs {
+		LuaValue call(LuaState state) throws LuaError;
+	}
+
+	@FunctionalInterface
+	public interface OneArg {
+		LuaValue call(LuaState state, LuaValue arg) throws LuaError;
+	}
+
+	@FunctionalInterface
+	public interface TwoArgs {
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError;
+	}
+
+	@FunctionalInterface
+	public interface ThreeArgs {
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError;
+	}
+
+	@FunctionalInterface
+	public interface AnyArgs {
+		Varargs call(LuaState state, Varargs arg) throws LuaError;
+	}
+
+	@FunctionalInterface
+	public interface Resumable<T> {
+		Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable;
+	}
+
+	@FunctionalInterface
+	public interface Resume<T> {
+		Varargs resume(LuaState state, T object, Varargs args) throws LuaError, UnwindThrowable;
+	}
+
+	@FunctionalInterface
+	public interface ResumeError<T> {
+		Varargs resumeError(LuaState state, T obj, LuaError error) throws LuaError, UnwindThrowable;
 	}
 }
