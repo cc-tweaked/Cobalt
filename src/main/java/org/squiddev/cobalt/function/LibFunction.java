@@ -209,9 +209,19 @@ public abstract class LibFunction extends LuaFunction {
 		table.rawset(name, new ThreeArgFunction(name, func));
 	}
 
-	public static LibFunction bindV(LuaTable table, String name, VarArgFunction.Delegate func) {
-		LibFunction function = new VarArgFunction(name, func);
-		table.rawset(name, function);
-		return function;
+	public static void bindV(LuaTable table, String name, VarArgFunction.Delegate func) {
+		table.rawset(name, new VarArgFunction(name, func));
+	}
+
+	public static <T> void bindR(LuaTable table, String name, ResumableFunction.Invoke<T> func) {
+		table.rawset(name, new ResumableFunction<>(name, func, ResumableFunction.defaultResume(), ResumableFunction.defaultResumeError()));
+	}
+
+	public static <T> void bindR(LuaTable table, String name, ResumableFunction.Invoke<T> func, ResumableFunction.Resume<T> resume) {
+		table.rawset(name, new ResumableFunction<>(name, func, resume, ResumableFunction.defaultResumeError()));
+	}
+
+	public static <T> void bindR(LuaTable table, String name, ResumableFunction.Invoke<T> func, ResumableFunction.Resume<T> resume, ResumableFunction.ResumeError<T> error) {
+		table.rawset(name, new ResumableFunction<T>(name, func, resume, error));
 	}
 }

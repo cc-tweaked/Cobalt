@@ -32,7 +32,7 @@ import org.squiddev.cobalt.debug.DebugState;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_JAVA;
 
-public final class ResumableVarArgFunction<T> extends LibFunction implements Resumable<Object> {
+public final class ResumableFunction<T> extends LibFunction implements Resumable<Object> {
 	private static final Object CALL_MARKER = new Object();
 	private static final Object RETURN_MARKER = new Object();
 	private static final Resume<?> DEFAULT_RESUME = (state, object, value) -> value;
@@ -54,13 +54,13 @@ public final class ResumableVarArgFunction<T> extends LibFunction implements Res
 		return (ResumeError<T>) DEFAULT_ERROR;
 	}
 
-	public ResumableVarArgFunction(Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
+	public ResumableFunction(Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
 		this.invoke = invoke;
 		this.resume = resume;
 		this.resumeError = resumeError;
 	}
 
-	public ResumableVarArgFunction(String name, Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
+	public ResumableFunction(String name, Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
 		this.name = name;
 		this.invoke = invoke;
 		this.resume = resume;

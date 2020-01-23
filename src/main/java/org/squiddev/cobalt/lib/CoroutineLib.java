@@ -29,12 +29,14 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
+import org.squiddev.cobalt.function.ResumableFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
+import static org.squiddev.cobalt.function.LibFunction.bind1;
+import static org.squiddev.cobalt.function.LibFunction.bindR;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code coroutine}
@@ -51,98 +53,56 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.2">http://www.lua.org/manual/5.1/manual.html#5.2</a>
  */
-public class CoroutineLib extends ResumableVarArgFunction<Object> implements LuaLibrary {
-	private static final int CREATE = 0;
-	private static final int RESUME = 1;
-	private static final int RUNNING = 2;
-	private static final int STATUS = 3;
-	private static final int YIELD = 4;
-	private static final int WRAP = 5;
-	private static final int WRAPPED = 6;
-
-	private final LuaThread thread;
-
-	public CoroutineLib() {
-		thread = null;
-	}
-
-	private CoroutineLib(LuaThread thread) {
-		this.thread = thread;
-	}
-
+public class CoroutineLib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		bind(t, CoroutineLib::new, new String[]{"create", "resume", "running", "status", "yield", "wrap"});
+
+		bind1(t, "create", (s, arg) -> {
+			final LuaFunction func = arg.checkFunction();
+			return new LuaThread(s, func, s.getCurrentThread().getfenv());
+		});
+		bindR(t, "resume", CoroutineLib::resume, CoroutineLib::resumeOk, CoroutineLib::resumeError);
+		bind1(t, "running", (s, arg) -> {
+			LuaThread r = s.getCurrentThread();
+			return r.isMainThread() ? Constants.NIL : r;
+		});
+		bind1(t, "status", (s, arg) -> valueOf(arg.checkThread().getStatus()));
+		bindR(t, "yield", (s, i, a) -> LuaThread.yield(s, a));
+		bind1(t, "wrap", CoroutineLib::wrap);
+
 		env.rawset("coroutine", t);
 		state.loadedPackages.rawset("coroutine", t);
 		return t;
 	}
 
-	@Override
-	public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-		switch (opcode) {
-			case CREATE: {
-				final LuaFunction func = args.arg(1).checkFunction();
-				return new LuaThread(state, func, state.getCurrentThread().getfenv());
-			}
-			case RESUME: {
-				di.flags |= FLAG_YPCALL;
-				LuaThread thread = args.arg(1).checkThread();
-				try {
-					Varargs result = LuaThread.resume(state, thread, args.subargs(2));
-					return varargsOf(Constants.TRUE, result);
-				} catch (LuaError le) {
-					return varargsOf(Constants.FALSE, le.value);
-				}
-			}
-			case RUNNING: {
-				final LuaThread r = state.getCurrentThread();
-				return r.isMainThread() ? Constants.NIL : r;
-			}
-			case STATUS: {
-				return valueOf(args.arg(1).checkThread().getStatus());
-			}
-			case YIELD:
-				return LuaThread.yield(state, args);
-			case WRAP: {
-				final LuaFunction func = args.arg(1).checkFunction();
-				final LuaTable env = func.getfenv();
-				final LuaThread thread = new LuaThread(state, func, env);
-				CoroutineLib cl = new CoroutineLib(thread);
-				cl.setfenv(env);
-				cl.name = "wrapped";
-				cl.opcode = WRAPPED;
-				return cl;
-			}
-			case WRAPPED: {
-				return LuaThread.resume(state, thread, args);
-			}
-			default:
-				return Constants.NONE;
+	static LuaValue wrap(LuaState state, LuaValue arg) throws LuaError {
+		final LuaFunction func = arg.checkFunction();
+		final LuaTable env = func.getfenv();
+		final LuaThread thread = new LuaThread(state, func, env);
+		return new ResumableFunction<Object>(
+			(s, d, a) -> LuaThread.resume(s, thread, a),
+			ResumableFunction.defaultResume(),
+			ResumableFunction.defaultResumeError()
+		);
+	}
+
+	static Varargs resume(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		di.flags |= FLAG_YPCALL;
+		LuaThread thread = args.arg(1).checkThread();
+		try {
+			Varargs result = LuaThread.resume(state, thread, args.subargs(2));
+			return varargsOf(Constants.TRUE, result);
+		} catch (LuaError le) {
+			return varargsOf(Constants.FALSE, le.value);
 		}
 	}
 
-	@Override
-	public Varargs resumeThis(LuaState state, Object object, Varargs value) {
-		switch (opcode) {
-			case YIELD:
-			case WRAPPED:
-				return value;
-			case RESUME:
-				return varargsOf(Constants.TRUE, value);
-			default:
-				throw new NonResumableException("Cannot resume " + debugName());
-		}
+	static Varargs resumeOk(LuaState state, Void object, Varargs value) {
+		return varargsOf(Constants.TRUE, value);
 	}
 
-	@Override
-	public Varargs resumeErrorThis(LuaState state, Object object, LuaError error) {
-		switch (opcode) {
-			case RESUME:
-				return varargsOf(Constants.FALSE, error.value);
-			default:
-				throw new NonResumableException("Cannot resume " + debugName());
-		}
+	static Varargs resumeError(LuaState state, Void object, LuaError error) {
+		return varargsOf(Constants.FALSE, error.value);
 	}
 }

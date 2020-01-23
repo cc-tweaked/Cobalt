@@ -30,13 +30,13 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
 import java.io.InputStream;
 
+import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
@@ -66,19 +66,13 @@ public class BaseLib implements LuaLibrary {
 	private LuaValue next;
 	private LuaValue inext;
 
-	private static final String[] LIBR_KEYS = {
-		"pcall", // (f, arg1, ...) -> status, result1, ...
-		"xpcall", // (f, err) -> result1, ...
-		"load", // ( func [,chunkname] ) -> chunk | nil, msg
-	};
-
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		env.rawset("_G", env);
 		env.rawset("_VERSION", valueOf(Lua._VERSION));
 
 		bindV(env, "assert", BaseLib::assert_);
-		bindV(env, "dofile", BaseLib::dofile);
+		bindR(env, "dofile", BaseLib::dofile);
 		bindV(env, "getfenv", BaseLib::getfenv);
 		bindV(env, "getmetatable", BaseLib::getmetatable);
 		bindV(env, "loadfile", BaseLib::loadfile);
@@ -91,7 +85,7 @@ public class BaseLib implements LuaLibrary {
 		bindV(env, "rawget", BaseLib::rawget);
 		bindV(env, "rawset", BaseLib::rawset);
 		bindV(env, "setmetatable", BaseLib::setmetatable);
-		bindV(env, "tostring", BaseLib::tostring);
+		bindR(env, "tostring", BaseLib::tostring);
 		bindV(env, "tonumber", BaseLib::tonumber);
 		bindV(env, "pairs", this::pairs);
 		bindV(env, "ipairs", this::ipairs);
@@ -100,8 +94,9 @@ public class BaseLib implements LuaLibrary {
 		bind1(env, "collectgarbage", BaseLib::collectGarbage);
 		bind2(env, "error", BaseLib::error);
 		bindV(env, "setfenv", BaseLib::setfenv);
-
-		LibFunction.bind(env, BaseLibR::new, LIBR_KEYS);
+		bindR(env, "pcall", BaseLib::pcall, BaseLib::resumePcall, BaseLib::resumeErrorPcall);
+		bindR(env, "xpcall", BaseLib::xpcall, BaseLib::resumePcall, BaseLib::resumeErrorPcall);
+		bindR(env, "load", BaseLib::load, BaseLib::resumePcall, BaseLib::resumeErrorPcall);
 
 		// remember next, and inext for use in pairs and ipairs
 		next = env.rawget("next");
@@ -124,7 +119,7 @@ public class BaseLib implements LuaLibrary {
 				return valueOf(used / 1024.);
 			case "step":
 				System.gc();
-				return Constants.TRUE;
+				return TRUE;
 			default:
 				throw ErrorFactory.argError(1, "invalid option");
 		}
@@ -163,7 +158,7 @@ public class BaseLib implements LuaLibrary {
 		return args;
 	}
 
-	static Varargs dofile(LuaState state, Varargs args) throws LuaError {
+	static Varargs dofile(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		// ( filename ) -> result1, ...
 		Varargs v = args.isNil(1) ?
 			BaseLib.loadStream(state, state.stdin, STDIN_STR) :
@@ -171,8 +166,7 @@ public class BaseLib implements LuaLibrary {
 		if (v.isNil(1)) {
 			throw new LuaError(v.arg(2).toString());
 		} else {
-			// TODO:
-			return OperationHelper.noUnwind(state, () -> OperationHelper.invoke(state, v.first(), Constants.NONE));
+			return OperationHelper.invoke(state, v.first(), Constants.NONE);
 		}
 	}
 
@@ -180,13 +174,13 @@ public class BaseLib implements LuaLibrary {
 		// ( [f] ) -> env
 		LuaValue f = getfenvobj(state, args.first());
 		LuaValue e = f.isClosure() || f.isThread() ? f.getfenv() : state.getMainThread().getfenv();
-		return e != null ? e : Constants.NIL;
+		return e != null ? e : NIL;
 	}
 
 	static Varargs getmetatable(LuaState state, Varargs args) throws LuaError {
 		// ( object ) -> table
 		LuaTable mt = args.checkValue(1).getMetatable(state);
-		return mt != null ? mt.rawget(Constants.METATABLE).optValue(mt) : Constants.NIL;
+		return mt != null ? mt.rawget(Constants.METATABLE).optValue(mt) : NIL;
 	}
 
 	static Varargs loadfile(LuaState state, Varargs args) throws LuaError {
@@ -286,14 +280,11 @@ public class BaseLib implements LuaLibrary {
 		return t;
 	}
 
-	static Varargs tostring(LuaState state, Varargs args) throws LuaError {
+	static Varargs tostring(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		// (e) -> value
 		LuaValue arg = args.checkValue(1);
 		LuaValue h = arg.metatag(state, Constants.TOSTRING);
-		if (!h.isNil()) {
-			// TODO:
-			return OperationHelper.noUnwind(state, () -> OperationHelper.call(state, h, arg));
-		}
+		if (!h.isNil()) return OperationHelper.call(state, h, arg);
 		LuaValue v = arg.toLuaString();
 		if (!v.isNil()) {
 			return v;
@@ -317,7 +308,7 @@ public class BaseLib implements LuaLibrary {
 
 	Varargs pairs(LuaState state, Varargs args) throws LuaError {
 		//(t) -> iter-func, t, nil
-		return varargsOf(next, args.arg(1).checkTable(), Constants.NIL);
+		return varargsOf(next, args.arg(1).checkTable(), NIL);
 	}
 
 	Varargs ipairs(LuaState state, Varargs args) throws LuaError {
@@ -335,89 +326,71 @@ public class BaseLib implements LuaLibrary {
 		return args.arg(1).checkTable().inext(args.arg(2));
 	}
 
-	private static class BaseLibR extends ResumableVarArgFunction<PCallState> {
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: // "pcall", // (f, arg1, ...) -> status, result1, ...
-					return pcall(state, di, args.checkValue(1), args.subargs(2), null);
-				case 1: // "xpcall", // (f, err) -> result1, ...
-					return pcall(state, di, args.checkValue(1), Constants.NONE, args.checkValue(2));
+	static Varargs pcall(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		// (f, arg1, ...) -> status, result1, ...
+		return pcall(state, di, false, args.checkValue(1), args.subargs(2), null);
+	}
 
-				case 2: // "load", // ( func [,chunkname] ) -> chunk | nil, msg
-				{
-					LuaValue function = args.arg(1).checkFunction();
-					LuaString chunkName = args.arg(2).optLuaString(FUNCTION_STR);
+	static Varargs xpcall(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		// (f, err) -> result1, ...
+		return pcall(state, di, false, args.checkValue(1), Constants.NONE, args.checkValue(2));
+	}
 
-					Varargs result = pcall(state, di, new ZeroArgFunction(lState -> {
-						try {
-							InputStream stream = new StringInputStream(lState, function);
-							return LoadState.load(lState, stream, chunkName, lState.getCurrentThread().getfenv());
-						} catch (Exception e) {
-							throw LuaError.wrapMessage(e);
-						}
-					}), Constants.NONE, state.getCurrentThread().getErrorFunc());
+	static Varargs load(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		// ( func [,chunkname] ) -> chunk | nil, msg
+		LuaValue function = args.arg(1).checkFunction();
+		LuaString chunkName = args.arg(2).optLuaString(FUNCTION_STR);
 
-					if (result.first().toBoolean()) {
-						return result.arg(2);
-					} else {
-						return varargsOf(Constants.NIL, result.arg(2));
-					}
-				}
-				default:
-					return Constants.NONE;
+		return pcall(state, di, true, new ZeroArgFunction(lState -> {
+			try {
+				InputStream stream = new StringInputStream(lState, function);
+				return LoadState.load(lState, stream, chunkName, lState.getCurrentThread().getfenv());
+			} catch (Exception e) {
+				throw LuaError.wrapMessage(e);
 			}
-		}
+		}), Constants.NONE, state.getCurrentThread().getErrorFunc());
+	}
 
-		@Override
-		protected Varargs resumeThis(LuaState state, PCallState pState, Varargs value) {
-			state.getCurrentThread().setErrorFunc(pState.oldErrorFunc);
+	static Varargs resumePcall(LuaState state, PCallState pState, Varargs value) {
+		state.getCurrentThread().setErrorFunc(pState.oldErrorFunc);
 
-			if (pState.errored) closeUntil(state, pState.frame);
-			return finish(pState, value);
-		}
-
-		@Override
-		public Varargs resumeErrorThis(LuaState state, PCallState pState, LuaError error) throws UnwindThrowable {
-			LuaValue value;
-			if (pState.errored) {
-				value = valueOf("error in error handling");
-			} else {
-				// Mark this frame as errored, meaning it will not be resumed.
-				DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
-				// And mark us as being in the error handler.
-				pState.errored = true;
-				error.fillTraceback(state);
-				value = error.value;
-			}
-
-			state.getCurrentThread().setErrorFunc(pState.oldErrorFunc);
+		if (pState.errored) {
 			closeUntil(state, pState.frame);
-			return finish(pState, value);
+			return varargsOf(pState.simple ? NIL : FALSE, value);
+		} else {
+			return pState.simple ? value : varargsOf(TRUE, value);
+		}
+	}
+
+	static Varargs resumeErrorPcall(LuaState state, PCallState pState, LuaError error) throws UnwindThrowable {
+		LuaValue value;
+		if (pState.errored) {
+			value = valueOf("error in error handling");
+		} else {
+			// Mark this frame as errored, meaning it will not be resumed.
+			DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
+			// And mark us as being in the error handler.
+			pState.errored = true;
+			error.fillTraceback(state);
+			value = error.value;
 		}
 
-		private Varargs finish(PCallState pState, Varargs value) {
-			switch (opcode) {
-				case 0:
-				case 1:
-					return pState.errored ? varargsOf(Constants.FALSE, value) : varargsOf(Constants.TRUE, value);
-				case 2:
-					return pState.errored ? varargsOf(Constants.NIL, value) : value;
-				default:
-					throw new NonResumableException("Cannot resume " + debugName());
-			}
-		}
+		state.getCurrentThread().setErrorFunc(pState.oldErrorFunc);
+		closeUntil(state, pState.frame);
+		return varargsOf(pState.simple ? NIL : FALSE, value);
 	}
 
 	private static final class PCallState {
 		DebugFrame frame;
 		LuaValue oldErrorFunc;
 		boolean errored = false;
+		boolean simple;
 	}
 
-	private static Varargs pcall(LuaState state, DebugFrame di, LuaValue func, Varargs args, LuaValue errFunc) throws UnwindThrowable {
+	private static Varargs pcall(LuaState state, DebugFrame di, boolean simple, LuaValue func, Varargs args, LuaValue errFunc) throws UnwindThrowable {
 		// Mark this frame as being an error handler
 		PCallState pState = new PCallState();
+		pState.simple = simple;
 		di.state = pState;
 		di.flags |= FLAG_YPCALL;
 
@@ -426,10 +399,10 @@ public class BaseLib implements LuaLibrary {
 
 		LuaValue oldErr = pState.oldErrorFunc = state.getCurrentThread().setErrorFunc(errFunc);
 		try {
-			Varargs result = varargsOf(Constants.TRUE, OperationHelper.invoke(state, func, args));
+			Varargs result = OperationHelper.invoke(state, func, args);
 
 			state.getCurrentThread().setErrorFunc(oldErr);
-			return result;
+			return simple ? result : varargsOf(TRUE, result);
 		} catch (Exception e) {
 			// Mark this frame as errored, meaning it will not be resumed.
 			DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
@@ -441,7 +414,7 @@ public class BaseLib implements LuaLibrary {
 
 			state.getCurrentThread().setErrorFunc(oldErr);
 			closeUntil(state, di);
-			return varargsOf(Constants.FALSE, le.value);
+			return varargsOf(simple ? NIL : FALSE, le.value);
 		}
 	}
 
@@ -466,7 +439,7 @@ public class BaseLib implements LuaLibrary {
 	public static Varargs loadFile(LuaState state, String filename) {
 		InputStream is = state.resourceManipulator.findResource(filename);
 		if (is == null) {
-			return varargsOf(Constants.NIL, valueOf("cannot open " + filename + ": No such file or directory"));
+			return varargsOf(NIL, valueOf("cannot open " + filename + ": No such file or directory"));
 		}
 		try {
 			return loadStream(state, is, valueOf("@" + filename));
@@ -482,11 +455,11 @@ public class BaseLib implements LuaLibrary {
 	private static Varargs loadStream(LuaState state, InputStream is, LuaString chunkname) {
 		try {
 			if (is == null) {
-				return varargsOf(Constants.NIL, valueOf("not found: " + chunkname));
+				return varargsOf(NIL, valueOf("not found: " + chunkname));
 			}
 			return LoadState.load(state, is, chunkname, state.getCurrentThread().getfenv());
 		} catch (Exception e) {
-			return varargsOf(Constants.NIL, LuaError.getMessage(e));
+			return varargsOf(NIL, LuaError.getMessage(e));
 		}
 	}
 

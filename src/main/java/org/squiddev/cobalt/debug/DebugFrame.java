@@ -38,7 +38,7 @@ public final class DebugFrame {
 	 *
 	 * @see #flags
 	 * @see DebugState#hookCall(DebugFrame) and other {@code hook*} functions.
-	 * @see org.squiddev.cobalt.function.ResumableVarArgFunction
+	 * @see ResumableFunction
 	 * @see org.squiddev.cobalt.function.LuaInterpretedFunction
 	 */
 	public static final int FLAG_HOOKED = 1 << 2;

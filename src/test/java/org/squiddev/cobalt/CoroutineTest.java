@@ -33,8 +33,8 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
 
@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
+import static org.squiddev.cobalt.function.LibFunction.*;
 
 /**
  * Tests yielding in a whole load of places
@@ -125,56 +126,37 @@ public class CoroutineTest {
 		assertEquals("dead", helpers.state.getMainThread().getStatus());
 	}
 
-	private static class Functions extends ResumableVarArgFunction<LuaThread> implements LuaLibrary {
+	private static class Functions implements LuaLibrary {
 		@Override
-		public LuaValue add(LuaState state, LuaTable environment) {
-			bind(environment, Functions::new, new String[]{"suspend", "run", "assertEquals", "fail", "id", "noUnwind"});
-			return environment;
-		}
+		public LuaValue add(LuaState state, LuaTable env) {
+			bindR(env, "suspend", (s, di, args) -> {
+				LuaThread.suspend(state);
+				return Constants.NONE;
+			}, (s, o, args) -> args);
+			LibFunction.<LuaThread>bindR(env, "run", (s, di, args) -> {
+				LuaThread thread = new LuaThread(s, args.first().checkFunction(), env);
+				di.state = thread;
+				Varargs value = Constants.NONE;
+				while (thread.isAlive()) value = LuaThread.resume(s, thread, value);
+				return value;
+			}, (s, thread, value) -> {
+				while (thread.isAlive()) value = LuaThread.resume(s, thread, value);
+				return value;
+			});
+			bind2(env, "assertEquals", (s, l, r) -> {
+				String traceback = DebugHelpers.traceback(s.getCurrentThread(), 0);
+				assertEquals(l, r, traceback);
+				return Constants.NIL;
+			});
+			bind1(env, "fail", (s, a) -> {
+				String traceback = DebugHelpers.traceback(s.getCurrentThread(), 0);
+				fail(a.toString() + ":\n" + traceback);
+				return Constants.NIL;
+			});
+			bindV(env, "id", (s, a) -> a);
+			bindV(env, "noUnwind", (s, args) -> noUnwind(s, () -> args.first().checkFunction().call(state)));
 
-		@Override
-		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: // suspend
-					LuaThread.suspend(state);
-					return Constants.NONE;
-				case 1: { // run
-					LuaThread thread = new LuaThread(state, args.first().checkFunction(), getfenv());
-					di.state = thread;
-					Varargs value = Constants.NONE;
-					while (thread.isAlive()) value = LuaThread.resume(state, thread, value);
-					return value;
-				}
-				case 2: { // assertEquals
-					String traceback = DebugHelpers.traceback(state.getCurrentThread(), 0);
-					assertEquals(args.arg(1), args.arg(2), traceback);
-					return Constants.NONE;
-				}
-				case 3: { // fail
-					String traceback = DebugHelpers.traceback(state.getCurrentThread(), 0);
-					fail(args.first().toString() + ":\n" + traceback);
-					return Constants.NONE;
-				}
-				case 4: // id
-					return args;
-				case 5: // noYield
-					return noUnwind(state, () -> args.first().checkFunction().call(state));
-				default:
-					return Constants.NONE;
-			}
-		}
-
-		@Override
-		public Varargs resumeThis(LuaState state, LuaThread thread, Varargs value) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0:
-					return Constants.NONE;
-				case 1: // run
-					while (thread.isAlive()) value = LuaThread.resume(state, thread, value);
-					return value;
-				default:
-					throw new NonResumableException("Cannot resume " + debugName());
-			}
+			return env;
 		}
 	}
 

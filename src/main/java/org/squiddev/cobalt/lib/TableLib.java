@@ -28,13 +28,11 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
-import static org.squiddev.cobalt.function.LibFunction.bind1;
-import static org.squiddev.cobalt.function.LibFunction.bindV;
+import static org.squiddev.cobalt.function.LibFunction.*;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code table}
@@ -55,7 +53,10 @@ public class TableLib implements LuaLibrary {
 		bindV(t, "remove", TableLib::remove);
 		bindV(t, "concat", TableLib::concat);
 		bindV(t, "insert", TableLib::insert);
-		LibFunction.bind(t, TableLibR::new, new String[]{"sort", "foreach", "foreachi"});
+
+		bindR(t, "sort", TableLib::sort, TableLib::resumeSort);
+		bindR(t, "foreach", TableLib::foreach, TableLib::resumeForeach);
+		bindR(t, "foreachi", TableLib::foreachi, TableLib::resumeForeachi);
 		env.rawset("table", t);
 		state.loadedPackages.rawset("table", t);
 		return t;
@@ -86,79 +87,64 @@ public class TableLib implements LuaLibrary {
 		return NONE;
 	}
 
-	private static final class TableLibR extends ResumableVarArgFunction<Object> {
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: { // "sort" (table [, comp]) -> void
-					LuaTable table = args.arg(1).checkTable();
-					LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
-					int n = table.prepSort();
-					if (n > 1) {
-						SortState res = new SortState(table, n, compare);
-						di.state = res;
-						heapSort(state, table, n, compare, res, 0, n / 2 - 1);
-					}
-					return NONE;
-				}
-				case 1: { // "foreach" (table, func) -> void
-					LuaTable table = args.arg(1).checkTable();
-					LuaFunction function = args.arg(2).checkFunction();
+	static Varargs sort(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		// (table [, comp]) -> void
+		LuaTable table = args.arg(1).checkTable();
+		LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
+		int n = table.prepSort();
+		if (n > 1) {
+			SortState res = new SortState(table, n, compare);
+			di.state = res;
+			heapSort(state, table, n, compare, res, 0, n / 2 - 1);
+		}
+		return NONE;
+	}
 
-					ForEachState res = new ForEachState(table, function);
-					di.state = res;
-					return foreach(state, table, function, res);
-				}
-				case 2: { // "foreachi" (table, func) -> void
-					LuaTable table = args.arg(1).checkTable();
-					LuaFunction function = args.arg(2).checkFunction();
+	static Varargs foreach(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		// (table, func) -> void
+		LuaTable table = args.arg(1).checkTable();
+		LuaFunction function = args.arg(2).checkFunction();
 
-					ForEachIState res = new ForEachIState(table, function);
-					di.state = res;
-					return foreachi(state, table, function, res);
-				}
-				default:
-					return NONE;
-			}
+		ForEachState res = new ForEachState(table, function);
+		di.state = res;
+		return foreach(state, table, function, res);
+	}
+
+	static Varargs foreachi(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		// (table, func) -> void
+		LuaTable table = args.arg(1).checkTable();
+		LuaFunction function = args.arg(2).checkFunction();
+
+		ForEachIState res = new ForEachIState(table, function);
+		di.state = res;
+		return foreachi(state, table, function, res);
+	}
+
+	static Varargs resumeSort(LuaState state, SortState res, Varargs value) throws LuaError, UnwindThrowable {
+		LuaTable table = res.table;
+		LuaValue compare = res.compare;
+		int count = res.count;
+
+		// We attempt to recover from sifting the state
+		if (res.siftState != -1) {
+			int root = stateSiftDown(state, table, compare, res, value.first().toBoolean());
+			res.siftState = -1;
+
+			// Continue sifting here
+			if (root != -1) normalSiftDown(state, table, root, res.end, compare, res);
 		}
 
-		@Override
-		protected Varargs resumeThis(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: { // "sort" (table [, comp]) -> void
-					SortState res = (SortState) object;
-					LuaTable table = res.table;
-					LuaValue compare = res.compare;
-					int count = res.count;
+		// And continue sorting
+		heapSort(state, table, count, compare, res, res.sortState, res.counter);
+		return NONE;
+	}
 
-					// We attempt to recover from sifting the state
-					if (res.siftState != -1) {
-						int root = stateSiftDown(state, table, compare, res, value.first().toBoolean());
-						res.siftState = -1;
+	static Varargs resumeForeach(LuaState state, ForEachState res, Varargs args) throws LuaError, UnwindThrowable {
+		return foreach(state, res.table, res.func, res);
+	}
 
-						// Continue sifting here
-						if (root != -1) normalSiftDown(state, table, root, res.end, compare, res);
-					}
-
-					// And continue sorting
-					heapSort(state, table, count, compare, res, res.sortState, res.counter);
-					return NONE;
-				}
-
-				case 1: { // "foreach" (table, func) -> void
-					ForEachState res = (ForEachState) object;
-					return foreach(state, res.table, res.func, res);
-				}
-
-				case 2: { // "foreachi" (table, func) -> void
-					ForEachIState res = (ForEachIState) object;
-					return foreachi(state, res.table, res.func, res);
-				}
-
-				default:
-					throw new NonResumableException("Cannot resume " + debugName());
-			}
-		}
+	static Varargs resumeForeachi(LuaState state, ForEachIState res, Varargs args) throws LuaError, UnwindThrowable {
+		return foreachi(state, res.table, res.func, res);
 	}
 
 	static final class ForEachState {

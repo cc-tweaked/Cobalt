@@ -31,7 +31,6 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -40,8 +39,7 @@ import java.io.IOException;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.*;
-import static org.squiddev.cobalt.function.LibFunction.bind1;
-import static org.squiddev.cobalt.function.LibFunction.bindV;
+import static org.squiddev.cobalt.function.LibFunction.*;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
@@ -73,8 +71,7 @@ public class StringLib implements LuaLibrary {
 		bindV(t, "match", StringLib::match);
 		bindV(t, "rep", StringLib::rep);
 		bindV(t, "sub", StringLib::sub);
-
-		LibFunction.bind(t, StringLibR::new, new String[]{"gsub"});
+		bindR(t, "gsub", StringLib::gsubWrapper, StringLib::resumeGsub);
 
 		t.rawset("gfind", t.rawget("gmatch"));
 		env.rawset("string", t);
@@ -84,36 +81,23 @@ public class StringLib implements LuaLibrary {
 		return t;
 	}
 
-	static final class StringLibR extends ResumableVarArgFunction<Object> {
-		@Override
-		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: { // gsub
-					LuaString src = args.arg(1).checkLuaString();
-					LuaString p = args.arg(2).checkLuaString();
-					LuaValue replace = args.arg(3);
-					int maxS = args.arg(4).optInteger(src.length() + 1);
+	/**
+	 * A wrapper for the main {@link #gsubRun(LuaState, GSubState, Varargs)} which sets up the appropriate state.
+	 */
+	static Varargs gsubWrapper(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		LuaString src = args.arg(1).checkLuaString();
+		LuaString p = args.arg(2).checkLuaString();
+		LuaValue replace = args.arg(3);
+		int maxS = args.arg(4).optInteger(src.length() + 1);
 
-					GSubState gsub = new GSubState(state, src, p, replace, maxS);
-					di.state = gsub;
-					return StringLib.gsubRun(state, gsub, null);
-				}
-				default:
-					return NONE;
-			}
-		}
-
-		// @Override
-		public Varargs resumeThis(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: // gsub
-					return StringLib.gsubRun(state, (GSubState) object, value.first());
-				default:
-					throw new NonResumableException("Cannot resume " + debugName());
-			}
-		}
+		GSubState gsub = new GSubState(state, src, p, replace, maxS);
+		di.state = gsub;
+		return gsubRun(state, gsub, null);
 	}
 
+	static Varargs resumeGsub(LuaState state, GSubState object, Varargs values) throws LuaError, UnwindThrowable {
+		return gsubRun(state, object, values.first());
+	}
 
 	/**
 	 * string.byte (s [, i [, j]])
@@ -124,7 +108,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
-	 * @param state
+	 * @param state The active Lua state
 	 * @param args  the calling args
 	 */
 	static Varargs byte_(LuaState state, Varargs args) throws LuaError {
@@ -156,7 +140,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
-	 * @param state
+	 * @param state The active Lua state
 	 * @param args  the calling VM
 	 * @return The characters for this string
 	 * @throws LuaError If the argument is not a number or is out of bounds.
@@ -767,10 +751,7 @@ public class StringLib implements LuaLibrary {
 					return;
 
 				case TFUNCTION:
-					replace = OperationHelper.noUnwind(state, () ->
-						// TODO: Ensure yields are handled correctly
-						OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first()
-					);
+					replace = OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first();
 					break;
 
 				case TTABLE: {
