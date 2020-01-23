@@ -64,22 +64,17 @@ public class LuaOperationsTest {
 	private final LuaValue stringlong = valueOf(samplestringlong);
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
 	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
-	private final LuaFunction somefunc = new ZeroArgFunction() {
-		{
-			env = table;
-		}
-
-		@Override
-		public LuaValue call(LuaState state) {
-			return Constants.NONE;
-		}
-	};
+	private final LuaFunction somefunc = new ZeroArgFunction(l -> Constants.NIL);
 	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
 	private final Prototype proto = new Prototype();
 	private final LuaClosure someclosure = new LuaInterpretedFunction(proto, table);
 	private final LuaUserdata userdataobj = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = ValueFactory.userdataOf(sampledata);
+
+	{
+		somefunc.setfenv(table);
+	}
 
 	private void throwsLuaError(String methodName, Object obj) {
 		try {
@@ -229,20 +224,9 @@ public class LuaOperationsTest {
 
 		// function tests
 		{
-			LuaFunction f = new ZeroArgFunction() {
-				{
-					env = _G;
-				}
-
-				@Override
-				public LuaValue call(LuaState state) throws LuaError {
-					return OperationHelper.noUnwind(state, () -> OperationHelper.getTable(state, env, valueOf("a")));
-				}
-			};
-			assertEquals(aaa, f.call(state));
+			LuaFunction f = new ZeroArgFunction(state -> Constants.NIL);
 			f.setfenv(newenv);
 			assertEquals(newenv, f.getfenv());
-			assertEquals(eee, f.call(state));
 		}
 
 		// closure tests

@@ -79,14 +79,14 @@ public class LexState {
 	}
 
 	/*
-	** Marks the end of a patch list. It is an invalid value both as an absolute
-	** address, and as a list link (would link an element to itself).
-	*/
+	 ** Marks the end of a patch list. It is an invalid value both as an absolute
+	 ** address, and as a list link (would link an element to itself).
+	 */
 	static final int NO_JUMP = (-1);
 
 	/*
-	** grep "ORDER OPR" if you change these enums
-	*/
+	 ** grep "ORDER OPR" if you change these enums
+	 */
 	static final int
 		OPR_ADD = 0, OPR_SUB = 1, OPR_MUL = 2, OPR_DIV = 3, OPR_MOD = 4, OPR_POW = 5,
 		OPR_CONCAT = 6,
@@ -100,21 +100,21 @@ public class LexState {
 
 	/* exp kind */
 	static final int
-		VVOID = 0,	/* no value */
+		VVOID = 0,    /* no value */
 		VNIL = 1,
 		VTRUE = 2,
 		VFALSE = 3,
-		VK = 4,		/* info = index of constant in `k' */
-		VKNUM = 5,	/* nval = numerical value */
-		VLOCAL = 6,	/* info = local register */
+		VK = 4,        /* info = index of constant in `k' */
+		VKNUM = 5,    /* nval = numerical value */
+		VLOCAL = 6,    /* info = local register */
 		VUPVAL = 7,       /* info = index of upvalue in `upvalues' */
-		VGLOBAL = 8,	/* info = index of table, aux = index of global name in `k' */
-		VINDEXED = 9,	/* info = table register, aux = index register (or `k') */
-		VJMP = 10,		/* info = instruction pc */
-		VRELOCABLE = 11,	/* info = instruction pc */
-		VNONRELOC = 12,	/* info = result register */
-		VCALL = 13,	/* info = instruction pc */
-		VVARARG = 14;	/* info = instruction pc */
+		VGLOBAL = 8,    /* info = index of table, aux = index of global name in `k' */
+		VINDEXED = 9,    /* info = table register, aux = index register (or `k') */
+		VJMP = 10,        /* info = instruction pc */
+		VRELOCABLE = 11,    /* info = instruction pc */
+		VNONRELOC = 12,    /* info = result register */
+		VCALL = 13,    /* info = instruction pc */
+		VVARARG = 14;    /* info = instruction pc */
 
 	/* semantics information */
 	private static class SemInfo {
@@ -335,10 +335,10 @@ public class LexState {
 
 
 	/*
-	** =======================================================
-	** LEXICAL ANALYZER
-	** =======================================================
-	*/
+	 ** =======================================================
+	 ** LEXICAL ANALYZER
+	 ** =======================================================
+	 */
 
 
 	private boolean check_next(String set) {
@@ -576,7 +576,7 @@ public class LexState {
 					if (current != '-') {
 						return '-';
 					}
-				/* else is a comment */
+					/* else is a comment */
 					nextChar();
 					if (current == '[') {
 						int sep = skip_sep();
@@ -587,7 +587,7 @@ public class LexState {
 							continue;
 						}
 					}
-				/* else short comment */
+					/* else short comment */
 					while (!currIsNewline() && current != EOZ) {
 						nextChar();
 					}
@@ -671,7 +671,7 @@ public class LexState {
 						read_numeral(seminfo);
 						return TK_NUMBER;
 					} else if (isalpha(current) || current == '_') {
-					/* identifier or reserved word */
+						/* identifier or reserved word */
 						LuaString ts;
 						do {
 							save_and_next();
@@ -1009,11 +1009,11 @@ public class LexState {
 	}
 
 
- /*
-	** {======================================================================
-	** Rules for Constructors
-	** =======================================================================
-	*/
+	/*
+	 ** {======================================================================
+	 ** Rules for Constructors
+	 ** =======================================================================
+	 */
 
 
 	static class ConsControl {
@@ -1101,10 +1101,10 @@ public class LexState {
 	}
 
 	/*
-	** converts an integer to a "floating point byte", represented as
-	** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
-	** eeeee != 0 and (xxx) otherwise.
-	*/
+	 ** converts an integer to a "floating point byte", represented as
+	 ** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
+	 ** eeeee != 0 and (xxx) otherwise.
+	 */
 	private static int luaO_int2fb(int x) {
 		int e = 0;  /* expoent */
 		while (x >= 16) {
@@ -1122,7 +1122,7 @@ public class LexState {
 	/* }====================================================================== */
 
 	private void parlist() throws CompileException {
-	  /* parlist -> [ param { `,' param } ] */
+		/* parlist -> [ param { `,' param } ] */
 		FuncState fs = this.fs;
 		Prototype f = fs.f;
 		int nparams = 0;
@@ -1137,7 +1137,7 @@ public class LexState {
 					case TK_DOTS: {  /* param . `...' */
 						this.next();
 						if (LUA_COMPAT_VARARG) {
-				  /* use `arg' as default name */
+							/* use `arg' as default name */
 							this.new_localvarliteral("arg", nparams++);
 							f.is_vararg = Lua.VARARG_HASARG | Lua.VARARG_NEEDSARG;
 						}
@@ -1233,15 +1233,15 @@ public class LexState {
 		f.init(VCALL, fs.codeABC(Lua.OP_CALL, base, nparams + 1, 2));
 		fs.fixline(line);
 		fs.freereg = base + 1;  /* call remove function and arguments and leaves
-							 * (unless changed) one result */
+		 * (unless changed) one result */
 	}
 
 
 	/*
-	** {======================================================================
-	** Expression parsing
-	** =======================================================================
-	*/
+	 ** {======================================================================
+	 ** Expression parsing
+	 ** =======================================================================
+	 */
 
 	private void prefixexp(expdesc v) throws CompileException {
 		/* prefixexp -> NAME | '(' expr ')' */
@@ -1434,9 +1434,9 @@ public class LexState {
 
 
 	/*
-	** subexpr -> (simpleexp | unop subexpr) { binop subexpr }
-	** where `binop' is any binary operator with a priority higher than `limit'
-	*/
+	 ** subexpr -> (simpleexp | unop subexpr) { binop subexpr }
+	 ** where `binop' is any binary operator with a priority higher than `limit'
+	 */
 	private int subexpr(expdesc v, int limit) throws CompileException {
 		int op;
 		int uop;
@@ -1474,10 +1474,10 @@ public class LexState {
 
 
 	/*
-	** {======================================================================
-	** Rules for Statements
-	** =======================================================================
-	*/
+	 ** {======================================================================
+	 ** Rules for Statements
+	 ** =======================================================================
+	 */
 
 
 	private boolean block_follow(int token) {
@@ -1495,7 +1495,7 @@ public class LexState {
 
 
 	private void block() throws CompileException {
-	  /* block -> chunk */
+		/* block -> chunk */
 		FuncState fs = this.fs;
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
 		fs.enterblock(bl, false);
@@ -1506,9 +1506,9 @@ public class LexState {
 
 
 	/*
-	** structure to chain all variables in the left-hand side of an
-	** assignment
-	*/
+	 ** structure to chain all variables in the left-hand side of an
+	 ** assignment
+	 */
 	static class LHS_assign {
 		LHS_assign prev;
 		/* variable (global, local, upvalue, or indexed) */
@@ -1517,11 +1517,11 @@ public class LexState {
 
 
 	/*
-	** check whether, in an assignment to a local variable, the local variable
-	** is needed in a previous assignment (to a table). If so, save original
-	** local value in a safe place and use this safe copy in the previous
-	** assignment.
-	*/
+	 ** check whether, in an assignment to a local variable, the local variable
+	 ** is needed in a previous assignment (to a table). If so, save original
+	 ** local value in a safe place and use this safe copy in the previous
+	 ** assignment.
+	 */
 	private void check_conflict(LHS_assign lh, expdesc v) throws CompileException {
 		FuncState fs = this.fs;
 		int extra = fs.freereg;  /* eventual position to save local variable */

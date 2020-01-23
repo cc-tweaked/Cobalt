@@ -28,7 +28,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.function.OneArgFunction;
-import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.Bit32Lib;
 import org.squiddev.cobalt.lib.Utf8Lib;
 
@@ -42,7 +41,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  */
 public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
-	@ValueSource(strings = {"table-hash-01", "table-hash-02", "table-hash-03"})
+	@ValueSource(strings = {"table-hash-01", "table-hash-02", "table-hash-03", "remove"})
 	public void tables(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/assert/table/");
 		helpers.setup();
@@ -87,20 +86,8 @@ public class AssertTests {
 	public void lua51(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.1/");
 		helpers.setup();
-		helpers.globals.rawset("mkdir", new OneArgFunction() {
-			@Override
-			public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-				return valueOf(new File(arg.checkString()).mkdirs());
-			}
-		});
-
-		// TODO: Move this into the debug library
-		((LuaTable) helpers.globals.rawget("debug")).rawset("debug", new ZeroArgFunction() {
-			@Override
-			public LuaValue call(LuaState state) {
-				return Constants.NONE;
-			}
-		});
+		helpers.globals.rawset("mkdir", new OneArgFunction((s, a) ->
+			valueOf(new File(a.checkString()).mkdirs())));
 
 		helpers.runWithDump(name);
 	}

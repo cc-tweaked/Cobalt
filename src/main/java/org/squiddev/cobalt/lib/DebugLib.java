@@ -29,12 +29,16 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.debug.DebugState;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LocalVariable;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
+import static org.squiddev.cobalt.function.LibFunction.bindV;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code debug}
@@ -48,39 +52,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see JsePlatform
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.9">http://www.lua.org/manual/5.1/manual.html#5.9</a>
  */
-public class DebugLib extends VarArgFunction implements LuaLibrary {
-	static final String[] NAMES = {
-		"debug",
-		"getfenv",
-		"gethook",
-		"getinfo",
-		"getlocal",
-		"getmetatable",
-		"getregistry",
-		"getupvalue",
-		"setfenv",
-		"sethook",
-		"setlocal",
-		"setmetatable",
-		"setupvalue",
-		"traceback",
-	};
-
-	private static final int DEBUG = 0;
-	private static final int GETFENV = 1;
-	private static final int GETHOOK = 2;
-	private static final int GETINFO = 3;
-	private static final int GETLOCAL = 4;
-	private static final int GETMETATABLE = 5;
-	private static final int GETREGISTRY = 6;
-	private static final int GETUPVALUE = 7;
-	private static final int SETFENV = 8;
-	private static final int SETHOOK = 9;
-	private static final int SETLOCAL = 10;
-	private static final int SETMETATABLE = 11;
-	private static final int SETUPVALUE = 12;
-	private static final int TRACEBACK = 13;
-
+public class DebugLib implements LuaLibrary {
 	private static final LuaString MAIN = valueOf("main");
 	private static final LuaString LUA = valueOf("Lua");
 	private static final LuaString C = valueOf("C");
@@ -102,60 +74,36 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString NPARAMS = valueOf("nparams");
 	private static final LuaString ISVARARG = valueOf("isvararg");
 
+	private LuaValue getinfo;
+
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		bind(t, DebugLib::new, NAMES);
+
+		bindV(t, "debug", (s, args) -> NONE);
+		bindV(t, "getfenv", (s, args) -> getfenv(args));
+		bindV(t, "gethook", DebugLib::gethook);
+		bindV(t, "getinfo", (s, args) -> getinfo(s, args, getinfo));
+		bindV(t, "getlocal", DebugLib::getlocal);
+		bindV(t, "getmetatable", DebugLib::getmetatable);
+		bindV(t, "getregistry", (s, args) -> getregistry(args));
+		bindV(t, "getupvalue", (s, args) -> getupvalue(args));
+		bindV(t, "setfenv", (s, args) -> setfenv(args));
+		bindV(t, "sethook", DebugLib::sethook);
+		bindV(t, "setlocal", DebugLib::setlocal);
+		bindV(t, "setmetatable", DebugLib::setmetatable);
+		bindV(t, "setupvalue", (s, args) -> setupvalue(args));
+		bindV(t, "traceback", DebugLib::traceback);
+
+		// FIXME: This is a terrible bodge. Is there a better way?
+		getinfo = t.rawget("getinfo");
+
 		env.rawset("debug", t);
 		state.loadedPackages.rawset("debug", t);
 		return t;
 	}
 
-	@Override
-	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-		switch (opcode) {
-			case DEBUG:
-				return _debug(args);
-			case GETFENV:
-				return _getfenv(args);
-			case GETHOOK:
-				return _gethook(state, args);
-			case GETINFO:
-				return _getinfo(state, args, this);
-			case GETLOCAL:
-				return _getlocal(state, args);
-			case GETMETATABLE:
-				return _getmetatable(state, args);
-			case GETREGISTRY:
-				return _getregistry(args);
-			case GETUPVALUE:
-				return _getupvalue(args);
-			case SETFENV:
-				return _setfenv(args);
-			case SETHOOK:
-				return _sethook(state, args);
-			case SETLOCAL:
-				return _setlocal(state, args);
-			case SETMETATABLE:
-				return _setmetatable(state, args);
-			case SETUPVALUE:
-				return _setupvalue(args);
-			case TRACEBACK:
-				return _traceback(state, args);
-			default:
-				return NONE;
-		}
-	}
-
-	// ------------------- library function implementations -----------------
-
-	// j2se subclass may wish to override and provide actual console here.
-	// j2me platform has not System.in to provide console.
-	private static Varargs _debug(Varargs args) {
-		return NONE;
-	}
-
-	private static Varargs _gethook(LuaState state, Varargs args) throws LuaError {
+	private static Varargs gethook(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		DebugState ds = thread.getDebugState();
@@ -174,7 +122,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 			valueOf(ds.hookcount));
 	}
 
-	private static Varargs _sethook(LuaState state, Varargs args) throws LuaError {
+	private static Varargs sethook(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		int i1 = a++;
@@ -203,20 +151,20 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return NONE;
 	}
 
-	private static Varargs _getfenv(Varargs args) throws LuaError {
+	private static Varargs getfenv(Varargs args) throws LuaError {
 		LuaValue object = args.first();
 		LuaValue env = object.getfenv();
 		return env != null ? env : NIL;
 	}
 
-	private static Varargs _setfenv(Varargs args) throws LuaError {
+	private static Varargs setfenv(Varargs args) throws LuaError {
 		LuaValue object = args.first();
 		LuaTable table = args.arg(2).checkTable();
 		object.setfenv(table);
 		return object;
 	}
 
-	protected static Varargs _getinfo(LuaState state, Varargs args, LuaValue level0func) throws LuaError {
+	protected static Varargs getinfo(LuaState state, Varargs args, LuaValue level0func) throws LuaError {
 		int arg = 1;
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 		LuaValue func = args.arg(arg);
@@ -299,7 +247,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return info;
 	}
 
-	private static Varargs _getlocal(LuaState state, Varargs args) throws LuaError {
+	private static Varargs getlocal(LuaState state, Varargs args) throws LuaError {
 		int arg = 1;
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 
@@ -327,7 +275,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		}
 	}
 
-	private static Varargs _setlocal(LuaState state, Varargs args) throws LuaError {
+	private static Varargs setlocal(LuaState state, Varargs args) throws LuaError {
 		int arg = 1;
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 		int level = args.arg(arg).checkInteger();
@@ -346,13 +294,13 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return name;
 	}
 
-	private static LuaValue _getmetatable(LuaState state, Varargs args) {
+	private static LuaValue getmetatable(LuaState state, Varargs args) {
 		LuaValue object = args.arg(1);
 		LuaValue mt = object.getMetatable(state);
 		return mt != null ? mt : NIL;
 	}
 
-	private static Varargs _setmetatable(LuaState state, Varargs args) {
+	private static Varargs setmetatable(LuaState state, Varargs args) {
 		LuaValue object = args.arg(1);
 		try {
 			LuaTable mt = args.arg(2).optTable(null);
@@ -384,7 +332,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		}
 	}
 
-	private static Varargs _getregistry(Varargs args) {
+	private static Varargs getregistry(Varargs args) {
 		return new LuaTable();
 	}
 
@@ -397,7 +345,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		}
 	}
 
-	private static Varargs _getupvalue(Varargs args) throws LuaError {
+	private static Varargs getupvalue(Varargs args) throws LuaError {
 		LuaValue func = args.arg(1).checkFunction();
 		int up = args.arg(2).checkInteger();
 		if (func instanceof LuaClosure) {
@@ -410,7 +358,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return NIL;
 	}
 
-	private static LuaValue _setupvalue(Varargs args) throws LuaError {
+	private static LuaValue setupvalue(Varargs args) throws LuaError {
 		LuaValue func = args.arg(1).checkFunction();
 		int up = args.arg(2).checkInteger();
 		LuaValue value = args.arg(3);
@@ -425,7 +373,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		return NIL;
 	}
 
-	private static LuaValue _traceback(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue traceback(LuaState state, Varargs args) throws LuaError {
 		int a = 1;
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		LuaValue messageValue = args.arg(a++);

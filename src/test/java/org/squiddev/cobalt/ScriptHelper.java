@@ -87,12 +87,7 @@ public class ScriptHelper extends FileResourceManipulator {
 	private void setupCommon(LuaState state) {
 		this.state = state;
 		globals = JsePlatform.debugGlobals(state);
-		globals.rawset("id_", new VarArgFunction() {
-			@Override
-			public Varargs invoke(LuaState state, Varargs args) {
-				return args;
-			}
-		});
+		globals.rawset("id_", new VarArgFunction((s, a) -> a));
 		TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
 	}
 

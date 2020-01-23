@@ -24,7 +24,10 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Varargs;
 
 /**
  * Abstract base class for Java function implementations that take no arguments and
@@ -48,24 +51,45 @@ import org.squiddev.cobalt.*;
  * @see ThreeArgFunction
  * @see VarArgFunction
  */
-public abstract class ZeroArgFunction extends LibFunction {
-	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
-		return call(state);
+public final class ZeroArgFunction extends LibFunction {
+	private final Delegate delegate;
+
+	public ZeroArgFunction(String name, Delegate delegate) {
+		this.name = name;
+		this.delegate = delegate;
+	}
+
+	public ZeroArgFunction(Delegate delegate) {
+		this.delegate = delegate;
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
-		return call(state);
+	public LuaValue call(LuaState state) throws LuaError {
+		return delegate.call(state);
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
-		return call(state);
+	public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+		return delegate.call(state);
 	}
 
 	@Override
-	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
-		return call(state);
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return delegate.call(state);
+	}
+
+	@Override
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+		return delegate.call(state);
+	}
+
+	@Override
+	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
+		return delegate.call(state);
+	}
+
+	@FunctionalInterface
+	public interface Delegate {
+		LuaValue call(LuaState state) throws LuaError;
 	}
 }

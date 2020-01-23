@@ -24,7 +24,10 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Varargs;
 
 import static org.squiddev.cobalt.Constants.NIL;
 
@@ -52,24 +55,45 @@ import static org.squiddev.cobalt.Constants.NIL;
  * @see ThreeArgFunction
  * @see VarArgFunction
  */
-public abstract class TwoArgFunction extends LibFunction {
-	@Override
-	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
-		return call(state, NIL, NIL);
+public final class TwoArgFunction extends LibFunction {
+	private final Delegate delegate;
+
+	public TwoArgFunction(String name, Delegate delegate) {
+		this.name = name;
+		this.delegate = delegate;
+	}
+
+	public TwoArgFunction(Delegate delegate) {
+		this.delegate = delegate;
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
-		return call(state, arg, NIL);
+	public LuaValue call(LuaState state) throws LuaError {
+		return delegate.call(state, NIL, NIL);
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
-		return call(state, arg1, arg2);
+	public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+		return delegate.call(state, arg, NIL);
 	}
 
 	@Override
-	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
-		return call(state, varargs.first(), varargs.arg(2));
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return delegate.call(state, arg1, arg2);
+	}
+
+	@Override
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+		return delegate.call(state, arg1, arg2);
+	}
+
+	@Override
+	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError {
+		return delegate.call(state, varargs.first(), varargs.arg(2));
+	}
+
+	@FunctionalInterface
+	public interface Delegate {
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError;
 	}
 }

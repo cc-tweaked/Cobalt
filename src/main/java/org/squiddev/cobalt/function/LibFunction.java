@@ -192,4 +192,26 @@ public abstract class LibFunction extends LuaFunction {
 			env.rawset(f.name, f);
 		}
 	}
+
+	public static void bind0(LuaTable table, String name, ZeroArgFunction.Delegate func) {
+		table.rawset(name, new ZeroArgFunction(name, func));
+	}
+
+	public static void bind1(LuaTable table, String name, OneArgFunction.Delegate func) {
+		table.rawset(name, new OneArgFunction(name, func));
+	}
+
+	public static void bind2(LuaTable table, String name, TwoArgFunction.Delegate func) {
+		table.rawset(name, new TwoArgFunction(name, func));
+	}
+
+	public static void bind3(LuaTable table, String name, ThreeArgFunction.Delegate func) {
+		table.rawset(name, new ThreeArgFunction(name, func));
+	}
+
+	public static LibFunction bindV(LuaTable table, String name, VarArgFunction.Delegate func) {
+		LibFunction function = new VarArgFunction(name, func);
+		table.rawset(name, function);
+		return function;
+	}
 }

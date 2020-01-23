@@ -32,32 +32,63 @@ import org.squiddev.cobalt.debug.DebugState;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_JAVA;
 
-public abstract class ResumableVarArgFunction<T> extends LibFunction implements Resumable<Object> {
+public final class ResumableVarArgFunction<T> extends LibFunction implements Resumable<Object> {
 	private static final Object CALL_MARKER = new Object();
 	private static final Object RETURN_MARKER = new Object();
+	private static final Resume<?> DEFAULT_RESUME = (state, object, value) -> value;
+	public static final ResumeError<?> DEFAULT_ERROR = (state, object, error) -> {
+		throw error;
+	};
+
+	private final Invoke<T> invoke;
+	private final Resume<T> resume;
+	private final ResumeError<T> resumeError;
+
+	@SuppressWarnings("unchecked")
+	public static <T> Resume<T> defaultResume() {
+		return (Resume<T>) DEFAULT_RESUME;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> ResumeError<T> defaultResumeError() {
+		return (ResumeError<T>) DEFAULT_ERROR;
+	}
+
+	public ResumableVarArgFunction(Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
+		this.invoke = invoke;
+		this.resume = resume;
+		this.resumeError = resumeError;
+	}
+
+	public ResumableVarArgFunction(String name, Invoke<T> invoke, Resume<T> resume, ResumeError<T> resumeError) {
+		this.name = name;
+		this.invoke = invoke;
+		this.resume = resume;
+		this.resumeError = resumeError;
+	}
 
 	@Override
-	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
+	public LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return invoke(state, Constants.NONE).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
+	public LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
 		return invoke(state, arg).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2)).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
 	}
 
 	@Override
-	public final Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		DebugState ds = DebugHandler.getDebugState(state);
 
 		// Push the frame
@@ -74,13 +105,13 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 			}
 		}
 
-		Varargs result = invoke(state, di, args);
+		Varargs result = invoke.invoke(state, di, args);
 		onReturn(state.debug, ds, di, result);
 		return result;
 	}
 
 	@Override
-	public final Varargs resume(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
+	public Varargs resume(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
 		DebugState ds = DebugHandler.getDebugState(state);
 
 		if (object == CALL_MARKER) {
@@ -93,7 +124,7 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 
 			// Reset the state and invoke the main function
 			di.state = null;
-			Varargs result = invoke(state, di, di.extras);
+			Varargs result = invoke.invoke(state, di, di.extras);
 			onReturn(state.debug, ds, di, result);
 			return result;
 		} else if (object == RETURN_MARKER) {
@@ -107,30 +138,22 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 			return args;
 		} else {
 			@SuppressWarnings("unchecked")
-			Varargs result = resumeThis(state, (T) object, value);
+			Varargs result = resume.resume(state, (T) object, value);
 			onReturn(state.debug, ds, ds.getStackUnsafe(), result);
 			return result;
 		}
 	}
 
 	@Override
-	public final Varargs resumeError(LuaState state, Object object, LuaError error) throws LuaError, UnwindThrowable {
+	public Varargs resumeError(LuaState state, Object object, LuaError error) throws LuaError, UnwindThrowable {
 		if (object == RETURN_MARKER || object == CALL_MARKER) throw error;
 
 		@SuppressWarnings("unchecked")
-		Varargs result = resumeErrorThis(state, (T) object, error);
+		Varargs result = resumeError.resumeError(state, (T) object, error);
 
 		DebugState ds = DebugHandler.getDebugState(state);
 		onReturn(state.debug, ds, ds.getStack(), result);
 		return result;
-	}
-
-	protected abstract Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable;
-
-	protected abstract Varargs resumeThis(LuaState state, T object, Varargs value) throws LuaError, UnwindThrowable;
-
-	protected Varargs resumeErrorThis(LuaState state, T object, LuaError error) throws LuaError, UnwindThrowable {
-		throw error;
 	}
 
 	private static void onReturn(DebugHandler debug, DebugState ds, DebugFrame di, Varargs result) throws LuaError, UnwindThrowable {
@@ -141,5 +164,20 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 			di.extras = result;
 			throw e;
 		}
+	}
+
+	@FunctionalInterface
+	public interface Invoke<T> {
+		Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable;
+	}
+
+	@FunctionalInterface
+	public interface Resume<T> {
+		Varargs resume(LuaState state, T object, Varargs args) throws LuaError, UnwindThrowable;
+	}
+
+	@FunctionalInterface
+	public interface ResumeError<T> {
+		Varargs resumeError(LuaState state, T obj, LuaError error) throws LuaError, UnwindThrowable;
 	}
 }

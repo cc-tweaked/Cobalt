@@ -61,12 +61,7 @@ public class TypeTest {
 	private final LuaValue stringlong = valueOf(samplestringlong);
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
 	private final LuaTable table = tableOf();
-	private final LuaFunction somefunc = new ZeroArgFunction() {
-		@Override
-		public LuaValue call(LuaState state) {
-			return NONE;
-		}
-	};
+	private final LuaFunction somefunc = new ZeroArgFunction(state -> NIL);
 	private final LuaThread thread = new LuaThread(new LuaState(), somefunc, table);
 	private final LuaClosure someclosure = new LuaInterpretedFunction(new Prototype());
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);

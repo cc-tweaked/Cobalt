@@ -26,11 +26,15 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.function.LibFunction.bind1;
+import static org.squiddev.cobalt.function.LibFunction.bindV;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code table}
@@ -46,55 +50,40 @@ public class TableLib implements LuaLibrary {
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		LibFunction.bind(t, TableLib1::new, new String[]{"getn", "maxn",});
-		LibFunction.bind(t, TableLibV::new, new String[]{"remove", "concat", "insert"});
+		bind1(t, "getn", (s, arg) -> arg.checkTable().getn());
+		bind1(t, "maxn", (s, arg) -> valueOf(arg.checkTable().maxn()));
+		bindV(t, "remove", TableLib::remove);
+		bindV(t, "concat", TableLib::concat);
+		bindV(t, "insert", TableLib::insert);
 		LibFunction.bind(t, TableLibR::new, new String[]{"sort", "foreach", "foreachi"});
 		env.rawset("table", t);
 		state.loadedPackages.rawset("table", t);
 		return t;
 	}
 
-	private static final class TableLib1 extends OneArgFunction {
-
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			switch (opcode) {
-				case 0:  // "getn" (table) -> number
-					return arg.checkTable().getn();
-				case 1: // "maxn"  (table) -> number
-					return valueOf(arg.checkTable().maxn());
-			}
-			return NIL;
-		}
+	static Varargs remove(LuaState state, Varargs args) throws LuaError {
+		// "remove" (table [, pos]) -> removed-ele
+		LuaTable table = args.arg(1).checkTable();
+		int pos = args.arg(2).optInteger(table.length());
+		return table.remove(pos);
 	}
 
-	private static final class TableLibV extends VarArgFunction {
-		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-			switch (opcode) {
-				case 0: { // "remove" (table [, pos]) -> removed-ele
-					LuaTable table = args.arg(1).checkTable();
-					int pos = args.count() > 1 ? args.arg(2).checkInteger() : 0;
-					return table.remove(pos);
-				}
-				case 1: { // "concat" (table [, sep [, i [, j]]]) -> string
-					LuaTable table = args.arg(1).checkTable();
-					return table.concat(
-						args.arg(2).optLuaString(EMPTYSTRING),
-						args.arg(3).optInteger(1),
-						args.exists(4) ? args.arg(4).checkInteger() : table.length());
-				}
-				case 2: { // "insert" (table, [pos,] value) -> prev-ele
-					final LuaTable table = args.arg(1).checkTable();
-					final int pos = args.count() > 2 ? args.arg(2).checkInteger() : 0;
-					final LuaValue value = args.arg(args.count() > 2 ? 3 : 2);
-					table.insert(pos, value);
-					return NONE;
-				}
-				default:
-					return NONE;
-			}
-		}
+	static Varargs concat(LuaState state, Varargs args) throws LuaError {
+		// "concat" (table [, sep [, i [, j]]]) -> string
+		LuaTable table = args.arg(1).checkTable();
+		return table.concat(
+			args.arg(2).optLuaString(EMPTYSTRING),
+			args.arg(3).optInteger(1),
+			args.exists(4) ? args.arg(4).checkInteger() : table.length());
+	}
+
+	static Varargs insert(LuaState state, Varargs args) throws LuaError {
+		// "insert" (table, [pos,] value) -> prev-ele
+		final LuaTable table = args.arg(1).checkTable();
+		final int pos = args.count() > 2 ? args.arg(2).checkInteger() : 0;
+		final LuaValue value = args.arg(args.count() > 2 ? 3 : 2);
+		table.insert(pos, value);
+		return NONE;
 	}
 
 	private static final class TableLibR extends ResumableVarArgFunction<Object> {

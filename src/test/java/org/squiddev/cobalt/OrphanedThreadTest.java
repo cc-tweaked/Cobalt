@@ -75,12 +75,8 @@ public class OrphanedThreadTest {
 
 		// And force coroutine.yield to actually be a blocking one.
 		env = JsePlatform.standardGlobals(state);
-		((LuaTable) env.rawget("coroutine")).rawset("yield", new VarArgFunction() {
-			@Override
-			public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-				return OperationHelper.noUnwind(state, () -> LuaThread.yield(state, args));
-			}
-		});
+		((LuaTable) env.rawget("coroutine")).rawset("yield", new VarArgFunction(
+			(state, args) -> OperationHelper.noUnwind(state, () -> LuaThread.yield(state, args))));
 	}
 
 	@AfterEach
@@ -90,19 +86,19 @@ public class OrphanedThreadTest {
 
 	@Test
 	public void testCollectOrphanedNormalThread() throws Exception {
-		function = new NormalFunction();
+		function = new OneArgFunction(this::normalFunction);
 		doTest(true, ZERO);
 	}
 
 	@Test
 	public void testCollectOrphanedEarlyCompletionThread() throws Exception {
-		function = new EarlyCompletionFunction();
+		function = new OneArgFunction(this::earlyCompletionFunction);
 		doTest(true, ZERO);
 	}
 
 	@Test
 	public void testCollectOrphanedAbnormalThread() throws Exception {
-		function = new AbnormalFunction();
+		function = new OneArgFunction(this::abnormalFunction);
 		doTest(false, valueOf("abnormal condition"));
 	}
 
@@ -231,47 +227,38 @@ public class OrphanedThreadTest {
 	}
 
 
-	private static class NormalFunction extends OneArgFunction {
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			try {
-				System.out.println("in normal.1, arg is " + arg);
-				arg = LuaThread.yieldBlocking(state, ONE).first();
-				System.out.println("in normal.2, arg is " + arg);
-				arg = LuaThread.yieldBlocking(state, ZERO).first();
-				System.out.println("in normal.3, arg is " + arg);
-				return NONE;
-			} catch (InterruptedException e) {
-				throw new InterruptedError(e);
-			}
+	public LuaValue normalFunction(LuaState state, LuaValue arg) throws LuaError {
+		try {
+			System.out.println("in normal.1, arg is " + arg);
+			arg = LuaThread.yieldBlocking(state, ONE).first();
+			System.out.println("in normal.2, arg is " + arg);
+			arg = LuaThread.yieldBlocking(state, ZERO).first();
+			System.out.println("in normal.3, arg is " + arg);
+			return NIL;
+		} catch (InterruptedException e) {
+			throw new InterruptedError(e);
 		}
 	}
 
-	private static class EarlyCompletionFunction extends OneArgFunction {
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			try {
-				System.out.println("in early.1, arg is " + arg);
-				arg = LuaThread.yieldBlocking(state, ONE).first();
-				System.out.println("in early.2, arg is " + arg);
-				return ZERO;
-			} catch (InterruptedException e) {
-				throw new InterruptedError(e);
-			}
+	public LuaValue earlyCompletionFunction(LuaState state, LuaValue arg) throws LuaError {
+		try {
+			System.out.println("in early.1, arg is " + arg);
+			arg = LuaThread.yieldBlocking(state, ONE).first();
+			System.out.println("in early.2, arg is " + arg);
+			return ZERO;
+		} catch (InterruptedException e) {
+			throw new InterruptedError(e);
 		}
 	}
 
-	private static class AbnormalFunction extends OneArgFunction {
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			try {
-				System.out.println("in abnormal.1, arg is " + arg);
-				arg = LuaThread.yieldBlocking(state, ONE).first();
-				System.out.println("in abnormal.2, arg is " + arg);
-				throw new LuaError("abnormal condition");
-			} catch (InterruptedException e) {
-				throw new InterruptedError(e);
-			}
+	public LuaValue abnormalFunction(LuaState state, LuaValue arg) throws LuaError {
+		try {
+			System.out.println("in abnormal.1, arg is " + arg);
+			arg = LuaThread.yieldBlocking(state, ONE).first();
+			System.out.println("in abnormal.2, arg is " + arg);
+			throw new LuaError("abnormal condition");
+		} catch (InterruptedException e) {
+			throw new InterruptedError(e);
 		}
 	}
 }

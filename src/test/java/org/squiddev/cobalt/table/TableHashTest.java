@@ -161,13 +161,10 @@ public class TableHashTest {
 		final LuaTable t = new LuaTable();
 		final LuaTable mt = new LuaTable();
 
-		final TwoArgFunction fb = new TwoArgFunction() {
-			@Override
-			public LuaValue call(LuaState state, LuaValue tbl, LuaValue key) {
-				assertEquals(tbl, t);
-				return ValueFactory.valueOf("from mt: " + key);
-			}
-		};
+		final TwoArgFunction fb = new TwoArgFunction((state, tbl, key) -> {
+			assertEquals(tbl, t);
+			return ValueFactory.valueOf("from mt: " + key);
+		});
 
 		// set basic values
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("ppp"), ValueFactory.valueOf("abc"));

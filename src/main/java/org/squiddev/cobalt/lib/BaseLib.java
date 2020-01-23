@@ -29,7 +29,9 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.ResumableVarArgFunction;
+import org.squiddev.cobalt.function.ZeroArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
@@ -40,6 +42,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_ERROR;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
+import static org.squiddev.cobalt.function.LibFunction.*;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua basic library functions.
@@ -63,33 +66,6 @@ public class BaseLib implements LuaLibrary {
 	private LuaValue next;
 	private LuaValue inext;
 
-	private static final String[] LIB2_KEYS = {
-		"collectgarbage", // ( opt [,arg] ) -> value
-		"error", // ( message [,level] ) -> ERR
-		"setfenv", // (f, table) -> void
-	};
-	private static final String[] LIBV_KEYS = {
-		"assert", // ( v [,message] ) -> v, message | ERR
-		"dofile", // ( filename ) -> result1, ...
-		"getfenv", // ( [f] ) -> env
-		"getmetatable", // ( object ) -> table
-		"loadfile", // ( [filename] ) -> chunk | nil, msg
-		"loadstring", // ( string [,chunkname] ) -> chunk | nil, msg
-		"print", // (...) -> void
-		"select", // (f, ...) -> value1, ...
-		"unpack", // (list [,i [,j]]) -> result1, ...
-		"type",  // (v) -> value
-		"rawequal", // (v1, v2) -> boolean
-		"rawget", // (table, index) -> value
-		"rawset", // (table, index, value) -> table
-		"setmetatable", // (table, metatable) -> table
-		"tostring", // (e) -> value
-		"tonumber", // (e [,base]) -> value
-		"pairs", // "pairs" (t) -> iter-func, t, nil
-		"ipairs", // "ipairs", // (t) -> iter-func, t, 0
-		"next", // "next"  ( table, [index] ) -> next-index, next-value
-		"__inext", // "inext" ( table, [int-index] ) -> next-index, next-value
-	};
 	private static final String[] LIBR_KEYS = {
 		"pcall", // (f, arg1, ...) -> status, result1, ...
 		"xpcall", // (f, err) -> result1, ...
@@ -100,8 +76,31 @@ public class BaseLib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		env.rawset("_G", env);
 		env.rawset("_VERSION", valueOf(Lua._VERSION));
-		LibFunction.bind(env, BaseLib2::new, LIB2_KEYS);
-		LibFunction.bind(env, () -> new BaseLibV(this), LIBV_KEYS);
+
+		bindV(env, "assert", BaseLib::assert_);
+		bindV(env, "dofile", BaseLib::dofile);
+		bindV(env, "getfenv", BaseLib::getfenv);
+		bindV(env, "getmetatable", BaseLib::getmetatable);
+		bindV(env, "loadfile", BaseLib::loadfile);
+		bindV(env, "loadstring", BaseLib::loadstring);
+		bindV(env, "print", BaseLib::print);
+		bindV(env, "select", BaseLib::select);
+		bindV(env, "unpack", BaseLib::unpack);
+		bindV(env, "type", BaseLib::type);
+		bindV(env, "rawequal", BaseLib::rawequal);
+		bindV(env, "rawget", BaseLib::rawget);
+		bindV(env, "rawset", BaseLib::rawset);
+		bindV(env, "setmetatable", BaseLib::setmetatable);
+		bindV(env, "tostring", BaseLib::tostring);
+		bindV(env, "tonumber", BaseLib::tonumber);
+		bindV(env, "pairs", this::pairs);
+		bindV(env, "ipairs", this::ipairs);
+		bindV(env, "next", BaseLib::next);
+		bindV(env, "__inext", BaseLib::inext);
+		bind1(env, "collectgarbage", BaseLib::collectGarbage);
+		bind2(env, "error", BaseLib::error);
+		bindV(env, "setfenv", BaseLib::setfenv);
+
 		LibFunction.bind(env, BaseLibR::new, LIBR_KEYS);
 
 		// remember next, and inext for use in pairs and ipairs
@@ -113,207 +112,227 @@ public class BaseLib implements LuaLibrary {
 		return env;
 	}
 
-	private static final class BaseLib2 extends TwoArgFunction {
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
-			switch (opcode) {
-				case 0: // "collectgarbage", // ( opt [,arg] ) -> value
-					String s = arg1.optString("collect");
-					if ("collect".equals(s)) {
-						System.gc();
-						return Constants.ZERO;
-					} else if ("count".equals(s)) {
-						Runtime rt = Runtime.getRuntime();
-						long used = rt.totalMemory() - rt.freeMemory();
-						return valueOf(used / 1024.);
-					} else if ("step".equals(s)) {
-						System.gc();
-						return Constants.TRUE;
-					} else {
-						throw ErrorFactory.argError(1, "invalid option");
-					}
-				case 1: // "error", // ( message [,level] ) -> ERR
-					throw new LuaError(arg1.isNil() ? Constants.NIL : arg1, arg2.optInteger(1));
-				case 2: { // "setfenv", // (f, table) -> void
-					LuaTable t = arg2.checkTable();
-					LuaValue f = getfenvobj(state, arg1);
-					if (!f.isThread() && !f.isClosure()) {
-						throw new LuaError("'setfenv' cannot change environment of given object");
-					}
-					f.setfenv(t);
-					return f.isThread() ? Constants.NONE : f;
-				}
-			}
-			return Constants.NIL;
+	private static LuaValue collectGarbage(LuaState state, LuaValue mode) throws LuaError {
+		String modeStr = mode.optString("collect");
+		switch (modeStr) {
+			case "collect":
+				System.gc();
+				return Constants.ZERO;
+			case "count":
+				Runtime rt = Runtime.getRuntime();
+				long used = rt.totalMemory() - rt.freeMemory();
+				return valueOf(used / 1024.);
+			case "step":
+				System.gc();
+				return Constants.TRUE;
+			default:
+				throw ErrorFactory.argError(1, "invalid option");
 		}
 	}
 
-	private static LuaValue getfenvobj(LuaState state, LuaValue arg) throws LuaError {
-		if (arg.isFunction()) {
-			return arg;
+	private static Varargs setfenv(LuaState state, Varargs args) throws LuaError {
+		LuaTable t = args.arg(2).checkTable();
+		LuaValue f = getfenvobj(state, args.arg(1));
+		if (!f.isThread() && !f.isClosure()) {
+			throw new LuaError("'setfenv' cannot change environment of given object");
 		}
+		f.setfenv(t);
+		return f.isThread() ? Constants.NONE : f;
+	}
+
+	private static LuaValue error(LuaState state, LuaValue message, LuaValue level) throws LuaError {
+		throw new LuaError(message, level.optInteger(1));
+	}
+
+	private static LuaValue getfenvobj(LuaState state, LuaValue arg) throws LuaError {
+		if (arg.isFunction()) return arg;
+
 		int level = arg.optInteger(1);
 		Varargs.argCheck(level >= 0, 1, "level must be non-negative");
-		if (level == 0) {
-			return state.getCurrentThread();
-		}
+		if (level == 0) return state.getCurrentThread();
 		LuaValue f = LuaThread.getCallstackFunction(state, level - 1);
 		Varargs.argCheck(f != null, 1, "invalid level");
 		return f;
 	}
 
-	private static final class BaseLibV extends VarArgFunction {
-		private final BaseLib baselib;
-
-		private BaseLibV(BaseLib baselib) {
-			this.baselib = baselib;
+	static Varargs assert_(LuaState state, Varargs args) throws LuaError {
+		// ( v [,message] ) -> v, message | ERR
+		if (!args.first().toBoolean()) {
+			throw new LuaError(args.count() > 1 ? args.arg(2).optString("assertion failed!") : "assertion failed!");
 		}
+		return args;
+	}
 
-		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
-			// Note: Only dofile and tostring throw UnwindThrowable. This is safe, as it's a tail call.
+	static Varargs dofile(LuaState state, Varargs args) throws LuaError {
+		// ( filename ) -> result1, ...
+		Varargs v = args.isNil(1) ?
+			BaseLib.loadStream(state, state.stdin, STDIN_STR) :
+			BaseLib.loadFile(state, args.arg(1).checkString());
+		if (v.isNil(1)) {
+			throw new LuaError(v.arg(2).toString());
+		} else {
+			// TODO:
+			return OperationHelper.noUnwind(state, () -> OperationHelper.invoke(state, v.first(), Constants.NONE));
+		}
+	}
 
-			switch (opcode) {
-				case 0: // "assert", // ( v [,message] ) -> v, message | ERR
-					if (!args.first().toBoolean()) {
-						throw new LuaError(args.count() > 1 ? args.arg(2).optString("assertion failed!") : "assertion failed!");
-					}
-					return args;
-				case 1: // "dofile", // ( filename ) -> result1, ...
-				{
-					Varargs v = args.isNil(1) ?
-						BaseLib.loadStream(state, state.stdin, STDIN_STR) :
-						BaseLib.loadFile(state, args.arg(1).checkString());
-					if (v.isNil(1)) {
-						throw new LuaError(v.arg(2).toString());
-					} else {
-						return OperationHelper.invoke(state, v.first(), Constants.NONE);
-					}
-				}
-				case 2: // "getfenv", // ( [f] ) -> env
-				{
-					LuaValue f = getfenvobj(state, args.first());
-					LuaValue e = f.getfenv();
-					return e != null ? e : Constants.NIL;
-				}
-				case 3: // "getmetatable", // ( object ) -> table
-				{
-					LuaTable mt = args.checkValue(1).getMetatable(state);
-					return mt != null ? mt.rawget(Constants.METATABLE).optValue(mt) : Constants.NIL;
-				}
-				case 4: // "loadfile", // ( [filename] ) -> chunk | nil, msg
-				{
-					return args.isNil(1) ?
-						BaseLib.loadStream(state, state.stdin, STDIN_STR) :
-						BaseLib.loadFile(state, args.arg(1).checkString());
-				}
-				case 5: // "loadstring", // ( string [,chunkname] ) -> chunk | nil, msg
-				{
-					LuaString script = args.arg(1).checkLuaString();
-					return BaseLib.loadStream(state, script.toInputStream(), args.arg(2).optLuaString(script));
-				}
-				case 6: // "print", // (...) -> void
-				{
-					return noUnwind(state, () -> {
-						LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
-						for (int i = 1, n = args.count(); i <= n; i++) {
-							if (i > 1) state.stdout.write('\t');
-							LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
-							int z = s.indexOf((byte) 0, 0);
-							state.stdout.write(s.bytes, s.offset, z >= 0 ? z : s.length);
-						}
-						state.stdout.println();
-						return Constants.NONE;
-					});
-				}
-				case 7: // "select", // (f, ...) -> value1, ...
-				{
-					int n = args.count() - 1;
-					if (args.first().equals(valueOf("#"))) {
-						return valueOf(n);
-					}
-					int i = args.arg(1).checkInteger();
-					if (i == 0 || i < -n) {
-						throw ErrorFactory.argError(1, "index out of range");
-					}
-					return args.subargs(i < 0 ? n + i + 2 : i + 1);
-				}
-				case 8: // "unpack", // (list [,i [,j]]) -> result1, ...
-				{
-					int na = args.count();
-					LuaTable t = args.arg(1).checkTable();
-					int n = t.length();
-					int i = na >= 2 ? args.arg(2).optInteger(1) : 1;
-					int j = na >= 3 ? args.arg(3).optInteger(n) : n;
-					n = j - i + 1;
-					if (n < 0) return Constants.NONE;
-					if (n == 1) return t.rawget(i);
-					if (n == 2) return varargsOf(t.rawget(i), t.rawget(j));
-					LuaValue[] v = new LuaValue[n];
-					for (int k = 0; k < n; k++) {
-						v[k] = t.rawget(i + k);
-					}
-					return varargsOf(v);
-				}
-				case 9: // "type",  // (v) -> value
-					return valueOf(args.checkValue(1).typeName());
-				case 10: // "rawequal", // (v1, v2) -> boolean
-					return valueOf(args.checkValue(1) == args.checkValue(2));
-				case 11: // "rawget", // (table, index) -> value
-					return args.arg(1).checkTable().rawget(args.checkValue(2));
-				case 12: { // "rawset", // (table, index, value) -> table
-					LuaTable t = args.arg(1).checkTable();
-					LuaValue k = args.checkValue(2);
-					LuaValue v = args.checkValue(3);
-					if (k.isNil()) throw new LuaError("table index is nil");
-					t.rawset(k.checkValidKey(), v);
-					return t;
-				}
-				case 13: { // "setmetatable", // (table, metatable) -> table
-					final LuaValue t = args.first();
-					final LuaTable mt0 = t.getMetatable(state);
-					if (mt0 != null && !mt0.rawget(Constants.METATABLE).isNil()) {
-						throw new LuaError("cannot change a protected metatable");
-					}
-					final LuaValue mt = args.checkValue(2);
-					t.setMetatable(state, mt.isNil() ? null : mt.checkTable());
-					return t;
-				}
-				case 14: { // "tostring", // (e) -> value
-					LuaValue arg = args.checkValue(1);
-					LuaValue h = arg.metatag(state, Constants.TOSTRING);
-					if (!h.isNil()) {
-						return OperationHelper.call(state, h, arg);
-					}
-					LuaValue v = arg.toLuaString();
-					if (!v.isNil()) {
-						return v;
-					}
-					return valueOf(arg.toString());
-				}
-				case 15: { // "tonumber", // (e [,base]) -> value
-					LuaValue arg1 = args.checkValue(1);
-					final int base = args.arg(2).optInteger(10);
-					if (base == 10) {  /* standard conversion */
-						return arg1.toNumber();
-					} else {
-						if (base < 2 || base > 36) {
-							throw ErrorFactory.argError(2, "base out of range");
-						}
-						return arg1.checkLuaString().tonumber(base);
-					}
-				}
-				case 16: // "pairs" (t) -> iter-func, t, nil
-					return varargsOf(baselib.next, args.arg(1).checkTable(), Constants.NIL);
-				case 17: // "ipairs", // (t) -> iter-func, t, 0
-					return varargsOf(baselib.inext, args.arg(1).checkTable(), Constants.ZERO);
-				case 18: // "next"  ( table, [index] ) -> next-index, next-value
-					return args.arg(1).checkTable().next(args.arg(2));
-				case 19: // "inext" ( table, [int-index] ) -> next-index, next-value
-					return args.arg(1).checkTable().inext(args.arg(2));
+	static Varargs getfenv(LuaState state, Varargs args) throws LuaError {
+		// ( [f] ) -> env
+		LuaValue f = getfenvobj(state, args.first());
+		LuaValue e = f.isClosure() || f.isThread() ? f.getfenv() : state.getMainThread().getfenv();
+		return e != null ? e : Constants.NIL;
+	}
+
+	static Varargs getmetatable(LuaState state, Varargs args) throws LuaError {
+		// ( object ) -> table
+		LuaTable mt = args.checkValue(1).getMetatable(state);
+		return mt != null ? mt.rawget(Constants.METATABLE).optValue(mt) : Constants.NIL;
+	}
+
+	static Varargs loadfile(LuaState state, Varargs args) throws LuaError {
+		// ( [filename] ) -> chunk | nil, msg
+		return args.isNil(1) ?
+			BaseLib.loadStream(state, state.stdin, STDIN_STR) :
+			BaseLib.loadFile(state, args.arg(1).checkString());
+	}
+
+	static Varargs loadstring(LuaState state, Varargs args) throws LuaError {
+		// ( string [,chunkname] ) -> chunk | nil, msg
+		LuaString script = args.arg(1).checkLuaString();
+		return BaseLib.loadStream(state, script.toInputStream(), args.arg(2).optLuaString(script));
+	}
+
+	static Varargs print(LuaState state, Varargs args) throws LuaError {
+		// (...) -> void
+		return noUnwind(state, () -> {
+			LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
+			for (int i = 1, n = args.count(); i <= n; i++) {
+				if (i > 1) state.stdout.write('\t');
+				LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
+				int z = s.indexOf((byte) 0, 0);
+				state.stdout.write(s.bytes, s.offset, z >= 0 ? z : s.length);
 			}
+			state.stdout.println();
 			return Constants.NONE;
+		});
+	}
+
+	static Varargs select(LuaState state, Varargs args) throws LuaError {
+		// (f, ...) -> value1, ...
+		int n = args.count() - 1;
+		if (args.first().equals(valueOf("#"))) {
+			return valueOf(n);
 		}
+		int i = args.arg(1).checkInteger();
+		if (i == 0 || i < -n) {
+			throw ErrorFactory.argError(1, "index out of range");
+		}
+		return args.subargs(i < 0 ? n + i + 2 : i + 1);
+	}
+
+	static Varargs unpack(LuaState state, Varargs args) throws LuaError {
+		// (list [,i [,j]]) -> result1, ...
+
+		int na = args.count();
+		LuaTable t = args.arg(1).checkTable();
+		int n = t.length();
+		int i = na >= 2 ? args.arg(2).optInteger(1) : 1;
+		int j = na >= 3 ? args.arg(3).optInteger(n) : n;
+		n = j - i + 1;
+		if (n < 0) return Constants.NONE;
+		if (n == 1) return t.rawget(i);
+		if (n == 2) return varargsOf(t.rawget(i), t.rawget(j));
+		LuaValue[] v = new LuaValue[n];
+		for (int k = 0; k < n; k++) {
+			v[k] = t.rawget(i + k);
+		}
+		return varargsOf(v);
+	}
+
+	static Varargs type(LuaState state, Varargs args) throws LuaError {
+		// (v) -> value
+		return valueOf(args.checkValue(1).typeName());
+	}
+
+	static Varargs rawequal(LuaState state, Varargs args) throws LuaError {
+		// (v1, v2) -> boolean
+		return valueOf(args.checkValue(1) == args.checkValue(2));
+	}
+
+	static Varargs rawget(LuaState state, Varargs args) throws LuaError {
+		// (table, index) -> value
+		return args.arg(1).checkTable().rawget(args.checkValue(2));
+	}
+
+	static Varargs rawset(LuaState state, Varargs args) throws LuaError {
+		// (table, index, value) -> table
+		LuaTable t = args.arg(1).checkTable();
+		LuaValue k = args.checkValue(2);
+		LuaValue v = args.checkValue(3);
+		if (k.isNil()) throw new LuaError("table index is nil");
+		t.rawset(k.checkValidKey(), v);
+		return t;
+	}
+
+	static Varargs setmetatable(LuaState state, Varargs args) throws LuaError {
+		// (table, metatable) -> table
+		final LuaValue t = args.first();
+		final LuaTable mt0 = t.getMetatable(state);
+		if (mt0 != null && !mt0.rawget(Constants.METATABLE).isNil()) {
+			throw new LuaError("cannot change a protected metatable");
+		}
+		final LuaValue mt = args.checkValue(2);
+		t.setMetatable(state, mt.isNil() ? null : mt.checkTable());
+		return t;
+	}
+
+	static Varargs tostring(LuaState state, Varargs args) throws LuaError {
+		// (e) -> value
+		LuaValue arg = args.checkValue(1);
+		LuaValue h = arg.metatag(state, Constants.TOSTRING);
+		if (!h.isNil()) {
+			// TODO:
+			return OperationHelper.noUnwind(state, () -> OperationHelper.call(state, h, arg));
+		}
+		LuaValue v = arg.toLuaString();
+		if (!v.isNil()) {
+			return v;
+		}
+		return valueOf(arg.toString());
+	}
+
+	static Varargs tonumber(LuaState state, Varargs args) throws LuaError {
+		// (e [,base]) -> value
+		LuaValue arg1 = args.checkValue(1);
+		final int base = args.arg(2).optInteger(10);
+		if (base == 10) {  /* standard conversion */
+			return arg1.toNumber();
+		} else {
+			if (base < 2 || base > 36) {
+				throw ErrorFactory.argError(2, "base out of range");
+			}
+			return arg1.checkLuaString().tonumber(base);
+		}
+	}
+
+	Varargs pairs(LuaState state, Varargs args) throws LuaError {
+		//(t) -> iter-func, t, nil
+		return varargsOf(next, args.arg(1).checkTable(), Constants.NIL);
+	}
+
+	Varargs ipairs(LuaState state, Varargs args) throws LuaError {
+		// (t) -> iter-func, t, 0
+		return varargsOf(inext, args.arg(1).checkTable(), Constants.ZERO);
+	}
+
+	static Varargs next(LuaState state, Varargs args) throws LuaError {
+		// ( table, [index] ) -> next-index, next-value
+		return args.arg(1).checkTable().next(args.arg(2));
+	}
+
+	static Varargs inext(LuaState state, Varargs args) throws LuaError {
+		// ( table, [int-index] ) -> next-index, next-value
+		return args.arg(1).checkTable().inext(args.arg(2));
 	}
 
 	private static class BaseLibR extends ResumableVarArgFunction<PCallState> {
@@ -330,17 +349,14 @@ public class BaseLib implements LuaLibrary {
 					LuaValue function = args.arg(1).checkFunction();
 					LuaString chunkName = args.arg(2).optLuaString(FUNCTION_STR);
 
-					Varargs result = pcall(state, di, new ZeroArgFunction() {
-						@Override
-						public LuaValue call(LuaState state) throws LuaError {
-							try {
-								InputStream stream = new StringInputStream(state, function);
-								return LoadState.load(state, stream, chunkName, state.getCurrentThread().getfenv());
-							} catch (Exception e) {
-								throw LuaError.wrapMessage(e);
-							}
+					Varargs result = pcall(state, di, new ZeroArgFunction(lState -> {
+						try {
+							InputStream stream = new StringInputStream(lState, function);
+							return LoadState.load(lState, stream, chunkName, lState.getCurrentThread().getfenv());
+						} catch (Exception e) {
+							throw LuaError.wrapMessage(e);
 						}
-					}, Constants.NONE, state.getCurrentThread().getErrorFunc());
+					}), Constants.NONE, state.getCurrentThread().getErrorFunc());
 
 					if (result.first().toBoolean()) {
 						return result.arg(2);

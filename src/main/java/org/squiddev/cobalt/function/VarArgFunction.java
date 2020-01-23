@@ -49,24 +49,45 @@ import org.squiddev.cobalt.*;
  * @see TwoArgFunction
  * @see ThreeArgFunction
  */
-public abstract class VarArgFunction extends LibFunction {
-	@Override
-	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
-		return invoke(state, Constants.NONE).first();
+public final class VarArgFunction extends LibFunction {
+	private final Delegate delegate;
+
+	public VarArgFunction(String name, Delegate delegate) {
+		this.name = name;
+		this.delegate = delegate;
+	}
+
+	public VarArgFunction(Delegate delegate) {
+		this.delegate = delegate;
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
-		return invoke(state, arg).first();
+	public LuaValue call(LuaState state) throws LuaError {
+		return delegate.call(state, Constants.NONE).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
-		return invoke(state, ValueFactory.varargsOf(arg1, arg2)).first();
+	public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+		return delegate.call(state, arg).first();
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
-		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return delegate.call(state, ValueFactory.varargsOf(arg1, arg2)).first();
+	}
+
+	@Override
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+		return delegate.call(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
+	}
+
+	@Override
+	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
+		return delegate.call(state, args);
+	}
+
+	@FunctionalInterface
+	public interface Delegate {
+		Varargs call(LuaState state, Varargs arg) throws LuaError;
 	}
 }

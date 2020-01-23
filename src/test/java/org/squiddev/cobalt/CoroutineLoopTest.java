@@ -39,16 +39,13 @@ public class CoroutineLoopTest {
 	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/coroutine/loop-");
 		helpers.setup();
-		helpers.globals.rawset("yieldBlocking", new VarArgFunction() {
-			@Override
-			public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-				try {
-					return LuaThread.yieldBlocking(state, args);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
+		helpers.globals.rawset("yieldBlocking", new VarArgFunction((state, args) -> {
+			try {
+				return LuaThread.yieldBlocking(state, args);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
 			}
-		});
+		}));
 
 		LuaThread thread = new LuaThread(helpers.state, helpers.loadScript(name), helpers.globals);
 

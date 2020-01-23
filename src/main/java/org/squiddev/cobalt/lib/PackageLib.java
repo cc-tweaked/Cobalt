@@ -28,11 +28,11 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 
 import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
+import static org.squiddev.cobalt.function.LibFunction.bind1;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard package and module
@@ -63,92 +63,35 @@ public class PackageLib implements LuaLibrary {
 	private static final LuaString _SEEALL = ValueFactory.valueOf("seeall");
 	private static final LuaString _SENTINEL = ValueFactory.valueOf("\u0001");
 
-	private static final int OP_MODULE = 0;
-	private static final int OP_REQUIRE = 1;
-	private static final int OP_LOADLIB = 2;
-	private static final int OP_SEEALL = 3;
-	private static final int OP_PRELOAD_LOADER = 4;
-	private static final int OP_LUA_LOADER = 5;
-	private static final int OP_JAVA_LOADER = 6;
-
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
-		env.rawset("require", new PkgLib1(env, "require", OP_REQUIRE, this));
-		env.rawset("module", new PkgLibV(env, "module", OP_MODULE, this));
-		env.rawset("package", PACKAGE = ValueFactory.tableOf(new LuaValue[]{
+		bind1(env, "require", (s, arg) -> OperationHelper.noUnwind(s, () -> require(s, arg)));
+		env.rawset("module", new VarArgFunction("module",
+			(s, a) -> OperationHelper.noUnwind(state, () -> module(s, a))));
+
+		env.rawset("package", PACKAGE = ValueFactory.tableOf(
 			_LOADED, state.loadedPackages,
 			_PRELOAD, ValueFactory.tableOf(),
 			_PATH, ValueFactory.valueOf(DEFAULT_LUA_PATH),
-			_LOADLIB, new PkgLibV(env, "loadlib", OP_LOADLIB, this),
-			_SEEALL, new PkgLib1(env, "seeall", OP_SEEALL, this),
-			_LOADERS, ValueFactory.listOf(new LuaValue[]{
-			new PkgLibV(env, "preload_loader", OP_PRELOAD_LOADER, this),
-			new PkgLibV(env, "lua_loader", OP_LUA_LOADER, this),
-			new PkgLibV(env, "java_loader", OP_JAVA_LOADER, this),
-		})}));
+			_LOADLIB, new VarArgFunction(PackageLib::loadlib),
+			_SEEALL, new VarArgFunction("seeall", PackageLib::seeall),
+			_LOADERS, ValueFactory.listOf(
+				new VarArgFunction((s, a) -> OperationHelper.noUnwind(state, () -> loaderPreloader(s, a))),
+				new VarArgFunction((s, a) -> OperationHelper.noUnwind(state, () -> loaderLua(s, a))),
+				new VarArgFunction((s, a) -> OperationHelper.noUnwind(state, () -> loaderJava(s, a, env)))
+			)
+		));
 		state.loadedPackages.rawset("package", PACKAGE);
 		return env;
 	}
 
-	static final class PkgLib1 extends OneArgFunction {
-		PackageLib lib;
-
-		public PkgLib1(LuaTable env, String name, int opcode, PackageLib lib) {
-			this.env = env;
-			this.name = name;
-			this.opcode = opcode;
-			this.lib = lib;
-		}
-
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			switch (opcode) {
-				case OP_REQUIRE:
-					return OperationHelper.noUnwind(state, () -> lib.require(state, arg));
-				case OP_SEEALL: {
-					LuaTable t = arg.checkTable();
-					LuaTable m = t.getMetatable(state);
-					if (m == null) {
-						t.setMetatable(state, m = ValueFactory.tableOf());
-					}
-					LuaTable mt = m;
-					noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
-					return Constants.NONE;
-				}
-			}
-			return Constants.NIL;
-		}
-	}
-
-	static final class PkgLibV extends VarArgFunction {
-		PackageLib lib;
-
-		public PkgLibV(LuaTable env, String name, int opcode, PackageLib lib) {
-			this.env = env;
-			this.name = name;
-			this.opcode = opcode;
-			this.lib = lib;
-		}
-
-		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-			switch (opcode) {
-				case OP_MODULE:
-					return OperationHelper.noUnwind(state, () -> lib.module(state, args));
-				case OP_LOADLIB:
-					return loadlib(args);
-				case OP_PRELOAD_LOADER: {
-					return OperationHelper.noUnwind(state, () -> lib.loader_preload(state, args));
-				}
-				case OP_LUA_LOADER: {
-					return OperationHelper.noUnwind(state, () -> lib.loader_Lua(state, args));
-				}
-				case OP_JAVA_LOADER: {
-					return lib.loader_Java(args, getfenv());
-				}
-			}
-			return Constants.NONE;
-		}
+	private static Varargs seeall(LuaState state, Varargs args) throws LuaError {
+		LuaTable t = args.first().checkTable();
+		LuaTable m = t.getMetatable(state);
+		if (m == null) t.setMetatable(state, m = ValueFactory.tableOf());
+		LuaTable mt = m;
+		noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
+		return Constants.NONE;
 	}
 
 	/**
@@ -353,12 +296,12 @@ public class PackageLib implements LuaLibrary {
 		return result;
 	}
 
-	public static Varargs loadlib(Varargs args) throws LuaError {
+	public static Varargs loadlib(LuaState state, Varargs args) throws LuaError {
 		args.arg(1).checkLuaString();
 		return varargsOf(Constants.NIL, ValueFactory.valueOf("dynamic libraries not enabled"), ValueFactory.valueOf("absent"));
 	}
 
-	LuaValue loader_preload(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	LuaValue loaderPreloader(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		LuaString name = args.arg(1).checkLuaString();
 		LuaValue preload = OperationHelper.getTable(state, PACKAGE, _PRELOAD).checkTable();
 		LuaValue val = OperationHelper.getTable(state, preload, name);
@@ -367,7 +310,7 @@ public class PackageLib implements LuaLibrary {
 			val;
 	}
 
-	LuaValue loader_Lua(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	LuaValue loaderLua(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		String name = args.arg(1).checkString();
 
 		// get package path
@@ -410,14 +353,20 @@ public class PackageLib implements LuaLibrary {
 		return ValueFactory.valueOf(sb.toString());
 	}
 
-	private LuaValue loader_Java(Varargs args, LuaTable env) throws LuaError {
+	private LuaValue loaderJava(LuaState state, Varargs args, LuaTable env) throws LuaError {
 		String name = args.arg(1).checkString();
 		String classname = toClassname(name);
 		try {
 			Class<?> c = Class.forName(classname);
-			LuaValue v = (LuaValue) c.newInstance();
-			v.setfenv(env);
-			return v;
+			if (LuaValue.class.isAssignableFrom(c)) {
+				LuaValue v = (LuaValue) c.newInstance();
+				v.setfenv(env);
+				return v;
+			} else if (LuaLibrary.class.isAssignableFrom(c)) {
+				return ((LuaLibrary) c.newInstance()).add(state, env);
+			} else {
+				return ValueFactory.valueOf("\n\tnot a loadable class '" + classname + "'");
+			}
 		} catch (ClassNotFoundException cnfe) {
 			return ValueFactory.valueOf("\n\tno class '" + classname + "'");
 		} catch (Exception e) {

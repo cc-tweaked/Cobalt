@@ -119,7 +119,7 @@ public class Constants {
 	/**
 	 * LuaValue constant corresponding to a {@link Varargs} list of no values
 	 */
-	public static final LuaValue NONE = None._NONE;
+	public static final Varargs NONE = None._NONE;
 
 	/**
 	 * LuaValue number constant equal to 0

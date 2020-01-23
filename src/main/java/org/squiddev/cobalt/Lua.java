@@ -97,7 +97,7 @@ public class Lua {
 	public static final int MAXARG_B = ((1 << SIZE_B) - 1);
 	public static final int MAXARG_C = ((1 << SIZE_C) - 1);
 	public static final int MAXARG_Bx = ((1 << SIZE_Bx) - 1);
-	public static final int MAXARG_sBx = (MAXARG_Bx >> 1);     	/* `sBx' is signed */
+	public static final int MAXARG_sBx = (MAXARG_Bx >> 1);        /* `sBx' is signed */
 
 	public static final int MASK_OP = ((1 << SIZE_OP) - 1) << POS_OP;
 	public static final int MASK_A = ((1 << SIZE_A) - 1) << POS_A;
@@ -140,8 +140,8 @@ public class Lua {
 
 
 	/*
-	** Macros to operate RK indices
-	*/
+	 ** Macros to operate RK indices
+	 */
 
 	/**
 	 * This bit 1 means constant (0 means register)
@@ -188,15 +188,15 @@ public class Lua {
 
 
 	/*
-	** R(x) - register
-	** Kst(x) - constant (in constant table)
-	** RK(x) == if ISK(x) then Kst(INDEXK(x)) else R(x)
-	*/
+	 ** R(x) - register
+	 ** Kst(x) - constant (in constant table)
+	 ** RK(x) == if ISK(x) then Kst(INDEXK(x)) else R(x)
+	 */
 
 
 	/*
-	** grep "ORDER OP" if you change these enums
-	*/
+	 ** grep "ORDER OP" if you change these enums
+	 */
 
 	/*----------------------------------------------------------------------
 	name		args	description
@@ -286,13 +286,13 @@ public class Lua {
 
 
 	/*
-	** masks for instruction properties. The format is:
-	** bits 0-1: op mode
-	** bits 2-3: C arg mode
-	** bits 4-5: B arg mode
-	** bit 6: instruction set register A
-	** bit 7: operator is a test
-	*/
+	 ** masks for instruction properties. The format is:
+	 ** bits 0-1: op mode
+	 ** bits 2-3: C arg mode
+	 ** bits 4-5: B arg mode
+	 ** bit 6: instruction set register A
+	 ** bit 7: operator is a test
+	 */
 
 	public static final int OpArgN = 0;  /* argument is not used */
 	public static final int OpArgU = 1;  /* argument is used */
@@ -300,45 +300,45 @@ public class Lua {
 	public static final int OpArgK = 3;  /* argument is a constant or register/constant */
 
 	public static final int[] luaP_opmodes = {
-	  /*   T        A           B             C          mode		   opcode	*/
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),		/* OP_MOVE */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgN << 2) | (iABx),		/* OP_LOADK */
-		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),		/* OP_LOADBOOL */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),		/* OP_LOADNIL */
-		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),		/* OP_GETUPVAL */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgN << 2) | (iABx),		/* OP_GETGLOBAL */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgK << 2) | (iABC),		/* OP_GETTABLE */
-		(0 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgN << 2) | (iABx),		/* OP_SETGLOBAL */
-		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),		/* OP_SETUPVAL */
-		(0 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_SETTABLE */
-		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),		/* OP_NEWTABLE */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgK << 2) | (iABC),		/* OP_SELF */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_ADD */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_SUB */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_MUL */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_DIV */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_MOD */
-		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_POW */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),		/* OP_UNM */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),		/* OP_NOT */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),		/* OP_LEN */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgR << 2) | (iABC),		/* OP_CONCAT */
-		(0 << 7) | (0 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),		/* OP_JMP */
-		(1 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_EQ */
-		(1 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_LT */
-		(1 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),		/* OP_LE */
-		(1 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgU << 2) | (iABC),		/* OP_TEST */
-		(1 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgU << 2) | (iABC),		/* OP_TESTSET */
-		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),		/* OP_CALL */
-		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),		/* OP_TAILCALL */
-		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),		/* OP_RETURN */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),		/* OP_FORLOOP */
-		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),		/* OP_FORPREP */
-		(1 << 7) | (0 << 6) | (OpArgN << 4) | (OpArgU << 2) | (iABC),		/* OP_TFORLOOP */
-		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),		/* OP_SETLIST */
-		(0 << 7) | (0 << 6) | (OpArgN << 4) | (OpArgN << 2) | (iABC),		/* OP_CLOSE */
-		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABx),		/* OP_CLOSURE */
-		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),		/* OP_VARARG */
+		/*   T        A           B             C          mode		   opcode	*/
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),        /* OP_MOVE */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgN << 2) | (iABx),        /* OP_LOADK */
+		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),        /* OP_LOADBOOL */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),        /* OP_LOADNIL */
+		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),        /* OP_GETUPVAL */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgN << 2) | (iABx),        /* OP_GETGLOBAL */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgK << 2) | (iABC),        /* OP_GETTABLE */
+		(0 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgN << 2) | (iABx),        /* OP_SETGLOBAL */
+		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),        /* OP_SETUPVAL */
+		(0 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_SETTABLE */
+		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),        /* OP_NEWTABLE */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgK << 2) | (iABC),        /* OP_SELF */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_ADD */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_SUB */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_MUL */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_DIV */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_MOD */
+		(0 << 7) | (1 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_POW */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),        /* OP_UNM */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),        /* OP_NOT */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iABC),        /* OP_LEN */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgR << 2) | (iABC),        /* OP_CONCAT */
+		(0 << 7) | (0 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),        /* OP_JMP */
+		(1 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_EQ */
+		(1 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_LT */
+		(1 << 7) | (0 << 6) | (OpArgK << 4) | (OpArgK << 2) | (iABC),        /* OP_LE */
+		(1 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgU << 2) | (iABC),        /* OP_TEST */
+		(1 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgU << 2) | (iABC),        /* OP_TESTSET */
+		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),        /* OP_CALL */
+		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),        /* OP_TAILCALL */
+		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),        /* OP_RETURN */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),        /* OP_FORLOOP */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),        /* OP_FORPREP */
+		(1 << 7) | (0 << 6) | (OpArgN << 4) | (OpArgU << 2) | (iABC),        /* OP_TFORLOOP */
+		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),        /* OP_SETLIST */
+		(0 << 7) | (0 << 6) | (OpArgN << 4) | (OpArgN << 2) | (iABC),        /* OP_CLOSE */
+		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABx),        /* OP_CLOSURE */
+		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),        /* OP_VARARG */
 	};
 
 	public static int getOpMode(int m) {

@@ -29,7 +29,10 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.DumpState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.ResumableVarArgFunction;
+import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
@@ -37,6 +40,8 @@ import java.io.IOException;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.*;
+import static org.squiddev.cobalt.function.LibFunction.bind1;
+import static org.squiddev.cobalt.function.LibFunction.bindV;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
@@ -53,11 +58,22 @@ public class StringLib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		LibFunction.bind(t, StringLib1::new, new String[]{
-			"dump", "len", "lower", "reverse", "upper",});
-		LibFunction.bind(t, StringLibV::new, new String[]{
-			"byte", "char", "find", "format",
-			"gmatch", "match", "rep", "sub"});
+
+		bind1(t, "dump", StringLib::dump);
+		bind1(t, "len", (s, arg) -> valueOf(arg.checkLuaString().length()));
+		bind1(t, "lower", StringLib::lower);
+		bind1(t, "reverse", StringLib::reverse);
+		bind1(t, "upper", StringLib::upper);
+
+		bindV(t, "byte", StringLib::byte_);
+		bindV(t, "char", StringLib::char_);
+		bindV(t, "find", StringLib::find);
+		bindV(t, "format", StringLib::format);
+		bindV(t, "gmatch", StringLib::gmatch);
+		bindV(t, "match", StringLib::match);
+		bindV(t, "rep", StringLib::rep);
+		bindV(t, "sub", StringLib::sub);
+
 		LibFunction.bind(t, StringLibR::new, new String[]{"gsub"});
 
 		t.rawset("gfind", t.rawget("gmatch"));
@@ -66,80 +82,6 @@ public class StringLib implements LuaLibrary {
 		state.stringMetatable = tableOf(INDEX, t);
 		state.loadedPackages.rawset("string", t);
 		return t;
-	}
-
-	static final class StringLib1 extends OneArgFunction {
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			switch (opcode) {
-				case 0:
-					return dump(arg); // dump (function)
-
-				case 1: // len (function)
-					return valueOf(arg.checkLuaString().length());
-
-				case 2: { // lower (function)
-					LuaString string = arg.checkLuaString();
-					if (string.length == 0) return EMPTYSTRING;
-
-					byte[] value = new byte[string.length];
-					System.arraycopy(string.bytes, string.offset, value, 0, value.length);
-					for (int i = 0; i < value.length; i++) {
-						byte c = value[i];
-						if (c >= 'A' && c <= 'Z') value[i] = (byte) (c | 0x20);
-					}
-					return valueOf(value);
-				}
-
-				case 3: { // reverse (function)
-					LuaString s = arg.checkLuaString();
-					int n = s.length();
-					byte[] b = new byte[n];
-					for (int i = 0, j = n - 1; i < n; i++, j--) {
-						b[j] = (byte) s.luaByte(i);
-					}
-					return LuaString.valueOf(b);
-				}
-				case 4: { // upper (function)
-					LuaString string = arg.checkLuaString();
-					if (string.length == 0) return EMPTYSTRING;
-
-					byte[] value = new byte[string.length];
-					System.arraycopy(string.bytes, string.offset, value, 0, value.length);
-					for (int i = 0; i < value.length; i++) {
-						byte c = value[i];
-						if (c >= 'a' && c <= 'z') value[i] = (byte) (c & ~0x20);
-					}
-					return valueOf(value);
-				}
-			}
-			return NIL;
-		}
-	}
-
-	static final class StringLibV extends VarArgFunction {
-		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-			switch (opcode) {
-				case 0:
-					return StringLib.byte_(args);
-				case 1:
-					return StringLib.char_(args);
-				case 2:
-					return StringLib.find(state, args);
-				case 3:
-					return StringLib.format(args);
-				case 4:
-					return StringLib.gmatch(state, args);
-				case 5:
-					return StringLib.match(state, args);
-				case 6:
-					return StringLib.rep(args);
-				case 7:
-					return StringLib.sub(args);
-			}
-			return NONE;
-		}
 	}
 
 	static final class StringLibR extends ResumableVarArgFunction<Object> {
@@ -182,9 +124,10 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
-	 * @param args the calling args
+	 * @param state
+	 * @param args  the calling args
 	 */
-	static Varargs byte_(Varargs args) throws LuaError {
+	static Varargs byte_(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int l = s.length;
 		int posi = posRelative(args.arg(2).optInteger(1), l);
@@ -213,11 +156,12 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
-	 * @param args the calling VM
+	 * @param state
+	 * @param args  the calling VM
 	 * @return The characters for this string
 	 * @throws LuaError If the argument is not a number or is out of bounds.
 	 */
-	public static Varargs char_(Varargs args) throws LuaError {
+	public static Varargs char_(LuaState state, Varargs args) throws LuaError {
 		int n = args.count();
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
@@ -239,7 +183,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * @throws LuaError If the function cannot be dumped.
 	 */
-	static LuaValue dump(LuaValue arg) throws LuaError {
+	static LuaValue dump(LuaState state, LuaValue arg) throws LuaError {
 		LuaValue f = arg.checkFunction();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
@@ -252,6 +196,43 @@ public class StringLib implements LuaLibrary {
 		} catch (IOException e) {
 			throw new LuaError(e.getMessage());
 		}
+	}
+
+	static LuaValue lower(LuaState state, LuaValue arg) throws LuaError {
+		LuaString string = arg.checkLuaString();
+		if (string.length == 0) return EMPTYSTRING;
+
+		byte[] value = new byte[string.length];
+		System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+		for (int i = 0; i < value.length; i++) {
+			byte c = value[i];
+			if (c >= 'A' && c <= 'Z') value[i] = (byte) (c | 0x20);
+		}
+		return valueOf(value);
+	}
+
+	static LuaValue reverse(LuaState state, LuaValue arg) throws LuaError {
+		LuaString s = arg.checkLuaString();
+
+		int n = s.length();
+		byte[] b = new byte[n];
+		for (int i = 0, j = n - 1; i < n; i++, j--) {
+			b[j] = (byte) s.luaByte(i);
+		}
+		return LuaString.valueOf(b);
+	}
+
+	static LuaValue upper(LuaState state, LuaValue arg) throws LuaError {
+		LuaString string = arg.checkLuaString();
+		if (string.length == 0) return EMPTYSTRING;
+
+		byte[] value = new byte[string.length];
+		System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+		for (int i = 0; i < value.length; i++) {
+			byte c = value[i];
+			if (c >= 'a' && c <= 'z') value[i] = (byte) (c & ~0x20);
+		}
+		return valueOf(value);
 	}
 
 	/**
@@ -301,7 +282,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * @throws LuaError On invalid arguments.
 	 */
-	static Varargs format(Varargs args) throws LuaError {
+	static Varargs format(LuaState state, Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
 		final int n = fmt.length();
 		Buffer result = new Buffer(n);
@@ -421,10 +402,10 @@ public class StringLib implements LuaLibrary {
 	static Varargs gmatch(LuaState state, Varargs args) throws LuaError {
 		LuaString src = args.arg(1).checkLuaString();
 		LuaString pat = args.arg(2).checkLuaString();
-		return new GMatchAux(state, src, pat);
+		return new VarArgFunction(new GMatchAux(state, src, pat)::invoke);
 	}
 
-	static class GMatchAux extends VarArgFunction {
+	static class GMatchAux {
 		private final int srclen;
 		private final MatchState ms;
 		private int soffset;
@@ -435,7 +416,6 @@ public class StringLib implements LuaLibrary {
 			this.soffset = 0;
 		}
 
-		@Override
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			for (; soffset < srclen; soffset++) {
 				ms.reset();
@@ -588,7 +568,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * Returns a string that is the concatenation of n copies of the string s.
 	 */
-	static Varargs rep(Varargs args) throws LuaError {
+	static Varargs rep(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int n = args.arg(2).checkInteger();
 		int len = s.length();
@@ -617,7 +597,7 @@ public class StringLib implements LuaLibrary {
 	 * string.sub(s, -i)
 	 * returns a suffix of s with length i.
 	 */
-	static Varargs sub(Varargs args) throws LuaError {
+	static Varargs sub(LuaState state, Varargs args) throws LuaError {
 		final LuaString s = args.arg(1).checkLuaString();
 		final int l = s.length();
 
@@ -787,8 +767,10 @@ public class StringLib implements LuaLibrary {
 					return;
 
 				case TFUNCTION:
-					// TODO: Ensure yields are handled correctly
-					replace = OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first();
+					replace = OperationHelper.noUnwind(state, () ->
+						// TODO: Ensure yields are handled correctly
+						OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first()
+					);
 					break;
 
 				case TTABLE: {

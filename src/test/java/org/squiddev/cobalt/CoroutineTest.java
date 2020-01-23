@@ -67,16 +67,14 @@ public class CoroutineTest {
 	}
 
 	private void setBlockingYield() {
-		((LuaTable) helpers.globals.rawget("coroutine")).rawset("yield", new VarArgFunction() {
-			@Override
-			public Varargs invoke(LuaState state, Varargs args) throws LuaError {
+		((LuaTable) helpers.globals.rawget("coroutine")).rawset("yield",
+			new VarArgFunction((state, args) -> {
 				try {
 					return LuaThread.yieldBlocking(state, args);
 				} catch (InterruptedException e) {
 					throw new InterruptedError(e);
 				}
-			}
-		});
+			}));
 	}
 
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)

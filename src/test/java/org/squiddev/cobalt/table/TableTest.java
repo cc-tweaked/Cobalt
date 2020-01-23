@@ -348,7 +348,7 @@ public class TableTest {
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
-			t.remove(0);
+			t.remove(t.length());
 			v.removeElementAt(v.size() - 1);
 			compareLists(t, v);
 		}
