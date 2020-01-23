@@ -26,6 +26,8 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JseIoLib;
@@ -147,6 +149,33 @@ public class ScriptHelper extends FileResourceManipulator {
 			return LoadState.load(state, script, "@" + name + ".lua", globals);
 		} finally {
 			script.close();
+		}
+	}
+
+	public Varargs runWithDump(String script) throws InterruptedException, LuaError, IOException, CompileException {
+		return runWithDump(loadScript(script));
+	}
+
+	public Varargs runWithDump(LuaFunction function) throws InterruptedException, LuaError {
+		try {
+			return LuaThread.runMain(state, function);
+		} catch (LuaError e) {
+			DebugState debug = state.getCurrentThread().getDebugState();
+			int level = 0;
+			while (true) {
+				DebugFrame frame = debug.getFrame(level++);
+				if (frame == null) break;
+
+				System.out.printf("%d %s\n", level, frame.func.debugName());
+
+				if (frame.closure == null || frame.stack == null) continue;
+				Prototype proto = frame.closure.getPrototype();
+				for (int local = 0; local < proto.maxstacksize; local++) {
+					LuaString name = frame.getLocalName(local);
+					if (name != null) System.out.printf("  %02x | %10s = %s\n", local, name, frame.stack[local]);
+				}
+			}
+			throw e;
 		}
 	}
 

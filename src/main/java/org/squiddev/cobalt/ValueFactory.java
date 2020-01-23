@@ -207,6 +207,18 @@ public class ValueFactory {
 	}
 
 	/**
+	 * Construct a {@link Varargs} from a single value. This is a helper function to ensure you don't call this
+	 * redundant pattern.
+	 *
+	 * @param v The value to pack up.
+	 * @return The exact same value as before.
+	 */
+	@Deprecated
+	public static Varargs varargsOf(final LuaValue v) {
+		return v;
+	}
+
+	/**
 	 * Construct a {@link Varargs} around an array of {@link LuaValue}s.
 	 *
 	 * @param v The array of {@link LuaValue}s
