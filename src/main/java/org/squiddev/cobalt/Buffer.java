@@ -164,8 +164,23 @@ public final class Buffer {
 	 */
 	public final Buffer append(byte[] b) {
 		makeRoom(0, b.length);
-		System.arraycopy(b, 0, bytes, offset, b.length);
+		System.arraycopy(b, 0, bytes, offset + length, b.length);
 		length += b.length;
+		return this;
+	}
+
+	/**
+	 * Append a region of bytes to the buffer.
+	 *
+	 * @param b      The bytes to append
+	 * @param start  The start index
+	 * @param length The number of values to append
+	 * @return {@code this} to allow call chaining
+	 */
+	public final Buffer append(byte[] b, int start, int length) {
+		makeRoom(0, length);
+		System.arraycopy(b, start, bytes, offset + this.length, length);
+		this.length += length;
 		return this;
 	}
 
@@ -257,7 +272,7 @@ public final class Buffer {
 			System.arraycopy(s.bytes, s.offset, bytes, offset, length);
 		} else if (offset + length + nafter > bytes.length || offset < nbefore) {
 			int n = nbefore + length + nafter;
-			int m = n < 32 ? 32 : n < length * 2 ? length * 2 : n;
+			int m = n < 32 ? 32 : Math.max(n, length * 2);
 			realloc(m, nbefore == 0 ? 0 : m - length - nafter);
 		}
 	}

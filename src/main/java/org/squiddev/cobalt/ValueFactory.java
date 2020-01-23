@@ -24,8 +24,6 @@
  */
 package org.squiddev.cobalt;
 
-import java.util.List;
-
 public class ValueFactory {
 	/**
 	 * Convert java boolean to a {@link LuaValue}.
@@ -206,6 +204,18 @@ public class ValueFactory {
 	 */
 	public static LuaUserdata userdataOf(Object o, LuaTable metatable) {
 		return new LuaUserdata(o, metatable);
+	}
+
+	/**
+	 * Construct a {@link Varargs} from a single value. This is a helper function to ensure you don't call this
+	 * redundant pattern.
+	 *
+	 * @param v The value to pack up.
+	 * @return The exact same value as before.
+	 */
+	@Deprecated
+	public static Varargs varargsOf(final LuaValue v) {
+		return v;
 	}
 
 	/**
