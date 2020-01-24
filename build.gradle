@@ -104,7 +104,7 @@ gradle.projectsEvaluated {
 }
 
 task executeProfile(type: JavaExec) {
-	main = "org.squiddev.cobalt.PerformanceRunner"
+	main = "org.squiddev.cobalt.PerformanceBenchmark"
 	classpath = sourceSets.test.runtimeClasspath
 }
 
