@@ -85,6 +85,9 @@ public class AssertTests {
 		"verybig",
 	})
 	public void lua51(String name) throws Exception {
+		new File("libs").mkdirs();
+		new File("libs/P1").mkdirs();
+
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.1/");
 		helpers.setup();
 		helpers.globals.rawset("mkdir", new OneArgFunction() {

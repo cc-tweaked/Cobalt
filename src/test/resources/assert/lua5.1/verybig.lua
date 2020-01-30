@@ -67,34 +67,34 @@ return 10
 
 -- functions to fill in the $n$
 F = {
-	function() -- $1$
-	for i = 10, 50009 do
-		io.write('a', i, ' = ', 5 + ((i - 10) / 2), ',\n')
-	end
-	end,
+function ()   -- $1$
+  for i=10,50009 do
+    io.write('a', i, ' = ', 5+((i-10)/2), ',\n')
+  end
+end,
 
-	function() -- $2$
-	for i = 30026, 50009 do
-		io.write('b', i, ' = ', 15013 + ((i - 30026) / 2), ',\n')
-	end
-	end,
+function ()   -- $2$
+  for i=30026,50009 do
+    io.write('b', i, ' = ', 15013+((i-30026)/2), ',\n')
+  end
+end,
 
-	function() -- $3$
-	for i = 10, 50009 do
-		io.write('"a', i, '", ', 5 + ((i - 10) / 2), ',\n')
-	end
-	end,
+function ()   -- $3$
+  for i=10,50009 do
+    io.write('"a', i, '", ', 5+((i-10)/2), ',\n')
+  end
+end,
 }
 
 file = os.tmpname()
 io.output(file)
 for s in string.gmatch(prog, "$([^$]+)") do
-	local n = tonumber(s)
-	if not n then io.write(s) else F[n]() end
+  local n = tonumber(s)
+  if not n then io.write(s) else F[n]() end
 end
 io.close()
 result = dofile(file)
 assert(os.remove(file))
-print 'OK'
+print'OK'
 return result
 
