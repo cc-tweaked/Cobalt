@@ -146,7 +146,7 @@ public final class DebugState {
 	/**
 	 * Pop a debug info off the stack
 	 */
-	protected void popInfo() {
+	public void popInfo() {
 		DebugFrame frame = stack[top--];
 		if ((frame.flags & (FLAG_JAVA | FLAG_FRESH)) != 0) javaCount--;
 		assert javaCount >= 0;

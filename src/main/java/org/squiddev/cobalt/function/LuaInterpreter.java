@@ -450,12 +450,9 @@ public final class LuaInterpreter {
 					case OP_TAILCALL: { // A B C: return R(A)(R(A+1), ... ,R(A+B-1))
 						int b = (i >>> POS_B) & MAXARG_B;
 
-						closeAll(openups);
-
 						LuaValue val = stack[a];
-						int flags = di.flags;
 						Varargs args;
-						switch ((i >>> POS_B) & MAXARG_B) {
+						switch (b) {
 							case 1:
 								args = NONE;
 								break;
@@ -481,29 +478,22 @@ public final class LuaInterpreter {
 							args = ValueFactory.varargsOf(val, args);
 						}
 
-						// FIXME: Note, this is incorrect. We should increment the tailcall debug info, and fire
-						//  tail return events when popping the last function.
-						// Technically we shouldn't do any of this when calling a C function, but LuaJ allows it,
-						// and thus some CC programs make assumptions about them being tail called.
-						handler.onReturn(ds, di);
-
 						if (functionVal instanceof LuaInterpretedFunction) {
+							int flags = di.flags;
+							// FIXME: Note, this is incorrect. We should increment the tailcall debug info.
+							closeAll(openups);
+							ds.popInfo();
+
 							// Replace the current frame with a new one.
 							function = (LuaInterpretedFunction) functionVal;
 							di = setupCall(state, function, args, flags & FLAG_FRESH);
 
 							continue newFrame;
-						} else if ((flags & FLAG_FRESH) != 0) {
-							// We're at the bottom of the stack: return a tailcall
-							return functionVal.invoke(state, args.asImmutable());
 						} else {
-							// Execute this function as normal
-							Varargs ret = functionVal.invoke(state, args.asImmutable());
-
-							di = ds.getStackUnsafe();
-							function = (LuaInterpretedFunction) di.closure;
-							resume(state, di, function, ret);
-							continue newFrame;
+							Varargs v = functionVal.invoke(state, args.asImmutable());
+							di.top = a + v.count();
+							di.extras = v;
+							break;
 						}
 					}
 
@@ -743,7 +733,7 @@ public final class LuaInterpreter {
 				break;
 			}
 
-			case OP_CALL: {
+			case OP_CALL: case OP_TAILCALL: {
 				int a = (i >>> POS_A) & MAXARG_A;
 				int c = (i >>> POS_C) & MAXARG_C;
 				if (c > 0) {
@@ -757,7 +747,7 @@ public final class LuaInterpreter {
 				break;
 			}
 
-			case OP_TAILCALL: case OP_SETTABLE: case OP_SETGLOBAL:
+			case OP_SETTABLE: case OP_SETGLOBAL:
 				// Nothing to be done here
 				break;
 
@@ -834,47 +824,6 @@ public final class LuaInterpreter {
 					// If we're a fresh invocation then return to the parent.
 					return ret;
 				} else {
-					di = ds.getStackUnsafe();
-					function = (LuaInterpretedFunction) di.closure;
-					resume(state, di, function, ret);
-					return execute(state, di, function);
-				}
-			}
-
-			case OP_TAILCALL: {
-				int a = (i >>> POS_A) & MAXARG_A;
-				int b = (i >>> POS_B) & MAXARG_B;
-
-				LuaValue[] stack = di.stack;
-				LuaValue val = stack[a];
-				Varargs args;
-				switch ((i >>> POS_B) & MAXARG_B) {
-					case 1:
-						args = NONE;
-						break;
-					case 2:
-						args = stack[a + 1];
-						break;
-					default:
-						args = b > 0 ?
-							ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-							ValueFactory.varargsOf(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
-				}
-
-				int flags = di.flags;
-				handler.onReturnError(ds);
-
-				if (val instanceof LuaInterpretedFunction) {
-					// Replace the current frame with a new one.
-					function = (LuaInterpretedFunction) val;
-					return execute(state, setupCall(state, function, args, flags & FLAG_FRESH), function);
-				} else if ((flags & FLAG_FRESH) != 0) {
-					// We're at the bottom of the stack: just execute it
-					return OperationHelper.invoke(state, val, args.asImmutable(), a);
-				} else {
-					// Execute this function as normal
-					Varargs ret = OperationHelper.invoke(state, val, args.asImmutable(), a);
-
 					di = ds.getStackUnsafe();
 					function = (LuaInterpretedFunction) di.closure;
 					resume(state, di, function, ret);

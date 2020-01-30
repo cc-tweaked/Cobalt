@@ -171,7 +171,7 @@ public class ScriptHelper extends FileResourceManipulator {
 				if (frame.closure == null || frame.stack == null) continue;
 				Prototype proto = frame.closure.getPrototype();
 				for (int local = 0; local < proto.maxstacksize; local++) {
-					LuaString name = frame.getLocalName(local);
+					LuaString name = frame.getLocalName(local + 1);
 					if (name != null) System.out.printf("  %02x | %10s = %s\n", local, name, frame.stack[local]);
 				}
 			}
