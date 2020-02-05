@@ -51,8 +51,18 @@ public class AssertTests {
 
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
-		"base-issues", "string-issues", "debug", "debug-coroutine-hook", "gc", "immutable", "invalid-tailcall",
-		"load-error", "no-unwind", "time",
+		"base-issues",
+		"string-issues",
+		"debug",
+		"debug-coroutine-hook",
+		"gc",
+		"immutable",
+		"invalid-tailcall",
+		"lex-context",
+		"lex-number",
+		"load-error",
+		"no-unwind",
+		"time",
 	})
 	public void main(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/assert/");
