@@ -13,7 +13,7 @@ end
 
 
 local function len (s)
-  return #string.gsub(s, "[\128-\191]", "")
+  return #string.gsub(s, "[\x80-\xBF]", "")
 end
 
 
@@ -25,7 +25,7 @@ local function checksyntax (s, t)
   for i = 1, #t do ts[i + 1] = string.format("\\u{%x}", t[i]) end
   ts[#t + 2] = "'"
   ts = table.concat(ts)
-  assert(assert(load(ts))() == s)
+  assert(assert(loadstring(ts))() == s)
 end
 
 assert(utf8.offset("alo", 5) == nil)
@@ -39,7 +39,7 @@ local function check (s, t)
 
   assert(utf8.offset(s, 0) == 1)
 
-  -- TODO: checksyntax(s, t)
+  checksyntax(s, t)
 
   local t1 = {utf8.codepoint(s, 1, -1)}
   assert(#t == #t1)
@@ -99,16 +99,16 @@ do    -- error indication in utf8.len
     local a, b = utf8.len(s)
     assert(not a and b == p)
   end
-  check("abc\227def", 4)
-  check("汉字\128", #("汉字") + 1)
-  check("\244\159\191", 1)
-  check("\244\159\191\191", 1)
+  check("abc\xE3def", 4)
+  check("汉字\x80", #("汉字") + 1)
+  check("\xF4\x9F\xBF", 1)
+  check("\xF4\x9F\xBF\xBF", 1)
 end
 
 -- error in utf8.codes
 checkerror("invalid UTF%-8 code",
   function ()
-    local s = "ab\255"
+    local s = "ab\xff"
     for c in utf8.codes(s) do assert(c) end
   end)
 
@@ -120,7 +120,7 @@ checkerror("position out of range", utf8.offset, "", 1, 2)
 checkerror("position out of range", utf8.offset, "", 1, -1)
 checkerror("continuation byte", utf8.offset, "𦧺", 1, 2)
 checkerror("continuation byte", utf8.offset, "𦧺", 1, 2)
-checkerror("continuation byte", utf8.offset, "\128", 1)
+checkerror("continuation byte", utf8.offset, "\x80", 1)
 
 
 
@@ -156,27 +156,30 @@ local function invalid (s)
 end
 
 -- UTF-8 representation for 0x11ffff (value out of valid range)
-invalid("\244\159\191\191")
+invalid("\xF4\x9F\xBF\xBF")
 
 -- overlong sequences
-invalid("\192\128")          -- zero
-invalid("\193\191")          -- 0x7F (should be coded in 1 byte)
-invalid("\224\159\191")      -- 0x7FF (should be coded in 2 bytes)
-invalid("\240\143\191\191")  -- 0xFFFF (should be coded in 3 bytes)
+invalid("\xC0\x80")          -- zero
+invalid("\xC1\xBF")          -- 0x7F (should be coded in 1 byte)
+invalid("\xE0\x9F\xBF")      -- 0x7FF (should be coded in 2 bytes)
+invalid("\xF0\x8F\xBF\xBF")  -- 0xFFFF (should be coded in 3 bytes)
 
 
 -- invalid bytes
-invalid("\128")  -- continuation byte
-invalid("\191")  -- continuation byte
-invalid("\254")  -- invalid byte
-invalid("\255")  -- invalid byte
+invalid("\x80")  -- continuation byte
+invalid("\xBF")  -- continuation byte
+invalid("\xFE")  -- invalid byte
+invalid("\xFF")  -- invalid byte
 
 
 -- empty string
 check("", {})
 
 -- minimum and maximum values for each sequence size
-s = "\0\32\127\194\128\32\223\191\224\160\128\32\239\191\191\240\144\128\128\32\32\244\143\191\191"
+s = "\0 \x7F\z
+     \xC2\x80 \xDF\xBF\z
+     \xE0\xA0\x80 \xEF\xBF\xBF\z
+     \xF0\x90\x80\x80  \xF4\x8F\xBF\xBF"
 s = string.gsub(s, " ", "")
 check(s, {0,0x7F, 0x80,0x7FF, 0x800,0xFFFF, 0x10000,0x10FFFF})
 
@@ -188,7 +191,7 @@ check(x, {26085, 26412, 35486, 97, 45, 52, 0, 233, 243})
 check("𣲷𠜎𠱓𡁻𠵼ab𠺢",
       {0x23CB7, 0x2070E, 0x20C53, 0x2107B, 0x20D7C, 0x61, 0x62, 0x20EA2,})
 
-check("𨳊𩶘𦧺𨳒𥄫𤓓\244\143\191\191",
+check("𨳊𩶘𦧺𨳒𥄫𤓓\xF4\x8F\xBF\xBF",
       {0x28CCA, 0x29D98, 0x269FA, 0x28CD2, 0x2512B, 0x244D3, 0x10ffff})
 
 

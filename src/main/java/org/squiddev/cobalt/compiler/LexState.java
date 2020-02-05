@@ -26,6 +26,7 @@ package org.squiddev.cobalt.compiler;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
+import org.squiddev.cobalt.lib.Utf8Lib;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -165,8 +166,8 @@ public class LexState {
 		TK_END = 262, TK_FALSE = 263, TK_FOR = 264, TK_FUNCTION = 265, TK_IF = 266,
 		TK_IN = 267, TK_LOCAL = 268, TK_NIL = 269, TK_NOT = 270, TK_OR = 271, TK_REPEAT = 272,
 		TK_RETURN = 273, TK_THEN = 274, TK_TRUE = 275, TK_UNTIL = 276, TK_WHILE = 277,
-		// other terminal symbols
-		TK_CONCAT = 278, TK_DOTS = 279, TK_EQ = 280, TK_GE = 281, TK_LE = 282, TK_NE = 283,
+	// other terminal symbols
+	TK_CONCAT = 278, TK_DOTS = 279, TK_EQ = 280, TK_GE = 281, TK_LE = 282, TK_NE = 283,
 		TK_EOS = 284,
 		TK_NUMBER = 285, TK_NAME = 286, TK_STRING = 287;
 
@@ -182,26 +183,26 @@ public class LexState {
 		}
 	}
 
-	private boolean isAlphaNum(int c) {
+	private static boolean isAlphaNum(int c) {
 		return c >= '0' && c <= '9'
 			|| c >= 'a' && c <= 'z'
 			|| c >= 'A' && c <= 'Z'
 			|| c == '_';
 	}
 
-	private boolean isAlpha(int c) {
+	private static boolean isAlpha(int c) {
 		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
 	}
 
-	private boolean isDigit(int c) {
+	private static boolean isDigit(int c) {
 		return c >= '0' && c <= '9';
 	}
 
-	private boolean isSpace(int c) {
+	private static boolean isSpace(int c) {
 		return c <= ' ';
 	}
 
-	private boolean isHex(int c) {
+	private static boolean isHex(int c) {
 		return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
 	}
 
@@ -494,58 +495,65 @@ public class LexState {
 				case '\r':
 					throw lexError("unfinished string", TK_STRING);
 				case '\\': {
-					int c;
-					nextChar(); /* do not save the `\' */
+					save_and_next(); /* do not save the `\' */
 					switch (current) {
 						case 'a': /* bell */
-							c = '\u0007';
+							saveEscape('\u0007');
 							break;
 						case 'b': /* backspace */
-							c = '\b';
+							saveEscape('\b');
 							break;
 						case 'f': /* form feed */
-							c = '\f';
+							saveEscape('\f');
 							break;
 						case 'n': /* newline */
-							c = '\n';
+							saveEscape('\n');
 							break;
 						case 'r': /* carriage return */
-							c = '\r';
+							saveEscape('\r');
 							break;
 						case 't': /* tab */
-							c = '\t';
+							saveEscape('\t');
 							break;
 						case 'v': /* vertical tab */
-							c = '\u000B';
+							saveEscape('\u000B');
+							break;
+						case 'x':
+							saveEscape(readHexEsc());
+							break;
+						case 'u':
+							readUtf8Esc();
 							break;
 						case '\n': /* go through */
 						case '\r':
+							nbuff--;
 							save('\n');
 							inclineNumber();
-							continue;
+							break;
 						case EOZ:
-							continue; /* will raise an error next loop */
+							break; /* will raise an error next loop */
+						case 'z': { // "zap" following span of spaces
+							nbuff--;
+							nextChar(); // Skip z and remove '\\'
+							while (isSpace(current)) {
+								if (currIsNewline()) inclineNumber();
+								nextChar();
+							}
+							break;
+						}
 						default: {
 							if (!isDigit(current)) {
+								nbuff--;
 								save_and_next(); /* handles \\, \", \', and \? */
 							} else { /* \xxx */
-								int i = 0;
-								c = 0;
-								do {
-									c = 10 * c + current - '0';
-									nextChar();
-								} while (++i < 3 && isDigit(current));
-								if (c > UCHAR_MAX) {
-									throw lexError("escape sequence too large", TK_STRING);
-								}
+								int c = readDecEsc();
+								nbuff--;
 								save(c);
 							}
-							continue;
+							break;
 						}
 					}
-					save(c);
-					nextChar();
-					continue;
+					break;
 				}
 				default:
 					save_and_next();
@@ -553,6 +561,77 @@ public class LexState {
 		}
 		save_and_next(); /* skip delimiter */
 		seminfo.ts = newString(buff, 1, nbuff - 2);
+	}
+
+	private void saveEscape(int character) {
+		nextChar();
+		nbuff--;
+		save(character);
+	}
+
+	private int readHexEsc() throws CompileException {
+		int r = (readHex() << 4) | readHex();
+		nbuff -= 2;
+		return r;
+	}
+
+	private int readDecEsc() throws CompileException {
+		int i = 0;
+		int result = 0;
+		for (; i < 3 && isDigit(current); i++) {
+			result = 10 * result + current - '0';
+			save_and_next();
+		}
+
+		if (result > UCHAR_MAX) throw escapeError("escape sequence too large");
+		nbuff -= i;
+
+		return result;
+	}
+
+	private void readUtf8Esc() throws CompileException {
+		save_and_next();
+		if (current != '{') throw escapeError("mising '{'");
+
+		int i = 4;
+		long codepoint = readHex();
+		while (true) {
+			save_and_next();
+			if (!isHex(current)) break;
+
+			i++;
+			codepoint = (codepoint << 4) | hexValue(current);
+			if (codepoint > Utf8Lib.MAX_UNICODE) throw escapeError("UTF-8 value too large");
+		}
+		if (current != '}') throw escapeError("missing '}'");
+		nextChar();
+
+		nbuff -= i;
+		if (codepoint < 0x80) {
+			save((int) codepoint);
+		} else {
+			byte[] buffer = new byte[8];
+			int j = Utf8Lib.buildCharacter(buffer, codepoint);
+			for (; j > 0; j--) save(buffer[8 - j]);
+		}
+	}
+
+	private int readHex() throws CompileException {
+		save_and_next();
+		if (!isHex(current)) throw escapeError("hexadecimal digit expected");
+		return hexValue(current);
+	}
+
+	private static int hexValue(int c) {
+		// Terrible bit twiddling right here:
+		// 'A'..'F' corresponds to 0x41..0x46, and 'a'..'f' to 0x61..0x66. So bitwise and with 0xf
+		// gives us the last digit, +9 to map from 1..6 to 10..15.
+		return c <= '9' ? c - '0' : (c & 0xf) + 9;
+	}
+
+	private CompileException escapeError(String message) {
+		if (current != EOZ) save_and_next();
+		return lexError(message, TK_STRING);
 	}
 
 	private int llex(SemInfo seminfo) throws CompileException {
@@ -686,7 +765,7 @@ public class LexState {
 		}
 	}
 
-	void next() throws CompileException {
+	void nextToken() throws CompileException {
 		lastline = linenumber;
 		if (lookahead.token != TK_EOS) { /* is there a look-ahead token? */
 			t.set(lookahead); /* use this one */
@@ -777,7 +856,7 @@ public class LexState {
 
 	private boolean testnext(int c) throws CompileException {
 		if (t.token == c) {
-			next();
+			nextToken();
 			return true;
 		} else {
 			return false;
@@ -792,7 +871,7 @@ public class LexState {
 
 	private void checknext(int c) throws CompileException {
 		check(c);
-		next();
+		nextToken();
 	}
 
 	private void check_condition(boolean c, String msg) throws CompileException {
@@ -818,7 +897,7 @@ public class LexState {
 		LuaString ts;
 		check(TK_NAME);
 		ts = t.seminfo.ts;
-		next();
+		nextToken();
 		return ts;
 	}
 
@@ -986,14 +1065,14 @@ public class LexState {
 		FuncState fs = this.fs;
 		expdesc key = new expdesc();
 		fs.exp2anyreg(v);
-		this.next(); /* skip the dot or colon */
+		this.nextToken(); /* skip the dot or colon */
 		this.checkname(key);
 		fs.indexed(v, key);
 	}
 
 	private void yindex(expdesc v) throws CompileException {
 		/* index -> '[' expr ']' */
-		this.next(); /* skip the '[' */
+		this.nextToken(); /* skip the '[' */
 		this.expr(v);
 		this.fs.exp2val(v);
 		this.checknext(']');
@@ -1126,7 +1205,7 @@ public class LexState {
 						break;
 					}
 					case TK_DOTS: {  /* param . `...' */
-						this.next();
+						this.nextToken();
 						if (LUA_COMPAT_VARARG) {
 							/* use `arg' as default name */
 							this.new_localvarliteral("arg", nparams++);
@@ -1188,7 +1267,7 @@ public class LexState {
 				if (line != this.lastline) {
 					throw syntaxError("ambiguous syntax (function call x new statement)");
 				}
-				this.next();
+				this.nextToken();
 				if (this.t.token == ')') /* arg list is empty? */ {
 					args.k = VVOID;
 				} else {
@@ -1204,7 +1283,7 @@ public class LexState {
 			}
 			case TK_STRING: { /* funcargs -> STRING */
 				this.codestring(args, this.t.seminfo.ts);
-				this.next(); /* must use `seminfo' before `next' */
+				this.nextToken(); /* must use `seminfo' before `next' */
 				break;
 			}
 			default: {
@@ -1239,7 +1318,7 @@ public class LexState {
 		switch (this.t.token) {
 			case '(': {
 				int line = this.linenumber;
-				this.next();
+				this.nextToken();
 				this.expr(v);
 				this.check_match(')', '(', line);
 				fs.dischargevars(v);
@@ -1278,7 +1357,7 @@ public class LexState {
 				}
 				case ':': { /* `:' NAME funcargs */
 					expdesc key = new expdesc();
-					this.next();
+					this.nextToken();
 					this.checkname(key);
 					fs.self(v, key);
 					this.funcargs(v);
@@ -1338,7 +1417,7 @@ public class LexState {
 				return;
 			}
 			case TK_FUNCTION: {
-				this.next();
+				this.nextToken();
 				this.body(v, false, this.linenumber);
 				return;
 			}
@@ -1347,7 +1426,7 @@ public class LexState {
 				return;
 			}
 		}
-		this.next();
+		this.nextToken();
 	}
 
 
@@ -1434,7 +1513,7 @@ public class LexState {
 		this.enterlevel();
 		uop = getunopr(this.t.token);
 		if (uop != OPR_NOUNOPR) {
-			this.next();
+			this.nextToken();
 			this.subexpr(v, UNARY_PRIORITY);
 			fs.prefix(uop, v);
 		} else {
@@ -1445,7 +1524,7 @@ public class LexState {
 		while (op != OPR_NOBINOPR && priority[op].left > limit) {
 			expdesc v2 = new expdesc();
 			int nextop;
-			this.next();
+			this.nextToken();
 			fs.infix(op, v);
 			/* read sub-expression with higher priority */
 			nextop = this.subexpr(v2, priority[op].right);
@@ -1606,7 +1685,7 @@ public class LexState {
 		int whileinit;
 		int condexit;
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
-		this.next();  /* skip WHILE */
+		this.nextToken();  /* skip WHILE */
 		whileinit = fs.getlabel();
 		condexit = this.cond();
 		fs.enterblock(bl, true);
@@ -1627,7 +1706,7 @@ public class LexState {
 		FuncState.BlockCnt bl2 = new FuncState.BlockCnt();
 		fs.enterblock(bl1, true); /* loop block */
 		fs.enterblock(bl2, false); /* scope block */
-		this.next(); /* skip REPEAT */
+		this.nextToken(); /* skip REPEAT */
 		this.chunk();
 		this.check_match(TK_UNTIL, TK_REPEAT, line);
 		condexit = this.cond(); /* read condition (inside scope block) */
@@ -1727,7 +1806,7 @@ public class LexState {
 		LuaString varname;
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
 		fs.enterblock(bl, true); /* scope for loop and control variables */
-		this.next(); /* skip `for' */
+		this.nextToken(); /* skip `for' */
 		varname = this.str_checkname(); /* first variable name */
 		switch (this.t.token) {
 			case '=':
@@ -1748,7 +1827,7 @@ public class LexState {
 	private int test_then_block() throws CompileException {
 		/* test_then_block -> [IF | ELSEIF] cond THEN block */
 		int condexit;
-		this.next(); /* skip IF or ELSEIF */
+		this.nextToken(); /* skip IF or ELSEIF */
 		condexit = this.cond();
 		this.checknext(TK_THEN);
 		this.block(); /* `then' part */
@@ -1771,7 +1850,7 @@ public class LexState {
 		if (this.t.token == TK_ELSE) {
 			fs.concat(escapelist, fs.jump());
 			fs.patchtohere(flist);
-			this.next(); /* skip ELSE (after patch, for correct line info) */
+			this.nextToken(); /* skip ELSE (after patch, for correct line info) */
 			this.block(); /* `else' part */
 		} else {
 			fs.concat(escapelist, flist);
@@ -1834,7 +1913,7 @@ public class LexState {
 		boolean needself;
 		expdesc v = new expdesc();
 		expdesc b = new expdesc();
-		this.next(); /* skip FUNCTION */
+		this.nextToken(); /* skip FUNCTION */
 		needself = this.funcname(v);
 		this.body(b, needself, line);
 		fs.storevar(v, b);
@@ -1860,7 +1939,7 @@ public class LexState {
 		FuncState fs = this.fs;
 		expdesc e = new expdesc();
 		int first, nret; /* registers with returned values */
-		this.next(); /* skip RETURN */
+		this.nextToken(); /* skip RETURN */
 		if (block_follow(this.t.token) || this.t.token == ';') {
 			first = nret = 0; /* return no values */
 		} else {
@@ -1899,7 +1978,7 @@ public class LexState {
 				return false;
 			}
 			case TK_DO: { /* stat -> DO block END */
-				this.next(); /* skip DO */
+				this.nextToken(); /* skip DO */
 				this.block();
 				this.check_match(TK_END, TK_DO, line);
 				return false;
@@ -1917,7 +1996,7 @@ public class LexState {
 				return false;
 			}
 			case TK_LOCAL: { /* stat -> localstat */
-				this.next(); /* skip LOCAL */
+				this.nextToken(); /* skip LOCAL */
 				if (this.testnext(TK_FUNCTION)) /* local function? */ {
 					this.localfunc();
 				} else {
@@ -1930,7 +2009,7 @@ public class LexState {
 				return true; /* must be last statement */
 			}
 			case TK_BREAK: { /* stat -> breakstat */
-				this.next(); /* skip BREAK */
+				this.nextToken(); /* skip BREAK */
 				this.breakstat();
 				return true; /* must be last statement */
 			}

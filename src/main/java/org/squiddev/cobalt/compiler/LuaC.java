@@ -35,7 +35,6 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
@@ -215,7 +214,7 @@ public class LuaC implements LuaCompiler {
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
 		funcstate.f.source = name;
-		lexstate.next(); /* read first token */
+		lexstate.nextToken(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);
 		lexstate.close_func();

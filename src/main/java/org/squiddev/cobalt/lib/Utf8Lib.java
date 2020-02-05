@@ -12,7 +12,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public class Utf8Lib implements LuaLibrary {
 
 	private static final int[] LIMITS = {0xFF, 0x7F, 0x7FF, 0xFFFF};
-	private static final long MAX_UNICODE = 0x10FFFFL;
+	public static final long MAX_UNICODE = 0x10FFFFL;
 
 	/**
 	 * [\0-\x7F\xC2-\xF4][\x80-\xBF]*
@@ -41,13 +41,25 @@ public class Utf8Lib implements LuaLibrary {
 		return t;
 	}
 
+	public static int buildCharacter(byte[] buffer, long codepoint) {
+		int mfb = 0x3f;
+		int j = 1;
+		do {
+			buffer[8 - j++] = ((byte) (0x80 | (codepoint & 0x3f)));
+			codepoint >>= 6;
+			mfb >>= 1;
+		} while (codepoint > mfb);
+		buffer[8 - j] = (byte) ((~mfb << 1) | codepoint);
+		return j;
+	}
+
 	private class Utf8Char extends VarArgFunction {
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 			switch (opcode) {
 				case 0: { // char
 					Buffer sb = new Buffer(args.count());
-					byte[] buffer = new byte[8];
+					byte[] buffer = null;
 					for (int i = 1, n = args.count(); i <= n; i++) {
 						int codepoint = args.arg(i).checkInteger();
 						if (codepoint < 0 || codepoint > MAX_UNICODE) {
@@ -57,14 +69,8 @@ public class Utf8Lib implements LuaLibrary {
 						if (codepoint < 0x80) {
 							sb.append((byte) codepoint);
 						} else {
-							int mfb = 0x3f;
-							int j = 1;
-							do {
-								buffer[8 - j++] = ((byte) (0x80 | (codepoint & 0x3f)));
-								codepoint >>= 6;
-								mfb >>= 1;
-							} while (codepoint > mfb);
-							buffer[8 - j] = (byte) ((~mfb << 1) | codepoint);
+							if (buffer == null) buffer = new byte[8];
+							int j = buildCharacter(buffer, codepoint);
 							sb.append(buffer, 8 - j, j);
 						}
 					}
