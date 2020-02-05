@@ -21,26 +21,24 @@ same(table.pack(table.unpack({ 1, "foo" }, 2, 5)), { n = 4, "foo" })
 
 -- table.unpack invokes metamethods. It'd be cleaner to do this on tables,
 -- but we don't support __len yet.
-for i = 0, 255 do
-	string[i] = i + 1
-end
-same(table.pack(table.unpack("aaa")), { n = 3, 2, 3, 4 })
-same(table.pack(table.unpack("aaa", 2)), { n = 2, 3, 4 })
+local basic = setmetatable({ 1 }, {
+	__len = function() return 3 end,
+	function(_, i) return i + 3 end,
+})
+same(table.pack(table.unpack(basic)), { n = 3, 1, 3, 4 })
+same(table.pack(table.unpack(basic, 2)), { n = 2, 3, 4 })
+
+assert(#basic == 3)
+assert(rawlen(basic) == 1)
 
 -- As above, but with a custom __index method.
-debug.setmetatable(false, {
-	__len = function()
-		coroutine.yield()
-		return 3
-	end,
-	__index = function(_, i)
-		coroutine.yield()
-		return i + 1
-	end,
+local yielding = setmetatable({}, {
+	__len = function() coroutine.yield() return 3 end,
+	__index = function(_, i) coroutine.yield() return i + 1 end,
 })
 
 local go = coroutine.create(function()
-	same(table.pack(table.unpack(false)), { n = 3, 2, 3, 4 })
+	same(table.pack(table.unpack(yielding)), { n = 3, 2, 3, 4 })
 end)
 
 local count = 0

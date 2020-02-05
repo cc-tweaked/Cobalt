@@ -356,7 +356,7 @@ public final class OperationHelper {
 	public static LuaValue length(LuaState state, LuaValue value, int stack) throws LuaError, UnwindThrowable {
 		switch (value.type()) {
 			case Constants.TTABLE: {
-				LuaValue h = value.metatag(state, Constants.LEN);
+				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
 				if (h.isNil()) {
 					return valueOf(((LuaTable) value).length());
 				} else {
