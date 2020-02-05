@@ -91,7 +91,7 @@ public final class LuaString extends LuaValue {
 		 * from different contexts, it will generally may show up as a cache hit and resolve
 		 * to the same value.
 		 */
-		public final LuaString recentShortStrings[] = new LuaString[RECENT_STRINGS_CACHE_SIZE];
+		public final LuaString[] recentShortStrings = new LuaString[RECENT_STRINGS_CACHE_SIZE];
 
 		public LuaString get(LuaString s) {
 			final int index = s.hashCode() & (RECENT_STRINGS_CACHE_SIZE - 1);

@@ -29,6 +29,7 @@ import org.squiddev.cobalt.function.LocalVariable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 public class LexState {
@@ -57,7 +58,7 @@ public class LexState {
 		}
 	}
 
-	private static final int EOZ = (-1);
+	private static final int EOZ = -1;
 	private static final int MAXSRC = 80;
 	private static final int MAX_INT = Integer.MAX_VALUE - 2;
 	private static final int UCHAR_MAX = 255; // TODO, convert to unicode CHAR_MAX?
@@ -82,7 +83,7 @@ public class LexState {
 	** Marks the end of a patch list. It is an invalid value both as an absolute
 	** address, and as a list link (would link an element to itself).
 	*/
-	static final int NO_JUMP = (-1);
+	static final int NO_JUMP = -1;
 
 	/*
 	** grep "ORDER OPR" if you change these enums
@@ -139,15 +140,16 @@ public class LexState {
 	private final Token t = new Token();  /* current token */
 	private final Token lookahead = new Token();  /* look ahead token */
 	FuncState fs;  /* `FuncState' is private to the parser */
-	private LuaC L;
 	private InputStream z;  /* input stream */
 	private byte[] buff;  /* buffer for tokens */
 	private int nbuff; /* length of buffer */
 	private LuaString source;  /* current source name */
 	private byte decpoint;  /* locale decimal point */
+	public int nCcalls;
+	private final HashMap<LuaString, LuaString> strings = new HashMap<>();
 
 	/* ORDER RESERVED */
-	private final static String luaX_tokens[] = {
+	private final static String[] luaX_tokens = {
 		"and", "break", "do", "else", "elseif",
 		"end", "false", "for", "function", "if",
 		"in", "local", "nil", "not", "or", "repeat",
@@ -178,32 +180,29 @@ public class LexState {
 		}
 	}
 
-	private boolean isalnum(int c) {
-		return (c >= '0' && c <= '9')
-			|| (c >= 'a' && c <= 'z')
-			|| (c >= 'A' && c <= 'Z')
-			|| (c == '_');
-		// return Character.isLetterOrDigit(c);
+	private boolean isAlphaNum(int c) {
+		return c >= '0' && c <= '9'
+			|| c >= 'a' && c <= 'z'
+			|| c >= 'A' && c <= 'Z'
+			|| c == '_';
 	}
 
-	private boolean isalpha(int c) {
-		return (c >= 'a' && c <= 'z')
-			|| (c >= 'A' && c <= 'Z');
+	private boolean isAlpha(int c) {
+		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
 	}
 
-	private boolean isdigit(int c) {
-		return (c >= '0' && c <= '9');
+	private boolean isDigit(int c) {
+		return c >= '0' && c <= '9';
 	}
 
-	private boolean isspace(int c) {
-		return (c <= ' ');
+	private boolean isSpace(int c) {
+		return c <= ' ';
 	}
 
 
-	public LexState(LuaC state, InputStream stream) {
+	public LexState(InputStream stream) {
 		this.z = stream;
 		this.buff = new byte[32];
-		this.L = state;
 	}
 
 	private void nextChar() {
@@ -235,8 +234,8 @@ public class LexState {
 	private String token2str(int token) {
 		if (token < FIRST_RESERVED) {
 			return iscntrl(token) ?
-				L.pushfstring("char(" + token + ")") :
-				L.pushfstring(String.valueOf((char) token));
+				"char(" + token + ")" :
+				String.valueOf((char) token);
 		} else {
 			return luaX_tokens[token - FIRST_RESERVED];
 		}
@@ -257,16 +256,15 @@ public class LexState {
 		}
 	}
 
-	CompileException lexerror(String msg, int token) {
-		String cid = chunkid(source.toString()); // TODO: get source name from source
-		L.pushfstring(cid + ":" + linenumber + ": " + msg);
+	CompileException lexError(String msg, int token) {
+		String cid = chunkId(source.toString()); // TODO: get source name from source
 		if (token != 0) {
-			L.pushfstring("syntax error: " + msg + " near " + txtToken(token));
+			txtToken(token);
 		}
 		return new CompileException(cid + ":" + linenumber + ": " + msg);
 	}
 
-	String chunkid(String source) {
+	String chunkId(String source) {
 		if (source.startsWith("=")) {
 			return source.substring(1);
 		}
@@ -284,21 +282,31 @@ public class LexState {
 		return source + end;
 	}
 
-	CompileException syntaxerror(String msg) {
-		return lexerror(msg, t.token);
+	CompileException syntaxError(String msg) {
+		return lexError(msg, t.token);
+	}
+
+	// look up and keep at most one copy of each string
+	public LuaString newString(byte[] bytes, int offset, int len) {
+		LuaString tmp = LuaString.valueOf(bytes, offset, len);
+		LuaString v = strings.get(tmp);
+		if (v == null) {
+			// must copy bytes, since bytes could be from reusable buffer
+			byte[] copy = new byte[len];
+			System.arraycopy(bytes, offset, copy, 0, len);
+			v = LuaString.valueOf(copy);
+			strings.put(v, v);
+		}
+		return v;
 	}
 
 	// only called by new_localvarliteral() for var names.
-	private LuaString newstring(String s) {
+	private LuaString newString(String s) {
 		byte[] b = s.getBytes();
-		return L.newTString(b, 0, b.length);
+		return newString(b, 0, b.length);
 	}
 
-	private LuaString newstring(byte[] bytes, int offset, int len) throws CompileException {
-		return L.newTString(bytes, offset, len);
-	}
-
-	private void inclinenumber() throws CompileException {
+	private void inclineNumber() throws CompileException {
 		int old = current;
 		LuaC._assert(currIsNewline());
 		nextChar(); /* skip '\n' or '\r' */
@@ -306,13 +314,12 @@ public class LexState {
 			nextChar(); /* skip '\n\r' or '\r\n' */
 		}
 		if (++linenumber >= MAX_INT) {
-			throw syntaxerror("chunk has too many lines");
+			throw syntaxError("chunk has too many lines");
 		}
 	}
 
-	void setinput(LuaC L, int firstByte, InputStream z, LuaString source) {
+	void setinput(int firstByte, InputStream z, LuaString source) {
 		this.decpoint = '.';
-		this.L = L;
 		this.lookahead.token = TK_EOS; /* no look-ahead token */
 		this.z = z;
 		this.fs = null;
@@ -352,7 +359,7 @@ public class LexState {
 	private void buffreplace(byte from, byte to) {
 		int n = nbuff;
 		byte[] p = buff;
-		while ((--n) >= 0) {
+		while (--n >= 0) {
 			if (p[n] == from) {
 				p[n] = to;
 			}
@@ -401,14 +408,14 @@ public class LexState {
 	*/
 
 	private void read_numeral(SemInfo seminfo) throws CompileException {
-		LuaC._assert(isdigit(current));
+		LuaC._assert(isDigit(current));
 		do {
 			save_and_next();
-		} while (isdigit(current) || current == '.');
+		} while (isDigit(current) || current == '.');
 		if (check_next("Ee")) /* `E'? */ {
 			check_next("+-"); /* optional exponent sign */
 		}
-		while (isalnum(current) || current == '_') {
+		while (isAlphaNum(current) || current == '_') {
 			save_and_next();
 		}
 		save('\0');
@@ -428,28 +435,28 @@ public class LexState {
 			save_and_next();
 			count++;
 		}
-		return (current == s) ? count : (-count) - 1;
+		return current == s ? count : -count - 1;
 	}
 
 	private void read_long_string(SemInfo seminfo, int sep) throws CompileException {
 		int cont = 0;
 		save_and_next(); /* skip 2nd `[' */
 		if (currIsNewline()) /* string starts with a newline? */ {
-			inclinenumber(); /* skip it */
+			inclineNumber(); /* skip it */
 		}
 		for (boolean endloop = false; !endloop; ) {
 			switch (current) {
 				case EOZ:
-					String msg = (seminfo != null) ? "unfinished long string"
+					String msg = seminfo != null ? "unfinished long string"
 						: "unfinished long comment";
-					throw lexerror(msg, TK_EOS);
+					throw lexError(msg, TK_EOS);
 				case '[': {
 					if (skip_sep() == sep) {
 						save_and_next(); /* skip 2nd `[' */
 						cont++;
 						if (LUA_COMPAT_LSTR == 1) {
 							if (sep == 0) {
-								throw lexerror("nesting of [[...]] is deprecated", (int) '[');
+								throw lexError("nesting of [[...]] is deprecated", (int) '[');
 							}
 						}
 					}
@@ -471,7 +478,7 @@ public class LexState {
 				case '\n':
 				case '\r': {
 					save('\n');
-					inclinenumber();
+					inclineNumber();
 					if (seminfo == null) {
 						nbuff = 0; /* avoid wasting space */
 					}
@@ -487,7 +494,7 @@ public class LexState {
 			}
 		}
 		if (seminfo != null) {
-			seminfo.ts = newstring(buff, 2 + sep, nbuff - 2 * (2 + sep));
+			seminfo.ts = newString(buff, 2 + sep, nbuff - 2 * (2 + sep));
 		}
 	}
 
@@ -496,10 +503,10 @@ public class LexState {
 		while (current != del) {
 			switch (current) {
 				case EOZ:
-					throw lexerror("unfinished string", TK_EOS);
+					throw lexError("unfinished string", TK_EOS);
 				case '\n':
 				case '\r':
-					throw lexerror("unfinished string", TK_STRING);
+					throw lexError("unfinished string", TK_STRING);
 				case '\\': {
 					int c;
 					nextChar(); /* do not save the `\' */
@@ -528,22 +535,22 @@ public class LexState {
 						case '\n': /* go through */
 						case '\r':
 							save('\n');
-							inclinenumber();
+							inclineNumber();
 							continue;
 						case EOZ:
 							continue; /* will raise an error next loop */
 						default: {
-							if (!isdigit(current)) {
+							if (!isDigit(current)) {
 								save_and_next(); /* handles \\, \", \', and \? */
 							} else { /* \xxx */
 								int i = 0;
 								c = 0;
 								do {
-									c = 10 * c + (current - '0');
+									c = 10 * c + current - '0';
 									nextChar();
-								} while (++i < 3 && isdigit(current));
+								} while (++i < 3 && isDigit(current));
 								if (c > UCHAR_MAX) {
-									throw lexerror("escape sequence too large", TK_STRING);
+									throw lexError("escape sequence too large", TK_STRING);
 								}
 								save(c);
 							}
@@ -559,7 +566,7 @@ public class LexState {
 			}
 		}
 		save_and_next(); /* skip delimiter */
-		seminfo.ts = newstring(buff, 1, nbuff - 2);
+		seminfo.ts = newString(buff, 1, nbuff - 2);
 	}
 
 	private int llex(SemInfo seminfo) throws CompileException {
@@ -568,7 +575,7 @@ public class LexState {
 			switch (current) {
 				case '\n':
 				case '\r': {
-					inclinenumber();
+					inclineNumber();
 					continue;
 				}
 				case '-': {
@@ -601,7 +608,7 @@ public class LexState {
 					} else if (sep == -1) {
 						return '[';
 					} else {
-						throw lexerror("invalid long string delimiter", TK_STRING);
+						throw lexError("invalid long string delimiter", TK_STRING);
 					}
 				}
 				case '=': {
@@ -653,7 +660,7 @@ public class LexState {
 						} else {
 							return TK_CONCAT; /* .. */
 						}
-					} else if (!isdigit(current)) {
+					} else if (!isDigit(current)) {
 						return '.';
 					} else {
 						read_numeral(seminfo);
@@ -664,19 +671,19 @@ public class LexState {
 					return TK_EOS;
 				}
 				default: {
-					if (isspace(current)) {
+					if (isSpace(current)) {
 						LuaC._assert(!currIsNewline());
 						nextChar();
-					} else if (isdigit(current)) {
+					} else if (isDigit(current)) {
 						read_numeral(seminfo);
 						return TK_NUMBER;
-					} else if (isalpha(current) || current == '_') {
+					} else if (isAlpha(current) || current == '_') {
 					/* identifier or reserved word */
 						LuaString ts;
 						do {
 							save_and_next();
-						} while (isalnum(current) || current == '_');
-						ts = newstring(buff, 0, nbuff);
+						} while (isAlphaNum(current) || current == '_');
+						ts = newString(buff, 0, nbuff);
 						if (RESERVED.containsKey(ts)) {
 							return RESERVED.get(ts);
 						} else {
@@ -733,7 +740,7 @@ public class LexState {
 			}
 
 			public LuaValue nval() {
-				return (_nval == null ? LuaInteger.valueOf(s.info) : _nval);
+				return _nval == null ? LuaInteger.valueOf(s.info) : _nval;
 			}
 		}
 
@@ -749,11 +756,11 @@ public class LexState {
 		}
 
 		boolean hasjumps() {
-			return (t.i != f.i);
+			return t.i != f.i;
 		}
 
 		boolean isnumeral() {
-			return (k == VKNUM && t.i == NO_JUMP && f.i == NO_JUMP);
+			return k == VKNUM && t.i == NO_JUMP && f.i == NO_JUMP;
 		}
 
 		public void setvalue(expdesc other) {
@@ -767,7 +774,7 @@ public class LexState {
 	}
 
 	private boolean hasmultret(int k) {
-		return ((k) == VCALL || (k) == VVARARG);
+		return k == VCALL || k == VVARARG;
 	}
 
 	/*----------------------------------------------------------------------
@@ -779,7 +786,7 @@ public class LexState {
 	 */
 
 	private void error_expected(int token) throws CompileException {
-		throw syntaxerror(L.pushfstring(LUA_QS(token2str(token)) + " expected"));
+		throw syntaxError(LUA_QS(token2str(token)) + " expected");
 	}
 
 	private boolean testnext(int c) throws CompileException {
@@ -803,8 +810,8 @@ public class LexState {
 	}
 
 	private void check_condition(boolean c, String msg) throws CompileException {
-		if (!(c)) {
-			throw syntaxerror(msg);
+		if (!c) {
+			throw syntaxError(msg);
 		}
 	}
 
@@ -814,9 +821,9 @@ public class LexState {
 			if (where == linenumber) {
 				error_expected(what);
 			} else {
-				throw syntaxerror(L.pushfstring(LUA_QS(token2str(what))
+				throw syntaxError(LUA_QS(token2str(what))
 					+ " expected " + "(to close " + LUA_QS(token2str(who))
-					+ " at line " + where + ")"));
+					+ " at line " + where + ")");
 			}
 		}
 	}
@@ -854,7 +861,7 @@ public class LexState {
 //	  this.new_localvar(luaX_newstring(ls, "" v, (sizeof(v)/sizeof(char))-1), n)
 //
 	private void new_localvarliteral(String v, int n) throws CompileException {
-		LuaString ts = newstring(v);
+		LuaString ts = newString(v);
 		new_localvar(ts, n);
 	}
 
@@ -915,13 +922,13 @@ public class LexState {
 	}
 
 	private void enterlevel() throws CompileException {
-		if (++L.nCcalls > LUAI_MAXCCALLS) {
-			throw lexerror("chunk has too many syntax levels", 0);
+		if (++nCcalls > LUAI_MAXCCALLS) {
+			throw lexError("chunk has too many syntax levels", 0);
 		}
 	}
 
 	private void leavelevel() {
-		L.nCcalls--;
+		nCcalls--;
 	}
 
 	private void pushclosure(FuncState func, expdesc v) throws CompileException {
@@ -933,14 +940,13 @@ public class LexState {
 		f.p[fs.np++] = func.f;
 		v.init(VRELOCABLE, fs.codeABx(Lua.OP_CLOSURE, 0, fs.np - 1));
 		for (int i = 0; i < func.f.nups; i++) {
-			int o = (func.upvalues[i].k == VLOCAL) ? Lua.OP_MOVE
+			int o = func.upvalues[i].k == VLOCAL ? Lua.OP_MOVE
 				: Lua.OP_GETUPVAL;
 			fs.codeABC(o, 0, func.upvalues[i].info, 0);
 		}
 	}
 
 	void open_func(FuncState fs) {
-		LuaC L = this.L;
 		Prototype f = new Prototype();
 		if (this.fs != null) {
 			f.source = this.fs.f.source;
@@ -948,7 +954,6 @@ public class LexState {
 		fs.f = f;
 		fs.prev = this.fs;  /* linked list of funcstates */
 		fs.ls = this;
-		fs.L = L;
 		this.fs = fs;
 		fs.pc = 0;
 		fs.lasttarget = -1;
@@ -1108,13 +1113,13 @@ public class LexState {
 	private static int luaO_int2fb(int x) {
 		int e = 0;  /* expoent */
 		while (x >= 16) {
-			x = (x + 1) >> 1;
+			x = x + 1 >> 1;
 			e++;
 		}
 		if (x < 8) {
 			return x;
 		} else {
-			return ((e + 1) << 3) | (x - 8);
+			return e + 1 << 3 | x - 8;
 		}
 	}
 
@@ -1145,12 +1150,12 @@ public class LexState {
 						break;
 					}
 					default:
-						throw syntaxerror("<name> or " + LUA_QL("...") + " expected");
+						throw syntaxError("<name> or " + LUA_QL("...") + " expected");
 				}
-			} while ((f.is_vararg == 0) && this.testnext(','));
+			} while (f.is_vararg == 0 && this.testnext(','));
 		}
 		this.adjustlocalvars(nparams);
-		f.numparams = (fs.nactvar - (f.is_vararg & Lua.VARARG_HASARG));
+		f.numparams = fs.nactvar - (f.is_vararg & Lua.VARARG_HASARG);
 		fs.reserveregs(fs.nactvar);  /* reserve register for parameters */
 	}
 
@@ -1195,7 +1200,7 @@ public class LexState {
 		switch (this.t.token) {
 			case '(': { /* funcargs -> `(' [ explist1 ] `)' */
 				if (line != this.lastline) {
-					throw syntaxerror("ambiguous syntax (function call x new statement)");
+					throw syntaxError("ambiguous syntax (function call x new statement)");
 				}
 				this.next();
 				if (this.t.token == ')') /* arg list is empty? */ {
@@ -1217,7 +1222,7 @@ public class LexState {
 				break;
 			}
 			default: {
-				throw syntaxerror("function arguments expected");
+				throw syntaxError("function arguments expected");
 			}
 		}
 		LuaC._assert(f.k == VNONRELOC);
@@ -1259,7 +1264,7 @@ public class LexState {
 				return;
 			}
 			default: {
-				throw syntaxerror("unexpected symbol");
+				throw syntaxError("unexpected symbol");
 			}
 		}
 	}
@@ -1600,7 +1605,7 @@ public class LexState {
 			bl = bl.previous;
 		}
 		if (bl == null) {
-			throw syntaxerror("no loop to break");
+			throw syntaxError("no loop to break");
 		}
 		if (upval) {
 			fs.codeABC(Lua.OP_CLOSE, bl.nactvar, 0, 0);
@@ -1677,10 +1682,10 @@ public class LexState {
 		this.block();
 		fs.leaveblock(); /* end of scope for declared variables */
 		fs.patchtohere(prep);
-		endfor = (isnum) ? fs.codeAsBx(Lua.OP_FORLOOP, base, NO_JUMP) : fs
+		endfor = isnum ? fs.codeAsBx(Lua.OP_FORLOOP, base, NO_JUMP) : fs
 			.codeABC(Lua.OP_TFORLOOP, base, 0, nvars);
 		fs.fixline(line); /* pretend that `Lua.OP_FOR' starts the loop */
-		fs.patchlist((isnum ? endfor : fs.jump()), prep + 1);
+		fs.patchlist(isnum ? endfor : fs.jump(), prep + 1);
 	}
 
 
@@ -1747,7 +1752,7 @@ public class LexState {
 				this.forlist(varname);
 				break;
 			default:
-				throw syntaxerror(LUA_QL("=") + " or " + LUA_QL("in") + " expected");
+				throw syntaxError(LUA_QL("=") + " or " + LUA_QL("in") + " expected");
 		}
 		this.check_match(TK_END, TK_FOR, line);
 		fs.leaveblock(); /* loop scope (`break' jumps to this point) */
@@ -1965,5 +1970,4 @@ public class LexState {
 	}
 
 	/* }====================================================================== */
-
 }
