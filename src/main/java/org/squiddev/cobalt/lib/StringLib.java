@@ -345,10 +345,10 @@ public class StringLib implements LuaLibrary {
 									fdsc.format(result, args.arg(arg).checkDouble());
 									break;
 								case 'q':
-									addquoted(result, args.arg(arg).checkLuaString());
+									addQuoted(result, arg, args.arg(arg));
 									break;
 								case 's': {
-									LuaString s = args.arg(arg).checkLuaString();
+									LuaString s = OperationHelper.toString(args.arg(arg));
 									if (fdsc.precision == -1 && s.length() >= 100) {
 										result.append(s);
 									} else {
@@ -369,7 +369,29 @@ public class StringLib implements LuaLibrary {
 		return result.toLuaString();
 	}
 
-	private static void addquoted(Buffer buf, LuaString s) {
+	private static void addQuoted(Buffer buf, int arg, LuaValue s) throws LuaError {
+		switch (s.type()) {
+			case TSTRING:
+				addQuoted(buf, s.checkLuaString());
+				break;
+			case TNUMBER: {
+				if (s instanceof LuaInteger) {
+					buf.append(Integer.toString(s.checkInteger()));
+				} else {
+					double value = s.checkDouble();
+					buf.append((long) value == value ? Long.toString((long) value) : Double.toHexString(value));
+				}
+				break;
+			}
+			case TBOOLEAN: case TNIL:
+				buf.append(s.toString());
+				break;
+			default:
+				throw ErrorFactory.argError(arg, "value has no literal representation");
+		}
+	}
+
+	private static void addQuoted(Buffer buf, LuaString s) {
 		int c;
 		buf.append((byte) '"');
 		for (int i = 0, n = s.length(); i < n; i++) {

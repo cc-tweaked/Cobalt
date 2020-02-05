@@ -1,13 +1,13 @@
 local function same(left, right)
 	for k, v in pairs(left) do
 		if v ~= right[k] then
-			error(("Mismatch in key %s (%s vs %s)"):format(tostring(k), tostring(left[k]), tostring(right[k])), 2)
+			error(("Mismatch in key %s (%s vs %s)"):format(k, left[k], right[k]), 2)
 		end
 	end
 
 	for k, v in pairs(right) do
 		if v ~= right[k] then
-			error(("Mismatch in key %s (%s vs %s)"):format(tostring(k), tostring(left[k]), tostring(right[k])), 2)
+			error(("Mismatch in key %s (%s vs %s)"):format(k, left[k], right[k]), 2)
 		end
 	end
 end

@@ -198,6 +198,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 						break;
 				}
 			}
+		} else {
+			count = 0;
 		}
 		thread.getDebugState().setHook(func, call, line, rtrn, count);
 		return NONE;

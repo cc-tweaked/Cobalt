@@ -602,4 +602,9 @@ public final class OperationHelper {
 			threadState.javaCount--;
 		}
 	}
+
+	public static LuaString toString(LuaValue value) {
+		LuaValue v = value.toLuaString();
+		return v.isNil() ? LuaString.valueOf(value.toString()) : (LuaString) v;
+	}
 }

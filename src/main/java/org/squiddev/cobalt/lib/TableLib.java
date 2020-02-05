@@ -44,6 +44,8 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.5">http://www.lua.org/manual/5.1/manual.html#5.5</a>
  */
 public class TableLib implements LuaLibrary {
+	private static final LuaValue N = LuaString.valueOf("n");
+
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
@@ -96,7 +98,7 @@ public class TableLib implements LuaLibrary {
 					int count = args.count();
 					LuaTable table = new LuaTable(count, 1);
 					for (int i = 1; i <= count; i++) table.rawset(i, args.arg(i));
-					table.rawset("n", valueOf(count));
+					table.rawset(N, valueOf(count));
 					return table;
 				}
 				default:

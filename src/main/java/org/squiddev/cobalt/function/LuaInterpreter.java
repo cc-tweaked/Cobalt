@@ -32,8 +32,7 @@ import org.squiddev.cobalt.debug.DebugState;
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_FRESH;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_LEQ;
+import static org.squiddev.cobalt.debug.DebugFrame.*;
 
 /**
  * The main interpreter for {@link LuaInterpretedFunction}s.
@@ -480,13 +479,12 @@ public final class LuaInterpreter {
 
 						if (functionVal instanceof LuaInterpretedFunction) {
 							int flags = di.flags;
-							// FIXME: Note, this is incorrect. We should increment the tailcall debug info.
 							closeAll(openups);
 							ds.popInfo();
 
 							// Replace the current frame with a new one.
 							function = (LuaInterpretedFunction) functionVal;
-							di = setupCall(state, function, args, flags & FLAG_FRESH);
+							di = setupCall(state, function, args, (flags & FLAG_FRESH) | FLAG_TAIL);
 
 							continue newFrame;
 						} else {

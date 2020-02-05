@@ -54,6 +54,7 @@ public class AssertTests {
 		"base-issues",
 		"string-issues",
 		"debug",
+		"debug-getinfo",
 		"debug-coroutine-hook",
 		"gc",
 		"immutable",

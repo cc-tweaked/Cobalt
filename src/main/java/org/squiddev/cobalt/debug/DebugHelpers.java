@@ -29,6 +29,7 @@ import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.DebugLib;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 
 /**
  * Helper methods for the debug library
@@ -39,6 +40,8 @@ public final class DebugHelpers {
 	private static final LuaString METHOD = valueOf("method");
 	private static final LuaString UPVALUE = valueOf("upvalue");
 	private static final LuaString FIELD = valueOf("field");
+	private static final LuaString QUESTION = valueOf("?");
+	private static final LuaString HOOK = valueOf("hook");
 
 	private DebugHelpers() {
 	}
@@ -104,55 +107,55 @@ public final class DebugHelpers {
 	}
 
 	// return StrValue[] { name, namewhat } if found, null if not
-	public static LuaString[] getobjname(DebugFrame di, int stackpos) {
-		LuaString name;
-		if (di.closure != null) { // a Lua function?
-			Prototype p = di.closure.getPrototype();
-			int pc = di.pc; // currentpc(L, ci);
-			int i;// Instruction i;
-			name = p.getlocalname(stackpos + 1, pc);
-			if (name != null) /* is a local? */ {
-				return new LuaString[]{name, LOCAL};
+	public static LuaString[] getObjectName(DebugFrame di, int stackpos) {
+		if (di.closure == null) return null;
+		if ((di.flags & FLAG_HOOKED) != 0) return new LuaString[]{QUESTION, HOOK};
+
+		Prototype p = di.closure.getPrototype();
+		int pc = di.pc; // currentpc(L, ci);
+		int i; // Instruction i;
+		LuaString name = p.getlocalname(stackpos + 1, pc);
+
+		// is a local?
+		if (name != null) return new LuaString[]{name, LOCAL};
+
+		i = symbexec(p, pc, stackpos); /* try symbolic execution */
+		lua_assert(pc != -1);
+		switch (Lua.GET_OPCODE(i)) {
+			case Lua.OP_GETGLOBAL: {
+				int g = Lua.GETARG_Bx(i); /* global index */
+				// lua_assert(p.k[g].isString());
+				LuaValue value = p.k[g];
+				LuaValue stringed = value.toLuaString();
+				LuaString string = stringed instanceof LuaString ? (LuaString) stringed : valueOf(value.toString());
+				return new LuaString[]{string, GLOBAL};
 			}
-			i = symbexec(p, pc, stackpos); /* try symbolic execution */
-			lua_assert(pc != -1);
-			switch (Lua.GET_OPCODE(i)) {
-				case Lua.OP_GETGLOBAL: {
-					int g = Lua.GETARG_Bx(i); /* global index */
-					// lua_assert(p.k[g].isString());
-					LuaValue value = p.k[g];
-					LuaValue stringed = value.toLuaString();
-					LuaString string = stringed instanceof LuaString ? (LuaString) stringed : valueOf(value.toString());
-					return new LuaString[]{string, GLOBAL};
+			case Lua.OP_MOVE: {
+				int a = Lua.GETARG_A(i);
+				int b = Lua.GETARG_B(i); /* move from `b' to `a' */
+				if (b < a) {
+					return getObjectName(di, b); /* get name for `b' */
 				}
-				case Lua.OP_MOVE: {
-					int a = Lua.GETARG_A(i);
-					int b = Lua.GETARG_B(i); /* move from `b' to `a' */
-					if (b < a) {
-						return getobjname(di, b); /* get name for `b' */
-					}
-					break;
-				}
-				case Lua.OP_GETTABLE: {
-					int k = Lua.GETARG_C(i); /* key index */
-					name = constantName(p, k);
-					return new LuaString[]{name, FIELD};
-				}
-				case Lua.OP_GETUPVAL: {
-					int u = Lua.GETARG_B(i); /* upvalue index */
-					name = u < p.upvalues.length ? p.upvalues[u] : DebugLib.QMARK;
-					return new LuaString[]{name, UPVALUE};
-				}
-				case Lua.OP_SELF: {
-					int k = Lua.GETARG_C(i); /* key index */
-					name = constantName(p, k);
-					return new LuaString[]{name, METHOD};
-				}
-				default:
-					break;
+				break;
+			}
+			case Lua.OP_GETTABLE: {
+				int k = Lua.GETARG_C(i); /* key index */
+				name = constantName(p, k);
+				return new LuaString[]{name, FIELD};
+			}
+			case Lua.OP_GETUPVAL: {
+				int u = Lua.GETARG_B(i); /* upvalue index */
+				name = u < p.upvalues.length ? p.upvalues[u] : DebugLib.QMARK;
+				return new LuaString[]{name, UPVALUE};
+			}
+			case Lua.OP_SELF: {
+				int k = Lua.GETARG_C(i); /* key index */
+				name = constantName(p, k);
+				return new LuaString[]{name, METHOD};
 			}
 		}
-		return null; /* no useful name found */
+
+		return null; // no useful name found
 	}
 
 	// return last instruction, or 0 if error

@@ -286,11 +286,10 @@ public class BaseLib implements LuaLibrary {
 					if (!h.isNil()) {
 						return OperationHelper.call(state, h, arg);
 					}
-					LuaValue v = arg.toLuaString();
-					if (!v.isNil()) {
-						return v;
-					}
-					return valueOf(arg.toString());
+
+					// TODO: OperationHelper.toString should call the metamethod instead. See
+					//  https://www.lua.org/source/5.3/lauxlib.c.html#luaL_tolstring
+					return OperationHelper.toString(arg);
 				}
 				case 15: { // "tonumber", // (e [,base]) -> value
 					LuaValue arg1 = args.checkValue(1);

@@ -1,12 +1,11 @@
 local function fails(str, exp)
 	local ok, err = loadstring("return " .. str, "=x")
 	assert(not ok)
-	if err ~= exp then error(("Expected %s,\n got %s"):format(exp, err, 0)) end
+	if err ~= exp then error(("Expected %s,\n got %s"):format(exp, err), 2) end
 end
 
-local function ok(str, exp)
-	local ok = loadstring("return " .. str, "=x")
-	assert(ok)
+local function ok(str)
+	assert(loadstring("return " .. str, "=x"))
 end
 
 fails("1a", "x:1: malformed number near '1a'")

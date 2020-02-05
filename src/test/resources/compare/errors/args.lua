@@ -29,6 +29,8 @@ somekey = { akey }
 notakey = { astring, anumber, aboolean, atable, afunction }
 
 notastring = { nil, aboolean, atable, afunction, athread }
+notastring_prim    = { n = 2, nil, aboolean }
+notastring_complex = { atable, afunction, athread }
 notanumber = { nil, astring, aboolean, atable, afunction, athread }
 notaboolean = { nil, astring, anumber, atable, afunction, athread }
 notatable = { nil, astring, anumber, aboolean, afunction, athread }

@@ -104,6 +104,14 @@ public final class DebugFrame {
 	public static final int FLAG_JAVA = 1 << 12;
 
 	/**
+	 * Whether this function was tail called
+	 *
+	 * @see #flags
+	 * @see LuaInterpreter
+	 */
+	public static final int FLAG_TAIL = 1 << 13;
+
+	/**
 	 * The debug info's function
 	 */
 	public LuaFunction func;
@@ -205,10 +213,12 @@ public final class DebugFrame {
 	 */
 	public LuaString[] getFuncKind() {
 		DebugFrame previous = this.previous;
+		if ((flags & FLAG_TAIL) != 0) return null;
+
 		if (previous == null || previous.closure == null || previous.pc < 0) return null;
 
 		int stackpos = (previous.closure.getPrototype().code[previous.pc] >> 6) & 0xff;
-		return DebugHelpers.getobjname(previous, stackpos);
+		return DebugHelpers.getObjectName(previous, stackpos);
 	}
 
 	public String sourceLine() {

@@ -215,50 +215,51 @@ public final class DebugState {
 
 	public void hookCall(DebugFrame frame) throws LuaError, UnwindThrowable {
 		inhook = true;
+		frame.flags |= FLAG_HOOKED;
 		try {
 			hookfunc.onCall(state, this, frame);
 		} catch (LuaError | RuntimeException e) {
 			inhook = false;
 			throw e;
-		} catch (UnwindThrowable e) {
-			frame.flags |= FLAG_HOOKED;
-			throw e;
 		}
 
 		inhook = false;
+		frame.flags &= ~FLAG_HOOKED;
 	}
 
 	void hookReturn(DebugFrame frame) throws LuaError, UnwindThrowable {
 		inhook = true;
+		frame.flags |= FLAG_HOOKED;
 		try {
 			hookfunc.onReturn(state, this, frame);
 		} catch (LuaError | RuntimeException e) {
 			inhook = false;
 			throw e;
-		} catch (UnwindThrowable e) {
-			frame.flags |= FLAG_HOOKED;
-			throw e;
 		}
 
 		inhook = false;
+		frame.flags &= ~FLAG_HOOKED;
 	}
 
 	void hookInstruction(DebugFrame frame) throws LuaError, UnwindThrowable {
 		inhook = true;
+		frame.flags |= FLAG_HOOKED;
 		try {
 			hookfunc.onCount(state, this, frame);
 		} catch (LuaError | RuntimeException e) {
 			inhook = false;
 			throw e;
 		} catch (UnwindThrowable e) {
-			frame.flags |= FLAG_HOOKED | FLAG_HOOKYIELD;
+			frame.flags |= FLAG_HOOKYIELD;
 			throw e;
 		}
 		inhook = false;
+		frame.flags &= ~FLAG_HOOKED;
 	}
 
 	void hookLine(DebugFrame frame, int newLine) throws LuaError, UnwindThrowable {
 		inhook = true;
+		frame.flags |= FLAG_HOOKED;
 		try {
 			hookfunc.onLine(state, this, frame, newLine);
 		} catch (LuaError | RuntimeException e) {
@@ -269,5 +270,6 @@ public final class DebugState {
 			throw e;
 		}
 		inhook = false;
+		frame.flags &= ~FLAG_HOOKED;
 	}
 }
