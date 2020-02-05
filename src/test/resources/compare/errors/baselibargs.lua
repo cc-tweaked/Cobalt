@@ -44,8 +44,8 @@ checkallerrors('ipairs', { notatable }, 'bad argument')
 
 -- load
 banner('load')
-checkallpass('load', { somefunction, { nil, astring, n = 2 } })
-checkallerrors('load', { notafunction, { nil, astring, anumber, n = 3 } }, 'bad argument')
+checkallpass('load', { { afunction, 'return 0' }, { nil, astring, n = 2 } })
+checkallerrors('load', { { nil, aboolean, atable, athread }, { nil, astring, anumber, n = 3 } }, 'bad argument')
 checkallerrors('load', { somefunction, { afunction, atable } }, 'bad argument')
 
 -- loadfile

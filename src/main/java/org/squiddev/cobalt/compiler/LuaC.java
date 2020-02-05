@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.compiler.LoadState.checkMode;
 
 /**
  * Compiler for Lua.
@@ -175,8 +176,8 @@ public class LuaC implements LuaCompiler {
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
 	@Override
-	public LuaFunction load(InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
-		Prototype p = compile(stream, name);
+	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
+		Prototype p = compile(stream, name, mode);
 		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
 		closure.nilUpvalues();
 		return closure;
@@ -196,20 +197,28 @@ public class LuaC implements LuaCompiler {
 	 * @throws CompileException If there is a syntax error.
 	 */
 	public static Prototype compile(InputStream stream, LuaString name) throws IOException, CompileException {
+		return compile(stream, name, null);
+	}
+
+	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws IOException, CompileException {
 		int firstByte = stream.read();
-		return (firstByte == '\033') ?
-			LoadState.loadBinaryChunk(firstByte, stream, name) :
-			INSTANCE.luaY_parser(firstByte, stream, name);
+		if (firstByte == '\033') {
+			checkMode(mode, "binary");
+			return LoadState.loadBinaryChunk(firstByte, stream, name);
+		} else {
+			checkMode(mode, "text");
+			return luaY_parser(firstByte, stream, name);
+		}
 	}
 
 	/**
 	 * Parse the input
 	 */
 	private static Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
-		LexState lexstate = new LexState( z);
+		LexState lexstate = new LexState(z);
 		FuncState funcstate = new FuncState();
 		// lexstate.buff = buff;
-		lexstate.setinput( firstByte, z, name);
+		lexstate.setinput(firstByte, z, name);
 		lexstate.open_func(funcstate);
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;

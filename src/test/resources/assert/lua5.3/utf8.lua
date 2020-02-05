@@ -25,7 +25,7 @@ local function checksyntax (s, t)
   for i = 1, #t do ts[i + 1] = string.format("\\u{%x}", t[i]) end
   ts[#t + 2] = "'"
   ts = table.concat(ts)
-  assert(assert(loadstring(ts))() == s)
+  assert(assert(load(ts))() == s)
 end
 
 assert(utf8.offset("alo", 5) == nil)
@@ -33,7 +33,7 @@ assert(utf8.offset("alo", -4) == nil)
 
 -- 't' is the list of codepoints of 's'
 local function check (s, t)
-  local l = utf8.len(s)
+  local l = utf8.len(s) 
   assert(#t == l and len(s) == l)
   assert(utf8.char(table.unpack(t)) == s)
 
@@ -52,7 +52,7 @@ local function check (s, t)
     assert(utf8.offset(s, -1, pi1) == pi)
     assert(utf8.offset(s, i - l - 1) == pi)
     assert(pi1 - pi == #utf8.char(utf8.codepoint(s, pi)))
-    for j = pi, pi1 - 1 do
+    for j = pi, pi1 - 1 do 
       assert(utf8.offset(s, 0, j) == pi)
     end
     for j = pi + 1, pi1 - 1 do
@@ -76,7 +76,7 @@ local function check (s, t)
   i = 0
   for p, c in utf8.codes(s) do
     i = i + 1
-    assert(c == t[i] and p == utf8.offset(s, i))
+    assert(c == t[i] and p == utf8.offset(s, i)) 
   end
   assert(i == #t)
 
@@ -207,3 +207,4 @@ for p, c in string.gmatch(x, "()(" .. utf8.charpattern .. ")") do
 end
 
 print'ok'
+

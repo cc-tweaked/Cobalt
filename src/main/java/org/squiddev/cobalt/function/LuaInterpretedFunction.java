@@ -43,7 +43,7 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  * There are three main ways {@link LuaInterpretedFunction} instances are created:
  * <ul>
  * <li>Construct an instance using {@link #LuaInterpretedFunction(Prototype, LuaTable)}</li>
- * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, LuaString, LuaTable)}
+ * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, LuaString, LuaString, LuaTable)}
  * <li>Execute the lua bytecode {@link Lua#OP_CLOSURE} as part of bytecode processing
  * </ul>
  *

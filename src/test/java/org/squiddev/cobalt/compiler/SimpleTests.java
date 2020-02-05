@@ -50,7 +50,7 @@ public class SimpleTests {
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
-			LuaFunction c = LuaC.INSTANCE.load(is, valueOf("script"), _G);
+			LuaFunction c = LuaC.INSTANCE.load(is, valueOf("script"), null, _G);
 			LuaThread.runMain(state, c);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);

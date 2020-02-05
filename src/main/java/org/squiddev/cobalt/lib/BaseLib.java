@@ -59,6 +59,7 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
 public class BaseLib implements LuaLibrary {
 	private static final LuaString STDIN_STR = valueOf("=stdin");
 	private static final LuaString FUNCTION_STR = valueOf("function");
+	private static final LuaString LOAD_MODE = valueOf("bt");
 
 	private LuaValue next;
 	private LuaValue inext;
@@ -336,17 +337,30 @@ public class BaseLib implements LuaLibrary {
 				case 1: // "xpcall", // (f, err) -> result1, ...
 					return pcall(state, di, args.checkValue(1), Constants.NONE, args.checkValue(2));
 
-				case 2: // "load", // ( func [,chunkname] ) -> chunk | nil, msg
+				case 2: // "load", // ( func|str [,chunkname[, mode[, env]]] ) -> chunk | nil, msg
 				{
-					LuaValue function = args.arg(1).checkFunction();
+					LuaValue scriptGen = args.arg(1);
 					LuaString chunkName = args.arg(2).optLuaString(FUNCTION_STR);
+					LuaString mode = args.arg(3).optLuaString(LOAD_MODE);
+					LuaTable funcEnv = args.arg(4).optTable(state.getCurrentThread().getfenv());
 
+					// If we're a string, load as normal
+					LuaValue script = scriptGen.toLuaString();
+					if (!script.isNil()) {
+						try {
+							return LoadState.load(state, ((LuaString) script).toInputStream(), chunkName, mode, funcEnv);
+						} catch (Exception e) {
+							return varargsOf(Constants.NIL, LuaError.getMessage(e));
+						}
+					}
+
+					LuaFunction function = scriptGen.checkFunction();
 					Varargs result = pcall(state, di, new ZeroArgFunction() {
 						@Override
 						public LuaValue call(LuaState state) throws LuaError {
 							try {
 								InputStream stream = new StringInputStream(state, function);
-								return LoadState.load(state, stream, chunkName, state.getCurrentThread().getfenv());
+								return LoadState.load(state, stream, chunkName, mode, funcEnv);
 							} catch (Exception e) {
 								throw LuaError.wrapMessage(e);
 							}

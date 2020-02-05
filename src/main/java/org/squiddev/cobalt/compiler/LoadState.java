@@ -70,7 +70,7 @@ public final class LoadState {
 	 * See the {@link LuaClosure} documentation for examples of how to use the compiler.
 	 *
 	 * @see LuaClosure
-	 * @see #load(InputStream, LuaString, LuaTable)
+	 * @see #load(InputStream, LuaString, LuaString, LuaTable)
 	 */
 	public interface LuaCompiler {
 
@@ -79,12 +79,13 @@ public final class LoadState {
 		 *
 		 * @param stream   Stream to read
 		 * @param filename Name of chunk
+		 * @param mode
 		 * @param env      Environment to load
 		 * @return The loaded function
 		 * @throws IOException      On stream read error
 		 * @throws CompileException If the stream cannot be loaded.
 		 */
-		LuaFunction load(InputStream stream, LuaString filename, LuaTable env) throws IOException, CompileException;
+		LuaFunction load(InputStream stream, LuaString filename, LuaString mode, LuaTable env) throws IOException, CompileException;
 	}
 
 	/**
@@ -115,18 +116,20 @@ public final class LoadState {
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
 	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
-		if (state.compiler != null) {
-			return state.compiler.load(stream, name, env);
-		} else {
-			int firstByte = stream.read();
-			if (firstByte != LUA_SIGNATURE[0]) {
-				throw new CompileException("no compiler");
-			}
-			Prototype p = loadBinaryChunk(firstByte, stream, name);
-			LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
-			closure.nilUpvalues();
-			return closure;
-		}
+		return load(state, stream, name, null, env);
+	}
+
+	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
+		if (state.compiler != null) return state.compiler.load(stream, name, mode, env);
+
+		int firstByte = stream.read();
+		if (firstByte != LUA_SIGNATURE[0]) throw new CompileException("no compiler");
+		checkMode(mode, "binary");
+
+		Prototype p = loadBinaryChunk(firstByte, stream, name);
+		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
+		closure.nilUpvalues();
+		return closure;
 	}
 
 	/**
@@ -230,5 +233,11 @@ public final class LoadState {
 		out[offset++] = ']';
 
 		return LuaString.valueOf(out, 0, offset);
+	}
+
+	public static void checkMode(LuaString mode, String current) throws CompileException {
+		if (mode != null && mode.indexOf((byte) current.charAt(0), 0) == -1) {
+			throw new CompileException("attempt to load a " + current + " chunk (mode is " + mode + ")");
+		}
 	}
 }
