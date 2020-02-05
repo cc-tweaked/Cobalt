@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
@@ -47,6 +48,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 /**
  * Ensures that coroutines are correctly cleaned up after executing.
  */
+@Timeout(value = 10)
 public class OrphanedThreadTest {
 	private static final Executor executor = Executors.newCachedThreadPool(command ->
 		new Thread(command, "Coroutine"));

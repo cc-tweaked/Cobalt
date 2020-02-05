@@ -62,6 +62,7 @@ public class AssertTests {
 		"lex-number",
 		"load-error",
 		"no-unwind",
+		"table",
 		"time",
 	})
 	public void main(String name) throws IOException, CompileException, LuaError, InterruptedException {

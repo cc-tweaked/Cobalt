@@ -35,7 +35,7 @@ assert(utf8.offset("alo", -4) == nil)
 local function check (s, t)
   local l = utf8.len(s)
   assert(#t == l and len(s) == l)
-  assert(utf8.char(unpack(t)) == s)
+  assert(utf8.char(table.unpack(t)) == s)
 
   assert(utf8.offset(s, 0) == 1)
 
