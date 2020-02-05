@@ -1,6 +1,6 @@
 print('testing scanner')
 
-local function dostring(x) return assert(loadstring(x))() end
+local function dostring (x) return assert(loadstring(x))() end
 
 dostring("x = 'a\0a'")
 assert(x == 'a\0a' and string.len(x) == 3)
@@ -44,10 +44,10 @@ assert(string.len(b) == 960)
 prog = [=[
 print('+')
 
-a1 = [["isto e' um string com vï¿½rias 'aspas'"]]
+a1 = [["isto e' um string com várias 'aspas'"]]
 a2 = "'aspas'"
 
-assert(string.find(a1, a2) == 33)
+assert(string.find(a1, a2) == 31)
 print('+')
 
 a1 = [==[temp = [[um valor qualquer]]; ]==]
@@ -112,10 +112,10 @@ hello\r\n\
 return debug.getinfo(1).currentline
 ]]
 
-for _, n in pairs { "\n", "\r", "\n\r", "\r\n" } do
-	local prog, nn = string.gsub(prog, "\n", n)
-	assert(dostring(prog) == nn)
-	assert(_G.x == "hi\n" and _G.y == "\nhello\r\n\n")
+for _, n in pairs{"\n", "\r", "\n\r", "\r\n"} do
+  local prog, nn = string.gsub(prog, "\n", n)
+  assert(dostring(prog) == nn)
+  assert(_G.x == "hi\n" and _G.y == "\nhello\r\n\n")
 end
 
 
@@ -141,34 +141,35 @@ x y z [==[ blu foo
 error error]=]===]
 
 -- generate all strings of four of these chars
-local x = { "=", "[", "]", "\n" }
+local x = {"=", "[", "]", "\n"}
 local len = 4
-local function gen(c, n)
-	if n == 0 then coroutine.yield(c)
-	else
-		for _, a in pairs(x) do
-			gen(c .. a, n - 1)
-		end
-	end
+local function gen (c, n)
+  if n==0 then coroutine.yield(c)
+  else
+    for _, a in pairs(x) do
+      gen(c..a, n-1)
+    end
+  end
 end
 
-for s in coroutine.wrap(function() gen("", len) end) do
-	assert(s == loadstring("return [====[\n" .. s .. "]====]")())
+for s in coroutine.wrap(function () gen("", len) end) do
+  assert(s == loadstring("return [====[\n"..s.."]====]")())
 end
 
 
 -- testing decimal point locale
 if os.setlocale("pt_BR") or os.setlocale("ptb") then
-	assert(tonumber("3,4") == 3.4 and tonumber "3.4" == nil)
-	assert(assert(loadstring("return 3.4"))() == 3.4)
-	assert(assert(loadstring("return .4,3"))() == .4)
-	assert(assert(loadstring("return 4."))() == 4.)
-	assert(assert(loadstring("return 4.+.5"))() == 4.5)
-	local a, b = loadstring("return 4.5.")
-	assert(string.find(b, "'4%.5%.'"))
-	assert(os.setlocale("C"))
+  assert(tonumber("3,4") == 3.4 and tonumber"3.4" == nil)
+  assert(assert(loadstring("return 3.4"))() == 3.4)
+  assert(assert(loadstring("return .4,3"))() == .4)
+  assert(assert(loadstring("return 4."))() == 4.)
+  assert(assert(loadstring("return 4.+.5"))() == 4.5)
+  local a,b = loadstring("return 4.5.")
+  assert(string.find(b, "'4%.5%.'"))
+  assert(os.setlocale("C"))
 else
-	(Message or print)('\a\n >>> pt_BR locale not available: skipping decimal point tests <<<\n\a')
+  (Message or print)(
+   '\a\n >>> pt_BR locale not available: skipping decimal point tests <<<\n\a')
 end
 
 

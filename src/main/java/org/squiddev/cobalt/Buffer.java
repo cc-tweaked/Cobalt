@@ -1,7 +1,8 @@
 /*
- * ****************************************************************************
+ * The MIT License (MIT)
+ *
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2017 SquidDev
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,17 +11,16 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt;
 
@@ -157,6 +157,34 @@ public final class Buffer {
 	}
 
 	/**
+	 * Append an array of bytes to the buffer.
+	 *
+	 * @param b The bytes to append
+	 * @return {@code this} to allow call chaining
+	 */
+	public final Buffer append(byte[] b) {
+		makeRoom(0, b.length);
+		System.arraycopy(b, 0, bytes, offset + length, b.length);
+		length += b.length;
+		return this;
+	}
+
+	/**
+	 * Append a region of bytes to the buffer.
+	 *
+	 * @param b      The bytes to append
+	 * @param start  The start index
+	 * @param length The number of values to append
+	 * @return {@code this} to allow call chaining
+	 */
+	public final Buffer append(byte[] b, int start, int length) {
+		makeRoom(0, length);
+		System.arraycopy(b, start, bytes, offset + this.length, length);
+		this.length += length;
+		return this;
+	}
+
+	/**
 	 * Append a single character to the buffer.
 	 *
 	 * @param c The byte to append
@@ -244,7 +272,7 @@ public final class Buffer {
 			System.arraycopy(s.bytes, s.offset, bytes, offset, length);
 		} else if (offset + length + nafter > bytes.length || offset < nbefore) {
 			int n = nbefore + length + nafter;
-			int m = n < 32 ? 32 : n < length * 2 ? length * 2 : n;
+			int m = n < 32 ? 32 : Math.max(n, length * 2);
 			realloc(m, nbefore == 0 ? 0 : m - length - nafter);
 		}
 	}

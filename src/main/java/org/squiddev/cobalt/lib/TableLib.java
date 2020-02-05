@@ -1,7 +1,8 @@
 /*
- * ****************************************************************************
+ * The MIT License (MIT)
+ *
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2017 SquidDev
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,17 +11,16 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt.lib;
 
@@ -31,6 +31,7 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code table}
@@ -47,8 +48,8 @@ public class TableLib implements LuaLibrary {
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(t, TableLib1::new, new String[]{"getn", "maxn",});
-		LibFunction.bind(t, TableLibV::new, new String[]{"remove", "concat", "insert"});
-		LibFunction.bind(t, TableLibR::new, new String[]{"sort", "foreach", "foreachi"});
+		LibFunction.bind(t, TableLibV::new, new String[]{"remove", "concat", "insert", "pack"});
+		LibFunction.bind(t, TableLibR::new, new String[]{"sort", "foreach", "foreachi", "unpack"});
 		env.rawset("table", t);
 		state.loadedPackages.rawset("table", t);
 		return t;
@@ -91,6 +92,13 @@ public class TableLib implements LuaLibrary {
 					table.insert(pos, value);
 					return NONE;
 				}
+				case 3: { // pack(...)
+					int count = args.count();
+					LuaTable table = new LuaTable(count, 1);
+					for (int i = 1; i <= count; i++) table.rawset(i, args.arg(i));
+					table.rawset("n", valueOf(count));
+					return table;
+				}
 				default:
 					return NONE;
 			}
@@ -127,6 +135,24 @@ public class TableLib implements LuaLibrary {
 					ForEachIState res = new ForEachIState(table, function);
 					di.state = res;
 					return foreachi(state, table, function, res);
+				}
+				case 3: { // unpack(table[, start[, stop]])
+					LuaValue table = args.arg(1);
+					int start = args.arg(2).optInteger(1);
+					UnpackState res = new UnpackState(table, start);
+					di.state = res;
+
+					LuaValue endValue = args.arg(3);
+					int end = res.end = (endValue.isNil() ? OperationHelper.length(state, table) : endValue).checkInteger();
+					if (start > end) return NONE;
+					LuaValue[] values = res.values = new LuaValue[end - start + 1];
+
+					for (int i = start; i <= end; i++) {
+						res.index = i;
+						values[i - start] = OperationHelper.getTable(state, table, valueOf(i));
+					}
+
+					return varargsOf(values);
 				}
 				default:
 					return NONE;
@@ -166,6 +192,32 @@ public class TableLib implements LuaLibrary {
 					return foreachi(state, res.table, res.func, res);
 				}
 
+				case 3: { // unpack(table[, start[, stop]])
+					UnpackState res = (UnpackState) object;
+					int start = res.start;
+					LuaValue table = res.table;
+					int end = res.end;
+					LuaValue[] values = res.values;
+
+					// If values is null, then we've yielded from fetching the length.
+					if (values == null) {
+						end = res.end = value.first().checkInteger();
+						if (start > end) return NONE;
+						values = res.values = new LuaValue[end - start + 1];
+						res.index = start;
+					} else {
+						values[res.index - start] = value.first();
+						res.index++;
+					}
+
+					for (int i = res.index; i <= end; i++) {
+						res.index = i;
+						values[i - start] = OperationHelper.getTable(state, table, valueOf(i));
+					}
+
+					return varargsOf(values);
+				}
+
 				default:
 					throw new NonResumableException("Cannot resume " + debugName());
 			}
@@ -180,6 +232,20 @@ public class TableLib implements LuaLibrary {
 		ForEachState(LuaTable table, LuaValue func) {
 			this.table = table;
 			this.func = func;
+		}
+	}
+
+	static final class UnpackState {
+		private final LuaValue table;
+		private final int start;
+		private int index;
+
+		private int end;
+		private LuaValue[] values;
+
+		UnpackState(LuaValue table, int start) {
+			this.table = table;
+			this.start = start;
 		}
 	}
 

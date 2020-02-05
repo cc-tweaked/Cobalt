@@ -1,6 +1,8 @@
-/**
- * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+/*
+ * The MIT License (MIT)
+ *
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -9,41 +11,34 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt.table;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 
 import java.util.Vector;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.Matchers.between;
 
 /**
  * Tests for tables used as lists.
  */
 public class TableArrayTest {
-	private LuaState state;
-
-	@Before
-	public void setup() throws Exception {
-		state = new LuaState();
-	}
+	private final LuaState state = new LuaState();
 
 	@Test
 	public void testInOrderIntegerKeyInsertion() throws LuaError, UnwindThrowable {
@@ -127,14 +122,14 @@ public class TableArrayTest {
 				final int ik = k.toInteger();
 				assertTrue(ik >= 0 && ik < 10);
 				final int mask = 1 << ik;
-				assertTrue((intKeys & mask) == 0);
+				assertEquals(0, (intKeys & mask));
 				intKeys |= mask;
 			} else if (k instanceof LuaString) {
 				final int ik = Integer.parseInt(k.toString());
 				assertEquals(String.valueOf(ik), k.toString());
 				assertTrue(ik >= 0 && ik < 10);
 				final int mask = 1 << ik;
-				assertTrue("Key \"" + ik + "\" found more than once", (stringKeys & mask) == 0);
+				assertEquals(0, (stringKeys & mask), "Key \"" + ik + "\" found more than once");
 				stringKeys |= mask;
 			} else {
 				fail("Unexpected type of key found");

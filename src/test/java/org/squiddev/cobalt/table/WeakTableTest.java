@@ -1,6 +1,8 @@
-/**
- * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+/*
+ * The MIT License (MIT)
+ *
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -9,22 +11,20 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt.table;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 
 import java.lang.ref.WeakReference;
@@ -32,18 +32,12 @@ import java.lang.ref.WeakReference;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.userdataOf;
 
 public abstract class WeakTableTest {
-	protected LuaState state;
-
-	@Before
-	public void setup() throws Exception {
-		state = new LuaState();
-	}
+	protected final LuaState state = new LuaState();
 
 	public static class MyData {
 		public final int value;
@@ -124,7 +118,7 @@ public abstract class WeakTableTest {
 			// check that they are dropped
 			assertEquals(NIL, OperationHelper.getTable(state, t, ValueFactory.valueOf("table")));
 			assertEquals(NIL, OperationHelper.getTable(state, t, ValueFactory.valueOf("userdata")));
-			assertFalse("strings should not be in weak references", OperationHelper.getTable(state, t, ValueFactory.valueOf("string")).isNil());
+			assertFalse(OperationHelper.getTable(state, t, ValueFactory.valueOf("string")).isNil(), "strings should not be in weak references");
 		}
 
 		@Test
@@ -169,10 +163,10 @@ public abstract class WeakTableTest {
 
 			// value should not be reachable after gc
 			collectGarbage();
-			assertEquals(null, origkey.get());
+			assertNull(origkey.get());
 			assertEquals(NIL, OperationHelper.getTable(state, t, key));
 			collectGarbage();
-			assertEquals(null, origval.get());
+			assertNull(origval.get());
 		}
 
 		@Test
@@ -245,10 +239,10 @@ public abstract class WeakTableTest {
 
 			// no values should be reachable after gc
 			collectGarbage();
-			assertEquals(null, origkey.get());
-			assertEquals(null, origval.get());
-			assertEquals(null, origkey2.get());
-			assertEquals(null, origval3.get());
+			assertNull(origkey.get());
+			assertNull(origval.get());
+			assertNull(origkey2.get());
+			assertNull(origval3.get());
 			assertEquals(NIL, OperationHelper.getTable(state, t, key));
 			assertEquals(NIL, OperationHelper.getTable(state, t, key2));
 			assertEquals(NIL, OperationHelper.getTable(state, t, key3));
@@ -257,8 +251,8 @@ public abstract class WeakTableTest {
 			val2 = null;
 			key3 = null;
 			collectGarbage();
-			assertEquals(null, origval2.get());
-			assertEquals(null, origkey3.get());
+			assertNull(origval2.get());
+			assertNull(origkey3.get());
 		}
 
 		@Test

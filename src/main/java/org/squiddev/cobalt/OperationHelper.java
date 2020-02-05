@@ -1,7 +1,8 @@
 /*
- * ****************************************************************************
+ * The MIT License (MIT)
+ *
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2017 SquidDev
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,19 +11,17 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
-
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugFrame;
@@ -330,8 +329,8 @@ public final class OperationHelper {
 				LuaTable rightMeta = right.getMetatable(state);
 				if (rightMeta == null) return false;
 
-				LuaValue h = leftMeta.rawget(Constants.EQ);
-				return !(h.isNil() || h != rightMeta.rawget(Constants.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
+				LuaValue h = leftMeta.rawget(CachedMetamethod.EQ);
+				return !(h.isNil() || h != rightMeta.rawget(CachedMetamethod.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
 			}
 			default:
 				return left == right || left.raweq(right);
@@ -367,7 +366,7 @@ public final class OperationHelper {
 			case TSTRING:
 				return valueOf(((LuaString) value).length());
 			default: {
-				LuaValue h = value.metatag(state, Constants.LEN);
+				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
 				if (h.isNil()) {
 					throw ErrorFactory.operandError(state, value, "get length of", stack);
 				}
@@ -516,10 +515,10 @@ public final class OperationHelper {
 		do {
 			if (t.isTable()) {
 				LuaValue res = ((LuaTable) t).rawget(key);
-				if (!res.isNil() || (tm = t.metatag(state, Constants.INDEX)).isNil()) {
+				if (!res.isNil() || (tm = t.metatag(state, CachedMetamethod.INDEX)).isNil()) {
 					return res;
 				}
-			} else if ((tm = t.metatag(state, Constants.INDEX)).isNil()) {
+			} else if ((tm = t.metatag(state, CachedMetamethod.INDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 			if (tm.isFunction()) {
@@ -553,11 +552,11 @@ public final class OperationHelper {
 			if (t.isTable()) {
 				LuaTable table = (LuaTable) t;
 				key.checkValidKey();
-				if (!table.rawget(key).isNil() || (tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
+				if (!table.rawget(key).isNil() || (tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
 					table.rawset(key, value);
 					return;
 				}
-			} else if ((tm = t.metatag(state, Constants.NEWINDEX)).isNil()) {
+			} else if ((tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 			if (tm.isFunction()) {

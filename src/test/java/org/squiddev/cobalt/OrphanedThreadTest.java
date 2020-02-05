@@ -1,6 +1,8 @@
 /*
- * ****************************************************************************
- * Copyright (c) 2012 Luaj.org. All rights reserved.
+ * The MIT License (MIT)
+ *
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -9,23 +11,23 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
@@ -39,10 +41,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
+/**
+ * Ensures that coroutines are correctly cleaned up after executing.
+ */
+@Timeout(value = 10)
 public class OrphanedThreadTest {
 	private static final Executor executor = Executors.newCachedThreadPool(command ->
 		new Thread(command, "Coroutine"));
@@ -54,7 +60,7 @@ public class OrphanedThreadTest {
 
 	private final AtomicInteger active = new AtomicInteger();
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		LuaThread.orphanCheckInterval = TimeUnit.MILLISECONDS.toNanos(5);
 		state = new LuaState.Builder()
@@ -79,7 +85,7 @@ public class OrphanedThreadTest {
 		});
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() {
 		LuaThread.orphanCheckInterval = TimeUnit.SECONDS.toNanos(30);
 	}
@@ -180,12 +186,12 @@ public class OrphanedThreadTest {
 		LuaThread.run(thread, NONE);
 
 		assertEquals("suspended", thread.getStatus());
-		assertEquals("Should have some active threads", 6, active.get());
+		assertEquals(6, active.get(), "Should have some active threads");
 
 		state.abandon();
 
 		for (int i = 0; i < 100 && active.get() > 0; i++) Thread.sleep(5);
-		assertEquals("Should have no active threads", 0, active.get());
+		assertEquals(0, active.get(), "Should have no active threads");
 	}
 
 	private void doTest(boolean secondOk, LuaValue secondValue) throws Exception {
@@ -202,10 +208,10 @@ public class OrphanedThreadTest {
 
 		try {
 			Varargs result = LuaThread.run(thread, valueOf("bar"));
-			assertTrue("Expected to error, but succeeded", secondOk);
+			assertTrue(secondOk, "Expected to error, but succeeded");
 			assertEquals(secondValue, result);
 		} catch (LuaError e) {
-			assertFalse("Expected to succeed, but errored (" + e.getMessage() + ")", secondOk);
+			assertFalse(secondOk, "Expected to succeed, but errored (" + e.getMessage() + ")");
 			assertEquals(secondValue, e.value);
 		}
 
@@ -222,8 +228,8 @@ public class OrphanedThreadTest {
 		}
 
 		// check reference
-		assertNull("Thread should have been GCed:", luaThreadRef.get());
-		assertNull("Function should have been GCed:", luaFuncRef.get());
+		assertNull(luaThreadRef.get(), "Thread should have been GCed:");
+		assertNull(luaFuncRef.get(), "Function should have been GCed:");
 	}
 
 

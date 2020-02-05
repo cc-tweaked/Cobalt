@@ -1,7 +1,8 @@
 /*
- * ****************************************************************************
+ * The MIT License (MIT)
+ *
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2017 SquidDev
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,19 +11,17 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
-
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.LuaC;
@@ -101,110 +100,137 @@ public class Constants {
 		"thread",
 		"value",
 	};
+
 	/**
 	 * LuaValue constant corresponding to lua {@code nil}
 	 */
 	public static final LuaValue NIL = LuaNil._NIL;
+
 	/**
 	 * LuaBoolean constant corresponding to lua {@code true}
 	 */
 	public static final LuaBoolean TRUE = LuaBoolean._TRUE;
+
 	/**
 	 * LuaBoolean constant corresponding to lua {@code false}
 	 */
 	public static final LuaBoolean FALSE = LuaBoolean._FALSE;
+
 	/**
 	 * LuaValue constant corresponding to a {@link Varargs} list of no values
 	 */
 	public static final LuaValue NONE = None._NONE;
+
 	/**
 	 * LuaValue number constant equal to 0
 	 */
 	public static final LuaNumber ZERO = LuaInteger.valueOf(0);
+
 	/**
 	 * LuaValue number constant equal to 1
 	 */
 	public static final LuaNumber ONE = LuaInteger.valueOf(1);
+
 	/**
 	 * LuaValue number constant equal to -1
 	 */
 	public static final LuaNumber MINUSONE = LuaInteger.valueOf(-1);
+
 	/**
 	 * LuaValue array constant with no values
 	 */
 	public static final LuaValue[] NOVALS = {};
+
 	/**
 	 * LuaString constant with value "__index" for use as metatag
 	 */
 	public static final LuaString INDEX = valueOf("__index");
+
 	/**
 	 * LuaString constant with value "__newindex" for use as metatag
 	 */
 	public static final LuaString NEWINDEX = valueOf("__newindex");
+
 	/**
 	 * LuaString constant with value "__call" for use as metatag
 	 */
 	public static final LuaString CALL = valueOf("__call");
+
 	/**
 	 * LuaString constant with value "__mode" for use as metatag
 	 */
 	public static final LuaString MODE = valueOf("__mode");
+
 	/**
 	 * LuaString constant with value "__metatable" for use as metatag
 	 */
 	public static final LuaString METATABLE = valueOf("__metatable");
+
 	/**
 	 * LuaString constant with value "__add" for use as metatag
 	 */
 	public static final LuaString ADD = valueOf("__add");
+
 	/**
 	 * LuaString constant with value "__sub" for use as metatag
 	 */
 	public static final LuaString SUB = valueOf("__sub");
+
 	/**
 	 * LuaString constant with value "__div" for use as metatag
 	 */
 	public static final LuaString DIV = valueOf("__div");
+
 	/**
 	 * LuaString constant with value "__mul" for use as metatag
 	 */
 	public static final LuaString MUL = valueOf("__mul");
+
 	/**
 	 * LuaString constant with value "__pow" for use as metatag
 	 */
 	public static final LuaString POW = valueOf("__pow");
+
 	/**
 	 * LuaString constant with value "__mod" for use as metatag
 	 */
 	public static final LuaString MOD = valueOf("__mod");
+
 	/**
 	 * LuaString constant with value "__unm" for use as metatag
 	 */
 	public static final LuaString UNM = valueOf("__unm");
+
 	/**
 	 * LuaString constant with value "__len" for use as metatag
 	 */
 	public static final LuaString LEN = valueOf("__len");
+
 	/**
 	 * LuaString constant with value "__eq" for use as metatag
 	 */
 	public static final LuaString EQ = valueOf("__eq");
+
 	/**
 	 * LuaString constant with value "__lt" for use as metatag
 	 */
 	public static final LuaString LT = valueOf("__lt");
+
 	/**
 	 * LuaString constant with value "__le" for use as metatag
 	 */
 	public static final LuaString LE = valueOf("__le");
+
 	/**
 	 * LuaString constant with value "__tostring" for use as metatag
 	 */
 	public static final LuaString TOSTRING = valueOf("__tostring");
+
 	/**
 	 * LuaString constant with value "__concat" for use as metatag
 	 */
 	public static final LuaString CONCAT = valueOf("__concat");
+
 	/**
 	 * LuaString constant with value ""
 	 */

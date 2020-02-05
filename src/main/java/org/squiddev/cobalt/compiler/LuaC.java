@@ -1,7 +1,8 @@
 /*
- * ****************************************************************************
+ * The MIT License (MIT)
+ *
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2017 SquidDev
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,17 +11,16 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt.compiler;
 
@@ -35,7 +35,6 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
@@ -169,14 +168,7 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	public int nCcalls;
-	private Hashtable<LuaString, LuaString> strings;
-
-	protected LuaC() {
-	}
-
-	private LuaC(Hashtable<LuaString, LuaString> strings) {
-		this.strings = strings;
+	private LuaC() {
 	}
 
 	/**
@@ -207,22 +199,22 @@ public class LuaC implements LuaCompiler {
 		int firstByte = stream.read();
 		return (firstByte == '\033') ?
 			LoadState.loadBinaryChunk(firstByte, stream, name) :
-			(new LuaC(new Hashtable<>())).luaY_parser(firstByte, stream, name);
+			INSTANCE.luaY_parser(firstByte, stream, name);
 	}
 
 	/**
 	 * Parse the input
 	 */
-	private Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
-		LexState lexstate = new LexState(this, z);
+	private static Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
+		LexState lexstate = new LexState( z);
 		FuncState funcstate = new FuncState();
 		// lexstate.buff = buff;
-		lexstate.setinput(this, firstByte, z, name);
+		lexstate.setinput( firstByte, z, name);
 		lexstate.open_func(funcstate);
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
 		funcstate.f.source = name;
-		lexstate.next(); /* read first token */
+		lexstate.nextToken(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);
 		lexstate.close_func();
@@ -230,24 +222,6 @@ public class LuaC implements LuaCompiler {
 		LuaC._assert(funcstate.f.nups == 0);
 		LuaC._assert(lexstate.fs == null);
 		return funcstate.f;
-	}
-
-	// look up and keep at most one copy of each string
-	public LuaString newTString(byte[] bytes, int offset, int len) {
-		LuaString tmp = LuaString.valueOf(bytes, offset, len);
-		LuaString v = strings.get(tmp);
-		if (v == null) {
-			// must copy bytes, since bytes could be from reusable buffer
-			byte[] copy = new byte[len];
-			System.arraycopy(bytes, offset, copy, 0, len);
-			v = LuaString.valueOf(copy);
-			strings.put(v, v);
-		}
-		return v;
-	}
-
-	public String pushfstring(String string) {
-		return string;
 	}
 
 	public LuaFunction load(Prototype p, LuaTable env) {

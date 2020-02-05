@@ -1,6 +1,8 @@
-/**
- * ****************************************************************************
- * Copyright (c) 2009 Luaj.org. All rights reserved.
+/*
+ * The MIT License (MIT)
+ *
+ * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -9,21 +11,20 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt.vm;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.function.LuaClosure;
@@ -35,8 +36,9 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class LuaOperationsTest {
@@ -165,9 +167,9 @@ public class LuaOperationsTest {
 		throwsLuaError("getfenv", stringlong);
 		throwsLuaError("getfenv", stringdouble);
 		throwsLuaError("getfenv", table);
-		assertTrue(table == thread.getfenv());
-		assertTrue(table == someclosure.getfenv());
-		assertTrue(table == somefunc.getfenv());
+		assertSame(table, thread.getfenv());
+		assertSame(table, someclosure.getfenv());
+		assertSame(table, somefunc.getfenv());
 		throwsLuaError("getfenv", userdataobj);
 		throwsLuaError("getfenv", userdatacls);
 	}
@@ -188,21 +190,21 @@ public class LuaOperationsTest {
 		setfenvThrowsLuaError("setfenv", stringdouble, table2);
 		setfenvThrowsLuaError("setfenv", table, table2);
 		thread.setfenv(table2);
-		assertTrue(table2 == thread.getfenv());
-		assertTrue(table == someclosure.getfenv());
-		assertTrue(table == somefunc.getfenv());
+		assertSame(table2, thread.getfenv());
+		assertSame(table, someclosure.getfenv());
+		assertSame(table, somefunc.getfenv());
 		someclosure.setfenv(table2);
-		assertTrue(table2 == someclosure.getfenv());
-		assertTrue(table == somefunc.getfenv());
+		assertSame(table2, someclosure.getfenv());
+		assertSame(table, somefunc.getfenv());
 		somefunc.setfenv(table2);
-		assertTrue(table2 == somefunc.getfenv());
+		assertSame(table2, somefunc.getfenv());
 		setfenvThrowsLuaError("setfenv", userdataobj, table2);
 		setfenvThrowsLuaError("setfenv", userdatacls, table2);
 	}
 
 	public Prototype createPrototype(String script, String name) {
 		try {
-			InputStream is = new ByteArrayInputStream(script.getBytes("UTF-8"));
+			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
 			return LuaC.compile(is, name);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -218,10 +220,9 @@ public class LuaOperationsTest {
 		LuaValue aaa = valueOf("aaa");
 		LuaValue eee = valueOf("eee");
 		LuaTable _G = JsePlatform.standardGlobals(state);
-		LuaTable newenv = ValueFactory.tableOf(new LuaValue[]{
-			valueOf("a"), valueOf("aaa"),
-			valueOf("b"), valueOf("bbb"),});
-		LuaTable mt = ValueFactory.tableOf(new LuaValue[]{Constants.INDEX, _G});
+		LuaTable newenv = ValueFactory.tableOf(valueOf("a"), valueOf("aaa"),
+			valueOf("b"), valueOf("bbb"));
+		LuaTable mt = ValueFactory.tableOf(Constants.INDEX, _G);
 		newenv.setMetatable(state, mt);
 		OperationHelper.setTable(state, _G, valueOf("a"), aaa);
 		OperationHelper.setTable(state, newenv, valueOf("a"), eee);

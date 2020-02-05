@@ -1,7 +1,8 @@
 /*
- * ****************************************************************************
+ * The MIT License (MIT)
+ *
  * Original Source: Copyright (c) 2009-2011 Luaj.org. All rights reserved.
- * Modifications: Copyright (c) 2015-2017 SquidDev
+ * Modifications: Copyright (c) 2015-2020 SquidDev
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,17 +11,16 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- * ****************************************************************************
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 package org.squiddev.cobalt;
 
@@ -735,7 +735,7 @@ public abstract class LuaValue extends Varargs {
 	 * Check that optional argument is a userdata whose instance is of a type
 	 * and return the Object instance
 	 *
-	 * @param <T> The type of this userdata.
+	 * @param <T>    The type of this userdata.
 	 * @param c      Class to test userdata instance against
 	 * @param defval Object to return if {@code this} is nil or none
 	 * @return Object instance of the userdata if a {@link LuaUserdata} and instance is assignable to {@code c},
@@ -1020,7 +1020,7 @@ public abstract class LuaValue extends Varargs {
 	 * Check that this is a {@link LuaUserdata}, or throw {@link LuaError} if it is not
 	 *
 	 * @param <T> The type of this userdata.
-	 * @param c The class of userdata to convert to
+	 * @param c   The class of userdata to convert to
 	 * @return {@code this} if it is a {@link LuaUserdata}
 	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
 	 * @see #isUserdata(Class)
@@ -1270,10 +1270,20 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public LuaValue metatag(LuaState state, LuaValue tag) {
 		LuaTable mt = getMetatable(state);
-		if (mt == null) {
-			return Constants.NIL;
-		}
-		return mt.rawget(tag);
+		return mt == null ? Constants.NIL : mt.rawget(tag);
+	}
+
+	/**
+	 * Get particular metatag, or return {@link Constants#NIL} if it doesn't exist
+	 *
+	 * @param state The current lua state
+	 * @param tag   Metatag name to look up, typically a string such as
+	 *              {@link Constants#INDEX} or {@link Constants#NEWINDEX}
+	 * @return {@link LuaValue} for tag {@code reason}, or  {@link Constants#NIL}
+	 */
+	public LuaValue metatag(LuaState state, CachedMetamethod tag) {
+		LuaTable mt = getMetatable(state);
+		return mt == null ? Constants.NIL : mt.rawget(tag);
 	}
 
 	/**

@@ -1,5 +1,5 @@
 package.path = "?.lua;test/lua/errors/?.lua"
-require 'args'
+require 'compare.errors.args'
 
 -- arg type tests for string library functions
 
