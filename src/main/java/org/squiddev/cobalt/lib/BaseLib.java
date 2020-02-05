@@ -89,6 +89,7 @@ public class BaseLib implements LuaLibrary {
 		"ipairs", // "ipairs", // (t) -> iter-func, t, 0
 		"next", // "next"  ( table, [index] ) -> next-index, next-value
 		"__inext", // "inext" ( table, [int-index] ) -> next-index, next-value
+		"rawlen", // "rawlen" ( table | string ) -> int
 	};
 	private static final String[] LIBR_KEYS = {
 		"pcall", // (f, arg1, ...) -> status, result1, ...
@@ -311,6 +312,17 @@ public class BaseLib implements LuaLibrary {
 					return args.arg(1).checkTable().next(args.arg(2));
 				case 19: // "inext" ( table, [int-index] ) -> next-index, next-value
 					return args.arg(1).checkTable().inext(args.arg(2));
+				case 20: {  // "rawlen" ( table | string ) -> int
+					LuaValue v = args.arg(1);
+					switch (v.type()) {
+						case Constants.TTABLE:
+							return ValueFactory.valueOf(((LuaTable) v).length());
+						case Constants.TSTRING:
+							return ValueFactory.valueOf(((LuaString) v).length);
+						default:
+							throw ErrorFactory.argError(1, "table or string expected");
+					}
+				}
 			}
 			return Constants.NONE;
 		}
