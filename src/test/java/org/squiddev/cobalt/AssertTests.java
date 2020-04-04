@@ -52,10 +52,9 @@ public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"base-issues",
-		"string-issues",
 		"debug",
-		"debug-getinfo",
 		"debug-coroutine-hook",
+		"debug-getinfo",
 		"gc",
 		"immutable",
 		"invalid-tailcall",
@@ -63,6 +62,8 @@ public class AssertTests {
 		"lex-number",
 		"load-error",
 		"no-unwind",
+		"number-format",
+		"string-issues",
 		"table",
 		"time",
 	})

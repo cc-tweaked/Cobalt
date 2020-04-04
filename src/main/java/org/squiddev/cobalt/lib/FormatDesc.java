@@ -409,7 +409,8 @@ public class FormatDesc {
 		if (v.lastIndexOf(".") == -1) return;
 
 		int length = v.length();
-		while (v.charAt(length - 1) == '0' || v.charAt(length - 1) == '.') length--;
+		while (v.charAt(length - 1) == '0') length--;
+		if (v.charAt(length - 1) == '.') length--;
 		v.setLength(length);
 	}
 }
