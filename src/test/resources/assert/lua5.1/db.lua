@@ -29,12 +29,10 @@ do
 	assert(b.name == nil and b.what == "Lua" and b.linedefined == 11 and
 			b.lastlinedefined == b.linedefined + 11 and
 			b.func == test and not string.find(b.short_src, "%["))
-	--[[ TODO: Add active lines
 	assert(b.activelines[b.linedefined + 1] and
 			b.activelines[b.lastlinedefined])
 	assert(not b.activelines[b.linedefined] and
 			not b.activelines[b.lastlinedefined + 1])
-	]]
 end
 
 
@@ -435,8 +433,8 @@ assert(t.isvararg == true and t.nparams == 2 and t.nups == 1)
 
 local function checktraceback(co, p)
 	local tb = debug.traceback(co)
-	local i = 0 print("==" .. tb .. "==" .. table.concat(p, "||") .. "==")
-	for l in string.gmatch(tb, "[^\n]+\n?") do print(i, l:gsub("\n", "\\n"), p[i])
+	local i = 0
+	for l in string.gmatch(tb, "[^\n]+\n?") do
 		assert(i == 0 or string.find(l, p[i] or error("Nil for line " .. l)))
 		i = i + 1
 	end
@@ -452,7 +450,7 @@ end
 
 local co = coroutine.create(f)
 coroutine.resume(co, 3)
---checktraceback(co, { "yield", "db.lua", "tail", "tail", "tail" }) -- Tail calls aren't correct.
+checktraceback(co, { "yield", "db.lua", "tail" })
 
 
 co = coroutine.create(function(x)
@@ -468,13 +466,13 @@ debug.sethook(co, foo, "l")
 
 local _, l = coroutine.resume(co, 10)
 local x = debug.getinfo(co, 1, "lfLS")
-assert(x.currentline == l.currentline) -- and x.activelines[x.currentline]
+assert(x.currentline == l.currentline and x.activelines[x.currentline])
 assert(type(x.func) == "function")
---for i = x.linedefined + 1, x.lastlinedefined do
---	assert(x.activelines[i])
---	x.activelines[i] = nil
---end
---assert(next(x.activelines) == nil) -- no 'extra' elements
+for i = x.linedefined + 1, x.lastlinedefined do
+	assert(x.activelines[i])
+	x.activelines[i] = nil
+end
+assert(next(x.activelines) == nil) -- no 'extra' elements
 assert(debug.getinfo(co, 2) == nil)
 local a, b = debug.getlocal(co, 1, 1)
 assert(a == "x" and b == 10)

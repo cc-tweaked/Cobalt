@@ -272,13 +272,14 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 					break;
 				}
 				case 'L': {
-					LuaTable lines = new LuaTable();
-					info.rawset(ACTIVELINES, lines);
-//					if ( di.luainfo != null ) {
-//						int line = di.luainfo.currentline();
-//						if ( line >= 0 )
-//							lines.set(1, IntValue.valueOf(line));
-//					}
+					if (di.closure != null) {
+						LuaTable lines = new LuaTable();
+						info.rawset(ACTIVELINES, lines);
+						int[] lineinfo = di.closure.getPrototype().lineinfo;
+						if (lineinfo != null) {
+							for (int line : lineinfo) lines.rawset(line, TRUE);
+						}
+					}
 					break;
 				}
 			}
