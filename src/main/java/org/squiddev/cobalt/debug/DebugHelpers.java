@@ -30,6 +30,7 @@ import org.squiddev.cobalt.lib.DebugLib;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_TAIL;
 
 /**
  * Helper methods for the debug library
@@ -43,6 +44,16 @@ public final class DebugHelpers {
 	private static final LuaString QUESTION = valueOf("?");
 	private static final LuaString HOOK = valueOf("hook");
 
+	/**
+	 * Size of the first part of the stack
+	 */
+	private static final int LEVELS1 = 10;
+
+	/**
+	 * Size of the second part of the stack
+	 */
+	private static final int LEVELS2 = 11;
+
 	private DebugHelpers() {
 	}
 
@@ -54,31 +65,52 @@ public final class DebugHelpers {
 	 * @return String containing the stack trace.
 	 */
 	public static String traceback(LuaThread thread, int level) {
-		DebugState state = thread.getDebugState();
-		StringBuilder sb = new StringBuilder();
+		return traceback(new StringBuilder(), thread, level).toString();
+	}
+
+	/**
+	 * Get a traceback for a particular thread.
+	 *
+	 * @param sb     The builder to append to
+	 * @param thread LuaThread to provide stack trace for
+	 * @param level  0-based level to start reporting on
+	 */
+	public static StringBuilder traceback(StringBuilder sb, LuaThread thread, int level) {
 		sb.append("stack traceback:");
+
+		DebugState state = thread.getDebugState();
+		int n1 = state.top - level > LEVELS1 + LEVELS2 ? LEVELS1 : -1;
 		for (DebugFrame di; (di = state.getFrame(level++)) != null; ) {
+			if (n1-- == 0) {
+				sb.append("\n\t...");
+				level = state.top - LEVELS2 + 2;
+				continue;
+			}
+
 			sb.append("\n\t");
 			sb.append(di.closure == null ? "[C]" : di.closure.getPrototype().sourceShort());
 			sb.append(':');
-			if (di.currentLine() > 0) {
-				sb.append(di.currentLine()).append(":");
-			}
+			if (di.currentLine() > 0) sb.append(di.currentLine()).append(":");
 			sb.append(" in ");
 
 			LuaString[] kind = di.getFuncKind();
 
-			if (di.closure != null && di.closure.getPrototype().linedefined == 0) {
+			if (kind != null) {
+				// Strictly speaking we should search the global table for this term - see Lua 5.3's pushglobalfuncname/
+				// pushfuncname. However, I'm somewhat reluctant to do that, so we just check it's a global.
+				sb.append(kind[1] == GLOBAL ? "function" : kind[1]).append(" '").append(kind[0]).append('\'');
+			} else if (di.closure != null && di.closure.getPrototype().linedefined == 0) {
 				sb.append("main chunk");
-			} else if (kind != null) {
-				sb.append("function '");
-				sb.append(kind[0]);
-				sb.append('\'');
-			} else {
+			} else if (di.closure != null) {
 				sb.append("function <").append(di.func.debugName()).append(">");
+			} else {
+				sb.append('?');
 			}
+
+			if ((di.flags & FLAG_TAIL) != 0) sb.append("\n\t(...tail calls...)");
 		}
-		return sb.toString();
+
+		return sb;
 	}
 
 	/**

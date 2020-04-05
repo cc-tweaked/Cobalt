@@ -66,6 +66,7 @@ public class AssertTests {
 		"string-issues",
 		"table",
 		"time",
+		"traceback",
 	})
 	public void main(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/assert/");

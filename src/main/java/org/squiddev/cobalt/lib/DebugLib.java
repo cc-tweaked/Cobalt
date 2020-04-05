@@ -66,21 +66,6 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		"traceback",
 	};
 
-	private static final int DEBUG = 0;
-	private static final int GETFENV = 1;
-	private static final int GETHOOK = 2;
-	private static final int GETINFO = 3;
-	private static final int GETLOCAL = 4;
-	private static final int GETMETATABLE = 5;
-	private static final int GETREGISTRY = 6;
-	private static final int GETUPVALUE = 7;
-	private static final int SETFENV = 8;
-	private static final int SETHOOK = 9;
-	private static final int SETLOCAL = 10;
-	private static final int SETMETATABLE = 11;
-	private static final int SETUPVALUE = 12;
-	private static final int TRACEBACK = 13;
-
 	private static final LuaString MAIN = valueOf("main");
 	private static final LuaString LUA = valueOf("Lua");
 	private static final LuaString C = valueOf("C");
@@ -114,33 +99,33 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	@Override
 	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 		switch (opcode) {
-			case DEBUG:
+			case 0:
 				return _debug(args);
-			case GETFENV:
+			case 1:
 				return _getfenv(args);
-			case GETHOOK:
+			case 2:
 				return _gethook(state, args);
-			case GETINFO:
+			case 3:
 				return _getinfo(state, args, this);
-			case GETLOCAL:
+			case 4:
 				return _getlocal(state, args);
-			case GETMETATABLE:
+			case 5:
 				return _getmetatable(state, args);
-			case GETREGISTRY:
+			case 6:
 				return _getregistry(args);
-			case GETUPVALUE:
+			case 7:
 				return _getupvalue(args);
-			case SETFENV:
+			case 8:
 				return _setfenv(args);
-			case SETHOOK:
+			case 9:
 				return _sethook(state, args);
-			case SETLOCAL:
+			case 10:
 				return _setlocal(state, args);
-			case SETMETATABLE:
+			case 11:
 				return _setmetatable(state, args);
-			case SETUPVALUE:
+			case 12:
 				return _setupvalue(args);
-			case TRACEBACK:
+			case 13:
 				return _traceback(state, args);
 			default:
 				return NONE;
@@ -434,8 +419,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		if (messageValue != NIL && !messageValue.isString()) return messageValue;
 		String message = messageValue.optString(null);
 		int level = args.arg(a).optInteger(1) - 1;
-		// if (thread == state.getCurrentThread()) level--;
-		String tb = DebugHelpers.traceback(thread, level);
-		return valueOf(message != null ? message + "\n" + tb : tb);
+		StringBuilder sb = new StringBuilder();
+		if (message != null) sb.append(message).append('\n');
+		return valueOf(DebugHelpers.traceback(sb, thread, level).toString());
 	}
 }
