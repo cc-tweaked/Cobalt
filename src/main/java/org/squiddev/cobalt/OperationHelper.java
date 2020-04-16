@@ -155,7 +155,8 @@ public final class OperationHelper {
 	 * using lua's rules for modulo
 	 */
 	public static double mod(double lhs, double rhs) {
-		return rhs != 0 ? lhs - rhs * Math.floor(lhs / rhs) : Double.NaN;
+		double mod = lhs % rhs;
+		return mod * rhs < 0 ? mod + rhs : mod;
 	}
 
 	/**

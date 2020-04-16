@@ -61,6 +61,7 @@ public class AssertTests {
 		"lex-context",
 		"lex-number",
 		"load-error",
+		"modulo-large",
 		"no-unwind",
 		"number-format",
 		"string-issues",
