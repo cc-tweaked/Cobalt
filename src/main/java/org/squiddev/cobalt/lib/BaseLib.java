@@ -340,7 +340,7 @@ public class BaseLib implements LuaLibrary {
 				case 2: // "load", // ( func|str [,chunkname[, mode[, env]]] ) -> chunk | nil, msg
 				{
 					LuaValue scriptGen = args.arg(1);
-					LuaString chunkName = args.arg(2).optLuaString(FUNCTION_STR);
+					LuaString chunkName = args.arg(2).optLuaString(null);
 					LuaString mode = args.arg(3).optLuaString(LOAD_MODE);
 					LuaTable funcEnv = args.arg(4).optTable(state.getCurrentThread().getfenv());
 
@@ -348,7 +348,7 @@ public class BaseLib implements LuaLibrary {
 					LuaValue script = scriptGen.toLuaString();
 					if (!script.isNil()) {
 						try {
-							return LoadState.load(state, ((LuaString) script).toInputStream(), chunkName, mode, funcEnv);
+							return LoadState.load(state, ((LuaString) script).toInputStream(), chunkName == null ? (LuaString) script : chunkName, mode, funcEnv);
 						} catch (Exception e) {
 							return varargsOf(Constants.NIL, LuaError.getMessage(e));
 						}
@@ -360,7 +360,7 @@ public class BaseLib implements LuaLibrary {
 						public LuaValue call(LuaState state) throws LuaError {
 							try {
 								InputStream stream = new StringInputStream(state, function);
-								return LoadState.load(state, stream, chunkName, mode, funcEnv);
+								return LoadState.load(state, stream, chunkName == null ? FUNCTION_STR : chunkName, mode, funcEnv);
 							} catch (Exception e) {
 								throw LuaError.wrapMessage(e);
 							}

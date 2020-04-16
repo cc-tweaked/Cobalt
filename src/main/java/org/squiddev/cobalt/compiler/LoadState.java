@@ -96,7 +96,7 @@ public final class LoadState {
 	/**
 	 * Name for compiled chunks
 	 */
-	public static final LuaString SOURCE_BINARY_STRING = valueOf("binary string");
+	public static final LuaString SOURCE_BINARY_STRING = valueOf("=?");
 
 
 	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException, CompileException {

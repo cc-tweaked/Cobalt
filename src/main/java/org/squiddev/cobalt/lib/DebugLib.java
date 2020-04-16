@@ -86,6 +86,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString ACTIVELINES = valueOf("activelines");
 	private static final LuaString NPARAMS = valueOf("nparams");
 	private static final LuaString ISVARARG = valueOf("isvararg");
+	private static final LuaString ISTAILCALL = valueOf("istailcall");
 
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
@@ -207,7 +208,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		int arg = 1;
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 		LuaValue func = args.arg(arg);
-		String what = args.arg(arg + 1).optString("nSluf");
+		String what = args.arg(arg + 1).optString("flnStu");
 
 		// find the stack info
 		DebugState ds = thread.getDebugState();
@@ -216,10 +217,14 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 			int level = func.checkInteger();
 
 			// So if we're getting info on the current thread then we fake a debug.getinfo function
-			if (thread == state.getCurrentThread()) {
-				di = level > 0 ? ds.getFrame(level - 1) : new DebugFrame(level0func.checkFunction());
-			} else {
+			if (thread != state.getCurrentThread()) {
 				di = ds.getFrame(level);
+			} else if (level < 0) {
+				di = null;
+			} else if (level == 0) {
+				di = new DebugFrame(level0func.checkFunction());
+			} else {
+				di = ds.getFrame(level - 1);
 			}
 		} else {
 			di = ds.findDebugInfo(func.checkFunction());
@@ -282,6 +287,11 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 					}
 					break;
 				}
+				case 't':
+					info.rawset(ISTAILCALL, valueOf((di.flags & DebugFrame.FLAG_TAIL) != 0));
+					break;
+				default:
+					throw ErrorFactory.argError(arg + 1, "invalid option");
 			}
 		}
 		return info;
@@ -419,7 +429,11 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		LuaValue messageValue = args.arg(a++);
 		if (messageValue != NIL && !messageValue.isString()) return messageValue;
 		String message = messageValue.optString(null);
-		int level = args.arg(a).optInteger(1) - 1;
+
+		int level = thread == state.getCurrentThread()
+			? args.arg(a).optInteger(1) - 1
+			: args.arg(a).optInteger(0);
+
 		StringBuilder sb = new StringBuilder();
 		if (message != null) sb.append(message).append('\n');
 		return valueOf(DebugHelpers.traceback(sb, thread, level).toString());

@@ -135,6 +135,8 @@ public final class DebugFrame {
 
 	public final DebugFrame previous;
 
+	private static final LuaString TEMPORARY = ValueFactory.valueOf("(*temporary)");
+
 	public Varargs varargs, extras;
 	public int pc = -1, oldPc = -1, top = -1;
 	public int flags;
@@ -218,7 +220,7 @@ public final class DebugFrame {
 		if (previous == null || previous.closure == null || previous.pc < 0) return null;
 
 		int stackpos = (previous.closure.getPrototype().code[previous.pc] >> 6) & 0xff;
-		return DebugHelpers.getObjectName(previous, stackpos);
+		return DebugHelpers.getFuncName(previous, stackpos);
 	}
 
 	public String sourceLine() {
@@ -228,7 +230,11 @@ public final class DebugFrame {
 
 	public LuaString getLocalName(int index) {
 		if (closure == null) return null;
-		return closure.getPrototype().getlocalname(index, pc);
+		LuaString name = closure.getPrototype().getlocalname(index, pc);
+		if (name != null) return name;
+
+		// FIXME: Use top rather than maxstacksize. Sadly it isn't currently updated.
+		return index > 0 && index <= closure.getPrototype().maxstacksize ? TEMPORARY : null;
 	}
 
 	@SuppressWarnings("unchecked")

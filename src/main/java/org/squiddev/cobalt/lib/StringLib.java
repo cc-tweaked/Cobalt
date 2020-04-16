@@ -54,9 +54,9 @@ public class StringLib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(t, StringLib1::new, new String[]{
-			"dump", "len", "lower", "reverse", "upper",});
+			"len", "lower", "reverse", "upper",});
 		LibFunction.bind(t, StringLibV::new, new String[]{
-			"byte", "char", "find", "format",
+			"dump", "byte", "char", "find", "format",
 			"gmatch", "match", "rep", "sub"});
 		LibFunction.bind(t, StringLibR::new, new String[]{"gsub"});
 
@@ -72,13 +72,10 @@ public class StringLib implements LuaLibrary {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 			switch (opcode) {
-				case 0:
-					return dump(arg); // dump (function)
-
-				case 1: // len (function)
+				case 0: // len (function)
 					return valueOf(arg.checkLuaString().length());
 
-				case 2: { // lower (function)
+				case 1: { // lower (function)
 					LuaString string = arg.checkLuaString();
 					if (string.length == 0) return EMPTYSTRING;
 
@@ -91,7 +88,7 @@ public class StringLib implements LuaLibrary {
 					return valueOf(value);
 				}
 
-				case 3: { // reverse (function)
+				case 2: { // reverse (function)
 					LuaString s = arg.checkLuaString();
 					int n = s.length();
 					byte[] b = new byte[n];
@@ -100,7 +97,7 @@ public class StringLib implements LuaLibrary {
 					}
 					return LuaString.valueOf(b);
 				}
-				case 4: { // upper (function)
+				case 3: { // upper (function)
 					LuaString string = arg.checkLuaString();
 					if (string.length == 0) return EMPTYSTRING;
 
@@ -122,20 +119,22 @@ public class StringLib implements LuaLibrary {
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			switch (opcode) {
 				case 0:
-					return StringLib.byte_(args);
+					return dump(args.arg(1).checkFunction(), args.arg(2).optBoolean(false));
 				case 1:
-					return StringLib.char_(args);
+					return byte_(args);
 				case 2:
-					return StringLib.find(state, args);
+					return StringLib.char_(args);
 				case 3:
-					return StringLib.format(args);
+					return StringLib.find(state, args);
 				case 4:
-					return StringLib.gmatch(state, args);
+					return StringLib.format(args);
 				case 5:
-					return StringLib.match(state, args);
+					return StringLib.gmatch(state, args);
 				case 6:
-					return StringLib.rep(args);
+					return StringLib.match(state, args);
 				case 7:
+					return StringLib.rep(args);
+				case 8:
 					return StringLib.sub(args);
 			}
 			return NONE;
@@ -239,12 +238,11 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * @throws LuaError If the function cannot be dumped.
 	 */
-	static LuaValue dump(LuaValue arg) throws LuaError {
-		LuaValue f = arg.checkFunction();
+	static LuaValue dump(LuaFunction f, boolean strip) throws LuaError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			if (f instanceof LuaClosure) {
-				DumpState.dump(((LuaClosure) f).getPrototype(), baos, false);
+				DumpState.dump(((LuaClosure) f).getPrototype(), baos, strip);
 				return LuaString.valueOf(baos.toByteArray());
 			}
 

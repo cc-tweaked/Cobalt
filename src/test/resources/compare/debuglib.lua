@@ -1,4 +1,9 @@
 local print, tostring, _G, pcall, ipairs, isnumber = print, tostring, _G, pcall, ipairs, isnumber
+local function tostring_x(x)
+ 	local ty = type(x)
+ 	if ty == "function" or ty == "table" then return ty else return tostring(x) end
+ end
+
 local e, f, g, h, s
 print('has debug', debug ~= nil)
 if not debug then error('no debug') end
@@ -22,9 +27,9 @@ h = function(v, i, n)
 	local x2, y2 = debug.setlocal(v, i, n)
 	local x3, y3 = debug.getlocal(v, i)
 	return s .. ' -> ' .. v .. '-' .. i .. ' ' ..
-			'get=' .. tostring(x1) .. ',' .. tostring(y1) .. ' ' ..
-			'set=' .. tostring(x2) .. ',' .. tostring(y2) .. ' ' ..
-			'get=' .. tostring(x3) .. ',' .. tostring(y3) .. ' '
+			'get=' .. tostring(x1) .. ',' .. tostring_x(y1) .. ' ' ..
+			'set=' .. tostring(x2) .. ',' .. tostring_x(y2) .. ' ' ..
+			'get=' .. tostring(x3) .. ',' .. tostring_x(y3) .. ' '
 end
 g = function(...)
 	local p, q, r = 7, 8, 9

@@ -118,6 +118,7 @@ docs/
 /lib
 /dist/
 /classes
+/src/test/generated_tests
 
 ##############
 # Test output

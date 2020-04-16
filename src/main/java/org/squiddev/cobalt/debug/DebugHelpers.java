@@ -28,6 +28,7 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.lib.DebugLib;
 
+import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_TAIL;
@@ -43,6 +44,7 @@ public final class DebugHelpers {
 	private static final LuaString FIELD = valueOf("field");
 	private static final LuaString QUESTION = valueOf("?");
 	private static final LuaString HOOK = valueOf("hook");
+	private static final LuaString METAMETHOD = valueOf("metamethod");
 
 	/**
 	 * Size of the first part of the stack
@@ -83,7 +85,7 @@ public final class DebugHelpers {
 		for (DebugFrame di; (di = state.getFrame(level++)) != null; ) {
 			if (n1-- == 0) {
 				sb.append("\n\t...");
-				level = state.top - LEVELS2 + 2;
+				level = state.top - LEVELS2 + 1;
 				continue;
 			}
 
@@ -138,6 +140,37 @@ public final class DebugHelpers {
 		return di != null ? di.sourceLine() : null;
 	}
 
+	private static LuaString[] fromMetamethod(String name) {
+		return new LuaString[]{valueOf("__" + name), METAMETHOD};
+	}
+
+	public static LuaString[] getFuncName(DebugFrame di, int stackpos) {
+		if (di.closure == null) return null;
+		if ((di.flags & FLAG_HOOKED) != 0) return new LuaString[]{QUESTION, HOOK};
+
+		Prototype p = di.closure.getPrototype();
+		int pc = di.pc; // currentpc(L, ci);
+		int i = p.code[pc];
+		switch (Lua.GET_OPCODE(i)) {
+			case OP_CALL: case OP_TAILCALL: return getObjectName(di, Lua.GETARG_A(i));
+			case OP_SELF: case OP_GETTABLE: return fromMetamethod("index");
+			case OP_SETTABLE: return fromMetamethod("newindex");
+			case OP_ADD: return fromMetamethod("add");
+			case OP_SUB: return fromMetamethod("sub");
+			case OP_MUL: return fromMetamethod("mul");
+			case OP_DIV: return fromMetamethod("div");
+			case OP_POW: return fromMetamethod("pow");
+			case OP_MOD: return fromMetamethod("mod");
+			case OP_UNM: return fromMetamethod("unm");
+			case OP_EQ: return fromMetamethod("eq");
+			case OP_LE: return fromMetamethod("le");
+			case OP_LT: return fromMetamethod("lt");
+			case OP_LEN: return fromMetamethod("len");
+			case OP_CONCAT: return fromMetamethod("concat");
+			default: return null;
+		}
+	}
+
 	// return StrValue[] { name, namewhat } if found, null if not
 	public static LuaString[] getObjectName(DebugFrame di, int stackpos) {
 		if (di.closure == null) return null;
@@ -154,7 +187,7 @@ public final class DebugHelpers {
 		i = symbexec(p, pc, stackpos); /* try symbolic execution */
 		lua_assert(pc != -1);
 		switch (Lua.GET_OPCODE(i)) {
-			case Lua.OP_GETGLOBAL: {
+			case OP_GETGLOBAL: {
 				int g = Lua.GETARG_Bx(i); /* global index */
 				// lua_assert(p.k[g].isString());
 				LuaValue value = p.k[g];
@@ -162,28 +195,23 @@ public final class DebugHelpers {
 				LuaString string = stringed instanceof LuaString ? (LuaString) stringed : valueOf(value.toString());
 				return new LuaString[]{string, GLOBAL};
 			}
-			case Lua.OP_MOVE: {
+			case OP_MOVE: {
 				int a = Lua.GETARG_A(i);
 				int b = Lua.GETARG_B(i); /* move from `b' to `a' */
-				if (b < a) {
-					return getObjectName(di, b); /* get name for `b' */
-				}
+				if (b < a) return getObjectName(di, b); /* get name for `b' */
 				break;
 			}
-			case Lua.OP_GETTABLE: {
+			case OP_GETTABLE: {
 				int k = Lua.GETARG_C(i); /* key index */
-				name = constantName(p, k);
-				return new LuaString[]{name, FIELD};
+				return new LuaString[]{constantName(p, k), FIELD};
 			}
-			case Lua.OP_GETUPVAL: {
+			case OP_GETUPVAL: {
 				int u = Lua.GETARG_B(i); /* upvalue index */
-				name = u < p.upvalues.length ? p.upvalues[u] : DebugLib.QMARK;
-				return new LuaString[]{name, UPVALUE};
+				return new LuaString[]{u < p.upvalues.length ? p.upvalues[u] : DebugLib.QMARK, UPVALUE};
 			}
-			case Lua.OP_SELF: {
+			case OP_SELF: {
 				int k = Lua.GETARG_C(i); /* key index */
-				name = constantName(p, k);
-				return new LuaString[]{name, METHOD};
+				return new LuaString[]{constantName(p, k), METHOD};
 			}
 		}
 
@@ -256,17 +284,17 @@ public final class DebugHelpers {
 					}
 					break;
 				}
-				case Lua.OP_GETUPVAL:
+				case OP_GETUPVAL:
 				case Lua.OP_SETUPVAL: {
 					if (!(b < pt.nups)) return 0;
 					break;
 				}
-				case Lua.OP_GETGLOBAL:
+				case OP_GETGLOBAL:
 				case Lua.OP_SETGLOBAL: {
 					if (!(pt.k[b].isString())) return 0;
 					break;
 				}
-				case Lua.OP_SELF: {
+				case OP_SELF: {
 					if (!checkRegister(pt, a + 1)) return 0;
 					if (reg == a + 1) {
 						last = pc;
@@ -297,8 +325,8 @@ public final class DebugHelpers {
 					}
 					break;
 				}
-				case Lua.OP_CALL:
-				case Lua.OP_TAILCALL: {
+				case OP_CALL:
+				case OP_TAILCALL: {
 					if (b != 0) {
 						if (!checkRegister(pt, a + b - 1)) return 0;
 					}
@@ -336,7 +364,7 @@ public final class DebugHelpers {
 					if (!(pc + nup < pt.code.length)) return 0;
 					for (j = 1; j <= nup; j++) {
 						int op1 = Lua.GET_OPCODE(pt.code[pc + j]);
-						if (!(op1 == Lua.OP_GETUPVAL || op1 == Lua.OP_MOVE)) return 0;
+						if (!(op1 == OP_GETUPVAL || op1 == OP_MOVE)) return 0;
 					}
 					if (reg != Lua.NO_REG) /* tracing? */ {
 						pc += nup; /* do not 'execute' these pseudo-instructions */
@@ -394,8 +422,8 @@ public final class DebugHelpers {
 	private static boolean checkOpenUp(Prototype proto, int pc) {
 		int i = proto.code[(pc) + 1];
 		switch (Lua.GET_OPCODE(i)) {
-			case Lua.OP_CALL:
-			case Lua.OP_TAILCALL:
+			case OP_CALL:
+			case OP_TAILCALL:
 			case Lua.OP_RETURN:
 			case Lua.OP_SETLIST: {
 				return Lua.GETARG_B(i) == 0;

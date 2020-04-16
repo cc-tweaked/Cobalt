@@ -24,6 +24,7 @@ local expected = [[stack traceback:
 	(...tail calls...)
 	[C]: in function 'pcall'
 	...
+	traceback.lua:6: in upvalue 'f'
 	traceback.lua:8: in upvalue 'f'
 	traceback.lua:8: in function <traceback.lua:1>
 	(...tail calls...)

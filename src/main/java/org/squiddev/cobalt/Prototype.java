@@ -80,9 +80,7 @@ public final class Prototype {
 		for (i = 0; i < locvars.length && locvars[i].startpc <= pc; i++) {
 			if (pc < locvars[i].endpc) {  /* is variable active? */
 				number--;
-				if (number == 0) {
-					return locvars[i].name;
-				}
+				if (number == 0) return locvars[i].name;
 			}
 		}
 		return null;  // not found
