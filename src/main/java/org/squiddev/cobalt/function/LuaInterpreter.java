@@ -656,9 +656,9 @@ public final class LuaInterpreter {
 		}
 	}
 
-	private static Function<UnwindableRunnable, UnwindableCallable<Varargs>> continuation(LuaState state, int pc, Prototype proto) {
+	private static Function<UnwindableRunnable, UnwindableCallable<EvalCont>> continuation(LuaState state, int pc, Prototype proto) {
 		return f -> {
-			final UnwindableCallable<Varargs> callable = di -> {
+			final UnwindableCallable<EvalCont> callable = di -> {
 				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
 				f.run(di);
 				//noinspection ReturnOfNull
@@ -672,9 +672,9 @@ public final class LuaInterpreter {
 		};
 	}
 
-	private static Function<UnwindableCallable<Varargs>, UnwindableCallable<Varargs>> rawCont(LuaState state, int pc, Prototype proto) {
+	private static Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> rawCont(LuaState state, int pc, Prototype proto) {
 		return raw -> {
-			final UnwindableCallable<Varargs> f = di -> {
+			final UnwindableCallable<EvalCont> f = di -> {
 				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
 				return raw.call(di);
 			};
@@ -686,11 +686,21 @@ public final class LuaInterpreter {
 		};
 	}
 
-	static Varargs partialEval(final LuaState state, final DebugFrame di, final LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
-		Varargs v;
-		//noinspection StatementWithEmptyBody
-		while ((v = partialEvalStep(state, di, function).call(di)) == null);
-		return v;
+	static Varargs partialEval(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
+		EvalCont cont;
+
+		while (true) {
+			cont = partialEvalStep(state, di, function).call(di);
+			if (cont != null) {
+				if (cont.varargs != null) break;
+				if (cont.debugFrame != null) {
+					di = cont.debugFrame;
+					function = cont.function;
+				}
+			}
+		}
+
+		return cont.varargs;
 	}
 
 	private static String tracePrefix(DebugFrame di) {
@@ -712,7 +722,7 @@ public final class LuaInterpreter {
 	}
 
 	// FIXME beware: if a reference to initialFrame makes it into any of the lambdas it could introduce serious memory leaks
-	static UnwindableCallable<Varargs> partialEvalStep(final LuaState state, final DebugFrame initialFrame, final LuaInterpretedFunction initialClosure) {
+	static UnwindableCallable<EvalCont> partialEvalStep(final LuaState state, final DebugFrame initialFrame, final LuaInterpretedFunction initialClosure) {
 		final DebugState ds = DebugHandler.getDebugState(state);
 		final DebugHandler handler = state.debug;
 
@@ -741,8 +751,8 @@ public final class LuaInterpreter {
 		final int i = code[pc];
 		final int a = (i >> POS_A) & MAXARG_A;
 
-		final Function<UnwindableRunnable, UnwindableCallable<Varargs>> cont = continuation(state, pc, p);
-		final Function<UnwindableCallable<Varargs>, UnwindableCallable<Varargs>> raw = rawCont(state, pc, p);
+		final Function<UnwindableRunnable, UnwindableCallable<EvalCont>> cont = continuation(state, pc, p);
+		final Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> raw = rawCont(state, pc, p);
 
 		// process the instruction
 		switch (((i >> POS_OP) & MAX_OP)) {
@@ -1018,7 +1028,7 @@ public final class LuaInterpreter {
 										: setupCall(state, fn, di.stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras, 0); // from prev top
 						}
 
-						return partialEval(state, debugFrame, fn);
+						return new EvalCont(debugFrame, fn);
 					}
 
 					switch (i & (MASK_B | MASK_C)) {
@@ -1074,7 +1084,7 @@ public final class LuaInterpreter {
 					}
 
 					// a native call is over, continue executing this function
-					return null; // FIXME why doesn't this work with null? (see partialEval)
+					return null;
 				});
 			}
 
@@ -1136,7 +1146,8 @@ public final class LuaInterpreter {
 						// TODO
 					}
 
-					return NONE;
+					// TODO
+					return new EvalCont(null);
 				});
 			}
 
@@ -1170,13 +1181,13 @@ public final class LuaInterpreter {
 
 					if (!fresh) {
 						// If we're a fresh invocation then return to the parent.
-						return ret;
+						return new EvalCont(ret);
 					} else {
 						DebugFrame debugFrame = ds.getStackUnsafe();
 						LuaInterpretedFunction fn = (LuaInterpretedFunction) debugFrame.closure;
 						debugFrame.pc--; // FIXME this shouldn't be here but otherwise we have an off-by-one error in resume
 						resume(state, debugFrame, fn, ret);
-						return partialEval(state, debugFrame, fn);
+						return new EvalCont(debugFrame, fn);
 					}
 				});
 			}

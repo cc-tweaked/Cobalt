@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.function.EvalCont;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.function.UnwindableCallable;
@@ -49,7 +50,7 @@ public final class Prototype {
 	public int[] code;
 	public BitSet partiallyEvaluated = new BitSet(256);
 	@SuppressWarnings("unchecked")
-	public UnwindableCallable<Varargs>[] compiledInstrs = new UnwindableCallable[256];
+	public UnwindableCallable<EvalCont>[] compiledInstrs = new UnwindableCallable[256];
 	/* functions defined inside the function */
 	public Prototype[] p;
 	/* map from opcodes to source lines */
