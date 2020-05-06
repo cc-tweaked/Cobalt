@@ -1168,7 +1168,6 @@ public final class LuaInterpreter {
 							break;
 					}
 
-					// TODO lift conditional out of λ
 					if (!fresh) {
 						// If we're a fresh invocation then return to the parent.
 						return ret;
