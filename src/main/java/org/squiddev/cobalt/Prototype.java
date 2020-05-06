@@ -26,6 +26,9 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
+import org.squiddev.cobalt.function.UnwindableCallable;
+
+import java.util.*;
 
 import static org.squiddev.cobalt.compiler.LoadState.getShortName;
 
@@ -44,6 +47,9 @@ public final class Prototype {
 	/* constants used by the function */
 	public LuaValue[] k;
 	public int[] code;
+	public BitSet partiallyEvaluated = new BitSet(256);
+	@SuppressWarnings("unchecked")
+	public UnwindableCallable<Varargs>[] compiledInstrs = new UnwindableCallable[256];
 	/* functions defined inside the function */
 	public Prototype[] p;
 	/* map from opcodes to source lines */
