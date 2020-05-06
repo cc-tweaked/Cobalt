@@ -1046,6 +1046,10 @@ public final class LuaInterpreter {
 			case OP_TAILCALL: { // A B C: return R(A)(R(A+1), ... ,R(A+B-1))
 				final int b = (i >>> POS_B) & MAXARG_B;
 
+				if (true) {
+					throw new UnsupportedOperationException("tail calls are a to-do, soz");
+				}
+
 				return raw.apply(() -> {
 					DebugFrame debugFrame = di;
 					LuaInterpretedFunction fn = function;
