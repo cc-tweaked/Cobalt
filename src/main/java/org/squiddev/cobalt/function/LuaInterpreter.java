@@ -1346,41 +1346,15 @@ public final class LuaInterpreter {
 			case OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 
-				return raw.apply(di -> {
-//					state.instructionHits[OP_FORLOOP]--;
-					final double limit = di.stack[a + 1].checkDouble();
-					final double step = di.stack[a + 2].checkDouble();
-
-					UnwindableCallable<EvalCont> replacement = 0 < step ? df -> {
-						// FIXME runs twice for a single FORLOOP
-						handler.onInstruction(ds, df, ++df.pc);
-//						state.instructionHits[OP_FORLOOP]++;
-
-						double value = df.stack[a].checkDouble();
-						double idx = step + value;
-						if (idx <= limit) {
-							df.stack[a + 3] = df.stack[a] = valueOf(idx);
-							df.pc += offset;
-						}
-
-						return null;
-					} : df -> {
-						handler.onInstruction(ds, df, ++df.pc);
-//						state.instructionHits[OP_FORLOOP]++;
-
-						double value = df.stack[a].checkDouble();
-						double idx = step + value;
-						if (limit <= idx) {
-							df.stack[a + 3] = df.stack[a] = valueOf(idx);
-							df.pc += offset;
-						}
-
-						return null;
-					};
-
-					p.compiledInstrs[pc] = replacement;
-					di.pc--;
-					return replacement.call(di);
+				return cont.apply(di -> {
+					double limit = di.stack[a + 1].checkDouble();
+					double step = di.stack[a + 2].checkDouble();
+					double value = di.stack[a].checkDouble();
+					double idx = step + value;
+					if (0 < step ? idx <= limit : limit <= idx) {
+						di.stack[a + 3] = di.stack[a] = valueOf(idx);
+						di.pc += offset;
+					}
 				});
 			}
 
@@ -1394,8 +1368,6 @@ public final class LuaInterpreter {
 					di.stack[a + 1] = limit;
 					di.stack[a + 2] = step;
 					di.pc += offset;
-					// force re-evaluation of the FORLOOP instruction to fetch new limit & step values
-					p.partiallyEvaluated.clear(di.pc);
 				});
 			}
 
