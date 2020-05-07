@@ -1336,7 +1336,6 @@ public final class LuaInterpreter {
 					} else {
 						DebugFrame debugFrame = ds.getStackUnsafe();
 						LuaInterpretedFunction fn = (LuaInterpretedFunction) debugFrame.closure;
-						debugFrame.pc--; // FIXME this shouldn't be here but otherwise we have an off-by-one error in resume
 						resume(state, debugFrame, fn, ret);
 						return new EvalCont(debugFrame, fn);
 					}
@@ -1540,7 +1539,10 @@ public final class LuaInterpreter {
 
 	public static void resume(LuaState state, DebugFrame di, LuaInterpretedFunction function, Varargs varargs) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		final int i = p.code[di.pc++];
+		// FIXME this is a temporary solution (should be di.pc++):
+		//  it looks like the PC is just past the current instruction when the instruction yields,
+		//  which causes all sorts of trouble
+		final int i = p.code[di.pc - 1];
 		final int opcode = (i >> POS_OP) & MAX_OP;
 
 		switch (opcode) {
