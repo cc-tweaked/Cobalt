@@ -27,6 +27,9 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.squiddev.cobalt.function.LuaFunction;
+
+import java.util.*;
 
 public class PerformanceTest {
 	private static final int TOTAL = Integer.parseInt(System.getProperty("cobalt.perfTotal", "1"));
@@ -40,19 +43,40 @@ public class PerformanceTest {
 		helpers.setupQuiet();
 	}
 
+	private void printInstrStats() {
+		final HashMap<String, Long> counts = new HashMap<>();
+		final long[] instructionHits = helpers.state.instructionHits;
+		long total = 0;
+
+		for (int i = 0; i < instructionHits.length; i++) {
+			counts.put(Print.OPNAMES[i], instructionHits[i]);
+			total += instructionHits[i];
+		}
+
+		for (String key : counts.keySet()) {
+			final long c = counts.get(key);
+			final String percentage = String.format("%.2f", (100.0 * c) / total);
+			final String spaces = new String(new char[10 - key.length()]).replace('\0', ' ');
+			System.out.println(key + spaces + percentage + "% \t(" + c + ")");
+		}
+	}
+
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {"binarytrees", "fannkuch", "nbody", "nsieve", "primes"})
 	public void run(String name) throws Exception {
 		System.out.println("[" + name + "]");
 
-		helpers.runComparisonTest(name);
+//		helpers.runComparisonTest(name);
 
+		final LuaFunction fn = helpers.loadScript(name);
 		for (int i = 0; i < TOTAL; i++) {
 			long start = System.nanoTime();
-			LuaThread.runMain(helpers.state, helpers.loadScript(name));
+			LuaThread.runMain(helpers.state, fn);
 			long finish = System.nanoTime();
 
 			if (i >= DISCARD) System.out.println("  Took " + (finish - start) / 1.0e9);
 		}
+
+		printInstrStats();
 	}
 }

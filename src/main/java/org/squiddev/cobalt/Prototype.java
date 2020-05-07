@@ -48,9 +48,8 @@ public final class Prototype {
 	/* constants used by the function */
 	public LuaValue[] k;
 	public int[] code;
-	public BitSet partiallyEvaluated = new BitSet(256);
-	@SuppressWarnings("unchecked")
-	public UnwindableCallable<EvalCont>[] compiledInstrs = new UnwindableCallable[256];
+	public BitSet partiallyEvaluated = new BitSet();
+	public UnwindableCallable<EvalCont>[] compiledInstrs;
 	/* functions defined inside the function */
 	public Prototype[] p;
 	/* map from opcodes to source lines */

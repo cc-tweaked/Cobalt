@@ -658,8 +658,12 @@ public final class LuaInterpreter {
 
 	private static Function<UnwindableRunnable, UnwindableCallable<EvalCont>> continuation(LuaState state, int pc, Prototype proto) {
 		return f -> {
+			final int instr = proto.code[pc] >> POS_OP & MAX_OP;
+
 			final UnwindableCallable<EvalCont> callable = di -> {
+				// FIXME could the handler redirect PC?
 				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
+				state.instructionHits[instr]++;
 				f.run(di);
 				//noinspection ReturnOfNull
 				return null;
@@ -674,8 +678,11 @@ public final class LuaInterpreter {
 
 	private static Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> rawCont(LuaState state, int pc, Prototype proto) {
 		return raw -> {
+			final int instr = proto.code[pc] >> POS_OP & MAX_OP;
+
 			final UnwindableCallable<EvalCont> f = di -> {
 				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
+				state.instructionHits[instr]++;
 				return raw.call(di);
 			};
 
@@ -801,10 +808,12 @@ public final class LuaInterpreter {
 			case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >>> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditional out of λ
-					di.stack[a] = OperationHelper.getTable(state, di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b);
-				});
+				if (c > 0xff) {
+					final LuaValue konst = k[c & 0x0ff];
+					return cont.apply(di -> di.stack[a] = OperationHelper.getTable(state, di.stack[b], konst, b));
+				}
+
+				return cont.apply(di -> di.stack[a] = OperationHelper.getTable(state, di.stack[b], di.stack[c], b));
 			}
 
 			case OP_SETGLOBAL: { // A Bx: Gbl[Kst(Bx)]:= R(A)
@@ -823,10 +832,22 @@ public final class LuaInterpreter {
 			case OP_SETTABLE: { // A B C: R(A)[RK(B)]:= RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >>> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					OperationHelper.setTable(state, di.stack[a], b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], a);
-				});
+				if (b > 0xff) {
+					final LuaValue konstKey = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstValue = k[c & 0x0ff];
+						return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], konstKey, konstValue, a));
+					}
+
+					return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], konstKey, di.stack[c], a));
+				}
+
+				if (c > 0xff) {
+					final LuaValue konstValue = k[c & 0x0ff];
+					return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], di.stack[b], konstValue, a));
+				}
+
+				return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], di.stack[b], di.stack[c], a));
 			}
 
 			case OP_NEWTABLE: // A B C: R(A):= {} (size = B,C)
@@ -1088,18 +1109,10 @@ public final class LuaInterpreter {
 				});
 			}
 
-			// TODO needs special handling, JVM doesn't have proper tail calls
 			case OP_TAILCALL: { // A B C: return R(A)(R(A+1), ... ,R(A+B-1))
 				final int b = (i >>> POS_B) & MAXARG_B;
 
-				if (true) {
-					throw new UnsupportedOperationException("tail calls are a to-do, soz");
-				}
-
 				return raw.apply(di -> {
-					DebugFrame debugFrame = di;
-					LuaInterpretedFunction fn = initialClosure;
-
 					LuaValue val = di.stack[a];
 					Varargs args;
 					switch (b) {
@@ -1110,14 +1123,14 @@ public final class LuaInterpreter {
 							args = di.stack[a + 1];
 							break;
 						default: {
-							Varargs v = debugFrame.extras;
+							Varargs v = di.extras;
 							args = b > 0 ?
 									ValueFactory.varargsOf(di.stack, a + 1, b - 1) : // exact arg count
-									ValueFactory.varargsOf(di.stack, a + 1, debugFrame.top - v.count() - (a + 1), v); // from prev top
+									ValueFactory.varargsOf(di.stack, a + 1, di.top - v.count() - (a + 1), v); // from prev top
 						}
 					}
 
-					LuaFunction functionVal;
+					final LuaFunction functionVal;
 					if (val.isFunction()) {
 						functionVal = (LuaFunction) val;
 					} else {
@@ -1129,25 +1142,21 @@ public final class LuaInterpreter {
 					}
 
 					if (functionVal instanceof LuaInterpretedFunction) {
-						int flags = debugFrame.flags;
+						int flags = di.flags;
 						closeAll(di.stackUpvalues);
 						ds.popInfo();
 
 						// Replace the current frame with a new one.
-						fn = (LuaInterpretedFunction) functionVal;
-						debugFrame = setupCall(state, fn, args, (flags & FLAG_FRESH) | FLAG_TAIL);
+						final LuaInterpretedFunction fn = (LuaInterpretedFunction) functionVal;
+						final DebugFrame debugFrame = setupCall(state, fn, args, (flags & FLAG_FRESH) | FLAG_TAIL);
 
-						partialEval(state, debugFrame, fn);
-						// TODO
+						return new EvalCont(debugFrame, fn);
 					} else {
 						Varargs v = functionVal.invoke(state, args.asImmutable());
-						debugFrame.top = a + v.count();
-						debugFrame.extras = v;
-						// TODO
+						di.top = a + v.count();
+						di.extras = v;
+						return null;
 					}
-
-					// TODO
-					return new EvalCont(null);
 				});
 			}
 

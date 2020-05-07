@@ -32,8 +32,7 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Random;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Global lua state
  */
 public final class LuaState {
+	public long[] instructionHits = new long[38];
+
 	/**
 	 * The active input stream
 	 */
