@@ -663,7 +663,7 @@ public final class LuaInterpreter {
 			final UnwindableCallable<EvalCont> callable = di -> {
 				// FIXME could the handler redirect PC?
 				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
-				state.instructionHits[instr]++;
+//				state.instructionHits[instr]++;
 				f.run(di);
 				//noinspection ReturnOfNull
 				return null;
@@ -682,7 +682,7 @@ public final class LuaInterpreter {
 
 			final UnwindableCallable<EvalCont> f = di -> {
 				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
-				state.instructionHits[instr]++;
+//				state.instructionHits[instr]++;
 				return raw.call(di);
 			};
 
@@ -884,37 +884,85 @@ public final class LuaInterpreter {
 			case OP_MUL: { // A B C: R(A):= RK(B) * RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					di.stack[a] = OperationHelper.mul(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
-				});
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, konstLeft, konstRight, b, c));
+					}
+
+					return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, konstLeft, di.stack[c], b, c));
+				}
+
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, di.stack[b], konstRight, b, c));
+				}
+
+				return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_DIV: { // A B C: R(A):= RK(B) / RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					di.stack[a] = OperationHelper.div(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
-				});
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> di.stack[a] = OperationHelper.div(state, konstLeft, konstRight, b, c));
+					}
+
+					return cont.apply(di -> di.stack[a] = OperationHelper.div(state, konstLeft, di.stack[c], b, c));
+				}
+
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> di.stack[a] = OperationHelper.div(state, di.stack[b], konstRight, b, c));
+				}
+
+				return cont.apply(di -> di.stack[a] = OperationHelper.div(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_MOD: { // A B C: R(A):= RK(B) % RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					di.stack[a] = OperationHelper.mod(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
-				});
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, konstLeft, konstRight, b, c));
+					}
+
+					return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, konstLeft, di.stack[c], b, c));
+				}
+
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, di.stack[b], konstRight, b, c));
+				}
+
+				return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_POW: { // A B C: R(A):= RK(B) ^ RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					di.stack[a] = OperationHelper.pow(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
-				});
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, konstLeft, konstRight, b, c));
+					}
+
+					return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, konstLeft, di.stack[c], b, c));
+				}
+
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, di.stack[b], konstRight, b, c));
+				}
+
+				return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_UNM: { // A B: R(A):= -R(B)
@@ -953,15 +1001,45 @@ public final class LuaInterpreter {
 				return cont.apply(di -> di.pc += offset);
 			}
 
+			// TODO speculatively precompute comparisons of constants (will have to be rolled back on metatable changes)
 			case OP_EQ: { // A B C: if ((RK(B) == RK(C)) ~= A) then pc++
-				int b = (i >>> POS_B) & MAXARG_B;
-				int c = (i >> POS_C) & MAXARG_C;
+				final int b = (i >>> POS_B) & MAXARG_B;
+				final int c = (i >> POS_C) & MAXARG_C;
+				final boolean aNotZero = a != 0;
+
+				// We assume the next instruction is a jump and read the branch from there.
+				final int offset = ((code[pc + 1] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
+
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> {
+							if (OperationHelper.eq(state, konstLeft, konstRight) == aNotZero) {
+								di.pc += offset;
+							}
+							di.pc++;
+						});
+					}
+					return cont.apply(di -> {
+						if (OperationHelper.eq(state, konstLeft, di.stack[c]) == aNotZero) {
+							di.pc += offset;
+						}
+						di.pc++;
+					});
+				}
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> {
+						if (OperationHelper.eq(state, di.stack[b], konstRight) == aNotZero) {
+							di.pc += offset;
+						}
+						di.pc++;
+					});
+				}
 				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					// TODO precompute for constants
-					if (OperationHelper.eq(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c]) == (a != 0)) {
-						// We assume the next instruction is a jump and read the branch from there.
-						di.pc += ((code[di.pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
+					if (OperationHelper.eq(state, di.stack[b], di.stack[c]) == aNotZero) {
+						di.pc += offset;
 					}
 					di.pc++;
 				});
@@ -970,12 +1048,39 @@ public final class LuaInterpreter {
 			case OP_LT: { // A B C: if ((RK(B) <  RK(C)) ~= A) then pc++
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
+				final boolean aNotZero = a != 0;
+				final int offset = ((code[pc + 1] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> {
+							if (OperationHelper.lt(state, konstLeft, konstRight) == aNotZero) {
+								di.pc += offset;
+							}
+							di.pc++;
+						});
+					}
+					return cont.apply(di -> {
+						if (OperationHelper.lt(state, konstLeft, di.stack[c]) == aNotZero) {
+							di.pc += offset;
+						}
+						di.pc++;
+					});
+				}
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> {
+						if (OperationHelper.lt(state, di.stack[b], konstRight) == aNotZero) {
+							di.pc += offset;
+						}
+						di.pc++;
+					});
+				}
 				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					if (false) System.out.println(initialClosure.toString());
-					if (OperationHelper.lt(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c]) == (a != 0)) {
-						di.pc += ((code[di.pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
+					if (OperationHelper.lt(state, di.stack[b], di.stack[c]) == aNotZero) {
+						di.pc += offset;
 					}
 					di.pc++;
 				});
@@ -984,11 +1089,39 @@ public final class LuaInterpreter {
 			case OP_LE: { // A B C: if ((RK(B) <= RK(C)) ~= A) then pc++
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
+				final boolean aNotZero = a != 0;
+				final int offset = ((code[pc + 1] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> {
+							if (OperationHelper.le(state, konstLeft, konstRight) == aNotZero) {
+								di.pc += offset;
+							}
+							di.pc++;
+						});
+					}
+					return cont.apply(di -> {
+						if (OperationHelper.le(state, konstLeft, di.stack[c]) == aNotZero) {
+							di.pc += offset;
+						}
+						di.pc++;
+					});
+				}
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> {
+						if (OperationHelper.le(state, di.stack[b], konstRight) == aNotZero) {
+							di.pc += offset;
+						}
+						di.pc++;
+					});
+				}
 				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					if (OperationHelper.le(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c]) == (a != 0)) {
-						di.pc += ((code[di.pc] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
+					if (OperationHelper.le(state, di.stack[b], di.stack[c]) == aNotZero) {
+						di.pc += offset;
 					}
 					di.pc++;
 				});

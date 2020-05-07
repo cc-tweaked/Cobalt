@@ -27,7 +27,6 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.squiddev.cobalt.function.LuaFunction;
 
 import java.util.*;
 
@@ -68,10 +67,9 @@ public class PerformanceTest {
 
 //		helpers.runComparisonTest(name);
 
-		final LuaFunction fn = helpers.loadScript(name);
 		for (int i = 0; i < TOTAL; i++) {
 			long start = System.nanoTime();
-			LuaThread.runMain(helpers.state, fn);
+			LuaThread.runMain(helpers.state, helpers.loadScript(name));
 			long finish = System.nanoTime();
 
 			if (i >= DISCARD) System.out.println("  Took " + (finish - start) / 1.0e9);
