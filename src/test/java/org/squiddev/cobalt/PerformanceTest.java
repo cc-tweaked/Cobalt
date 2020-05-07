@@ -54,9 +54,11 @@ public class PerformanceTest {
 
 		for (String key : counts.keySet()) {
 			final long c = counts.get(key);
-			final String percentage = String.format("%.2f", (100.0 * c) / total);
-			final String spaces = new String(new char[10 - key.length()]).replace('\0', ' ');
-			System.out.println(key + spaces + percentage + "% \t(" + c + ")");
+			if (c > 0) {
+				final String percentage = String.format("%.2f", (100.0 * c) / total);
+				final String spaces = new String(new char[10 - key.length()]).replace('\0', ' ');
+				System.out.println(key + spaces + percentage + "% \t(" + c + ")");
+			}
 		}
 	}
 

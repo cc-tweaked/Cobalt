@@ -657,13 +657,15 @@ public final class LuaInterpreter {
 	}
 
 	private static Function<UnwindableRunnable, UnwindableCallable<EvalCont>> continuation(LuaState state, int pc, Prototype proto) {
+		final DebugState ds = DebugHandler.getDebugState(state);
+
 		return f -> {
 			final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 			final UnwindableCallable<EvalCont> callable = di -> {
 				// FIXME could the handler redirect PC?
-				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
-//				state.instructionHits[instr]++;
+				state.debug.onInstruction(ds, di, ++di.pc);
+				state.instructionHits[instr]++;
 				f.run(di);
 				//noinspection ReturnOfNull
 				return null;
@@ -677,12 +679,14 @@ public final class LuaInterpreter {
 	}
 
 	private static Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> rawCont(LuaState state, int pc, Prototype proto) {
+		final DebugState ds = DebugHandler.getDebugState(state);
+
 		return raw -> {
 			final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 			final UnwindableCallable<EvalCont> f = di -> {
-				state.debug.onInstruction(DebugHandler.getDebugState(state), di, ++di.pc);
-//				state.instructionHits[instr]++;
+				state.debug.onInstruction(ds, di, ++di.pc);
+				state.instructionHits[instr]++;
 				return raw.call(di);
 			};
 
@@ -694,15 +698,22 @@ public final class LuaInterpreter {
 	}
 
 	static Varargs partialEval(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
+		Prototype proto = function.getPrototype();
 		EvalCont cont;
 
 		while (true) {
-			cont = partialEvalStep(state, di, function).call(di);
+			if (proto.partiallyEvaluated.get(di.pc)) {
+				cont = proto.compiledInstrs[di.pc].call(di);
+			} else {
+				cont = partialEvalStep(state, di, function).call(di);
+			}
+
 			if (cont != null) {
 				if (cont.varargs != null) break;
 				if (cont.debugFrame != null) {
 					di = cont.debugFrame;
 					function = cont.function;
+					proto = function.getPrototype();
 				}
 			}
 		}
@@ -730,29 +741,27 @@ public final class LuaInterpreter {
 
 	// FIXME beware: if a reference to initialFrame makes it into any of the lambdas it could introduce serious memory leaks
 	static UnwindableCallable<EvalCont> partialEvalStep(final LuaState state, final DebugFrame initialFrame, final LuaInterpretedFunction initialClosure) {
-		final DebugState ds = DebugHandler.getDebugState(state);
-		final DebugHandler handler = state.debug;
+		final Prototype p = initialClosure.p;
+		final int pc = initialFrame.pc;
+
+//		if (p.partiallyEvaluated.get(pc)) {
+//			return p.compiledInstrs[pc];
+//		}
 
 		// Fetch all info from the function
-		final Prototype p = initialClosure.p;
 //		final Upvalue[] upvalues = closure.upvalues;
 		final int[] code = p.code;
 		final LuaValue[] k = p.k;
+
+		final DebugState ds = DebugHandler.getDebugState(state);
+		final DebugHandler handler = state.debug;
 
 		// And from the debug info
 //		final LuaValue[] stack = initialFrame.stack;
 //		final Upvalue[] openups = initialFrame.stackUpvalues;
 //		final Varargs varargs = initialFrame.varargs;
 
-		final int pc = initialFrame.pc;
 //		System.out.print(tracePrefix(initialFrame) + "@ " + pc + ": " + Print.OPNAMES[code[pc] >> POS_OP & MAX_OP]);
-
-		if (p.partiallyEvaluated.get(pc)) {
-//			System.out.println(" cached");
-			return p.compiledInstrs[pc];
-		} else {
-//			System.out.println();
-		}
 
 		// pull out instruction
 		final int i = code[pc];
@@ -1336,15 +1345,41 @@ public final class LuaInterpreter {
 
 			case OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
-				return cont.apply(di -> {
-					double limit = di.stack[a + 1].checkDouble();
-					double step = di.stack[a + 2].checkDouble();
-					double value = di.stack[a].checkDouble();
-					double idx = step + value;
-					if (0 < step ? idx <= limit : limit <= idx) {
-						di.stack[a + 3] = di.stack[a] = valueOf(idx);
-						di.pc += offset;
-					}
+				return raw.apply(di -> {
+					state.instructionHits[OP_FORLOOP]--;
+					final double limit = di.stack[a + 1].checkDouble();
+					final double step = di.stack[a + 2].checkDouble();
+
+					UnwindableCallable<EvalCont> replacement = 0 < step ? df -> {
+						// FIXME runs twice for a single FORLOOP
+						state.debug.onInstruction(ds, df, ++df.pc);
+						state.instructionHits[OP_FORLOOP]++;
+
+						double value = df.stack[a].checkDouble();
+						double idx = step + value;
+						if (idx <= limit) {
+							df.stack[a + 3] = df.stack[a] = valueOf(idx);
+							df.pc += offset;
+						}
+
+						return null;
+					} : df -> {
+						state.debug.onInstruction(ds, df, ++df.pc);
+						state.instructionHits[OP_FORLOOP]++;
+
+						double value = df.stack[a].checkDouble();
+						double idx = step + value;
+						if (limit <= idx) {
+							df.stack[a + 3] = df.stack[a] = valueOf(idx);
+							df.pc += offset;
+						}
+
+						return null;
+					};
+
+					p.compiledInstrs[pc] = replacement;
+					di.pc--;
+					return replacement.call(di);
 				});
 			}
 
@@ -1358,6 +1393,8 @@ public final class LuaInterpreter {
 					di.stack[a + 1] = limit;
 					di.stack[a + 2] = step;
 					di.pc += offset;
+					// force re-evaluation of the FORLOOP instruction to fetch new limit & step values
+					p.partiallyEvaluated.clear(di.pc);
 				});
 			}
 
