@@ -658,14 +658,14 @@ public final class LuaInterpreter {
 
 	private static Function<UnwindableRunnable, UnwindableCallable<EvalCont>> continuation(LuaState state, int pc, Prototype proto) {
 		final DebugState ds = DebugHandler.getDebugState(state);
+		final DebugHandler handler = state.debug;
+		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 		return f -> {
-			final int instr = proto.code[pc] >> POS_OP & MAX_OP;
-
 			final UnwindableCallable<EvalCont> callable = di -> {
 				// FIXME could the handler redirect PC?
-				state.debug.onInstruction(ds, di, ++di.pc);
-				state.instructionHits[instr]++;
+				handler.onInstruction(ds, di, ++di.pc);
+//				state.instructionHits[instr]++;
 				f.run(di);
 				//noinspection ReturnOfNull
 				return null;
@@ -680,13 +680,13 @@ public final class LuaInterpreter {
 
 	private static Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> rawCont(LuaState state, int pc, Prototype proto) {
 		final DebugState ds = DebugHandler.getDebugState(state);
+		final DebugHandler handler = state.debug;
+		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 		return raw -> {
-			final int instr = proto.code[pc] >> POS_OP & MAX_OP;
-
 			final UnwindableCallable<EvalCont> f = di -> {
-				state.debug.onInstruction(ds, di, ++di.pc);
-				state.instructionHits[instr]++;
+				handler.onInstruction(ds, di, ++di.pc);
+//				state.instructionHits[instr]++;
 				return raw.call(di);
 			};
 
@@ -1345,15 +1345,16 @@ public final class LuaInterpreter {
 
 			case OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
+
 				return raw.apply(di -> {
-					state.instructionHits[OP_FORLOOP]--;
+//					state.instructionHits[OP_FORLOOP]--;
 					final double limit = di.stack[a + 1].checkDouble();
 					final double step = di.stack[a + 2].checkDouble();
 
 					UnwindableCallable<EvalCont> replacement = 0 < step ? df -> {
 						// FIXME runs twice for a single FORLOOP
-						state.debug.onInstruction(ds, df, ++df.pc);
-						state.instructionHits[OP_FORLOOP]++;
+						handler.onInstruction(ds, df, ++df.pc);
+//						state.instructionHits[OP_FORLOOP]++;
 
 						double value = df.stack[a].checkDouble();
 						double idx = step + value;
@@ -1364,8 +1365,8 @@ public final class LuaInterpreter {
 
 						return null;
 					} : df -> {
-						state.debug.onInstruction(ds, df, ++df.pc);
-						state.instructionHits[OP_FORLOOP]++;
+						handler.onInstruction(ds, df, ++df.pc);
+//						state.instructionHits[OP_FORLOOP]++;
 
 						double value = df.stack[a].checkDouble();
 						double idx = step + value;
