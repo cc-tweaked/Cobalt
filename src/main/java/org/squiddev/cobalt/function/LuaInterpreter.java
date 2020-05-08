@@ -657,13 +657,13 @@ public final class LuaInterpreter {
 	}
 
 	private static Function<UnwindableRunnable, UnwindableCallable<EvalCont>> continuation(LuaState state, int pc, Prototype proto) {
-		final DebugState ds = DebugHandler.getDebugState(state);
 		final DebugHandler handler = state.debug;
 		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 		return f -> {
 			final UnwindableCallable<EvalCont> callable = di -> {
 				// FIXME could the handler redirect PC?
+				final DebugState ds = DebugHandler.getDebugState(state);
 				handler.onInstruction(ds, di, di.pc);
 //				state.instructionHits[instr]++;
 				f.run(di);
@@ -679,12 +679,12 @@ public final class LuaInterpreter {
 	}
 
 	private static Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> rawCont(LuaState state, int pc, Prototype proto) {
-		final DebugState ds = DebugHandler.getDebugState(state);
 		final DebugHandler handler = state.debug;
 		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 		return raw -> {
 			final UnwindableCallable<EvalCont> f = di -> {
+				final DebugState ds = DebugHandler.getDebugState(state);
 				handler.onInstruction(ds, di, di.pc);
 //				state.instructionHits[instr]++;
 				return raw.call(di);
