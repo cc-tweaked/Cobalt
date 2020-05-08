@@ -746,7 +746,6 @@ public final class LuaInterpreter {
 
 	// FIXME beware: if a reference to initialFrame makes it into any of the lambdas it could introduce serious memory leaks
 	static UnwindableCallable<EvalCont> partialEvalStep(final LuaState state, final DebugFrame initialFrame, final LuaInterpretedFunction initialClosure) {
-		final DebugState ds = DebugHandler.getDebugState(state);
 		final DebugHandler handler = state.debug;
 		final Prototype p = initialClosure.p;
 		final int pc = initialFrame.pc;
@@ -1283,7 +1282,7 @@ public final class LuaInterpreter {
 					if (functionVal instanceof LuaInterpretedFunction) {
 						int flags = di.flags;
 						closeAll(di.stackUpvalues);
-						ds.popInfo();
+						DebugHandler.getDebugState(state).popInfo();
 
 						// Replace the current frame with a new one.
 						final LuaInterpretedFunction fn = (LuaInterpretedFunction) functionVal;
@@ -1308,6 +1307,7 @@ public final class LuaInterpreter {
 
 					final LuaValue[] stack = di.stack;
 					closeAll(di.stackUpvalues);
+					final DebugState ds = DebugHandler.getDebugState(state);
 					handler.onReturn(ds, di);
 
 					Varargs ret;
