@@ -29,7 +29,11 @@ import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.UnwindThrowable;
 import org.squiddev.cobalt.function.LuaFunction;
 
-import static org.squiddev.cobalt.debug.DebugFrame.*;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_FRESH;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD_LINE;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_JAVA;
 
 /**
  * DebugState is associated with a Thread
@@ -129,7 +133,8 @@ public final class DebugState {
 		DebugFrame[] frames = stack;
 		int length = frames.length;
 		if (top >= length) {
-			if (top >= MAX_SIZE) throw new LuaError("stack overflow");
+			if (top >= MAX_SIZE)
+				throw new LuaError("stack overflow");
 			int newSize = length == 0 ? DEFAULT_SIZE : Math.min(MAX_SIZE, length + (length / 2));
 			DebugFrame[] f = new DebugFrame[newSize];
 			System.arraycopy(frames, 0, f, 0, length);

@@ -309,7 +309,7 @@ public class Print {
 	}
 
 	private static int getline(Prototype f, int pc) {
-		return pc > 0 && f.lineinfo != null && pc < f.lineinfo.length ? f.lineinfo[pc] : -1;
+		return pc >= 0 && f.lineinfo != null && pc < f.lineinfo.length ? f.lineinfo[pc] : -1;
 	}
 
 	static void printHeader(Prototype f) {
