@@ -30,6 +30,7 @@ import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static org.squiddev.cobalt.Constants.FALSE;
 import static org.squiddev.cobalt.Constants.NIL;
@@ -655,37 +656,52 @@ public final class LuaInterpreter {
 		}
 	}
 
-	private static UnwindableCallable<EvalCont> continuation(LuaState state, int pc, Prototype proto, final UnwindableRunnable f) {
+	private static Function<UnwindableRunnable, UnwindableCallable<EvalCont>> continuation(LuaState state, int pc, Prototype proto) {
+		final DebugState ds = DebugHandler.getDebugState(state);
+		final DebugHandler handler = state.debug;
 		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
-		final UnwindableCallable<EvalCont> callable = di -> {
-			f.run(di);
-			//noinspection ReturnOfNull
-			return null;
+		return f -> {
+			final UnwindableCallable<EvalCont> callable = di -> {
+				// FIXME could the handler redirect PC?
+				handler.onInstruction(ds, di, di.pc);
+//				state.instructionHits[instr]++;
+				f.run(di);
+				//noinspection ReturnOfNull
+				return null;
+			};
+
+			proto.partiallyEvaluated.set(pc);
+			proto.compiledInstrs[pc] = callable;
+
+			return callable;
 		};
-
-		proto.partiallyEvaluated.set(pc);
-		proto.compiledInstrs[pc] = callable;
-
-		return callable;
 	}
 
-	private static UnwindableCallable<EvalCont> rawCont(LuaState state, int pc, Prototype proto, final UnwindableCallable<EvalCont> raw) {
-		proto.partiallyEvaluated.set(pc);
-		proto.compiledInstrs[pc] = raw;
+	private static Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> rawCont(LuaState state, int pc, Prototype proto) {
+		final DebugState ds = DebugHandler.getDebugState(state);
+		final DebugHandler handler = state.debug;
+		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
-		return raw;
+		return raw -> {
+			final UnwindableCallable<EvalCont> f = di -> {
+				handler.onInstruction(ds, di, di.pc);
+//				state.instructionHits[instr]++;
+				return raw.call(di);
+			};
+
+			proto.partiallyEvaluated.set(pc);
+			proto.compiledInstrs[pc] = f;
+
+			return f;
+		};
 	}
 
 	static Varargs partialEval(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
-		final DebugState ds = DebugHandler.getDebugState(state);
-		final DebugHandler handler = state.debug;
 		Prototype proto = function.getPrototype();
 		EvalCont cont;
 
 		while (true) {
-			// FIXME could the handler redirect PC?
-			handler.onInstruction(ds, di, di.pc);
 			if (proto.partiallyEvaluated.get(di.pc)) {
 				cont = proto.compiledInstrs[di.pc].call(di);
 			} else {
@@ -743,34 +759,37 @@ public final class LuaInterpreter {
 		final int i = code[pc];
 		final int a = (i >> POS_A) & MAXARG_A;
 
+		final Function<UnwindableRunnable, UnwindableCallable<EvalCont>> cont = continuation(state, pc, p);
+		final Function<UnwindableCallable<EvalCont>, UnwindableCallable<EvalCont>> raw = rawCont(state, pc, p);
+
 		// process the instruction
 		switch (((i >> POS_OP) & MAX_OP)) {
 			case OP_MOVE: { // A B: R(A):= R(B)
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return continuation(state, pc, p, di -> di.stack[a] = di.stack[b]);
+				return cont.apply(di -> di.stack[a] = di.stack[b]);
 			}
 
 			case OP_LOADK: { // A Bx: R(A):= Kst(Bx)
 				final LuaValue konst = k[(i >>> POS_Bx) & MAXARG_Bx];
-				return continuation(state, pc, p, di -> di.stack[a] = konst);
+				return cont.apply(di -> di.stack[a] = konst);
 			}
 
 			case OP_LOADBOOL: { // A B C: R(A):= (Bool)B: if (C) pc++
 				LuaBoolean value = ((i >>> POS_B) & MAXARG_B) != 0 ? TRUE : FALSE;
 				// skip next instruction (if C)
 				if (((i >>> POS_C) & MAXARG_C) != 0) {
-					return rawCont(state, pc, p, di -> {
+					return raw.apply(di -> {
 						di.stack[a] = value;
 						return new EvalCont(pc + 2);
 					});
 				}
 
-				return continuation(state, pc, p, di -> di.stack[a] = value);
+				return cont.apply(di -> di.stack[a] = value);
 			}
 
 			case OP_LOADNIL: { // A B: R(A):= ...:= R(B):= nil
 				final int init = ((i >>> POS_B) & MAXARG_B);
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					int b = init;
 					do {
 						di.stack[b--] = NIL;
@@ -780,34 +799,34 @@ public final class LuaInterpreter {
 
 			case OP_GETUPVAL: { // A B: R(A):= UpValue[B]
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					LuaInterpretedFunction closure = (LuaInterpretedFunction) di.closure;
 					di.stack[a] = closure.upvalues[b].getValue();
 				});
 			}
 
 			case OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
-				return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.getTable(state, initialClosure.env, k[(i >>> POS_Bx) & MAXARG_Bx]));
+				return cont.apply(di -> di.stack[a] = OperationHelper.getTable(state, initialClosure.env, k[(i >>> POS_Bx) & MAXARG_Bx]));
 
 			case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >>> POS_C) & MAXARG_C;
 				if (c > 0xff) {
 					final LuaValue konst = k[c & 0x0ff];
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.getTable(state, di.stack[b], konst, b));
+					return cont.apply(di -> di.stack[a] = OperationHelper.getTable(state, di.stack[b], konst, b));
 				}
 
-				return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.getTable(state, di.stack[b], di.stack[c], b));
+				return cont.apply(di -> di.stack[a] = OperationHelper.getTable(state, di.stack[b], di.stack[c], b));
 			}
 
 			case OP_SETGLOBAL: { // A Bx: Gbl[Kst(Bx)]:= R(A)
 				final LuaValue konst = k[(i >>> POS_Bx) & MAXARG_Bx];
-				return continuation(state, pc, p, di -> OperationHelper.setTable(state, initialClosure.env, konst, di.stack[a]));
+				return cont.apply(di -> OperationHelper.setTable(state, initialClosure.env, konst, di.stack[a]));
 			}
 
 			case OP_SETUPVAL: { // A B: UpValue[B]:= R(A)
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					LuaInterpretedFunction closure = (LuaInterpretedFunction) di.closure;
 					closure.upvalues[b].setValue(di.stack[a]);
 				});
@@ -820,27 +839,27 @@ public final class LuaInterpreter {
 					final LuaValue konstKey = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstValue = k[c & 0x0ff];
-						return continuation(state, pc, p, di -> OperationHelper.setTable(state, di.stack[a], konstKey, konstValue, a));
+						return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], konstKey, konstValue, a));
 					}
 
-					return continuation(state, pc, p, di -> OperationHelper.setTable(state, di.stack[a], konstKey, di.stack[c], a));
+					return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], konstKey, di.stack[c], a));
 				}
 
 				if (c > 0xff) {
 					final LuaValue konstValue = k[c & 0x0ff];
-					return continuation(state, pc, p, di -> OperationHelper.setTable(state, di.stack[a], di.stack[b], konstValue, a));
+					return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], di.stack[b], konstValue, a));
 				}
 
-				return continuation(state, pc, p, di -> OperationHelper.setTable(state, di.stack[a], di.stack[b], di.stack[c], a));
+				return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], di.stack[b], di.stack[c], a));
 			}
 
 			case OP_NEWTABLE: // A B C: R(A):= {} (size = B,C)
-				return continuation(state, pc, p, di -> di.stack[a] = new LuaTable((i >>> POS_B) & MAXARG_B, (i >>> POS_C) & MAXARG_C));
+				return cont.apply(di -> di.stack[a] = new LuaTable((i >>> POS_B) & MAXARG_B, (i >>> POS_C) & MAXARG_C));
 
 			case OP_SELF: { // A B C: R(A+1):= R(B): R(A):= R(B)[RK(C)]
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					LuaValue o = di.stack[a + 1] = di.stack[b];
 					// TODO lift conditional out of λ
 					di.stack[a] = OperationHelper.getTable(state, o, c > 0xff ? k[c & 0x0ff] : di.stack[c], b);
@@ -850,7 +869,7 @@ public final class LuaInterpreter {
 			case OP_ADD: { // A B C: R(A):= RK(B) + RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					// TODO lift conditionals out of λ
 					di.stack[a] = OperationHelper.add(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
 				});
@@ -859,7 +878,7 @@ public final class LuaInterpreter {
 			case OP_SUB: { // A B C: R(A):= RK(B) - RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					// TODO lift conditionals out of λ
 					di.stack[a] = OperationHelper.sub(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
 				});
@@ -872,18 +891,18 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mul(state, konstLeft, konstRight, b, c));
+						return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, konstLeft, konstRight, b, c));
 					}
 
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mul(state, konstLeft, di.stack[c], b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, konstLeft, di.stack[c], b, c));
 				}
 
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mul(state, di.stack[b], konstRight, b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, di.stack[b], konstRight, b, c));
 				}
 
-				return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mul(state, di.stack[b], di.stack[c], b, c));
+				return cont.apply(di -> di.stack[a] = OperationHelper.mul(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_DIV: { // A B C: R(A):= RK(B) / RK(C)
@@ -893,18 +912,18 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.div(state, konstLeft, konstRight, b, c));
+						return cont.apply(di -> di.stack[a] = OperationHelper.div(state, konstLeft, konstRight, b, c));
 					}
 
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.div(state, konstLeft, di.stack[c], b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.div(state, konstLeft, di.stack[c], b, c));
 				}
 
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.div(state, di.stack[b], konstRight, b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.div(state, di.stack[b], konstRight, b, c));
 				}
 
-				return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.div(state, di.stack[b], di.stack[c], b, c));
+				return cont.apply(di -> di.stack[a] = OperationHelper.div(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_MOD: { // A B C: R(A):= RK(B) % RK(C)
@@ -914,18 +933,18 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mod(state, konstLeft, konstRight, b, c));
+						return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, konstLeft, konstRight, b, c));
 					}
 
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mod(state, konstLeft, di.stack[c], b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, konstLeft, di.stack[c], b, c));
 				}
 
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mod(state, di.stack[b], konstRight, b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, di.stack[b], konstRight, b, c));
 				}
 
-				return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.mod(state, di.stack[b], di.stack[c], b, c));
+				return cont.apply(di -> di.stack[a] = OperationHelper.mod(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_POW: { // A B C: R(A):= RK(B) ^ RK(C)
@@ -935,23 +954,23 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.pow(state, konstLeft, konstRight, b, c));
+						return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, konstLeft, konstRight, b, c));
 					}
 
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.pow(state, konstLeft, di.stack[c], b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, konstLeft, di.stack[c], b, c));
 				}
 
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.pow(state, di.stack[b], konstRight, b, c));
+					return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, di.stack[b], konstRight, b, c));
 				}
 
-				return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.pow(state, di.stack[b], di.stack[c], b, c));
+				return cont.apply(di -> di.stack[a] = OperationHelper.pow(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_UNM: { // A B: R(A):= -R(B)
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					// TODO lift conditional out of λ
 					di.stack[a] = OperationHelper.neg(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], b);
 				});
@@ -959,12 +978,12 @@ public final class LuaInterpreter {
 
 			case OP_NOT: { // A B: R(A):= not R(B)
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return continuation(state, pc, p, di -> di.stack[a] = di.stack[b].toBoolean() ? FALSE : TRUE);
+				return cont.apply(di -> di.stack[a] = di.stack[b].toBoolean() ? FALSE : TRUE);
 			}
 
 			case OP_LEN: { // A B: R(A):= length of R(B)
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return continuation(state, pc, p, di -> di.stack[a] = OperationHelper.length(state, di.stack[b], b));
+				return cont.apply(di -> di.stack[a] = OperationHelper.length(state, di.stack[b], b));
 			}
 
 			case OP_CONCAT: { // A B C: R(A):= R(B).. ... ..R(C)
@@ -972,7 +991,7 @@ public final class LuaInterpreter {
 				final int c = (i >> POS_C) & MAXARG_C;
 				final int total = c - b + 1;
 
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					di.top = c + 1;
 					concat(state, di, di.stack, di.top, total);
 					di.stack[a] = di.stack[b];
@@ -982,7 +1001,7 @@ public final class LuaInterpreter {
 
 			case OP_JMP: { // sBx: pc+=sBx
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
-				return rawCont(state, pc, p, di -> new EvalCont(pc + offset));
+				return raw.apply(di -> new EvalCont(pc + offset));
 			}
 
 			// TODO speculatively precompute comparisons of constants (will have to be rolled back on metatable changes)
@@ -998,14 +1017,14 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return rawCont(state, pc, p, di -> {
+						return raw.apply(di -> {
 							if (OperationHelper.eq(state, konstLeft, konstRight) == aNotZero) {
 								return new EvalCont(pc + offset);
 							}
 							return new EvalCont(pc + 2);
 						});
 					}
-					return rawCont(state, pc, p, di -> {
+					return raw.apply(di -> {
 						if (OperationHelper.eq(state, konstLeft, di.stack[c]) == aNotZero) {
 							return new EvalCont(pc + offset);
 						}
@@ -1014,14 +1033,14 @@ public final class LuaInterpreter {
 				}
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return rawCont(state, pc, p, di -> {
+					return raw.apply(di -> {
 						if (OperationHelper.eq(state, di.stack[b], konstRight) == aNotZero) {
 							return new EvalCont(pc + offset);
 						}
 						return new EvalCont(pc + 2);
 					});
 				}
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					if (OperationHelper.eq(state, di.stack[b], di.stack[c]) == aNotZero) {
 						return new EvalCont(pc + offset);
 					}
@@ -1039,14 +1058,14 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return rawCont(state, pc, p, di -> {
+						return raw.apply(di -> {
 							if (OperationHelper.lt(state, konstLeft, konstRight) == aNotZero) {
 								return new EvalCont(pc + offset);
 							}
 							return new EvalCont(pc + 2);
 						});
 					}
-					return rawCont(state, pc, p, di -> {
+					return raw.apply(di -> {
 						if (OperationHelper.lt(state, konstLeft, di.stack[c]) == aNotZero) {
 							return new EvalCont(pc + offset);
 						}
@@ -1055,14 +1074,14 @@ public final class LuaInterpreter {
 				}
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return rawCont(state, pc, p, di -> {
+					return raw.apply(di -> {
 						if (OperationHelper.lt(state, di.stack[b], konstRight) == aNotZero) {
 							return new EvalCont(pc + offset);
 						}
 						return new EvalCont(pc + 2);
 					});
 				}
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					if (OperationHelper.lt(state, di.stack[b], di.stack[c]) == aNotZero) {
 						return new EvalCont(pc + offset);
 					}
@@ -1080,14 +1099,14 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return rawCont(state, pc, p, di -> {
+						return raw.apply(di -> {
 							if (OperationHelper.le(state, konstLeft, konstRight) == aNotZero) {
 								return new EvalCont(pc + offset);
 							}
 							return new EvalCont(pc + 2);
 						});
 					}
-					return rawCont(state, pc, p, di -> {
+					return raw.apply(di -> {
 						if (OperationHelper.le(state, konstLeft, di.stack[c]) == aNotZero) {
 							return new EvalCont(pc + offset);
 						}
@@ -1096,14 +1115,14 @@ public final class LuaInterpreter {
 				}
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return rawCont(state, pc, p, di -> {
+					return raw.apply(di -> {
 						if (OperationHelper.le(state, di.stack[b], konstRight) == aNotZero) {
 							return new EvalCont(pc + offset);
 						}
 						return new EvalCont(pc + 2);
 					});
 				}
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					if (OperationHelper.le(state, di.stack[b], di.stack[c]) == aNotZero) {
 						return new EvalCont(pc + offset);
 					}
@@ -1115,7 +1134,7 @@ public final class LuaInterpreter {
 				final boolean c = (i >> POS_C & MAXARG_C) != 0;
 				final int offset = ((code[pc + 1] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 2;
 
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					if (di.stack[a].toBoolean() == c) {
 						return new EvalCont(pc + offset);
 					}
@@ -1130,7 +1149,7 @@ public final class LuaInterpreter {
 				final int offset = ((code[pc + 1] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 2;
 				boolean nonZeroC = c != 0;
 
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					LuaValue val = di.stack[b];
 					if (val.toBoolean() == nonZeroC) {
 						di.stack[a] = val;
@@ -1144,7 +1163,7 @@ public final class LuaInterpreter {
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
 
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					LuaValue val = di.stack[a];
 
 					if (val instanceof LuaInterpretedFunction) {
@@ -1232,7 +1251,7 @@ public final class LuaInterpreter {
 			case OP_TAILCALL: { // A B C: return R(A)(R(A+1), ... ,R(A+B-1))
 				final int b = (i >>> POS_B) & MAXARG_B;
 
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					LuaValue val = di.stack[a];
 					Varargs args;
 					switch (b) {
@@ -1282,7 +1301,7 @@ public final class LuaInterpreter {
 
 			case OP_RETURN: { // A B: return R(A), ... ,R(A+B-2) (see note)
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					final int flags = di.flags, top = di.top;
 					final boolean fresh = (flags & FLAG_FRESH) == 0;
 					final Varargs v = di.extras;
@@ -1323,7 +1342,7 @@ public final class LuaInterpreter {
 			case OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
 
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					double limit = di.stack[a + 1].checkDouble();
 					double step = di.stack[a + 2].checkDouble();
 					double value = di.stack[a].checkDouble();
@@ -1339,7 +1358,7 @@ public final class LuaInterpreter {
 			// TODO compile the target FORLOOP instruction if there's a LOADK at pc - 1 (sets the step to a constant value)
 			case OP_FORPREP: { // A sBx: R(A)-=R(A+2): pc+=sBx
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					LuaNumber init = di.stack[a].checkNumber("'for' initial value must be a number");
 					LuaNumber limit = di.stack[a + 1].checkNumber("'for' limit must be a number");
 					LuaNumber step = di.stack[a + 2].checkNumber("'for' step must be a number");
@@ -1357,7 +1376,7 @@ public final class LuaInterpreter {
 								else pc++
 							*/
 				final int initC = (i >> POS_C) & MAXARG_C;
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					Varargs v = di.extras = OperationHelper.invoke(state, di.stack[a], ValueFactory.varargsOf(di.stack[a + 1], di.stack[a + 2]), a);
 					LuaValue val = v.first();
 					if (val.isNil()) {
@@ -1381,7 +1400,7 @@ public final class LuaInterpreter {
 				if (_c == 0) c = code[pc + 1]; else c = _c;
 				final int offset = (c - 1) * LFIELDS_PER_FLUSH;
 
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					// TODO lift conditional out of λ
 					int newPc = pc;
 					if (_c == 0) newPc++;
@@ -1408,7 +1427,7 @@ public final class LuaInterpreter {
 			}
 
 			case OP_CLOSE: // A : close all variables in the stack up to (>=) R(A)
-				return continuation(state, pc, p, di -> {
+				return cont.apply(di -> {
 					final Upvalue[] openups = di.stackUpvalues;
 					for (int x = openups.length; --x >= a; ) {
 						Upvalue upvalue = openups[x];
@@ -1421,7 +1440,7 @@ public final class LuaInterpreter {
 
 			case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
 				Prototype newp = p.p[(i >>> POS_Bx) & MAXARG_Bx];
-				return rawCont(state, pc, p, di -> {
+				return raw.apply(di -> {
 					final Upvalue[] openups = di.stackUpvalues;
 					final LuaInterpretedFunction closure = (LuaInterpretedFunction) di.closure;
 					LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, closure.env);
@@ -1441,12 +1460,12 @@ public final class LuaInterpreter {
 			case OP_VARARG: { // A B: R(A), R(A+1), ..., R(A+B-1) = vararg
 				final int b = (i >>> POS_B) & MAXARG_B;
 				if (b == 0) {
-					return continuation(state, pc, p, di -> {
+					return cont.apply(di -> {
 						di.top = a + di.varargs.count();
 						di.extras = di.varargs;
 					});
 				} else {
-					return continuation(state, pc, p, di -> {
+					return cont.apply(di -> {
 						for (int j = 1; j < b; ++j) {
 							di.stack[a + j - 1] = di.varargs.arg(j);
 						}
