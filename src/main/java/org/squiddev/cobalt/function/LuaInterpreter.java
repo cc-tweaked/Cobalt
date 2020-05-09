@@ -656,15 +656,10 @@ public final class LuaInterpreter {
 	}
 
 	private static Function<UnwindableRunnable, UnwindableCallable> continuation(LuaState state, int pc, Prototype proto) {
-		final DebugHandler handler = state.debug;
-
 		return f -> {
-			final UnwindableCallable callable = di -> {
-				final DebugState ds = DebugHandler.getDebugState(state);
-				handler.onInstruction(ds, di, di.pc);
+			final UnwindableCallable callable = (di, c) -> {
 				f.run(di);
-				//noinspection ReturnOfNull
-				return null;
+				c.programCounter = di.pc + 1;
 			};
 
 			proto.compiledInstrs[pc] = callable;
@@ -673,13 +668,9 @@ public final class LuaInterpreter {
 	}
 
 	private static Function<UnwindableCallable, UnwindableCallable> rawCont(LuaState state, int pc, Prototype proto) {
-		final DebugHandler handler = state.debug;
-
 		return raw -> {
-			final UnwindableCallable f = di -> {
-				final DebugState ds = DebugHandler.getDebugState(state);
-				handler.onInstruction(ds, di, di.pc);
-				return raw.call(di);
+			final UnwindableCallable f = (di, c) -> {
+				raw.call(di, c);
 			};
 
 			proto.compiledInstrs[pc] = f;
@@ -689,29 +680,31 @@ public final class LuaInterpreter {
 
 	static Varargs partialEval(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
 		Prototype proto = function.getPrototype();
-		EvalCont cont;
+		EvalCont cont = new EvalCont();
+		final DebugHandler handler = state.debug;
+		DebugState ds = DebugHandler.getDebugState(state);
 
 		while (true) {
+			handler.onInstruction(ds, di, di.pc);
 			final UnwindableCallable compiledInstr = proto.compiledInstrs[di.pc];
 			if (compiledInstr != null) {
-				cont = compiledInstr.call(di);
+				compiledInstr.call(di, cont);
 			} else {
-				cont = partialEvalStep(state, di, function).call(di);
+				partialEvalStep(state, di, function).call(di, cont);
 			}
 
-			if (cont == null) {
-				// a null continuation simply increments the PC by default
-				di.pc++;
-			} else {
-				if (cont.varargs != null) return cont.varargs;
-				if (cont.debugFrame != null) {
-					di = cont.debugFrame;
-					function = cont.function;
-					proto = function.getPrototype();
-				} else {
-					di.pc = cont.programCounter;
-				}
+			if (cont.varargs != null) return cont.varargs;
+			if (cont.debugFrame != null) {
+				di = cont.debugFrame;
+				cont.programCounter = di.pc;
+				function = cont.function;
+				proto = function.getPrototype();
+				ds = DebugHandler.getDebugState(state);
+				cont.debugFrame = null;
+				cont.function = null;
 			}
+
+			di.pc = cont.programCounter;
 		}
 	}
 
@@ -748,9 +741,9 @@ public final class LuaInterpreter {
 				LuaBoolean value = ((i >>> POS_B) & MAXARG_B) != 0 ? TRUE : FALSE;
 				// skip next instruction (if C)
 				if (((i >>> POS_C) & MAXARG_C) != 0) {
-					return raw.apply(di -> {
+					return raw.apply((di, c) -> {
 						di.stack[a] = value;
-						return new EvalCont(pc + 2);
+						c.programCounter = pc + 2;
 					});
 				}
 
@@ -1012,7 +1005,7 @@ public final class LuaInterpreter {
 
 			case OP_JMP: { // sBx: pc+=sBx
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
-				return raw.apply(di -> new EvalCont(pc + offset));
+				return raw.apply((di, c) -> c.programCounter = pc + offset);
 			}
 
 			// TODO precompute comparisons of constants
@@ -1028,13 +1021,13 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return raw.apply(di -> new EvalCont(
+						return raw.apply((di, continuation) -> continuation.programCounter = (
 								OperationHelper.eq(state, konstLeft, konstRight) == aNotZero
 										? pc + offset
 										: pc + 2
 						));
 					}
-					return raw.apply(di -> new EvalCont(
+					return raw.apply((di, continuation) -> continuation.programCounter = (
 							OperationHelper.eq(state, konstLeft, di.stack[c]) == aNotZero
 									? pc + offset
 									: pc + 2
@@ -1042,13 +1035,13 @@ public final class LuaInterpreter {
 				}
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return raw.apply(di -> new EvalCont(
+					return raw.apply((di, continuation) -> continuation.programCounter = (
 							OperationHelper.eq(state, di.stack[b], konstRight) == aNotZero
 									? pc + offset
 									: pc + 2
 					));
 				}
-				return raw.apply(di -> new EvalCont(
+				return raw.apply((di, continuation) -> continuation.programCounter = (
 						OperationHelper.eq(state, di.stack[b], di.stack[c]) == aNotZero
 								? pc + offset
 								: pc + 2
@@ -1065,13 +1058,13 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return raw.apply(di -> new EvalCont(
+						return raw.apply((di, continuation) -> continuation.programCounter = (
 								OperationHelper.lt(state, konstLeft, konstRight) == aNotZero
 										? pc + offset
 										: pc + 2
 						));
 					}
-					return raw.apply(di -> new EvalCont(
+					return raw.apply((di, continuation) -> continuation.programCounter = (
 							OperationHelper.lt(state, konstLeft, di.stack[c]) == aNotZero
 									? pc + offset
 									: pc + 2
@@ -1079,13 +1072,13 @@ public final class LuaInterpreter {
 				}
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return raw.apply(di -> new EvalCont(
+					return raw.apply((di, continuation) -> continuation.programCounter = (
 							OperationHelper.lt(state, di.stack[b], konstRight) == aNotZero
 									? pc + offset
 									: pc + 2
 					));
 				}
-				return raw.apply(di -> new EvalCont(
+				return raw.apply((di, continuation) -> continuation.programCounter = (
 						OperationHelper.lt(state, di.stack[b], di.stack[c]) == aNotZero
 								? pc + offset
 								: pc + 2
@@ -1102,13 +1095,13 @@ public final class LuaInterpreter {
 					final LuaValue konstLeft = k[b & 0x0ff];
 					if (c > 0xff) {
 						final LuaValue konstRight = k[c & 0x0ff];
-						return raw.apply(di -> new EvalCont(
+						return raw.apply((di, continuation) -> continuation.programCounter = (
 								OperationHelper.le(state, konstLeft, konstRight) == aNotZero
 										? pc + offset
 										: pc + 2
 						));
 					}
-					return raw.apply(di -> new EvalCont(
+					return raw.apply((di, continuation) -> continuation.programCounter = (
 							OperationHelper.le(state, konstLeft, di.stack[c]) == aNotZero
 									? pc + offset
 									: pc + 2
@@ -1116,13 +1109,13 @@ public final class LuaInterpreter {
 				}
 				if (c > 0xff) {
 					final LuaValue konstRight = k[c & 0x0ff];
-					return raw.apply(di -> new EvalCont(
+					return raw.apply((di, continuation) -> continuation.programCounter = (
 							OperationHelper.le(state, di.stack[b], konstRight) == aNotZero
 									? pc + offset
 									: pc + 2
 					));
 				}
-				return raw.apply(di -> new EvalCont(
+				return raw.apply((di, continuation) -> continuation.programCounter = (
 						OperationHelper.le(state, di.stack[b], di.stack[c]) == aNotZero
 								? pc + offset
 								: pc + 2
@@ -1133,12 +1126,9 @@ public final class LuaInterpreter {
 				final boolean c = (i >> POS_C & MAXARG_C) != 0;
 				final int offset = ((code[pc + 1] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 2;
 
-				return raw.apply(di -> {
-					if (di.stack[a].toBoolean() == c) {
-						return new EvalCont(pc + offset);
-					}
-					return new EvalCont(pc + 2);
-				});
+				return raw.apply((di, continuation) ->
+						continuation.programCounter = di.stack[a].toBoolean() == c ? pc + offset : pc + 2
+				);
 			}
 
 			case OP_TESTSET: { // A B C: if (R(B) <=> C) then R(A):= R(B) else pc++
@@ -1148,13 +1138,14 @@ public final class LuaInterpreter {
 				final int offset = ((code[pc + 1] >> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 2;
 				boolean nonZeroC = c != 0;
 
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					LuaValue val = di.stack[b];
 					if (val.toBoolean() == nonZeroC) {
 						di.stack[a] = val;
-						return new EvalCont(pc + offset);
+						continuation.programCounter = pc + offset;
+					} else {
+						continuation.programCounter = pc + 2;
 					}
-					return new EvalCont(pc + 2);
 				});
 			}
 
@@ -1163,7 +1154,7 @@ public final class LuaInterpreter {
 				final int c = (i >> POS_C) & MAXARG_C;
 				final int bc = i & (MASK_B | MASK_C);
 
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					LuaValue val = di.stack[a];
 
 					if (val instanceof LuaInterpretedFunction) {
@@ -1188,7 +1179,9 @@ public final class LuaInterpreter {
 										: setupCall(state, fn, di.stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras, 0); // from prev top
 						}
 
-						return new EvalCont(debugFrame, fn);
+						continuation.debugFrame = debugFrame;
+						continuation.function = fn;
+						return;
 					}
 
 					switch (bc) {
@@ -1244,15 +1237,14 @@ public final class LuaInterpreter {
 					}
 
 					// a native call is over, continue executing this function
-					//noinspection ReturnOfNull
-					return null;
+					continuation.programCounter = pc + 1;
 				});
 			}
 
 			case OP_TAILCALL: { // A B C: return R(A)(R(A+1), ... ,R(A+B-1))
 				final int b = (i >>> POS_B) & MAXARG_B;
 
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					LuaValue val = di.stack[a];
 					Varargs args;
 					switch (b) {
@@ -1288,22 +1280,20 @@ public final class LuaInterpreter {
 
 						// Replace the current frame with a new one.
 						final LuaInterpretedFunction fn = (LuaInterpretedFunction) functionVal;
-						final DebugFrame debugFrame = setupCall(state, fn, args, (flags & FLAG_FRESH) | FLAG_TAIL);
-
-						return new EvalCont(debugFrame, fn);
+						continuation.debugFrame = setupCall(state, fn, args, (flags & FLAG_FRESH) | FLAG_TAIL);
+						continuation.function = fn;
 					} else {
 						Varargs v = functionVal.invoke(state, args.asImmutable());
 						di.top = a + v.count();
 						di.extras = v;
-						//noinspection ReturnOfNull
-						return null;
+						continuation.programCounter = pc + 1;
 					}
 				});
 			}
 
 			case OP_RETURN: { // A B: return R(A), ... ,R(A+B-2) (see note)
 				final int b = (i >>> POS_B) & MAXARG_B;
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					final int flags = di.flags, top = di.top;
 					final boolean fresh = (flags & FLAG_FRESH) != 0;
 					final Varargs v = di.extras;
@@ -1332,12 +1322,13 @@ public final class LuaInterpreter {
 
 					if (fresh) {
 						// If we're a fresh invocation then return to the parent.
-						return new EvalCont(ret);
+						continuation.varargs = ret;
 					} else {
 						DebugFrame debugFrame = ds.getStackUnsafe();
 						LuaInterpretedFunction fn = (LuaInterpretedFunction) debugFrame.closure;
 						resume(state, debugFrame, fn, ret);
-						return new EvalCont(debugFrame, fn);
+						continuation.debugFrame = debugFrame;
+						continuation.function = fn;
 					}
 				});
 			}
@@ -1345,29 +1336,30 @@ public final class LuaInterpreter {
 			case OP_FORLOOP: { // A sBx: R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
 
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					double limit = di.stack[a + 1].checkDouble();
 					double step = di.stack[a + 2].checkDouble();
 					double value = di.stack[a].checkDouble();
 					double idx = step + value;
 					if (0 < step ? idx <= limit : limit <= idx) {
 						di.stack[a + 3] = di.stack[a] = valueOf(idx);
-						return new EvalCont(pc + offset);
+						continuation.programCounter = pc + offset;
+					} else {
+						continuation.programCounter = pc + 1;
 					}
-					return new EvalCont(pc + 1);
 				});
 			}
 
 			case OP_FORPREP: { // A sBx: R(A)-=R(A+2): pc+=sBx
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					LuaNumber init = di.stack[a].checkNumber("'for' initial value must be a number");
 					LuaNumber limit = di.stack[a + 1].checkNumber("'for' limit must be a number");
 					LuaNumber step = di.stack[a + 2].checkNumber("'for' step must be a number");
 					di.stack[a] = valueOf(init.toDouble() - step.toDouble());
 					di.stack[a + 1] = limit;
 					di.stack[a + 2] = step;
-					return new EvalCont(pc + offset);
+					continuation.programCounter = pc + offset;
 				});
 			}
 
@@ -1378,11 +1370,12 @@ public final class LuaInterpreter {
 								else pc++
 							*/
 				final int initC = (i >> POS_C) & MAXARG_C;
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					Varargs v = di.extras = OperationHelper.invoke(state, di.stack[a], ValueFactory.varargsOf(di.stack[a + 1], di.stack[a + 2]), a);
 					LuaValue val = v.first();
 					if (val.isNil()) {
-						return new EvalCont(pc + 2);
+						continuation.programCounter = pc + 2;
+						return;
 					}
 
 					di.stack[a + 2] = di.stack[a + 3] = val;
@@ -1390,7 +1383,7 @@ public final class LuaInterpreter {
 						di.stack[a + 2 + c] = v.arg(c);
 					}
 					di.extras = NONE;
-					return new EvalCont(pc + 1);
+					continuation.programCounter = pc + 1;
 				});
 			}
 
@@ -1401,7 +1394,7 @@ public final class LuaInterpreter {
 				if (_c == 0) c = code[pc + 1]; else c = _c;
 				final int offset = (c - 1) * LFIELDS_PER_FLUSH;
 
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					// TODO lift conditional out of λ
 					int newPc = pc;
 					if (_c == 0) newPc++;
@@ -1423,7 +1416,7 @@ public final class LuaInterpreter {
 							tbl.rawset(offset + j, di.stack[a + j]);
 						}
 					}
-					return new EvalCont(newPc + 1);
+					continuation.programCounter = newPc + 1;
 				});
 			}
 
@@ -1441,7 +1434,7 @@ public final class LuaInterpreter {
 
 			case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
 				Prototype newp = p.p[(i >>> POS_Bx) & MAXARG_Bx];
-				return raw.apply(di -> {
+				return raw.apply((di, continuation) -> {
 					final Upvalue[] openups = di.stackUpvalues;
 					final LuaInterpretedFunction closure = (LuaInterpretedFunction) di.closure;
 					LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, closure.env);
@@ -1454,7 +1447,7 @@ public final class LuaInterpreter {
 								: openups[b] != null ? openups[b] : (openups[b] = new Upvalue(di.stack, b)); // OP_MOVE
 					}
 					di.stack[a] = newcl;
-					return new EvalCont(pc + newp.nups + 1);
+					continuation.programCounter = pc + newp.nups + 1;
 				});
 			}
 

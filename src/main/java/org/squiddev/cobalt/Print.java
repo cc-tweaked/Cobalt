@@ -199,7 +199,7 @@ public class Print {
 		int sbx = GETARG_sBx(i);
 		int line = getline(f, pc);
 		sb.append(' ');
-		sb.append(f.compiledInstrs != null ? 'c' : ' ');
+		sb.append(f.compiledInstrs[pc] != null ? 'c' : ' ');
 		sb.append(pc + 1).append("  ");
 		if (line > 0) {
 			sb.append("[").append(line).append("]  ");
