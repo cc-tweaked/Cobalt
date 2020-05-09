@@ -854,8 +854,14 @@ public final class LuaInterpreter {
 				return cont.apply(di -> OperationHelper.setTable(state, di.stack[a], di.stack[b], di.stack[c], a));
 			}
 
-			case OP_NEWTABLE: // A B C: R(A):= {} (size = B,C)
-				return cont.apply(di -> di.stack[a] = new LuaTable((i >>> POS_B) & MAXARG_B, (i >>> POS_C) & MAXARG_C));
+			case OP_NEWTABLE: { // A B C: R(A):= {} (size = B,C)
+				final int narray = (i >>> POS_B) & MAXARG_B;
+				final int nhash = (i >>> POS_C) & MAXARG_C;
+
+				return cont.apply(di -> {
+					di.stack[a] = new LuaTable(narray, nhash);
+				});
+			}
 
 			case OP_SELF: { // A B C: R(A+1):= R(B): R(A):= R(B)[RK(C)]
 				final int b = (i >>> POS_B) & MAXARG_B;
