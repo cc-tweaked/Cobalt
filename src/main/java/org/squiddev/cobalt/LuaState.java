@@ -41,8 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Global lua state
  */
 public final class LuaState {
-	public long[] instructionHits = new long[38];
-
 	/**
 	 * The active input stream
 	 */

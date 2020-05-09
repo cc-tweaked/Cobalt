@@ -663,7 +663,6 @@ public final class LuaInterpreter {
 			final UnwindableCallable callable = di -> {
 				final DebugState ds = DebugHandler.getDebugState(state);
 				handler.onInstruction(ds, di, di.pc);
-//				state.instructionHits[instr]++;
 				f.run(di);
 				//noinspection ReturnOfNull
 				return null;
@@ -684,7 +683,6 @@ public final class LuaInterpreter {
 			final UnwindableCallable f = di -> {
 				final DebugState ds = DebugHandler.getDebugState(state);
 				handler.onInstruction(ds, di, di.pc);
-//				state.instructionHits[instr]++;
 				return raw.call(di);
 			};
 
