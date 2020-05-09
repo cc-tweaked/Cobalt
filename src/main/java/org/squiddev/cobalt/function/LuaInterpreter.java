@@ -1396,9 +1396,38 @@ public final class LuaInterpreter {
 				});
 			}
 
-			// TODO compile the target FORLOOP instruction if there's a LOADK at pc - 1 (sets the step to a constant value)
 			case OP_FORPREP: { // A sBx: R(A)-=R(A+2): pc+=sBx
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
+
+				final int loadk;
+				if (pc > 0 && ((loadk = code[pc - 1]) >> POS_OP & MAX_OP) == OP_LOADK && (loadk >> POS_A & MAXARG_A) == a + 2) {
+					// there's a LOADK preceding this instruction targetting the step register
+					final LuaValue konstStep = k[(loadk >>> POS_Bx) & MAXARG_Bx];
+					if (konstStep.isNumber()) {
+						double step = konstStep.toDouble();
+						p.partiallyEvaluated.set(pc + offset);
+						p.compiledInstrs[pc + offset] = 0 < step ? di -> {
+							double limit = di.stack[a + 1].checkDouble();
+							double value = di.stack[a].checkDouble();
+							double idx = step + value;
+							if (idx <= limit) {
+								di.stack[a + 3] = di.stack[a] = valueOf(idx);
+								return new EvalCont(pc + 1);
+							}
+							return new EvalCont(pc + offset + 1);
+						} : di -> {
+							double limit = di.stack[a + 1].checkDouble();
+							double value = di.stack[a].checkDouble();
+							double idx = step + value;
+							if (limit <= idx) {
+								di.stack[a + 3] = di.stack[a] = valueOf(idx);
+								return new EvalCont(pc + 1);
+							}
+							return new EvalCont(pc + offset + 1);
+						};
+					}
+				}
+
 				return raw.apply(di -> {
 					LuaNumber init = di.stack[a].checkNumber("'for' initial value must be a number");
 					LuaNumber limit = di.stack[a + 1].checkNumber("'for' limit must be a number");
