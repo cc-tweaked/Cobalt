@@ -133,8 +133,7 @@ public final class DebugState {
 		DebugFrame[] frames = stack;
 		int length = frames.length;
 		if (top >= length) {
-			if (top >= MAX_SIZE)
-				throw new LuaError("stack overflow");
+			if (top >= MAX_SIZE) throw new LuaError("stack overflow");
 			int newSize = length == 0 ? DEFAULT_SIZE : Math.min(MAX_SIZE, length + (length / 2));
 			DebugFrame[] f = new DebugFrame[newSize];
 			System.arraycopy(frames, 0, f, 0, length);

@@ -657,7 +657,6 @@ public final class LuaInterpreter {
 
 	private static Function<UnwindableRunnable, UnwindableCallable> continuation(LuaState state, int pc, Prototype proto) {
 		final DebugHandler handler = state.debug;
-		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 		return f -> {
 			final UnwindableCallable callable = di -> {
@@ -668,16 +667,13 @@ public final class LuaInterpreter {
 				return null;
 			};
 
-			proto.partiallyEvaluated.set(pc);
 			proto.compiledInstrs[pc] = callable;
-
 			return callable;
 		};
 	}
 
 	private static Function<UnwindableCallable, UnwindableCallable> rawCont(LuaState state, int pc, Prototype proto) {
 		final DebugHandler handler = state.debug;
-		final int instr = proto.code[pc] >> POS_OP & MAX_OP;
 
 		return raw -> {
 			final UnwindableCallable f = di -> {
@@ -686,9 +682,7 @@ public final class LuaInterpreter {
 				return raw.call(di);
 			};
 
-			proto.partiallyEvaluated.set(pc);
 			proto.compiledInstrs[pc] = f;
-
 			return f;
 		};
 	}
@@ -698,8 +692,9 @@ public final class LuaInterpreter {
 		EvalCont cont;
 
 		while (true) {
-			if (proto.partiallyEvaluated.get(di.pc)) {
-				cont = proto.compiledInstrs[di.pc].call(di);
+			final UnwindableCallable compiledInstr = proto.compiledInstrs[di.pc];
+			if (compiledInstr != null) {
+				cont = compiledInstr.call(di);
 			} else {
 				cont = partialEvalStep(state, di, function).call(di);
 			}
@@ -708,7 +703,7 @@ public final class LuaInterpreter {
 				// a null continuation simply increments the PC by default
 				di.pc++;
 			} else {
-				if (cont.varargs != null) break;
+				if (cont.varargs != null) return cont.varargs;
 				if (cont.debugFrame != null) {
 					di = cont.debugFrame;
 					function = cont.function;
@@ -718,8 +713,6 @@ public final class LuaInterpreter {
 				}
 			}
 		}
-
-		return cont.varargs;
 	}
 
 	// FIXME beware: if a reference to initialFrame makes it into any of the lambdas it could introduce serious memory leaks
