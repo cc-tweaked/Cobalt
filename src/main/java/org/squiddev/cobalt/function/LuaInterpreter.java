@@ -860,29 +860,61 @@ public final class LuaInterpreter {
 			case OP_SELF: { // A B C: R(A+1):= R(B): R(A):= R(B)[RK(C)]
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
+
+				if (c > 0xff) {
+					final LuaValue konstKey = k[c & 0x0ff];
+					return cont.apply(di -> {
+						LuaValue o = di.stack[a + 1] = di.stack[b];
+						di.stack[a] = OperationHelper.getTable(state, o, konstKey, b);
+					});
+				}
+
 				return cont.apply(di -> {
 					LuaValue o = di.stack[a + 1] = di.stack[b];
-					// TODO lift conditional out of λ
-					di.stack[a] = OperationHelper.getTable(state, o, c > 0xff ? k[c & 0x0ff] : di.stack[c], b);
+					di.stack[a] = OperationHelper.getTable(state, o, di.stack[c], b);
 				});
 			}
 
 			case OP_ADD: { // A B C: R(A):= RK(B) + RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					di.stack[a] = OperationHelper.add(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
-				});
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> di.stack[a] = OperationHelper.add(state, konstLeft, konstRight, b, c));
+					}
+
+					return cont.apply(di -> di.stack[a] = OperationHelper.add(state, konstLeft, di.stack[c], b, c));
+				}
+
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> di.stack[a] = OperationHelper.add(state, di.stack[b], konstRight, b, c));
+				}
+
+				return cont.apply(di -> di.stack[a] = OperationHelper.add(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_SUB: { // A B C: R(A):= RK(B) - RK(C)
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
-				return cont.apply(di -> {
-					// TODO lift conditionals out of λ
-					di.stack[a] = OperationHelper.sub(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], c > 0xff ? k[c & 0x0ff] : di.stack[c], b, c);
-				});
+				if (b > 0xff) {
+					final LuaValue konstLeft = k[b & 0x0ff];
+					if (c > 0xff) {
+						final LuaValue konstRight = k[c & 0x0ff];
+						return cont.apply(di -> di.stack[a] = OperationHelper.sub(state, konstLeft, konstRight, b, c));
+					}
+
+					return cont.apply(di -> di.stack[a] = OperationHelper.sub(state, konstLeft, di.stack[c], b, c));
+				}
+
+				if (c > 0xff) {
+					final LuaValue konstRight = k[c & 0x0ff];
+					return cont.apply(di -> di.stack[a] = OperationHelper.sub(state, di.stack[b], konstRight, b, c));
+				}
+
+				return cont.apply(di -> di.stack[a] = OperationHelper.sub(state, di.stack[b], di.stack[c], b, c));
 			}
 
 			case OP_MUL: { // A B C: R(A):= RK(B) * RK(C)
@@ -971,9 +1003,16 @@ public final class LuaInterpreter {
 
 			case OP_UNM: { // A B: R(A):= -R(B)
 				final int b = (i >>> POS_B) & MAXARG_B;
+
+				if (b > 0xff) {
+					final LuaValue konst = k[b & 0x0ff];
+					return cont.apply(di -> {
+						di.stack[a] = OperationHelper.neg(state, konst, b);
+					});
+				}
+
 				return cont.apply(di -> {
-					// TODO lift conditional out of λ
-					di.stack[a] = OperationHelper.neg(state, b > 0xff ? k[b & 0x0ff] : di.stack[b], b);
+					di.stack[a] = OperationHelper.neg(state, di.stack[b], b);
 				});
 			}
 
@@ -1005,7 +1044,7 @@ public final class LuaInterpreter {
 				return raw.apply(di -> new EvalCont(pc + offset));
 			}
 
-			// TODO speculatively precompute comparisons of constants (will have to be rolled back on metatable changes)
+			// TODO precompute comparisons of constants
 			case OP_EQ: { // A B C: if ((RK(B) == RK(C)) ~= A) then pc++
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
@@ -1304,7 +1343,7 @@ public final class LuaInterpreter {
 				final int b = (i >>> POS_B) & MAXARG_B;
 				return raw.apply(di -> {
 					final int flags = di.flags, top = di.top;
-					final boolean fresh = (flags & FLAG_FRESH) == 0;
+					final boolean fresh = (flags & FLAG_FRESH) != 0;
 					final Varargs v = di.extras;
 
 					final LuaValue[] stack = di.stack;
@@ -1329,7 +1368,7 @@ public final class LuaInterpreter {
 							break;
 					}
 
-					if (!fresh) {
+					if (fresh) {
 						// If we're a fresh invocation then return to the parent.
 						return new EvalCont(ret);
 					} else {
