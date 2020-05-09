@@ -304,7 +304,6 @@ public final class BytecodeLoader {
 		f.is_vararg = is.readUnsignedByte();
 		f.maxstacksize = is.readUnsignedByte();
 		f.code = loadIntArray();
-		//noinspection unchecked
 		f.compiledInstrs = new UnwindableCallable[f.code.length];
 		loadConstants(f);
 		loadDebug(f);

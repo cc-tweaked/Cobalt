@@ -1092,7 +1092,6 @@ public class FuncState {
 		/* put new instruction in code array */
 		if (f.code == null || this.pc + 1 > f.code.length) {
 			f.code = LuaC.realloc(f.code, this.pc * 2 + 1);
-			//noinspection unchecked
 			f.compiledInstrs = new UnwindableCallable[f.code.length];
 		}
 		f.code[this.pc] = instruction;

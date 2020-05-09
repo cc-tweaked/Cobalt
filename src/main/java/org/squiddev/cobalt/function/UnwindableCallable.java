@@ -5,6 +5,6 @@ import org.squiddev.cobalt.UnwindThrowable;
 import org.squiddev.cobalt.debug.DebugFrame;
 
 @FunctionalInterface
-public interface UnwindableCallable<R> {
-    R call(DebugFrame di) throws LuaError, UnwindThrowable;
+public interface UnwindableCallable {
+    EvalCont call(DebugFrame di) throws LuaError, UnwindThrowable;
 }
