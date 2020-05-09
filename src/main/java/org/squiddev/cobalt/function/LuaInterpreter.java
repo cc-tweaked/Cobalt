@@ -29,7 +29,6 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
-import java.util.*;
 import java.util.function.Function;
 
 import static org.squiddev.cobalt.Constants.FALSE;
@@ -662,7 +661,6 @@ public final class LuaInterpreter {
 
 		return f -> {
 			final UnwindableCallable<EvalCont> callable = di -> {
-				// FIXME could the handler redirect PC?
 				final DebugState ds = DebugHandler.getDebugState(state);
 				handler.onInstruction(ds, di, di.pc);
 //				state.instructionHits[instr]++;
@@ -724,24 +722,6 @@ public final class LuaInterpreter {
 		}
 
 		return cont.varargs;
-	}
-
-	private static String tracePrefix(DebugFrame di) {
-		List<String> parts = new ArrayList<>(5);
-		do {
-			final String part;
-			if (di.closure.getPrototype().linedefined == 0) {
-				part = "[main]";
-			} else {
-				part = di.func.debugName();
-			}
-
-			parts.add(part);
-			di = di.previous;
-		} while (di != null);
-
-		Collections.reverse(parts);
-		return parts.stream().reduce((a, b) -> a + ">" + b).get();
 	}
 
 	// FIXME beware: if a reference to initialFrame makes it into any of the lambdas it could introduce serious memory leaks
@@ -858,9 +838,7 @@ public final class LuaInterpreter {
 				final int narray = (i >>> POS_B) & MAXARG_B;
 				final int nhash = (i >>> POS_C) & MAXARG_C;
 
-				return cont.apply(di -> {
-					di.stack[a] = new LuaTable(narray, nhash);
-				});
+				return cont.apply(di -> di.stack[a] = new LuaTable(narray, nhash));
 			}
 
 			case OP_SELF: { // A B C: R(A+1):= R(B): R(A):= R(B)[RK(C)]
@@ -1012,14 +990,10 @@ public final class LuaInterpreter {
 
 				if (b > 0xff) {
 					final LuaValue konst = k[b & 0x0ff];
-					return cont.apply(di -> {
-						di.stack[a] = OperationHelper.neg(state, konst, b);
-					});
+					return cont.apply(di -> di.stack[a] = OperationHelper.neg(state, konst, b));
 				}
 
-				return cont.apply(di -> {
-					di.stack[a] = OperationHelper.neg(state, di.stack[b], b);
-				});
+				return cont.apply(di -> di.stack[a] = OperationHelper.neg(state, di.stack[b], b));
 			}
 
 			case OP_NOT: { // A B: R(A):= not R(B)
@@ -1208,6 +1182,7 @@ public final class LuaInterpreter {
 			case OP_CALL: { // A B C: R(A), ... ,R(A+C-2):= R(A)(R(A+1), ... ,R(A+B-1)) */
 				final int b = (i >>> POS_B) & MAXARG_B;
 				final int c = (i >> POS_C) & MAXARG_C;
+				final int bc = i & (MASK_B | MASK_C);
 
 				return raw.apply(di -> {
 					LuaValue val = di.stack[a];
@@ -1237,7 +1212,7 @@ public final class LuaInterpreter {
 						return new EvalCont(debugFrame, fn);
 					}
 
-					switch (i & (MASK_B | MASK_C)) {
+					switch (bc) {
 						case (1 << POS_B) | (0 << POS_C): {
 							Varargs v = di.extras = OperationHelper.invoke(state, val, NONE, a);
 							di.top = a + v.count();
@@ -1290,6 +1265,7 @@ public final class LuaInterpreter {
 					}
 
 					// a native call is over, continue executing this function
+					//noinspection ReturnOfNull
 					return null;
 				});
 			}
@@ -1340,6 +1316,7 @@ public final class LuaInterpreter {
 						Varargs v = functionVal.invoke(state, args.asImmutable());
 						di.top = a + v.count();
 						di.extras = v;
+						//noinspection ReturnOfNull
 						return null;
 					}
 				});
@@ -1402,7 +1379,6 @@ public final class LuaInterpreter {
 				});
 			}
 
-			// TODO compile the target FORLOOP instruction if there's a LOADK at pc - 1 (sets the step to a constant value)
 			case OP_FORPREP: { // A sBx: R(A)-=R(A+2): pc+=sBx
 				final int offset = ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx + 1;
 				return raw.apply(di -> {
@@ -1443,7 +1419,6 @@ public final class LuaInterpreter {
 				final int _b = (i >>> POS_B) & MAXARG_B;
 				final int _c = (i >> POS_C) & MAXARG_C;
 				final int c;
-				// FIXME is this safe? the code doesn't change, so we don't need `di`, right?
 				if (_c == 0) c = code[pc + 1]; else c = _c;
 				final int offset = (c - 1) * LFIELDS_PER_FLUSH;
 
