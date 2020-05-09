@@ -830,7 +830,7 @@ public final class LuaInterpreter {
 			}
 
 			default:
-				Print.printCode(function.p);
+				Print.printCode(System.out, function.p);
 				throw new IllegalStateException("Cannot resume on this opcode (pc=" + di.pc + ")");
 		}
 	}

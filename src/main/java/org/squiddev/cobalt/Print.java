@@ -28,6 +28,9 @@ import org.squiddev.cobalt.function.LuaClosure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 import static org.squiddev.cobalt.Lua.*;
 
@@ -38,13 +41,6 @@ import static org.squiddev.cobalt.Lua.*;
  * @see LuaClosure
  */
 public class Print {
-
-	/**
-	 * opcode names
-	 */
-	private static final String STRING_FOR_NULL = "null";
-	public static PrintStream ps = System.out;
-
 	public static final String[] OPNAMES = {
 		"MOVE",
 		"LOADK",
@@ -134,7 +130,7 @@ public class Print {
 		ps.print('"');
 	}
 
-	static void printValue(PrintStream ps, LuaValue v) {
+	private static void printValue(PrintStream ps, LuaValue v) {
 		switch (v.type()) {
 			case Constants.TSTRING:
 				printString(ps, (LuaString) v);
@@ -145,7 +141,7 @@ public class Print {
 		}
 	}
 
-	static void printConstant(PrintStream ps, Prototype f, int i) {
+	private static void printConstant(PrintStream ps, Prototype f, int i) {
 		printValue(ps, f.k[i]);
 	}
 
@@ -154,23 +150,13 @@ public class Print {
 	 *
 	 * @param f the {@link Prototype}
 	 */
-	public static void printCode(Prototype f) {
+	public static void printCode(PrintStream ps, Prototype f) {
 		int[] code = f.code;
 		int pc, n = code.length;
 		for (pc = 0; pc < n; pc++) {
-			printOpCode(f, pc);
+			printOpcode(ps, f, pc);
 			ps.println();
 		}
-	}
-
-	/**
-	 * Print an opcode in a prototype
-	 *
-	 * @param f  the {@link Prototype}
-	 * @param pc the program counter to look up and print
-	 */
-	public static void printOpCode(Prototype f, int pc) {
-		printOpCode(ps, f, pc);
 	}
 
 	/**
@@ -180,7 +166,7 @@ public class Print {
 	 * @param f  the {@link Prototype}
 	 * @param pc the program counter to look up and print
 	 */
-	public static void printOpCode(PrintStream ps, Prototype f, int pc) {
+	public static void printOpcode(PrintStream ps, Prototype f, int pc) {
 		int[] code = f.code;
 		int i = code[pc];
 		int o = GET_OPCODE(i);
@@ -299,7 +285,7 @@ public class Print {
 		return pc > 0 && f.lineinfo != null && pc < f.lineinfo.length ? f.lineinfo[pc] : -1;
 	}
 
-	static void printHeader(Prototype f) {
+	private static void printHeader(PrintStream ps, Prototype f) {
 		String s = String.valueOf(f.source);
 		if (s.startsWith("@") || s.startsWith("=")) {
 			s = s.substring(1);
@@ -318,7 +304,7 @@ public class Print {
 			+ " constant, " + f.p.length + " function\n");
 	}
 
-	static void printConstants(Prototype f) {
+	private static void printConstants(PrintStream ps, Prototype f) {
 		int i, n = f.k.length;
 		ps.print("constants (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
@@ -328,7 +314,7 @@ public class Print {
 		}
 	}
 
-	static void printLocals(Prototype f) {
+	private static void printLocals(PrintStream ps, Prototype f) {
 		int i, n = f.locvars.length;
 		ps.print("locals (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
@@ -336,7 +322,7 @@ public class Print {
 		}
 	}
 
-	static void printUpValues(Prototype f) {
+	private static void printUpValues(PrintStream ps, Prototype f) {
 		int i, n = f.upvalues.length;
 		ps.print("upvalues (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
@@ -344,25 +330,25 @@ public class Print {
 		}
 	}
 
-	public static void print(Prototype p) {
-		printFunction(p, true);
+	public static String show(Prototype p) {
+		return showWith(ps -> printFunction(ps, p, true));
 	}
 
-	public static void printFunction(Prototype f, boolean full) {
+	public static void printFunction(PrintStream ps, Prototype f, boolean full) {
 		int i, n = f.p.length;
-		printHeader(f);
-		printCode(f);
+		printHeader(ps, f);
+		printCode(ps, f);
 		if (full) {
-			printConstants(f);
-			printLocals(f);
-			printUpValues(f);
+			printConstants(ps, f);
+			printLocals(ps, f);
+			printUpValues(ps, f);
 		}
 		for (i = 0; i < n; i++) {
-			printFunction(f.p[i], full);
+			printFunction(ps, f.p[i], full);
 		}
 	}
 
-	private static void format(String s, int maxcols) {
+	private static void format(PrintStream ps, String s, int maxcols) {
 		int n = s.length();
 		if (n > maxcols) {
 			ps.print(s.substring(0, maxcols));
@@ -375,13 +361,7 @@ public class Print {
 	}
 
 	private static String id(Prototype f) {
-		return "Proto";
-	}
-
-	private void _assert(boolean b) {
-		if (!b) {
-			throw new NullPointerException("_assert failed");
-		}
+		return f.sourceShort() + ":" + f.linedefined;
 	}
 
 	/**
@@ -393,23 +373,16 @@ public class Print {
 	 * @param top     the top of the stack
 	 * @param varargs any {@link Varargs} value that may apply
 	 */
-	public static void printState(LuaClosure cl, int pc, LuaValue[] stack, int top, Varargs varargs) {
+	public static void printState(PrintStream ps, LuaClosure cl, int pc, LuaValue[] stack, int top, Varargs varargs) {
 		// print opcode into buffer
-		PrintStream previous = ps;
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ps = new PrintStream(baos);
-		printOpCode(cl.getPrototype(), pc);
-		ps.flush();
-		ps.close();
-		ps = previous;
-		format(baos.toString(), 50);
+		format(ps, showWith(p -> printOpcode(p, cl.getPrototype(), pc)), 50);
 
 		// print stack
 		ps.print('[');
 		for (int i = 0; i < stack.length; i++) {
 			LuaValue v = stack[i];
 			if (v == null) {
-				ps.print(STRING_FOR_NULL);
+				ps.print("null");
 			} else {
 				switch (v.type()) {
 					case Constants.TSTRING:
@@ -445,5 +418,16 @@ public class Print {
 		ps.println();
 	}
 
-
+	private static String showWith(Consumer<PrintStream> f) {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		PrintStream ps;
+		try {
+			ps = new PrintStream(output, false, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new IllegalStateException("UTF-8 should exist", e);
+		}
+		f.accept(ps);
+		ps.flush();
+		return new String(output.toByteArray(), StandardCharsets.UTF_8);
+	}
 }
