@@ -804,8 +804,10 @@ public final class LuaInterpreter {
 				});
 			}
 
-			case OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
-				return cont.apply(di -> di.stack[a] = OperationHelper.getTable(state, initialClosure.env, k[(i >>> POS_Bx) & MAXARG_Bx]));
+			case OP_GETGLOBAL: { // A Bx	R(A):= Gbl[Kst(Bx)]
+				final LuaValue konstKey = k[(i >>> POS_Bx) & MAXARG_Bx];
+				return cont.apply(di -> di.stack[a] = OperationHelper.getTable(state, di.func.env, konstKey));
+			}
 
 			case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
 				final int b = (i >>> POS_B) & MAXARG_B;
@@ -820,7 +822,7 @@ public final class LuaInterpreter {
 
 			case OP_SETGLOBAL: { // A Bx: Gbl[Kst(Bx)]:= R(A)
 				final LuaValue konst = k[(i >>> POS_Bx) & MAXARG_Bx];
-				return cont.apply(di -> OperationHelper.setTable(state, initialClosure.env, konst, di.stack[a]));
+				return cont.apply(di -> OperationHelper.setTable(state, di.func.env, konst, di.stack[a]));
 			}
 
 			case OP_SETUPVAL: { // A B: UpValue[B]:= R(A)
