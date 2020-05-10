@@ -655,7 +655,7 @@ public final class LuaInterpreter {
 		}
 	}
 
-	private static Function<UnwindableRunnable, UnwindableCallable> continuation(LuaState state, int pc, Prototype proto) {
+	private static Function<UnwindableRunnable, UnwindableCallable> continuation(Prototype proto, int pc) {
 		return f -> {
 			final UnwindableCallable callable = (di, c) -> {
 				f.run(di);
@@ -667,14 +667,10 @@ public final class LuaInterpreter {
 		};
 	}
 
-	private static Function<UnwindableCallable, UnwindableCallable> rawCont(LuaState state, int pc, Prototype proto) {
+	private static Function<UnwindableCallable, UnwindableCallable> rawCont(Prototype proto, int pc) {
 		return raw -> {
-			final UnwindableCallable f = (di, c) -> {
-				raw.call(di, c);
-			};
-
-			proto.compiledInstrs[pc] = f;
-			return f;
+			proto.compiledInstrs[pc] = raw;
+			return raw;
 		};
 	}
 
@@ -690,7 +686,7 @@ public final class LuaInterpreter {
 			if (compiledInstr != null) {
 				compiledInstr.call(di, cont);
 			} else {
-				partialEvalStep(state, di, function).call(di, cont);
+				partialEvalStep(state, proto, di.pc).call(di, cont);
 			}
 
 			if (cont.varargs != null) return cont.varargs;
@@ -708,11 +704,8 @@ public final class LuaInterpreter {
 		}
 	}
 
-	// FIXME beware: if a reference to initialFrame makes it into any of the lambdas it could introduce serious memory leaks
-	static UnwindableCallable partialEvalStep(final LuaState state, final DebugFrame initialFrame, final LuaInterpretedFunction initialClosure) {
+	static UnwindableCallable partialEvalStep(final LuaState state, final Prototype p, final int pc) {
 		final DebugHandler handler = state.debug;
-		final Prototype p = initialClosure.p;
-		final int pc = initialFrame.pc;
 
 		// Fetch all info from the function
 		final int[] code = p.code;
@@ -722,8 +715,8 @@ public final class LuaInterpreter {
 		final int i = code[pc];
 		final int a = (i >> POS_A) & MAXARG_A;
 
-		final Function<UnwindableRunnable, UnwindableCallable> cont = continuation(state, pc, p);
-		final Function<UnwindableCallable, UnwindableCallable> raw = rawCont(state, pc, p);
+		final Function<UnwindableRunnable, UnwindableCallable> cont = continuation(p, pc);
+		final Function<UnwindableCallable, UnwindableCallable> raw = rawCont(p, pc);
 
 		// process the instruction
 		switch (((i >> POS_OP) & MAX_OP)) {
