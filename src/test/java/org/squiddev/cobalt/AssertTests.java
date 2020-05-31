@@ -67,6 +67,7 @@ public class AssertTests {
 		"string-issues",
 		"table",
 		"time",
+		"tonumber",
 		"traceback",
 	})
 	public void main(String name) throws IOException, CompileException, LuaError, InterruptedException {

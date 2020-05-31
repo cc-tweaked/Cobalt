@@ -224,7 +224,7 @@ public final class LuaString extends LuaValue {
 	 */
 	@Override
 	public double checkArith() throws LuaError {
-		double d = scannumber(10);
+		double d = scanNumber(10);
 		if (Double.isNaN(d)) {
 			throw ErrorFactory.arithError(this);
 		}
@@ -248,7 +248,7 @@ public final class LuaString extends LuaValue {
 
 	@Override
 	public double checkDouble() throws LuaError {
-		double d = scannumber(10);
+		double d = scanNumber(10);
 		if (Double.isNaN(d)) {
 			throw ErrorFactory.argError(this, "number");
 		}
@@ -262,7 +262,7 @@ public final class LuaString extends LuaValue {
 
 	@Override
 	public LuaNumber checkNumber(String msg) throws LuaError {
-		double d = scannumber(10);
+		double d = scanNumber(10);
 		if (Double.isNaN(d)) {
 			throw new LuaError(msg);
 		}
@@ -276,13 +276,13 @@ public final class LuaString extends LuaValue {
 
 	@Override
 	public boolean isNumber() {
-		double d = scannumber(10);
+		double d = scanNumber(10);
 		return !Double.isNaN(d);
 	}
 
 	@Override
 	public boolean isInteger() {
-		double d = scannumber(10);
+		double d = scanNumber(10);
 		if (Double.isNaN(d)) {
 			return false;
 		}
@@ -292,7 +292,7 @@ public final class LuaString extends LuaValue {
 
 	@Override
 	public boolean isLong() {
-		double d = scannumber(10);
+		double d = scanNumber(10);
 		if (Double.isNaN(d)) {
 			return false;
 		}
@@ -302,7 +302,7 @@ public final class LuaString extends LuaValue {
 
 	@Override
 	public double toDouble() {
-		return scannumber(10);
+		return scanNumber(10);
 	}
 
 	@Override
@@ -758,7 +758,7 @@ public final class LuaString extends LuaValue {
 	 * @see LuaValue#toNumber()
 	 */
 	public LuaValue tonumber(int base) {
-		double d = scannumber(base);
+		double d = scanNumber(base);
 		return Double.isNaN(d) ? NIL : ValueFactory.valueOf(d);
 	}
 
@@ -768,27 +768,26 @@ public final class LuaString extends LuaValue {
 	 * @param base the base to use, such as 10
 	 * @return double value if conversion is valid, or Double.NaN if not
 	 */
-	public double scannumber(int base) {
-		if (base >= 2 && base <= 36) {
-			int i = offset, j = offset + length;
-			while (i < j && StringLib.isWhitespace(bytes[i])) {
-				++i;
-			}
-			while (i < j && StringLib.isWhitespace(bytes[j - 1])) {
-				--j;
-			}
-			if (i >= j) {
-				return Double.NaN;
-			}
-			if ((base == 10 || base == 16) && (bytes[i] == '0' && i + 1 < j && (bytes[i + 1] == 'x' || bytes[i + 1] == 'X'))) {
-				base = 16;
-				i += 2;
-			}
-			double l = scanlong(base, i, j);
-			return Double.isNaN(l) && base == 10 ? scandouble(i, j) : l;
+	public double scanNumber(int base) {
+		if (base < 2 || base > 36) return Double.NaN;
+
+		int i = offset, j = offset + length;
+		while (i < j && StringLib.isWhitespace(bytes[i])) i++;
+		while (i < j && StringLib.isWhitespace(bytes[j - 1])) j--;
+
+		boolean isNeg = i < j && bytes[i] == '-';
+		if (isNeg) i++;
+
+		if (i >= j) return Double.NaN;
+
+		if ((base == 10 || base == 16) && (bytes[i] == '0' && i + 1 < j && (bytes[i + 1] == 'x' || bytes[i + 1] == 'X'))) {
+			base = 16;
+			i += 2;
 		}
 
-		return Double.NaN;
+		double l = scanLong(base, i, j);
+		double value = Double.isNaN(l) && base == 10 ? scandouble(i, j) : l;
+		return isNeg ? -value : value;
 	}
 
 	/**
@@ -800,7 +799,7 @@ public final class LuaString extends LuaValue {
 	 * @return double value if conversion is valid,
 	 * or Double.NaN if not
 	 */
-	private double scanlong(int base, int start, int end) {
+	private double scanLong(int base, int start, int end) {
 		long x = 0;
 		boolean neg = (bytes[start] == '-');
 		for (int i = (neg ? start + 1 : start); i < end; i++) {
