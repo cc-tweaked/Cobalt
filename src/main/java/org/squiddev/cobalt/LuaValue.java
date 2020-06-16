@@ -1218,38 +1218,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Perform string comparison with another value
-	 * of any type
-	 * using string comparison based on byte values.
-	 *
-	 * Only strings can be compared, meaning
-	 * each operand must derive from {@link LuaString}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return int &lt; 0 for {@code (this &lt; rhs)}, int &gt; 0 for {@code (this &gt; rhs)}, or 0 when same string.
-	 * @throws LuaError if either operand is not a string
-	 */
-	public int strcmp(LuaValue rhs) throws LuaError {
-		throw new LuaError("attempt to compare " + typeName());
-	}
-
-	/**
-	 * Perform string comparison with another value
-	 * known to be a {@link LuaString}
-	 * using string comparison based on byte values.
-	 *
-	 * Only strings can be compared, meaning
-	 * each operand must derive from {@link LuaString}.
-	 *
-	 * @param rhs The right-hand-side value to perform the comparison with
-	 * @return int &lt; 0 for {@code (this &lt; rhs)}, int &gt; 0 for {@code (this &gt; rhs)}, or 0 when same string.
-	 * @throws LuaError if this is not a string
-	 */
-	public int strcmp(LuaString rhs) throws LuaError {
-		throw new LuaError("attempt to compare " + typeName());
-	}
-
-	/**
 	 * Convert this value to a string if it is a {@link LuaString} or {@link LuaNumber},
 	 * or throw a {@link LuaError} if it is not
 	 *

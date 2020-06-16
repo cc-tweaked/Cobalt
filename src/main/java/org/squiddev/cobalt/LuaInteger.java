@@ -190,12 +190,6 @@ public final class LuaInteger extends LuaNumber {
 		return v == val;
 	}
 
-	// string comparison
-	@Override
-	public int strcmp(LuaString rhs) throws LuaError {
-		throw ErrorFactory.typeError(this, "attempt to compare number with string");
-	}
-
 	@Override
 	public int checkInteger() {
 		return v;

@@ -170,12 +170,6 @@ public final class LuaDouble extends LuaNumber {
 		return v == val;
 	}
 
-	// string comparison
-	@Override
-	public int strcmp(LuaString rhs) throws LuaError {
-		throw ErrorFactory.typeError(this, "attempt to compare number with string");
-	}
-
 	@Override
 	public String toString() {
 		long l = (long) v;

@@ -203,17 +203,10 @@ public final class LuaString extends LuaValue {
 		return decode(bytes, offset, length);
 	}
 
-	// string comparison
-	@Override
-	public int strcmp(LuaValue lhs) throws LuaError {
-		return -lhs.strcmp(this);
-	}
-
-	@Override
-	public int strcmp(LuaString rhs) {
+	public int compare(LuaString rhs) {
 		for (int i = 0, j = 0; i < length && j < rhs.length; ++i, ++j) {
 			if (bytes[offset + i] != rhs.bytes[rhs.offset + j]) {
-				return ((int) bytes[offset + i]) - ((int) rhs.bytes[rhs.offset + j]);
+				return (bytes[offset + i] & 0xFF) - (rhs.bytes[rhs.offset + j] & 0xFF);
 			}
 		}
 		return length - rhs.length;

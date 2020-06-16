@@ -64,6 +64,7 @@ public class AssertTests {
 		"modulo-large",
 		"no-unwind",
 		"number-format",
+		"string-compare",
 		"string-issues",
 		"table",
 		"time",
