@@ -40,7 +40,7 @@ public class ErrorFactory {
 	 * @return The created LuaError
 	 */
 	public static LuaError argError(LuaValue value, String expected) {
-		return new LuaError("bad argument: " + expected + " expected, got " + value.typeName());
+		return new LuaError("bad argument (" + expected + " expected, got " + value.typeName() + ")");
 	}
 
 	/**
@@ -51,7 +51,7 @@ public class ErrorFactory {
 	 * @return The created LuaError
 	 */
 	public static LuaError argError(int iarg, String msg) {
-		return new LuaError("bad argument #" + iarg + ": " + msg);
+		return new LuaError("bad argument #" + iarg + " (" + msg + ")");
 	}
 
 	/**
