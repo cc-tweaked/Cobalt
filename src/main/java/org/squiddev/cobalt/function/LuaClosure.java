@@ -25,7 +25,6 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Prototype;
 
 /**
@@ -46,9 +45,9 @@ public abstract class LuaClosure extends LuaFunction {
 	 */
 	public abstract Prototype getPrototype();
 
-	public abstract LuaValue getUpvalue(int i);
+	public abstract Upvalue getUpvalue(int i);
 
-	public abstract void setUpvalue(int i, LuaValue v);
+	public abstract void setUpvalue(int i, Upvalue upvalue);
 
 	@Override
 	public LuaClosure checkClosure() {

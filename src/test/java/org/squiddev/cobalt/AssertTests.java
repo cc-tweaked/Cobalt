@@ -55,6 +55,7 @@ public class AssertTests {
 		"debug",
 		"debug-coroutine-hook",
 		"debug-getinfo",
+		"debug-upvalue",
 		"gc",
 		"immutable",
 		"invalid-tailcall",

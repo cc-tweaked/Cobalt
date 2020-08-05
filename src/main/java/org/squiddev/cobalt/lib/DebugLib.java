@@ -64,6 +64,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		"setmetatable",
 		"setupvalue",
 		"traceback",
+		"upvalueid",
+		"upvaluejoin",
 	};
 
 	private static final LuaString MAIN = valueOf("main");
@@ -128,6 +130,10 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 				return _setupvalue(args);
 			case 13:
 				return _traceback(state, args);
+			case 14:
+				return upvalueId(args);
+			case 15:
+				return upvalueJoin(args);
 			default:
 				return NONE;
 		}
@@ -402,7 +408,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 			LuaClosure c = (LuaClosure) func;
 			LuaString name = findupvalue(c, up);
 			if (name != null) {
-				return varargsOf(name, c.getUpvalue(up - 1));
+				return varargsOf(name, c.getUpvalue(up - 1).getValue());
 			}
 		}
 		return NIL;
@@ -416,7 +422,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 			LuaClosure c = (LuaClosure) func;
 			LuaString name = findupvalue(c, up);
 			if (name != null) {
-				c.setUpvalue(up - 1, value);
+				c.getUpvalue(up - 1).setValue(value);
 				return name;
 			}
 		}
@@ -437,5 +443,32 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		StringBuilder sb = new StringBuilder();
 		if (message != null) sb.append(message).append('\n');
 		return valueOf(DebugHelpers.traceback(sb, thread, level).toString());
+	}
+
+	private static LuaClosure getClosureForUpvalue(Varargs args, int offset, int upvalue) throws LuaError {
+		LuaFunction function = args.arg(offset).checkFunction();
+		if (function instanceof LuaClosure) {
+			LuaClosure closure = (LuaClosure) function;
+			if (upvalue >= 0 && upvalue < closure.getPrototype().nups) return closure;
+		}
+
+		throw ErrorFactory.argError(offset, "invalid upvalue index");
+	}
+
+	private static Varargs upvalueId(Varargs args) throws LuaError {
+		int upvalue = args.arg(2).checkInteger() - 1;
+		LuaClosure closure = getClosureForUpvalue(args, 1, upvalue);
+		return new LuaUserdata(closure.getUpvalue(upvalue));
+	}
+
+	private static Varargs upvalueJoin(Varargs args) throws LuaError {
+		int upvalue1 = args.arg(2).checkInteger() - 1;
+		LuaClosure closure1 = getClosureForUpvalue(args, 1, upvalue1);
+
+		int upvalue2 = args.arg(4).checkInteger() - 1;
+		LuaClosure closure2 = getClosureForUpvalue(args, 3, upvalue2);
+
+		closure1.setUpvalue(upvalue1, closure2.getUpvalue(upvalue2));
+		return NONE;
 	}
 }
