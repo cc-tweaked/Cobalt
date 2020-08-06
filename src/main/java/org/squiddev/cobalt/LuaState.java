@@ -210,8 +210,11 @@ public final class LuaState {
 	 */
 	public static class Builder {
 		private static final AtomicInteger coroutineCount = new AtomicInteger();
-		private static final Executor defaultCoroutineExecutor = Executors.newCachedThreadPool(command ->
-			new Thread(command, "Coroutine-" + coroutineCount.getAndIncrement()));
+		private static final Executor defaultCoroutineExecutor = Executors.newCachedThreadPool(command -> {
+			Thread thread = new Thread(command, "Coroutine-" + coroutineCount.getAndIncrement());
+			thread.setDaemon(true);
+			return thread;
+		});
 
 		private InputStream stdin = System.in;
 		private PrintStream stdout = System.out;
