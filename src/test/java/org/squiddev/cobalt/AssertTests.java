@@ -142,10 +142,12 @@ public class AssertTests {
 	@ValueSource(strings = {
 		"db",
 		"utf8",
+		"tpack",
 	})
 	public void lua53(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.3/");
 		helpers.setup();
+		helpers.globals.load(helpers.state, new Bit32Lib());
 		helpers.globals.load(helpers.state, new Utf8Lib());
 
 		helpers.runWithDump(name);
