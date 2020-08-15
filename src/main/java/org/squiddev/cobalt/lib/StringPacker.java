@@ -556,6 +556,7 @@ public class StringPacker {
 				default: throw new LuaError(String.format("invalid format option '%c'", fmt.bytes[i]));
 			}
 		}
-		return varargsOf((LuaValue[])retval.toArray());
+		retval.add(LuaInteger.valueOf(pos + 1));
+		return varargsOf(retval.toArray(new LuaValue[0]));
 	}
 }
