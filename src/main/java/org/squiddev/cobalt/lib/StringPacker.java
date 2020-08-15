@@ -3,6 +3,7 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.*;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
@@ -76,23 +77,20 @@ public class StringPacker {
 	 */
 	static Varargs pack(Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
-		ByteOrder endianness = ByteOrder.nativeOrder();
+		ByteOrder endianness = ByteOrder.LITTLE_ENDIAN;
 		int alignment = 1;
 		int currentSize = 64, pos = 0;
 		int argnum = 2;
 		byte[] output = new byte[currentSize];
 		for (int i = fmt.offset; i < fmt.length; i++) {
 			switch (fmt.bytes[i]) {
+				case '=':
 				case '<': {
 					endianness = ByteOrder.LITTLE_ENDIAN;
 					break;
 				}
 				case '>': {
 					endianness = ByteOrder.BIG_ENDIAN;
-					break;
-				}
-				case '=': {
-					endianness = ByteOrder.LITTLE_ENDIAN;
 					break;
 				}
 				case '!': {
@@ -301,12 +299,8 @@ public class StringPacker {
 					}
 					if (size > 16)
 						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					else if (size == 0) { // This is a bit hacky; it will probably need to be rewritten
-						String arch = System.getProperty("os.arch");
-						if (arch.equals("x86_64") || arch.equals("amd64") || arch.equals("x64"))
-							alignment = 8; // assume 8 bytes on 64-bit architectures
-						else alignment = 4; // assume 4 bytes on 32-bit architectures
-					} else alignment = size;
+					else if (size == 0) alignment = 4;
+					else alignment = size;
 					break;
 				}
 				case 'b':
@@ -421,21 +415,18 @@ public class StringPacker {
 		else if (pos == 0) throw new LuaError("bad argument #3 to 'unpack' (initial position out of string)");
 		else pos--;
 		if (pos > str.length || pos < 0) throw new LuaError("bad argument #3 to 'unpack' (initial position out of string)");
-		ByteOrder endianness = ByteOrder.nativeOrder();
+		ByteOrder endianness = ByteOrder.LITTLE_ENDIAN;
 		int alignment = 1;
-		LuaTable retval = new LuaTable();
+		ArrayList<LuaValue> retval = new ArrayList<LuaValue>();
 		for (int i = fmt.offset; i < fmt.length; i++) {
 			switch (fmt.bytes[i]) {
+				case '=':
 				case '<': {
 					endianness = ByteOrder.LITTLE_ENDIAN;
 					break;
 				}
 				case '>': {
 					endianness = ByteOrder.BIG_ENDIAN;
-					break;
-				}
-				case '=': {
-					endianness = ByteOrder.nativeOrder();
 					break;
 				}
 				case '!': {
@@ -446,12 +437,8 @@ public class StringPacker {
 					}
 					if (size > 16)
 						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					else if (size == 0) { // This is a bit hacky; it will probably need to be rewritten
-						String arch = System.getProperty("os.arch");
-						if (arch.equals("x86_64") || arch.equals("amd64") || arch.equals("x64"))
-							alignment = 8; // assume 8 bytes on 64-bit architectures
-						else alignment = 4; // assume 4 bytes on 32-bit architectures
-					} else alignment = size;
+					else if (size == 0) alignment = 4;
+					else alignment = size;
 					break;
 				}
 				case 'b':
@@ -465,7 +452,7 @@ public class StringPacker {
 				case 'T': {
 					if (pos + packoptsize(fmt.bytes[i], 0) > str.length) throw new LuaError("data string too short");
 					UnpackIntState res = unpackint(str.bytes, pos, packoptsize(fmt.bytes[i], 0), endianness, alignment, Character.isLowerCase(fmt.bytes[i]));
-					retval.insert(retval.length() + 1, LuaInteger.valueOf(res.result));
+					retval.add(LuaInteger.valueOf(res.result));
 					pos += res.size;
 					break;
 				}
@@ -484,7 +471,7 @@ public class StringPacker {
 					else if (size == 0) size = 4;
 					if (pos + size > str.length) throw new LuaError("data string too short");
 					UnpackIntState res = unpackint(str.bytes, pos, size, endianness, alignment, signed);
-					retval.insert(retval.length() + 1, LuaInteger.valueOf(res.result));
+					retval.add(LuaInteger.valueOf(res.result));
 					pos += res.size;
 					break;
 				}
@@ -494,7 +481,7 @@ public class StringPacker {
 					int l = 0;
 					for (int j = 0; j < 4; j++)
 						l |= (((int)str.bytes[pos + j] & 0xFF) << ((endianness == ByteOrder.BIG_ENDIAN ? 3 - j : j) * 8));
-					retval.insert(retval.length() + 1, LuaDouble.valueOf(Float.intBitsToFloat(l)));
+					retval.add(LuaDouble.valueOf(Float.intBitsToFloat(l)));
 					pos += 4;
 					break;
 				}
@@ -504,7 +491,7 @@ public class StringPacker {
 					if (pos + 8 > str.length) throw new LuaError("data string too short");
 					long l = 0;
 					for (int j = 0; j < 8; j++) l |= (((long)str.bytes[pos + j] & 0xFF) << ((endianness == ByteOrder.BIG_ENDIAN ? 7 - j : j) * 8));
-					retval.insert(retval.length() + 1, LuaDouble.valueOf(Double.longBitsToDouble(l)));
+					retval.add(LuaDouble.valueOf(Double.longBitsToDouble(l)));
 					pos += 8;
 					break;
 				}
@@ -517,14 +504,14 @@ public class StringPacker {
 						size = (size * 10) + (fmt.bytes[++i] - '0');
 					}
 					if (pos + size > str.length) throw new LuaError("data string too short");
-					retval.insert(retval.length() + 1, LuaString.valueOf(str.bytes, pos, size));
+					retval.add(LuaString.valueOf(str.bytes, pos, size));
 					pos += size;
 					break;
 				}
 				case 'z': {
 					int size = 0;
 					while (str.bytes[pos + size] != 0) if (++size >= str.length) throw new LuaError("unfinished string for format 'z'");
-					retval.insert(retval.length() + 1, LuaString.valueOf(str.bytes, pos, size));
+					retval.add(LuaString.valueOf(str.bytes, pos, size));
 					pos += size + 1;
 					break;
 				}
@@ -541,7 +528,7 @@ public class StringPacker {
 					UnpackIntState num = unpackint(str.bytes, pos, size, endianness, alignment, false);
 					pos += num.size;
 					if (pos + num.result > str.length) throw new LuaError("data string too short");
-					retval.insert(retval.length() + 1, LuaString.valueOf(str.bytes, pos, (int)num.result));
+					retval.add(LuaString.valueOf(str.bytes, pos, (int)num.result));
 					pos += num.result;
 					break;
 				}
@@ -569,9 +556,6 @@ public class StringPacker {
 				default: throw new LuaError(String.format("invalid format option '%c'", fmt.bytes[i]));
 			}
 		}
-		LuaValue[] retvar = new LuaValue[retval.length() + 1];
-		for (int i = 0; i < retval.length(); i++) retvar[i] = retval.rawget(i+1);
-		retvar[retval.length()] = LuaInteger.valueOf(pos + 1);
-		return varargsOf(retvar);
+		return varargsOf((LuaValue[])retval.toArray());
 	}
 }
