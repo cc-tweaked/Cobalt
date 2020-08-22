@@ -677,9 +677,7 @@ public final class LuaInterpreter {
 						length += strLen;
 					}
 
-					LuaBaseString[] strings = new LuaBaseString[n];
-					System.arraycopy(stack, top - n, strings, 0, n);
-					stack[top - n] = new LuaRope(strings);
+					stack[top - n] = LuaRope.valueOf(stack, top - n, n, length);
 				}
 
 				// Got "n" strings and created one new one

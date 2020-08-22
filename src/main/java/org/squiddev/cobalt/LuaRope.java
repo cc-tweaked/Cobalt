@@ -1,15 +1,36 @@
 package org.squiddev.cobalt;
 
 public final class LuaRope extends LuaBaseString {
+	private static final int SMALL_STRING = 32;
+
 	private LuaString string;
 	private LuaBaseString[] contents;
 	private final int length;
 
-	public LuaRope(LuaBaseString[] contents) {
+	private LuaRope(LuaBaseString[] contents, int length) {
 		this.contents = contents;
-		int length = 0;
-		for (LuaBaseString str : contents) length += str.length();
 		this.length = length;
+	}
+
+	public static LuaBaseString valueOf(LuaValue[] contents, int start, int length, int strLength) {
+		if (length == 0 || strLength == 0) return Constants.EMPTYSTRING;
+		if (length == 1) return (LuaBaseString) contents[0];
+
+		if (strLength > SMALL_STRING) {
+			LuaBaseString[] slice = new LuaBaseString[length];
+			System.arraycopy(contents, start, slice, 0, length);
+			return new LuaRope(slice, strLength);
+		}
+
+		byte[] out = new byte[strLength];
+		int position = 0;
+		for (int i = 0; i < length; i++) {
+			LuaString string = (LuaString) contents[start + i];
+			System.arraycopy(string.bytes, string.offset, out, position, string.length);
+			position += string.length;
+		}
+
+		return LuaString.valueOf(out);
 	}
 
 	@Override
