@@ -965,7 +965,7 @@ public abstract class LuaValue extends Varargs {
 	 * Numbers will be converted to {@link LuaString}.
 	 *
 	 * @return {@link LuaString} representation of the value if it is a {@link LuaString} or {@link LuaNumber}
-	 * @throws LuaError if {@code this} is not a {@link LuaTable}
+	 * @throws LuaError if {@code this} is not a {@link LuaString}
 	 * @see #checkString()
 	 * @see #optLuaString(LuaString)
 	 * @see #toLuaString()
@@ -974,6 +974,16 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public LuaString checkLuaString() throws LuaError {
 		throw ErrorFactory.argError(this, "string");
+	}
+
+	/**
+	 * Check that this is a lua string, or throw {@link LuaError} if it is not
+	 *
+	 * @return {@link LuaBaseString} representation of the value if it is a {@link LuaBaseString} or {@link LuaNumber}
+	 * @throws LuaError if {@code this} is not a {@link LuaBaseString}
+	 */
+	public LuaBaseString checkLuaBaseString() throws LuaError {
+		return checkLuaString();
 	}
 
 	/**

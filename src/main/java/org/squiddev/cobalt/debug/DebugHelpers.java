@@ -191,8 +191,7 @@ public final class DebugHelpers {
 				int g = Lua.GETARG_Bx(i); /* global index */
 				// lua_assert(p.k[g].isString());
 				LuaValue value = p.k[g];
-				LuaValue stringed = value.toLuaString();
-				LuaString string = stringed instanceof LuaString ? (LuaString) stringed : valueOf(value.toString());
+				LuaString string = OperationHelper.toString(value);
 				return new LuaString[]{string, GLOBAL};
 			}
 			case OP_MOVE: {

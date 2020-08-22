@@ -628,18 +628,6 @@ public final class LuaTable extends LuaValue {
 		return lg;
 	}
 
-	public static boolean isLargeKey(LuaValue key) {
-		switch (key.type()) {
-			case TSTRING:
-				return ((LuaString) key).length() > LuaString.RECENT_STRINGS_MAX_LENGTH;
-			case TNUMBER:
-			case TBOOLEAN:
-				return false;
-			default:
-				return true;
-		}
-	}
-
 	// ----------------- sort support -----------------------------
 	//
 	// implemented heap sort from wikipedia
