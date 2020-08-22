@@ -7,6 +7,9 @@ public final class LuaRope extends LuaBaseString {
 	private LuaBaseString[] contents;
 	private final int length;
 
+	private LuaRope parent;
+	private int index;
+
 	private LuaRope(LuaBaseString[] contents, int length) {
 		this.contents = contents;
 		this.length = length;
@@ -35,36 +38,58 @@ public final class LuaRope extends LuaBaseString {
 
 	@Override
 	public LuaString strvalue() {
-		if (string != null) return string;
-
-		// Unlike strings, ropes are not shared across Lua instances, and so we don't need to worry about race
-		// conditions.
-		byte[] out = new byte[length];
-		append(out, 0, contents);
-		contents = null;
-		return this.string = LuaString.valueOf(out);
+		return string != null ? string : actualise(this);
 	}
 
-	private static int append(byte[] out, int start, LuaBaseString[] contents) {
-		for (LuaBaseString str : contents) {
-			LuaString string;
-			if (str instanceof LuaRope) {
-				LuaRope rope = (LuaRope) str;
-				if (rope.contents != null) {
-					start = append(out, start, ((LuaRope) str).contents);
-					continue;
+	/**
+	 * Convert a rope into a string, updating it in place.
+	 *
+	 * This is effectively a recursive algorithm, but implemented as a basic loop. The ropes themselves act as the
+	 * stack, holding onto the current iteration state of their parent. Unlike strings, ropes are not shared across Lua
+	 * instances, and so we don't need to worry about race conditions.
+	 *
+	 * @param current The rope to convert to a string.
+	 * @return The actualised string.
+	 */
+	private static LuaString actualise(LuaRope current) {
+		byte[] out = new byte[current.length];
+		int position = 0;
+
+		top:
+		while (true) {
+			LuaBaseString[] contents = current.contents;
+			int index = current.index;
+
+			for (; index < contents.length; index++) {
+				LuaBaseString str = contents[index];
+				LuaString string;
+				if (str instanceof LuaRope) {
+					LuaRope rope = (LuaRope) str;
+					if (rope.contents != null) {
+						current.index = index + 1;
+						rope.parent = current;
+						current = rope;
+						continue top;
+					}
+
+					string = rope.string;
+				} else {
+					string = (LuaString) str;
 				}
 
-				string = rope.string;
-			} else {
-				string = (LuaString) str;
+				System.arraycopy(string.bytes, string.offset, out, position, string.length);
+				position += string.length;
 			}
 
-			System.arraycopy(string.bytes, string.offset, out, start, string.length);
-			start += string.length;
+			current.index = 0;
+			LuaRope parent = current.parent;
+			if (parent == null) break;
+			current.parent = null;
+			current = parent;
 		}
 
-		return start;
+		current.contents = null;
+		return current.string = LuaString.valueOf(out);
 	}
 
 	@Override
