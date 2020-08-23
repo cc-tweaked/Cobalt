@@ -55,6 +55,7 @@ public class CompareTest {
 	@ValueSource(strings = {
 		"baselib", "coroutinelib", "debuglib", "errors", "iolib", "format", "functions", "manyupvals", "mathlib",
 		"metatags", "oslib", "stringlib", "tablelib", "tailcalls", "traceback", "upvalues", "vm",
+		"string_pack",
 	})
 	public void libs(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/compare/");

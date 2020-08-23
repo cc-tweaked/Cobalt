@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import java.util.List;
+
 public class ValueFactory {
 	/**
 	 * Convert java boolean to a {@link LuaValue}.
@@ -236,6 +238,27 @@ public class ValueFactory {
 				return new LuaValue.PairVarargs(v[0], v[1]);
 			default:
 				return new LuaValue.ArrayVarargs(v, Constants.NONE);
+		}
+	}
+
+	/**
+	 * Construct a {@link Varargs} around a list of {@link LuaValue}s.
+	 *
+	 * @param v The array of {@link LuaValue}s
+	 * @return {@link Varargs} wrapping the supplied values.
+	 * @see ValueFactory#varargsOf(LuaValue, Varargs)
+	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
+	 */
+	public static Varargs varargsOf(final List<LuaValue> v) {
+		switch (v.size()) {
+			case 0:
+				return Constants.NONE;
+			case 1:
+				return v.get(0);
+			case 2:
+				return new LuaValue.PairVarargs(v.get(0), v.get(1));
+			default:
+				return new LuaValue.ArrayVarargs(v.toArray(new LuaValue[0]), Constants.NONE);
 		}
 	}
 

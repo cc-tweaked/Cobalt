@@ -54,10 +54,10 @@ public class StringLib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(t, StringLib1::new, new String[]{
-			"len", "lower", "reverse", "upper",});
+			"len", "lower", "reverse", "upper", "packsize"});
 		LibFunction.bind(t, StringLibV::new, new String[]{
 			"dump", "byte", "char", "find", "format",
-			"gmatch", "match", "rep", "sub"});
+			"gmatch", "match", "rep", "sub", "pack", "unpack"});
 		LibFunction.bind(t, StringLibR::new, new String[]{"gsub"});
 
 		t.rawset("gfind", t.rawget("gmatch"));
@@ -109,6 +109,9 @@ public class StringLib implements LuaLibrary {
 					}
 					return valueOf(value);
 				}
+				case 4: { // packsize
+					return LuaInteger.valueOf(StringPacker.packsize(arg.checkLuaString()));
+				}
 			}
 			return NIL;
 		}
@@ -136,6 +139,10 @@ public class StringLib implements LuaLibrary {
 					return StringLib.rep(args);
 				case 8:
 					return StringLib.sub(args);
+				case 9:
+					return StringPacker.pack(args);
+				case 10:
+					return StringPacker.unpack(args);
 			}
 			return NONE;
 		}
@@ -701,8 +708,10 @@ public class StringLib implements LuaLibrary {
 		return NIL;
 	}
 
-	private static int posRelative(int pos, int len) {
-		return pos >= 0 ? pos : len + pos + 1;
+	static int posRelative(int pos, int len) {
+		if (pos >= 0) return pos;
+		if (-pos > len) return 0;
+		return len + pos + 1;
 	}
 
 	// Pattern matching implementation
