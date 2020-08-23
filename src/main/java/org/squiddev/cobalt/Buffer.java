@@ -292,4 +292,7 @@ public final class Buffer {
 		}
 	}
 
+	public int offset() {
+		return this.offset;
+	}
 }

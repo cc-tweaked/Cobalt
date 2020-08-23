@@ -8,7 +8,7 @@ local unpack = string.unpack
 print "testing pack/unpack"
 
 -- maximum size for integers
-local NB = 4
+local NB = 16
 
 local sizeshort = packsize("h")
 local sizeint = packsize("i")
@@ -38,7 +38,7 @@ print("\talignment: " .. align)
 function checkerror (msg, f, ...)
   local status, err = pcall(f, ...)
   -- print(status, err, msg)
-  assert(not status and string.find(err, msg))
+  assert(not status and string.find(err, msg), status and "didn't fail" or err)
 end
 
 -- minimum behavior for integer formats
@@ -78,7 +78,6 @@ do
   assert(unpack("<i" .. sizeLI + 1, s .. "\0") == lnum)
 
   for i = sizeLI + 1, NB do
-    print(i)
     local s = pack("<j", -lnum)
     assert(unpack("<j", s) == -lnum)
     -- strings with (correct) extra bytes
@@ -92,7 +91,7 @@ do
   end
 end
 
-for i = 1, sizeLI do
+for i = 1, 4 do
   local lstr = "\1\2\3\4"
   local lnum = 0x04030201
   local n = bit32.band(lnum, bit32.bnot(bit32.lshift(-1, i * 8)))
@@ -123,9 +122,9 @@ end
 print("testing invalid formats")
 
 checkerror("out of limits", pack, "i0", 0)
-checkerror("out of limits", pack, "i" .. 17, 0)
-checkerror("out of limits", pack, "!" .. 17, 0)
-checkerror("%(17%) out of limits %[1,16%]", pack, "Xi" .. 17)
+checkerror("out of limits", pack, "i" .. NB + 1, 0)
+checkerror("out of limits", pack, "!" .. NB + 1, 0)
+checkerror("%(17%) out of limits %[1,16%]", pack, "Xi" .. NB + 1)
 checkerror("invalid format option 'r'", pack, "i3r", 0)
 checkerror("16%-byte integer", unpack, "i16", string.rep('\3', 16))
 checkerror("not power of 2", pack, "!4i3", 0);
@@ -146,7 +145,7 @@ if packsize("i") == 4 then
 end
 
 -- overflow in packing
-for i = 1, sizeLI - 1 do
+for i = 1, 4 - 1 do
   local umax = bit32.lshift(1, (i * 8)) - 1
   local max = bit32.rshift(umax, 1)
   local min = -max - 1
@@ -164,9 +163,9 @@ for i = 1, sizeLI - 1 do
 end
 
 -- Lua integer size
---assert(unpack(">j", pack(">j", math.maxinteger)) == math.maxinteger)
---assert(unpack("<j", pack("<j", math.mininteger)) == math.mininteger)
-assert(unpack("<J", pack("<j", -1)) == 0xFFFFFFFF)   -- maximum unsigned integer
+-- assert(unpack(">j", pack(">j", math.maxinteger)) == math.maxinteger)
+-- assert(unpack("<j", pack("<j", math.mininteger)) == math.mininteger)
+assert(unpack("<J", pack("<j", -1)) == -1)   -- maximum unsigned integer
 
 if little then
   assert(pack("f", 24) == pack("<f", 24))
@@ -174,7 +173,7 @@ else
   assert(pack("f", 24) == pack(">f", 24))
 end
 
-print "testing pack/unpack of floating-point numbers" 
+print "testing pack/unpack of floating-point numbers"
 
 for _, n in ipairs{0, -1.1, 1.9, 1/0, -1/0, 1e20, -1e20, 0.1, 2000.7} do
     assert(unpack("n", pack("n", n)) == n)
@@ -242,7 +241,7 @@ do
   assert(#x == packsize("<b h b f d f n i"))
   local a, b, c, d, e, f, g, h = unpack("<b h b f d f n i", x)
   assert(a == 1 and b == 2 and c == 3 and d == 4 and e == 5 and f == 6 and
-         g == 7 and h == 8) 
+         g == 7 and h == 8)
 end
 
 print "testing alignment"
@@ -252,7 +251,7 @@ do
   assert(#x == packsize(">!8 b Xh i4 i8 c1 Xi8"))
   assert(x == "\xf4" .. "\0\0\0" ..
               "\0\0\0\100" ..
-              "\0\0\0\0\0\0\0\xC8" .. 
+              "\0\0\0\0\0\0\0\xC8" ..
               "\xEC" .. "\0\0\0\0\0\0\0")
   local a, b, c, d, pos = unpack(">!8 c1 Xh i4 i8 b Xi8 XI XH", x)
   assert(a == "\xF4" and b == 100 and c == 200 and d == -20 and (pos - 1) == #x)
@@ -316,7 +315,7 @@ do    -- testing initial position
   checkerror("out of string", unpack, "c0", x, 0)
   checkerror("out of string", unpack, "c0", x, #x + 2)
   checkerror("out of string", unpack, "c0", x, -(#x + 1))
- 
+
 end
 
 print "OK"

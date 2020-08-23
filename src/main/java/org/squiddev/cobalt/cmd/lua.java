@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.cmd;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
@@ -190,6 +191,13 @@ public class lua {
 				OperationHelper.noUnwind(state, () ->
 					OperationHelper.invoke(state, OperationHelper.getTable(state, _G, valueOf("print")), result));
 			}
+		} catch (CompileException e) {
+			System.out.println();
+			System.out.println(e.getMessage());
+		} catch (LuaError e) {
+			System.out.println();
+			System.out.println(e.traceback);
+			if (e.getCause() != null && e.getCause() != e) e.getCause().printStackTrace(System.out);
 		} catch (Exception e) {
 			System.out.println();
 			e.printStackTrace(System.out);

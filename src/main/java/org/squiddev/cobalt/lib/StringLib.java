@@ -34,7 +34,6 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteOrder;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.*;
@@ -709,8 +708,10 @@ public class StringLib implements LuaLibrary {
 		return NIL;
 	}
 
-	private static int posRelative(int pos, int len) {
-		return pos >= 0 ? pos : len + pos + 1;
+	static int posRelative(int pos, int len) {
+		if (pos >= 0) return pos;
+		if (-pos > len) return 0;
+		return len + pos + 1;
 	}
 
 	// Pattern matching implementation

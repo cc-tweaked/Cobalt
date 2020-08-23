@@ -2,73 +2,186 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 
-import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
 public class StringPacker {
-	private static int packint(long num, int size, byte[] output, int offset, int alignment, ByteOrder endianness, boolean signed) {
-		int total_size = 0;
-		if (offset % Math.min(size, alignment) != 0 && alignment > 1) {
-			for (int i = 0; offset % Math.min(size, alignment) != 0 && i < alignment; i++) {
-				output[offset++] = 0;
-				total_size++;
+	/**
+	 * The size of {@code size_t}. Cobalt runs on a hypothetical 32-bit little endian machine, so we set this to 4.
+	 */
+	private static final int SIZEOF_SIZE_T = 4;
+
+	private static final int SIZE_LONG = 8;
+
+	private final static class Buffer {
+		byte[] output;
+		int offset;
+
+		void ensure(int bytes) {
+			if (output == null) {
+				output = new byte[Math.max(32, bytes)];
+			} else if (offset + bytes > output.length) {
+				output = Arrays.copyOf(output, Math.max(output.length * 2, offset + bytes));
 			}
 		}
-		if (endianness == ByteOrder.BIG_ENDIAN) {
-			int added_padding = 0;
-			if (size > 8) {
-				for (int i = 0; i < size - 8; i++) {
-					output[offset + i] = signed && (num & (1 << (size * 8 - 1))) != 0 ? (byte) 0xFF : 0;
-					added_padding++;
-					total_size++;
-				}
-			}
-			for (int i = added_padding; i < size; i++) {
-				output[offset + i] = (byte) ((num >> ((size - i - 1) * 8)) & 0xFF);
-				total_size++;
-			}
-		} else {
-			for (int i = 0; i < Math.min(size, 8); i++) {
-				output[offset + i] = (byte) ((num >> (i * 8)) & 0xFF);
-				total_size++;
-			}
-			for (int i = 8; i < size; i++) {
-				output[offset + i] = signed && (num & (1 << (size * 8 - 1))) != 0 ? (byte) 0xFF : 0;
-				total_size++;
-			}
+
+		void putUnsafe(byte value) {
+			output[offset++] = value;
 		}
-		return total_size;
 	}
 
-	private static int packoptsize(byte opt, int alignment) {
-		int retval = 0;
-		switch (opt) {
-			case 'b':
-			case 'B':
-			case 'x':
-				retval = 1;
-				break;
-			case 'h':
-			case 'H':
-				retval = 2;
-				break;
-			case 'f':
-			case 'j': // lua_Integer is 32-bit because of bit32 support
-			case 'J':
-				retval = 4;
-				break;
-			case 'l':
-			case 'L':
-			case 'T':
-			case 'd':
-			case 'n':
-				retval = 8;
-				break;
+	private enum Mode {
+		INT,
+		UINT,
+		FLOAT,
+		DOUBLE,
+		STRING,
+		CHAR,
+		PADDING,
+		ZSTR,
+		PADD_ALIGN,
+		NONE,
+	}
+
+	private static class Info {
+		final LuaString string;
+		int position;
+		final int end;
+
+		// Current state
+		boolean isLittle = true;
+		int maxAlign = 1;
+
+		// Current option state
+		int size;
+		int alignTo;
+
+		public Info(LuaString string) {
+			this.string = string;
+			this.position = string.offset;
+			this.end = string.offset + string.length;
 		}
-		if (alignment > 1 && retval % alignment != 0) retval += (alignment - (retval % alignment));
-		return retval;
+
+		Mode setup(int size, Mode mode) {
+			this.size = size;
+			return mode;
+		}
+	}
+
+	private static boolean digit(int c) {
+		return c >= '0' && c <= '9';
+	}
+
+	public static int getNum(Info info, int def) {
+		if (info.position >= info.end) return def;
+
+		byte c = info.string.bytes[info.position];
+		if (!digit(c)) return def;
+
+		int result = 0;
+		do {
+			result = result * 10 + (c - '0');
+			info.position++;
+		} while (info.position < info.end && digit(c = info.string.bytes[info.position]) && result <= (Integer.MAX_VALUE - 9) / 10);
+		return result;
+	}
+
+	public static int getNumLimit(Info info, int def) throws LuaError {
+		int size = getNum(info, def);
+		if (size <= 0 || size > 16) {
+			throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
+		}
+
+		return size;
+	}
+
+	public static Mode getOption(Info info) throws LuaError {
+		byte c = info.string.bytes[info.position++];
+		switch (c) {
+			case 'b': return info.setup(1, Mode.INT);
+			case 'B': return info.setup(1, Mode.UINT);
+			case 'h': return info.setup(2, Mode.INT);
+			case 'H': return info.setup(2, Mode.UINT);
+			case 'l': return info.setup(8, Mode.INT);
+			case 'L': return info.setup(8, Mode.UINT);
+			case 'j': return info.setup(8, Mode.INT);
+			case 'J': return info.setup(8, Mode.UINT);
+			case 'T': return info.setup(SIZEOF_SIZE_T, Mode.UINT);
+			case 'f': return info.setup(4, Mode.FLOAT);
+			case 'd': return info.setup(8, Mode.DOUBLE);
+			case 'n': return info.setup(8, Mode.DOUBLE);
+
+			case 'i': return info.setup(getNumLimit(info, 4), Mode.INT);
+			case 'I': return info.setup(getNumLimit(info, 4), Mode.UINT);
+			case 's': return info.setup(getNumLimit(info, SIZEOF_SIZE_T), Mode.STRING);
+			case 'c': {
+				int size = getNum(info, -1);
+				if (size < 0) throw new LuaError("missing size for format option 'c'");
+				return info.setup(size, Mode.CHAR);
+			}
+			case 'z': return info.setup(0, Mode.ZSTR);
+			case 'x': return info.setup(1, Mode.PADDING);
+			case 'X': return info.setup(0, Mode.PADD_ALIGN);
+			case ' ': return info.setup(0, Mode.NONE);
+			case '<':
+			case '=':
+				info.isLittle = true;
+				return info.setup(0, Mode.NONE);
+			case '>':
+				info.isLittle = false;
+				return info.setup(0, Mode.NONE);
+			case '!':
+				info.maxAlign = getNumLimit(info, 8);
+				return info.setup(0, Mode.NONE);
+			default: throw new LuaError("invalid format option '" + (char) c + "'");
+		}
+	}
+
+	public static Mode getDetails(Info info, int outPosition) throws LuaError {
+		Mode mode = getOption(info);
+		int align = info.size;
+		if (mode == Mode.PADD_ALIGN) {
+			if (info.position >= info.end || getOption(info) == Mode.CHAR || info.size == 0) {
+				throw new LuaError("invalid next option for option 'X'");
+			}
+
+			align = info.size;
+			info.size = 0;
+		}
+
+		if (align <= 1 || mode == Mode.CHAR) {
+			info.alignTo = 0;
+		} else {
+			align = Math.min(align, info.maxAlign);
+			if ((align & (align - 1)) != 0) {
+				throw new LuaError("bad argument #1 to 'pack' (format asks for alignment not power of 2)");
+			}
+
+			info.alignTo = (align - (outPosition & (align - 1))) & (align - 1);
+		}
+
+		return mode;
+	}
+
+	private static void packInt(Buffer buffer, long num, boolean littleEndian, int size, boolean neg) {
+		buffer.ensure(size);
+		byte[] output = buffer.output;
+		int offset = buffer.offset;
+		buffer.offset += size;
+
+		for (int i = 0; i < size; i++) {
+			output[offset + (littleEndian ? i : size - 1 - i)] = (byte) (num & 0xFF);
+			num >>>= 8;
+		}
+
+		// Sign-extend for negative numbers
+		if (neg && size > SIZE_LONG) {
+			for (int i = SIZE_LONG; i < size; i++) output[offset + (littleEndian ? i : size - 1 - i)] = (byte) 0xFF;
+		}
 	}
 
 	/**
@@ -79,245 +192,95 @@ public class StringPacker {
 	 */
 	static Varargs pack(Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
-		ByteOrder endianness = ByteOrder.LITTLE_ENDIAN;
-		int alignment = 1;
-		int currentSize = 64, pos = 0;
-		int argnum = 2;
-		byte[] output = new byte[currentSize];
-		for (int i = fmt.offset; i < fmt.length; i++) {
-			switch (fmt.bytes[i]) {
-				case '=':
-				case '<': {
-					endianness = ByteOrder.LITTLE_ENDIAN;
+
+		Info info = new Info(fmt);
+		Buffer buffer = new Buffer();
+		int i = 2;
+		while (info.position < info.end) {
+			Mode mode = getDetails(info, buffer.offset);
+			buffer.ensure(info.alignTo);
+			while (info.alignTo-- > 0) buffer.putUnsafe((byte) 0);
+
+			switch (mode) {
+				case PADD_ALIGN:
+				case NONE:
+					break;
+				case INT: {
+					long num = args.arg(i++).checkLong();
+					if (info.size < SIZE_LONG) {
+						long limit = 1L << (info.size * 8 - 1);
+						if (-limit > num || num >= limit) throw ErrorFactory.argError(i - 1, "integer overflow");
+					}
+
+					packInt(buffer, num, info.isLittle, info.size, num < 0);
 					break;
 				}
-				case '>': {
-					endianness = ByteOrder.BIG_ENDIAN;
+				case UINT: {
+					long num = args.arg(i++).checkLong();
+					if (info.size < SIZE_LONG) {
+						long limit = 1L << (info.size * 8);
+						if (num < 0 || num >= limit) throw ErrorFactory.argError(i - 1, "integer overflow");
+					}
+
+					packInt(buffer, num, info.isLittle, info.size, false);
 					break;
 				}
-				case '!': {
-					int size = -1;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'pack' (invalid format)");
-						}
-						size = (Math.max(size, 0) * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16 || size == 0) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (size == -1) {
-						alignment = 4;
-					} else {
-						alignment = size;
-					}
+
+				case FLOAT: {
+					float f = (float) args.arg(i++).checkDouble();
+					packInt(buffer, Float.floatToIntBits(f), info.isLittle, info.size, false);
 					break;
 				}
-				case 'b':
-				case 'B':
-				case 'h':
-				case 'H':
-				case 'l':
-				case 'L':
-				case 'j':
-				case 'J':
-				case 'T': {
-					long num = args.arg(argnum++).checkLong();
-					if (num >= Math.pow(2, (packoptsize(fmt.bytes[i], 0) * 8 - (Character.isLowerCase(fmt.bytes[i]) ? 1 : 0))) ||
-						num < (Character.isLowerCase(fmt.bytes[i]) ? -Math.pow(2, (packoptsize(fmt.bytes[i], 0) * 8 - 1)) : 0)) {
-						throw new LuaError(String.format("bad argument #%d to 'pack' (integer overflow)", argnum - 1));
-					}
-					if (pos + packoptsize(fmt.bytes[i], alignment) >= currentSize) {
-						byte[] newoutput = new byte[currentSize + 64];
-						System.arraycopy(output, 0, newoutput, 0, currentSize);
-						output = newoutput;
-						currentSize += 64;
-					}
-					pos += packint(num, packoptsize(fmt.bytes[i], 0), output, pos, alignment, endianness, false);
+				case DOUBLE: {
+					double f = args.arg(i++).checkDouble();
+					packInt(buffer, Double.doubleToLongBits(f), info.isLittle, info.size, false);
 					break;
 				}
-				case 'i':
-				case 'I': {
-					boolean signed = fmt.bytes[i] == 'i';
-					int size = -1;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'pack' (invalid format)");
-						}
-						size = (Math.max(size, 0) * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16 || size == 0) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (alignment > 1 && (size != 1 && size != 2 && size != 4 && size != 8 && size != 16)) {
-						throw new LuaError("bad argument #1 to 'pack' (format asks for alignment not power of 2)");
-					} else if (size == -1) size = 4;
-					long num = args.arg(argnum++).checkLong();
-					if (num >= Math.pow(2, size * 8 - (signed ? 1 : 0)) ||
-						num < (signed ? -Math.pow(2, (size * 8 - 1)) : 0)) {
-						throw new LuaError(String.format("bad argument #%d to 'pack' (integer overflow)", argnum - 1));
-					}
-					if (pos + (size % alignment != 0 ? size + (alignment - (size % alignment)) : size) >= currentSize) {
-						byte[] newoutput = new byte[currentSize + 64];
-						System.arraycopy(output, 0, newoutput, 0, currentSize);
-						output = newoutput;
-						currentSize += 64;
-					}
-					pos += packint(num, size, output, pos, alignment, endianness, signed);
+
+				case CHAR: {
+					LuaString string = args.arg(i++).checkLuaString();
+					if (string.length > info.size) throw ErrorFactory.argError(i - 1, "string longer than given size");
+
+					buffer.ensure(info.size);
+					System.arraycopy(string.bytes, string.offset, buffer.output, buffer.offset, string.length);
+					buffer.offset += info.size;
 					break;
 				}
-				case 'f': {
-					float f = (float) args.arg(argnum++).checkDouble();
-					if (pos + 4 >= currentSize) {
-						byte[] newoutput = new byte[currentSize + 64];
-						System.arraycopy(output, 0, newoutput, 0, currentSize);
-						output = newoutput;
-						currentSize += 64;
+
+				case ZSTR: {
+					LuaString string = args.arg(i++).checkLuaString();
+
+					int end = string.offset + string.length;
+					for (int j = string.offset; j < end; j++) {
+						if (string.bytes[j] == 0) throw ErrorFactory.argError(i - 1, "string contains zeros");
 					}
-					int l = Float.floatToRawIntBits(f);
-					if (pos % Math.min(4, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(4, alignment) != 0 && j < alignment; j++) output[pos++] = 0;
-					}
-					for (int j = 0; j < 4; j++) {
-						output[pos + (endianness == ByteOrder.BIG_ENDIAN ? 3 - j : j)] = (byte) ((l >> (j * 8)) & 0xFF);
-					}
-					pos += 4;
+
+					buffer.ensure(string.length);
+					System.arraycopy(string.bytes, string.offset, buffer.output, buffer.offset, string.length);
+					buffer.offset += string.length + 1;
 					break;
 				}
-				case 'd':
-				case 'n': {
-					double f = args.arg(argnum++).checkDouble();
-					if (pos + 8 >= currentSize) {
-						byte[] newoutput = new byte[currentSize + 64];
-						System.arraycopy(output, 0, newoutput, 0, currentSize);
-						output = newoutput;
-						currentSize += 64;
+
+				case STRING: {
+					LuaString string = args.arg(i++).checkLuaString();
+					if (info.size < SIZEOF_SIZE_T && string.length > (1 << (info.size * 8))) {
+						throw ErrorFactory.argError(i - 1, "string length does not fit in given size");
 					}
-					long l = Double.doubleToRawLongBits(f);
-					if (pos % Math.min(8, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(8, alignment) != 0 && j < alignment; j++) output[pos++] = 0;
-					}
-					for (int j = 0; j < 8; j++) {
-						output[pos + (endianness == ByteOrder.BIG_ENDIAN ? 7 - j : j)] = (byte) ((l >> (j * 8)) & 0xFF);
-					}
-					pos += 8;
+
+					packInt(buffer, string.length, info.isLittle, info.size, false);
+					buffer.ensure(string.length);
+					System.arraycopy(string.bytes, string.offset, buffer.output, buffer.offset, string.length);
+					buffer.offset += string.length;
 					break;
 				}
-				case 'c': {
-					int size = 0;
-					if (i + 1 == fmt.length || fmt.bytes[i + 1] < '0' || fmt.bytes[i + 1] > '9') {
-						throw new LuaError("missing size for format option 'c'");
-					}
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'pack' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (pos + size < pos || pos + size > Integer.MAX_VALUE) {
-						throw new LuaError("bad argument #1 to 'pack' (format result too large)");
-					}
-					LuaString str = args.arg(argnum++).checkLuaString();
-					if (str.length > size) {
-						throw new LuaError(String.format("bad argument #%d to 'pack' (string longer than given size)", argnum - 1));
-					}
-					if (size > 0) {
-						if (pos + size >= currentSize) {
-							int bytestoadd = size % 64 == 0 ? size : size + (64 - (size % 64));
-							byte[] newoutput = new byte[currentSize + bytestoadd];
-							System.arraycopy(output, 0, newoutput, 0, currentSize);
-							output = newoutput;
-							currentSize += bytestoadd;
-						}
-						System.arraycopy(str.bytes, 0, output, pos, Math.min(str.length, size));
-						for (int j = str.length; j < size; j++) output[pos + j] = 0;
-						pos += size;
-					}
+				case PADDING:
+					buffer.ensure(1);
+					buffer.putUnsafe((byte) 0);
 					break;
-				}
-				case 'z': {
-					LuaString str = args.arg(argnum++).checkLuaString();
-					for (byte b : str.bytes) {
-						if (b == 0) {
-							throw new LuaError(String.format("bad argument #%d to 'pack' (string contains zeros)", argnum - 1));
-						}
-					}
-					if (pos + str.length + 1 >= currentSize) {
-						int bytestoadd = (str.length + 1) % 64 == 0 ? (str.length + 1) : (str.length + 1) + (64 - ((str.length + 1) % 64));
-						byte[] newoutput = new byte[currentSize + bytestoadd];
-						System.arraycopy(output, 0, newoutput, 0, currentSize);
-						output = newoutput;
-						currentSize += bytestoadd;
-					}
-					System.arraycopy(str.bytes, 0, output, pos, str.length);
-					output[pos + str.length] = 0;
-					pos += str.length + 1;
-					break;
-				}
-				case 's': {
-					int size = 0;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'pack' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (size == 0) size = 8;
-					LuaString str = args.arg(argnum++).checkLuaString();
-					if (str.length >= Math.pow(2, (size * 8))) {
-						throw new LuaError(String.format("bad argument #%d to 'pack' (string length does not fit in given size)", argnum - 1));
-					}
-					if (pos + str.length + size >= currentSize) {
-						int bytestoadd = (str.length + size) % 64 == 0 ? (str.length + size) : (str.length + size) + (64 - ((str.length + size) % 64));
-						byte[] newoutput = new byte[currentSize + bytestoadd];
-						System.arraycopy(output, 0, newoutput, 0, currentSize);
-						output = newoutput;
-						currentSize += bytestoadd;
-					}
-					packint(str.length, size, output, pos, 1, endianness, false);
-					System.arraycopy(str.bytes, 0, output, pos + size, str.length);
-					pos += str.length + size;
-					break;
-				}
-				case 'x': {
-					if (pos + 1 >= currentSize) {
-						byte[] newoutput = new byte[currentSize + 64];
-						System.arraycopy(output, 0, newoutput, 0, currentSize);
-						output = newoutput;
-						currentSize += 64;
-					}
-					output[pos++] = 0;
-					break;
-				}
-				case 'X': {
-					if (i + 1 >= fmt.length) throw new LuaError("invalid next option for option 'X'");
-					int size = 0;
-					if (fmt.bytes[++i] == 'i' || fmt.bytes[i] == 'I') {
-						while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-							if (size >= Integer.MAX_VALUE / 10) {
-								throw new LuaError("bad argument #1 to 'pack' (invalid format)");
-							}
-							size = (size * 10) + (fmt.bytes[++i] - '0');
-						}
-						if (size > 16 || size == 0) {
-							throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-						}
-					} else {
-						size = packoptsize(fmt.bytes[i], 0);
-					}
-					if (size < 1) throw new LuaError("invalid next option for option 'X'");
-					if (pos % Math.min(size, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(size, alignment) != 0 && j < alignment; j++) {
-							output[pos++] = 0;
-						}
-					}
-					break;
-				}
-				case ' ': break;
-				default: throw new LuaError(String.format("invalid format option '%c'", fmt.bytes[i]));
 			}
 		}
-		return LuaString.valueOf(output, 0, pos);
+
+		return buffer.offset == 0 ? Constants.EMPTYSTRING : LuaString.valueOf(buffer.output, 0, buffer.offset);
 	}
 
 	/**
@@ -327,150 +290,46 @@ public class StringPacker {
 	 * The format string cannot have the variable-length options 's' or 'z'.
 	 */
 	static long packsize(LuaString fmt) throws LuaError {
-		long pos = 0;
-		int alignment = 1;
-		for (int i = fmt.offset; i < fmt.length; i++) {
-			switch (fmt.bytes[i]) {
-				case '!': {
-					int size = 0;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'packsize' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (size == 0) {
-						alignment = 4;
-					} else {
-						alignment = size;
-					}
-					break;
-				}
-				case 'b':
-				case 'B':
-				case 'h':
-				case 'H':
-				case 'l':
-				case 'L':
-				case 'j':
-				case 'J':
-				case 'T': {
-					int size = packoptsize(fmt.bytes[i], 0);
-					if (pos % Math.min(size, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(size, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					pos += size;
-					break;
-				}
-				case 'i':
-				case 'I': {
-					int size = 0;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'packsize' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (alignment > 1 && (size != 1 && size != 2 && size != 4 && size != 8 && size != 16)) {
-						throw new LuaError("bad argument #1 to 'pack' (format asks for alignment not power of 2)");
-					} else if (size == 0) size = 4;
-					if (pos % Math.min(size, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(size, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					pos += size;
-					break;
-				}
-				case 'f': {
-					if (pos % Math.min(4, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(4, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					pos += 4;
-					break;
-				}
-				case 'd':
-				case 'n': {
-					if (pos % Math.min(8, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(8, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					pos += 8;
-					break;
-				}
-				case 'c': {
-					int size = 0;
-					if (i + 1 == fmt.length || fmt.bytes[i + 1] < '0' || fmt.bytes[i + 1] > '9') {
-						throw new LuaError("missing size for format option 'c'");
-					}
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'packsize' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (pos + size < pos || pos + size > Integer.MAX_VALUE) {
-						throw new LuaError("bad argument #1 to 'packsize' (format result too large)");
-					}
-					pos += size;
-					break;
-				}
-				case 'x': {
-					pos++;
-					break;
-				}
-				case 'X': {
-					if (i + 1 >= fmt.length) throw new LuaError("invalid next option for option 'X'");
-					int size = 0;
-					if (fmt.bytes[++i] == 'i' || fmt.bytes[i] == 'I') {
-						while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-							if (size >= Integer.MAX_VALUE / 10) {
-								throw new LuaError("bad argument #1 to 'packsize' (invalid format)");
-							}
-							size = (size * 10) + (fmt.bytes[++i] - '0');
-						}
-						if (size > 16 || size == 0) {
-							throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-						}
-					} else {
-						size = packoptsize(fmt.bytes[i], 0);
-					}
-					if (size < 1) throw new LuaError("invalid next option for option 'X'");
-					if (pos % Math.min(size, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(size, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					break;
-				}
-				case ' ': case '<': case '>': case '=': break;
-				case 's': case 'z': throw new LuaError("bad argument #1 to 'packsize' (variable-length format)");
-				default: throw new LuaError(String.format("invalid format option '%c'", fmt.bytes[i]));
-			}
-		}
-		return pos;
-	}
-
-	private static class UnpackIntState {
-		long result = 0;
 		int size = 0;
-	}
+		Info info = new Info(fmt);
+		while (info.position < info.end) {
+			Mode mode = getDetails(info, size);
 
-	private static UnpackIntState unpackint(byte[] str, int offset, int size, ByteOrder endianness, int alignment, boolean signed) {
-		UnpackIntState retval = new UnpackIntState();
-		if (offset % Math.min(size, alignment) != 0 && alignment > 1) {
-			for (int i = 0; offset % Math.min(size, alignment) != 0 && i < alignment; i++) {
-				offset++;
-				retval.size++;
+			int thisSize = info.alignTo + info.size;
+			if (size > Integer.MAX_VALUE - thisSize) throw ErrorFactory.argError(1, "format result too large");
+			size += thisSize;
+
+			if (mode == Mode.STRING || mode == Mode.ZSTR) {
+				throw ErrorFactory.argError(1, "variable-length format");
 			}
 		}
-		for (int i = 0; i < size; i++) {
-			retval.result |= (((long) str[offset + i] & 0xFF) << ((endianness == ByteOrder.BIG_ENDIAN ? size - i - 1 : i) * 8));
-			retval.size++;
+
+		return size;
+	}
+
+	private static long unpackInt(byte[] str, int offset, boolean isLittle, int size, boolean signed) throws LuaError {
+		long res = 0;
+		int limit = Math.min(size, SIZE_LONG);
+		for (int i = limit - 1; i >= 0; i--) {
+			res <<= 8;
+			res |= str[offset + (isLittle ? i : size - 1 - i)] & 0xFF;
 		}
-		if (signed && (retval.result & (1 << (size * 8 - 1))) != 0) {
-			for (int i = size; i < 8; i++) retval.result |= ((long) 0xFF & 0xFF) << (i * 8);
+
+		if (size < SIZE_LONG) {
+			if (signed) { // If smaller than a long, perform sign extension.
+				long mask = 1L << (size * 8 - 1);
+				res = (res ^ mask) - mask;
+			}
+		} else if (size > SIZE_LONG) {
+			int mask = (!signed || res >= 0) ? 0 : 0xFF;
+			for (int i = limit; i < size; i++) {
+				if ((str[offset + (isLittle ? i : size - 1 - i)] & 0xFF) != mask) {
+					throw new LuaError(size + "-byte integer does not fit into Lua Integer");
+				}
+			}
 		}
-		return retval;
+
+		return res;
 	}
 
 	/**
@@ -483,186 +342,69 @@ public class StringPacker {
 	static Varargs unpack(Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
 		LuaString str = args.arg(2).checkLuaString();
-		int pos = args.arg(3).optInteger(1);
-		if (pos < 0) {
-			pos = str.length + pos;
-		} else if (pos == 0) {
-			throw new LuaError("bad argument #3 to 'unpack' (initial position out of string)");
-		} else {
-			pos--;
-		}
-		if (pos > str.length || pos < 0) {
-			throw new LuaError("bad argument #3 to 'unpack' (initial position out of string)");
-		}
-		ByteOrder endianness = ByteOrder.LITTLE_ENDIAN;
-		int alignment = 1;
-		ArrayList<LuaValue> retval = new ArrayList<LuaValue>();
-		for (int i = fmt.offset; i < fmt.length; i++) {
-			switch (fmt.bytes[i]) {
-				case '=':
-				case '<': {
-					endianness = ByteOrder.LITTLE_ENDIAN;
-					break;
-				}
-				case '>': {
-					endianness = ByteOrder.BIG_ENDIAN;
-					break;
-				}
-				case '!': {
-					int size = 0;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'unpack' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (size == 0) {
-						alignment = 4;
-					} else {
-						alignment = size;
-					}
-					break;
-				}
-				case 'b':
-				case 'B':
-				case 'h':
-				case 'H':
-				case 'l':
-				case 'L':
-				case 'j':
-				case 'J':
-				case 'T': {
-					if (pos + packoptsize(fmt.bytes[i], 0) > str.length) throw new LuaError("data string too short");
-					UnpackIntState res = unpackint(str.bytes, pos, packoptsize(fmt.bytes[i], 0), endianness, alignment, Character.isLowerCase(fmt.bytes[i]));
-					retval.add(LuaInteger.valueOf(res.result));
-					pos += res.size;
-					break;
-				}
-				case 'i':
-				case 'I': {
-					boolean signed = fmt.bytes[i] == 'i';
-					int size = 0;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'unpack' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (size > 8) {
-						throw new LuaError(String.format("%d-byte integer does not fit into Lua Integer", size));
-					} else if (size == 0) size = 4;
-					if (pos + size > str.length) throw new LuaError("data string too short");
-					UnpackIntState res = unpackint(str.bytes, pos, size, endianness, alignment, signed);
-					retval.add(LuaInteger.valueOf(res.result));
-					pos += res.size;
-					break;
-				}
-				case 'f': {
-					if (pos % Math.min(4, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(4, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					if (pos + 4 > str.length) throw new LuaError("data string too short");
-					int l = 0;
-					for (int j = 0; j < 4; j++) {
-						l |= (((int) str.bytes[pos + j] & 0xFF) << ((endianness == ByteOrder.BIG_ENDIAN ? 3 - j : j) * 8));
-					}
-					retval.add(LuaDouble.valueOf(Float.intBitsToFloat(l)));
-					pos += 4;
-					break;
-				}
-				case 'd':
-				case 'n': {
-					if (pos % Math.min(8, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(8, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					if (pos + 8 > str.length) throw new LuaError("data string too short");
-					long l = 0;
-					for (int j = 0; j < 8; j++) {
-						l |= (((long) str.bytes[pos + j] & 0xFF) << ((endianness == ByteOrder.BIG_ENDIAN ? 7 - j : j) * 8));
-					}
-					retval.add(LuaDouble.valueOf(Double.longBitsToDouble(l)));
-					pos += 8;
-					break;
-				}
-				case 'c': {
-					int size = 0;
-					if (i + 1 == fmt.length || fmt.bytes[i + 1] < '0' || fmt.bytes[i + 1] > '9') {
-						throw new LuaError("missing size for format option 'c'");
-					}
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'unpack' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (pos + size > str.length) throw new LuaError("data string too short");
-					retval.add(LuaString.valueOf(str.bytes, pos, size));
-					pos += size;
-					break;
-				}
-				case 'z': {
-					int size = 0;
-					while (str.bytes[pos + size] != 0) {
-						if (++size >= str.length) throw new LuaError("unfinished string for format 'z'");
-					}
-					retval.add(LuaString.valueOf(str.bytes, pos, size));
-					pos += size + 1;
-					break;
-				}
-				case 's': {
-					int size = 0;
-					while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-						if (size >= Integer.MAX_VALUE / 10) {
-							throw new LuaError("bad argument #1 to 'unpack' (invalid format)");
-						}
-						size = (size * 10) + (fmt.bytes[++i] - '0');
-					}
-					if (size > 16) {
-						throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-					} else if (size == 0) size = 8;
-					if (pos + 8 > str.length) throw new LuaError("data string too short");
-					UnpackIntState num = unpackint(str.bytes, pos, size, endianness, alignment, false);
-					pos += num.size;
-					if (pos + num.result > str.length) throw new LuaError("data string too short");
-					retval.add(LuaString.valueOf(str.bytes, pos, (int) num.result));
-					pos += num.result;
-					break;
-				}
-				case 'x': {
-					pos++;
-					break;
-				}
-				case 'X': {
-					if (i + 1 >= fmt.length) throw new LuaError("invalid next option for option 'X'");
-					int size = -1;
-					if (fmt.bytes[++i] == 'i' || fmt.bytes[i] == 'I') {
-						while (i + 1 < fmt.length && fmt.bytes[i + 1] >= '0' && fmt.bytes[i + 1] <= '9') {
-							if (size >= Integer.MAX_VALUE / 10) {
-								throw new LuaError("bad argument #1 to 'unpack' (invalid format)");
-							}
-							size = (Math.max(size, 0) * 10) + (fmt.bytes[++i] - '0');
-						}
-						if (size > 16 || size == 0) {
-							throw new LuaError(String.format("integral size (%d) out of limits [1,16]", size));
-						} else if (size == -1) size = 4;
-					} else {
-						size = packoptsize(fmt.bytes[i], 0);
-					}
-					if (size < 1) throw new LuaError("invalid next option for option 'X'");
-					if (pos % Math.min(size, alignment) != 0 && alignment > 1) {
-						for (int j = 0; pos % Math.min(size, alignment) != 0 && j < alignment; j++) pos++;
-					}
-					break;
-				}
-				case ' ': break;
-				default: throw new LuaError(String.format("invalid format option '%c'", fmt.bytes[i]));
+		int pos = StringLib.posRelative(args.arg(3).optInteger(1), str.length) - 1;
+		if (pos > str.length || pos < 0) throw ErrorFactory.argError(3, "initial position out of string");
+
+		List<LuaValue> out = new ArrayList<>();
+		Info info = new Info(fmt);
+		while (info.position < info.end) {
+			Mode mode = getDetails(info, pos);
+
+			if (info.alignTo + info.size + pos > str.length) {
+				throw ErrorFactory.argError(2, "data string too short");
 			}
+			pos += info.alignTo;
+
+			switch (mode) {
+				case PADD_ALIGN:
+				case PADDING:
+				case NONE:
+					break;
+
+				case INT:
+				case UINT: {
+					long value = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, mode == Mode.INT);
+					out.add(valueOf(value));
+					break;
+				}
+				case FLOAT: {
+					long bits = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, false);
+					float value = Float.intBitsToFloat((int) bits);
+					out.add(valueOf(value));
+					break;
+				}
+				case DOUBLE: {
+					long bits = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, false);
+					double value = Double.longBitsToDouble(bits);
+					out.add(valueOf(value));
+					break;
+				}
+				case CHAR:
+					out.add(valueOf(str.bytes, str.offset + pos, info.size));
+					break;
+				case STRING: {
+					long len = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, false);
+					if (info.size + len + pos > str.length) throw ErrorFactory.argError(2, "data string too short");
+					out.add(valueOf(str.bytes, str.offset + pos + info.size, (int) len));
+					pos += len;
+					break;
+				}
+				case ZSTR: {
+					int len = 0;
+					for (int i = str.offset + pos, end = str.offset + str.length; i < end; i++, len++) {
+						if (str.bytes[i] == 0) break;
+					}
+
+					out.add(valueOf(str.bytes, str.offset + pos + info.size, len));
+					pos += len + 1;
+					break;
+				}
+			}
+
+			pos += info.size;
 		}
-		retval.add(LuaInteger.valueOf(pos + 1));
-		return varargsOf(retval.toArray(new LuaValue[0]));
+
+		out.add(valueOf(pos + 1));
+		return varargsOf(out);
 	}
 }
