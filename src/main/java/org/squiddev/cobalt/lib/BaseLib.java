@@ -316,9 +316,9 @@ public class BaseLib implements LuaLibrary {
 					LuaValue v = args.arg(1);
 					switch (v.type()) {
 						case Constants.TTABLE:
-							return ValueFactory.valueOf(((LuaTable) v).length());
+							return ValueFactory.valueOf(v.checkTable().length());
 						case Constants.TSTRING:
-							return ValueFactory.valueOf(((LuaString) v).length);
+							return ValueFactory.valueOf(v.checkLuaString().length);
 						default:
 							throw ErrorFactory.argError(1, "table or string expected");
 					}

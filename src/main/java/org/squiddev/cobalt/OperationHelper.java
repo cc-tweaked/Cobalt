@@ -365,7 +365,7 @@ public final class OperationHelper {
 				}
 			}
 			case TSTRING:
-				return valueOf(((LuaString) value).length());
+				return valueOf(((LuaBaseString)value).length());
 			default: {
 				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
 				if (h.isNil()) {

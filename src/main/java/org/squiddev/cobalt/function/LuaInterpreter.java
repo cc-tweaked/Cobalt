@@ -646,19 +646,19 @@ public final class LuaInterpreter {
 				LuaValue left = stack[top - 2];
 				LuaValue right = stack[top - 1];
 
-				LuaString lString, rString;
+				LuaBaseString lString, rString;
 
 				int n = 2;
 
 				if (!left.isString() || !right.isString()) {
 					// If one of these isn't convertible to a string then use the metamethod
 					stack[top - 2] = OperationHelper.concatNonStrings(state, left, right, top - 2, top - 1);
-				} else if ((rString = right.checkLuaString()).length == 0) {
+				} else if ((rString = right.checkLuaBaseString()).length() == 0) {
 					stack[top - 2] = left.checkLuaString();
-				} else if ((lString = left.checkLuaString()).length == 0) {
+				} else if ((lString = left.checkLuaBaseString()).length() == 0) {
 					stack[top - 2] = rString;
 				} else {
-					int length = rString.length + lString.length;
+					int length = rString.length() + lString.length();
 					stack[top - 2] = lString;
 					stack[top - 1] = rString;
 
@@ -666,26 +666,18 @@ public final class LuaInterpreter {
 						LuaValue value = stack[top - n - 1];
 						if (!value.isString()) break;
 
-						LuaString string = value.checkLuaString();
+						LuaBaseString string = value.checkLuaBaseString();
 
 						// Ensure we don't get a string which is too long
-						if (string.length > Integer.MAX_VALUE - length) throw new LuaError("string length overflow");
+						int strLen = string.length();
+						if (strLen > Integer.MAX_VALUE - length) throw new LuaError("string length overflow");
 
 						// Otherwise increment the length and store this converted string
 						stack[top - n - 1] = string;
-						length += string.length;
+						length += strLen;
 					}
 
-					byte[] buffer = new byte[length];
-					length = 0;
-					for (int j = n; j > 0; j--) {
-						LuaString string = (LuaString) stack[top - j];
-						System.arraycopy(string.bytes, string.offset, buffer, length, string.length);
-						length += string.length;
-					}
-
-					stack[top - n] = LuaString.valueOf(buffer);
-
+					stack[top - n] = LuaRope.valueOf(stack, top - n, n, length);
 				}
 
 				// Got "n" strings and created one new one

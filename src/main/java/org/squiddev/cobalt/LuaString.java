@@ -31,8 +31,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.squiddev.cobalt.Constants.NIL;
-
 /**
  * Subclass of {@link LuaValue} for representing lua strings.
  *
@@ -52,7 +50,7 @@ import static org.squiddev.cobalt.Constants.NIL;
  * @see ValueFactory#valueOf(String)
  * @see ValueFactory#valueOf(byte[])
  */
-public final class LuaString extends LuaValue {
+public final class LuaString extends LuaBaseString {
 	/**
 	 * Size of cache of recent short strings. This is the maximum number of LuaStrings that
 	 * will be retained in the cache of recent short strings.
@@ -187,15 +185,10 @@ public final class LuaString extends LuaValue {
 	 * @param length length of the byte buffer
 	 */
 	private LuaString(byte[] bytes, int offset, int length) {
-		super(Constants.TSTRING);
+		super();
 		this.bytes = bytes;
 		this.offset = offset;
 		this.length = length;
-	}
-
-	@Override
-	public LuaTable getMetatable(LuaState state) {
-		return state.stringMetatable;
 	}
 
 	@Override
@@ -212,142 +205,6 @@ public final class LuaString extends LuaValue {
 		return length - rhs.length;
 	}
 
-	/**
-	 * Check for number in arithmetic, or throw aritherror
-	 */
-	@Override
-	public double checkArith() throws LuaError {
-		double d = scanNumber(10);
-		if (Double.isNaN(d)) {
-			throw ErrorFactory.arithError(this);
-		}
-		return d;
-	}
-
-	@Override
-	public int checkInteger() throws LuaError {
-		return (int) (long) checkDouble();
-	}
-
-	@Override
-	public LuaInteger checkLuaInteger() throws LuaError {
-		return ValueFactory.valueOf(checkInteger());
-	}
-
-	@Override
-	public long checkLong() throws LuaError {
-		return (long) checkDouble();
-	}
-
-	@Override
-	public double checkDouble() throws LuaError {
-		double d = scanNumber(10);
-		if (Double.isNaN(d)) {
-			throw ErrorFactory.argError(this, "number");
-		}
-		return d;
-	}
-
-	@Override
-	public LuaNumber checkNumber() throws LuaError {
-		return ValueFactory.valueOf(checkDouble());
-	}
-
-	@Override
-	public LuaNumber checkNumber(String msg) throws LuaError {
-		double d = scanNumber(10);
-		if (Double.isNaN(d)) {
-			throw new LuaError(msg);
-		}
-		return ValueFactory.valueOf(d);
-	}
-
-	@Override
-	public LuaValue toNumber() {
-		return tonumber(10);
-	}
-
-	@Override
-	public boolean isNumber() {
-		double d = scanNumber(10);
-		return !Double.isNaN(d);
-	}
-
-	@Override
-	public boolean isInteger() {
-		double d = scanNumber(10);
-		if (Double.isNaN(d)) {
-			return false;
-		}
-		int i = (int) d;
-		return i == d;
-	}
-
-	@Override
-	public boolean isLong() {
-		double d = scanNumber(10);
-		if (Double.isNaN(d)) {
-			return false;
-		}
-		long l = (long) d;
-		return l == d;
-	}
-
-	@Override
-	public double toDouble() {
-		return scanNumber(10);
-	}
-
-	@Override
-	public int toInteger() {
-		return (int) toLong();
-	}
-
-	@Override
-	public long toLong() {
-		return (long) toDouble();
-	}
-
-	@Override
-	public double optDouble(double defval) throws LuaError {
-		return checkNumber().checkDouble();
-	}
-
-	@Override
-	public int optInteger(int defval) throws LuaError {
-		return checkNumber().checkInteger();
-	}
-
-	@Override
-	public LuaInteger optLuaInteger(LuaInteger defval) throws LuaError {
-		return checkNumber().checkLuaInteger();
-	}
-
-	@Override
-	public long optLong(long defval) throws LuaError {
-		return checkNumber().checkLong();
-	}
-
-	@Override
-	public LuaNumber optNumber(LuaNumber defval) throws LuaError {
-		return checkNumber().checkNumber();
-	}
-
-	@Override
-	public LuaString optLuaString(LuaString defval) {
-		return this;
-	}
-
-	@Override
-	public LuaValue toLuaString() {
-		return this;
-	}
-
-	@Override
-	public String optString(String defval) {
-		return toString();
-	}
-
 	@Override
 	public LuaString strvalue() {
 		return this;
@@ -361,6 +218,7 @@ public final class LuaString extends LuaValue {
 		return valueOf(bytes, offset + beginIndex, length - 1);
 	}
 
+	@Override
 	public int hashCode() {
 		int h = hashCode;
 		if (h != 0) return h;
@@ -375,8 +233,9 @@ public final class LuaString extends LuaValue {
 	}
 
 	// object comparison, used in key comparison
+	@Override
 	public boolean equals(Object o) {
-		return o instanceof LuaString && raweq((LuaString) o);
+		return this == o || (o instanceof LuaValue && ((LuaValue) o).raweq(this));
 	}
 
 	// equality w/o metatable processing
@@ -427,6 +286,7 @@ public final class LuaString extends LuaValue {
 		writer.write(bytes, offset + i, len);
 	}
 
+	@Override
 	public int length() {
 		return length;
 	}
@@ -444,16 +304,6 @@ public final class LuaString extends LuaValue {
 			throw new IndexOutOfBoundsException();
 		}
 		return luaByte(index);
-	}
-
-	@Override
-	public String checkString() {
-		return toString();
-	}
-
-	@Override
-	public LuaString checkLuaString() {
-		return this;
 	}
 
 	/**
@@ -743,24 +593,7 @@ public final class LuaString extends LuaValue {
 
 	// --------------------- number conversion -----------------------
 
-	/**
-	 * convert to a number using a supplied base, or NIL if it can't be converted
-	 *
-	 * @param base the base to use, such as 10
-	 * @return IntValue, DoubleValue, or NIL depending on the content of the string.
-	 * @see LuaValue#toNumber()
-	 */
-	public LuaValue tonumber(int base) {
-		double d = scanNumber(base);
-		return Double.isNaN(d) ? NIL : ValueFactory.valueOf(d);
-	}
-
-	/**
-	 * Convert to a number in a base, or return Double.NaN if not a number.
-	 *
-	 * @param base the base to use, such as 10
-	 * @return double value if conversion is valid, or Double.NaN if not
-	 */
+	@Override
 	public double scanNumber(int base) {
 		if (base < 2 || base > 36) return Double.NaN;
 
