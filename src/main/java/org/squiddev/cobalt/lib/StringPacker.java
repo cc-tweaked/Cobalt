@@ -9,7 +9,7 @@ import java.util.List;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
-public class StringPacker {
+class StringPacker {
 	/**
 	 * The size of {@code size_t}. Cobalt runs on a hypothetical 32-bit little endian machine, so we set this to 4.
 	 */
