@@ -67,11 +67,11 @@ nil..true	false
 "a"..3.5	true
 3.5.."b"	true
 -------- pairs tests
-a(pairs(nil))	false	string
-a(pairs(a))  	false	string
-a(pairs(s))  	false	string
+a(pairs(nil))	true	func.1
+a(pairs(a))  	true	func.1
+a(pairs(s))  	true	func.1
 a(pairs(t))  	true	func.1
-a(pairs(true))	false	string
+a(pairs(true))	true	func.1
 -------- setmetatable tests
 a(setmetatable(nil))	false	string
 a(setmetatable(a))  	false	string

@@ -1246,7 +1246,7 @@ public abstract class LuaValue extends Varargs {
 	 *              {@link Constants#INDEX} or {@link Constants#NEWINDEX}
 	 * @return {@link LuaValue} for tag {@code reason}, or  {@link Constants#NIL}
 	 */
-	public LuaValue metatag(LuaState state, LuaValue tag) {
+	public final LuaValue metatag(LuaState state, LuaValue tag) {
 		LuaTable mt = getMetatable(state);
 		return mt == null ? Constants.NIL : mt.rawget(tag);
 	}
@@ -1259,7 +1259,7 @@ public abstract class LuaValue extends Varargs {
 	 *              {@link Constants#INDEX} or {@link Constants#NEWINDEX}
 	 * @return {@link LuaValue} for tag {@code reason}, or  {@link Constants#NIL}
 	 */
-	public LuaValue metatag(LuaState state, CachedMetamethod tag) {
+	public final LuaValue metatag(LuaState state, CachedMetamethod tag) {
 		LuaTable mt = getMetatable(state);
 		return mt == null ? Constants.NIL : mt.rawget(tag);
 	}

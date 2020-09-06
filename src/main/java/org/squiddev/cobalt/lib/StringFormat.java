@@ -96,7 +96,7 @@ class StringFormat {
 					break;
 				case 's': {
 					try {
-						addString(result, fdsc, OperationHelper.toString(state, value));
+						addString(result, fdsc, OperationHelper.checkToString(OperationHelper.toString(state, value)));
 					} catch (UnwindThrowable e) {
 						format.current = fdsc;
 						format.i = i;

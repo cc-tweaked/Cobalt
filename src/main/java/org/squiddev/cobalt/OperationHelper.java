@@ -604,9 +604,9 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaString toString(LuaState state, LuaValue value) throws LuaError, UnwindThrowable {
+	public static LuaValue toString(LuaState state, LuaValue value) throws LuaError, UnwindThrowable {
 		LuaValue h = value.metatag(state, Constants.TOSTRING);
-		return h.isNil() ? toStringDirect(value) : checkToString(OperationHelper.call(state, h, value));
+		return h.isNil() ? toStringDirect(value) : OperationHelper.call(state, h, value);
 	}
 
 	public static LuaString checkToString(LuaValue value) throws LuaError {

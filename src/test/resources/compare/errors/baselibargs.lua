@@ -73,7 +73,6 @@ checkallerrors('next', { sometable, nonkey }, 'invalid key')
 -- pairs
 banner('pairs')
 checkallpass('pairs', { sometable })
-checkallerrors('pairs', { notatable }, 'bad argument')
 
 -- pcall
 banner('pcall')

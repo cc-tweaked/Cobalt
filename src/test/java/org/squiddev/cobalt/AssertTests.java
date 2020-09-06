@@ -142,8 +142,9 @@ public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"db",
-		"utf8",
+		"nextvar",
 		"tpack",
+		"utf8",
 	})
 	public void lua53(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.3/");

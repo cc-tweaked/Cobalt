@@ -438,6 +438,7 @@ public final class LuaTable extends LuaValue {
 		// Its in the array part so just return that
 		int arrayIndex = arraySlot(key);
 		if (arrayIndex > 0 && arrayIndex <= array.length) return arrayIndex;
+		if (nodes.length == 0) return -1;
 
 		// Must be in the main part so try to find it in the chain.
 		int idx = hashSlot(key);

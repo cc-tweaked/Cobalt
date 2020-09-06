@@ -173,7 +173,7 @@ public class BaseLib implements LuaLibrary {
 
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
-			// Note: Only dofile and tostring throw UnwindThrowable. This is safe, as it's a tail call.
+			// Note: dofile, tostring and pairs throw UnwindThrowable. This is safe, as it's a tail call.
 
 			switch (opcode) {
 				case 0: // "assert", // ( v [,message] ) -> v, message | ERR
@@ -281,17 +281,8 @@ public class BaseLib implements LuaLibrary {
 					t.setMetatable(state, mt.isNil() ? null : mt.checkTable());
 					return t;
 				}
-				case 14: { // "tostring", // (e) -> value
-					LuaValue arg = args.checkValue(1);
-					LuaValue h = arg.metatag(state, Constants.TOSTRING);
-					if (!h.isNil()) {
-						return OperationHelper.call(state, h, arg);
-					}
-
-					// TODO: OperationHelper.toString should call the metamethod instead. See
-					//  https://www.lua.org/source/5.3/lauxlib.c.html#luaL_tolstring
-					return OperationHelper.toString(state, arg);
-				}
+				case 14:  // "tostring", // (e) -> value
+					return OperationHelper.toString(state, args.checkValue(1));
 				case 15: { // "tonumber", // (e [,base]) -> value
 					LuaValue arg1 = args.checkValue(1);
 					final int base = args.arg(2).optInteger(10);
@@ -304,8 +295,15 @@ public class BaseLib implements LuaLibrary {
 						return arg1.checkLuaString().tonumber(base);
 					}
 				}
-				case 16: // "pairs" (t) -> iter-func, t, nil
-					return varargsOf(baselib.next, args.arg(1).checkTable(), Constants.NIL);
+				case 16: { // "pairs" (t) -> iter-func, t, nil
+					LuaValue value = args.checkValue(1);
+					LuaValue pairs = value.metatag(state, Constants.PAIRS);
+					if(pairs.isNil()) {
+						return varargsOf(baselib.next, value, Constants.NIL);
+					} else {
+						return OperationHelper.invoke(state, pairs, value);
+					}
+				}
 				case 17: // "ipairs", // (t) -> iter-func, t, 0
 					return varargsOf(baselib.inext, args.arg(1).checkTable(), Constants.ZERO);
 				case 18: // "next"  ( table, [index] ) -> next-index, next-value
