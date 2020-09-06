@@ -191,7 +191,7 @@ public final class DebugHelpers {
 				int g = Lua.GETARG_Bx(i); /* global index */
 				// lua_assert(p.k[g].isString());
 				LuaValue value = p.k[g];
-				LuaString string = OperationHelper.toString(value);
+				LuaString string = OperationHelper.toStringDirect(value);
 				return new LuaString[]{string, GLOBAL};
 			}
 			case OP_MOVE: {

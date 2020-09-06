@@ -365,7 +365,7 @@ public final class OperationHelper {
 				}
 			}
 			case TSTRING:
-				return valueOf(((LuaBaseString)value).length());
+				return valueOf(((LuaBaseString) value).length());
 			default: {
 				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
 				if (h.isNil()) {
@@ -604,7 +604,28 @@ public final class OperationHelper {
 		}
 	}
 
-	public static LuaString toString(LuaValue value) {
+	public static LuaString toString(LuaState state, LuaValue value) throws LuaError, UnwindThrowable {
+		LuaValue h = value.metatag(state, Constants.TOSTRING);
+		return h.isNil() ? toStringDirect(value) : checkToString(OperationHelper.call(state, h, value));
+	}
+
+	public static LuaString checkToString(LuaValue value) throws LuaError {
+		LuaValue asStr = value.toLuaString();
+		if (asStr.isNil()) throw new LuaError("'__tostring' must return a string");
+		return (LuaString) asStr;
+	}
+
+	/**
+	 * A version of {@link #toString(LuaState, LuaValue)} which doesn't obey metamethods.
+	 *
+	 * Technically this is wrong, as <code>luaL_tolstring</code> should use metamethods, but sometimes it's easier
+	 * to not worry about them yielding.
+	 *
+	 * @param value The value to convert to a string.
+	 * @return This value as a string.
+	 * @see <a href="https://www.lua.org/source/5.3/lauxlib.c.html#luaL_tolstring">luaL_tolstring</a>
+	 */
+	public static LuaString toStringDirect(LuaValue value)  {
 		LuaValue v = value.toLuaString();
 		return v.isNil() ? LuaString.valueOf(value.toString()) : (LuaString) v;
 	}

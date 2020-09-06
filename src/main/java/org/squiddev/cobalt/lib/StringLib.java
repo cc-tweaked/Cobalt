@@ -29,6 +29,8 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.DumpState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.lib.StringFormat.FormatState;
+import org.squiddev.cobalt.lib.StringMatch.GSubState;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
@@ -54,11 +56,12 @@ public class StringLib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
 		LibFunction.bind(t, StringLib1::new, new String[]{
-			"len", "lower", "reverse", "upper", "packsize"});
+			"len", "lower", "reverse", "upper", "packsize"
+		});
 		LibFunction.bind(t, StringLibV::new, new String[]{
-			"dump", "byte", "char", "find", "format",
-			"gmatch", "match", "rep", "sub", "pack", "unpack"});
-		LibFunction.bind(t, StringLibR::new, new String[]{"gsub"});
+			"dump", "byte", "char", "find", "gmatch", "match", "rep", "sub", "pack", "unpack"
+		});
+		LibFunction.bind(t, StringLibR::new, new String[]{"gsub", "format"});
 
 		t.rawset("gfind", t.rawget("gmatch"));
 		env.rawset("string", t);
@@ -130,18 +133,16 @@ public class StringLib implements LuaLibrary {
 				case 3:
 					return StringMatch.find(state, args);
 				case 4:
-					return StringFormat.format(args);
-				case 5:
 					return StringMatch.gmatch(state, args);
-				case 6:
+				case 5:
 					return StringMatch.match(state, args);
-				case 7:
+				case 6:
 					return StringLib.rep(args);
-				case 8:
+				case 7:
 					return StringLib.sub(args);
-				case 9:
+				case 8:
 					return StringPacker.pack(args);
-				case 10:
+				case 9:
 					return StringPacker.unpack(args);
 			}
 			return NONE;
@@ -158,9 +159,15 @@ public class StringLib implements LuaLibrary {
 					LuaValue replace = args.arg(3);
 					int maxS = args.arg(4).optInteger(src.length() + 1);
 
-					StringMatch.GSubState gsub = new StringMatch.GSubState(state, src, p, replace, maxS);
+					GSubState gsub = new GSubState(state, src, p, replace, maxS);
 					di.state = gsub;
 					return StringMatch.gsubRun(state, gsub, null);
+				}
+				case 1: { // format
+					LuaString src = args.arg(1).checkLuaString();
+					FormatState format = new FormatState(src, new Buffer(src.length), args);
+					di.state = format;
+					return StringFormat.format(state, format);
 				}
 				default:
 					return NONE;
@@ -171,7 +178,12 @@ public class StringLib implements LuaLibrary {
 		public Varargs resumeThis(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
 			switch (opcode) {
 				case 0: // gsub
-					return StringMatch.gsubRun(state, (StringMatch.GSubState) object, value.first());
+					return StringMatch.gsubRun(state, (GSubState) object, value.first());
+				case 1: { // format
+					FormatState format = (FormatState) object;
+					StringFormat.addString(format.buffer, format.current, OperationHelper.checkToString(value.first()));
+					return StringFormat.format(state, format);
+				}
 				default:
 					throw new NonResumableException("Cannot resume " + debugName());
 			}

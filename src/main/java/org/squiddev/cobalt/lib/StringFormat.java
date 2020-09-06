@@ -6,6 +6,23 @@ import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.lib.StringLib.L_ESC;
 
 class StringFormat {
+	static class FormatState {
+		final LuaString format;
+		int i = 0;
+
+		final Buffer buffer;
+
+		int arg = 1;
+		final Varargs args;
+		FormatDesc current;
+
+		FormatState(LuaString format, Buffer buffer, Varargs args) {
+			this.args = args;
+			this.format = format;
+			this.buffer = buffer;
+		}
+	}
+
 	/**
 	 * string.format (formatstring, ...)
 	 *
@@ -31,72 +48,76 @@ class StringFormat {
 	 *
 	 * @throws LuaError On invalid arguments.
 	 */
-	static Varargs format(Varargs args) throws LuaError {
-		LuaString fmt = args.arg(1).checkLuaString();
+	static Varargs format(LuaState state, FormatState format) throws LuaError, UnwindThrowable {
+		LuaString fmt = format.format;
 		final int n = fmt.length();
-		Buffer result = new Buffer(n);
-		int arg = 1;
-		int c;
+		Buffer result = format.buffer;
 
-		for (int i = 0; i < n; ) {
-			switch (c = fmt.luaByte(i++)) {
-				case '\n':
-					result.append("\n");
+		for (int i = format.i; i < n; ) {
+			int c = fmt.luaByte(i++);
+			if (c != L_ESC) {
+				result.append((byte) c);
+				continue;
+			}
+
+			if (i >= n) throw new LuaError("invalid option '%' to 'format'");
+
+			if (fmt.luaByte(i) == L_ESC) {
+				i++;
+				result.append((byte) L_ESC);
+				continue;
+			}
+
+			LuaValue value = format.args.arg(++format.arg);
+			FormatDesc fdsc = new FormatDesc(fmt, i);
+			i += fdsc.length;
+
+			switch (fdsc.conversion) {
+				case 'c':
+					fdsc.format(result, (byte) value.checkLong());
 					break;
-				default:
-					result.append((byte) c);
+				case 'i':
+				case 'd':
+				case 'o':
+				case 'u':
+				case 'x':
+				case 'X':
+					fdsc.format(result, value.checkLong());
 					break;
-				case L_ESC:
-					if (i < n) {
-						if (fmt.luaByte(i) == L_ESC) {
-							++i;
-							result.append((byte) L_ESC);
-						} else {
-							arg++;
-							FormatDesc fdsc = new FormatDesc(fmt, i);
-							i += fdsc.length;
-							switch (fdsc.conversion) {
-								case 'c':
-									fdsc.format(result, (byte) args.arg(arg).checkLong());
-									break;
-								case 'i':
-								case 'd':
-								case 'o':
-								case 'u':
-								case 'x':
-								case 'X':
-									fdsc.format(result, args.arg(arg).checkLong());
-									break;
-								case 'e':
-								case 'E':
-								case 'f':
-								case 'g':
-								case 'G':
-									fdsc.format(result, args.arg(arg).checkDouble());
-									break;
-								case 'q':
-									addQuoted(result, arg, args.arg(arg));
-									break;
-								case 's': {
-									LuaString s = OperationHelper.toString(args.arg(arg));
-									if (fdsc.precision == -1 && s.length() >= 100) {
-										result.append(s);
-									} else {
-										fdsc.format(result, s);
-									}
-								}
-								break;
-								default:
-									throw new LuaError("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
-							}
-						}
-					} else {
-						throw new LuaError("invalid option '%' to 'format'");
+				case 'e':
+				case 'E':
+				case 'f':
+				case 'g':
+				case 'G':
+					fdsc.format(result, value.checkDouble());
+					break;
+				case 'q':
+					addQuoted(result, format.arg, value);
+					break;
+				case 's': {
+					try {
+						addString(result, fdsc, OperationHelper.toString(state, value));
+					} catch (UnwindThrowable e) {
+						format.current = fdsc;
+						format.i = i;
+						throw e;
 					}
+				}
+				break;
+				default:
+					throw new LuaError("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
 			}
 		}
 
 		return result.toLuaString();
+	}
+
+	static void addString(Buffer result, FormatDesc fdsc, LuaString s) {
+		if (fdsc.precision == -1 && s.length() >= 100) {
+			result.append(s);
+		} else {
+			fdsc.format(result, s);
+		}
 	}
 
 	private static void addQuoted(Buffer buf, int arg, LuaValue s) throws LuaError {
