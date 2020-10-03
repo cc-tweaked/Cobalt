@@ -35,7 +35,7 @@ public class Lua {
 	/**
 	 * Version is supplied by ant build task
 	 */
-	public static final String _VERSION = "Luaj 0.0";
+	public static final String _VERSION = "Lua 5.1";
 
 	/**
 	 * Use return values from previous op

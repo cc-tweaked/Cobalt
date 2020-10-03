@@ -29,9 +29,12 @@ import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
+import org.squiddev.cobalt.persist.Serializer;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.Executor;
@@ -134,6 +137,9 @@ public final class LuaState {
 	 */
 	boolean abandoned;
 
+	private final Map<String, Serializer<?>> serializers = new HashMap<>();
+	private final Map<String, Object> permanent = new HashMap<>();
+
 	public LuaState() {
 		this(new LuaState.Builder());
 	}
@@ -199,6 +205,30 @@ public final class LuaState {
 		LuaThread thread = new LuaThread(this, environment);
 		mainThread = thread;
 		currentThread = thread;
+	}
+
+	public void addSerializer(Serializer<?> serializer) {
+		String name = serializer.getName();
+		Serializer<?> current = serializers.get(name);
+		if (serializer == current) return;
+		if (current != null) throw new IllegalArgumentException("Duplicate serializers for " + name);
+		serializers.put(name, serializer);
+	}
+
+	public Serializer<?> getSerializer(String name) {
+		return serializers.get(name);
+	}
+
+	public void addPermanent(String key, Object value) {
+		Object current = permanent.get(key);
+		if (value == current) return;
+		// TODO: Do we want this
+		// if (current != null) throw new IllegalArgumentException("Duplicate object for " + key);
+		permanent.put(key, value);
+	}
+
+	public Object getPermanent(String name) {
+		return permanent.get(name);
 	}
 
 	public static LuaState.Builder builder() {

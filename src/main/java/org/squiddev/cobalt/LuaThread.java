@@ -30,7 +30,10 @@ import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.persist.ValueReader;
+import org.squiddev.cobalt.persist.ValueWriter;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -672,6 +675,22 @@ public class LuaThread extends LuaValue {
 			this.owner = new WeakReference<>(owner);
 			this.status = status;
 		}
+	}
+
+	public void writeInternalState(ValueWriter writer) throws IOException {
+		if (function != null && state.status == STATUS_RUNNING) {
+			throw new IOException("Cannot serialize running coroutine");
+		}
+		if (state.needsThreadedResume) throw new IOException("Cannot serialize coroutine which needs threaded resume");
+		if (state.javaCount != 0) throw new IOException("Cannot serialize coroutine with Java functions on stack");
+		writer.writeVarInt(state.status);
+		writer.write(state.previousThread == null ? Constants.NIL : state.previousThread);
+	}
+
+	public void readInternalState(ValueReader reader) throws IOException {
+		state.status = reader.readVarInt();
+		LuaValue previous = (LuaValue) reader.read();
+		state.previousThread = previous.isNil() ? null : (LuaThread) previous;
 	}
 
 	/**

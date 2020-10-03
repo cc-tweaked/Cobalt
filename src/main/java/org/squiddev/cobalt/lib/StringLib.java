@@ -55,13 +55,13 @@ public class StringLib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		LibFunction.bind(t, StringLib1::new, new String[]{
+		LibFunction.bind(state, "string", t, StringLib1::new, new String[]{
 			"len", "lower", "reverse", "upper", "packsize"
 		});
-		LibFunction.bind(t, StringLibV::new, new String[]{
+		LibFunction.bind(state, "string", t, StringLibV::new, new String[]{
 			"dump", "byte", "char", "find", "gmatch", "match", "rep", "sub", "pack", "unpack"
 		});
-		LibFunction.bind(t, StringLibR::new, new String[]{"gsub", "format"});
+		LibFunction.bind(state, "string", t, StringLibR::new, new String[]{"gsub", "format"});
 
 		t.rawset("gfind", t.rawget("gmatch"));
 		env.rawset("string", t);

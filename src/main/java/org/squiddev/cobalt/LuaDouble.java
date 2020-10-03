@@ -225,11 +225,6 @@ public final class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public String checkString() {
-		return toString();
-	}
-
-	@Override
 	public LuaString checkLuaString() {
 		return strvalue();
 	}
@@ -238,10 +233,5 @@ public final class LuaDouble extends LuaNumber {
 	public LuaValue checkValidKey() throws LuaError {
 		if (Double.isNaN(v)) throw new LuaError("table index is NaN");
 		return this;
-	}
-
-	@Override
-	public double checkArith() {
-		return v;
 	}
 }

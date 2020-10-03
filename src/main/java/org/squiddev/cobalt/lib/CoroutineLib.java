@@ -73,7 +73,7 @@ public class CoroutineLib extends ResumableVarArgFunction<Object> implements Lua
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		bind(t, CoroutineLib::new, new String[]{"create", "resume", "running", "status", "yield", "wrap"});
+		bind(state, "coroutine", t, CoroutineLib::new, new String[]{"create", "resume", "running", "status", "yield", "wrap"});
 		env.rawset("coroutine", t);
 		state.loadedPackages.rawset("coroutine", t);
 		return t;

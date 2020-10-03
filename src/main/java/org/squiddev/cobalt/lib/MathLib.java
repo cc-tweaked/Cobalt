@@ -52,20 +52,16 @@ public class MathLib implements LuaLibrary {
 		LuaTable t = new LuaTable(0, 30);
 		t.rawset("pi", ValueFactory.valueOf(Math.PI));
 		t.rawset("huge", LuaDouble.POSINF);
-		LibFunction.bind(t, MathLib1::new, new String[]{
-			"abs", "ceil", "cos", "deg",
-			"exp", "floor", "rad", "sin",
-			"sqrt", "tan",
-			"acos", "asin", "atan", "cosh",
-			"exp", "log10", "sinh",
-			"tanh"
+		LibFunction.bind(state, "math", t, MathLib1::new, new String[]{
+			"abs", "ceil", "cos", "deg", "exp", "floor", "rad", "sin",
+			"sqrt", "tan", "acos", "asin", "atan", "cosh", "log10", "sinh", "tanh"
 		});
-		LibFunction.bind(t, MathLib2::new, new String[]{
+		LibFunction.bind(state, "math", t, MathLib2::new, new String[]{
 			"fmod", "ldexp", "pow", "atan2", "log"
 		});
-		LibFunction.bind(t, MathLibV::new, new String[]{
-			"frexp", "max", "min", "modf",
-			"randomseed", "random",});
+		LibFunction.bind(state, "math", t, MathLibV::new, new String[]{
+			"frexp", "max", "min", "modf", "randomseed", "random",
+		});
 		t.rawset("mod", t.rawget("fmod"));
 
 		env.rawset("math", t);
@@ -106,12 +102,10 @@ public class MathLib implements LuaLibrary {
 				case 13:
 					return ValueFactory.valueOf(Math.cosh(arg.checkDouble()));
 				case 14:
-					return ValueFactory.valueOf(Math.exp(arg.checkDouble()));
-				case 15:
 					return ValueFactory.valueOf(Math.log10(arg.checkDouble()));
-				case 16:
+				case 15:
 					return ValueFactory.valueOf(Math.sinh(arg.checkDouble()));
-				case 17:
+				case 16:
 					return ValueFactory.valueOf(Math.tanh(arg.checkDouble()));
 			}
 			return Constants.NIL;

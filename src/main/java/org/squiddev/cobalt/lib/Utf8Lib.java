@@ -31,12 +31,11 @@ public class Utf8Lib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable environment) {
 		LuaTable t = new LuaTable(0, 6);
 		t.rawset("charpattern", PATTERN);
-		LibFunction.bind(t, Utf8Char::new, new String[]{"char", "codes", "codepoint", "len", "offset"});
+		LibFunction.bind(state, "utf8", t, Utf8Char::new, new String[]{"char", "codes", "codepoint", "len", "offset"});
 		environment.rawset("utf8", t);
 		state.loadedPackages.rawset("utf8", t);
 
-		codesIter = new Utf8CodesIter();
-		codesIter.setfenv(environment);
+		codesIter = new Utf8CodesIter(state, environment);
 
 		return t;
 	}
@@ -207,6 +206,11 @@ public class Utf8Lib implements LuaLibrary {
 	 *  invariant state in the hopes that this is the tiniest bit faster.
 	 */
 	private static class Utf8CodesIter extends VarArgFunction {
+		public Utf8CodesIter(LuaState state, LuaTable env) {
+			setName(state, "utf8", "$iter");
+			setfenv(env);
+		}
+
 		@Override
 		public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 			// Arg 1: invariant state (the string)
