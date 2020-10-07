@@ -96,7 +96,7 @@ import java.util.function.Supplier;
  *      }
  *  }
  * }
- * </pre>
+ * } </pre>
  * The default constructor is used to instantiate the library
  * in response to {@code require 'hyperbolic'} statement,
  * provided it is on Javas class path.

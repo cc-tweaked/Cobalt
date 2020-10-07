@@ -108,9 +108,9 @@ public final class DebugState {
 	/**
 	 * Push a new debug frame onto the stack, marking it as also consuming one or more Java stack frames.
 	 *
-	 * @return The created info. This should be marked with {@link DebugFrame#FLAG_JAVA} or {
+	 * @return The created info. This should be marked with {@link DebugFrame#FLAG_JAVA} or
+	 * {@link DebugFrame#FLAG_FRESH} by the calling function.
 	 * @throws LuaError On a stack overflow
-	 * @link DebugFrame#FLAG_FRESH} by the calling function.
 	 */
 	public DebugFrame pushJavaInfo() throws LuaError {
 		int javaTop = this.javaCount + 1;

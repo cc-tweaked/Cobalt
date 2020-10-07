@@ -24,7 +24,7 @@ import java.io.IOException;
  *         value's ID.
  *     </li>
  *     <li>
- *         If we've not seen the value before, we add it to the object->id table. The id is just an incrementing id, and
+ *         If we've not seen the value before, we add it to the object-&gt;id table. The id is just an incrementing id, and
  *         so does not need to be written when writing the value.
  *
  *         We now come to write the value's tag. When writing a value we keep track of its depth. Once we're deeper than
@@ -38,7 +38,7 @@ import java.io.IOException;
  * {@link Persist#FLAG_PARTIAL}) and then the body written.
  *
  * Reading follows much the same principle (read the main body, and then populate later on). Care must be taken that
- * values are added to the id->object table before their body is read.
+ * values are added to the id-&gt;object table before their body is read.
  */
 public final class Persist {
 	private Persist() {
