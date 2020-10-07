@@ -41,8 +41,8 @@ public class Bit32Lib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		bind(t, Bit32LibV::new, new String[]{"band", "bnot", "bor", "btest", "bxor", "extract", "replace"});
-		bind(t, Bit32Lib2::new, new String[]{"arshift", "lrotate", "lshift", "rrotate", "rshift"});
+		bind(state, "bit32", t, Bit32LibV::new, new String[]{"band", "bnot", "bor", "btest", "bxor", "extract", "replace"});
+		bind(state, "bit32", t, Bit32Lib2::new, new String[]{"arshift", "lrotate", "lshift", "rrotate", "rshift"});
 		env.rawset("bit32", t);
 		state.loadedPackages.rawset("bit32", t);
 		return t;

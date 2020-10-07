@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.squiddev.cobalt;
+package org.squiddev.cobalt.support;
 
 import org.hamcrest.Matcher;
 

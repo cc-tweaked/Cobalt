@@ -24,10 +24,14 @@
  */
 package org.squiddev.cobalt.debug;
 
-import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.UnwindThrowable;
+import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.Upvalue;
+import org.squiddev.cobalt.persist.ValueReader;
+import org.squiddev.cobalt.persist.ValueWriter;
+
+import java.io.IOException;
 
 import static org.squiddev.cobalt.debug.DebugFrame.*;
 
@@ -104,9 +108,9 @@ public final class DebugState {
 	/**
 	 * Push a new debug frame onto the stack, marking it as also consuming one or more Java stack frames.
 	 *
-	 * @return The created info. This should be marked with {@link DebugFrame#FLAG_JAVA} or {
+	 * @return The created info. This should be marked with {@link DebugFrame#FLAG_JAVA} or
+	 * {@link DebugFrame#FLAG_FRESH} by the calling function.
 	 * @throws LuaError On a stack overflow
-	 * @link DebugFrame#FLAG_FRESH} by the calling function.
 	 */
 	public DebugFrame pushJavaInfo() throws LuaError {
 		int javaTop = this.javaCount + 1;
@@ -271,5 +275,109 @@ public final class DebugState {
 		}
 		inhook = false;
 		frame.flags &= ~FLAG_HOOKED;
+	}
+
+	public int getTop() {
+		return top;
+	}
+
+	private static final int HOOK_CALL = 1 << 0;
+	private static final int HOOK_RETURN = 1 << 1;
+	private static final int HOOK_LINE = 1 << 2;
+
+	public void writeInternalState(ValueWriter writer) throws IOException {
+		if (hookfunc instanceof LuaValue) {
+			writer.write((LuaValue) hookfunc);
+			writer.writeByte((hookcall ? HOOK_CALL : 0)
+				| (hookrtrn ? HOOK_RETURN : 0)
+				| (hookline ? HOOK_LINE : 0));
+			writer.writeVarInt(hookcount);
+			writer.writeVarInt(hookcodes);
+		} else {
+			writer.write(Constants.NIL);
+		}
+
+		writer.writeVarInt(javaCount);
+
+		// Call stack
+		writer.writeVarInt(top);
+		for (int i = 0; i <= top; i++) {
+			DebugFrame frame = stack[i];
+			assert frame != null;
+
+			writer.write(frame.func);
+			writer.writeVarInt(frame.flags);
+
+			writer.writeByte(frame.closure == null ? 0 : 1);
+			if (frame.closure != null) {
+				writer.write(frame.stack);
+				if (frame.stackUpvalues != null) {
+					for (int j = 0; j < frame.stack.length; j++) {
+						Upvalue u = frame.stackUpvalues[j];
+						if (u == null) continue;
+						writer.writeVarInt(j);
+						writer.write(u);
+					}
+				}
+				writer.writeVarInt(-1);
+
+				writer.write(frame.varargs);
+				writer.write(frame.extras);
+				writer.writeVarInt(frame.pc);
+				writer.writeVarInt(frame.oldPc);
+				writer.writeVarInt(frame.top);
+			} else if (frame.state == null) {
+				writer.write(Constants.NIL);
+			} else {
+				writer.serialize(frame.state);
+			}
+		}
+	}
+
+	public void readInternalState(ValueReader reader) throws IOException {
+		// Debug functions
+		LuaValue hook = (LuaValue) reader.read();
+		if (!hook.isNil()) {
+			hookfunc = (LuaFunction) hook;
+			int state = reader.readByte();
+			hookcall = (state & HOOK_CALL) != 0;
+			hookrtrn = (state & HOOK_RETURN) != 0;
+			hookline = (state & HOOK_LINE) != 0;
+
+			hookcount = reader.readVarInt();
+			hookcodes = reader.readVarInt();
+		}
+
+		javaCount = reader.readVarInt();
+
+		// Call stack
+		top = reader.readVarInt();
+		stack = new DebugFrame[top + 1];
+		for (int i = 0; i <= top; i++) {
+			DebugFrame frame = stack[i] = new DebugFrame(i > 0 ? stack[i - 1] : null);
+
+			frame.func = (LuaFunction) reader.read();
+			frame.flags = reader.readVarInt();
+			if (reader.readByte() != 0) {
+				frame.closure = (LuaClosure) frame.func;
+				frame.stack = (LuaValue[]) reader.read();
+
+				frame.stackUpvalues = new Upvalue[frame.stack.length];
+				while (true) {
+					int j = reader.readVarInt();
+					if (j == -1) break;
+
+					frame.stackUpvalues[j] = (Upvalue) reader.read();
+				}
+
+				frame.varargs = reader.readVarargs();
+				frame.extras = reader.readVarargs();
+				frame.pc = reader.readVarInt();
+				frame.oldPc = reader.readVarInt();
+				frame.top = reader.readVarInt();
+			} else {
+				frame.state = reader.read();
+			}
+		}
 	}
 }

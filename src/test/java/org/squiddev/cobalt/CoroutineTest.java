@@ -30,21 +30,18 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHelpers;
-import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.LuaLibrary;
+import org.squiddev.cobalt.support.SuspendingDebug;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.squiddev.cobalt.OperationHelper.noUnwind;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
 
 /**
  * Tests yielding in a whole load of places
@@ -130,7 +127,7 @@ public class CoroutineTest {
 	private static class Functions extends ResumableVarArgFunction<LuaThread> implements LuaLibrary {
 		@Override
 		public LuaValue add(LuaState state, LuaTable environment) {
-			bind(environment, Functions::new, new String[]{"suspend", "run", "assertEquals", "fail", "id", "noUnwind"});
+			bind(state, "$test", environment, Functions::new, new String[]{"suspend", "run", "assertEquals", "fail", "id", "noUnwind"});
 			return environment;
 		}
 
@@ -180,36 +177,4 @@ public class CoroutineTest {
 		}
 	}
 
-	private static class SuspendingDebug extends DebugHandler {
-		private boolean suspend = true;
-
-		private int flags;
-		private boolean inHook;
-
-		@Override
-		public void onInstruction(DebugState ds, DebugFrame di, int pc) throws LuaError, UnwindThrowable {
-			di.pc = pc;
-
-			if (suspend) {
-				// Save the current state
-				flags = di.flags;
-				inHook = ds.inhook;
-
-				// Set HOOK_YIELD and HOOKED flags so we know its an instruction hook
-				di.flags |= FLAG_HOOKYIELD | FLAG_HOOKED;
-
-				// We don't want to suspend next tick.
-				suspend = false;
-				LuaThread.suspend(ds.getLuaState());
-			}
-
-			// Restore the old state
-			ds.inhook = inHook;
-			di.flags = flags;
-			suspend = true;
-
-			// And continue as normal
-			super.onInstruction(ds, di, pc);
-		}
-	}
 }

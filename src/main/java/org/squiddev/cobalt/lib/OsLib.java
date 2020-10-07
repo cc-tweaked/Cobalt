@@ -86,7 +86,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		LibFunction.bind(t, OsLib::new, NAMES);
+		LibFunction.bind(state, "os", t, OsLib::new, NAMES);
 		env.rawset("os", t);
 		state.loadedPackages.rawset("os", t);
 		return t;

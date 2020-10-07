@@ -41,37 +41,42 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public LuaNumber checkNumber() {
+	public final LuaNumber checkNumber() {
 		return this;
 	}
 
 	@Override
-	public LuaNumber checkNumber(String errmsg) {
+	public final LuaNumber checkNumber(String errmsg) {
 		return this;
 	}
 
 	@Override
-	public LuaNumber optNumber(LuaNumber defval) {
+	public final LuaNumber optNumber(LuaNumber defval) {
 		return this;
 	}
 
 	@Override
-	public LuaValue toNumber() {
+	public final LuaValue toNumber() {
 		return this;
 	}
 
 	@Override
-	public boolean isNumber() {
+	public final boolean isNumber() {
 		return true;
 	}
 
 	@Override
-	public LuaTable getMetatable(LuaState state) {
+	public final LuaTable getMetatable(LuaState state) {
 		return state.numberMetatable;
 	}
 
 	@Override
-	public double checkArith() {
+	public final double checkArith() {
 		return toDouble();
+	}
+
+	@Override
+	public final String checkString() {
+		return toString();
 	}
 }

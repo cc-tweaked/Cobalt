@@ -27,6 +27,7 @@ package org.squiddev.cobalt.lib.jse;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.*;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
@@ -91,7 +92,6 @@ public class JsePlatform {
 		_G.load(state, new MathLib());
 		_G.load(state, new JseIoLib());
 		_G.load(state, new OsLib());
-		_G.load(state, new Utf8Lib());
 		return _G;
 	}
 

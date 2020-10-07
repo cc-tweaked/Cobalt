@@ -42,9 +42,6 @@ public class DebugHandler {
 		return state.getCurrentThread().getDebugState();
 	}
 
-	protected DebugHandler() {
-	}
-
 	/**
 	 * Called by Closures and recurring Java functions on return
 	 *

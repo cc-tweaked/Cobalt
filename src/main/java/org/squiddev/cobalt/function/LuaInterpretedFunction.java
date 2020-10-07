@@ -92,14 +92,18 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  * @see LoadState
  */
 public final class LuaInterpretedFunction extends LuaClosure implements Resumable<Object> {
-	private static final Upvalue[] NO_UPVALUES = new Upvalue[0];
+	public static final Upvalue[] NO_UPVALUES = new Upvalue[0];
 
 	public final Prototype p;
 	public final Upvalue[] upvalues;
 
-	public LuaInterpretedFunction(Prototype p) {
+	public LuaInterpretedFunction(Prototype p, Upvalue[] upvalues) {
 		this.p = p;
-		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+		this.upvalues = upvalues;
+	}
+
+	public LuaInterpretedFunction(Prototype p) {
+		this(p, p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES);
 	}
 
 	/**

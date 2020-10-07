@@ -32,7 +32,7 @@ import java.util.Vector;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.squiddev.cobalt.Matchers.between;
+import static org.squiddev.cobalt.support.Matchers.between;
 
 /**
  * Tests for tables used as lists.

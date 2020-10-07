@@ -88,4 +88,12 @@ public final class Upvalue {
 		array = new LuaValue[]{array[index]};
 		index = 0;
 	}
+
+	public LuaValue[] getArray() {
+		return array;
+	}
+
+	public int getIndex() {
+		return index;
+	}
 }

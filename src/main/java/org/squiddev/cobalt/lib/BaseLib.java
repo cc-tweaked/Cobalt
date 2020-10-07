@@ -32,7 +32,12 @@ import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
+import org.squiddev.cobalt.persist.Serializable;
+import org.squiddev.cobalt.persist.Serializer;
+import org.squiddev.cobalt.persist.ValueReader;
+import org.squiddev.cobalt.persist.ValueWriter;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import static org.squiddev.cobalt.OperationHelper.noUnwind;
@@ -102,15 +107,15 @@ public class BaseLib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		env.rawset("_G", env);
 		env.rawset("_VERSION", valueOf(Lua._VERSION));
-		LibFunction.bind(env, BaseLib2::new, LIB2_KEYS);
-		LibFunction.bind(env, () -> new BaseLibV(this), LIBV_KEYS);
-		LibFunction.bind(env, BaseLibR::new, LIBR_KEYS);
+
+		state.addSerializer(PCALL_SERIALIZER);
+		LibFunction.bind(state, "_G", env, BaseLib2::new, LIB2_KEYS);
+		LibFunction.bind(state, "_G", env, () -> new BaseLibV(this), LIBV_KEYS);
+		LibFunction.bind(state, "_G", env, BaseLibR::new, LIBR_KEYS);
 
 		// remember next, and inext for use in pairs and ipairs
 		next = env.rawget("next");
 		inext = env.rawget("__inext");
-
-		env.rawset("_VERSION", valueOf("Lua 5.1"));
 
 		return env;
 	}
@@ -298,7 +303,7 @@ public class BaseLib implements LuaLibrary {
 				case 16: { // "pairs" (t) -> iter-func, t, nil
 					LuaValue value = args.checkValue(1);
 					LuaValue pairs = value.metatag(state, Constants.PAIRS);
-					if(pairs.isNil()) {
+					if (pairs.isNil()) {
 						return varargsOf(baselib.next, value, Constants.NIL);
 					} else {
 						return OperationHelper.invoke(state, pairs, value);
@@ -333,7 +338,7 @@ public class BaseLib implements LuaLibrary {
 				case 0: // "pcall", // (f, arg1, ...) -> status, result1, ...
 					return pcall(state, di, args.checkValue(1), args.subargs(2), null);
 				case 1: // "xpcall", // (f, err) -> result1, ...
-					return pcall(state, di, args.checkValue(1), Constants.NONE, args.checkValue(2));
+					return pcall(state, di, args.checkValue(1), Constants.NONE, args.checkNotNil(2));
 
 				case 2: // "load", // ( func|str [,chunkname[, mode[, env]]] ) -> chunk | nil, msg
 				{
@@ -416,11 +421,44 @@ public class BaseLib implements LuaLibrary {
 		}
 	}
 
-	private static final class PCallState {
-		DebugFrame frame;
+	private static final class PCallState implements Serializable<PCallState> {
+		int frame;
 		LuaValue oldErrorFunc;
 		boolean errored = false;
+
+		@Override
+		public Serializer<PCallState> getSerializer() {
+			return PCALL_SERIALIZER;
+		}
 	}
+
+	private static final Serializer<PCallState> PCALL_SERIALIZER = new Serializer<PCallState>() {
+		@Override
+		public String getName() {
+			return "cobalt.base$pcall";
+		}
+
+		@Override
+		public void save(ValueWriter writer, PCallState value) throws IOException {
+			writer.writeByte(
+				(value.oldErrorFunc != null ? 1 : 0)
+					| (value.errored ? 2 : 0)
+			);
+			if (value.oldErrorFunc != null) writer.write(value.oldErrorFunc);
+			writer.writeVarInt(value.frame);
+		}
+
+		@Override
+		public PCallState load(ValueReader reader) throws IOException {
+			int flags = reader.readByte();
+
+			PCallState state = new PCallState();
+			state.errored = (flags & 2) != 0;
+			state.oldErrorFunc = (flags & 1) != 0 ? (LuaValue)reader.read() : null;
+			state.frame = reader.readVarInt();
+			return state;
+		}
+	};
 
 	private static Varargs pcall(LuaState state, DebugFrame di, LuaValue func, Varargs args, LuaValue errFunc) throws UnwindThrowable {
 		// Mark this frame as being an error handler
@@ -429,7 +467,8 @@ public class BaseLib implements LuaLibrary {
 		di.flags |= FLAG_YPCALL;
 
 		// Store this frame in the current state.
-		pState.frame = di;
+		int top = DebugHandler.getDebugState(state).getTop();
+		pState.frame = top;
 
 		LuaValue oldErr = pState.oldErrorFunc = state.getCurrentThread().setErrorFunc(errFunc);
 		try {
@@ -447,18 +486,17 @@ public class BaseLib implements LuaLibrary {
 			le.fillTraceback(state);
 
 			state.getCurrentThread().setErrorFunc(oldErr);
-			closeUntil(state, di);
+			closeUntil(state, top);
 			return varargsOf(Constants.FALSE, le.value);
 		}
 	}
 
-	private static void closeUntil(LuaState state, DebugFrame top) {
+	private static void closeUntil(LuaState state, int top) {
 		DebugState ds = DebugHandler.getDebugState(state);
 		DebugHandler handler = state.debug;
 
-		DebugFrame current;
-		while ((current = ds.getStackUnsafe()) != top) {
-			current.cleanup();
+		while (ds.getTop() != top) {
+			ds.getStackUnsafe().cleanup();
 			handler.onReturnError(ds);
 		}
 	}

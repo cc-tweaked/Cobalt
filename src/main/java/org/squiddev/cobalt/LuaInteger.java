@@ -206,17 +206,7 @@ public final class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public String checkString() {
-		return String.valueOf(v);
-	}
-
-	@Override
 	public LuaString checkLuaString() {
 		return ValueFactory.valueOf(String.valueOf(v));
-	}
-
-	@Override
-	public double checkArith() {
-		return v;
 	}
 }

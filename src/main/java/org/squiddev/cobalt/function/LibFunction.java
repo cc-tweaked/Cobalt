@@ -29,7 +29,12 @@ import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.TableLib;
+import org.squiddev.cobalt.persist.Serializable;
+import org.squiddev.cobalt.persist.Serializer;
+import org.squiddev.cobalt.persist.ValueReader;
+import org.squiddev.cobalt.persist.ValueWriter;
 
+import java.io.IOException;
 import java.util.function.Supplier;
 
 /**
@@ -91,7 +96,7 @@ import java.util.function.Supplier;
  *      }
  *  }
  * }
- * </pre>
+ * } </pre>
  * The default constructor is used to instantiate the library
  * in response to {@code require 'hyperbolic'} statement,
  * provided it is on Javas class path.
@@ -129,12 +134,11 @@ import java.util.function.Supplier;
  * See the source code in any of the library functions
  * such as {@link BaseLib} or {@link TableLib} for other examples.
  */
-public abstract class LibFunction extends LuaFunction {
-
+public abstract class LibFunction extends LuaFunction implements Serializable<LibFunction> {
 	/**
 	 * User-defined opcode to differentiate between instances of the library function class.
 	 *
-	 * Subclass will typicall switch on this value to provide the specific behavior for each function.
+	 * Subclass will typically switch on this value to provide the specific behavior for each function.
 	 */
 	protected int opcode;
 
@@ -144,6 +148,11 @@ public abstract class LibFunction extends LuaFunction {
 	 * Binding functions initialize this to the name to which it is bound.
 	 */
 	protected String name;
+
+	/**
+	 * The library this function belongs to.
+	 */
+	private String library;
 
 	/**
 	 * Default constructor for use by subclasses
@@ -162,13 +171,15 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = 0, second with 1, etc.
 	 *
+	 * @param state   The active Lua state.
+	 * @param name    The name of the set of the library one is binding.
 	 * @param env     The environment to apply to each bound function
 	 * @param factory The factory to provide a new instance each time
 	 * @param names   Array of function names
-	 * @see #bind(LuaTable, Supplier, String[], int)
+	 * @see #bind(LuaState, String, LuaTable, Supplier, String[], int)
 	 */
-	public static void bind(LuaTable env, Supplier<LibFunction> factory, String[] names) {
-		bind(env, factory, names, 0);
+	public static void bind(LuaState state, String name, LuaTable env, Supplier<LibFunction> factory, String[] names) {
+		bind(state, name, env, factory, names, 0);
 	}
 
 	/**
@@ -177,19 +188,61 @@ public abstract class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = {@code firstopcode}, second with {@code firstopcode+1}, etc.
 	 *
+	 * @param state       The active Lua state.
+	 * @param name        The name of the set of the library one is binding.
 	 * @param env         The environment to apply to each bound function
 	 * @param factory     The factory to provide a new instance each time
 	 * @param names       Array of function names
 	 * @param firstOpcode The first opcode to use
-	 * @see #bind(LuaTable, Supplier, String[])
+	 * @see #bind(LuaState, String, LuaTable, Supplier, String[])
 	 */
-	public static void bind(LuaTable env, Supplier<LibFunction> factory, String[] names, int firstOpcode) {
+	public static void bind(LuaState state, String name, LuaTable env, Supplier<LibFunction> factory, String[] names, int firstOpcode) {
+		state.addSerializer(SerializerImpl.INSTANCE);
+
 		for (int i = 0; i < names.length; i++) {
 			LibFunction f = factory.get();
+			f.setName(state, name, names[i]);
 			f.opcode = firstOpcode + i;
-			f.name = names[i];
 			f.env = env;
 			env.rawset(f.name, f);
+		}
+	}
+
+	protected void setName(LuaState state, String library, String name) {
+		this.name = name;
+		this.library = library;
+		if (library != null) state.addPermanent(library + "." + name, this);
+	}
+
+	@Override
+	public Serializer<LibFunction> getSerializer() {
+		return name != null && library != null ? SerializerImpl.INSTANCE : null;
+	}
+
+	private static class SerializerImpl implements Serializer<LibFunction> {
+		static final Serializer<LibFunction> INSTANCE = new SerializerImpl();
+
+		private SerializerImpl() {
+		}
+
+		@Override
+		public String getName() {
+			return "cobalt.permanent";
+		}
+
+		@Override
+		public void save(ValueWriter writer, LibFunction value) throws IOException {
+			writer.write(value.library);
+			writer.write(value.name);
+		}
+
+		@Override
+		public LibFunction load(ValueReader reader) throws IOException {
+			String key = reader.readString() + "." + reader.readString();
+			Object value = reader.getState().getPermanent(key);
+			if (value == null) throw new IOException("Cannot find " + key);
+			if (!(value instanceof LibFunction)) throw new IOException("Malformed value for " + key);
+			return (LibFunction) value;
 		}
 	}
 }
