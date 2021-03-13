@@ -223,12 +223,20 @@ public class LuaC implements LuaCompiler {
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
 		funcstate.f.source = name;
+		LexState.expdesc v = new LexState.expdesc();
+		v.init(LexState.VLOCAL, 0);
+		funcstate.f.upvalues = new LuaString[1];
+		funcstate.f.upvalues[0] = LuaString.valueOf("_ENV");
+		funcstate.f.nups = 1;
+		funcstate.upvalues[0] = funcstate.new upvaldesc();
+		funcstate.upvalues[0].k = LexState.VLOCAL;
+		funcstate.upvalues[0].info = (short)v.u.s.info;
 		lexstate.nextToken(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);
 		lexstate.close_func();
 		LuaC._assert(funcstate.prev == null);
-		LuaC._assert(funcstate.f.nups == 0);
+		LuaC._assert(funcstate.f.nups == 1);
 		LuaC._assert(lexstate.fs == null);
 		return funcstate.f;
 	}

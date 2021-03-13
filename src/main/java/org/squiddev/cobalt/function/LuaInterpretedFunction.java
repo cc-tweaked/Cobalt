@@ -99,7 +99,8 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 
 	public LuaInterpretedFunction(Prototype p) {
 		this.p = p;
-		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+		//this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+        this.upvalues = new Upvalue[p.nups + 1];
 	}
 
 	/**
@@ -111,14 +112,16 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	public LuaInterpretedFunction(Prototype p, LuaTable env) {
 		super(env);
 		this.p = p;
-		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+		//this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+        this.upvalues = new Upvalue[p.nups + 1];
+        this.upvalues[0] = new Upvalue(env);
 	}
 
 	public void nilUpvalues() {
 		int nups = p.nups;
 		if (nups > 0) {
 			Upvalue[] upvalues = this.upvalues;
-			for (int i = 0; i < nups; i++) {
+			for (int i = 1; i < nups; i++) {
 				upvalues[i] = new Upvalue(Constants.NIL);
 			}
 		}
@@ -148,6 +151,12 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
 		return execute(state, setupCall(state, this, varargs, FLAG_FRESH), this);
 	}
+
+	@Override
+	public LuaTable getfenv() { return (LuaTable)upvalues[0].getValue(); }
+
+	@Override
+	public void setfenv(LuaTable env) { upvalues[0].setValue(env); }
 
 	@Override
 	public Upvalue getUpvalue(int i) {

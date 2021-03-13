@@ -40,6 +40,7 @@ public class FuncState {
 	class upvaldesc {
 		short k;
 		short info;
+		LuaString name;
 	}
 
 	static class BlockCnt {
@@ -69,6 +70,7 @@ public class FuncState {
 	short actvar[] = new short[LUAI_MAXVARS];  /* declared-variable stack */
 
 	FuncState() {
+        
 	}
 
 
@@ -136,6 +138,14 @@ public class FuncState {
 		return f.nups++;
 	}
 
+	private int searchupvalue(LuaString n) {
+		int i;
+		for (i = 0; i < f.nups; i++) {
+			if (f.upvalues[i] == n) return i;
+		}
+		return -1;  /* not found */
+	}
+
 	private int searchvar(LuaString n) {
 		int i;
 		for (i = nactvar - 1; i >= 0; i--) {
@@ -164,17 +174,22 @@ public class FuncState {
 				markupval(v); /* local will be used as an upval */
 			}
 			return LexState.VLOCAL;
-		} else { /* not found at current level; try upper one */
-			if (prev == null) { /* no more levels? */
-				/* default is global variable */
-				var.init(LexState.VGLOBAL, NO_REG);
-				return LexState.VGLOBAL;
+		} else { /* not found at current level; try upvalues */
+			int idx = searchupvalue(n);
+			if (idx < 0) { /* not found? */
+				if (prev == null) { /* no more levels? */
+					/* default is global variable */
+					var.init(LexState.VGLOBAL, NO_REG);
+					return LexState.VGLOBAL;
+				}
+				if (prev.singlevaraux(n, var, 0) == LexState.VGLOBAL) {
+					return LexState.VGLOBAL;
+				}
+				var.u.s.info = indexupvalue(n, var); /* else was LOCAL or UPVAL */
+				var.k = LexState.VUPVAL; /* upvalue in this level */
+				return LexState.VUPVAL;
 			}
-			if (prev.singlevaraux(n, var, 0) == LexState.VGLOBAL) {
-				return LexState.VGLOBAL;
-			}
-			var.u.s.info = indexupvalue(n, var); /* else was LOCAL or UPVAL */
-			var.k = LexState.VUPVAL; /* upvalue in this level */
+			var.init(LexState.VUPVAL, idx);
 			return LexState.VUPVAL;
 		}
 	}
