@@ -99,8 +99,8 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 
 	public LuaInterpretedFunction(Prototype p) {
 		this.p = p;
-		//this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
-        this.upvalues = new Upvalue[p.nups + 1];
+		if (p.isLua52) this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+        else this.upvalues = new Upvalue[p.nups + 1];
 	}
 
 	/**
@@ -112,9 +112,11 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	public LuaInterpretedFunction(Prototype p, LuaTable env) {
 		super(env);
 		this.p = p;
-		//this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
-        this.upvalues = new Upvalue[p.nups + 1];
-        this.upvalues[0] = new Upvalue(env);
+		if (p.isLua52) this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+		else {
+			this.upvalues = new Upvalue[p.nups + 1];
+			this.upvalues[0] = new Upvalue(env);
+		}
 	}
 
 	public void nilUpvalues() {

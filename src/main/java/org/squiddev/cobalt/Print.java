@@ -32,7 +32,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-import static org.squiddev.cobalt.Lua.*;
+import static org.squiddev.cobalt.Lua52.*;
 
 /**
  * Debug helper class to pretty-print lua bytecodes.
@@ -80,6 +80,51 @@ public class Print {
 		"CLOSE",
 		"CLOSURE",
 		"VARARG",
+		null,
+	};
+
+	public static final String[] OPNAMES_52 = {
+		"MOVE",
+		"LOADK",
+		"LOADKX",
+		"LOADBOOL",
+		"LOADNIL",
+		"GETUPVAL",
+		"GETTABUP",
+		"GETTABLE",
+		"SETTABUP",
+		"SETUPVAL",
+		"SETTABLE",
+		"NEWTABLE",
+		"SELF",
+		"ADD",
+		"SUB",
+		"MUL",
+		"DIV",
+		"MOD",
+		"POW",
+		"UNM",
+		"NOT",
+		"LEN",
+		"CONCAT",
+		"JMP",
+		"EQ",
+		"LT",
+		"LE",
+		"TEST",
+		"TESTSET",
+		"CALL",
+		"TAILCALL",
+		"RETURN",
+		"FORLOOP",
+		"FORPREP",
+		"TFORCALL",
+		"TFORLOOP",
+		"SETLIST",
+		"CLOSE",
+		"CLOSURE",
+		"VARARG",
+		"EXTRAARG",
 		null,
 	};
 
@@ -182,7 +227,7 @@ public class Print {
 		} else {
 			ps.print("[-]  ");
 		}
-		ps.print(OPNAMES[o] + "  ");
+		ps.print((f.isLua52 ? OPNAMES_52[o] : OPNAMES[o]) + "  ");
 		switch (getOpMode(o)) {
 			case iABC:
 				ps.print(a);

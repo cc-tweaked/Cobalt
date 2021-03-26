@@ -30,6 +30,7 @@ import org.squiddev.cobalt.function.LocalVariable;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import static org.squiddev.cobalt.Constants.*;
 
@@ -58,6 +59,11 @@ public final class BytecodeLoader {
 	public static final int LUAC_VERSION = 0x51;
 
 	/**
+	 * for header of binary files -- this is Lua 5.2
+	 */
+	public static final int LUAC_VERSION_52 = 0x52;
+
+	/**
 	 * for header of binary files -- this is the official format
 	 */
 	public static final int LUAC_FORMAT = 0;
@@ -71,6 +77,7 @@ public final class BytecodeLoader {
 	private boolean luacLittleEndian;
 	private int luacSizeofSizeT;
 	private int luacNumberFormat;
+	private boolean isLua52;
 
 	/**
 	 * input stream from which we are loading
@@ -256,6 +263,10 @@ public final class BytecodeLoader {
 	 * @throws IOException if there is an i/o exception
 	 */
 	private void loadDebug(Prototype f) throws IOException {
+		if (isLua52) {
+			LuaString src = loadString();
+			if (src != null) f.source = src;
+		}
 		f.lineinfo = loadIntArray();
 		int n = loadInt();
 		f.locvars = n > 0 ? new LocalVariable[n] : NOLOCVARS;
@@ -282,18 +293,29 @@ public final class BytecodeLoader {
 	 */
 	public Prototype loadFunction(LuaString p) throws IOException {
 		Prototype f = new Prototype();
-		f.source = loadString();
-		if (f.source == null) {
-			f.source = p;
+		if (isLua52) f.source = p;
+		else {
+			f.source = loadString();
+			if (f.source == null) {
+				f.source = p;
+			}
 		}
 		f.linedefined = loadInt();
 		f.lastlinedefined = loadInt();
-		f.nups = is.readUnsignedByte();
+		if (!isLua52) f.nups = is.readUnsignedByte();
 		f.numparams = is.readUnsignedByte();
 		f.is_vararg = is.readUnsignedByte();
 		f.maxstacksize = is.readUnsignedByte();
+		f.isLua52 = isLua52;
 		f.code = loadIntArray();
 		loadConstants(f);
+		if (isLua52) {
+			f.nups = loadInt();
+			f.upvalue_info = new int[f.nups];
+			for (int i = 0; i < f.nups; i++) {
+				f.upvalue_info[i] = is.readUnsignedByte() << 8 | is.readUnsignedByte();
+			}
+		}
 		loadDebug(f);
 
 		// TODO: add check here, for debugging purposes, I believe
@@ -311,7 +333,9 @@ public final class BytecodeLoader {
 	 */
 	public void loadHeader() throws IOException, CompileException {
 		int luacVersion = is.readByte();
-		if (luacVersion != LUAC_VERSION) throw new CompileException("unsupported luac version");
+		if (luacVersion == LUAC_VERSION) isLua52 = false;
+		else if (luacVersion == LUAC_VERSION_52) isLua52 = true;
+		else throw new CompileException("unsupported luac version");
 
 		int luacFormat = is.readByte();
 		luacLittleEndian = (0 != is.readByte());
@@ -320,6 +344,11 @@ public final class BytecodeLoader {
 		int luacSizeofInstruction = is.readByte();
 		int luacSizeofLuaNumber = is.readByte();
 		luacNumberFormat = is.readByte();
+		if (isLua52) {
+			byte[] data = new byte[6];
+			is.read(data);
+			if (!Arrays.equals(data, Lua52.error_check)) throw new CompileException("corrupted precompiled chunk");
+		}
 
 		// check format
 		switch (luacNumberFormat) {

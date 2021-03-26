@@ -30,7 +30,7 @@ import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Lua.*;
+import static org.squiddev.cobalt.Lua52.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
 import static org.squiddev.cobalt.debug.DebugFrame.*;
 
@@ -175,14 +175,23 @@ public final class LuaInterpreter {
 				int i = code[pc++];
 				int a = ((i >> POS_A) & MAXARG_A);
 
+				int op = ((i >> POS_OP) & MAX_OP);
+
+				if (!p.isLua52) op = lua51opcodes[op];
+
 				// process the instruction
-				switch (((i >> POS_OP) & MAX_OP)) {
+				switch (op) {
 					case OP_MOVE: // A B: R(A):= R(B)
 						stack[a] = stack[(i >>> POS_B) & MAXARG_B];
 						break;
 
 					case OP_LOADK: // A Bx: R(A):= Kst(Bx)
 						stack[a] = k[(i >>> POS_Bx) & MAXARG_Bx];
+						break;
+
+					case OP_LOADKX: // A: R(A) := Kst(extra arg)
+						// assert(((code[pc] >> POS_OP) & MAX_OP) == OP_EXTRAARG);
+						stack[a] = k[GETARG_Ax(code[pc++])];
 						break;
 
 					case OP_LOADBOOL: // A B C: R(A):= (Bool)B: if (C) pc++
@@ -202,6 +211,13 @@ public final class LuaInterpreter {
 						stack[a] = upvalues[((i >>> POS_B) & MAXARG_B)].getValue();
 						break;
 
+					case OP_GETTABUP: { // A B C: R(A) := UpValue[B][RK(C)]
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >>> POS_C) & MAXARG_C;
+						stack[a] = OperationHelper.getTable(state, upvalues[b].getValue(), c > 0xff ? k[c & 0x0ff] : stack[c], b);
+						break;
+					}
+
 					case OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
 						stack[a] = OperationHelper.getTable(state, upvalues[0].getValue(), k[(i >>> POS_Bx) & MAXARG_Bx]);
 						break;
@@ -216,6 +232,13 @@ public final class LuaInterpreter {
 					case OP_SETGLOBAL: // A Bx: Gbl[Kst(Bx)]:= R(A)
 						OperationHelper.setTable(state, upvalues[0].getValue(), k[(i >>> POS_Bx) & MAXARG_Bx], stack[a]);
 						break;
+
+					case OP_SETTABUP: { // A B C: UpValue[A][RK(B)] := RK(C)
+						int b = (i >>> POS_B) & MAXARG_B;
+						int c = (i >>> POS_C) & MAXARG_C;
+						OperationHelper.setTable(state, upvalues[a].getValue(), b > 0xff ? k[b & 0x0ff] : stack[b], c > 0xff ? k[c & 0x0ff] : stack[c], a);
+						break;
+					}
 
 					case OP_SETUPVAL: // A B: UpValue[B]:= R(A)
 						upvalues[(i >>> POS_B) & MAXARG_B].setValue(stack[a]);
@@ -553,6 +576,29 @@ public final class LuaInterpreter {
 					}
 					break;
 
+					case OP_TFORCALL: { // A C: R(A+3), ..., R(A+2+C) := R(A)(R(A+1), R(A+2));
+						int c = ((i >> POS_C) & MAXARG_C);
+
+						LuaValue val = stack[a];
+						if (val instanceof LuaInterpretedFunction) {
+							function = (LuaInterpretedFunction) val;
+							di = setupCall(state, function, stack[a + 1], stack[a + 2], 0);
+							continue newFrame;
+						}
+
+						Varargs args = ValueFactory.varargsOf(stack, a + 1, a + 2); // exact arg count
+						Varargs v = OperationHelper.invoke(state, val, args.asImmutable(), a);
+						i = code[pc++];
+						a = ((i >> POS_A) & MAXARG_A);
+						if (c > 0) {
+							while (--c > 0) stack[a + 3 + c] = v.arg(c);
+							v = NONE;
+						} else {
+							di.top = a + 3 + v.count();
+							di.extras = v;
+						}
+					}
+
 					case OP_TFORLOOP: {
 							/*
 								A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
@@ -613,12 +659,23 @@ public final class LuaInterpreter {
 					case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
 						Prototype newp = p.p[(i >>> POS_Bx) & MAXARG_Bx];
 						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, (LuaTable)upvalues[0].getValue());
-						for (int j = 0, nup = newp.nups; j < nup; ++j) {
-							i = code[pc++];
-							int b = (i >>> POS_B) & MAXARG_B;
-							newcl.upvalues[j] = (i & 4) != 0
-								? upvalues[b] // OP_GETUPVAL
-								: openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b)); // OP_MOVE
+						if (p.isLua52) {
+							for (int j = 0; j < newp.nups; ++j) {
+								DebugFrame frame = di;
+								for (int s = (newp.upvalue_info[j] >> 8) - 1; s > 0 && frame != null; --s) frame = frame.previous;
+								if (frame == null) {
+									// TODO: handle this
+								}
+								newcl.upvalues[j] = new Upvalue(frame.stack, newp.upvalue_info[j] & 0xFF);
+							}
+						} else {
+							for (int j = 0, nup = newp.nups; j < nup; ++j) {
+								i = code[pc++];
+								int b = (i >>> POS_B) & MAXARG_B;
+								newcl.upvalues[j] = (i & 4) != 0
+									? upvalues[b] // OP_GETUPVAL
+									: openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b)); // OP_MOVE
+							}
 						}
 						stack[a] = newcl;
 						break;
@@ -634,7 +691,11 @@ public final class LuaInterpreter {
 								stack[a + j - 1] = varargs.arg(j);
 							}
 						}
+						break;
 					}
+
+					case OP_EXTRAARG:
+						// throw exception?
 				}
 			}
 		}
@@ -701,7 +762,7 @@ public final class LuaInterpreter {
 
 		switch (((i >> POS_OP) & MAX_OP)) {
 			case OP_ADD: case OP_SUB: case OP_MUL: case OP_DIV: case OP_MOD: case OP_POW: case OP_UNM:
-			case OP_GETTABLE: case OP_GETGLOBAL: case OP_SELF: {
+			case OP_GETTABLE: case OP_GETTABUP: case OP_GETGLOBAL: case OP_SELF: {
 				di.stack[(i >> POS_A) & MAXARG_A] = varargs.first();
 				break;
 			}
@@ -723,6 +784,20 @@ public final class LuaInterpreter {
 				break;
 			}
 
+			case OP_TFORCALL: {
+				int a = (i >>> POS_A) & MAXARG_A;
+				int c = (i >>> POS_C) & MAXARG_C;
+				if (c > 0) {
+					LuaValue[] stack = di.stack;
+					while (--c > 0) stack[a + 3 + c] = varargs.arg(c);
+					di.extras = NONE;
+				} else {
+					di.top = a + 3 + varargs.count();
+					di.extras = varargs;
+				}
+				break;
+			}
+
 			case OP_CALL: case OP_TAILCALL: {
 				int a = (i >>> POS_A) & MAXARG_A;
 				int c = (i >>> POS_C) & MAXARG_C;
@@ -737,7 +812,7 @@ public final class LuaInterpreter {
 				break;
 			}
 
-			case OP_SETTABLE: case OP_SETGLOBAL:
+			case OP_SETTABLE: case OP_SETGLOBAL: case OP_SETTABUP:
 				// Nothing to be done here
 				break;
 

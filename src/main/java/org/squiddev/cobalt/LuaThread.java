@@ -28,6 +28,8 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
+import org.squiddev.cobalt.function.Upvalue;
 import org.squiddev.cobalt.lib.CoroutineLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -459,6 +461,9 @@ public class LuaThread extends LuaValue {
 						// Clear the function after the first run
 						LuaFunction function = func;
 						func = null;
+						if (function instanceof LuaInterpretedFunction) {
+							((LuaInterpretedFunction)function).setUpvalue(0, new Upvalue(thread.env));
+						}
 
 						Varargs res = loop(state, state.currentThread, function, threader.unpack());
 
