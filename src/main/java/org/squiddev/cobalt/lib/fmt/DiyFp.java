@@ -30,38 +30,48 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
-// This "Do It Yourself Floating Point" class implements a floating-point number
-// with a uint64 significand and an int exponent. Normalized DiyFp numbers will
-// have the most significant bit of the significand set.
-// Multiplication and Subtraction do not normalize their results.
-// DiyFp store only non-negative numbers and are not designed to contain special
-// doubles (NaN and Infinity).
+import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
+
+/**
+ * This "Do It Yourself Floating Point" class implements a floating-point number
+ * with a uint64 significand and an int exponent. Normalized DiyFp numbers will
+ * have the most significant bit of the significand set.
+ * Multiplication and Subtraction do not normalize their results.
+ * DiyFp store only non-negative numbers and are not designed to contain special
+ * doubles (NaN and Infinity).
+ */
 public class DiyFp {
 	public static final int kSignificandSize = 64;
 
 	DiyFp() { this.f_ = 0; this.e_ = 0; }
 	DiyFp(final uint64_t significand, final int32_t exponent) { this.f_ = significand; this.e_ = exponent; }
 
-	// this -= other.
-	// The exponents of both numbers must be the same and the significand of this
-	// must be greater or equal than the significand of other.
-	// The result will not be normalized.
+	/**
+	 * this -= other.
+	 * The exponents of both numbers must be the same and the significand of this
+	 * must be greater or equal than the significand of other.
+	 * The result will not be normalized.
+	 */
 	public void Subtract(const DiyFp& other) {
 		DOUBLE_CONVERSION_ASSERT(e_ == other.e_);
 		DOUBLE_CONVERSION_ASSERT(f_ >= other.f_);
 		f_ -= other.f_;
 	}
 
-	// Returns a - b.
-	// The exponents of both numbers must be the same and a must be greater
-	// or equal than b. The result will not be normalized.
+	/**
+	 * Returns a - b.
+	 * The exponents of both numbers must be the same and a must be greater
+	 * or equal than b. The result will not be normalized.
+	 */
 	public static DiyFp Minus(const DiyFp& a, const DiyFp& b) {
 		DiyFp result = a;
 		result.Subtract(b);
 		return result;
 	}
 
-	// this *= other.
+	/**
+	 * this *= other.
+	 */
 	public void Multiply(const DiyFp& other) {
 		// Simply "emulates" a 128 bit multiplication.
 		// However: the resulting number only contains 64 bits. The least
@@ -83,7 +93,10 @@ public class DiyFp {
 		f_ = ac + (ad >> 32) + (bc >> 32) + (tmp >> 32);
 	}
 
-	// returns a * b;
+
+	/**
+	 * returns a * b;
+	 */
 	public static DiyFp Times(const DiyFp& a, const DiyFp& b) {
 		DiyFp result = a;
 		result.Multiply(b);

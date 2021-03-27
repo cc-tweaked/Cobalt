@@ -30,8 +30,10 @@
 package org.squiddev.cobalt.lib.fmt;
 
 public class PowersOfTenCache {
-	// Not all powers of ten are cached. The decimal exponent of two neighboring
-	// cached numbers will differ by kDecimalExponentDistance.
+	/**
+	 *  Not all powers of ten are cached. The decimal exponent of two neighboring
+	 *  cached numbers will differ by kDecimalExponentDistance.
+	 */
 	public static final int kDecimalExponentDistance = 8;
 
 	public static final int kMinDecimalExponent = -348;
@@ -134,11 +136,15 @@ public class PowersOfTenCache {
 			{0xaf87023b9bf0ee6bL, 1066, 340},
 		};
 
-		private static final int kCachedPowersOffset = 348;  // -1 * the first decimal_exponent.
-		private static final double kD_1_LOG2_10 = 0.30102999566398114;  //  1 / lg(10)
+		/** -1 * the first decimal_exponent. */
+		private static final int kCachedPowersOffset = 348;
+		/** 1 / lg(10) */
+		private static final double kD_1_LOG2_10 = 0.30102999566398114;
 
-		// Returns a cached power-of-ten with a binary exponent in the range
-		// [min_exponent; max_exponent] (boundaries included).
+		/**
+		 * Returns a cached power-of-ten with a binary exponent in the range
+		 * [min_exponent; max_exponent] (boundaries included).
+		 */
 		public void GetCachedPowerForBinaryExponentRange(
 				int min_exponent,
 				int max_exponent,
@@ -159,11 +165,13 @@ public class PowersOfTenCache {
 		}
 
 
-		// Returns a cached power of ten x ~= 10^k such that
-		//   k <= decimal_exponent < k + kCachedPowersDecimalDistance.
-		// The given decimal_exponent must satisfy
-		//   kMinDecimalExponent <= requested_exponent, and
-		//   requested_exponent < kMaxDecimalExponent + kDecimalExponentDistance.
+		/**
+		 *  Returns a cached power of ten x ~= 10^k such that
+		 *    k <= decimal_exponent < k + kCachedPowersDecimalDistance.
+		 *  The given decimal_exponent must satisfy
+		 *    kMinDecimalExponent <= requested_exponent, and
+		 *    requested_exponent < kMaxDecimalExponent + kDecimalExponentDistance.
+		 */
 		public void GetCachedPowerForDecimalExponent(int requested_exponent,
 				DiyFp* power,
 				int* found_exponent) {

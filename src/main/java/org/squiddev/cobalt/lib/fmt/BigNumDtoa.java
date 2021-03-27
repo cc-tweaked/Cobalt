@@ -32,17 +32,23 @@ package org.squiddev.cobalt.lib.fmt;
 
 public class BigNumDtoa {
 	public enum BignumDtoaMode {
-		// Return the shortest correct representation.
-		// For example the output of 0.299999999999999988897 is (the less accurate but
-		// correct) 0.3.
+		/**
+		 *  Return the shortest correct representation.
+		 *  For example the output of 0.299999999999999988897 is (the less accurate but
+		 *  correct) 0.3.
+		 */
 		BIGNUM_DTOA_SHORTEST,
-		// Same as BIGNUM_DTOA_SHORTEST but for single-precision floats.
+		/**
+		 * Same as BIGNUM_DTOA_SHORTEST but for single-precision floats.
+		 */
 		BIGNUM_DTOA_SHORTEST_SINGLE,
-		// Return a fixed number of digits after the decimal point.
-		// For instance fixed(0.1, 4) becomes 0.1000
-		// If the input number is big, the output will be big.
+		/**
+		 *  Return a fixed number of digits after the decimal point.
+		 *  For instance fixed(0.1, 4) becomes 0.1000
+		 *  If the input number is big, the output will be big.
+		 */
 		BIGNUM_DTOA_FIXED,
-		// Return a fixed number of digits, no matter what the exponent is.
+		/** Return a fixed number of digits, no matter what the exponent is. */
 		BIGNUM_DTOA_PRECISION
 	};
 
@@ -55,36 +61,37 @@ public class BigNumDtoa {
 		return exponent;
 	}
 
-
-	// Converts the given double 'v' to ascii.
-	// The result should be interpreted as buffer * 10^(point-length).
-	// The buffer will be null-terminated.
-	//
-	// The input v must be > 0 and different from NaN, and Infinity.
-	//
-	// The output depends on the given mode:
-	//  - SHORTEST: produce the least amount of digits for which the internal
-	//   identity requirement is still satisfied. If the digits are printed
-	//   (together with the correct exponent) then reading this number will give
-	//   'v' again. The buffer will choose the representation that is closest to
-	//   'v'. If there are two at the same distance, than the number is round up.
-	//   In this mode the 'requested_digits' parameter is ignored.
-	//  - FIXED: produces digits necessary to print a given number with
-	//   'requested_digits' digits after the decimal point. The produced digits
-	//   might be too short in which case the caller has to fill the gaps with '0's.
-	//   Example: toFixed(0.001, 5) is allowed to return buffer="1", point=-2.
-	//   Halfway cases are rounded up. The call toFixed(0.15, 2) thus returns
-	//     buffer="2", point=0.
-	//   Note: the length of the returned buffer has no meaning wrt the significance
-	//   of its digits. That is, just because it contains '0's does not mean that
-	//   any other digit would not satisfy the internal identity requirement.
-	//  - PRECISION: produces 'requested_digits' where the first digit is not '0'.
-	//   Even though the length of produced digits usually equals
-	//   'requested_digits', the function is allowed to return fewer digits, in
-	//   which case the caller has to fill the missing digits with '0's.
-	//   Halfway cases are again rounded up.
-	// 'BignumDtoa' expects the given buffer to be big enough to hold all digits
-	// and a terminating null-character.
+	/**
+	 *  Converts the given double 'v' to ascii.
+	 *  The result should be interpreted as buffer * 10^(point-length).
+	 *  The buffer will be null-terminated.
+	 *
+	 *  The input v must be > 0 and different from NaN, and Infinity.
+	 *
+	 *  The output depends on the given mode:
+	 *   - SHORTEST: produce the least amount of digits for which the internal
+	 *    identity requirement is still satisfied. If the digits are printed
+	 *    (together with the correct exponent) then reading this number will give
+	 *    'v' again. The buffer will choose the representation that is closest to
+	 *    'v'. If there are two at the same distance, than the number is round up.
+	 *    In this mode the 'requested_digits' parameter is ignored.
+	 *   - FIXED: produces digits necessary to print a given number with
+	 *    'requested_digits' digits after the decimal point. The produced digits
+	 *    might be too short in which case the caller has to fill the gaps with '0's.
+	 *    Example: ToFixed(0.001, 5) is allowed to return buffer="1", point=-2.
+	 *    Halfway cases are rounded up. The call ToFixed(0.15, 2) thus returns
+	 * 	 buffer="2", point=0.
+	 *    Note: the length of the returned buffer has no meaning wrt the significance
+	 *    of its digits. That is, just because it contains '0's does not mean that
+	 *    any other digit would not satisfy the internal identity requirement.
+	 *   - PRECISION: produces 'requested_digits' where the first digit is not '0'.
+	 *    Even though the length of produced digits usually equals
+	 *    'requested_digits', the function is allowed to return fewer digits, in
+	 *    which case the caller has to fill the missing digits with '0's.
+	 *    Halfway cases are again rounded up.
+	 *  'BignumDtoa' expects the given buffer to be big enough to hold all digits
+	 *  and a terminating null-character.
+	 */
 	public void BignumDtoa(double v, BignumDtoaMode mode, int requested_digits,
 						   Vector<char> buffer, int* length, int* point) {
 		DOUBLE_CONVERSION_ASSERT(v > 0);
@@ -167,22 +174,24 @@ public class BigNumDtoa {
 		buffer[*length] = '\0';
 	}
 
-	// Generates digits from the left to the right and stops when the generated
-	// digits yield the shortest decimal representation of v.
-
-	// The procedure starts generating digits from the left to the right and stops
-	// when the generated digits yield the shortest decimal representation of v. A
-	// decimal representation of v is a number lying closer to v than to any other
-	// double, so it converts to v when read.
-	//
-	// This is true if d, the decimal representation, is between m- and m+, the
-	// upper and lower boundaries. d must be strictly between them if !is_even.
-	//           m- := (numerator - delta_minus) / denominator
-	//           m+ := (numerator + delta_plus) / denominator
-	//
-	// Precondition: 0 <= (numerator+delta_plus) / denominator < 10.
-	//   If 1 <= (numerator+delta_plus) / denominator < 10 then no leading 0 digit
-	//   will be produced. This should be the standard precondition.
+	/**
+	 *  Generates digits from the left to the right and stops when the generated
+	 *  digits yield the shortest decimal representation of v.
+	 *
+	 *  The procedure starts generating digits from the left to the right and stops
+	 *  when the generated digits yield the shortest decimal representation of v. A
+	 *  decimal representation of v is a number lying closer to v than to any other
+	 *  double, so it converts to v when read.
+	 *
+	 *  This is true if d, the decimal representation, is between m- and m+, the
+	 *  upper and lower boundaries. d must be strictly between them if !is_even.
+	 * 		   m- := (numerator - delta_minus) / denominator
+	 * 		   m+ := (numerator + delta_plus) / denominator
+	 *
+	 *  Precondition: 0 <= (numerator+delta_plus) / denominator < 10.
+	 *    If 1 <= (numerator+delta_plus) / denominator < 10 then no leading 0 digit
+	 *    will be produced. This should be the standard precondition.
+	 */
 	private static void GenerateShortestDigits(Bignum* numerator, Bignum* denominator,
 									   Bignum* delta_minus, Bignum* delta_plus,
 									   bool is_even,
@@ -274,17 +283,19 @@ public class BigNumDtoa {
 		}
 	}
 
-	// Generates 'count' digits of numerator/denominator.
-	// Once 'count' digits have been produced rounds the result depending on the
-	// remainder (remainders of exactly .5 round upwards). Might update the
-	// decimal_point when rounding up (for example for 0.9999).
-
-	// Let v = numerator / denominator < 10.
-	// Then we generate 'count' digits of d = x.xxxxx... (without the decimal point)
-	// from left to right. Once 'count' digits have been produced we decide wether
-	// to round up or down. Remainders of exactly .5 round upwards. Numbers such
-	// as 9.999999 propagate a carry all the way, and change the
-	// exponent (decimal_point), when rounding upwards.
+	/**
+	 *  Generates 'count' digits of numerator/denominator.
+	 *  Once 'count' digits have been produced rounds the result depending on the
+	 *  remainder (remainders of exactly .5 round upwards). Might update the
+	 *  decimal_point when rounding up (for example for 0.9999).
+	 *
+	 *  Let v = numerator / denominator < 10.
+	 *  Then we generate 'count' digits of d = x.xxxxx... (without the decimal point)
+	 *  from left to right. Once 'count' digits have been produced we decide wether
+	 *  to round up or down. Remainders of exactly .5 round upwards. Numbers such
+	 *  as 9.999999 propagate a carry all the way, and change the
+	 *  exponent (decimal_point), when rounding upwards.
+	 */
 	private static void GenerateCountedDigits(int count, int* decimal_point,
 									  Bignum* numerator, Bignum* denominator,
 									  Vector<char> buffer, int* length) {
@@ -322,12 +333,13 @@ public class BigNumDtoa {
   		*length = count;
 	}
 
-
-	// Generates 'requested_digits' after the decimal point. It might omit
-	// trailing '0's. If the input number is too small then no digits at all are
-	// generated (ex.: 2 fixed digits for 0.00001).
-	//
-	// Input verifies:  1 <= (numerator + delta) / denominator < 10.
+	/**
+	 *  Generates 'requested_digits' after the decimal point. It might omit
+	 *  trailing '0's. If the input number is too small then no digits at all are
+	 *  generated (ex.: 2 fixed digits for 0.00001).
+	 *
+	 *  Input verifies:  1 <= (numerator + delta) / denominator < 10.
+	 */
 	private static void BignumToFixed(int requested_digits, int* decimal_point,
 							  Bignum* numerator, Bignum* denominator,
 							  Vector<char> buffer, int* length) {
@@ -372,21 +384,23 @@ public class BigNumDtoa {
 	}
 
 
-	// Returns an estimation of k such that 10^(k-1) <= v < 10^k where
-	// v = f * 2^exponent and 2^52 <= f < 2^53.
-	// v is hence a normalized double with the given exponent. The output is an
-	// approximation for the exponent of the decimal approximation .digits * 10^k.
-	//
-	// The result might undershoot by 1 in which case 10^k <= v < 10^k+1.
-	// Note: this property holds for v's upper boundary m+ too.
-	//    10^k <= m+ < 10^k+1.
-	//   (see explanation below).
-	//
-	// Examples:
-	//  EstimatePower(0)   => 16
-	//  EstimatePower(-52) => 0
-	//
-	// Note: e >= 0 => EstimatedPower(e) > 0. No similar claim can be made for e<0.
+	/**
+	 *  Returns an estimation of k such that 10^(k-1) <= v < 10^k where
+	 *  v = f * 2^exponent and 2^52 <= f < 2^53.
+	 *  v is hence a normalized double with the given exponent. The output is an
+	 *  approximation for the exponent of the decimal approximation .digits * 10^k.
+	 *
+	 *  The result might undershoot by 1 in which case 10^k <= v < 10^k+1.
+	 *  Note: this property holds for v's upper boundary m+ too.
+	 * 	10^k <= m+ < 10^k+1.
+	 *    (see explanation below).
+	 *
+	 *  Examples:
+	 *   EstimatePower(0)   => 16
+	 *   EstimatePower(-52) => 0
+	 *
+	 *  Note: e >= 0 => EstimatedPower(e) > 0. No similar claim can be made for e<0.
+	 */
 	private static int EstimatePower(int exponent) {
 		// This function estimates log10 of v where v = f*2^e (with e == exponent).
 		// Note that 10^floor(log10(v)) <= v, but v <= 10^ceil(log10(v)).
@@ -418,7 +432,45 @@ public class BigNumDtoa {
 	}
 
 
-	// See comments for InitialScaledStartValues.
+	/**
+	 *  Let v = significand * 2^exponent.
+	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions GenerateShortestDigits and
+	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  representation d, with the required accuracy.
+	 *  Then d * 10^estimated_power is the representation of v.
+	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  generating the decimal representation.)
+	 *
+	 *  The initial start values consist of:
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled (common) denominator.
+	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   decimal converting back to v):
+	 *   - v - m-: the distance to the lower boundary.
+	 *   - m+ - v: the distance to the upper boundary.
+	 *
+	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
+	 *
+	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *   v / 10^ep = numerator / denominator.
+	 *   v's boundaries m- and m+:
+	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 *   Or in other words:
+	 * 	m- == v - delta_minus * 10^ep / denominator;
+	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 *
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *   or       10^k <= v < 10^(k+1)
+	 *   we then have 0.1 <= numerator/denominator < 1
+	 * 		   or    1 <= numerator/denominator < 10
+	 *
+	 *  It is then easy to kickstart the digit-generation routine.
+	 *
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
+	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 */
 	private static void InitialScaledStartValuesPositiveExponent(
 			uint64_t significand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
@@ -451,7 +503,45 @@ public class BigNumDtoa {
 	}
 
 
-	// See comments for InitialScaledStartValues
+	/**
+	 *  Let v = significand * 2^exponent.
+	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions GenerateShortestDigits and
+	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  representation d, with the required accuracy.
+	 *  Then d * 10^estimated_power is the representation of v.
+	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  generating the decimal representation.)
+	 *
+	 *  The initial start values consist of:
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled (common) denominator.
+	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   decimal converting back to v):
+	 *   - v - m-: the distance to the lower boundary.
+	 *   - m+ - v: the distance to the upper boundary.
+	 *
+	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
+	 *
+	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *   v / 10^ep = numerator / denominator.
+	 *   v's boundaries m- and m+:
+	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 *   Or in other words:
+	 * 	m- == v - delta_minus * 10^ep / denominator;
+	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 *
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *   or       10^k <= v < 10^(k+1)
+	 *   we then have 0.1 <= numerator/denominator < 1
+	 * 		   or    1 <= numerator/denominator < 10
+	 *
+	 *  It is then easy to kickstart the digit-generation routine.
+	 *
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
+	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 */
 	private static void InitialScaledStartValuesNegativeExponentPositivePower(
 			uint64_t significand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
@@ -485,7 +575,45 @@ public class BigNumDtoa {
 	}
 
 
-	// See comments for InitialScaledStartValues
+	/**
+	 *  Let v = significand * 2^exponent.
+	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions GenerateShortestDigits and
+	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  representation d, with the required accuracy.
+	 *  Then d * 10^estimated_power is the representation of v.
+	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  generating the decimal representation.)
+	 *
+	 *  The initial start values consist of:
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled (common) denominator.
+	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   decimal converting back to v):
+	 *   - v - m-: the distance to the lower boundary.
+	 *   - m+ - v: the distance to the upper boundary.
+	 *
+	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
+	 *
+	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *   v / 10^ep = numerator / denominator.
+	 *   v's boundaries m- and m+:
+	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 *   Or in other words:
+	 * 	m- == v - delta_minus * 10^ep / denominator;
+	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 *
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *   or       10^k <= v < 10^(k+1)
+	 *   we then have 0.1 <= numerator/denominator < 1
+	 * 		   or    1 <= numerator/denominator < 10
+	 *
+	 *  It is then easy to kickstart the digit-generation routine.
+	 *
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
+	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 */
 	private static void InitialScaledStartValuesNegativeExponentNegativePower(
 			uint64_t significand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
@@ -531,44 +659,45 @@ public class BigNumDtoa {
 		}
 	}
 
-
-	// Let v = significand * 2^exponent.
-	// Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
-	// and denominator. The functions GenerateShortestDigits and
-	// GenerateCountedDigits will then convert this ratio to its decimal
-	// representation d, with the required accuracy.
-	// Then d * 10^estimated_power is the representation of v.
-	// (Note: the fraction and the estimated_power might get adjusted before
-	// generating the decimal representation.)
-	//
-	// The initial start values consist of:
-	//  - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
-	//  - a scaled (common) denominator.
-	//  optionally (used by GenerateShortestDigits to decide if it has the shortest
-	//  decimal converting back to v):
-	//  - v - m-: the distance to the lower boundary.
-	//  - m+ - v: the distance to the upper boundary.
-	//
-	// v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
-	//
-	// Let ep == estimated_power, then the returned values will satisfy:
-	//  v / 10^ep = numerator / denominator.
-	//  v's boundaries m- and m+:
-	//    m- / 10^ep == v / 10^ep - delta_minus / denominator
-	//    m+ / 10^ep == v / 10^ep + delta_plus / denominator
-	//  Or in other words:
-	//    m- == v - delta_minus * 10^ep / denominator;
-	//    m+ == v + delta_plus * 10^ep / denominator;
-	//
-	// Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
-	//  or       10^k <= v < 10^(k+1)
-	//  we then have 0.1 <= numerator/denominator < 1
-	//           or    1 <= numerator/denominator < 10
-	//
-	// It is then easy to kickstart the digit-generation routine.
-	//
-	// The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
-	// or BIGNUM_DTOA_SHORTEST_SINGLE.
+	/**
+	 *  Let v = significand * 2^exponent.
+	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions GenerateShortestDigits and
+	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  representation d, with the required accuracy.
+	 *  Then d * 10^estimated_power is the representation of v.
+	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  generating the decimal representation.)
+	 *
+	 *  The initial start values consist of:
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled (common) denominator.
+	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   decimal converting back to v):
+	 *   - v - m-: the distance to the lower boundary.
+	 *   - m+ - v: the distance to the upper boundary.
+	 *
+	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
+	 *
+	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *   v / 10^ep = numerator / denominator.
+	 *   v's boundaries m- and m+:
+	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 *   Or in other words:
+	 * 	m- == v - delta_minus * 10^ep / denominator;
+	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 *
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *   or       10^k <= v < 10^(k+1)
+	 *   we then have 0.1 <= numerator/denominator < 1
+	 * 		   or    1 <= numerator/denominator < 10
+	 *
+	 *  It is then easy to kickstart the digit-generation routine.
+	 *
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
+	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 */
 	private static void InitialScaledStartValues(uint64_t significand,
 										 int exponent,
 										 boolean lower_boundary_is_closer,
@@ -602,23 +731,26 @@ public class BigNumDtoa {
 	}
 
 
-	// Multiplies numerator/denominator so that its values lies in the range 1-10.
-	// Returns decimal_point s.t.
-	//  v = numerator'/denominator' * 10^(decimal_point-1)
-	//     where numerator' and denominator' are the values of numerator and
-	//     denominator after the call to this function.
 
-	// This routine multiplies numerator/denominator so that its values lies in the
-	// range 1-10. That is after a call to this function we have:
-	//    1 <= (numerator + delta_plus) /denominator < 10.
-	// Let numerator the input before modification and numerator' the argument
-	// after modification, then the output-parameter decimal_point is such that
-	//  numerator / denominator * 10^estimated_power ==
-	//    numerator' / denominator' * 10^(decimal_point - 1)
-	// In some cases estimated_power was too low, and this is already the case. We
-	// then simply adjust the power so that 10^(k-1) <= v < 10^k (with k ==
-	// estimated_power) but do not touch the numerator or denominator.
-	// Otherwise the routine multiplies the numerator and the deltas by 10.
+	/**
+	 *  Multiplies numerator/denominator so that its values lies in the range 1-10.
+	 *  Returns decimal_point s.t.
+	 *   v = numerator'/denominator' * 10^(decimal_point-1)
+	 * 	 where numerator' and denominator' are the values of numerator and
+	 * 	 denominator after the call to this function.
+	 *
+	 *  This routine multiplies numerator/denominator so that its values lies in the
+	 *  range 1-10. That is after a call to this function we have:
+	 * 	1 <= (numerator + delta_plus) /denominator < 10.
+	 *  Let numerator the input before modification and numerator' the argument
+	 *  after modification, then the output-parameter decimal_point is such that
+	 *   numerator / denominator * 10^estimated_power ==
+	 * 	numerator' / denominator' * 10^(decimal_point - 1)
+	 *  In some cases estimated_power was too low, and this is already the case. We
+	 *  then simply adjust the power so that 10^(k-1) <= v < 10^k (with k ==
+	 *  estimated_power) but do not touch the numerator or denominator.
+	 *  Otherwise the routine multiplies the numerator and the deltas by 10.
+	 */
 	private static void FixupMultiply10(int estimated_power, boolean is_even,
 								int* decimal_point,
 								Bignum* numerator, Bignum* denominator,

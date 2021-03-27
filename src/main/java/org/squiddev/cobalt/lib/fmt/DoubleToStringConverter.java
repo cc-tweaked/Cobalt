@@ -31,42 +31,59 @@
 package org.squiddev.cobalt.lib.fmt;
 
 public class DoubleToStringConverter {
-	// When calling ToFixed with a double > 10^kMaxFixedDigitsBeforePoint
-	// or a requested_digits parameter > kMaxFixedDigitsAfterPoint then the
-	// function returns false.
+	/**
+	 *  When calling ToFixed with a double > 10^kMaxFixedDigitsBeforePoint
+	 *  or a requested_digits parameter > kMaxFixedDigitsAfterPoint then the
+	 *  function returns false.
+	 */
 	public static final int kMaxFixedDigitsBeforePoint = 60;
 	public static final int kMaxFixedDigitsAfterPoint = 100;
 
-	// When calling ToExponential with a requested_digits
-	// parameter > kMaxExponentialDigits then the function returns false.
+	/**
+	 *  When calling ToExponential with a requested_digits
+	 *  parameter > kMaxExponentialDigits then the function returns false.
+	 */
 	public static final int kMaxExponentialDigits = 120;
 
-	// When calling ToPrecision with a requested_digits
-	// parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
-	// then the function returns false.
+	/**
+	 *  When calling ToPrecision with a requested_digits
+	 *  parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
+	 *  then the function returns false.
+	 */
 	public static final int kMinPrecisionDigits = 1;
+	/**
+	 *  When calling ToPrecision with a requested_digits
+	 *  parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
+	 *  then the function returns false.
+	 */
 	public static final int kMaxPrecisionDigits = 120;
 
-	// The maximal number of digits that are needed to emit a double in base 10.
-	// A higher precision can be achieved by using more digits, but the shortest
-	// accurate representation of any double will never use more digits than
-	// kBase10MaximalLength.
-	// Note that DoubleToAscii null-terminates its input. So the given buffer
-	// should be at least kBase10MaximalLength + 1 characters long.
+	/**
+	 * 	 The maximal number of digits that are needed to emit a double in base 10.
+	 * 	 A higher precision can be achieved by using more digits, but the shortest
+	 * 	 accurate representation of any double will never use more digits than
+	 * 	 kBase10MaximalLength.
+	 * 	 Note that DoubleToAscii null-terminates its input. So the given buffer
+	 * 	 should be at least kBase10MaximalLength + 1 characters long.
+	 */
 	public static final int kBase10MaximalLength = 17;
 
-	// The maximal number of digits that are needed to emit a single in base 10.
-	// A higher precision can be achieved by using more digits, but the shortest
-	// accurate representation of any single will never use more digits than
-	// kBase10MaximalLengthSingle.
+	/**
+	 *  The maximal number of digits that are needed to emit a single in base 10.
+	 *  A higher precision can be achieved by using more digits, but the shortest
+	 *  accurate representation of any single will never use more digits than
+	 *  kBase10MaximalLengthSingle.
+	 */
 	public static final int kBase10MaximalLengthSingle = 9;
 
-	// The length of the longest string that 'ToShortest' can produce when the
-	// converter is instantiated with EcmaScript defaults (see
-	// 'EcmaScriptConverter')
-	// This value does not include the trailing '\0' character.
-	// This amount of characters is needed for negative values that hit the
-	// 'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
+	/**
+	 *  The length of the longest string that 'ToShortest' can produce when the
+	 *  converter is instantiated with EcmaScript defaults (see
+	 *  'EcmaScriptConverter')
+	 *  This value does not include the trailing '\0' character.
+	 *  This amount of characters is needed for negative values that hit the
+	 *  'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
+	 */
 	public static final int kMaxCharsEcmaScriptShortest = 25;
 
 	public enum Flags {
@@ -80,8 +97,8 @@ public class DoubleToStringConverter {
 
 
 	private final int flags_;
-	private final char* infinity_symbol_;
-	private final char* nan_symbol_;
+	private final String infinity_symbol_;
+	private final String nan_symbol_;
 	private final char exponent_character_;
 	private final int decimal_in_shortest_low_;
 	private final int decimal_in_shortest_high_;
@@ -89,62 +106,64 @@ public class DoubleToStringConverter {
 	private final int max_trailing_padding_zeroes_in_precision_mode_;
 	private final int min_exponent_width_;
 
-	// Flags should be a bit-or combination of the possible Flags-enum.
-	//  - NO_FLAGS: no special flags.
-	//  - EMIT_POSITIVE_EXPONENT_SIGN: when the number is converted into exponent
-	//    form, emits a '+' for positive exponents. Example: 1.2e+2.
-	//  - EMIT_TRAILING_DECIMAL_POINT: when the input number is an integer and is
-	//    converted into decimal format then a trailing decimal point is appended.
-	//    Example: 2345.0 is converted to "2345.".
-	//  - EMIT_TRAILING_ZERO_AFTER_POINT: in addition to a trailing decimal point
-	//    emits a trailing '0'-character. This flag requires the
-	//    EMIT_TRAILING_DECIMAL_POINT flag.
-	//    Example: 2345.0 is converted to "2345.0".
-	//  - UNIQUE_ZERO: "-0.0" is converted to "0.0".
-	//  - NO_TRAILING_ZERO: Trailing zeros are removed from the fractional portion
-	//    of the result in precision mode. Matches printf's %g.
-	//    When EMIT_TRAILING_ZERO_AFTER_POINT is also given, one trailing zero is
-	//    preserved.
-	//
-	// Infinity symbol and nan_symbol provide the string representation for these
-	// special values. If the string is NULL and the special value is encountered
-	// then the conversion functions return false.
-	//
-	// The exponent_character is used in exponential representations. It is
-	// usually 'e' or 'E'.
-	//
-	// When converting to the shortest representation the converter will
-	// represent input numbers in decimal format if they are in the interval
-	// [10^decimal_in_shortest_low; 10^decimal_in_shortest_high[
-	//    (lower boundary included, greater boundary excluded).
-	// Example: with decimal_in_shortest_low = -6 and
-	//               decimal_in_shortest_high = 21:
-	//   ToShortest(0.000001)  -> "0.000001"
-	//   ToShortest(0.0000001) -> "1e-7"
-	//   ToShortest(111111111111111111111.0)  -> "111111111111111110000"
-	//   ToShortest(100000000000000000000.0)  -> "100000000000000000000"
-	//   ToShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
-	//
-	// When converting to precision mode the converter may add
-	// max_leading_padding_zeroes before returning the number in exponential
-	// format.
-	// Example with max_leading_padding_zeroes_in_precision_mode = 6.
-	//   ToPrecision(0.0000012345, 2) -> "0.0000012"
-	//   ToPrecision(0.00000012345, 2) -> "1.2e-7"
-	// Similarily the converter may add up to
-	// max_trailing_padding_zeroes_in_precision_mode in precision mode to avoid
-	// returning an exponential representation. A zero added by the
-	// EMIT_TRAILING_ZERO_AFTER_POINT flag is counted for this limit.
-	// Examples for max_trailing_padding_zeroes_in_precision_mode = 1:
-	//   ToPrecision(230.0, 2) -> "230"
-	//   ToPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
-	//   ToPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
-	//
-	// The min_exponent_width is used for exponential representations.
-	// The converter adds leading '0's to the exponent until the exponent
-	// is at least min_exponent_width digits long.
-	// The min_exponent_width is clamped to 5.
-	// As such, the exponent may never have more than 5 digits in total.
+	/**
+	 *  Flags should be a bit-or combination of the possible Flags-enum.
+	 *   - NO_FLAGS: no special flags.
+	 *   - EMIT_POSITIVE_EXPONENT_SIGN: when the number is converted into exponent
+	 * 	form, emits a '+' for positive exponents. Example: 1.2e+2.
+	 *   - EMIT_TRAILING_DECIMAL_POINT: when the input number is an integer and is
+	 * 	converted into decimal format then a trailing decimal point is appended.
+	 * 	Example: 2345.0 is converted to "2345.".
+	 *   - EMIT_TRAILING_ZERO_AFTER_POINT: in addition to a trailing decimal point
+	 * 	emits a trailing '0'-character. This flag requires the
+	 * 	EMIT_TRAILING_DECIMAL_POINT flag.
+	 * 	Example: 2345.0 is converted to "2345.0".
+	 *   - UNIQUE_ZERO: "-0.0" is converted to "0.0".
+	 *   - NO_TRAILING_ZERO: Trailing zeros are removed from the fractional portion
+	 * 	of the result in precision mode. Matches printf's %g.
+	 * 	When EMIT_TRAILING_ZERO_AFTER_POINT is also given, one trailing zero is
+	 * 	preserved.
+	 *
+	 *  Infinity symbol and nan_symbol provide the string representation for these
+	 *  special values. If the string is NULL and the special value is encountered
+	 *  then the conversion functions return false.
+	 *
+	 *  The exponent_character is used in exponential representations. It is
+	 *  usually 'e' or 'E'.
+	 *
+	 *  When converting to the shortest representation the converter will
+	 *  represent input numbers in decimal format if they are in the interval
+	 *  [10^decimal_in_shortest_low; 10^decimal_in_shortest_high[
+	 * 	(lower boundary included, greater boundary excluded).
+	 *  Example: with decimal_in_shortest_low = -6 and
+	 * 			   decimal_in_shortest_high = 21:
+	 *    ToShortest(0.000001)  -> "0.000001"
+	 *    ToShortest(0.0000001) -> "1e-7"
+	 *    ToShortest(111111111111111111111.0)  -> "111111111111111110000"
+	 *    ToShortest(100000000000000000000.0)  -> "100000000000000000000"
+	 *    ToShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
+	 *
+	 *  When converting to precision mode the converter may add
+	 *  max_leading_padding_zeroes before returning the number in exponential
+	 *  format.
+	 *  Example with max_leading_padding_zeroes_in_precision_mode = 6.
+	 *    ToPrecision(0.0000012345, 2) -> "0.0000012"
+	 *    ToPrecision(0.00000012345, 2) -> "1.2e-7"
+	 *  Similarily the converter may add up to
+	 *  max_trailing_padding_zeroes_in_precision_mode in precision mode to avoid
+	 *  returning an exponential representation. A zero added by the
+	 *  EMIT_TRAILING_ZERO_AFTER_POINT flag is counted for this limit.
+	 *  Examples for max_trailing_padding_zeroes_in_precision_mode = 1:
+	 *    ToPrecision(230.0, 2) -> "230"
+	 *    ToPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
+	 *    ToPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
+	 *
+	 *  The min_exponent_width is used for exponential representations.
+	 *  The converter adds leading '0's to the exponent until the exponent
+	 *  is at least min_exponent_width digits long.
+	 *  The min_exponent_width is clamped to 5.
+	 *  As such, the exponent may never have more than 5 digits in total.
+	 */
 	public DoubleToStringConverter(int flags,
                           const char* infinity_symbol,
                           const char* nan_symbol,
@@ -171,15 +190,17 @@ public class DoubleToStringConverter {
 				!((flags & EMIT_TRAILING_ZERO_AFTER_POINT) != 0));
 	}
 
-	// Returns a converter following the EcmaScript specification.
-	//
-	// Flags: UNIQUE_ZERO and EMIT_POSITIVE_EXPONENT_SIGN.
-	// Special values: "Infinity" and "NaN".
-	// Lower case 'e' for exponential values.
-	// decimal_in_shortest_low: -6
-	// decimal_in_shortest_high: 21
-	// max_leading_padding_zeroes_in_precision_mode: 6
-	// max_trailing_padding_zeroes_in_precision_mode: 0
+	/**
+	 *  Returns a converter following the EcmaScript specification.
+	 *
+	 *  Flags: UNIQUE_ZERO and EMIT_POSITIVE_EXPONENT_SIGN.
+	 *  Special values: "Infinity" and "NaN".
+	 *  Lower case 'e' for exponential values.
+	 *  decimal_in_shortest_low: -6
+	 *  decimal_in_shortest_high: 21
+	 *  max_leading_padding_zeroes_in_precision_mode: 6
+	 *  max_trailing_padding_zeroes_in_precision_mode: 0
+	 */
 	public static final DoubleToStringConverter& EcmaScriptConverter() {
 		int flags = UNIQUE_ZERO | EMIT_POSITIVE_EXPONENT_SIGN;
 		static DoubleToStringConverter converter(flags,
@@ -191,57 +212,62 @@ public class DoubleToStringConverter {
 		return converter;
 	}
 
-	// Computes the shortest string of digits that correctly represent the input
-	// number. Depending on decimal_in_shortest_low and decimal_in_shortest_high
-	// (see constructor) it then either returns a decimal representation, or an
-	// exponential representation.
-	// Example with decimal_in_shortest_low = -6,
-	//              decimal_in_shortest_high = 21,
-	//              EMIT_POSITIVE_EXPONENT_SIGN activated, and
-	//              EMIT_TRAILING_DECIMAL_POINT deactived:
-	//   ToShortest(0.000001)  -> "0.000001"
-	//   ToShortest(0.0000001) -> "1e-7"
-	//   ToShortest(111111111111111111111.0)  -> "111111111111111110000"
-	//   ToShortest(100000000000000000000.0)  -> "100000000000000000000"
-	//   ToShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
-	//
-	// Note: the conversion may round the output if the returned string
-	// is accurate enough to uniquely identify the input-number.
-	// For example the most precise representation of the double 9e59 equals
-	// "899999999999999918767229449717619953810131273674690656206848", but
-	// the converter will return the shorter (but still correct) "9e59".
-	//
-	// Returns true if the conversion succeeds. The conversion always succeeds
-	// except when the input value is special and no infinity_symbol or
-	// nan_symbol has been given to the constructor.
-	//
-	// The length of the longest result is the maximum of the length of the
-	// following string representations (each with possible examples):
-	// - NaN and negative infinity: "NaN", "-Infinity", "-inf".
-	// - -10^(decimal_in_shortest_high - 1):
-	//      "-100000000000000000000", "-1000000000000000.0"
-	// - the longest string in range [0; -10^decimal_in_shortest_low]. Generally,
-	//   this string is 3 + kBase10MaximalLength - decimal_in_shortest_low.
-	//   (Sign, '0', decimal point, padding zeroes for decimal_in_shortest_low,
-	//   and the significant digits).
-	//      "-0.0000033333333333333333", "-0.0012345678901234567"
-	// - the longest exponential representation. (A negative number with
-	//   kBase10MaximalLength significant digits).
-	//      "-1.7976931348623157e+308", "-1.7976931348623157E308"
-	// In addition, the buffer must be able to hold the trailing '\0' character.
+
+	/**
+	 *  Computes the shortest string of digits that correctly represent the input
+	 *  number. Depending on decimal_in_shortest_low and decimal_in_shortest_high
+	 *  (see constructor) it then either returns a decimal representation, or an
+	 *  exponential representation.
+	 *  Example with decimal_in_shortest_low = -6,
+	 * 			  decimal_in_shortest_high = 21,
+	 * 			  EMIT_POSITIVE_EXPONENT_SIGN activated, and
+	 * 			  EMIT_TRAILING_DECIMAL_POINT deactived:
+	 *    ToShortest(0.000001)  -> "0.000001"
+	 *    ToShortest(0.0000001) -> "1e-7"
+	 *    ToShortest(111111111111111111111.0)  -> "111111111111111110000"
+	 *    ToShortest(100000000000000000000.0)  -> "100000000000000000000"
+	 *    ToShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
+	 *
+	 *  Note: the conversion may round the output if the returned string
+	 *  is accurate enough to uniquely identify the input-number.
+	 *  For example the most precise representation of the double 9e59 equals
+	 *  "899999999999999918767229449717619953810131273674690656206848", but
+	 *  the converter will return the shorter (but still correct) "9e59".
+	 *
+	 *  Returns true if the conversion succeeds. The conversion always succeeds
+	 *  except when the input value is special and no infinity_symbol or
+	 *  nan_symbol has been given to the constructor.
+	 *
+	 *  The length of the longest result is the maximum of the length of the
+	 *  following string representations (each with possible examples):
+	 *  - NaN and negative infinity: "NaN", "-Infinity", "-inf".
+	 *  - -10^(decimal_in_shortest_high - 1):
+	 * 	  "-100000000000000000000", "-1000000000000000.0"
+	 *  - the longest string in range [0; -10^decimal_in_shortest_low]. Generally,
+	 *    this string is 3 + kBase10MaximalLength - decimal_in_shortest_low.
+	 *    (Sign, '0', decimal point, padding zeroes for decimal_in_shortest_low,
+	 *    and the significant digits).
+	 * 	  "-0.0000033333333333333333", "-0.0012345678901234567"
+	 *  - the longest exponential representation. (A negative number with
+	 *    kBase10MaximalLength significant digits).
+	 * 	  "-1.7976931348623157e+308", "-1.7976931348623157E308"
+	 *  In addition, the buffer must be able to hold the trailing '\0' character.
+	 */
 	public boolean ToShortest(double value, StringBuilder* result_builder) {
 		return ToShortestIeeeNumber(value, result_builder, SHORTEST);
 	}
 
-	// Same as ToShortest, but for single-precision floats.
-	public boolean ToShortestSingle(float value, StringBuilder* result_builder) {
+	/** Same as ToShortest, but for single-precision floats. */
+	public boolean ToShortestSingle(float value, StringBuilder result_builder) {
 		return ToShortestIeeeNumber(value, result_builder, SHORTEST_SINGLE);
 	}
 
-	// If the value is a special value (NaN or Infinity) constructs the
-	// corresponding string using the configured infinity/nan-symbol.
-	// If either of them is NULL or the value is not special then the
-	// function returns false.
+	/**
+	 * 	 If the value is a special value (NaN or Infinity) constructs the
+	 * 	 corresponding string using the configured infinity/nan-symbol.
+	 * 	 If either of them is NULL or the value is not special then the
+	 * 	 function returns false.
+	 */
 	private boolean HandleSpecialValues(double value, StringBuilder* result_builder) {
 		Double double_inspect(value);
 		if (double_inspect.IsInfinite()) {
@@ -260,8 +286,10 @@ public class DoubleToStringConverter {
 		return false;
 	}
 
-	// Constructs an exponential representation (i.e. 1.234e56).
-	// The given exponent assumes a decimal point after the first decimal digit.
+	/**
+	 * 	 Constructs an exponential representation (i.e. 1.234e56).
+	 * 	 The given exponent assumes a decimal point after the first decimal digit.
+	 */
 	private void CreateExponentialRepresentation(const char* decimal_digits,
 												 int length,
 												 int exponent,
@@ -304,7 +332,7 @@ public class DoubleToStringConverter {
 				kMaxExponentLength - first_char_pos);
 	}
 
-	// Creates a decimal representation (i.e 1234.5678).
+	/** Creates a decimal representation (i.e 1234.5678). */
 	private void CreateDecimalRepresentation(const char* decimal_digits,
 											 int length,
 											 int decimal_point,
@@ -351,7 +379,7 @@ public class DoubleToStringConverter {
 		}
 	}
 
-	// Implementation for ToShortest and ToShortestSingle.
+	/** Implementation for ToShortest and ToShortestSingle. */
 	private boolean ToShortestIeeeNumber(double value,
 										 StringBuilder* result_builder,
 										 DtoaMode mode) {
@@ -389,41 +417,43 @@ public class DoubleToStringConverter {
 	}
 
 
-	// Computes a decimal representation with a fixed number of digits after the
-	// decimal point. The last emitted digit is rounded.
-	//
-	// Examples:
-	//   ToFixed(3.12, 1) -> "3.1"
-	//   ToFixed(3.1415, 3) -> "3.142"
-	//   ToFixed(1234.56789, 4) -> "1234.5679"
-	//   ToFixed(1.23, 5) -> "1.23000"
-	//   ToFixed(0.1, 4) -> "0.1000"
-	//   ToFixed(1e30, 2) -> "1000000000000000019884624838656.00"
-	//   ToFixed(0.1, 30) -> "0.100000000000000005551115123126"
-	//   ToFixed(0.1, 17) -> "0.10000000000000001"
-	//
-	// If requested_digits equals 0, then the tail of the result depends on
-	// the EMIT_TRAILING_DECIMAL_POINT and EMIT_TRAILING_ZERO_AFTER_POINT.
-	// Examples, for requested_digits == 0,
-	//   let EMIT_TRAILING_DECIMAL_POINT and EMIT_TRAILING_ZERO_AFTER_POINT be
-	//    - false and false: then 123.45 -> 123
-	//                             0.678 -> 1
-	//    - true and false: then 123.45 -> 123.
-	//                            0.678 -> 1.
-	//    - true and true: then 123.45 -> 123.0
-	//                           0.678 -> 1.0
-	//
-	// Returns true if the conversion succeeds. The conversion always succeeds
-	// except for the following cases:
-	//   - the input value is special and no infinity_symbol or nan_symbol has
-	//     been provided to the constructor,
-	//   - 'value' > 10^kMaxFixedDigitsBeforePoint, or
-	//   - 'requested_digits' > kMaxFixedDigitsAfterPoint.
-	// The last two conditions imply that the result for non-special values never
-	// contains more than
-	//  1 + kMaxFixedDigitsBeforePoint + 1 + kMaxFixedDigitsAfterPoint characters
-	// (one additional character for the sign, and one for the decimal point).
-	// In addition, the buffer must be able to hold the trailing '\0' character.
+	/**
+	 *  Computes a decimal representation with a fixed number of digits after the
+	 *  decimal point. The last emitted digit is rounded.
+	 *
+	 *  Examples:
+	 *    ToFixed(3.12, 1) -> "3.1"
+	 *    ToFixed(3.1415, 3) -> "3.142"
+	 *    ToFixed(1234.56789, 4) -> "1234.5679"
+	 *    ToFixed(1.23, 5) -> "1.23000"
+	 *    ToFixed(0.1, 4) -> "0.1000"
+	 *    ToFixed(1e30, 2) -> "1000000000000000019884624838656.00"
+	 *    ToFixed(0.1, 30) -> "0.100000000000000005551115123126"
+	 *    ToFixed(0.1, 17) -> "0.10000000000000001"
+	 *
+	 *  If requested_digits equals 0, then the tail of the result depends on
+	 *  the EMIT_TRAILING_DECIMAL_POINT and EMIT_TRAILING_ZERO_AFTER_POINT.
+	 *  Examples, for requested_digits == 0,
+	 *    let EMIT_TRAILING_DECIMAL_POINT and EMIT_TRAILING_ZERO_AFTER_POINT be
+	 * 	- false and false: then 123.45 -> 123
+	 * 							 0.678 -> 1
+	 * 	- true and false: then 123.45 -> 123.
+	 * 							0.678 -> 1.
+	 * 	- true and true: then 123.45 -> 123.0
+	 * 						   0.678 -> 1.0
+	 *
+	 *  Returns true if the conversion succeeds. The conversion always succeeds
+	 *  except for the following cases:
+	 *    - the input value is special and no infinity_symbol or nan_symbol has
+	 * 	 been provided to the constructor,
+	 *    - 'value' > 10^kMaxFixedDigitsBeforePoint, or
+	 *    - 'requested_digits' > kMaxFixedDigitsAfterPoint.
+	 *  The last two conditions imply that the result for non-special values never
+	 *  contains more than
+	 *   1 + kMaxFixedDigitsBeforePoint + 1 + kMaxFixedDigitsAfterPoint characters
+	 *  (one additional character for the sign, and one for the decimal point).
+	 *  In addition, the buffer must be able to hold the trailing '\0' character.
+	 */
 	boolean ToFixed(double value,
 				 int requested_digits,
 				 StringBuilder* result_builder) {
@@ -459,36 +489,36 @@ public class DoubleToStringConverter {
 		return true;
 	}
 
-	// Computes a representation in exponential format with requested_digits
-	// after the decimal point. The last emitted digit is rounded.
-	// If requested_digits equals -1, then the shortest exponential representation
-	// is computed.
-	//
-	// Examples with EMIT_POSITIVE_EXPONENT_SIGN deactivated, and
-	//               exponent_character set to 'e'.
-	//   ToExponential(3.12, 1) -> "3.1e0"
-	//   ToExponential(5.0, 3) -> "5.000e0"
-	//   ToExponential(0.001, 2) -> "1.00e-3"
-	//   ToExponential(3.1415, -1) -> "3.1415e0"
-	//   ToExponential(3.1415, 4) -> "3.1415e0"
-	//   ToExponential(3.1415, 3) -> "3.142e0"
-	//   ToExponential(123456789000000, 3) -> "1.235e14"
-	//   ToExponential(1000000000000000019884624838656.0, -1) -> "1e30"
-	//   ToExponential(1000000000000000019884624838656.0, 32) ->
-	//                     "1.00000000000000001988462483865600e30"
-	//   ToExponential(1234, 0) -> "1e3"
-	//
-	// Returns true if the conversion succeeds. The conversion always succeeds
-	// except for the following cases:
-	//   - the input value is special and no infinity_symbol or nan_symbol has
-	//     been provided to the constructor,
-	//   - 'requested_digits' > kMaxExponentialDigits.
-	//
-	// The last condition implies that the result never contains more than
-	// kMaxExponentialDigits + 8 characters (the sign, the digit before the
-	// decimal point, the decimal point, the exponent character, the
-	// exponent's sign, and at most 3 exponent digits).
-	// In addition, the buffer must be able to hold the trailing '\0' character.
+	/**
+	 *  Computes a representation in exponential format with requested_digits
+	 *  after the decimal point. The last emitted digit is rounded.
+	 *  If requested_digits equals -1, then the shortest exponential representation
+	 *  is computed.
+	 *
+	 *  Examples with EMIT_POSITIVE_EXPONENT_SIGN deactivated, and
+	 *  exponent_character set to 'e'.
+	 *  ToExponential(3.12, 1) -> "3.1e0"
+	 *  ToExponential(5.0, 3) -> "5.000e0"
+	 *  ToExponential(0.001, 2) -> "1.00e-3"
+	 *  ToExponential(3.1415, -1) -> "3.1415e0"
+	 *  ToExponential(3.1415, 4) -> "3.1415e0"
+	 *  ToExponential(3.1415, 3) -> "3.142e0"
+	 *  ToExponential(123456789000000, 3) -> "1.235e14"
+	 *  ToExponential(1000000000000000019884624838656.0, -1) -> "1e30"
+	 *  ToExponential(1000000000000000019884624838656.0, 32) ->
+	 *  "1.00000000000000001988462483865600e30"
+	 *  ToExponential(1234, 0) -> "1e3"
+	 *
+	 *  Returns true if the conversion succeeds. The conversion always succeeds
+	 *  except for the following cases:
+	 *  - the input value is special and no infinity_symbol or nan_symbol has
+	 *  been provided to the constructor,
+	 *  - 'requested_digits' > kMaxExponentialDigits.
+	 *  The last condition implies that the result will never contains more than
+	 *  kMaxExponentialDigits + 8 characters (the sign, the digit before the
+	 *  decimal point, the decimal point, the exponent character, the
+	 *  exponent's sign, and at most 3 exponent digits).
+	 */
 	boolean ToExponential(double value,
 					   int requested_digits,
 					   StringBuilder* result_builder) {
@@ -542,44 +572,44 @@ public class DoubleToStringConverter {
 		return true;
 	}
 
-
-
-	// Computes 'precision' leading digits of the given 'value' and returns them
-	// either in exponential or decimal format, depending on
-	// max_{leading|trailing}_padding_zeroes_in_precision_mode (given to the
-	// constructor).
-	// The last computed digit is rounded.
-	//
-	// Example with max_leading_padding_zeroes_in_precision_mode = 6.
-	//   ToPrecision(0.0000012345, 2) -> "0.0000012"
-	//   ToPrecision(0.00000012345, 2) -> "1.2e-7"
-	// Similarily the converter may add up to
-	// max_trailing_padding_zeroes_in_precision_mode in precision mode to avoid
-	// returning an exponential representation. A zero added by the
-	// EMIT_TRAILING_ZERO_AFTER_POINT flag is counted for this limit.
-	// Examples for max_trailing_padding_zeroes_in_precision_mode = 1:
-	//   ToPrecision(230.0, 2) -> "230"
-	//   ToPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
-	//   ToPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
-	// Examples for max_trailing_padding_zeroes_in_precision_mode = 3, and no
-	//    EMIT_TRAILING_ZERO_AFTER_POINT:
-	//   ToPrecision(123450.0, 6) -> "123450"
-	//   ToPrecision(123450.0, 5) -> "123450"
-	//   ToPrecision(123450.0, 4) -> "123500"
-	//   ToPrecision(123450.0, 3) -> "123000"
-	//   ToPrecision(123450.0, 2) -> "1.2e5"
-	//
-	// Returns true if the conversion succeeds. The conversion always succeeds
-	// except for the following cases:
-	//   - the input value is special and no infinity_symbol or nan_symbol has
-	//     been provided to the constructor,
-	//   - precision < kMinPericisionDigits
-	//   - precision > kMaxPrecisionDigits
-	//
-	// The last condition implies that the result never contains more than
-	// kMaxPrecisionDigits + 7 characters (the sign, the decimal point, the
-	// exponent character, the exponent's sign, and at most 3 exponent digits).
-	// In addition, the buffer must be able to hold the trailing '\0' character.
+	/**
+	 *  Computes 'precision' leading digits of the given 'value' and returns them
+	 *  either in exponential or decimal format, depending on
+	 *  max_{leading|trailing}_padding_zeroes_in_precision_mode (given to the
+	 *  constructor).
+	 *  The last computed digit is rounded.
+	 *
+	 *  Example with max_leading_padding_zeroes_in_precision_mode = 6.
+	 *    ToPrecision(0.0000012345, 2) -> "0.0000012"
+	 *    ToPrecision(0.00000012345, 2) -> "1.2e-7"
+	 *  Similarily the converter may add up to
+	 *  max_trailing_padding_zeroes_in_precision_mode in precision mode to avoid
+	 *  returning an exponential representation. A zero added by the
+	 *  EMIT_TRAILING_ZERO_AFTER_POINT flag is counted for this limit.
+	 *  Examples for max_trailing_padding_zeroes_in_precision_mode = 1:
+	 *    ToPrecision(230.0, 2) -> "230"
+	 *    ToPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
+	 *    ToPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
+	 *  Examples for max_trailing_padding_zeroes_in_precision_mode = 3, and no
+	 * 	EMIT_TRAILING_ZERO_AFTER_POINT:
+	 *    ToPrecision(123450.0, 6) -> "123450"
+	 *    ToPrecision(123450.0, 5) -> "123450"
+	 *    ToPrecision(123450.0, 4) -> "123500"
+	 *    ToPrecision(123450.0, 3) -> "123000"
+	 *    ToPrecision(123450.0, 2) -> "1.2e5"
+	 *
+	 *  Returns true if the conversion succeeds. The conversion always succeeds
+	 *  except for the following cases:
+	 *    - the input value is special and no infinity_symbol or nan_symbol has
+	 * 	 been provided to the constructor,
+	 *    - precision < kMinPericisionDigits
+	 *    - precision > kMaxPrecisionDigits
+	 *
+	 *  The last condition implies that the result never contains more than
+	 *  kMaxPrecisionDigits + 7 characters (the sign, the decimal point, the
+	 *  exponent character, the exponent's sign, and at most 3 exponent digits).
+	 *  In addition, the buffer must be able to hold the trailing '\0' character.
+	 */
 	boolean ToPrecision(double value,
 					 int precision,
 					 StringBuilder* result_builder) {
@@ -676,50 +706,52 @@ public class DoubleToStringConverter {
 		}
 	}
 
-
-	// Converts the given double 'v' to digit characters. 'v' must not be NaN,
-	// +Infinity, or -Infinity. In SHORTEST_SINGLE-mode this restriction also
-	// applies to 'v' after it has been casted to a single-precision float. That
-	// is, in this mode static_cast<float>(v) must not be NaN, +Infinity or
-	// -Infinity.
-	//
-	// The result should be interpreted as buffer * 10^(point-length).
-	//
-	// The digits are written to the buffer in the platform's charset, which is
-	// often UTF-8 (with ASCII-range digits) but may be another charset, such
-	// as EBCDIC.
-	//
-	// The output depends on the given mode:
-	//  - SHORTEST: produce the least amount of digits for which the internal
-	//   identity requirement is still satisfied. If the digits are printed
-	//   (together with the correct exponent) then reading this number will give
-	//   'v' again. The buffer will choose the representation that is closest to
-	//   'v'. If there are two at the same distance, than the one farther away
-	//   from 0 is chosen (halfway cases - ending with 5 - are rounded up).
-	//   In this mode the 'requested_digits' parameter is ignored.
-	//  - SHORTEST_SINGLE: same as SHORTEST but with single-precision.
-	//  - FIXED: produces digits necessary to print a given number with
-	//   'requested_digits' digits after the decimal point. The produced digits
-	//   might be too short in which case the caller has to fill the remainder
-	//   with '0's.
-	//   Example: toFixed(0.001, 5) is allowed to return buffer="1", point=-2.
-	//   Halfway cases are rounded towards +/-Infinity (away from 0). The call
-	//   toFixed(0.15, 2) thus returns buffer="2", point=0.
-	//   The returned buffer may contain digits that would be truncated from the
-	//   shortest representation of the input.
-	//  - PRECISION: produces 'requested_digits' where the first digit is not '0'.
-	//   Even though the length of produced digits usually equals
-	//   'requested_digits', the function is allowed to return fewer digits, in
-	//   which case the caller has to fill the missing digits with '0's.
-	//   Halfway cases are again rounded away from 0.
-	// DoubleToAscii expects the given buffer to be big enough to hold all
-	// digits and a terminating null-character. In SHORTEST-mode it expects a
-	// buffer of at least kBase10MaximalLength + 1. In all other modes the
-	// requested_digits parameter and the padding-zeroes limit the size of the
-	// output. Don't forget the decimal point, the exponent character and the
-	// terminating null-character when computing the maximal output size.
-	// The given length is only used in debug mode to ensure the buffer is big
-	// enough.
+	/**
+	 * 	 Converts the given double 'v' to digit characters. 'v' must not be NaN,
+	 * 	 +Infinity, or -Infinity. In SHORTEST_SINGLE-mode this restriction also
+	 * 	 applies to 'v' after it has been casted to a single-precision float. That
+	 * 	 is, in this mode static_cast<float>(v) must not be NaN, +Infinity or
+	 * 	 -Infinity.
+	 *
+	 * 	 The result should be interpreted as outBuffer * 10^(outPoint-outLength).
+	 *
+	 * 	 The digits are written to the outBuffer in the platform's charset, which is
+	 * 	 often UTF-8 (with ASCII-range digits) but may be another charset, such
+	 * 	 as EBCDIC.
+	 *
+	 * 	 The output depends on the given mode:
+	 * 	  - SHORTEST: produce the least amount of digits for which the internal
+	 * 	   identity requirement is still satisfied. If the digits are printed
+	 * 	   (together with the correct exponent) then reading this number will give
+	 * 	   'v' again. The outBuffer will choose the representation that is closest to
+	 * 	   'v'. If there are two at the same distance, than the one farther away
+	 * 	   from 0 is chosen (halfway cases - ending with 5 - are rounded up).
+	 * 	   In this mode the 'requested_digits' parameter is ignored.
+	 * 	  - SHORTEST_SINGLE: same as SHORTEST but with single-precision.
+	 * 	  - FIXED: produces digits necessary to print a given number with
+	 * 	   'requested_digits' digits after the decimal outPoint. The produced digits
+	 * 	   might be too short in which case the caller has to fill the remainder
+	 * 	   with '0's.
+	 * 	   Example: ToFixed(0.001, 5) is allowed to return outBuffer="1", outPoint=-2.
+	 * 	   Halfway cases are rounded towards +/-Infinity (away from 0). The call
+	 * 	   ToFixed(0.15, 2) thus returns outBuffer="2", outPoint=0.
+	 * 	   The returned outBuffer may contain digits that would be truncated from the
+	 * 	   shortest representation of the input.
+	 * 	  - PRECISION: produces 'requested_digits' where the first digit is not '0'.
+	 * 	   Even though the outLength of produced digits usually equals
+	 * 	   'requested_digits', the function is allowed to return fewer digits, in
+	 * 	   which case the caller has to fill the missing digits with '0's.
+	 * 	   Halfway cases are again rounded away from 0.
+	 * 	 DoubleToAscii expects the given outBuffer to be big enough to hold all
+	 * 	 digits and a terminating null-character. In SHORTEST-mode it expects a
+	 * 	 outBuffer of at least kBase10MaximalLength + 1. In all other modes the
+	 * 	 requested_digits parameter and the padding-zeroes limit the size of the
+	 * 	 output. Don't forget the decimal outPoint, the exponent character and the
+	 * 	 terminating null-character when computing the maximal output size.
+	 * 	 The given outLength is only used in debug mode to ensure the outBuffer is big
+	 * 	 enough.
+	 *
+	 */
 	public static void DoubleToAscii(double v,
 							  DtoaMode mode,
 							  int requested_digits,

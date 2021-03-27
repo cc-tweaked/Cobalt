@@ -50,8 +50,10 @@ public class Ieee {
 			d64_ = DiyFpToUint64(diy_fp);
 		}
 
-		// The value encoded by this Double must be greater or equal to +0.0.
-		// It must not be special (infinity, or NaN).
+		/**
+		 *  The value encoded by this Double must be greater or equal to +0.0.
+		 *  It must not be special (infinity, or NaN).
+		 */
 		public DiyFp AsDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
@@ -80,7 +82,8 @@ public class Ieee {
 			return d64_;
 		}
 
-		// Returns the next greater double. Returns +infinity on input +infinity.
+
+		/** Returns the next greater double. Returns +infinity on input +infinity. */
 		public double NextDouble() {
 			if (d64_ == kInfinity) return Double(kInfinity).value();
 			if (Sign() < 0 && Significand() == 0) {
@@ -123,14 +126,16 @@ public class Ieee {
 			}
 		}
 
-		// Returns true if the double is a denormal.
+		/** Returns true if the double is a denormal. */
 		public bool IsDenormal() {
 			uint64_t d64 = AsUint64();
 			return (d64 & kExponentMask) == 0;
 		}
 
-		// We consider denormals not to be special.
-		// Hence only Infinity and NaN are special.
+		/**
+		 *  We consider denormals not to be special.
+		 *  Hence only Infinity and NaN are special.
+		 */
 		public bool IsSpecial() {
 			uint64_t d64 = AsUint64();
 			return (d64 & kExponentMask) == kExponentMask;
@@ -162,17 +167,21 @@ public class Ieee {
 			return (d64 & kSignMask) == 0? 1: -1;
 		}
 
-		// Precondition: the value encoded by this Double must be greater or equal
-		// than +0.0.
+		/**
+		 * Precondition: the value encoded by this Double must be greater or equal
+		 * than +0.0.
+		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			return DiyFp(Significand() * 2 + 1, Exponent() - 1);
 		}
 
-		// Computes the two boundaries of this.
-		// The bigger boundary (m_plus) is normalized. The lower boundary has the same
-		// exponent as m_plus.
-		// Precondition: the value encoded by this Double must be greater than 0.
+		/**
+		 * Computes the two boundaries of this.
+		 * The bigger boundary (m_plus) is normalized. The lower boundary has the same
+		 * exponent as m_plus.
+		 * Precondition: the value encoded by this Double must be greater than 0.
+		 */
 		public void NormalizedBoundaries(DiyFp* out_m_minus, DiyFp* out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
 			DiyFp v = this->AsDiyFp();
@@ -204,12 +213,14 @@ public class Ieee {
 
 		public double value() { return uint64_to_double(d64_); }
 
-		// Returns the significand size for a given order of magnitude.
-		// If v = f*2^e with 2^p-1 <= f <= 2^p then p+e is v's order of magnitude.
-		// This function returns the number of significant binary digits v will have
-		// once it's encoded into a double. In almost all cases this is equal to
-		// kSignificandSize. The only exceptions are denormals. They start with
-		// leading zeroes and their effective significand-size is hence smaller.
+		/**
+		 *  Returns the significand size for a given order of magnitude.
+		 *  If v = f*2^e with 2^p-1 <= f <= 2^p then p+e is v's order of magnitude.
+		 *  This function returns the number of significant binary digits v will have
+		 *  once it's encoded into a double. In almost all cases this is equal to
+		 *  kSignificandSize. The only exceptions are denormals. They start with
+		 *  leading zeroes and their effective significand-size is hence smaller.
+		 */
 		public static int SignificandSizeForOrderOfMagnitude(int order) {
 			if (order >= (kDenormalExponent + kSignificandSize)) {
 				return kSignificandSize;
@@ -274,15 +285,17 @@ public class Ieee {
 		public Single(float f) { d32_ = float_to_uint32(f); }
 		public Single(uint32_t d32) { this.d32_ = d32; }
 
-		// The value encoded by this Single must be greater or equal to +0.0.
-		// It must not be special (infinity, or NaN).
+		/**
+		 *  The value encoded by this Single must be greater or equal to +0.0.
+		 *  It must not be special (infinity, or NaN).
+		 */
 		public DiyFp AsDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
 			return DiyFp(Significand(), Exponent());
 		}
 
-		// Returns the single's bit as uint64.
+		/** Returns the single's bit as uint64. */
 		public uint32_t AsUint32() {
 			return d32_;
 		}
@@ -306,14 +319,16 @@ public class Ieee {
 			}
 		}
 
-		// Returns true if the single is a denormal.
+		/** Returns true if the single is a denormal. */
 		public boolean IsDenormal() {
 			uint32_t d32 = AsUint32();
 			return (d32 & kExponentMask) == 0;
 		}
 
-		// We consider denormals not to be special.
-		// Hence only Infinity and NaN are special.
+		/**
+		 *  We consider denormals not to be special.
+		 *  Hence only Infinity and NaN are special.
+		 */
 		public boolean IsSpecial() {
 			uint32_t d32 = AsUint32();
 			return (d32 & kExponentMask) == kExponentMask;
@@ -345,10 +360,12 @@ public class Ieee {
 			return (d32 & kSignMask) == 0? 1: -1;
 		}
 
-		// Computes the two boundaries of this.
-		// The bigger boundary (m_plus) is normalized. The lower boundary has the same
-		// exponent as m_plus.
-		// Precondition: the value encoded by this Single must be greater than 0.
+		/**
+		 *  Computes the two boundaries of this.
+		 *  The bigger boundary (m_plus) is normalized. The lower boundary has the same
+		 *  exponent as m_plus.
+		 *  Precondition: the value encoded by this Single must be greater than 0.
+		 */
 		void NormalizedBoundaries(DiyFp* out_m_minus, DiyFp* out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
 			DiyFp v = this->AsDiyFp();
@@ -365,8 +382,10 @@ public class Ieee {
     		*out_m_minus = m_minus;
 		}
 
-		// Precondition: the value encoded by this Single must be greater or equal
-		// than +0.0.
+		/**
+		 *  Precondition: the value encoded by this Single must be greater or equal
+		 *  than +0.0.
+		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			return DiyFp(Significand() * 2 + 1, Exponent() - 1);

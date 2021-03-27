@@ -31,50 +31,67 @@ package org.squiddev.cobalt.lib.fmt;
 
 public class FastDtoa {
 	public enum FastDtoaMode {
-		// Computes the shortest representation of the given input. The returned
-		// result will be the most accurate number of this length. Longer
-		// representations might be more accurate.
+		/**
+		 * 	 Computes the shortest representation of the given input. The returned
+		 * 	 result will be the most accurate number of this length. Longer
+		 * 	 representations might be more accurate.
+		 */
 		FAST_DTOA_SHORTEST,
-		// Same as FAST_DTOA_SHORTEST but for single-precision floats.
+		/** Same as FAST_DTOA_SHORTEST but for single-precision floats. */
 		FAST_DTOA_SHORTEST_SINGLE,
-		// Computes a representation where the precision (number of digits) is
-		// given as input. The precision is independent of the decimal point.
+		/**
+		 * 	 Computes a representation where the precision (number of digits) is
+		 * 	 given as input. The precision is independent of the decimal point.
+		 */
 		FAST_DTOA_PRECISION
 	};
 
-	// FastDtoa will produce at most kFastDtoaMaximalLength digits. This does not
-	// include the terminating '\0' character.
+	/**
+	 *   fastDtoa will produce at most kFastDtoaMaximalLength digits. This does not
+	 * 	 include the terminating '\0' character.
+	 */
 	public static final int kFastDtoaMaximalLength = 17;
-	// Same for single-precision numbers.
+	/** Same for single-precision numbers. */
 	public static final int kFastDtoaMaximalSingleLength = 9;
 
 
 
-	// The minimal and maximal target exponent define the range of w's binary
-	// exponent, where 'w' is the result of multiplying the input by a cached power
-	// of ten.
-	//
-	// A different range might be chosen on a different platform, to optimize digit
-	// generation, but a smaller range requires more powers of ten to be cached.
+	/**
+	 *  The minimal and maximal target exponent define the range of w's binary
+	 *  exponent, where 'w' is the result of multiplying the input by a cached power
+	 *  of ten.
+	 *
+	 *  A different range might be chosen on a different platform, to optimize digit
+	 *  generation, but a smaller range requires more powers of ten to be cached.
+	 */
 	private static final int kMinimalTargetExponent = -60;
+	/**
+	 *  The minimal and maximal target exponent define the range of w's binary
+	 *  exponent, where 'w' is the result of multiplying the input by a cached power
+	 *  of ten.
+	 *
+	 *  A different range might be chosen on a different platform, to optimize digit
+	 *  generation, but a smaller range requires more powers of ten to be cached.
+	 */
 	private static final int kMaximalTargetExponent = -32;
 
-
-	// Adjusts the last digit of the generated number, and screens out generated
-	// solutions that may be inaccurate. A solution may be inaccurate if it is
-	// outside the safe interval, or if we cannot prove that it is closer to the
-	// input than a neighboring representation of the same length.
-	//
-	// Input: * buffer containing the digits of too_high / 10^kappa
-	//        * the buffer's length
-	//        * distance_too_high_w == (too_high - w).f() * unit
-	//        * unsafe_interval == (too_high - too_low).f() * unit
-	//        * rest = (too_high - buffer * 10^kappa).f() * unit
-	//        * ten_kappa = 10^kappa * unit
-	//        * unit = the common multiplier
-	// Output: returns true if the buffer is guaranteed to contain the closest
-	//    representable number to the input.
-	//  Modifies the generated digits in the buffer to approach (round towards) w.
+	/**
+	 *  Adjusts the last digit of the generated number, and screens out generated
+	 *  solutions that may be inaccurate. A solution may be inaccurate if it is
+	 *  outside the safe interval, or if we cannot prove that it is closer to the
+	 *  input than a neighboring representation of the same length.
+	 *
+	 *  Input: * buffer containing the digits of too_high / 10^kappa
+	 * 		* the buffer's length
+	 * 		* distance_too_high_w == (too_high - w).f() * unit
+	 * 		* unsafe_interval == (too_high - too_low).f() * unit
+	 * 		* rest = (too_high - buffer * 10^kappa).f() * unit
+	 * 		* ten_kappa = 10^kappa * unit
+	 * 		* unit = the common multiplier
+	 *  Output: returns true if the buffer is guaranteed to contain the closest
+	 * 	representable number to the input.
+	 *   Modifies the generated digits in the buffer to approach (round towards) w.
+	 */
 	private static boolean RoundWeed(Vector<char> buffer,
 						  int length,
 						  uint64_t distance_too_high_w,
@@ -183,18 +200,20 @@ public class FastDtoa {
 	}
 
 
-	// Rounds the buffer upwards if the result is closer to v by possibly adding
-	// 1 to the buffer. If the precision of the calculation is not sufficient to
-	// round correctly, return false.
-	// The rounding might shift the whole buffer in which case the kappa is
-	// adjusted. For example "99", kappa = 3 might become "10", kappa = 4.
-	//
-	// If 2*rest > ten_kappa then the buffer needs to be round up.
-	// rest can have an error of +/- 1 unit. This function accounts for the
-	// imprecision and returns false, if the rounding direction cannot be
-	// unambiguously determined.
-	//
-	// Precondition: rest < ten_kappa.
+	/**
+	 *  Rounds the buffer upwards if the result is closer to v by possibly adding
+	 *  1 to the buffer. If the precision of the calculation is not sufficient to
+	 *  round correctly, return false.
+	 *  The rounding might shift the whole buffer in which case the kappa is
+	 *  adjusted. For example "99", kappa = 3 might become "10", kappa = 4.
+	 *
+	 *  If 2*rest > ten_kappa then the buffer needs to be round up.
+	 *  rest can have an error of +/- 1 unit. This function accounts for the
+	 *  imprecision and returns false, if the rounding direction cannot be
+	 *  unambiguously determined.
+	 *
+	 *  Precondition: rest < ten_kappa.
+	 */
 	private static boolean RoundWeedCounted(Vector<char> buffer,
 								 int length,
 								 uint64_t rest,
@@ -239,21 +258,24 @@ public class FastDtoa {
 		return false;
 	}
 
-	// Returns the biggest power of ten that is less than or equal to the given
-	// number. We furthermore receive the maximum number of bits 'number' has.
-	//
-	// Returns power == 10^(exponent_plus_one-1) such that
-	//    power <= number < power * 10.
-	// If number_bits == 0 then 0^(0-1) is returned.
-	// The number of bits must be <= 32.
-	// Precondition: number < (1 << (number_bits + 1)).
-
-	// Inspired by the method for finding an integer log base 10 from here:
-	// http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
+	/**
+	 *  Inspired by the method for finding an integer log base 10 from here:
+	 *  http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
+	 */
 	private static final unsigned int kSmallPowersOfTen[] =
 		{0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
 			1000000000};
 
+	/**
+	 *  Returns the biggest power of ten that is less than or equal to the given
+	 *  number. We furthermore receive the maximum number of bits 'number' has.
+	 *
+	 *  Returns power == 10^(exponent_plus_one-1) such that
+	 * 	power <= number < power * 10.
+	 *  If number_bits == 0 then 0^(0-1) is returned.
+	 *  The number of bits must be <= 32.
+	 *  Precondition: number < (1 << (number_bits + 1)).
+	 */
 	static void BiggestPowerTen(uint32_t number,
 								int number_bits,
 								uint32_t* power,
@@ -272,48 +294,51 @@ public class FastDtoa {
 		*exponent_plus_one = exponent_plus_one_guess;
 	}
 
-	// Generates the digits of input number w.
-	// w is a floating-point number (DiyFp), consisting of a significand and an
-	// exponent. Its exponent is bounded by kMinimalTargetExponent and
-	// kMaximalTargetExponent.
-	//       Hence -60 <= w.e() <= -32.
-	//
-	// Returns false if it fails, in which case the generated digits in the buffer
-	// should not be used.
-	// Preconditions:
-	//  * low, w and high are correct up to 1 ulp (unit in the last place). That
-	//    is, their error must be less than a unit of their last digits.
-	//  * low.e() == w.e() == high.e()
-	//  * low < w < high, and taking into account their error: low~ <= high~
-	//  * kMinimalTargetExponent <= w.e() <= kMaximalTargetExponent
-	// Postconditions: returns false if procedure fails.
-	//   otherwise:
-	//     * buffer is not null-terminated, but len contains the number of digits.
-	//     * buffer contains the shortest possible decimal digit-sequence
-	//       such that LOW < buffer * 10^kappa < HIGH, where LOW and HIGH are the
-	//       correct values of low and high (without their error).
-	//     * if more than one decimal representation gives the minimal number of
-	//       decimal digits then the one closest to W (where W is the correct value
-	//       of w) is chosen.
-	// Remark: this procedure takes into account the imprecision of its input
-	//   numbers. If the precision is not enough to guarantee all the postconditions
-	//   then false is returned. This usually happens rarely (~0.5%).
-	//
-	// Say, for the sake of example, that
-	//   w.e() == -48, and w.f() == 0x1234567890abcdef
-	// w's value can be computed by w.f() * 2^w.e()
-	// We can obtain w's integral digits by simply shifting w.f() by -w.e().
-	//  -> w's integral part is 0x1234
-	//  w's fractional part is therefore 0x567890abcdef.
-	// Printing w's integral part is easy (simply print 0x1234 in decimal).
-	// In order to print its fraction we repeatedly multiply the fraction by 10 and
-	// get each digit. Example the first digit after the point would be computed by
-	//   (0x567890abcdef * 10) >> 48. -> 3
-	// The whole thing becomes slightly more complicated because we want to stop
-	// once we have enough digits. That is, once the digits inside the buffer
-	// represent 'w' we can stop. Everything inside the interval low - high
-	// represents w. However we have to pay attention to low, high and w's
-	// imprecision.
+
+	/**
+	 *  Generates the digits of input number w.
+	 *  w is a floating-point number (DiyFp), consisting of a significand and an
+	 *  exponent. Its exponent is bounded by kMinimalTargetExponent and
+	 *  kMaximalTargetExponent.
+	 *        Hence -60 <= w.e() <= -32.
+	 *
+	 *  Returns false if it fails, in which case the generated digits in the buffer
+	 *  should not be used.
+	 *  Preconditions:
+	 *   * low, w and high are correct up to 1 ulp (unit in the last place). That
+	 *     is, their error must be less than a unit of their last digits.
+	 *   * low.e() == w.e() == high.e()
+	 *   * low < w < high, and taking into account their error: low~ <= high~
+	 *   * kMinimalTargetExponent <= w.e() <= kMaximalTargetExponent
+	 *  Postconditions: returns false if procedure fails.
+	 *    otherwise:
+	 *      * buffer is not null-terminated, but len contains the number of digits.
+	 *      * buffer contains the shortest possible decimal digit-sequence
+	 *        such that LOW < buffer * 10^kappa < HIGH, where LOW and HIGH are the
+	 *        correct values of low and high (without their error).
+	 *      * if more than one decimal representation gives the minimal number of
+	 *        decimal digits then the one closest to W (where W is the correct value
+	 *        of w) is chosen.
+	 *  Remark: this procedure takes into account the imprecision of its input
+	 *    numbers. If the precision is not enough to guarantee all the postconditions
+	 *    then false is returned. This usually happens rarely (~0.5%).
+	 *
+	 *  Say, for the sake of example, that
+	 *    w.e() == -48, and w.f() == 0x1234567890abcdef
+	 *  w's value can be computed by w.f() * 2^w.e()
+	 *  We can obtain w's integral digits by simply shifting w.f() by -w.e().
+	 *   -> w's integral part is 0x1234
+	 *   w's fractional part is therefore 0x567890abcdef.
+	 *  Printing w's integral part is easy (simply print 0x1234 in decimal).
+	 *  In order to print its fraction we repeatedly multiply the fraction by 10 and
+	 *  get each digit. Example the first digit after the point would be computed by
+	 *    (0x567890abcdef * 10) >> 48. -> 3
+	 *  The whole thing becomes slightly more complicated because we want to stop
+	 *  once we have enough digits. That is, once the digits inside the buffer
+	 *  represent 'w' we can stop. Everything inside the interval low - high
+	 *  represents w. However we have to pay attention to low, high and w's
+	 *  imprecision.
+	 */
 	private static boolean DigitGen(DiyFp low,
 						 DiyFp w,
 						 DiyFp high,
@@ -414,34 +439,36 @@ public class FastDtoa {
 
 
 
-	// Generates (at most) requested_digits digits of input number w.
-	// w is a floating-point number (DiyFp), consisting of a significand and an
-	// exponent. Its exponent is bounded by kMinimalTargetExponent and
-	// kMaximalTargetExponent.
-	//       Hence -60 <= w.e() <= -32.
-	//
-	// Returns false if it fails, in which case the generated digits in the buffer
-	// should not be used.
-	// Preconditions:
-	//  * w is correct up to 1 ulp (unit in the last place). That
-	//    is, its error must be strictly less than a unit of its last digit.
-	//  * kMinimalTargetExponent <= w.e() <= kMaximalTargetExponent
-	//
-	// Postconditions: returns false if procedure fails.
-	//   otherwise:
-	//     * buffer is not null-terminated, but length contains the number of
-	//       digits.
-	//     * the representation in buffer is the most precise representation of
-	//       requested_digits digits.
-	//     * buffer contains at most requested_digits digits of w. If there are less
-	//       than requested_digits digits then some trailing '0's have been removed.
-	//     * kappa is such that
-	//            w = buffer * 10^kappa + eps with |eps| < 10^kappa / 2.
-	//
-	// Remark: This procedure takes into account the imprecision of its input
-	//   numbers. If the precision is not enough to guarantee all the postconditions
-	//   then false is returned. This usually happens rarely, but the failure-rate
-	//   increases with higher requested_digits.
+	/**
+	 *  Generates (at most) requested_digits digits of input number w.
+	 *  w is a floating-point number (DiyFp), consisting of a significand and an
+	 *  exponent. Its exponent is bounded by kMinimalTargetExponent and
+	 *  kMaximalTargetExponent.
+	 *        Hence -60 <= w.e() <= -32.
+	 *
+	 *  Returns false if it fails, in which case the generated digits in the buffer
+	 *  should not be used.
+	 *  Preconditions:
+	 *   * w is correct up to 1 ulp (unit in the last place). That
+	 *     is, its error must be strictly less than a unit of its last digit.
+	 *   * kMinimalTargetExponent <= w.e() <= kMaximalTargetExponent
+	 *
+	 *  Postconditions: returns false if procedure fails.
+	 *    otherwise:
+	 *      * buffer is not null-terminated, but length contains the number of
+	 *        digits.
+	 *      * the representation in buffer is the most precise representation of
+	 *        requested_digits digits.
+	 *      * buffer contains at most requested_digits digits of w. If there are less
+	 *        than requested_digits digits then some trailing '0's have been removed.
+	 *      * kappa is such that
+	 *             w = buffer * 10^kappa + eps with |eps| < 10^kappa / 2.
+	 *
+	 *  Remark: This procedure takes into account the imprecision of its input
+	 *    numbers. If the precision is not enough to guarantee all the postconditions
+	 *    then false is returned. This usually happens rarely, but the failure-rate
+	 *    increases with higher requested_digits.
+	 */
 	private static boolean DigitGenCounted(DiyFp w,
 								int requested_digits,
 								Vector<char> buffer,
@@ -522,17 +549,19 @@ public class FastDtoa {
 	}
 
 
-	// Provides a decimal representation of v.
-	// Returns true if it succeeds, otherwise the result cannot be trusted.
-	// There will be *length digits inside the buffer (not null-terminated).
-	// If the function returns true then
-	//        v == (double) (buffer * 10^decimal_exponent).
-	// The digits in the buffer are the shortest representation possible: no
-	// 0.09999999999999999 instead of 0.1. The shorter representation will even be
-	// chosen even if the longer one would be closer to v.
-	// The last digit will be closest to the actual v. That is, even if several
-	// digits might correctly yield 'v' when read again, the closest will be
-	// computed.
+	/**
+	 * Provides a decimal representation of v.
+	 * Returns true if it succeeds, otherwise the result cannot be trusted.
+	 * There will be *outLength digits inside the buffer (not null-terminated).
+	 * If the function returns true then
+	 * 	v == (double) (buffer * 10^outDecimalExponent).
+	 * The digits in the buffer are the shortest representation possible: no
+	 * 0.09999999999999999 instead of 0.1. The shorter representation will even be
+	 * chosen even if the longer one would be closer to v.
+	 * The last digit will be closest to the actual v. That is, even if several
+	 * digits might correctly yield 'v' when read again, the closest will be
+	 * computed.
+	 */
 	private static boolean Grisu3(double v,
 					   FastDtoaMode mode,
 					   Vector<char> buffer,
@@ -600,11 +629,13 @@ public class FastDtoa {
 	}
 
 
-	// The "counted" version of grisu3 (see above) only generates requested_digits
-	// number of digits. This version does not generate the shortest representation,
-	// and with enough requested digits 0.1 will at some point print as 0.9999999...
-	// Grisu3 is too imprecise for real halfway cases (1.5 will not work) and
-	// therefore the rounding strategy for halfway cases is irrelevant.
+	/**
+	 * The "counted" version of grisu3 (see above) only generates requested_digits
+	 * number of digits. This version does not generate the shortest representation,
+	 * and with enough requested digits 0.1 will at some point print as 0.9999999...
+	 * Grisu3 is too imprecise for real halfway cases (1.5 will not work) and
+	 * therefore the rounding strategy for halfway cases is irrelevant.
+	 */
 	private static boolean Grisu3Counted(double v,
 							  int requested_digits,
 							  Vector<char> buffer,
@@ -648,33 +679,36 @@ public class FastDtoa {
 		return result;
 	}
 
-	// Provides a decimal representation of v.
-	// The result should be interpreted as buffer * 10^(point - length).
-	//
-	// Precondition:
-	//   * v must be a strictly positive finite double.
-	//
-	// Returns true if it succeeds, otherwise the result can not be trusted.
-	// There will be *length digits inside the buffer followed by a null terminator.
-	// If the function returns true and mode equals
-	//   - FAST_DTOA_SHORTEST, then
-	//     the parameter requested_digits is ignored.
-	//     The result satisfies
-	//         v == (double) (buffer * 10^(point - length)).
-	//     The digits in the buffer are the shortest representation possible. E.g.
-	//     if 0.099999999999 and 0.1 represent the same double then "1" is returned
-	//     with point = 0.
-	//     The last digit will be closest to the actual v. That is, even if several
-	//     digits might correctly yield 'v' when read again, the buffer will contain
-	//     the one closest to v.
-	//   - FAST_DTOA_PRECISION, then
-	//     the buffer contains requested_digits digits.
-	//     the difference v - (buffer * 10^(point-length)) is closest to zero for
-	//     all possible representations of requested_digits digits.
-	//     If there are two values that are equally close, then FastDtoa returns
-	//     false.
-	// For both modes the buffer must be large enough to hold the result.
-	public static boolean FastDtoa(double d,
+
+	/**
+	 *  Provides a decimal representation of v.
+	 *  The result should be interpreted as buffer * 10^(point - outLength).
+	 *
+	 *  Precondition:
+	 *    * v must be a strictly positive finite double.
+	 *
+	 *  Returns true if it succeeds, otherwise the result can not be trusted.
+	 *  There will be *outLength digits inside the buffer followed by a null terminator.
+	 *  If the function returns true and mode equals
+	 *    - FAST_DTOA_SHORTEST, then
+	 *      the parameter requested_digits is ignored.
+	 *      The result satisfies
+	 *          v == (double) (buffer * 10^(point - outLength)).
+	 *      The digits in the buffer are the shortest representation possible. E.g.
+	 *      if 0.099999999999 and 0.1 represent the same double then "1" is returned
+	 *      with point = 0.
+	 *      The last digit will be closest to the actual v. That is, even if several
+	 *      digits might correctly yield 'v' when read again, the buffer will contain
+	 *      the one closest to v.
+	 *    - FAST_DTOA_PRECISION, then
+	 *      the buffer contains requested_digits digits.
+	 *      the difference v - (buffer * 10^(point-outLength)) is closest to zero for
+	 *      all possible representations of requested_digits digits.
+	 *      If there are two values that are equally close, then fastDtoa returns
+	 *      false.
+	 *  For both modes the buffer must be large enough to hold the result.
+	 */
+	public static boolean FastDtoa(double v,
 								   FastDtoaMode mode,
 								   int requested_digits,
 								   Vector<char> buffer,
