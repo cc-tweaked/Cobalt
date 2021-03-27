@@ -30,6 +30,8 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
+import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
+
 public class FixedDtoa {
 
 	// Represents a 128bit type. This class should be replaced by a native type on

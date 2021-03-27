@@ -29,6 +29,8 @@
  */
 package org.squiddev.cobalt.lib.fmt;
 
+import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
+
 public class PowersOfTenCache {
 	/**
 	 *  Not all powers of ten are cached. The decimal exponent of two neighboring
