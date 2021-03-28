@@ -327,7 +327,7 @@ public class DoubleToStringConverter {
 		}
 		// Add prefix '0' to make exponent width >= min(min_exponent_with_, kMaxExponentLength)
 		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
-		while(kMaxExponentLength - first_char_pos < std::min(min_exponent_width_, kMaxExponentLength)) {
+		while(kMaxExponentLength - first_char_pos < Math.min(min_exponent_width_, kMaxExponentLength)) {
 			buffer[--first_char_pos] = '0';
 		}
 		// TODO verify this is equivalent
@@ -411,8 +411,8 @@ public class DoubleToStringConverter {
 				(exponent < decimal_in_shortest_high_)) {
 			CreateDecimalRepresentation(decimal_rep, decimal_rep_length[0],
 					decimal_point[0],
-					(std::max)(0, decimal_rep_length[0] - decimal_point[0]),
-			result_builder);
+					Math.max(0, decimal_rep_length[0] - decimal_point[0]),
+					result_builder);
 		} else {
 			CreateExponentialRepresentation(decimal_rep, decimal_rep_length[0], exponent,
 					result_builder);
@@ -663,12 +663,12 @@ public class DoubleToStringConverter {
 		if ((flags_ & Flags.NO_TRAILING_ZERO) != 0) {
 			// Truncate trailing zeros that occur after the decimal point (if exponential,
 			// that is everything after the first digit).
-			int stop = as_exponential ? 1 : std::max(1, decimal_point);
+			int stop = as_exponential ? 1 : Math.max(1, decimal_point);
 			while (decimal_rep_length > stop && decimal_rep[decimal_rep_length - 1] == '0') {
 				--decimal_rep_length;
 			}
 			// Clamp precision to avoid the code below re-adding the zeros.
-			precision = std::min(precision, decimal_rep_length);
+			precision = Math.min(precision, decimal_rep_length);
 		}
 		if (as_exponential) {
 			// Fill buffer to contain 'precision' digits.
@@ -684,8 +684,8 @@ public class DoubleToStringConverter {
 					result_builder);
 		} else {
 			CreateDecimalRepresentation(decimal_rep, decimal_rep_length, decimal_point,
-					(std::max)(0, precision - decimal_point),
-			result_builder);
+					Math.max(0, precision - decimal_point),
+					result_builder);
 		}
 		return true;
 	}

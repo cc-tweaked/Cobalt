@@ -429,7 +429,7 @@ public class BigNumDtoa {
 
 		// For doubles len(f) == 53 (don't forget the hidden bit).
   		final int kSignificandSize = Ieee.Double.kSignificandSize;
-		double estimate = ceil((exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
+		double estimate = Math.ceil((exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
 		return (int)estimate;
 	}
 
