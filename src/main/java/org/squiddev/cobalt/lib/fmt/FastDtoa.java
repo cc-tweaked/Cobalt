@@ -248,6 +248,7 @@ public class FastDtoa {
 				buffer[i - 1]++;
 			}
 			// If the first digit is now '0'+ 10 we had a buffer with all '9's. With the
+			// If the first digit is now '0'+ 10 we had a buffer with all '9's. With the
 			// exception of the first digit all digits are now '0'. Simply switch the
 			// first digit to '1' and adjust the kappa. Example: "99" becomes "10" and
 			// the power (the kappa) is increased.
@@ -584,10 +585,10 @@ public class FastDtoa {
 		{
 			DiyFp[] inBoundaryMinus = new DiyFp[1];
 			DiyFp[] inBoundaryPlus = new DiyFp[1];
-			if (mode == FAST_DTOA_SHORTEST) {
+			if (mode == FastDtoaMode.FAST_DTOA_SHORTEST) {
 				new Ieee.Double(v).NormalizedBoundaries(inBoundaryMinus, inBoundaryPlus);
 			} else {
-				DOUBLE_CONVERSION_ASSERT(mode == FAST_DTOA_SHORTEST_SINGLE);
+				DOUBLE_CONVERSION_ASSERT(mode == FastDtoaMode.FAST_DTOA_SHORTEST_SINGLE);
 				float single_v = (float)v;
 				new Ieee.Single(single_v).NormalizedBoundaries(inBoundaryMinus, inBoundaryPlus);
 			}

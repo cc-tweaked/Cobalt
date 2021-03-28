@@ -56,7 +56,7 @@ public class BigNumDtoa {
 
 	private static int NormalizedExponent(uint64_t significand, int exponent) {
 		DOUBLE_CONVERSION_ASSERT(significand != 0);
-		while ((significand & Double.kHiddenBit) == 0) {
+		while ((significand & Ieee.Double.kHiddenBit) == 0) {
 			significand = significand << 1;
 			exponent = exponent - 1;
 		}
@@ -97,23 +97,23 @@ public class BigNumDtoa {
 	public void BignumDtoa(double v, BignumDtoaMode mode, int requested_digits,
 						   char[] buffer, int[] length, int[] decimal_point) {
 		DOUBLE_CONVERSION_ASSERT(v > 0);
-		DOUBLE_CONVERSION_ASSERT(!Double(v).IsSpecial());
+		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
 		uint64_t significand;
 		int exponent;
 		boolean lower_boundary_is_closer;
-		if (mode == BIGNUM_DTOA_SHORTEST_SINGLE) {
+		if (mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE) {
 			float f = (float)v;
 			DOUBLE_CONVERSION_ASSERT(f == v);
-			significand = Single(f).Significand();
-			exponent = Single(f).Exponent();
-			lower_boundary_is_closer = Single(f).LowerBoundaryIsCloser();
+			significand = new Ieee.Single(f).Significand();
+			exponent = new Ieee.Single(f).Exponent();
+			lower_boundary_is_closer = new Ieee.Single(f).LowerBoundaryIsCloser();
 		} else {
-			significand = Double(v).Significand();
-			exponent = Double(v).Exponent();
-			lower_boundary_is_closer = Double(v).LowerBoundaryIsCloser();
+			significand = new Ieee.Double(v).Significand();
+			exponent = new Ieee.Double(v).Exponent();
+			lower_boundary_is_closer = new Ieee.Double(v).LowerBoundaryIsCloser();
 		}
 		boolean need_boundary_deltas =
-				(mode == BIGNUM_DTOA_SHORTEST || mode == BIGNUM_DTOA_SHORTEST_SINGLE);
+				(mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST || mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE);
 
 		boolean is_even = (significand & 1) == 0;
 		int normalized_exponent = NormalizedExponent(significand, exponent);
@@ -124,7 +124,7 @@ public class BigNumDtoa {
 		// The requested digits correspond to the digits after the point. If the
 		// number is much too small, then there is no need in trying to get any
 		// digits.
-		if (mode == BIGNUM_DTOA_FIXED && -estimated_power - 1 > requested_digits) {
+		if (mode == BignumDtoaMode.BIGNUM_DTOA_FIXED && -estimated_power - 1 > requested_digits) {
 			buffer[0] = '\0';
     		length[0] = 0;
 			// Set decimal-point to -requested_digits. This is what Gay does.
@@ -134,10 +134,10 @@ public class BigNumDtoa {
 			return;
 		}
 
-		Bignum numerator;
-		Bignum denominator;
-		Bignum delta_minus;
-		Bignum delta_plus;
+		Bignum numerator = new Bignum();
+		Bignum denominator = new Bignum();
+		Bignum delta_minus = new Bignum();
+		Bignum delta_plus = new Bignum();
 		// Make sure the bignum can grow large enough. The smallest double equals
 		// 4e-324. In this case the denominator needs fewer than 324*4 binary digits.
 		// The maximum double is 1.7976931348623157e308 which needs fewer than
@@ -428,7 +428,7 @@ public class BigNumDtoa {
   		final double k1Log10 = 0.30102999566398114;  // 1/lg(10)
 
 		// For doubles len(f) == 53 (don't forget the hidden bit).
-  		final int kSignificandSize = Double.kSignificandSize;
+  		final int kSignificandSize = Ieee.Double.kSignificandSize;
 		double estimate = ceil((exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
 		return (int)estimate;
 	}
@@ -487,7 +487,7 @@ public class BigNumDtoa {
 		numerator.AssignUInt64(significand);
 		numerator.ShiftLeft(exponent);
 		// denominator = 10^estimated_power.
-		denominator.AssignPowerUInt16(10, estimated_power);
+		denominator.AssignPower(10, estimated_power);
 
 		if (need_boundary_deltas) {
 			// Introduce a common denominator so that the deltas to the boundaries are
@@ -496,10 +496,10 @@ public class BigNumDtoa {
 			numerator.ShiftLeft(1);
 			// Let v = f * 2^e, then m+ - v = 1/2 * 2^e; With the common
 			// denominator (of 2) delta_plus equals 2^e.
-			delta_plus.AssignUInt16(1);
+			delta_plus.AssignUInt(1);
 			delta_plus.ShiftLeft(exponent);
 			// Same for delta_minus. The adjustments if f == 2^p-1 are done later.
-			delta_minus.AssignUInt16(1);
+			delta_minus.AssignUInt(1);
 			delta_minus.ShiftLeft(exponent);
 		}
 	}
@@ -558,7 +558,7 @@ public class BigNumDtoa {
 		//  numerator = v * / 2^-exponent
 		numerator.AssignUInt64(significand);
 		// denominator = 10^estimated_power * 2^-exponent (with exponent < 0)
-		denominator.AssignPowerUInt16(10, estimated_power);
+		denominator.AssignPower(10, estimated_power);
 		denominator.ShiftLeft(-exponent);
 
 		if (need_boundary_deltas) {
@@ -570,9 +570,9 @@ public class BigNumDtoa {
 			// denominator (of 2) delta_plus equals 2^e.
 			// Given that the denominator already includes v's exponent the distance
 			// to the boundaries is simply 1.
-			delta_plus.AssignUInt16(1);
+			delta_plus.AssignUInt(1);
 			// Same for delta_minus. The adjustments if f == 2^p-1 are done later.
-			delta_minus.AssignUInt16(1);
+			delta_minus.AssignUInt(1);
 		}
 	}
 
@@ -626,7 +626,7 @@ public class BigNumDtoa {
 
 		// Use numerator as temporary container for power_ten.
 		Bignum power_ten = numerator;
-		power_ten.AssignPowerUInt16(10, -estimated_power);
+		power_ten.AssignPower(10, -estimated_power);
 
 		if (need_boundary_deltas) {
 			// Since power_ten == numerator we must make a copy of 10^estimated_power
@@ -645,7 +645,7 @@ public class BigNumDtoa {
 		numerator.MultiplyByUInt64(significand);
 
 		// denominator = 2 * 2^-exponent with exponent < 0.
-		denominator.AssignUInt16(1);
+		denominator.AssignUInt(1);
 		denominator.ShiftLeft(-exponent);
 
 		if (need_boundary_deltas) {

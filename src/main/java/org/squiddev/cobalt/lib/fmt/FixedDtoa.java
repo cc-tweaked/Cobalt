@@ -266,7 +266,7 @@ public class FixedDtoa {
 			}
 		} else {  // We need 128 bits.
 			DOUBLE_CONVERSION_ASSERT(64 < -exponent && -exponent <= 128);
-			UInt128 fractionals128 = UInt128(fractionals, 0);
+			UInt128 fractionals128 = new UInt128(fractionals, 0);
 			fractionals128.Shift(-exponent - 64);
 			int point = 128;
 			for (int i = 0; i < fractional_count; ++i) {
@@ -327,8 +327,8 @@ public class FixedDtoa {
 	public static boolean FastFixedDtoa(double v, int fractional_count,
 										char[] buffer, int[] length, int[] decimal_point) {
   		final uint32_t kMaxUInt32 = 0xFFFFFFFF;
-		uint64_t significand = Double(v).Significand();
-		int exponent = Double(v).Exponent();
+		uint64_t significand = new Ieee.Double(v).Significand();
+		int exponent = new Ieee.Double(v).Exponent();
 		// v = significand * 2^exponent (with significand a 53bit integer).
 		// If the exponent is larger than 20 (i.e. we may have a 73bit number) then we
 		// don't know how to compute the representation. 2^73 ~= 9.5*10^21.

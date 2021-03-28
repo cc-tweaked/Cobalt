@@ -31,6 +31,7 @@
 package org.squiddev.cobalt.lib.fmt;
 
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.fmt.FixedDtoa.FastFixedDtoa;
 
 public class DoubleToStringConverter {
 	/**
@@ -88,13 +89,13 @@ public class DoubleToStringConverter {
 	 */
 	public static final int kMaxCharsEcmaScriptShortest = 25;
 
-	public enum Flags {
-		NO_FLAGS = 0,
-		EMIT_POSITIVE_EXPONENT_SIGN = 1,
-		EMIT_TRAILING_DECIMAL_POINT = 2,
-		EMIT_TRAILING_ZERO_AFTER_POINT = 4,
-		UNIQUE_ZERO = 8,
-		NO_TRAILING_ZERO = 16
+	public static class Flags {
+		public static final int NO_FLAGS = 0;
+		public static final int EMIT_POSITIVE_EXPONENT_SIGN = 1;
+		public static final int EMIT_TRAILING_DECIMAL_POINT = 2;
+		public static final int EMIT_TRAILING_ZERO_AFTER_POINT = 4;
+		public static final int UNIQUE_ZERO = 8;
+		public static final int NO_TRAILING_ZERO = 16;
 	};
 
 
@@ -188,8 +189,8 @@ public class DoubleToStringConverter {
 		this.min_exponent_width_ = min_exponent_width;
 		// When 'trailing zero after the point' is set, then 'trailing point'
 		// must be set too.
-		DOUBLE_CONVERSION_ASSERT(((flags & EMIT_TRAILING_DECIMAL_POINT) != 0) ||
-				!((flags & EMIT_TRAILING_ZERO_AFTER_POINT) != 0));
+		DOUBLE_CONVERSION_ASSERT(((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) ||
+				!((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0));
 	}
 
 	/**
@@ -204,7 +205,7 @@ public class DoubleToStringConverter {
 	 *  max_trailing_padding_zeroes_in_precision_mode: 0
 	 */
 	public static final DoubleToStringConverter EcmaScriptConverter() {
-		int flags = UNIQUE_ZERO | EMIT_POSITIVE_EXPONENT_SIGN;
+		int flags = Flags.UNIQUE_ZERO | Flags.EMIT_POSITIVE_EXPONENT_SIGN;
 		return new DoubleToStringConverter(flags,
 				"Infinity",
 				"NaN",
@@ -255,12 +256,12 @@ public class DoubleToStringConverter {
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
 	public boolean ToShortest(double value, StringBuilder result_builder) {
-		return ToShortestIeeeNumber(value, result_builder, SHORTEST);
+		return ToShortestIeeeNumber(value, result_builder, DtoaMode.SHORTEST);
 	}
 
 	/** Same as ToShortest, but for single-precision floats. */
 	public boolean ToShortestSingle(float value, StringBuilder result_builder) {
-		return ToShortestIeeeNumber(value, result_builder, SHORTEST_SINGLE);
+		return ToShortestIeeeNumber(value, result_builder, DtoaMode.SHORTEST_SINGLE);
 	}
 
 	/**
@@ -270,7 +271,7 @@ public class DoubleToStringConverter {
 	 * 	 function returns false.
 	 */
 	private boolean HandleSpecialValues(double value, StringBuilder result_builder) {
-		Double double_inspect(value);
+		Ieee.Double double_inspect = new Ieee.Double(value);
 		if (double_inspect.IsInfinite()) {
 			if (infinity_symbol_ == null) return false;
 			if (value < 0) {
@@ -384,21 +385,21 @@ public class DoubleToStringConverter {
 	private boolean ToShortestIeeeNumber(double value,
 										 StringBuilder result_builder,
 										 DtoaMode mode) {
-		DOUBLE_CONVERSION_ASSERT(mode == SHORTEST || mode == SHORTEST_SINGLE);
-		if (Double(value).IsSpecial()) {
+		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE);
+		if (new Ieee.Double(value).IsSpecial()) {
 			return HandleSpecialValues(value, result_builder);
 		}
 
-		int decimal_point;
-		boolean sign;
+		int[] decimal_point = new int[1];
+		boolean[] sign = new boolean[1];
 		final int kDecimalRepCapacity = kBase10MaximalLength + 1;
-		char decimal_rep[kDecimalRepCapacity];
-		int decimal_rep_length;
+		char[] decimal_rep = new char[kDecimalRepCapacity];
+		int[] decimal_rep_length = new int[1];
 
 		DoubleToAscii(value, mode, 0, decimal_rep, kDecimalRepCapacity,
 				sign, decimal_rep_length, decimal_point);
 
-		boolean unique_zero = (flags_ & UNIQUE_ZERO) != 0;
+		boolean unique_zero = (flags_ & Flags.UNIQUE_ZERO) != 0;
 		if (sign[0] && (value != 0.0 || !unique_zero)) {
 			result_builder.AddCharacter('-');
 		}
@@ -461,7 +462,7 @@ public class DoubleToStringConverter {
 		DOUBLE_CONVERSION_ASSERT(kMaxFixedDigitsBeforePoint == 60);
   		final double kFirstNonFixed = 1e60;
 
-		if (Double(value).IsSpecial()) {
+		if (new Ieee.Double(value).IsSpecial()) {
 			return HandleSpecialValues(value, result_builder);
 		}
 
@@ -545,11 +546,11 @@ public class DoubleToStringConverter {
 		int[] decimal_rep_length = new int[1];
 
 		if (requested_digits == -1) {
-			DoubleToAscii(value, SHORTEST, 0,
+			DoubleToAscii(value, DtoaMode.SHORTEST, 0,
 					decimal_rep, kDecimalRepCapacity,
 					sign, decimal_rep_length, decimal_point);
 		} else {
-			DoubleToAscii(value, PRECISION, requested_digits + 1,
+			DoubleToAscii(value, DtoaMode.PRECISION, requested_digits + 1,
 					decimal_rep, kDecimalRepCapacity,
 					sign, decimal_rep_length, decimal_point);
 			DOUBLE_CONVERSION_ASSERT(decimal_rep_length[0] <= requested_digits + 1);
@@ -560,7 +561,7 @@ public class DoubleToStringConverter {
 			decimal_rep_length[0] = requested_digits + 1;
 		}
 
-		boolean unique_zero = ((flags_ & UNIQUE_ZERO) != 0);
+		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
 		if (sign[0] && (value != 0.0 || !unique_zero)) {
 			result_builder.AddCharacter('-');
 		}
@@ -614,7 +615,7 @@ public class DoubleToStringConverter {
 	boolean ToPrecision(double value,
 					 int precision,
 					 StringBuilder result_builder) {
-		if (Double(value).IsSpecial()) {
+		if (new Ieee.Double(value).IsSpecial()) {
 			return HandleSpecialValues(value, result_builder);
 		}
 
@@ -643,7 +644,7 @@ public class DoubleToStringConverter {
 			decimal_rep_length = inDecimalRepLength[0];
 		}
 
-		boolean unique_zero = ((flags_ & UNIQUE_ZERO) != 0);
+		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
 		if (sign && (value != 0.0 || !unique_zero)) {
 			result_builder.AddCharacter('-');
 		}
@@ -652,12 +653,12 @@ public class DoubleToStringConverter {
 		// decimal point after the first digit.
 		int exponent = decimal_point - 1;
 
-		int extra_zero = ((flags_ & EMIT_TRAILING_ZERO_AFTER_POINT) != 0) ? 1 : 0;
+		int extra_zero = ((flags_ & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) ? 1 : 0;
 		boolean as_exponential =
 				(-decimal_point + 1 > max_leading_padding_zeroes_in_precision_mode_) ||
 						(decimal_point - precision + extra_zero >
 								max_trailing_padding_zeroes_in_precision_mode_);
-		if ((flags_ & NO_TRAILING_ZERO) != 0) {
+		if ((flags_ & Flags.NO_TRAILING_ZERO) != 0) {
 			// Truncate trailing zeros that occur after the decimal point (if exponential,
 			// that is everything after the first digit).
 			int stop = as_exponential ? 1 : std::max(1, decimal_point);
@@ -702,14 +703,14 @@ public class DoubleToStringConverter {
 		PRECISION
 	};
 
-	private static BignumDtoaMode DtoaToBignumDtoaMode(
+	private static BigNumDtoa.BignumDtoaMode DtoaToBignumDtoaMode(
 			DoubleToStringConverter.DtoaMode dtoa_mode) {
 		switch (dtoa_mode) {
-			case DoubleToStringConverter::SHORTEST:  return BIGNUM_DTOA_SHORTEST;
-			case DoubleToStringConverter::SHORTEST_SINGLE:
-				return BIGNUM_DTOA_SHORTEST_SINGLE;
-			case DoubleToStringConverter::FIXED:     return BIGNUM_DTOA_FIXED;
-			case DoubleToStringConverter::PRECISION: return BIGNUM_DTOA_PRECISION;
+			case SHORTEST:  return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_SHORTEST;
+			case SHORTEST_SINGLE:
+				return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE;
+			case FIXED:     return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_FIXED;
+			case PRECISION: return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_PRECISION;
 			default:
 				throw new IllegalStateException("Unreachable");
 		}
@@ -770,16 +771,16 @@ public class DoubleToStringConverter {
 							  int[] length,
 							  int[] point) {
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
-		DOUBLE_CONVERSION_ASSERT(mode == SHORTEST || mode == SHORTEST_SINGLE || requested_digits >= 0);
+		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE || requested_digits >= 0);
 
 		if (new Ieee.Double(v).Sign() < 0) {
-    		sign[0] = true;
+			sign[0] = true;
 			v = -v;
 		} else {
     		sign[0] = false;
 		}
 
-		if (mode == PRECISION && requested_digits == 0) {
+		if (mode == DtoaMode.PRECISION && requested_digits == 0) {
 			vector[0] = '\0';
 			length[0] = 0;
 			return;
@@ -796,17 +797,17 @@ public class DoubleToStringConverter {
 		boolean fast_worked;
 		switch (mode) {
 			case SHORTEST:
-				fast_worked = FastDtoa(v, FAST_DTOA_SHORTEST, 0, vector, length, point);
+				fast_worked = FastDtoa.FastDtoa(v, FastDtoa.FastDtoaMode.FAST_DTOA_SHORTEST, 0, vector, length, point);
 				break;
 			case SHORTEST_SINGLE:
-				fast_worked = FastDtoa(v, FAST_DTOA_SHORTEST_SINGLE, 0,
+				fast_worked = FastDtoa.FastDtoa(v, FastDtoa.FastDtoaMode.FAST_DTOA_SHORTEST_SINGLE, 0,
 						vector, length, point);
 				break;
 			case FIXED:
 				fast_worked = FastFixedDtoa(v, requested_digits, vector, length, point);
 				break;
 			case PRECISION:
-				fast_worked = FastDtoa(v, FAST_DTOA_PRECISION, requested_digits,
+				fast_worked = FastDtoa.FastDtoa(v, FastDtoa.FastDtoaMode.FAST_DTOA_PRECISION, requested_digits,
 						vector, length, point);
 				break;
 			default:
@@ -816,8 +817,8 @@ public class DoubleToStringConverter {
 		if (fast_worked) return;
 
 		// If the fast dtoa didn't succeed use the slower bignum version.
-		BignumDtoaMode bignum_mode = DtoaToBignumDtoaMode(mode);
-		BignumDtoa(v, bignum_mode, requested_digits, vector, length, point);
+		BigNumDtoa.BignumDtoaMode bignum_mode = DtoaToBignumDtoaMode(mode);
+		BigNumDtoa.BignumDtoa(v, bignum_mode, requested_digits, vector, length, point);
 		vector[length[0]] = '\0';
 	}
 
