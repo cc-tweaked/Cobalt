@@ -150,20 +150,20 @@ public class PowersOfTenCache {
 		public void GetCachedPowerForBinaryExponentRange(
 				int min_exponent,
 				int max_exponent,
-				DiyFp* power,
-				int* decimal_exponent) {
-			int kQ = DiyFp::kSignificandSize;
+				DiyFp[] power,
+				int[] decimal_exponent) {
+			int kQ = DiyFp.kSignificandSize;
 			double k = ceil((min_exponent + kQ - 1) * kD_1_LOG2_10);
 			int foo = kCachedPowersOffset;
 			int index =
-			(foo + static_cast<int>(k) - 1) / kDecimalExponentDistance + 1;
-			DOUBLE_CONVERSION_ASSERT(0 <= index && index < static_cast<int>(DOUBLE_CONVERSION_ARRAY_SIZE(kCachedPowers)));
+			(foo + (int)k - 1) / kDecimalExponentDistance + 1;
+			DOUBLE_CONVERSION_ASSERT(0 <= index && index < (int)DOUBLE_CONVERSION_ARRAY_SIZE(kCachedPowers));
 			CachedPower cached_power = kCachedPowers[index];
 			DOUBLE_CONVERSION_ASSERT(min_exponent <= cached_power.binary_exponent);
 			(void) max_exponent;  // Mark variable as used.
 			DOUBLE_CONVERSION_ASSERT(cached_power.binary_exponent <= max_exponent);
-			*decimal_exponent = cached_power.decimal_exponent;
-			*power = DiyFp(cached_power.significand, cached_power.binary_exponent);
+			decimal_exponent[0] = cached_power.decimal_exponent;
+			power[0] = DiyFp(cached_power.significand, cached_power.binary_exponent);
 		}
 
 
@@ -175,17 +175,17 @@ public class PowersOfTenCache {
 		 *    requested_exponent < kMaxDecimalExponent + kDecimalExponentDistance.
 		 */
 		public void GetCachedPowerForDecimalExponent(int requested_exponent,
-				DiyFp* power,
-				int* found_exponent) {
+				DiyFp[] power,
+				int[] found_exponent) {
 			DOUBLE_CONVERSION_ASSERT(kMinDecimalExponent <= requested_exponent);
 			DOUBLE_CONVERSION_ASSERT(requested_exponent < kMaxDecimalExponent + kDecimalExponentDistance);
 			int index =
 			(requested_exponent + kCachedPowersOffset) / kDecimalExponentDistance;
 			CachedPower cached_power = kCachedPowers[index];
-			*power = DiyFp(cached_power.significand, cached_power.binary_exponent);
-			*found_exponent = cached_power.decimal_exponent;
-			DOUBLE_CONVERSION_ASSERT(*found_exponent <= requested_exponent);
-			DOUBLE_CONVERSION_ASSERT(requested_exponent < *found_exponent + kDecimalExponentDistance);
+			power[0] = DiyFp(cached_power.significand, cached_power.binary_exponent);
+			found_exponent[0] = cached_power.decimal_exponent;
+			DOUBLE_CONVERSION_ASSERT(found_exponent[0] <= requested_exponent);
+			DOUBLE_CONVERSION_ASSERT(requested_exponent[0] < found_exponent[0] + kDecimalExponentDistance);
 		}
 
 }

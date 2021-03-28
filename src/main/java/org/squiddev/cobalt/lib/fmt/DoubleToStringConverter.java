@@ -167,8 +167,8 @@ public class DoubleToStringConverter {
 	 *  As such, the exponent may never have more than 5 digits in total.
 	 */
 	public DoubleToStringConverter(int flags,
-                          const char* infinity_symbol,
-                          const char* nan_symbol,
+							String infinity_symbol,
+						    String nan_symbol,
 							char exponent_character,
 							int decimal_in_shortest_low,
 							int decimal_in_shortest_high,
@@ -203,15 +203,14 @@ public class DoubleToStringConverter {
 	 *  max_leading_padding_zeroes_in_precision_mode: 6
 	 *  max_trailing_padding_zeroes_in_precision_mode: 0
 	 */
-	public static final DoubleToStringConverter& EcmaScriptConverter() {
+	public static final DoubleToStringConverter EcmaScriptConverter() {
 		int flags = UNIQUE_ZERO | EMIT_POSITIVE_EXPONENT_SIGN;
-		static DoubleToStringConverter converter(flags,
+		return new DoubleToStringConverter(flags,
 				"Infinity",
 				"NaN",
 				'e',
 				-6, 21,
-				6, 0);
-		return converter;
+				6, 0, 0);
 	}
 
 
@@ -255,7 +254,7 @@ public class DoubleToStringConverter {
 	 * 	  "-1.7976931348623157e+308", "-1.7976931348623157E308"
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
-	public boolean ToShortest(double value, StringBuilder* result_builder) {
+	public boolean ToShortest(double value, StringBuilder result_builder) {
 		return ToShortestIeeeNumber(value, result_builder, SHORTEST);
 	}
 
@@ -270,19 +269,19 @@ public class DoubleToStringConverter {
 	 * 	 If either of them is NULL or the value is not special then the
 	 * 	 function returns false.
 	 */
-	private boolean HandleSpecialValues(double value, StringBuilder* result_builder) {
+	private boolean HandleSpecialValues(double value, StringBuilder result_builder) {
 		Double double_inspect(value);
 		if (double_inspect.IsInfinite()) {
-			if (infinity_symbol_ == NULL) return false;
+			if (infinity_symbol_ == null) return false;
 			if (value < 0) {
-				result_builder->AddCharacter('-');
+				result_builder.AddCharacter('-');
 			}
-			result_builder->AddString(infinity_symbol_);
+			result_builder.AddString(infinity_symbol_);
 			return true;
 		}
 		if (double_inspect.IsNan()) {
-			if (nan_symbol_ == NULL) return false;
-			result_builder->AddString(nan_symbol_);
+			if (nan_symbol_ == null) return false;
+			result_builder.AddString(nan_symbol_);
 			return true;
 		}
 		return false;
@@ -292,29 +291,29 @@ public class DoubleToStringConverter {
 	 * 	 Constructs an exponential representation (i.e. 1.234e56).
 	 * 	 The given exponent assumes a decimal point after the first decimal digit.
 	 */
-	private void CreateExponentialRepresentation(const char* decimal_digits,
+	private void CreateExponentialRepresentation(final char[] decimal_digits,
 												 int length,
 												 int exponent,
-												 StringBuilder* result_builder) {
+												 StringBuilder result_builder) {
 		DOUBLE_CONVERSION_ASSERT(length != 0);
-		result_builder->AddCharacter(decimal_digits[0]);
+		result_builder.AddCharacter(decimal_digits[0]);
 		if (length != 1) {
-			result_builder->AddCharacter('.');
-			result_builder->AddSubstring(&decimal_digits[1], length-1);
+			result_builder.AddCharacter('.');
+			result_builder.AddSubstring(decimal_digits[1], length-1);
 		}
-		result_builder->AddCharacter(exponent_character_);
+		result_builder.AddCharacter(exponent_character_);
 		if (exponent < 0) {
-			result_builder->AddCharacter('-');
+			result_builder.AddCharacter('-');
 			exponent = -exponent;
 		} else {
 			if ((flags_ & EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
-				result_builder->AddCharacter('+');
+				result_builder.AddCharacter('+');
 			}
 		}
 		DOUBLE_CONVERSION_ASSERT(exponent < 1e4);
 		// Changing this constant requires updating the comment of DoubleToStringConverter constructor
-  		final int kMaxExponentLength = 5;
-		char buffer[kMaxExponentLength + 1];
+		final int kMaxExponentLength = 5;
+		char[] buffer = new char[kMaxExponentLength + 1];
 		buffer[kMaxExponentLength] = '\0';
 		int first_char_pos = kMaxExponentLength;
 		if (exponent == 0) {
@@ -330,60 +329,60 @@ public class DoubleToStringConverter {
 		while(kMaxExponentLength - first_char_pos < std::min(min_exponent_width_, kMaxExponentLength)) {
 			buffer[--first_char_pos] = '0';
 		}
-		result_builder->AddSubstring(&buffer[first_char_pos],
+		result_builder.AddSubstring(buffer[first_char_pos],
 				kMaxExponentLength - first_char_pos);
 	}
 
 	/** Creates a decimal representation (i.e 1234.5678). */
-	private void CreateDecimalRepresentation(const char* decimal_digits,
+	private void CreateDecimalRepresentation(final char[] decimal_digits,
 											 int length,
 											 int decimal_point,
 											 int digits_after_point,
-											 StringBuilder* result_builder) {
+											 StringBuilder result_builder) {
 		// Create a representation that is padded with zeros if needed.
 		if (decimal_point <= 0) {
 			// "0.00000decimal_rep" or "0.000decimal_rep00".
-			result_builder->AddCharacter('0');
+			result_builder.AddCharacter('0');
 			if (digits_after_point > 0) {
-				result_builder->AddCharacter('.');
-				result_builder->AddPadding('0', -decimal_point);
+				result_builder.AddCharacter('.');
+				result_builder.AddPadding('0', -decimal_point);
 				DOUBLE_CONVERSION_ASSERT(length <= digits_after_point - (-decimal_point));
-				result_builder->AddSubstring(decimal_digits, length);
+				result_builder.AddSubstring(decimal_digits, length);
 				int remaining_digits = digits_after_point - (-decimal_point) - length;
-				result_builder->AddPadding('0', remaining_digits);
+				result_builder.AddPadding('0', remaining_digits);
 			}
 		} else if (decimal_point >= length) {
 			// "decimal_rep0000.00000" or "decimal_rep.0000".
-			result_builder->AddSubstring(decimal_digits, length);
-			result_builder->AddPadding('0', decimal_point - length);
+			result_builder.AddSubstring(decimal_digits, length);
+			result_builder.AddPadding('0', decimal_point - length);
 			if (digits_after_point > 0) {
-				result_builder->AddCharacter('.');
-				result_builder->AddPadding('0', digits_after_point);
+				result_builder.AddCharacter('.');
+				result_builder.AddPadding('0', digits_after_point);
 			}
 		} else {
 			// "decima.l_rep000".
 			DOUBLE_CONVERSION_ASSERT(digits_after_point > 0);
-			result_builder->AddSubstring(decimal_digits, decimal_point);
-			result_builder->AddCharacter('.');
+			result_builder.AddSubstring(decimal_digits, decimal_point);
+			result_builder.AddCharacter('.');
 			DOUBLE_CONVERSION_ASSERT(length - decimal_point <= digits_after_point);
-			result_builder->AddSubstring(&decimal_digits[decimal_point],
+			result_builder.AddSubstring(decimal_digits[decimal_point],
 					length - decimal_point);
 			int remaining_digits = digits_after_point - (length - decimal_point);
-			result_builder->AddPadding('0', remaining_digits);
+			result_builder.AddPadding('0', remaining_digits);
 		}
 		if (digits_after_point == 0) {
 			if ((flags_ & EMIT_TRAILING_DECIMAL_POINT) != 0) {
-				result_builder->AddCharacter('.');
+				result_builder.AddCharacter('.');
 			}
 			if ((flags_ & EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
-				result_builder->AddCharacter('0');
+				result_builder.AddCharacter('0');
 			}
 		}
 	}
 
 	/** Implementation for ToShortest and ToShortestSingle. */
 	private boolean ToShortestIeeeNumber(double value,
-										 StringBuilder* result_builder,
+										 StringBuilder result_builder,
 										 DtoaMode mode) {
 		DOUBLE_CONVERSION_ASSERT(mode == SHORTEST || mode == SHORTEST_SINGLE);
 		if (Double(value).IsSpecial()) {
@@ -397,22 +396,22 @@ public class DoubleToStringConverter {
 		int decimal_rep_length;
 
 		DoubleToAscii(value, mode, 0, decimal_rep, kDecimalRepCapacity,
-				&sign, &decimal_rep_length, &decimal_point);
+				sign, decimal_rep_length, decimal_point);
 
 		boolean unique_zero = (flags_ & UNIQUE_ZERO) != 0;
-		if (sign && (value != 0.0 || !unique_zero)) {
-			result_builder->AddCharacter('-');
+		if (sign[0] && (value != 0.0 || !unique_zero)) {
+			result_builder.AddCharacter('-');
 		}
 
-		int exponent = decimal_point - 1;
+		int exponent = decimal_point[0] - 1;
 		if ((decimal_in_shortest_low_ <= exponent) &&
 				(exponent < decimal_in_shortest_high_)) {
-			CreateDecimalRepresentation(decimal_rep, decimal_rep_length,
-					decimal_point,
-					(std::max)(0, decimal_rep_length - decimal_point),
+			CreateDecimalRepresentation(decimal_rep, decimal_rep_length[0],
+					decimal_point[0],
+					(std::max)(0, decimal_rep_length[0] - decimal_point[0]),
 			result_builder);
 		} else {
-			CreateExponentialRepresentation(decimal_rep, decimal_rep_length, exponent,
+			CreateExponentialRepresentation(decimal_rep, decimal_rep_length[0], exponent,
 					result_builder);
 		}
 		return true;
@@ -458,7 +457,7 @@ public class DoubleToStringConverter {
 	 */
 	boolean ToFixed(double value,
 				 int requested_digits,
-				 StringBuilder* result_builder) {
+				 StringBuilder result_builder) {
 		DOUBLE_CONVERSION_ASSERT(kMaxFixedDigitsBeforePoint == 60);
   		final double kFirstNonFixed = 1e60;
 
@@ -470,23 +469,23 @@ public class DoubleToStringConverter {
 		if (value >= kFirstNonFixed || value <= -kFirstNonFixed) return false;
 
 		// Find a sufficiently precise decimal representation of n.
-		int decimal_point;
-		boolean sign;
+		int[] decimal_point = new int[1];
+		boolean[] sign = new boolean[1];
 		// Add space for the '\0' byte.
   		final int kDecimalRepCapacity =
 				kMaxFixedDigitsBeforePoint + kMaxFixedDigitsAfterPoint + 1;
-		char decimal_rep[kDecimalRepCapacity];
-		int decimal_rep_length;
-		DoubleToAscii(value, FIXED, requested_digits,
+		char[] decimal_rep = new char[kDecimalRepCapacity];
+		int[] decimal_rep_length = new int[1];
+		DoubleToAscii(value, DtoaMode.FIXED, requested_digits,
 				decimal_rep, kDecimalRepCapacity,
-				&sign, &decimal_rep_length, &decimal_point);
+				sign, decimal_rep_length, decimal_point);
 
 		boolean unique_zero = ((flags_ & UNIQUE_ZERO) != 0);
 		if (sign && (value != 0.0 || !unique_zero)) {
-			result_builder->AddCharacter('-');
+			result_builder.AddCharacter('-');
 		}
 
-		CreateDecimalRepresentation(decimal_rep, decimal_rep_length, decimal_point,
+		CreateDecimalRepresentation(decimal_rep, decimal_rep_length[0], decimal_point[0],
 				requested_digits, result_builder);
 		return true;
 	}
@@ -523,52 +522,52 @@ public class DoubleToStringConverter {
 	 */
 	boolean ToExponential(double value,
 					   int requested_digits,
-					   StringBuilder* result_builder) {
-		if (Double(value).IsSpecial()) {
+					   StringBuilder result_builder) {
+		if (new Ieee.Double(value).IsSpecial()) {
 			return HandleSpecialValues(value, result_builder);
 		}
 
 		if (requested_digits < -1) return false;
 		if (requested_digits > kMaxExponentialDigits) return false;
 
-		int decimal_point;
-		boolean sign;
+		int[] decimal_point = new int[1];
+		boolean[] sign = new boolean[1];
 		// Add space for digit before the decimal point and the '\0' character.
   		final int kDecimalRepCapacity = kMaxExponentialDigits + 2;
 		DOUBLE_CONVERSION_ASSERT(kDecimalRepCapacity > kBase10MaximalLength);
-		char decimal_rep[kDecimalRepCapacity];
+		char[] decimal_rep = new char[kDecimalRepCapacity];
 //#ifndef NDEBUG
 //		// Problem: there is an assert in StringBuilder::AddSubstring() that
 //		// will pass this buffer to strlen(), and this buffer is not generally
 //		// null-terminated.
 //		memset(decimal_rep, 0, sizeof(decimal_rep));
 //#endif
-		int decimal_rep_length;
+		int[] decimal_rep_length = new int[1];
 
 		if (requested_digits == -1) {
 			DoubleToAscii(value, SHORTEST, 0,
 					decimal_rep, kDecimalRepCapacity,
-					&sign, &decimal_rep_length, &decimal_point);
+					sign, decimal_rep_length, decimal_point);
 		} else {
 			DoubleToAscii(value, PRECISION, requested_digits + 1,
 					decimal_rep, kDecimalRepCapacity,
-					&sign, &decimal_rep_length, &decimal_point);
-			DOUBLE_CONVERSION_ASSERT(decimal_rep_length <= requested_digits + 1);
+					sign, decimal_rep_length, decimal_point);
+			DOUBLE_CONVERSION_ASSERT(decimal_rep_length[0] <= requested_digits + 1);
 
-			for (int i = decimal_rep_length; i < requested_digits + 1; ++i) {
+			for (int i = decimal_rep_length[0]; i < requested_digits + 1; ++i) {
 				decimal_rep[i] = '0';
 			}
-			decimal_rep_length = requested_digits + 1;
+			decimal_rep_length[0] = requested_digits + 1;
 		}
 
 		boolean unique_zero = ((flags_ & UNIQUE_ZERO) != 0);
-		if (sign && (value != 0.0 || !unique_zero)) {
-			result_builder->AddCharacter('-');
+		if (sign[0] && (value != 0.0 || !unique_zero)) {
+			result_builder.AddCharacter('-');
 		}
 
-		int exponent = decimal_point - 1;
+		int exponent = decimal_point[0] - 1;
 		CreateExponentialRepresentation(decimal_rep,
-				decimal_rep_length,
+				decimal_rep_length[0],
 				exponent,
 				result_builder);
 		return true;
@@ -614,7 +613,7 @@ public class DoubleToStringConverter {
 	 */
 	boolean ToPrecision(double value,
 					 int precision,
-					 StringBuilder* result_builder) {
+					 StringBuilder result_builder) {
 		if (Double(value).IsSpecial()) {
 			return HandleSpecialValues(value, result_builder);
 		}
@@ -628,17 +627,25 @@ public class DoubleToStringConverter {
 		boolean sign;
 		// Add one for the terminating null character.
   		final int kDecimalRepCapacity = kMaxPrecisionDigits + 1;
-		char decimal_rep[kDecimalRepCapacity];
+		char[] decimal_rep = new char[kDecimalRepCapacity];
 		int decimal_rep_length;
 
-		DoubleToAscii(value, PRECISION, precision,
-				decimal_rep, kDecimalRepCapacity,
-				&sign, &decimal_rep_length, &decimal_point);
-		DOUBLE_CONVERSION_ASSERT(decimal_rep_length <= precision);
+		{
+			int[] inDecimalPoint = new int[1];
+			boolean[] inSign = new boolean[1];
+			int[] inDecimalRepLength = new int[1];
+			DoubleToAscii(value, DtoaMode.PRECISION, precision,
+					decimal_rep, kDecimalRepCapacity,
+					inSign, inDecimalRepLength, inDecimalPoint);
+			DOUBLE_CONVERSION_ASSERT(inDecimalRepLength[0] <= precision);
+			decimal_point = inDecimalPoint[0];
+			sign = inSign[0];
+			decimal_rep_length = inDecimalRepLength[0];
+		}
 
 		boolean unique_zero = ((flags_ & UNIQUE_ZERO) != 0);
 		if (sign && (value != 0.0 || !unique_zero)) {
-			result_builder->AddCharacter('-');
+			result_builder.AddCharacter('-');
 		}
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
@@ -704,7 +711,7 @@ public class DoubleToStringConverter {
 			case DoubleToStringConverter::FIXED:     return BIGNUM_DTOA_FIXED;
 			case DoubleToStringConverter::PRECISION: return BIGNUM_DTOA_PRECISION;
 			default:
-				DOUBLE_CONVERSION_UNREACHABLE();
+				throw new IllegalStateException("Unreachable");
 		}
 	}
 
@@ -757,33 +764,32 @@ public class DoubleToStringConverter {
 	public static void DoubleToAscii(double v,
 							  DtoaMode mode,
 							  int requested_digits,
-							  char* buffer,
+							  char[] vector,
 							  int buffer_length,
-							  boolean* sign,
-							  int* length,
-							  int* point) {
-		Vector<char> vector(buffer, buffer_length);
-		DOUBLE_CONVERSION_ASSERT(!Double(v).IsSpecial());
+							  boolean[] sign,
+							  int[] length,
+							  int[] point) {
+		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
 		DOUBLE_CONVERSION_ASSERT(mode == SHORTEST || mode == SHORTEST_SINGLE || requested_digits >= 0);
 
-		if (Double(v).Sign() < 0) {
-    		*sign = true;
+		if (new Ieee.Double(v).Sign() < 0) {
+    		sign[0] = true;
 			v = -v;
 		} else {
-    		*sign = false;
+    		sign[0] = false;
 		}
 
 		if (mode == PRECISION && requested_digits == 0) {
 			vector[0] = '\0';
-    		*length = 0;
+			length[0] = 0;
 			return;
 		}
 
 		if (v == 0) {
 			vector[0] = '0';
 			vector[1] = '\0';
-    		*length = 1;
-    		*point = 1;
+			length[0] = 1;
+			point[0] = 1;
 			return;
 		}
 
@@ -805,14 +811,14 @@ public class DoubleToStringConverter {
 				break;
 			default:
 				fast_worked = false;
-				DOUBLE_CONVERSION_UNREACHABLE();
+				throw new IllegalStateException("Unreachable");
 		}
 		if (fast_worked) return;
 
 		// If the fast dtoa didn't succeed use the slower bignum version.
 		BignumDtoaMode bignum_mode = DtoaToBignumDtoaMode(mode);
 		BignumDtoa(v, bignum_mode, requested_digits, vector, length, point);
-		vector[*length] = '\0';
+		vector[length[0]] = '\0';
 	}
 
 

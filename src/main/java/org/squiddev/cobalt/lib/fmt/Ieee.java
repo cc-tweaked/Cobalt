@@ -59,7 +59,7 @@ public class Ieee {
 		public DiyFp AsDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
-			return DiyFp(Significand(), Exponent());
+			return new DiyFp(Significand(), Exponent());
 		}
 
 		// The value encoded by this Double must be strictly greater than 0.
@@ -74,9 +74,9 @@ public class Ieee {
 				e--;
 			}
 			// Do the final shifts in one go.
-			f <<= DiyFp::kSignificandSize - kSignificandSize;
-			e -= DiyFp::kSignificandSize - kSignificandSize;
-			return DiyFp(f, e);
+			f <<= DiyFp.kSignificandSize - kSignificandSize;
+			e -= DiyFp.kSignificandSize - kSignificandSize;
+			return new DiyFp(UnsignedLong.valueOf(f), e);
 		}
 
 		// Returns the double's bit as uint64.
@@ -87,25 +87,25 @@ public class Ieee {
 
 		/** Returns the next greater double. Returns +infinity on input +infinity. */
 		public double NextDouble() {
-			if (d64_ == kInfinity) return Double(kInfinity).value();
+			if (d64_ == kInfinity) return new Double(kInfinity).value();
 			if (Sign() < 0 && Significand() == 0) {
 				// -0.0
 				return 0.0;
 			}
 			if (Sign() < 0) {
-				return Double(d64_ - 1).value();
+				return new Double(d64_ - 1).value();
 			} else {
-				return Double(d64_ + 1).value();
+				return new Double(d64_ + 1).value();
 			}
 		}
 
 		public double PreviousDouble() {
 			if (d64_ == (kInfinity | kSignMask)) return -Infinity();
 			if (Sign() < 0) {
-				return Double(d64_ + 1).value();
+				return new Double(d64_ + 1).value();
 			} else {
 				if (Significand() == 0) return -0.0;
-				return Double(d64_ - 1).value();
+				return new Double(d64_ - 1).value();
 			}
 		}
 
@@ -114,7 +114,7 @@ public class Ieee {
 
 			uint64_t d64 = AsUint64();
 			int biased_e =
-					static_cast<int>((d64 & kExponentMask) >> kPhysicalSignificandSize);
+					(int)((d64 & kExponentMask) >> kPhysicalSignificandSize);
 			return biased_e - kExponentBias;
 		}
 
@@ -129,7 +129,7 @@ public class Ieee {
 		}
 
 		/** Returns true if the double is a denormal. */
-		public bool IsDenormal() {
+		public boolean IsDenormal() {
 			uint64_t d64 = AsUint64();
 			return (d64 & kExponentMask) == 0;
 		}
@@ -138,27 +138,27 @@ public class Ieee {
 		 *  We consider denormals not to be special.
 		 *  Hence only Infinity and NaN are special.
 		 */
-		public bool IsSpecial() {
+		public boolean IsSpecial() {
 			uint64_t d64 = AsUint64();
 			return (d64 & kExponentMask) == kExponentMask;
 		}
 
-		public bool IsNan() {
+		public boolean IsNan() {
 			uint64_t d64 = AsUint64();
 			return ((d64 & kExponentMask) == kExponentMask) &&
 					((d64 & kSignificandMask) != 0);
 		}
 
-		public bool IsQuietNan() {
+		public boolean IsQuietNan() {
 			return IsNan() && ((AsUint64() & kQuietNanBit) != 0);
 		}
 
-		public bool IsSignalingNan() {
+		public boolean IsSignalingNan() {
 			return IsNan() && ((AsUint64() & kQuietNanBit) == 0);
 		}
 
 
-		public bool IsInfinite() {
+		public boolean IsInfinite() {
 			uint64_t d64 = AsUint64();
 			return ((d64 & kExponentMask) == kExponentMask) &&
 					((d64 & kSignificandMask) == 0);
@@ -175,7 +175,7 @@ public class Ieee {
 		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return DiyFp(Significand() * 2 + 1, Exponent() - 1);
+			return new DiyFp((Significand() * 2) + 1), Exponent() - 1);
 		}
 
 		/**
@@ -184,10 +184,10 @@ public class Ieee {
 		 * exponent as m_plus.
 		 * Precondition: the value encoded by this Double must be greater than 0.
 		 */
-		public void NormalizedBoundaries(DiyFp* out_m_minus, DiyFp* out_m_plus) {
+		public void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
-			DiyFp v = this->AsDiyFp();
-			DiyFp m_plus = DiyFp::Normalize(DiyFp((v.f() << 1) + 1, v.e() - 1));
+			DiyFp v = this.AsDiyFp();
+			DiyFp m_plus = DiyFp.Normalize(DiyFp((v.f() << 1) + 1, v.e() - 1));
 			DiyFp m_minus;
 			if (LowerBoundaryIsCloser()) {
 				m_minus = DiyFp((v.f() << 2) - 1, v.e() - 2);
@@ -196,8 +196,8 @@ public class Ieee {
 			}
 			m_minus.set_f(m_minus.f() << (m_minus.e() - m_plus.e()));
 			m_minus.set_e(m_plus.e());
-    	*out_m_plus = m_plus;
-    	*out_m_minus = m_minus;
+			out_m_plus[0] = m_plus;
+			out_m_minus[0] = m_minus;
 		}
 
 		public boolean LowerBoundaryIsCloser() {
@@ -266,7 +266,7 @@ public class Ieee {
 			if (exponent == kDenormalExponent && (significand & kHiddenBit) == 0) {
 				biased_exponent = 0;
 			} else {
-				biased_exponent = static_cast<uint64_t>(exponent + kExponentBias);
+				biased_exponent = (uint64_t)(exponent + kExponentBias);
 			}
 			return (significand & kSignificandMask) |
 					(biased_exponent << kPhysicalSignificandSize);
@@ -307,7 +307,7 @@ public class Ieee {
 
 			uint32_t d32 = AsUint32();
 			int biased_e =
-					static_cast<int>((d32 & kExponentMask) >> kPhysicalSignificandSize);
+					(int)((d32 & kExponentMask) >> kPhysicalSignificandSize);
 			return biased_e - kExponentBias;
 		}
 
@@ -368,10 +368,10 @@ public class Ieee {
 		 *  exponent as m_plus.
 		 *  Precondition: the value encoded by this Single must be greater than 0.
 		 */
-		void NormalizedBoundaries(DiyFp* out_m_minus, DiyFp* out_m_plus) {
+		void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
-			DiyFp v = this->AsDiyFp();
-			DiyFp m_plus = DiyFp::Normalize(DiyFp((v.f() << 1) + 1, v.e() - 1));
+			DiyFp v = this.AsDiyFp();
+			DiyFp m_plus = DiyFp.Normalize(DiyFp((v.f() << 1) + 1, v.e() - 1));
 			DiyFp m_minus;
 			if (LowerBoundaryIsCloser()) {
 				m_minus = DiyFp((v.f() << 2) - 1, v.e() - 2);
@@ -380,8 +380,8 @@ public class Ieee {
 			}
 			m_minus.set_f(m_minus.f() << (m_minus.e() - m_plus.e()));
 			m_minus.set_e(m_plus.e());
-    		*out_m_plus = m_plus;
-    		*out_m_minus = m_minus;
+    		out_m_plus[0] = m_plus;
+    		out_m_minus[0] = m_minus;
 		}
 
 		/**
@@ -390,7 +390,7 @@ public class Ieee {
 		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return DiyFp(Significand() * 2 + 1, Exponent() - 1);
+			return new DiyFp((Significand() * 2 + 1), Exponent() - 1);
 		}
 
 		public boolean LowerBoundaryIsCloser() {
@@ -409,11 +409,11 @@ public class Ieee {
 		public float value() { return uint32_to_float(d32_); }
 
 		public static float Infinity() {
-			return Single(kInfinity).value();
+			return new Single(kInfinity).value();
 		}
 
 		public static float NaN() {
-			return Single(kNaN).value();
+			return new Single(kNaN).value();
 		}
 
 		private static final int kExponentBias = 0x7F + kPhysicalSignificandSize;

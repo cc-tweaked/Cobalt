@@ -52,7 +52,7 @@ public class DiyFp {
 	 * must be greater or equal than the significand of other.
 	 * The result will not be normalized.
 	 */
-	public void Subtract(const DiyFp& other) {
+	public void Subtract(DiyFp other) {
 		DOUBLE_CONVERSION_ASSERT(e_ == other.e_);
 		DOUBLE_CONVERSION_ASSERT(f_ >= other.f_);
 		f_ -= other.f_;
@@ -63,7 +63,7 @@ public class DiyFp {
 	 * The exponents of both numbers must be the same and a must be greater
 	 * or equal than b. The result will not be normalized.
 	 */
-	public static DiyFp Minus(const DiyFp& a, const DiyFp& b) {
+	public static DiyFp Minus(DiyFp a, DiyFp b) {
 		DiyFp result = a;
 		result.Subtract(b);
 		return result;
@@ -72,7 +72,7 @@ public class DiyFp {
 	/**
 	 * this *= other.
 	 */
-	public void Multiply(const DiyFp& other) {
+	public void Multiply(DiyFp other) {
 		// Simply "emulates" a 128 bit multiplication.
 		// However: the resulting number only contains 64 bits. The least
 		// significant 64 bits are only used for rounding the most significant 64
@@ -97,7 +97,7 @@ public class DiyFp {
 	/**
 	 * returns a * b;
 	 */
-	public static DiyFp Times(const DiyFp& a, const DiyFp& b) {
+	public static DiyFp Times(DiyFp a, DiyFp b) {
 		DiyFp result = a;
 		result.Multiply(b);
 		return result;
@@ -123,14 +123,14 @@ const uint64_t k10MSBits = DOUBLE_CONVERSION_UINT64_2PART_C(0xFFC00000, 00000000
 		e_ = exponent;
 	}
 
-	public static DiyFp Normalize(const DiyFp& a) {
+	public static DiyFp Normalize(DiyFp a) {
 		DiyFp result = a;
 		result.Normalize();
 		return result;
 	}
 
-	public uint64_t f() const { return f_; }
-	public int32_t e() const { return e_; }
+	public uint64_t f() { return f_; }
+	public int32_t e() { return e_; }
 
 	public void set_f(uint64_t new_value) { f_ = new_value; }
 	public void set_e(int32_t new_value) { e_ = new_value; }

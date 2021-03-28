@@ -44,13 +44,13 @@ public class FixedDtoa {
 			uint64_t accumulator;
 
 			accumulator = (low_bits_ & kMask32) * multiplicand;
-			uint32_t part = static_cast<uint32_t>(accumulator & kMask32);
+			uint32_t part = (uint32_t)(accumulator & kMask32);
 			accumulator >>= 32;
 			accumulator = accumulator + (low_bits_ >> 32) * multiplicand;
 			low_bits_ = (accumulator << 32) + part;
 			accumulator >>= 32;
 			accumulator = accumulator + (high_bits_ & kMask32) * multiplicand;
-			part = static_cast<uint32_t>(accumulator & kMask32);
+			part = (uint32_t)(accumulator & kMask32);
 			accumulator >>= 32;
 			accumulator = accumulator + (high_bits_ >> 32) * multiplicand;
 			high_bits_ = (accumulator << 32) + part;
@@ -82,28 +82,28 @@ public class FixedDtoa {
 		// Returns *this DIV (2^power).
 		public int DivModPowerOf2(int power) {
 			if (power >= 64) {
-				int result = static_cast<int>(high_bits_ >> (power - 64));
-				high_bits_ -= static_cast<uint64_t>(result) << (power - 64);
+				int result = (int)(high_bits_ >> (power - 64));
+				high_bits_ -= (uint64_t)(result) << (power - 64);
 				return result;
 			} else {
 				uint64_t part_low = low_bits_ >> power;
 				uint64_t part_high = high_bits_ << (64 - power);
-				int result = static_cast<int>(part_low + part_high);
+				int result = (int)(part_low + part_high);
 				high_bits_ = 0;
 				low_bits_ -= part_low << power;
 				return result;
 			}
 		}
 
-		public boolean IsZero() const {
+		public boolean IsZero() {
 			return high_bits_ == 0 && low_bits_ == 0;
 		}
 
-		public int BitAt(int position) const {
+		public int BitAt(int position) {
 			if (position >= 64) {
-				return static_cast<int>(high_bits_ >> (position - 64)) & 1;
+				return (int)(high_bits_ >> (position - 64)) & 1;
 			} else {
-				return static_cast<int>(low_bits_ >> position) & 1;
+				return (int)(low_bits_ >> position) & 1;
 			}
 		}
 
@@ -118,27 +118,28 @@ public class FixedDtoa {
 
 
 	private static void FillDigits32FixedLength(uint32_t number, int requested_length,
-										Vector<char> buffer, int* length) {
+										char[] buffer, int[] length) {
+		int len = length[0];
 		for (int i = requested_length - 1; i >= 0; --i) {
-			buffer[(*length) + i] = '0' + number % 10;
+			buffer[len + i] = '0' + number % 10;
 			number /= 10;
 		}
-  		*length += requested_length;
+  		length[0] += requested_length;
 	}
 
 
-	private static void FillDigits32(uint32_t number, Vector<char> buffer, int* length) {
+	private static void FillDigits32(uint32_t number, char[] buffer, int[] length) {
 		int number_length = 0;
 		// We fill the digits in reverse order and exchange them afterwards.
 		while (number != 0) {
 			int digit = number % 10;
 			number /= 10;
-			buffer[(*length) + number_length] = static_cast<char>('0' + digit);
+			buffer[length[0] + number_length] = (char)('0' + digit);
 			number_length++;
 		}
 		// Exchange the digits.
-		int i = *length;
-		int j = *length + number_length - 1;
+		int i = length[0];
+		int j = length[0] + number_length - 1;
 		while (i < j) {
 			char tmp = buffer[i];
 			buffer[i] = buffer[j];
@@ -146,18 +147,18 @@ public class FixedDtoa {
 			i++;
 			j--;
 		}
-  		*length += number_length;
+  		length[0] += number_length;
 	}
 
 
 	private static void FillDigits64FixedLength(uint64_t number,
-										Vector<char> buffer, int* length) {
+										char[] buffer, int[] length) {
   		final uint32_t kTen7 = 10000000;
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
-		uint32_t part2 = static_cast<uint32_t>(number % kTen7);
+		uint32_t part2 = (uint32_t)(number % kTen7);
 		number /= kTen7;
-		uint32_t part1 = static_cast<uint32_t>(number % kTen7);
-		uint32_t part0 = static_cast<uint32_t>(number / kTen7);
+		uint32_t part1 = (uint32_t)(number % kTen7);
+		uint32_t part0 = (uint32_t)(number / kTen7);
 
 		FillDigits32FixedLength(part0, 3, buffer, length);
 		FillDigits32FixedLength(part1, 7, buffer, length);
@@ -165,13 +166,13 @@ public class FixedDtoa {
 	}
 
 
-	private static void FillDigits64(uint64_t number, Vector<char> buffer, int* length) {
-  		final uint32_t kTen7 = 10000000;
+	private static void FillDigits64(uint64_t number, char[] buffer, int[] length) {
+  		final uint64_t kTen7 = 10000000L;
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
-		uint32_t part2 = static_cast<uint32_t>(number % kTen7);
+		uint32_t part2 = (uint32_t)(number % kTen7);
 		number /= kTen7;
-		uint32_t part1 = static_cast<uint32_t>(number % kTen7);
-		uint32_t part0 = static_cast<uint32_t>(number / kTen7);
+		uint32_t part1 = (uint32_t)(number % kTen7);
+		uint32_t part0 = (uint32_t)(number / kTen7);
 
 		if (part0 != 0) {
 			FillDigits32(part0, buffer, length);
@@ -186,18 +187,18 @@ public class FixedDtoa {
 	}
 
 
-	private static void RoundUp(Vector<char> buffer, int* length, int* decimal_point) {
+	private static void RoundUp(char[] buffer, int[] length, int[] decimal_point) {
 		// An empty buffer represents 0.
-		if (*length == 0) {
+		if (length[0] == 0) {
 			buffer[0] = '1';
-    		*decimal_point = 1;
-    		*length = 1;
+    		decimal_point[0] = 1;
+    		length[0] = 1;
 			return;
 		}
 		// Round the last digit until we either have a digit that was not '9' or until
 		// we reached the first digit.
-		buffer[(*length) - 1]++;
-		for (int i = (*length) - 1; i > 0; --i) {
+		buffer[length[0] - 1]++;
+		for (int i = length[0] - 1; i > 0; --i) {
 			if (buffer[i] != '0' + 10) {
 				return;
 			}
@@ -211,7 +212,7 @@ public class FixedDtoa {
 		// (indicating that the point is now one digit to the right).
 		if (buffer[0] == '0' + 10) {
 			buffer[0] = '1';
-			(*decimal_point)++;
+			decimal_point[0]++;
 		}
 	}
 
@@ -228,8 +229,8 @@ public class FixedDtoa {
 	// already contained "199" (thus yielding a buffer of "19999") then a
 	// rounding-up will change the contents of the buffer to "20000".
 	private static void FillFractionals(uint64_t fractionals, int exponent,
-								int fractional_count, Vector<char> buffer,
-								int* length, int* decimal_point) {
+								int fractional_count, char[] buffer,
+								int[] length, int[] decimal_point) {
 		DOUBLE_CONVERSION_ASSERT(-128 <= exponent && exponent <= 0);
 		// 'fractionals' is a fixed-point number, with binary point at bit
 		// (-exponent). Inside the function the non-converted remainder of fractionals
@@ -252,11 +253,11 @@ public class FixedDtoa {
 				// and any further multiplication of fractionals by 5 will not overflow.
 				fractionals *= 5;
 				point--;
-				int digit = static_cast<int>(fractionals >> point);
+				int digit = (int)(fractionals >> point);
 				DOUBLE_CONVERSION_ASSERT(digit <= 9);
-				buffer[*length] = static_cast<char>('0' + digit);
-				(*length)++;
-				fractionals -= static_cast<uint64_t>(digit) << point;
+				buffer[length[0]] = (char)('0' + digit);
+				length[0]++;
+				fractionals -= (uint64_t)(digit) << point;
 			}
 			// If the first bit after the point is set we have to round up.
 			DOUBLE_CONVERSION_ASSERT(fractionals == 0 || point - 1 >= 0);
@@ -277,8 +278,8 @@ public class FixedDtoa {
 				point--;
 				int digit = fractionals128.DivModPowerOf2(point);
 				DOUBLE_CONVERSION_ASSERT(digit <= 9);
-				buffer[*length] = static_cast<char>('0' + digit);
-				(*length)++;
+				buffer[length[0]] = (char)('0' + digit);
+				length[0]++;
 			}
 			if (fractionals128.BitAt(point - 1) == 1) {
 				RoundUp(buffer, length, decimal_point);
@@ -289,20 +290,20 @@ public class FixedDtoa {
 
 	// Removes leading and trailing zeros.
 	// If leading zeros are removed then the decimal point position is adjusted.
-	private static void TrimZeros(Vector<char> buffer, int* length, int* decimal_point) {
-		while (*length > 0 && buffer[(*length) - 1] == '0') {
-			(*length)--;
+	private static void TrimZeros(char[] buffer, int[] length, int[] decimal_point) {
+		while (length[0] > 0 && buffer[length[0] - 1] == '0') {
+			length[0]--;
 		}
 		int first_non_zero = 0;
-		while (first_non_zero < *length && buffer[first_non_zero] == '0') {
+		while (first_non_zero < length[0] && buffer[first_non_zero] == '0') {
 			first_non_zero++;
 		}
 		if (first_non_zero != 0) {
-			for (int i = first_non_zero; i < *length; ++i) {
+			for (int i = first_non_zero; i < length[0]; ++i) {
 				buffer[i - first_non_zero] = buffer[i];
 			}
-    		*length -= first_non_zero;
-    		*decimal_point -= first_non_zero;
+    		length[0] -= first_non_zero;
+    		decimal_point[0] -= first_non_zero;
 		}
 	}
 
@@ -324,7 +325,7 @@ public class FixedDtoa {
 	// This method only works for some parameters. If it can't handle the input it
 	// returns false. The output is null-terminated when the function succeeds.
 	public static boolean FastFixedDtoa(double v, int fractional_count,
-										Vector<char> buffer, int* length, int* decimal_point) {
+										char[] buffer, int[] length, int[] decimal_point) {
   		final uint32_t kMaxUInt32 = 0xFFFFFFFF;
 		uint64_t significand = Double(v).Significand();
 		int exponent = Double(v).Exponent();
@@ -335,7 +336,7 @@ public class FixedDtoa {
 		// more.
 		if (exponent > 20) return false;
 		if (fractional_count > 20) return false;
-  		*length = 0;
+  		length[0] = 0;
 		// At most kDoubleSignificandSize bits of the significand are non-zero.
 		// Given a 64 bit integer we have 11 0s followed by 53 potentially non-zero
 		// bits:  0..11*..0xxx..53*..xx
@@ -366,21 +367,21 @@ public class FixedDtoa {
 			if (exponent > divisor_power) {
 				// We only allow exponents of up to 20 and therefore (17 - e) <= 3
 				dividend <<= exponent - divisor_power;
-				quotient = static_cast<uint32_t>(dividend / divisor);
+				quotient = (uint32_t)(dividend / divisor);
 				remainder = (dividend % divisor) << divisor_power;
 			} else {
 				divisor <<= divisor_power - exponent;
-				quotient = static_cast<uint32_t>(dividend / divisor);
+				quotient = (uint32_t)(dividend / divisor);
 				remainder = (dividend % divisor) << exponent;
 			}
 			FillDigits32(quotient, buffer, length);
 			FillDigits64FixedLength(remainder, buffer, length);
-    		*decimal_point = *length;
+    		decimal_point[0] = length[0];
 		} else if (exponent >= 0) {
 			// 0 <= exponent <= 11
 			significand <<= exponent;
 			FillDigits64(significand, buffer, length);
-    		*decimal_point = *length;
+    		decimal_point[0] = length[0];
 		} else if (exponent > -kDoubleSignificandSize) {
 			// We have to cut the number.
 			uint64_t integrals = significand >> -exponent;
@@ -388,9 +389,9 @@ public class FixedDtoa {
 			if (integrals > kMaxUInt32) {
 				FillDigits64(integrals, buffer, length);
 			} else {
-				FillDigits32(static_cast<uint32_t>(integrals), buffer, length);
+				FillDigits32((uint32_t)integrals, buffer, length);
 			}
-    		*decimal_point = *length;
+    		decimal_point[0] = length[0];
 			FillFractionals(fractionals, exponent, fractional_count,
 					buffer, length, decimal_point);
 		} else if (exponent < -128) {
@@ -398,19 +399,19 @@ public class FixedDtoa {
 			// 0.
 			DOUBLE_CONVERSION_ASSERT(fractional_count <= 20);
 			buffer[0] = '\0';
-    		*length = 0;
-    		*decimal_point = -fractional_count;
+    		length[0] = 0;
+    		decimal_point[0] = -fractional_count;
 		} else {
-    		*decimal_point = 0;
+    		decimal_point[0] = 0;
 			FillFractionals(significand, exponent, fractional_count,
 					buffer, length, decimal_point);
 		}
 		TrimZeros(buffer, length, decimal_point);
-		buffer[*length] = '\0';
-		if ((*length) == 0) {
+		buffer[length[0]] = '\0';
+		if (length[0] == 0) {
 			// The string is empty and the decimal_point thus has no importance. Mimick
 			// Gay's dtoa and and set it to -fractional_count.
-    		*decimal_point = -fractional_count;
+    		decimal_point[0] = -fractional_count;
 		}
 		return true;
 	}
