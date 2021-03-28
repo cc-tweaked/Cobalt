@@ -275,14 +275,14 @@ public class DoubleToStringConverter {
 		if (double_inspect.IsInfinite()) {
 			if (infinity_symbol_ == null) return false;
 			if (value < 0) {
-				result_builder.AddCharacter('-');
+				result_builder.append('-');
 			}
-			result_builder.AddString(infinity_symbol_);
+			result_builder.append(infinity_symbol_);
 			return true;
 		}
 		if (double_inspect.IsNan()) {
 			if (nan_symbol_ == null) return false;
-			result_builder.AddString(nan_symbol_);
+			result_builder.append(nan_symbol_);
 			return true;
 		}
 		return false;
@@ -297,18 +297,18 @@ public class DoubleToStringConverter {
 												 int exponent,
 												 StringBuilder result_builder) {
 		DOUBLE_CONVERSION_ASSERT(length != 0);
-		result_builder.AddCharacter(decimal_digits[0]);
+		result_builder.append(decimal_digits[0]);
 		if (length != 1) {
-			result_builder.AddCharacter('.');
-			result_builder.AddSubstring(decimal_digits[1], length-1);
+			result_builder.append('.');
+			result_builder.append(decimal_digits, 1, length-1);
 		}
-		result_builder.AddCharacter(exponent_character_);
+		result_builder.append(exponent_character_);
 		if (exponent < 0) {
-			result_builder.AddCharacter('-');
+			result_builder.append('-');
 			exponent = -exponent;
 		} else {
-			if ((flags_ & EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
-				result_builder.AddCharacter('+');
+			if ((flags_ & Flags.EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
+				result_builder.append('+');
 			}
 		}
 		DOUBLE_CONVERSION_ASSERT(exponent < 1e4);
@@ -343,40 +343,40 @@ public class DoubleToStringConverter {
 		// Create a representation that is padded with zeros if needed.
 		if (decimal_point <= 0) {
 			// "0.00000decimal_rep" or "0.000decimal_rep00".
-			result_builder.AddCharacter('0');
+			result_builder.append('0');
 			if (digits_after_point > 0) {
-				result_builder.AddCharacter('.');
-				result_builder.AddPadding('0', -decimal_point);
+				result_builder.append('.');
+
+				addPadding(result_builder, '0', -decimal_point);
 				DOUBLE_CONVERSION_ASSERT(length <= digits_after_point - (-decimal_point));
-				result_builder.AddSubstring(decimal_digits, length);
+				result_builder.append(decimal_digits);
 				int remaining_digits = digits_after_point - (-decimal_point) - length;
-				result_builder.AddPadding('0', remaining_digits);
+				addPadding(result_builder, '0', remaining_digits);
 			}
 		} else if (decimal_point >= length) {
 			// "decimal_rep0000.00000" or "decimal_rep.0000".
-			result_builder.AddSubstring(decimal_digits, length);
-			result_builder.AddPadding('0', decimal_point - length);
+			result_builder.append(decimal_digits);
+			addPadding(result_builder, '0', decimal_point - length);
 			if (digits_after_point > 0) {
-				result_builder.AddCharacter('.');
-				result_builder.AddPadding('0', digits_after_point);
+				result_builder.append('.');
+				addPadding(result_builder, '0', digits_after_point);
 			}
 		} else {
 			// "decima.l_rep000".
 			DOUBLE_CONVERSION_ASSERT(digits_after_point > 0);
-			result_builder.AddSubstring(decimal_digits, decimal_point);
-			result_builder.AddCharacter('.');
+			result_builder.append(decimal_digits, 0, decimal_point+1);
+			result_builder.append('.');
 			DOUBLE_CONVERSION_ASSERT(length - decimal_point <= digits_after_point);
-			result_builder.AddSubstring(decimal_digits[decimal_point],
-					length - decimal_point);
+			result_builder.append(decimal_digits, decimal_point, length - decimal_point);
 			int remaining_digits = digits_after_point - (length - decimal_point);
-			result_builder.AddPadding('0', remaining_digits);
+			addPadding(result_builder, '0', remaining_digits);
 		}
 		if (digits_after_point == 0) {
-			if ((flags_ & EMIT_TRAILING_DECIMAL_POINT) != 0) {
-				result_builder.AddCharacter('.');
+			if ((flags_ & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) {
+				result_builder.append('.');
 			}
-			if ((flags_ & EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
-				result_builder.AddCharacter('0');
+			if ((flags_ & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
+				result_builder.append('0');
 			}
 		}
 	}
@@ -401,7 +401,7 @@ public class DoubleToStringConverter {
 
 		boolean unique_zero = (flags_ & Flags.UNIQUE_ZERO) != 0;
 		if (sign[0] && (value != 0.0 || !unique_zero)) {
-			result_builder.AddCharacter('-');
+			result_builder.append('-');
 		}
 
 		int exponent = decimal_point[0] - 1;
@@ -481,9 +481,9 @@ public class DoubleToStringConverter {
 				decimal_rep, kDecimalRepCapacity,
 				sign, decimal_rep_length, decimal_point);
 
-		boolean unique_zero = ((flags_ & UNIQUE_ZERO) != 0);
-		if (sign && (value != 0.0 || !unique_zero)) {
-			result_builder.AddCharacter('-');
+		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
+		if (sign[0] && (value != 0.0 || !unique_zero)) {
+			result_builder.append('-');
 		}
 
 		CreateDecimalRepresentation(decimal_rep, decimal_rep_length[0], decimal_point[0],
@@ -563,7 +563,7 @@ public class DoubleToStringConverter {
 
 		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
 		if (sign[0] && (value != 0.0 || !unique_zero)) {
-			result_builder.AddCharacter('-');
+			result_builder.append('-');
 		}
 
 		int exponent = decimal_point[0] - 1;
@@ -646,7 +646,7 @@ public class DoubleToStringConverter {
 
 		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
 		if (sign && (value != 0.0 || !unique_zero)) {
-			result_builder.AddCharacter('-');
+			result_builder.append('-');
 		}
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
@@ -822,5 +822,13 @@ public class DoubleToStringConverter {
 		vector[length[0]] = '\0';
 	}
 
-
+	/**
+	 * 	Add character padding to the builder. If count is non-positive,
+	 * 	nothing is added to the builder.
+	 */
+	private static void addPadding(StringBuilder sb, char c, int count) {
+		for (int i=count; i > 0; i--) {
+			sb.append(c);
+		}
+	}
 }
