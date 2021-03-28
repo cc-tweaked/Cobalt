@@ -54,7 +54,7 @@ public class BigNumDtoa {
 		BIGNUM_DTOA_PRECISION
 	};
 
-	private static int NormalizedExponent(uint64_t significand, int exponent) {
+	private static int NormalizedExponent(long significand, int exponent) {
 		DOUBLE_CONVERSION_ASSERT(significand != 0);
 		while ((significand & Ieee.Double.kHiddenBit) == 0) {
 			significand = significand << 1;
@@ -98,7 +98,7 @@ public class BigNumDtoa {
 						   char[] buffer, int[] length, int[] decimal_point) {
 		DOUBLE_CONVERSION_ASSERT(v > 0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
-		uint64_t significand;
+		long significand;
 		int exponent;
 		boolean lower_boundary_is_closer;
 		if (mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE) {
@@ -205,8 +205,8 @@ public class BigNumDtoa {
 		}
   		length[0] = 0;
 		for (;;) {
-			uint16_t digit;
-			digit = numerator.DivideModuloIntBignum(*denominator);
+			int digit;
+			digit = numerator.DivideModuloIntBignum(denominator);
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
@@ -303,7 +303,7 @@ public class BigNumDtoa {
 									  char[] buffer, int[] length) {
 		DOUBLE_CONVERSION_ASSERT(count >= 0);
 		for (int i = 0; i < count - 1; ++i) {
-			uint16_t digit;
+			int digit;
 			digit = numerator.DivideModuloIntBignum(denominator);
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
 			// digit = numerator / denominator (integer division).
@@ -313,7 +313,7 @@ public class BigNumDtoa {
 			numerator.Times10();
 		}
 		// Generate the last digit.
-		uint16_t digit;
+		int digit;
 		digit = numerator.DivideModuloIntBignum(denominator);
 		if (Bignum.PlusCompare(numerator, numerator, denominator) >= 0) {
 			digit++;
@@ -474,7 +474,7 @@ public class BigNumDtoa {
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
 	private static void InitialScaledStartValuesPositiveExponent(
-			uint64_t significand, int exponent,
+			long significand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
 			Bignum numerator, Bignum denominator,
 			Bignum delta_minus, Bignum delta_plus) {
@@ -545,7 +545,7 @@ public class BigNumDtoa {
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
 	private static void InitialScaledStartValuesNegativeExponentPositivePower(
-			uint64_t significand, int exponent,
+			long ulSignificand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
 			Bignum numerator, Bignum denominator,
 			Bignum delta_minus, Bignum delta_plus) {
@@ -556,7 +556,7 @@ public class BigNumDtoa {
 		// numerator = significand
 		//  since v = significand * 2^exponent this is equivalent to
 		//  numerator = v * / 2^-exponent
-		numerator.AssignUInt64(significand);
+		numerator.AssignUInt64(ulSignificand);
 		// denominator = 10^estimated_power * 2^-exponent (with exponent < 0)
 		denominator.AssignPower(10, estimated_power);
 		denominator.ShiftLeft(-exponent);
@@ -617,7 +617,7 @@ public class BigNumDtoa {
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
 	private static void InitialScaledStartValuesNegativeExponentNegativePower(
-			uint64_t significand, int exponent,
+			long ulSignificand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
 			Bignum numerator, Bignum denominator,
 			Bignum delta_minus, Bignum delta_plus) {
@@ -642,7 +642,7 @@ public class BigNumDtoa {
 		// Remember: numerator has been abused as power_ten. So no need to assign it
 		//  to itself.
 		DOUBLE_CONVERSION_ASSERT(numerator == power_ten);
-		numerator.MultiplyByUInt64(significand);
+		numerator.MultiplyByUInt64(ulSignificand);
 
 		// denominator = 2 * 2^-exponent with exponent < 0.
 		denominator.AssignUInt(1);
@@ -700,7 +700,7 @@ public class BigNumDtoa {
 	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
-	private static void InitialScaledStartValues(uint64_t significand,
+	private static void InitialScaledStartValues(long ulSignificand,
 										 int exponent,
 										 boolean lower_boundary_is_closer,
 										 int estimated_power,
@@ -711,15 +711,15 @@ public class BigNumDtoa {
 										 Bignum delta_plus) {
 		if (exponent >= 0) {
 			InitialScaledStartValuesPositiveExponent(
-					significand, exponent, estimated_power, need_boundary_deltas,
+					ulSignificand, exponent, estimated_power, need_boundary_deltas,
 					numerator, denominator, delta_minus, delta_plus);
 		} else if (estimated_power >= 0) {
 			InitialScaledStartValuesNegativeExponentPositivePower(
-					significand, exponent, estimated_power, need_boundary_deltas,
+					ulSignificand, exponent, estimated_power, need_boundary_deltas,
 					numerator, denominator, delta_minus, delta_plus);
 		} else {
 			InitialScaledStartValuesNegativeExponentNegativePower(
-					significand, exponent, estimated_power, need_boundary_deltas,
+					ulSignificand, exponent, estimated_power, need_boundary_deltas,
 					numerator, denominator, delta_minus, delta_plus);
 		}
 

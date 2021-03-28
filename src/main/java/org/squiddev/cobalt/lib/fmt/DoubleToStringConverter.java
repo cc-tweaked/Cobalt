@@ -102,7 +102,7 @@ public class DoubleToStringConverter {
 	private final int flags_;
 	private final String infinity_symbol_;
 	private final String nan_symbol_;
-	private final char exponent_character_;
+	private final int exponent_character_;
 	private final int decimal_in_shortest_low_;
 	private final int decimal_in_shortest_high_;
 	private final int max_leading_padding_zeroes_in_precision_mode_;
@@ -170,7 +170,7 @@ public class DoubleToStringConverter {
 	public DoubleToStringConverter(int flags,
 							String infinity_symbol,
 						    String nan_symbol,
-							char exponent_character,
+							int exponent_character,
 							int decimal_in_shortest_low,
 							int decimal_in_shortest_high,
 							int max_leading_padding_zeroes_in_precision_mode,
@@ -321,7 +321,7 @@ public class DoubleToStringConverter {
 			buffer[--first_char_pos] = '0';
 		} else {
 			while (exponent > 0) {
-				buffer[--first_char_pos] = '0' + (exponent % 10);
+				buffer[--first_char_pos] = (char) ('0' + (exponent % 10));
 				exponent /= 10;
 			}
 		}
@@ -330,8 +330,10 @@ public class DoubleToStringConverter {
 		while(kMaxExponentLength - first_char_pos < std::min(min_exponent_width_, kMaxExponentLength)) {
 			buffer[--first_char_pos] = '0';
 		}
-		result_builder.AddSubstring(buffer[first_char_pos],
-				kMaxExponentLength - first_char_pos);
+		// TODO verify this is equivalent
+		result_builder.append(buffer, first_char_pos, kMaxExponentLength -first_char_pos);
+//		result_builder->AddSubstring(&buffer[first_char_pos],
+//				kMaxExponentLength - first_char_pos);
 	}
 
 	/** Creates a decimal representation (i.e 1234.5678). */
