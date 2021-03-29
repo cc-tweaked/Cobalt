@@ -109,6 +109,24 @@ public class DoubleToStringConverter {
 	private final int max_trailing_padding_zeroes_in_precision_mode_;
 	private final int min_exponent_width_;
 
+	public DoubleToStringConverter(int flags,
+								String infinity_symbol,
+								String nan_symbol,
+								int exponent_character,
+								int decimal_in_shortest_low,
+								int decimal_in_shortest_high,
+								int max_leading_padding_zeroes_in_precision_mode,
+								int max_trailing_padding_zeroes_in_precision_mode) {
+		this(flags,
+			infinity_symbol,
+			nan_symbol,
+			exponent_character,
+			decimal_in_shortest_low,
+			decimal_in_shortest_high,
+			max_leading_padding_zeroes_in_precision_mode,
+			max_trailing_padding_zeroes_in_precision_mode, 0);
+	}
+
 	/**
 	 *  Flags should be a bit-or combination of the possible Flags-enum.
 	 *   - NO_FLAGS: no special flags.
@@ -175,7 +193,7 @@ public class DoubleToStringConverter {
 							int decimal_in_shortest_high,
 							int max_leading_padding_zeroes_in_precision_mode,
 							int max_trailing_padding_zeroes_in_precision_mode,
-							int min_exponent_width = 0) {
+							int min_exponent_width) {
         this.flags_ = flags;
 		this.infinity_symbol_ = infinity_symbol;
 		this.nan_symbol_ = nan_symbol;
@@ -204,14 +222,14 @@ public class DoubleToStringConverter {
 	 *  max_leading_padding_zeroes_in_precision_mode: 6
 	 *  max_trailing_padding_zeroes_in_precision_mode: 0
 	 */
-	public static final DoubleToStringConverter EcmaScriptConverter() {
+	public static DoubleToStringConverter EcmaScriptConverter() {
 		int flags = Flags.UNIQUE_ZERO | Flags.EMIT_POSITIVE_EXPONENT_SIGN;
 		return new DoubleToStringConverter(flags,
 				"Infinity",
 				"NaN",
 				'e',
 				-6, 21,
-				6, 0, 0);
+				6, 0);
 	}
 
 
