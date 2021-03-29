@@ -27,7 +27,22 @@ package org.squiddev.cobalt.lib.fmt;
 final public class Assert {
 	public static void DOUBLE_CONVERSION_ASSERT(boolean expected) {
 		if (!expected) {
-			throw new AssertionError("Assertion failed");
+			throw new DoubleConversionAssertionError("Assertion failed");
+		}
+	}
+
+	public static class DoubleConversionAssertionError extends AssertionError {
+		private static final long serialVersionUID = 1L;
+
+		public DoubleConversionAssertionError() {
+		}
+
+		public DoubleConversionAssertionError(String message) {
+			super(message, null);
+		}
+
+		public DoubleConversionAssertionError(String message, Throwable cause) {
+			super(message, cause);
 		}
 	}
 
