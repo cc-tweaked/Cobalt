@@ -94,7 +94,7 @@ public class BigNumDtoa {
 	 *  'BignumDtoa' expects the given buffer to be big enough to hold all digits
 	 *  and a terminating null-character.
 	 */
-	public void BignumDtoa(double v, BignumDtoaMode mode, int requested_digits,
+	public static void BignumDtoa(double v, BignumDtoaMode mode, int requested_digits,
 						   char[] buffer, int[] length, int[] decimal_point) {
 		DOUBLE_CONVERSION_ASSERT(v > 0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
