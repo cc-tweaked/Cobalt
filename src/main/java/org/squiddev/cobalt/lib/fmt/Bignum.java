@@ -26,6 +26,8 @@ package org.squiddev.cobalt.lib.fmt;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A mutable proxy object to java BigDecimal.  Probably can be
@@ -39,17 +41,45 @@ public class Bignum {
 		val = new BigDecimal(0);
 	}
 
-	public void AssignUInt(short value) {
-		val = BigDecimal.valueOf(Short.toUnsignedInt(value) );
+	private Bignum(BigDecimal val) {
+		this.val = val;
 	}
 
-	public void AssignUInt(int value) {
-		val = BigDecimal.valueOf(Integer.toUnsignedLong(value) );
+	/**
+	 * Only used in tests, so doesn't have to be efficient
+	 */
+	boolean ToHexString(char[] buffer, final int buffer_size) {
+		String hex = val.toBigInteger().toString(16).toUpperCase();
+		hex.getChars(0, hex.length(), buffer, 0);
+		buffer[hex.length()] = '\0';
+		return true;
 	}
 
-	public void AssignUInt64(long value) {
-		val = fromUnsigned(value);
+	public Bignum copy() {
+		return new Bignum(val);
 	}
+
+	public void AssignHexString(String value) {
+		val = new BigDecimal(new BigInteger(value, 16));
+	}
+
+	public void AssignDecimalString(String value) {
+		val = new BigDecimal(value);
+	}
+
+	public void AssignUInt(short unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void AssignUInt(int unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void AssignUInt(long unsignedValue) { val = fromUnsigned(unsignedValue); }
+
+	// special care is needed to prevent sign-extending conversions
+	public void AssignUInt16(short unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt16(int unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt32(short unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt32(int unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt64(short unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt64(int unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt64(long unsignedValue) { AssignUInt(unsignedValue); }
+
 	public void AssignBignum(Bignum other) {
 		this.val = other.val;
 	}
@@ -61,12 +91,21 @@ public class Bignum {
 		this.val = new BigDecimal(new BigInteger(String.valueOf(value), 16));
 	}
 
-	public void AssignPower(int base, int exponent) {
-		val = BigDecimal.valueOf(base, exponent);
+
+	public void AssignPowerUInt16(int base, int exponent) {
+		AssignPower(base, exponent);
 	}
 
-	public void AddUInt64(long operand) {
-		val = val.add(fromUnsigned(operand));
+	public void AssignPower(int base, int exponent) {
+		val = BigDecimal.valueOf(base).pow(exponent);
+	}
+
+	public void AddUInt64(short operand) { add(fromUnsigned(operand)); }
+	public void AddUInt64(int operand) { add(fromUnsigned(operand)); }
+	public void AddUInt64(long operand) { add(fromUnsigned(operand)); }
+
+	private void add(BigDecimal operand) {
+		val = val.add(operand);
 	}
 
 	public void AddBignum(Bignum other) {
@@ -78,21 +117,32 @@ public class Bignum {
 		val = val.subtract(other.val);
 	}
 
-	void Square() {
+	public void Square() {
 		val = val.multiply(val);
 	}
 
-	void ShiftLeft(int shift_amount) {
+	public void ShiftLeft(int shift_amount) {
 		val = new BigDecimal(val.toBigIntegerExact().shiftLeft(shift_amount));
 	}
 
-	void MultiplyByUInt32(int factor) {
-		val = val.multiply(fromUnsigned(factor));
+
+	// special care is needed to prevent sign-extending conversions
+	public void MultiplyByUInt32(short unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+	public void MultiplyByUInt32(int unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+
+	// special care is needed to prevent sign-extending conversions
+	void MultiplyByUInt64(short unsignedFactor){ multiply(fromUnsigned(unsignedFactor)); }
+	void MultiplyByUInt64(int unsignedFactor)  {  multiply(fromUnsigned(unsignedFactor)); }
+	void MultiplyByUInt64(long unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+
+	public void MultiplyByPowerOfTen(final int exponent) {
+		val = val.scaleByPowerOfTen(exponent);
 	}
 
-	void MultiplyByUInt64(long factor) {
-		val = val.multiply(fromUnsigned(factor));
+	private void multiply(BigDecimal exponent) {
+		val = val.multiply(exponent);
 	}
+
 
 //	void MultiplyByPowerOfTen(int exponent);
 
@@ -103,7 +153,7 @@ public class Bignum {
 	//  this = this % other;
 	// In the worst case this function is in O(this/other).
 	int DivideModuloIntBignum(Bignum other) {
-		int quotient = val.divide(other.val).intValueExact();
+		int quotient = val.divide(other.val, RoundingMode.DOWN).intValue();
 		val = val.remainder(other.val);
 		return quotient;
 	}
@@ -154,8 +204,8 @@ public class Bignum {
 	}
 
 	private static BigDecimal fromUnsigned(long value) {
-		if (value < 0) {
-			return new BigDecimal(BigInteger.valueOf(value & Long.MAX_VALUE).setBit(Long.SIZE-1));
+		if (value < 0L) {
+			return new BigDecimal(BigInteger.valueOf(value >>> 1).shiftLeft(1).add(BigInteger.valueOf(value & 1)));
 		} else {
 			return BigDecimal.valueOf(value);
 		}
