@@ -44,13 +44,13 @@ public class FixedDtoa {
 			long accumulator;
 
 			accumulator = (low_bits_ & kMask32) * multiplicand;
-			int part = (int)(accumulator & kMask32);
+			long part = accumulator & kMask32;
 			accumulator >>>= 32;
 			accumulator = accumulator + (low_bits_ >>> 32) * multiplicand;
 			low_bits_ = (accumulator << 32) + part;
 			accumulator >>>= 32;
 			accumulator = accumulator + (high_bits_ & kMask32) * multiplicand;
-			part = (int)(accumulator & kMask32);
+			part = accumulator & kMask32;
 			accumulator >>>= 32;
 			accumulator = accumulator + (high_bits_ >>> 32) * multiplicand;
 			high_bits_ = (accumulator << 32) + part;
