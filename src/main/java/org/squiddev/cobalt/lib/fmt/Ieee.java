@@ -62,7 +62,7 @@ public class Ieee {
 		public DiyFp AsDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
-			return new DiyFp(UnsignedLong.valueOf(Significand()),
+			return new DiyFp(UnsignedLong.uValueOf(Significand()),
 					Exponent());
 		}
 
@@ -80,7 +80,7 @@ public class Ieee {
 			// Do the final shifts in one go.
 			f <<= DiyFp.kSignificandSize - kSignificandSize;
 			e -= DiyFp.kSignificandSize - kSignificandSize;
-			return new DiyFp(UnsignedLong.valueOf(f), e);
+			return new DiyFp(UnsignedLong.uValueOf(f), e);
 		}
 
 		// Returns the double's bit as uint64.
@@ -179,7 +179,7 @@ public class Ieee {
 		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return new DiyFp(UnsignedLong.valueOf((Significand() * 2) + 1),
+			return new DiyFp(UnsignedLong.uValueOf((Significand() * 2) + 1),
 					Exponent() - 1);
 		}
 
@@ -236,11 +236,11 @@ public class Ieee {
 		}
 
 		public static double Infinity() {
-			return Double(kInfinity).value();
+			return new Double(kInfinity).value();
 		}
 
 		public static double NaN() {
-			return Double(kNaN).value();
+			return new Double(kNaN).value();
 		}
 
 		private static final int kDenormalExponent = -kExponentBias + 1;
@@ -253,7 +253,7 @@ public class Ieee {
 			UnsignedLong significand = diy_fp.f();
 			int exponent = diy_fp.e();
 			while (significand.gt(
-					UnsignedLong.valueOf(kHiddenBit + kSignificandMask))) {
+					UnsignedLong.uValueOf(kHiddenBit + kSignificandMask))) {
 				significand = significand.shr(1);
 				exponent++;
 			}
@@ -273,7 +273,7 @@ public class Ieee {
 			} else {
 				biased_exponent = (exponent + kExponentBias);
 			}
-			return significand.bitAnd(kSignificandMask).longValue() |
+			return significand.bitAnd(kSignificandMask).unsafeLongValue() |
 					(biased_exponent << kPhysicalSignificandSize);
 		}
 
@@ -299,7 +299,7 @@ public class Ieee {
 		public DiyFp AsDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
-			return new DiyFp(UnsignedLong.valueOf(Significand()), Exponent());
+			return new DiyFp(UnsignedLong.uValueOf(Significand()), Exponent());
 		}
 
 		/** Returns the single's bit as uint64. */
@@ -316,7 +316,7 @@ public class Ieee {
 			return biased_e - kExponentBias;
 		}
 
-		public int Significand() {
+		public long Significand() {
 			int d32 = AsUint32();
 			int significand = d32 & kSignificandMask;
 			if (!IsDenormal()) {
@@ -395,7 +395,7 @@ public class Ieee {
 		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return new DiyFp(UnsignedLong.valueOf((Significand() * 2) + 1), Exponent() - 1);
+			return new DiyFp(UnsignedLong.uValueOf((Significand() * 2) + 1), Exponent() - 1);
 		}
 
 		public boolean LowerBoundaryIsCloser() {

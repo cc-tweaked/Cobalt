@@ -43,8 +43,12 @@ import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 public class DiyFp {
 	public static final int kSignificandSize = 64;
 
-	DiyFp() { this.f_ = UnsignedLong.valueOf(0); this.e_ = 0; }
+	DiyFp() { this.f_ = UnsignedLong.ZERO; this.e_ = 0; }
 	DiyFp(final UnsignedLong significand, final int exponent) { this.f_ = significand; this.e_ = exponent; }
+
+	public DiyFp copy() {
+		return new DiyFp(this.f_, this.e_);
+	}
 
 	/**
 	 * this -= other.
@@ -64,7 +68,7 @@ public class DiyFp {
 	 * or equal than b. The result will not be normalized.
 	 */
 	public static DiyFp Minus(DiyFp a, DiyFp b) {
-		DiyFp result = a;
+		DiyFp result = a.copy();
 		result.Subtract(b);
 		return result;
 	}
@@ -77,8 +81,8 @@ public class DiyFp {
 		// However: the resulting number only contains 64 bits. The least
 		// significant 64 bits are only used for rounding the most significant 64
 		// bits.
-		long f = f_.longValue();
-		long otherF = other.f_.longValue();
+		long f = f_.unsafeLongValue();
+		long otherF = other.f_.unsafeLongValue();
 
 		final long kM32 = 0xFFFFFFFFL;
 		final long a = f >>> 32;
@@ -91,9 +95,9 @@ public class DiyFp {
 		final long bd = b * d;
 		// By adding 1U << 31 to tmp we round the final result.
 		// Halfway cases will be rounded up.
-		final long tmp = (bd >> 32) + (ad & kM32) + (bc & kM32) + (1L << 31);
+		final long tmp = (bd >>> 32) + (ad & kM32) + (bc & kM32) + (1L << 31);
 		e_ += other.e_ + 64;
-		f_ = UnsignedLong.valueOf(ac + (ad >>> 32) + (bc >>> 32) + (tmp >>> 32));
+		f_ = UnsignedLong.uValueOf(ac + (ad >>> 32) + (bc >>> 32) + (tmp >>> 32));
 	}
 
 
@@ -101,7 +105,7 @@ public class DiyFp {
 	 * returns a * b;
 	 */
 	public static DiyFp Times(DiyFp a, DiyFp b) {
-		DiyFp result = a;
+		DiyFp result = a.copy();
 		result.Multiply(b);
 		return result;
 	}
@@ -127,7 +131,7 @@ public class DiyFp {
 	}
 
 	public static DiyFp Normalize(DiyFp a) {
-		DiyFp result = a;
+		DiyFp result = a.copy();
 		result.Normalize();
 		return result;
 	}

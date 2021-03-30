@@ -3,12 +3,37 @@ package org.squiddev.cobalt.lib.fmt;
 /**
  * A wrapper to long to help safely keep an unsigned value
  */
-public class UnsignedLong extends Number implements Comparable<UnsignedLong> {
+public class UnsignedLong implements Comparable<UnsignedLong> {
+	public static final UnsignedLong ZERO = new UnsignedLong(0);
+	public static final UnsignedLong ONE = new UnsignedLong(1);
+
 	private static final long UNSIGNED_MASK = 0x7fff_ffff_ffff_ffffL;
 	private static final long MASK_32 = 0xffff_ffffL;
+	private static final long UPPER_MASK = 0xffff_ffff_0000_0000L;
 
 	private final long val;
 
+
+	// requires overloading to prevent accidental sign extending
+
+	/** New UnsignedLong from a naked unsigned integer */
+	public static UnsignedLong uValueOf(short val) {
+		return new UnsignedLong(Short.toUnsignedLong(val));
+	}
+
+	/** New UnsignedLong from a naked unsigned integer */
+	public static UnsignedLong uValueOf(int val) {
+		return new UnsignedLong(Integer.toUnsignedLong(val));
+	}
+
+	/** New UnsignedLong from a naked unsigned integer */
+	public static UnsignedLong uValueOf(long val) {
+		return new UnsignedLong(val);
+	}
+
+	/**
+	 * Create a new <code>UnsignedLong</code> with a given value.  This value is treated as a signed value.
+	 */
 	public static UnsignedLong valueOf(long val) {
 		return new UnsignedLong(val);
 	}
@@ -55,6 +80,15 @@ public class UnsignedLong extends Number implements Comparable<UnsignedLong> {
 		return false;
 	}
 
+	public boolean isZero() {
+		return val == 0;
+	}
+
+	public boolean isEven() {
+		return (val & 1) == 0;
+	}
+
+
 	public boolean eq(long longValue) {
 		if (longValue < 0) return false;
 		return val == longValue;
@@ -97,31 +131,61 @@ public class UnsignedLong extends Number implements Comparable<UnsignedLong> {
 	}
 
 	/**
-	 * Act like a c cast to a unsigned 32-bit number, which
-	 * 	truncates the value to the lowest 32 bits.
+	 * @return true if value can fit in an {@link UnsignedInt}
 	 */
-	public long unsignedIntValue() {
-		return val & MASK_32;
+	public boolean isUIntValue() {
+		return (val & UPPER_MASK) == 0;
 	}
 
-	@Override
-	public int intValue() {
+	/**
+	 * Use this if your code can guarantee the value won't be truncated
+	 */
+	public UnsignedInt unsafeUIntValue() {
+		return UnsignedInt.uValueOf((int)val);
+	}
+
+	/**
+	 * Get the unsigned value, with a check to prevent truncation
+	 * @throws ArithmeticException if value could not fit in an {@link UnsignedInt} value
+	 */
+	public UnsignedInt uIntValueExact() {
+		if ((val & UPPER_MASK) != 0) throw new ArithmeticException("Value too large");
+		return UnsignedInt.valueOf((int)val);
+	}
+
+	/**
+	 * Get the unsigned value, with a check to prevent truncation
+	 * @throws ArithmeticException if value could not fit in an {@link UnsignedInt} value
+	 */
+	public short shortValueExact() {
+		if (val > Short.MAX_VALUE) throw new ArithmeticException("Value too large");
+		return (short) val;
+	}
+
+	public int intValueExact() {
+		if (val > Integer.MAX_VALUE) throw new ArithmeticException("Value too large");
 		return (int) val;
 	}
 
-	@Override
-	public long longValue() {
+	public int unsafeIntValue() {
+		return (int)val;
+	}
+
+	public long unsafeLongValue() {
 		return val;
 	}
 
-	@Override
+	public long longValueExact() {
+		if (val < 0) throw new ArithmeticException("Refusing to return with sign bit set");
+		return val;
+	}
+
 	public float floatValue() {
 		float f = (float) (val & UNSIGNED_MASK);
 		if (val < 0) f += 0x1.0p63f;
 		return f;
 	}
 
-	@Override
 	public double doubleValue() {
 		double f = (double) (val & UNSIGNED_MASK);
 		if (val < 0) f += 0x1.0p63d;
@@ -194,13 +258,24 @@ public class UnsignedLong extends Number implements Comparable<UnsignedLong> {
 				Long.remainderUnsigned(val, rVal.val));
 	}
 
+	public int mod10() {
+		return (int)Long.remainderUnsigned(val, 10);
+	}
+
+	/**
+	 * return this % 10^7 (10,000,000)
+	 */
+	public UnsignedInt modTen7() {
+		return UnsignedInt.uValueOf((int)Long.remainderUnsigned(val, 10_000_000));
+	}
+
+
 	public UnsignedLong times(long rVal) {
 		return new UnsignedLong(val * rVal);
 	}
 
-	public UnsignedLong times(UnsignedLong rVal) {
-		return new UnsignedLong(
-				Long.divideUnsigned(val, rVal.val));
+	public UnsignedLong times(UnsignedLong multiplier) {
+		return new UnsignedLong(val * multiplier.val);
 	}
 
 }

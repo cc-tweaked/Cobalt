@@ -27,13 +27,14 @@ package org.squiddev.cobalt.lib.fmt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 
 /**
  * A mutable proxy object to java BigDecimal.  Probably can be
  *   optimized away at some point, but for now it will get the things into a functional state.
  */
 public class Bignum {
+	private static final long LONG_UNSIGNED_BITS = 0x7fff_ffff_ffff_ffffL;
+
 
 	private BigDecimal val;
 
@@ -204,8 +205,9 @@ public class Bignum {
 	}
 
 	private static BigDecimal fromUnsigned(long value) {
-		if (value < 0L) {
-			return new BigDecimal(BigInteger.valueOf(value >>> 1).shiftLeft(1).add(BigInteger.valueOf(value & 1)));
+		if (value < 0) {
+			return new BigDecimal(BigInteger.valueOf(value & LONG_UNSIGNED_BITS)
+					.add(BigInteger.valueOf(1L).shiftLeft(63)));
 		} else {
 			return BigDecimal.valueOf(value);
 		}

@@ -36,54 +36,55 @@ public class DiyFpTest {
 	@Test
 	public void subtract() {
 		DiyFp diy_fp1 = new DiyFp(UnsignedLong.valueOf(3), 0);
-		DiyFp diy_fp2 = new DiyFp(UnsignedLong.valueOf(1), 0);
+		DiyFp diy_fp2 = new DiyFp(UnsignedLong.ONE, 0);
 		DiyFp diff = DiyFp.Minus(diy_fp1, diy_fp2);
 
-		assertEquals(2, diff.f().longValue());  // NOLINT
+		assertEquals(2, diff.f().longValueExact());  // NOLINT
 		assertEquals(0, diff.e());
 		diy_fp1.Subtract(diy_fp2);
-		assertEquals(2, diy_fp1.f().longValue());  // NOLINT
+		assertEquals(2, diy_fp1.f().longValueExact());  // NOLINT
 		assertEquals(0, diy_fp1.e());
 	}
 
+	@Test
 	public void multiply() {
 		DiyFp diy_fp1 = new DiyFp(UnsignedLong.valueOf(3), 0);
 		DiyFp diy_fp2 = new DiyFp(UnsignedLong.valueOf(2), 0);
 		DiyFp product = DiyFp.Times(diy_fp1, diy_fp2);
 
-		assertEquals(0, product.f().longValue());  // NOLINT
+		assertEquals(0, product.f().longValueExact());  // NOLINT
 		assertEquals(64, product.e());
 		diy_fp1.Multiply(diy_fp2);
-		assertEquals(0, diy_fp1.f().longValue());  // NOLINT
+		assertEquals(0, diy_fp1.f().longValueExact());  // NOLINT
 		assertEquals(64, diy_fp1.e());
 
-		diy_fp1 = new DiyFp(UnsignedLong.valueOf(0x80000000_00000000L), 11);
+		diy_fp1 = new DiyFp(UnsignedLong.uValueOf(0x80000000_00000000L), 11);
 		diy_fp2 = new DiyFp(UnsignedLong.valueOf(2), 13);
 		product = DiyFp.Times(diy_fp1, diy_fp2);
-		assertEquals(1, product.f().longValue());  // NOLINT
+		assertEquals(1, product.f().longValueExact());  // NOLINT
 		assertEquals(11 + 13 + 64, product.e());
 
 		// Test rounding.
-		diy_fp1 = new DiyFp(UnsignedLong.valueOf(0x80000000_00000001L), 11);
+		diy_fp1 = new DiyFp(UnsignedLong.uValueOf(0x80000000_00000001L), 11);
 		diy_fp2 = new DiyFp(UnsignedLong.valueOf(1), 13);
 		product = DiyFp.Times(diy_fp1, diy_fp2);
-		assertEquals(1, product.f().longValue());  // NOLINT
+		assertEquals(1, product.f().longValueExact());  // NOLINT
 		assertEquals(11 + 13 + 64, product.e());
 
-		diy_fp1 = new DiyFp(UnsignedLong.valueOf(0x7fffffff_ffffffffL), 11);
-		diy_fp2 = new DiyFp(UnsignedLong.valueOf(1), 13);
+		diy_fp1 = new DiyFp(UnsignedLong.uValueOf(0x7fffffff_ffffffffL), 11);
+		diy_fp2 = new DiyFp(UnsignedLong.ONE, 13);
 		product = DiyFp.Times(diy_fp1, diy_fp2);
-		assertEquals(0, product.f().longValue());  // NOLINT
+		assertEquals(0, product.f().longValueExact());  // NOLINT
 		assertEquals(11 + 13 + 64, product.e());
 
 		// Halfway cases are allowed to round either way. So don't check for it.
 
 		// Big numbers.
-		diy_fp1 = new DiyFp(UnsignedLong.valueOf(0xFFFFFFFF_FFFFFFFFL), 11);
-		diy_fp2 = new DiyFp(UnsignedLong.valueOf(0xFFFFFFFF_FFFFFFFFL), 13);
+		diy_fp1 = new DiyFp(UnsignedLong.uValueOf(0xFFFFFFFF_FFFFFFFFL), 11);
+		diy_fp2 = new DiyFp(UnsignedLong.uValueOf(0xFFFFFFFF_FFFFFFFFL), 13);
 		// 128bit result: 0xfffffffffffffffe0000000000000001
 		product = DiyFp.Times(diy_fp1, diy_fp2);
-		assertEquals(UnsignedLong.valueOf(0xFFFFFFFF_FFFFFFFeL), product.f());
+		assertEquals(UnsignedLong.uValueOf(0xFFFFFFFF_FFFFFFFeL), product.f());
 		assertEquals(11 + 13 + 64, product.e());
 	}
 
