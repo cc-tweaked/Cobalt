@@ -90,7 +90,6 @@ public final class BytecodeLoader {
 	 * @param stream The stream to read from
 	 */
 	public BytecodeLoader(InputStream stream) {
-
 		this.is = new DataInputStream(stream);
 	}
 
@@ -347,7 +346,9 @@ public final class BytecodeLoader {
 		if (isLua52) {
 			byte[] data = new byte[6];
 			is.read(data);
-			if (!Arrays.equals(data, Lua52.error_check)) throw new CompileException("corrupted precompiled chunk");
+			if (!Arrays.equals(data, Lua52.error_check)) {
+				throw new CompileException("corrupted precompiled chunk");
+			}
 		}
 
 		// check format

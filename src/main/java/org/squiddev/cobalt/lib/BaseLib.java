@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.lib;
 
+import jdk.nashorn.internal.runtime.regexp.joni.ast.ConsAltNode;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugFrame;
@@ -91,6 +92,7 @@ public class BaseLib implements LuaLibrary {
 		"next", // "next"  ( table, [index] ) -> next-index, next-value
 		"__inext", // "inext" ( table, [int-index] ) -> next-index, next-value
 		"rawlen", // "rawlen" ( table | string ) -> int
+		"__internal_print",
 	};
 	private static final String[] LIBR_KEYS = {
 		"pcall", // (f, arg1, ...) -> status, result1, ...
@@ -321,6 +323,9 @@ public class BaseLib implements LuaLibrary {
 							throw ErrorFactory.argError(1, "table or string expected");
 					}
 				}
+				case 21: // __internal_print (TODO: delete this)
+					System.out.println(args.arg(1).checkLuaString().toString());
+					return Constants.NONE;
 			}
 			return Constants.NONE;
 		}

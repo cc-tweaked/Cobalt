@@ -208,7 +208,7 @@ public final class LuaInterpreter {
 					}
 
 					case OP_GETUPVAL: // A B: R(A):= UpValue[B]
-						stack[a] = upvalues[((i >>> POS_B) & MAXARG_B)].getValue();
+						stack[a] = upvalues[((i >>> POS_B) & MAXARG_B) + (p.isLua52 ? 0 : 1)].getValue();
 						break;
 
 					case OP_GETTABUP: { // A B C: R(A) := UpValue[B][RK(C)]
@@ -241,7 +241,7 @@ public final class LuaInterpreter {
 					}
 
 					case OP_SETUPVAL: // A B: UpValue[B]:= R(A)
-						upvalues[(i >>> POS_B) & MAXARG_B].setValue(stack[a]);
+						upvalues[((i >>> POS_B) & MAXARG_B) + (p.isLua52 ? 0 : 1)].setValue(stack[a]);
 						break;
 
 					case OP_SETTABLE: { // A B C: R(A)[RK(B)]:= RK(C)
@@ -586,8 +586,7 @@ public final class LuaInterpreter {
 							continue newFrame;
 						}
 
-						Varargs args = ValueFactory.varargsOf(stack, a + 1, a + 2); // exact arg count
-						Varargs v = OperationHelper.invoke(state, val, args.asImmutable(), a);
+						Varargs v = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
 						i = code[pc++];
 						a = ((i >> POS_A) & MAXARG_A);
 						if (c > 0) {
@@ -605,8 +604,11 @@ public final class LuaInterpreter {
 								R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
 								else pc++
 							*/
-						Varargs v = di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
-						LuaValue val = v.first();
+						LuaValue val;
+						Varargs v;
+						if (!p.isLua52) di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
+						v = di.extras;
+						val = v.first();
 						if (val.isNil()) {
 							pc++;
 						} else {
@@ -658,23 +660,32 @@ public final class LuaInterpreter {
 
 					case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
 						Prototype newp = p.p[(i >>> POS_Bx) & MAXARG_Bx];
-						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, (LuaTable)upvalues[0].getValue());
-						if (p.isLua52) {
+						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, newp.isLua52 ? null : (LuaTable)upvalues[0].getValue());
+						if (newp.isLua52) {
 							for (int j = 0; j < newp.nups; ++j) {
-								DebugFrame frame = di;
-								for (int s = (newp.upvalue_info[j] >> 8) - 1; s > 0 && frame != null; --s) frame = frame.previous;
-								if (frame == null) {
-									// TODO: handle this
+								int b = newp.upvalue_info[j];
+								if ((b >> 8) != 0) {
+									DebugFrame frame = di;
+									for (int s = (b >> 8) - 1; s > 0 && frame != null; --s) frame = frame.previous;
+									if (frame == null) {
+										throw new IllegalStateException("Upvalue stack index out of range");
+									}
+									//System.out.println("Found upvalue index " + (newp.upvalue_info[j] & 0xFF) + " (named " + (frame.func instanceof LuaInterpretedFunction ? frame.closure.getPrototype().upvalues[newp.upvalue_info[j] & 0xFF] : "?") + ") with type " + frame.closure.getUpvalue(newp.upvalue_info[j] & 0xFF).getClass().getName());
+									newcl.upvalues[j] = new Upvalue(frame.stack, b & 0xFF);
+									//newcl.upvalues[j] = openups[b] != null ? openups[b] : (openups[b] = new Upvalue(frame.stack, b & 0xFF));
+									//newcl.upvalues[j] = openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b));
+								} else {
+									newcl.upvalues[j] = upvalues[b & 0xFF];
 								}
-								newcl.upvalues[j] = new Upvalue(frame.stack, newp.upvalue_info[j] & 0xFF);
 							}
 						} else {
-							for (int j = 0, nup = newp.nups; j < nup; ++j) {
+							for (int j = 1, nup = newp.nups; j <= nup; ++j) {
 								i = code[pc++];
 								int b = (i >>> POS_B) & MAXARG_B;
 								newcl.upvalues[j] = (i & 4) != 0
-									? upvalues[b] // OP_GETUPVAL
+									? upvalues[b+1] // OP_GETUPVAL
 									: openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b)); // OP_MOVE
+								//System.out.println("Added upvalue " + j + " as " + ((i & 4) != 0 ? di.closure.getPrototype().upvalues[b] : "?"));
 							}
 						}
 						stack[a] = newcl;
@@ -759,8 +770,10 @@ public final class LuaInterpreter {
 	public static void resume(LuaState state, DebugFrame di, LuaInterpretedFunction function, Varargs varargs) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		int i = p.code[di.pc++];
+		int op = ((i >> POS_OP) & MAX_OP);
+		if (!p.isLua52) op = lua51opcodes[op];
 
-		switch (((i >> POS_OP) & MAX_OP)) {
+		switch (op) {
 			case OP_ADD: case OP_SUB: case OP_MUL: case OP_DIV: case OP_MOD: case OP_POW: case OP_UNM:
 			case OP_GETTABLE: case OP_GETTABUP: case OP_GETGLOBAL: case OP_SELF: {
 				di.stack[(i >> POS_A) & MAXARG_A] = varargs.first();

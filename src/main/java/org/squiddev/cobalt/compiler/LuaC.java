@@ -30,6 +30,7 @@ import org.squiddev.cobalt.compiler.LoadState.LuaCompiler;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
+import org.squiddev.cobalt.function.Upvalue;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
 
@@ -73,6 +74,10 @@ public class LuaC implements LuaCompiler {
 	protected static void _assert(boolean b) throws CompileException {
 		if (!b) {
 			// So technically this should fire a runtime exception but...
+			System.err.println("compiler assert failed\nstack trace:");
+			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+				System.err.println(ste);
+			}
 			throw new CompileException("compiler assert failed");
 		}
 	}
@@ -180,6 +185,9 @@ public class LuaC implements LuaCompiler {
 		Prototype p = compile(stream, name, mode);
 		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
 		closure.nilUpvalues();
+		if (p.isLua52 && p.nups == 1) {
+			closure.setUpvalue(0, new Upvalue(env));
+		}
 		return closure;
 	}
 
@@ -220,23 +228,26 @@ public class LuaC implements LuaCompiler {
 		// lexstate.buff = buff;
 		lexstate.setinput(firstByte, z, name);
 		lexstate.open_func(funcstate);
+		funcstate.f.isLua52 = false; // temporary!
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
 		funcstate.f.source = name;
-		LexState.expdesc v = new LexState.expdesc();
-		v.init(LexState.VLOCAL, 0);
-		funcstate.f.upvalues = new LuaString[1];
-		funcstate.f.upvalues[0] = LuaString.valueOf("_ENV");
-		funcstate.f.nups = 1;
-		funcstate.upvalues[0] = funcstate.new upvaldesc();
-		funcstate.upvalues[0].k = LexState.VLOCAL;
-		funcstate.upvalues[0].info = (short)v.u.s.info;
+		if (funcstate.f.isLua52) {
+			LexState.expdesc v = new LexState.expdesc();
+			v.init(LexState.VLOCAL, 0);
+			funcstate.f.upvalues = new LuaString[1];
+			funcstate.f.upvalues[0] = LuaString.valueOf("_ENV");
+			funcstate.f.nups = 1;
+			funcstate.upvalues[0] = funcstate.new upvaldesc();
+			funcstate.upvalues[0].k = LexState.VLOCAL;
+			funcstate.upvalues[0].info = (short) v.u.s.info;
+		}
 		lexstate.nextToken(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);
 		lexstate.close_func();
 		LuaC._assert(funcstate.prev == null);
-		LuaC._assert(funcstate.f.nups == 1);
+		LuaC._assert(funcstate.f.nups == (funcstate.f.isLua52 ? 1 : 0));
 		LuaC._assert(lexstate.fs == null);
 		return funcstate.f;
 	}
