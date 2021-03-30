@@ -118,11 +118,11 @@ public class DiyFp {
 		// This method is mainly called for normalizing boundaries. In general,
 		// boundaries need to be shifted by 10 bits, and we optimize for this case.
 		final long k10MSBits = 0xFFC0000000000000L;
-		while ((significand.bitAnd(k10MSBits).eq(0))) {
+		while ((significand.bitAndU(k10MSBits).eq(0))) {
 			significand = significand.shl(10);
 			exponent -= 10;
 		}
-		while (significand.bitAnd(kUint64MSB).eq(0)) {
+		while (significand.bitAndU(kUint64MSB).eq(0)) {
 			significand = significand.shl(1);
 			exponent--;
 		}

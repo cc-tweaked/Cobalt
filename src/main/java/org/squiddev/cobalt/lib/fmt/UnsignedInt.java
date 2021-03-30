@@ -121,7 +121,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 
 	public int intValueExact() {
 		if (val < 0) throw new ArithmeticException("Value too large");
-		return (int) val;
+		return val;
 	}
 
 	public int unsafeIntValue() {
@@ -149,16 +149,18 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return f;
 	}
 
-	public UnsignedInt bitAnd(int rVal) {
+	// requires overloading to prevent accidental sign extending
+	/** returns this & (unsigned)rVal */
+	public UnsignedInt bitAndU(short rVal) {
+		return new UnsignedInt(val & Short.toUnsignedInt(rVal));
+	}
+	/** returns this & (unsigned)rVal */
+	public UnsignedInt bitAndU(int rVal) {
 		return new UnsignedInt(val & rVal);
 	}
 
 	public UnsignedInt bitAnd(UnsignedInt rVal) {
 		return new UnsignedInt(val & rVal.val);
-	}
-
-	public UnsignedInt bitOr(int rVal) {
-		return new UnsignedInt(val | rVal);
 	}
 
 	public UnsignedInt bitOr(UnsignedInt rVal) {
@@ -178,15 +180,17 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return new UnsignedInt(val >>> rVal);
 	}
 
-	public UnsignedInt plus(int rVal) {
-		return new UnsignedInt(val + val);
-	}
-
 	public UnsignedInt plus(UnsignedInt rVal) {
 		return new UnsignedInt(val + rVal.val);
 	}
 
-	public UnsignedInt minus(int rVal) {
+	// requires overloading to prevent accidental sign extending
+	/** returns this + (unsigned)rVal */
+	public UnsignedInt minusU(short rVal) {
+		return new UnsignedInt(val - Short.toUnsignedInt(rVal));
+	}
+	/** returns this + (unsigned)rVal */
+	public UnsignedInt minusU(int rVal) {
 		return new UnsignedInt(val - rVal);
 	}
 

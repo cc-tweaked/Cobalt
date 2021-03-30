@@ -31,6 +31,7 @@
 package org.squiddev.cobalt.lib.fmt;
 
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.fmt.UnsignedLong.ONE;
 
 public class Ieee {
 
@@ -117,6 +118,7 @@ public class Ieee {
 			if (IsDenormal()) return kDenormalExponent;
 
 			long d64 = AsUint64();
+			// Type Safety - Okay to cast, because the Shift-right is 52 bits
 			int biased_e =
 					(int)((d64 & kExponentMask) >> kPhysicalSignificandSize);
 			return biased_e - kExponentBias;
@@ -192,12 +194,12 @@ public class Ieee {
 		public void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
 			DiyFp v = this.AsDiyFp();
-			DiyFp mPlus = DiyFp.Normalize(new DiyFp(v.f().shl(1).plus(1), v.e() - 1));
+			DiyFp mPlus = DiyFp.Normalize(new DiyFp(v.f().shl(1).plus(ONE), v.e() - 1));
 			DiyFp mMinus;
 			if (LowerBoundaryIsCloser()) {
-				mMinus = new DiyFp(v.f().shl(2).minus(1), v.e() - 2);
+				mMinus = new DiyFp(v.f().shl(2).minus(ONE), v.e() - 2);
 			} else {
-				mMinus = new DiyFp(v.f().shl(1).minus(1), v.e() - 1);
+				mMinus = new DiyFp(v.f().shl(1).minus(ONE), v.e() - 1);
 			}
 			mMinus.set_f(mMinus.f().shl(mMinus.e() - mPlus.e()));
 			mMinus.set_e(mPlus.e());
@@ -263,17 +265,17 @@ public class Ieee {
 			if (exponent < kDenormalExponent) {
 				return 0;
 			}
-			while (exponent > kDenormalExponent && significand.bitAnd(kHiddenBit).eq(0)) {
+			while (exponent > kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0)) {
 				significand = significand.shl(1);
 				exponent--;
 			}
 			long biased_exponent;
-			if (exponent == kDenormalExponent && significand.bitAnd(kHiddenBit).eq(0)) {
+			if (exponent == kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0)) {
 				biased_exponent = 0;
 			} else {
 				biased_exponent = (exponent + kExponentBias);
 			}
-			return significand.bitAnd(kSignificandMask).unsafeLongValue() |
+			return significand.bitAndU(kSignificandMask).unsafeLongValue() |
 					(biased_exponent << kPhysicalSignificandSize);
 		}
 
@@ -312,7 +314,7 @@ public class Ieee {
 
 			int d32 = AsUint32();
 			int biased_e =
-					(int)((d32 & kExponentMask) >>> kPhysicalSignificandSize);
+					((d32 & kExponentMask) >>> kPhysicalSignificandSize);
 			return biased_e - kExponentBias;
 		}
 
@@ -376,12 +378,12 @@ public class Ieee {
 		void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
 			DiyFp v = this.AsDiyFp();
-			DiyFp m_plus = DiyFp.Normalize(new DiyFp(v.f().shl(1).plus(1), v.e() - 1));
+			DiyFp m_plus = DiyFp.Normalize(new DiyFp(v.f().shl(1).plus(ONE), v.e() - 1));
 			DiyFp m_minus;
 			if (LowerBoundaryIsCloser()) {
-				m_minus = new DiyFp(v.f().shl(2).minus(1), v.e() - 2);
+				m_minus = new DiyFp(v.f().shl(2).minus(ONE), v.e() - 2);
 			} else {
-				m_minus = new DiyFp(v.f().shl(1).minus(1), v.e() - 1);
+				m_minus = new DiyFp(v.f().shl(1).minus(ONE), v.e() - 1);
 			}
 			m_minus.set_f(m_minus.f().shl(m_minus.e() - m_plus.e()));
 			m_minus.set_e(m_plus.e());

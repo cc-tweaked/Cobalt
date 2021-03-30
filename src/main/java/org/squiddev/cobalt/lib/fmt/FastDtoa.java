@@ -30,6 +30,7 @@
 package org.squiddev.cobalt.lib.fmt;
 
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.fmt.UnsignedLong.ONE;
 
 public class FastDtoa {
 
@@ -352,7 +353,7 @@ public class FastDtoa {
 						 int[] length,
 						 int[] kappa) {
 		DOUBLE_CONVERSION_ASSERT(low.e() == w.e() && w.e() == high.e() );
-		DOUBLE_CONVERSION_ASSERT( low.f().plus(1).le( high.f().minus(1) ) );
+		DOUBLE_CONVERSION_ASSERT( low.f().plus(ONE).le( high.f().minus(ONE) ) );
 		DOUBLE_CONVERSION_ASSERT(kMinimalTargetExponent <= w.e() && w.e() <= kMaximalTargetExponent);
 		// low, w and high are imprecise, but by less than one ulp (unit in the last
 		// place).
@@ -365,7 +366,7 @@ public class FastDtoa {
 		// We will now start by generating the digits within the uncertain
 		// interval. Later we will weed out representations that lie outside the safe
 		// interval and thus _might_ lie outside the correct interval.
-		UnsignedLong unit = UnsignedLong.ONE;
+		UnsignedLong unit = ONE;
 		DiyFp too_low = new DiyFp(low.f().minus(unit), low.e());
 		DiyFp too_high = new DiyFp(high.f().plus(unit), high.e());
 		// too_low and too_high are guaranteed to lie outside the interval we want the
@@ -378,11 +379,11 @@ public class FastDtoa {
 		// such that:   too_low < buffer * 10^kappa < too_high
 		// We use too_high for the digit_generation and stop as soon as possible.
 		// If we stop early we effectively round down.
-		DiyFp one = new DiyFp(UnsignedLong.ONE.shl(-w.e()), w.e());
+		DiyFp one = new DiyFp(ONE.shl(-w.e()), w.e());
 		// Division by one is a shift.
 		UnsignedInt integrals = too_high.f().shr(-one.e()).uIntValueExact();
 		// Modulo by one is an and.
-		UnsignedLong fractionals = too_high.f().bitAnd(one.f().minus(1));
+		UnsignedLong fractionals = too_high.f().bitAnd(one.f().minus(ONE));
 		UnsignedInt divisor;
 		int divisor_exponent_plus_one;
 		{
@@ -439,7 +440,7 @@ public class FastDtoa {
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
 			buffer[length[0]] = (char)('0' + digit);
 			length[0]++;
-			fractionals = fractionals.bitAnd(one.f().minus(1));  // Modulo by one.
+			fractionals = fractionals.bitAnd(one.f().minus(ONE));  // Modulo by one.
 			kappa[0]--;
 			if (fractionals.lt(unsafe_interval.f())) {
 				return RoundWeed(buffer, length[0], DiyFp.Minus(too_high, w).f().times(unit),
@@ -488,16 +489,16 @@ public class FastDtoa {
 		DOUBLE_CONVERSION_ASSERT(kMaximalTargetExponent <= -32);
 		// w is assumed to have an error less than 1 unit. Whenever w is scaled we
 		// also scale its error.
-		UnsignedLong w_error = UnsignedLong.ONE;
+		UnsignedLong w_error = ONE;
 		// We cut the input number into two parts: the integral digits and the
 		// fractional digits. We don't emit any decimal separator, but adapt kappa
 		// instead. Example: instead of writing "1.2" we put "12" into the buffer and
 		// increase kappa by 1.
-		DiyFp one = new DiyFp(UnsignedLong.ONE.shl(-w.e()), w.e());
+		DiyFp one = new DiyFp(ONE.shl(-w.e()), w.e());
 		// Division by one is a shift.
 		UnsignedInt integrals = w.f().shr(-one.e()).uIntValueExact();
 		// Modulo by one is an and.
-		UnsignedLong fractionals = w.f().bitAnd(one.f().minus(1));
+		UnsignedLong fractionals = w.f().bitAnd(one.f().minus(ONE));
 		UnsignedInt divisor;
 		int divisorExponentPlusOne;
 		{
@@ -555,7 +556,7 @@ public class FastDtoa {
 			buffer[length[0]] = (char)('0' + digit);
 			length[0]++;
 			requested_digits--;
-			fractionals = fractionals.bitAnd(one.f().minus(1));  // Modulo by one.
+			fractionals = fractionals.bitAnd(one.f().minus(ONE));  // Modulo by one.
 			kappa[0]--;
 		}
 		if (requested_digits != 0) return false;

@@ -89,6 +89,16 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	}
 
 
+	// requires overloading to prevent accidental sign extending
+
+	public boolean eq(short shortValue) {
+		if (shortValue < 0) return false;
+		return val == shortValue;
+	}
+	public boolean eq(int intValue) {
+		if (intValue < 0) return false;
+		return val == intValue;
+	}
 	public boolean eq(long longValue) {
 		if (longValue < 0) return false;
 		return val == longValue;
@@ -192,16 +202,16 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 		return f;
 	}
 
-	public UnsignedLong bitAnd(long rVal) {
-		return new UnsignedLong(val & rVal);
-	}
+	// requires overloading to prevent accidental sign extending
+	/** returns this & (unsigned)rVal */
+	public UnsignedLong bitAndU(short rVal) { return new UnsignedLong(val & Short.toUnsignedLong(rVal)); }
+	/** returns this & (unsigned)rVal */
+	public UnsignedLong bitAndU(int rVal) { return new UnsignedLong(val & Integer.toUnsignedLong(rVal)); }
+	/** returns this & (unsigned)rVal */
+	public UnsignedLong bitAndU(long rVal) { return new UnsignedLong(val & rVal); }
 
 	public UnsignedLong bitAnd(UnsignedLong rVal) {
 		return new UnsignedLong(val & rVal.val);
-	}
-
-	public UnsignedLong bitOr(long rVal) {
-		return new UnsignedLong(val | rVal);
 	}
 
 	public UnsignedLong bitOr(UnsignedLong rVal) {
@@ -221,15 +231,9 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 		return new UnsignedLong(val >>> rVal);
 	}
 
-	public UnsignedLong plus(long rVal) {
-		return new UnsignedLong(val + rVal);
-	}
+
 	public UnsignedLong plus(UnsignedLong rVal) {
 		return new UnsignedLong(val + rVal.val);
-	}
-
-	public UnsignedLong minus(long rVal) {
-		return new UnsignedLong(val - rVal);
 	}
 
 	public UnsignedLong minus(UnsignedLong rVal) {
