@@ -238,7 +238,7 @@ public class BigNumDtoa {
 				// We optimized delta_plus to be equal to delta_minus (if they share the
 				// same value). So don't multiply delta_plus if they point to the same
 				// object.
-				if (delta_minus != delta_plus) {
+				if (!delta_minus.equals(delta_plus)) {
 					delta_plus.Times10();
 				}
 			} else if (in_delta_room_minus && in_delta_room_plus) {
@@ -641,7 +641,7 @@ public class BigNumDtoa {
 		// numerator = v * 10^-estimated_power * 2 * 2^-exponent.
 		// Remember: numerator has been abused as power_ten. So no need to assign it
 		//  to itself.
-		DOUBLE_CONVERSION_ASSERT(numerator == power_ten);
+		DOUBLE_CONVERSION_ASSERT(numerator.equals(power_ten));
 		numerator.MultiplyByUInt64(ulSignificand);
 
 		// denominator = 2 * 2^-exponent with exponent < 0.

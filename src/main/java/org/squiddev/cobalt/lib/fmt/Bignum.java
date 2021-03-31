@@ -27,6 +27,7 @@ package org.squiddev.cobalt.lib.fmt;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.Objects;
 
 /**
  * A mutable proxy object to java BigDecimal.  Probably can be
@@ -39,11 +40,24 @@ public class Bignum {
 	private BigDecimal val;
 
 	public Bignum() {
-		val = new BigDecimal(0);
+		val = new BigDecimal(BigInteger.ZERO);
 	}
 
 	private Bignum(BigDecimal val) {
 		this.val = val;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Bignum bignum = (Bignum) o;
+		return val.equals(bignum.val);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(val);
 	}
 
 	/**

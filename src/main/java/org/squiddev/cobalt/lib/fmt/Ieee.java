@@ -30,6 +30,8 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
+import jdk.jfr.Unsigned;
+
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.fmt.UnsignedLong.ONE;
 
