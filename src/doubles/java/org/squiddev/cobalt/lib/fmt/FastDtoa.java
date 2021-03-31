@@ -441,7 +441,7 @@ public class FastDtoa {
 			unit = unit.times(10L);
 			unsafe_interval.set_f(unsafe_interval.f().times(10L));
 			// Integer division by one.
-			int digit = fractionals.shr(-one.e()).shortValueExact();
+			int digit = (@Signed int)fractionals.shr(-one.e()).intValueExact();
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
 			buffer[length[0]] = (char)(ASCII_ZERO + digit);
 			length[0]++;
@@ -556,7 +556,7 @@ public class FastDtoa {
 			fractionals = fractionals.times(10L);
 			w_error  = w_error.times(10L);
 			// Integer division by one.
-			int digit = fractionals.shr(-one.e()).shortValueExact();
+			int digit = (@Signed int)fractionals.shr(-one.e()).intValueExact();
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
 			buffer[length[0]] = (char)(ASCII_ZERO + digit);
 			length[0]++;
