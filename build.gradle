@@ -1,10 +1,13 @@
 plugins {
     id "com.github.hierynomus.license" version "0.15.0"
+	// Checker Framework pluggable type-checking
+	id 'org.checkerframework' version '0.5.17'
 }
 
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'maven'
+apply plugin: 'org.checkerframework'
 
 group = 'org.squiddev'
 version = '0.5.1-SNAPSHOT'
@@ -18,6 +21,20 @@ repositories {
 
 configurations {
 	deployerJars
+}
+
+sourceSets {
+	doubles {
+		compileClasspath += sourceSets.main.compileClasspath
+	}
+	main {
+		compileClasspath += sourceSets.doubles.output
+		runtimeClasspath += sourceSets.doubles.output
+	}
+	test {
+		compileClasspath += sourceSets.doubles.output
+		runtimeClasspath += sourceSets.doubles.output
+	}
 }
 
 dependencies {
@@ -36,6 +53,21 @@ license {
 	strictCheck true
 	include("*.java")
 }
+
+checkerFramework {
+	checkers = [
+			'org.checkerframework.checker.signedness.SignednessChecker'
+	]
+	// add '-PskipCheckerFramework' to the command line to speed up the build
+}
+tasks.withType(JavaCompile).configureEach {
+	if (name == "compileJava" || name == "compileTestJava") {
+		checkerFramework {
+			skipCheckerFramework = true;
+		}
+	}
+}
+
 
 task sourcesJar(type: Jar, dependsOn: classes) {
 	classifier = 'sources'

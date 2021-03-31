@@ -30,6 +30,8 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 
 /**
@@ -81,7 +83,9 @@ public class DiyFp {
 		// However: the resulting number only contains 64 bits. The least
 		// significant 64 bits are only used for rounding the most significant 64
 		// bits.
+		@Unsigned
 		long f = f_.unsafeLongValue();
+		@Unsigned
 		long otherF = other.f_.unsafeLongValue();
 
 		final long kM32 = 0xFFFFFFFFL;
@@ -117,6 +121,7 @@ public class DiyFp {
 
 		// This method is mainly called for normalizing boundaries. In general,
 		// boundaries need to be shifted by 10 bits, and we optimize for this case.
+		@Unsigned
 		final long k10MSBits = 0xFFC0000000000000L;
 		while ((significand.bitAndU(k10MSBits).eq(0))) {
 			significand = significand.shl(10);

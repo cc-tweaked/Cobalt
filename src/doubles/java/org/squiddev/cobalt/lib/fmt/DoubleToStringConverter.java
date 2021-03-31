@@ -557,6 +557,7 @@ public class DoubleToStringConverter {
   		final int kDecimalRepCapacity = kMaxExponentialDigits + 2;
 		DOUBLE_CONVERSION_ASSERT(kDecimalRepCapacity > kBase10MaximalLength);
 		char[] decimal_rep = new char[kDecimalRepCapacity];
+		// TODO make sure this isn't a problem in java
 //#ifndef NDEBUG
 //		// Problem: there is an assert in StringBuilder::AddSubstring() that
 //		// will pass this buffer to strlen(), and this buffer is not generally

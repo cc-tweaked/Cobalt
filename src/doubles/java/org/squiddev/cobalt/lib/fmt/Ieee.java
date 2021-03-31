@@ -251,6 +251,7 @@ public class Ieee {
 		private static final long kInfinity = 0x7FF0000000000000L;
 		private static final long kNaN = 0x7FF8000000000000L;
 
+		@Unsigned
 		private final long d64_;
 
 		private static long DiyFpToUint64(DiyFp diy_fp) {
@@ -432,6 +433,6 @@ public class Ieee {
 		private static final int kNaN = 0x7FC00000;
 
   		private final int d32_;
-	};
+	}
 
 }

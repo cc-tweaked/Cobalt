@@ -1,5 +1,7 @@
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 /**
  * A wrapper to long to help safely keep an unsigned value
  */
@@ -11,23 +13,23 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	private static final long MASK_32 = 0xffff_ffffL;
 	private static final long UPPER_MASK = 0xffff_ffff_0000_0000L;
 
-	private final long val;
+	private final @Unsigned long val;
 
 
 	// requires overloading to prevent accidental sign extending
 
 	/** New UnsignedLong from a naked unsigned integer */
-	public static UnsignedLong uValueOf(short val) {
+	public static UnsignedLong uValueOf(@Unsigned short val) {
 		return new UnsignedLong(Short.toUnsignedLong(val));
 	}
 
 	/** New UnsignedLong from a naked unsigned integer */
-	public static UnsignedLong uValueOf(int val) {
+	public static UnsignedLong uValueOf(@Unsigned int val) {
 		return new UnsignedLong(Integer.toUnsignedLong(val));
 	}
 
 	/** New UnsignedLong from a naked unsigned integer */
-	public static UnsignedLong uValueOf(long val) {
+	public static UnsignedLong uValueOf(@Unsigned long val) {
 		return new UnsignedLong(val);
 	}
 
@@ -46,7 +48,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 		return new UnsignedLong(Long.parseUnsignedLong(str, radix));
 	}
 
-	private UnsignedLong(long val) {
+	private UnsignedLong(@Unsigned long val) {
 		this.val = val;
 	}
 

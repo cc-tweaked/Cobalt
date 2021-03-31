@@ -1,5 +1,8 @@
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.checkerframework.common.value.qual.IntRange;
+
 public class UnsignedInt implements Comparable<UnsignedInt> {
 	public static final UnsignedInt ZERO = new UnsignedInt(0);
 	public static final UnsignedInt ONE = new UnsignedInt(1);
@@ -12,11 +15,11 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 
 	// requires overloading to prevent accidental sign extending
 	/** New UnsignedLong from a naked unsigned integer */
-	public static UnsignedInt uValueOf(short value) {
+	public static UnsignedInt uValueOf(@Unsigned short value) {
 		return new UnsignedInt(Short.toUnsignedInt(value));
 	}
 	/** New UnsignedLong from a naked unsigned integer */
-	public static UnsignedInt uValueOf(int value) {
+	public static UnsignedInt uValueOf(@Unsigned int value) {
 		return new UnsignedInt(value);
 	}
 
@@ -31,7 +34,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return new UnsignedInt(Integer.parseUnsignedInt(str));
 	}
 
-	public static UnsignedInt valueOf(String str, int radix) {
+	public static UnsignedInt valueOf(String str, @IntRange(from=2,to=36) int radix) {
 		return new UnsignedInt(Integer.parseUnsignedInt(str, radix));
 	}
 
@@ -43,7 +46,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return Integer.toUnsignedString(val);
 	}
 
-	public String toString(int radix) {
+	public String toString(@IntRange(from=2, to=36) int radix) {
 		return Integer.toUnsignedString(val, radix);
 	}
 
