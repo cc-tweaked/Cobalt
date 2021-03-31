@@ -558,22 +558,22 @@ public class BignumTest {
 		Bignum bignum = new Bignum();
 
 		AssignHexString(bignum, "0");
-		bignum.MultiplyByUInt64(0x25);
+		bignum.MultiplyByUInt64(0x25L);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("0", buffer);
 
 		AssignHexString(bignum, "2");
-		bignum.MultiplyByUInt64(0x5);
+		bignum.MultiplyByUInt64(0x5L);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("A", buffer);
 
 		AssignHexString(bignum, "10000000");
-		bignum.MultiplyByUInt64(0x9);
+		bignum.MultiplyByUInt64(0x9L);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("90000000", buffer);
 
 		AssignHexString(bignum, "100000000000000");
-		bignum.MultiplyByUInt64(0xFFFF);
+		bignum.MultiplyByUInt64(0xFFFFL);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("FFFF00000000000000", buffer);
 
@@ -583,7 +583,7 @@ public class BignumTest {
 		CHECK_EQ("FFFFFFFFFFFFFFFF00000000000000", buffer);
 
 		AssignHexString(bignum, "1234567ABCD");
-		bignum.MultiplyByUInt64(0xFFF);
+		bignum.MultiplyByUInt64(0xFFFL);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("12333335552433", buffer);
 
@@ -593,17 +593,17 @@ public class BignumTest {
 		CHECK_EQ("1234567ABCBDCBA985433", buffer);
 
 		AssignHexString(bignum, "FFFFFFFFFFFFFFFF");
-		bignum.MultiplyByUInt64(0x2);
+		bignum.MultiplyByUInt64(0x2L);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("1FFFFFFFFFFFFFFFE", buffer);
 
 		AssignHexString(bignum, "FFFFFFFFFFFFFFFF");
-		bignum.MultiplyByUInt64(0x4);
+		bignum.MultiplyByUInt64(0x4L);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("3FFFFFFFFFFFFFFFC", buffer);
 
 		AssignHexString(bignum, "FFFFFFFFFFFFFFFF");
-		bignum.MultiplyByUInt64(0xF);
+		bignum.MultiplyByUInt64(0xFL);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("EFFFFFFFFFFFFFFF1", buffer);
 
@@ -615,28 +615,28 @@ public class BignumTest {
 		bignum.AssignUInt16((short) 0x1);
 		bignum.ShiftLeft(100);
 		// "10 0000 0000 0000 0000 0000 0000"
-		bignum.MultiplyByUInt64(2);
+		bignum.MultiplyByUInt64(2L);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("20000000000000000000000000", buffer);
 
 		bignum.AssignUInt16((short) 0x1);
 		bignum.ShiftLeft(100);
 		// "10 0000 0000 0000 0000 0000 0000"
-		bignum.MultiplyByUInt64(0xF);
+		bignum.MultiplyByUInt64(0xFL);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("F0000000000000000000000000", buffer);
 
 		bignum.AssignUInt16((short)0xFFFF);
 		bignum.ShiftLeft(100);
 		// "FFFF0 0000 0000 0000 0000 0000 0000"
-		bignum.MultiplyByUInt64(0xFFFF);
+		bignum.MultiplyByUInt64(0xFFFFL);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("FFFE00010000000000000000000000000", buffer);
 
 		bignum.AssignUInt16((short)0xFFFF);
 		bignum.ShiftLeft(100);
 		// "FFFF0 0000 0000 0000 0000 0000 0000"
-		bignum.MultiplyByUInt64(0xFFFFFFFF);
+		bignum.MultiplyByUInt64(0xFFFFFFFFL);
 		CHECK(bignum.ToHexString(buffer, kBufferSize));
 		CHECK_EQ("FFFEFFFF00010000000000000000000000000", buffer);
 
