@@ -96,7 +96,7 @@ public class DoubleToStringConverter {
 		public static final int EMIT_TRAILING_ZERO_AFTER_POINT = 4;
 		public static final int UNIQUE_ZERO = 8;
 		public static final int NO_TRAILING_ZERO = 16;
-	};
+	}
 
 
 	private final int flags_;
@@ -722,7 +722,7 @@ public class DoubleToStringConverter {
 		FIXED,
 		// Fixed number of digits (independent of the decimal point).
 		PRECISION
-	};
+	}
 
 	private static BigNumDtoa.BignumDtoaMode DtoaToBignumDtoaMode(
 			DoubleToStringConverter.DtoaMode dtoa_mode) {

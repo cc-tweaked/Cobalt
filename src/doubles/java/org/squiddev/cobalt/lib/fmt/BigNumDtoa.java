@@ -54,7 +54,7 @@ public class BigNumDtoa {
 		BIGNUM_DTOA_FIXED,
 		/** Return a fixed number of digits, no matter what the exponent is. */
 		BIGNUM_DTOA_PRECISION
-	};
+	}
 
 	private static int NormalizedExponent(@Unsigned long significand, int exponent) {
 		DOUBLE_CONVERSION_ASSERT(significand != 0);
