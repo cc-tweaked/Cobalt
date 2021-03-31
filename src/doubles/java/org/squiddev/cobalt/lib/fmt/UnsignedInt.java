@@ -131,7 +131,6 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 	}
 
 	public @Unsigned int intValueExact() {
-		if ((val & NOT_INT_MASK) == 0) throw new ArithmeticException("Value too large");
 		return val;
 	}
 
