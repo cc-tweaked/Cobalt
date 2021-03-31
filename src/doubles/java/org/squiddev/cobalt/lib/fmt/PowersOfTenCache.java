@@ -29,6 +29,8 @@
  */
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 
 public class PowersOfTenCache {
@@ -42,11 +44,11 @@ public class PowersOfTenCache {
 	public static final int kMaxDecimalExponent = 340;
 
 	static class CachedPower {
-		long significand;
+		@Unsigned long significand;
 		short binary_exponent;
 		short decimal_exponent;
 
-		CachedPower(long significand, short binaryExponent, short decimalExponent) {
+		CachedPower(@Unsigned long significand, short binaryExponent, short decimalExponent) {
 			this.significand = significand;
 			this.binary_exponent = binaryExponent;
 			this.decimal_exponent = decimalExponent;

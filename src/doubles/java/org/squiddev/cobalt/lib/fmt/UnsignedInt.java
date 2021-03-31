@@ -1,5 +1,7 @@
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Signed;
+import org.checkerframework.checker.signedness.qual.SignednessGlb;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 import org.checkerframework.common.value.qual.IntRange;
 
@@ -7,14 +9,19 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 	public static final UnsignedInt ZERO = new UnsignedInt(0);
 	public static final UnsignedInt ONE = new UnsignedInt(1);
 
-	private static final long MASK_32 = 0xffff_ffff;
-	private static final long UNSIGNED_MASK = 0x7fff_ffff;
-	private static final long UPPER_MASK = 0xffff_ffff_0000_0000L;
+	private static final @Unsigned long INT_MASK = 0xffff_ffffL;
+	private static final @Unsigned long NOT_INT_MASK = ~INT_MASK;
+	private static final @Unsigned int INT_SIGN_BIT = 0x8000_0000;
+	private static final @Unsigned int INT_UNSIGNED_MASK = ~INT_SIGN_BIT;
+	private static final @Unsigned long LONG_SIGNED_MASK = 0x8000_0000_0000_0000L;
+	private static final @Unsigned int SHORT_MASK = 0xffff;
+	private static final @Unsigned int NOT_SHORT_MASK = ~SHORT_MASK;
 
-	private final int val;
+	private final @Unsigned int val;
 
 	// requires overloading to prevent accidental sign extending
 	/** New UnsignedLong from a naked unsigned integer */
+	@SuppressWarnings("argument.type.incompatible")
 	public static UnsignedInt uValueOf(@Unsigned short value) {
 		return new UnsignedInt(Short.toUnsignedInt(value));
 	}
@@ -26,7 +33,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 	/**
 	 * Create a new <code>UnsignedInt</code> with a given value.  This value is treated as a signed value.
 	 */
-	public static UnsignedInt valueOf(int value) {
+	public static UnsignedInt valueOf(@SignednessGlb int value) {
 		return new UnsignedInt(value);
 	}
 
@@ -38,7 +45,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return new UnsignedInt(Integer.parseUnsignedInt(str, radix));
 	}
 
-	private UnsignedInt(int value) {
+	private UnsignedInt(@Unsigned int value) {
 		this.val = value;
 	}
 
@@ -60,6 +67,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 	}
 
 	@Override
+	@SuppressWarnings("argument.type.incompatible")
 	public int hashCode() {
 		return Integer.hashCode(val);
 	}
@@ -117,38 +125,39 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return this.compareTo(ui) < 0;
 	}
 
-	public short shortValueExact() {
-		if (val > Short.MAX_VALUE) throw new ArithmeticException("Value too large");
-		return (short) val;
+	public @Unsigned short shortValueExact() {
+		if ((val & NOT_SHORT_MASK) != 0) throw new ArithmeticException("Value too large");
+		return (@Unsigned short) val;
 	}
 
-	public int intValueExact() {
-		if (val < 0) throw new ArithmeticException("Value too large");
+	public @Unsigned int intValueExact() {
+		if ((val & NOT_INT_MASK) == 0) throw new ArithmeticException("Value too large");
 		return val;
 	}
 
-	public int unsafeIntValue() {
-		return val;
+	@SuppressWarnings("cast.unsafe")
+	public @SignednessGlb int unsafeIntValue() {
+		return (@SignednessGlb int) val;
 	}
 
 	public UnsignedLong uLongValue() {
 		return UnsignedLong.uValueOf(val);
 	}
 
-	public long longValueExact() {
-		if (val < 0) throw new ArithmeticException("Refusing to return with sign bit set");
-		return val;
+	public @Signed long longValueExact() {
+		if ((val & INT_SIGN_BIT) != 0) throw new ArithmeticException("Refusing to return with sign bit set");
+		return (@Signed long) val;
 	}
 
 	public float floatValue() {
-		float f = (float) (val & UNSIGNED_MASK);
-		if (val < 0) f += 0x1.0p31f;
+		float f = (float) (val & INT_UNSIGNED_MASK);
+		if ((val & INT_SIGN_BIT) != 0) f += 0x1.0p31f;
 		return f;
 	}
 
 	public double doubleValue() {
-		double f = (double) (val & UNSIGNED_MASK);
-		if (val < 0) f += 0x1.0p31d;
+		double f = (double) (val & INT_UNSIGNED_MASK);
+		if ((val & INT_SIGN_BIT) != 0) f += 0x1.0p31d;
 		return f;
 	}
 
@@ -158,7 +167,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return new UnsignedInt(val & Short.toUnsignedInt(rVal));
 	}
 	/** returns this & (unsigned)rVal */
-	public UnsignedInt bitAndU(int rVal) {
+	public UnsignedInt bitAndU(@Unsigned int rVal) {
 		return new UnsignedInt(val & rVal);
 	}
 
@@ -193,7 +202,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return new UnsignedInt(val - Short.toUnsignedInt(rVal));
 	}
 	/** returns this + (unsigned)rVal */
-	public UnsignedInt minusU(int rVal) {
+	public UnsignedInt minusU(@Unsigned int rVal) {
 		return new UnsignedInt(val - rVal);
 	}
 
@@ -206,10 +215,12 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 		return new UnsignedInt(
 				Integer.divideUnsigned(val, divisor));
 	}
+
+	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt divideExact(long divisor) {
-		if ((divisor & UPPER_MASK) != 0) throw new ArithmeticException("divisor must fit in 32 bits");
+		if ((divisor & NOT_INT_MASK) != 0) throw new ArithmeticException("divisor must fit in 32 bits");
 		return new UnsignedInt(
-				Integer.divideUnsigned(val, (int)divisor));
+				Integer.divideUnsigned(val, (@Unsigned int)divisor));
 	}
 
 	public UnsignedInt divideBy(UnsignedInt divisor) {
@@ -223,7 +234,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 				Integer.remainderUnsigned(val, divisor));
 	}
 
-	public int mod10() {
+	public @Unsigned int mod10() {
 		return Integer.remainderUnsigned(val, 10);
 	}
 
@@ -236,10 +247,11 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 	}
 
 
+	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt modExact(long divisor) {
-		if ((divisor & UPPER_MASK) != 0) throw new ArithmeticException("divisor must fit in 32 bits");
+		if ((divisor & NOT_INT_MASK) != 0) throw new ArithmeticException("divisor must fit in 32 bits");
 		return new UnsignedInt(
-				Integer.remainderUnsigned(val, (int)divisor));
+				Integer.remainderUnsigned(val, (@Unsigned int)divisor));
 	}
 
 	public UnsignedInt mod(UnsignedInt rVal) {
@@ -247,12 +259,13 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 				Integer.remainderUnsigned(val, rVal.val));
 	}
 
+	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt timesExact(long multiplier) {
-		if ((multiplier & UPPER_MASK) != 0) throw new ArithmeticException("multiplier must fit in 32 bits");
-		return new UnsignedInt(val * (int)multiplier);
+		if ((multiplier & NOT_INT_MASK) != 0) throw new ArithmeticException("multiplier must fit in 32 bits");
+		return new UnsignedInt(val * (@Unsigned int)multiplier);
 	}
 
-	public UnsignedInt times(int multiplier) {
+	public UnsignedInt times(@Unsigned int multiplier) {
 		return new UnsignedInt(val * multiplier);
 	}
 

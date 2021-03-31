@@ -1,6 +1,10 @@
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Signed;
+import org.checkerframework.checker.signedness.qual.SignedPositive;
+import org.checkerframework.checker.signedness.qual.SignednessGlb;
 import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.checkerframework.common.value.qual.IntRange;
 
 /**
  * A wrapper to long to help safely keep an unsigned value
@@ -9,9 +13,12 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	public static final UnsignedLong ZERO = new UnsignedLong(0);
 	public static final UnsignedLong ONE = new UnsignedLong(1);
 
+	private static final long LONG_SIGN_BIT = 0x8000_0000_0000_0000L;
 	private static final long UNSIGNED_MASK = 0x7fff_ffff_ffff_ffffL;
-	private static final long MASK_32 = 0xffff_ffffL;
-	private static final long UPPER_MASK = 0xffff_ffff_0000_0000L;
+	private static final long SHORT_MASK = 0xffffL;
+	private static final long NOT_SHORT_MASK = ~SHORT_MASK;
+	private static final long INT_MASK = 0xffff_ffffL;
+	private static final long NOT_INT_MASK = ~INT_MASK;
 
 	private final @Unsigned long val;
 
@@ -19,13 +26,15 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	// requires overloading to prevent accidental sign extending
 
 	/** New UnsignedLong from a naked unsigned integer */
+	@SuppressWarnings("cast.unsafe")
 	public static UnsignedLong uValueOf(@Unsigned short val) {
-		return new UnsignedLong(Short.toUnsignedLong(val));
+		return new UnsignedLong(Short.toUnsignedLong((@Signed short)val));
 	}
 
 	/** New UnsignedLong from a naked unsigned integer */
+	@SuppressWarnings("cast.unsafe")
 	public static UnsignedLong uValueOf(@Unsigned int val) {
-		return new UnsignedLong(Integer.toUnsignedLong(val));
+		return new UnsignedLong(Integer.toUnsignedLong((@Signed int)val));
 	}
 
 	/** New UnsignedLong from a naked unsigned integer */
@@ -36,15 +45,17 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	/**
 	 * Create a new <code>UnsignedLong</code> with a given value.  This value is treated as a signed value.
 	 */
-	public static UnsignedLong valueOf(long val) {
-		return new UnsignedLong(val);
+	@SuppressWarnings("cast.unsafe")
+	public static UnsignedLong valueOf(@SignedPositive long val) {
+		if ((val & LONG_SIGN_BIT) != 0) throw new ArithmeticException("Can't assign a signed value");
+		return new UnsignedLong((@Unsigned long)val);
 	}
 
 	public static UnsignedLong valueOf(String str) {
 		return new UnsignedLong(Long.parseUnsignedLong(str));
 	}
 
-	public static UnsignedLong valueOf(String str, int radix) {
+	public static UnsignedLong valueOf(String str, @IntRange(from=2, to=36) int radix) {
 		return new UnsignedLong(Long.parseUnsignedLong(str, radix));
 	}
 
@@ -56,7 +67,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 		return Long.toUnsignedString(val);
 	}
 
-	public String toString(int radix) {
+	public String toString(@IntRange(from=2, to=36) int radix) {
 		return Long.toUnsignedString(val, radix);
 	}
 
@@ -70,6 +81,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	}
 
 	@Override
+	@SuppressWarnings("argument.type.incompatible")
 	public int hashCode() {
 		return Long.hashCode(val);
 	}
@@ -146,7 +158,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	 * @return true if value can fit in an {@link UnsignedInt}
 	 */
 	public boolean isUIntValue() {
-		return (val & UPPER_MASK) == 0;
+		return (val & NOT_INT_MASK) == 0;
 	}
 
 	/**
@@ -160,57 +172,66 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	 * Get the unsigned value, with a check to prevent truncation
 	 * @throws ArithmeticException if value could not fit in an {@link UnsignedInt} value
 	 */
+	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt uIntValueExact() {
-		if ((val & UPPER_MASK) != 0) throw new ArithmeticException("Value too large");
-		return UnsignedInt.valueOf((int)val);
+		if ((val & NOT_INT_MASK) != 0) throw new ArithmeticException("Value too large");
+		return UnsignedInt.valueOf((@SignednessGlb int)val);
 	}
 
 	/**
 	 * Get the unsigned value, with a check to prevent truncation
 	 * @throws ArithmeticException if value could not fit in an {@link UnsignedInt} value
 	 */
-	public short shortValueExact() {
-		if (val > Short.MAX_VALUE) throw new ArithmeticException("Value too large");
-		return (short) val;
+	public @Unsigned short shortValueExact() {
+		if ((val & NOT_SHORT_MASK) != 0) throw new ArithmeticException("Value too large");
+		return (@Unsigned short) val;
 	}
 
-	public int intValueExact() {
-		if (val > Integer.MAX_VALUE) throw new ArithmeticException("Value too large");
-		return (int) val;
+	public @Unsigned int intValueExact() {
+		if ((val & NOT_INT_MASK) != 0) throw new ArithmeticException("Value too large");
+		return (@Unsigned int) val;
 	}
 
-	public int unsafeIntValue() {
+	public @Unsigned int unsafeIntValue() {
 		return (int)val;
 	}
 
-	public long unsafeLongValue() {
+	@SuppressWarnings("cast.unsafe")
+	public @Unsigned long unsafeLongValue() {
 		return val;
 	}
 
-	public long longValueExact() {
-		if (val < 0) throw new ArithmeticException("Refusing to return with sign bit set");
-		return val;
+	@SuppressWarnings("cast.unsafe")
+	public @Signed long longValueExact() {
+		if ((val & LONG_SIGN_BIT) != 0) throw new ArithmeticException("Value too large");
+		return (@Signed long)val;
 	}
 
 	public float floatValue() {
 		float f = (float) (val & UNSIGNED_MASK);
-		if (val < 0) f += 0x1.0p63f;
+		if ((val & LONG_SIGN_BIT) != 0) f += 0x1.0p63f;
 		return f;
 	}
 
 	public double doubleValue() {
 		double f = (double) (val & UNSIGNED_MASK);
-		if (val < 0) f += 0x1.0p63d;
+		if ((val & LONG_SIGN_BIT) != 0) f += 0x1.0p63d;
 		return f;
 	}
 
 	// requires overloading to prevent accidental sign extending
 	/** returns this & (unsigned)rVal */
-	public UnsignedLong bitAndU(short rVal) { return new UnsignedLong(val & Short.toUnsignedLong(rVal)); }
+	@SuppressWarnings("cast.unsafe")
+	public UnsignedLong bitAndU(@Unsigned short rVal) {
+		return new UnsignedLong(val & Short.toUnsignedLong((@Signed short)rVal));
+	}
 	/** returns this & (unsigned)rVal */
-	public UnsignedLong bitAndU(int rVal) { return new UnsignedLong(val & Integer.toUnsignedLong(rVal)); }
+	@SuppressWarnings("cast.unsafe")
+	public UnsignedLong bitAndU(@Unsigned int rVal) {
+		return new UnsignedLong(val & Integer.toUnsignedLong((@Signed int) rVal));
+	}
 	/** returns this & (unsigned)rVal */
-	public UnsignedLong bitAndU(long rVal) { return new UnsignedLong(val & rVal); }
+	public UnsignedLong bitAndU(@Unsigned long rVal) { return new UnsignedLong(val & rVal); }
 
 	public UnsignedLong bitAnd(UnsignedLong rVal) {
 		return new UnsignedLong(val & rVal.val);
@@ -264,8 +285,8 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 				Long.remainderUnsigned(val, rVal.val));
 	}
 
-	public int mod10() {
-		return (int)Long.remainderUnsigned(val, 10);
+	public @Unsigned int mod10() {
+		return (@Unsigned int)Long.remainderUnsigned(val, 10);
 	}
 
 	/**
@@ -276,7 +297,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	}
 
 
-	public UnsignedLong times(long rVal) {
+	public UnsignedLong times(@Unsigned long rVal) {
 		return new UnsignedLong(val * rVal);
 	}
 

@@ -30,6 +30,9 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Signed;
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 
 public class FixedDtoa {
@@ -38,10 +41,10 @@ public class FixedDtoa {
 	// platforms that support 128bit integers.
 	// Protected for testins
 	static class UInt128 {
-		private static final long kMask32 = 0xFFFFFFFFL;
+		private static final @Unsigned long kMask32 = 0xFFFFFFFFL;
 		// Value == (high_bits_ << 64) + low_bits_
-		private final long high;
-		private final long low;
+		private final @Unsigned long high;
+		private final @Unsigned long low;
 
 		public UInt128() {
 			this.high = 0;
@@ -52,22 +55,22 @@ public class FixedDtoa {
 			this(high.unsafeLongValue(), low.unsafeLongValue());
 		}
 
-		private UInt128(long high, long low) {
+		private UInt128(@Unsigned long high, @Unsigned long low) {
 			this.high = high;
 			this.low = low;
 		}
 
 		// package for testing
-		long rawHigh() {
+		@Unsigned long rawHigh() {
 			return high;
 		}
 
 		// package for testing
-		long rawLow() {
+		@Unsigned long rawLow() {
 			return low;
 		}
 
-		public UInt128 times(long multiplicand) {
+		public UInt128 times(@Unsigned long multiplicand) {
 			long accumulator;
 
 			accumulator = (low & kMask32) * multiplicand;
@@ -113,7 +116,7 @@ public class FixedDtoa {
 		// Returns *this DIV (2^power).
 		public QuotientRemainder divModPowerOf2(int power) {
 			long remHigh, remLow;
-			int quotient;
+			@Unsigned int quotient;
 			if (power >= 64) {
 				quotient = (int) (high >>> (power - 64));
 				remHigh = high - (((long) quotient) << (power - 64));
@@ -141,10 +144,10 @@ public class FixedDtoa {
 		}
 
 		public static class QuotientRemainder {
-			public final int quotient;
+			public final @Unsigned int quotient;
 			public final UInt128 remainder;
 
-			public  QuotientRemainder(int quotient, UInt128 remainder) {
+			public  QuotientRemainder(@Unsigned int quotient, UInt128 remainder) {
 				this.quotient = quotient;
 				this.remainder = remainder;
 			}
@@ -289,7 +292,7 @@ public class FixedDtoa {
 				// and any further multiplication of fractionals by 5 will not overflow.
 				fractionals = fractionals.times(5);
 				point--;
-				int digit = fractionals.shr(point).unsafeIntValue();
+				int digit = (@Signed int)fractionals.shr(point).unsafeIntValue();
 				DOUBLE_CONVERSION_ASSERT(digit <= 9);
 				buffer[length[0]] = (char)('0' + digit);
 				length[0]++;
@@ -313,7 +316,7 @@ public class FixedDtoa {
 				fractionals128 = fractionals128.times(5);
 				point--;
 				UInt128.QuotientRemainder qr = fractionals128.divModPowerOf2(point);
-				int digit = qr.quotient;
+				int digit = (@Signed int)qr.quotient;
 				fractionals128 = qr.remainder;
 				DOUBLE_CONVERSION_ASSERT(digit <= 9);
 				buffer[length[0]] = (char)('0' + digit);
@@ -365,7 +368,7 @@ public class FixedDtoa {
 	public static boolean FastFixedDtoa(double v, int fractional_count,
 										char[] buffer, int[] length, int[] decimal_point) {
   		final UnsignedLong kMaxUInt32 = UnsignedLong.uValueOf(0xFFFFFFFFL);
-		UnsignedLong significand = UnsignedLong.valueOf(new Ieee.Double(v).Significand());
+		UnsignedLong significand = UnsignedLong.uValueOf(new Ieee.Double(v).Significand());
 		int exponent = new Ieee.Double(v).Exponent();
 		// v = significand * 2^exponent (with significand a 53bit integer).
 		// If the exponent is larger than 20 (i.e. we may have a 73bit number) then we

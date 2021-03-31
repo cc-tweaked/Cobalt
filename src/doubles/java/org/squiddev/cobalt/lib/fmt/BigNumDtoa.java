@@ -30,6 +30,8 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 
 public class BigNumDtoa {
@@ -54,7 +56,7 @@ public class BigNumDtoa {
 		BIGNUM_DTOA_PRECISION
 	};
 
-	private static int NormalizedExponent(long significand, int exponent) {
+	private static int NormalizedExponent(@Unsigned long significand, int exponent) {
 		DOUBLE_CONVERSION_ASSERT(significand != 0);
 		while ((significand & Ieee.Double.kHiddenBit) == 0) {
 			significand = significand << 1;
@@ -474,7 +476,7 @@ public class BigNumDtoa {
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
 	private static void InitialScaledStartValuesPositiveExponent(
-			long significand, int exponent,
+			@Unsigned long significand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
 			Bignum numerator, Bignum denominator,
 			Bignum delta_minus, Bignum delta_plus) {
@@ -545,7 +547,7 @@ public class BigNumDtoa {
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
 	private static void InitialScaledStartValuesNegativeExponentPositivePower(
-			long ulSignificand, int exponent,
+			@Unsigned long ulSignificand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
 			Bignum numerator, Bignum denominator,
 			Bignum delta_minus, Bignum delta_plus) {
@@ -617,7 +619,7 @@ public class BigNumDtoa {
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
 	private static void InitialScaledStartValuesNegativeExponentNegativePower(
-			long ulSignificand, int exponent,
+			@Unsigned long ulSignificand, int exponent,
 			int estimated_power, boolean need_boundary_deltas,
 			Bignum numerator, Bignum denominator,
 			Bignum delta_minus, Bignum delta_plus) {
@@ -700,7 +702,7 @@ public class BigNumDtoa {
 	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
-	private static void InitialScaledStartValues(long ulSignificand,
+	private static void InitialScaledStartValues(@Unsigned long ulSignificand,
 										 int exponent,
 										 boolean lower_boundary_is_closer,
 										 int estimated_power,

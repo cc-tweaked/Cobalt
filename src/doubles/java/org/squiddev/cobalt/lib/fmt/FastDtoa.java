@@ -29,6 +29,9 @@
  */
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Signed;
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.fmt.UnsignedLong.ONE;
 
@@ -267,7 +270,7 @@ public class FastDtoa {
 	 *  Inspired by the method for finding an integer log base 10 from here:
 	 *  http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
 	 */
-	private static final int[] kSmallPowersOfTen =
+	private static final @Unsigned int[] kSmallPowersOfTen =
 		{0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
 			1000000000};
 
@@ -287,7 +290,7 @@ public class FastDtoa {
 								int[] exponent_plus_one) {
 		DOUBLE_CONVERSION_ASSERT( number.lt(UnsignedInt.ONE.shl(number_bits + 1)) );
 		// 1233/4096 is approximately 1/lg(10).
-		int exponent_plus_one_guess = ((number_bits + 1) * 1233 >>> 12);
+		int exponent_plus_one_guess = ((number_bits + 1) * 1233 >> 12);
 		// We increment to skip over the first entry in the kPowersOf10 table.
 		// Note: kPowersOf10[i] == 10^(i-1).
 		exponent_plus_one_guess++;
@@ -518,9 +521,9 @@ public class FastDtoa {
 		// with the divisor exponent + 1. And the divisor is the biggest power of ten
 		// that is smaller than 'integrals'.
 		while (kappa[0] > 0) {
-			int digit = integrals.divideBy(divisor).unsafeIntValue();
+			int digit = (@Signed int)integrals.divideBy(divisor).unsafeIntValue();
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (char)('0' + digit);
+			buffer[length[0]] = (@Unsigned char)('0' + digit);
 			length[0]++;
 			requested_digits--;
 			integrals = integrals.mod(divisor);

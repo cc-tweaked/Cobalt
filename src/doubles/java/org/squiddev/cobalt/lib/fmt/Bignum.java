@@ -24,6 +24,9 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.Signed;
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -34,6 +37,7 @@ import java.util.Objects;
  *   optimized away at some point, but for now it will get the things into a functional state.
  */
 public class Bignum {
+	private static final long LONG_SIGN_BIT = 0x8000_0000_0000_0000L;
 	private static final long LONG_UNSIGNED_BITS = 0x7fff_ffff_ffff_ffffL;
 
 
@@ -82,18 +86,12 @@ public class Bignum {
 		val = new BigDecimal(value);
 	}
 
-	public void AssignUInt(short unsignedValue) { val = fromUnsigned(unsignedValue); }
-	public void AssignUInt(int unsignedValue) { val = fromUnsigned(unsignedValue); }
-	public void AssignUInt(long unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void AssignUInt(@Unsigned long unsignedValue) { val = fromUnsigned(unsignedValue); }
 
 	// special care is needed to prevent sign-extending conversions
-	public void AssignUInt16(short unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt16(int unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt32(short unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt32(int unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt64(short unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt64(int unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt64(long unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt16(@Unsigned int unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt32(@Unsigned int unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt64(@Unsigned long unsignedValue) { AssignUInt(unsignedValue); }
 
 	public void AssignBignum(Bignum other) {
 		this.val = other.val;
@@ -115,9 +113,7 @@ public class Bignum {
 		val = BigDecimal.valueOf(base).pow(exponent);
 	}
 
-	public void AddUInt64(short operand) { add(fromUnsigned(operand)); }
-	public void AddUInt64(int operand) { add(fromUnsigned(operand)); }
-	public void AddUInt64(long operand) { add(fromUnsigned(operand)); }
+	public void AddUInt64(@Unsigned long operand) { add(fromUnsigned(operand)); }
 
 	private void add(BigDecimal operand) {
 		val = val.add(operand);
@@ -142,13 +138,10 @@ public class Bignum {
 
 
 	// special care is needed to prevent sign-extending conversions
-	public void MultiplyByUInt32(short unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
-	public void MultiplyByUInt32(int unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+	public void MultiplyByUInt32(@Unsigned int unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
 
 	// special care is needed to prevent sign-extending conversions
-	void MultiplyByUInt64(short unsignedFactor){ multiply(fromUnsigned(unsignedFactor)); }
-	void MultiplyByUInt64(int unsignedFactor)  {  multiply(fromUnsigned(unsignedFactor)); }
-	void MultiplyByUInt64(long unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+	void MultiplyByUInt64(@Unsigned long unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
 
 	public void MultiplyByPowerOfTen(final int exponent) {
 		val = val.scaleByPowerOfTen(exponent);
@@ -209,21 +202,23 @@ public class Bignum {
 		return PlusCompare(a, b, c) < 0;
 	}
 
-
-	private static BigDecimal fromUnsigned(short value) {
-		return new BigDecimal(BigInteger.valueOf(Short.toUnsignedLong(value)));
+	@SuppressWarnings("cast.unsafe")
+	private static BigDecimal fromUnsigned(@Unsigned short value) {
+		return new BigDecimal(BigInteger.valueOf(Short.toUnsignedLong((@Signed short)value)));
 	}
 
-	private static BigDecimal fromUnsigned(int value) {
-		return new BigDecimal(BigInteger.valueOf(Integer.toUnsignedLong(value)));
+	@SuppressWarnings("cast.unsafe")
+	private static BigDecimal fromUnsigned(@Unsigned int value) {
+		return new BigDecimal(BigInteger.valueOf(Integer.toUnsignedLong((@Signed int)value)));
 	}
 
-	private static BigDecimal fromUnsigned(long value) {
-		if (value < 0) {
+	@SuppressWarnings("cast.unsafe")
+	private static BigDecimal fromUnsigned(@Unsigned long value) {
+		if ((value & LONG_SIGN_BIT) != 0) {
 			return new BigDecimal(BigInteger.valueOf(value & LONG_UNSIGNED_BITS)
 					.add(BigInteger.valueOf(1L).shiftLeft(63)));
 		} else {
-			return BigDecimal.valueOf(value);
+			return BigDecimal.valueOf((@Signed long)value);
 		}
 	}
 }

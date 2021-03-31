@@ -30,7 +30,8 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
-import jdk.jfr.Unsigned;
+import org.checkerframework.checker.signedness.qual.Signed;
+import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.fmt.UnsignedLong.ONE;
@@ -38,11 +39,11 @@ import static org.squiddev.cobalt.lib.fmt.UnsignedLong.ONE;
 public class Ieee {
 
 	public static class Double {
-		public static final long kSignMask = 0x8000000000000000L;
-		public static final long kExponentMask = 0x7FF0000000000000L;
-		public static final long kSignificandMask = 0x000FFFFFFFFFFFFFL;
-		public static final long kHiddenBit = 0x0010000000000000L;
-		public static final long kQuietNanBit = 0x0008000000000000L;
+		public static final @Unsigned long kSignMask = 0x8000000000000000L;
+		public static final @Unsigned long kExponentMask = 0x7FF0000000000000L;
+		public static final @Unsigned long kSignificandMask = 0x000FFFFFFFFFFFFFL;
+		public static final @Unsigned long kHiddenBit = 0x0010000000000000L;
+		public static final @Unsigned long kQuietNanBit = 0x0008000000000000L;
 
 		public static final int kPhysicalSignificandSize = 52;  // Excludes the hidden bit.
 		public static final int kSignificandSize = 53;
@@ -50,10 +51,11 @@ public class Ieee {
 		public static final int kMaxExponent = 0x7FF - kExponentBias;
 
 		public Double() { d64_ =0;}
+		@SuppressWarnings("cast.unsafe")
 		public Double(double d) {
-			this.d64_ = java.lang.Double.doubleToRawLongBits(d);
+			this.d64_ = (@Unsigned long)java.lang.Double.doubleToRawLongBits(d);
 		}
-		public Double(long d64) { this.d64_ = d64; }
+		public Double(@Unsigned long d64) { this.d64_ = d64; }
 		public Double(DiyFp diy_fp) {
 			d64_ = DiyFpToUint64(diy_fp);
 		}
@@ -72,7 +74,7 @@ public class Ieee {
 		// The value encoded by this Double must be strictly greater than 0.
 		public DiyFp AsNormalizedDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
-			long f = Significand();
+			@Unsigned long f = Significand();
 			int e = Exponent();
 
 			// The current double could be a denormal.
@@ -87,7 +89,7 @@ public class Ieee {
 		}
 
 		// Returns the double's bit as uint64.
-		public long AsUint64() {
+		public @Unsigned long AsUint64() {
 			return d64_;
 		}
 
@@ -126,9 +128,9 @@ public class Ieee {
 			return biased_e - kExponentBias;
 		}
 
-		public long Significand() {
-			long d64 = AsUint64();
-			long significand = d64 & kSignificandMask;
+		public @Unsigned long Significand() {
+			@Unsigned long d64 = AsUint64();
+			@Unsigned long significand = d64 & kSignificandMask;
 			if (!IsDenormal()) {
 				return significand + kHiddenBit;
 			} else {
@@ -221,7 +223,9 @@ public class Ieee {
 			boolean physical_significand_is_zero = ((AsUint64() & kSignificandMask) == 0);
 			return physical_significand_is_zero && (Exponent() != kDenormalExponent);
 		}
-		public double value() { return java.lang.Double.longBitsToDouble(d64_); }
+
+		@SuppressWarnings("cast.unsafe")
+		public double value() { return java.lang.Double.longBitsToDouble((@Signed long)d64_); }
 
 		/**
 		 *  Returns the significand size for a given order of magnitude.
@@ -248,13 +252,12 @@ public class Ieee {
 		}
 
 		private static final int kDenormalExponent = -kExponentBias + 1;
-		private static final long kInfinity = 0x7FF0000000000000L;
-		private static final long kNaN = 0x7FF8000000000000L;
+		private static final @Unsigned long kInfinity = 0x7FF0000000000000L;
+		private static final @Unsigned long kNaN = 0x7FF8000000000000L;
 
-		@Unsigned
-		private final long d64_;
+		private final @Unsigned long d64_;
 
-		private static long DiyFpToUint64(DiyFp diy_fp) {
+		private static @Unsigned long DiyFpToUint64(DiyFp diy_fp) {
 			UnsignedLong significand = diy_fp.f();
 			int exponent = diy_fp.e();
 			while (significand.gt(
@@ -285,17 +288,18 @@ public class Ieee {
 	}
 
 	public static class Single {
-		public static final int kSignMask = 0x80000000;
-		public static final int kExponentMask = 0x7F800000;
-		public static final int kSignificandMask = 0x007FFFFF;
-		public static final int kHiddenBit = 0x00800000;
-		public static final int kQuietNanBit = 0x00400000;
+		public static final @Unsigned int kSignMask = 0x80000000;
+		public static final @Unsigned int kExponentMask = 0x7F800000;
+		public static final @Unsigned int kSignificandMask = 0x007FFFFF;
+		public static final @Unsigned int kHiddenBit = 0x00800000;
+		public static final @Unsigned int kQuietNanBit = 0x00400000;
 		public static final int kPhysicalSignificandSize = 23;  // Excludes the hidden bit.
 		public static final int kSignificandSize = 24;
 
 		public Single() { this.d32_ = 0; }
-		public Single(float f) { d32_ = Float.floatToIntBits(f); }
-		public Single(int d32) { this.d32_ = d32; }
+		@SuppressWarnings("cast.unsafe")
+		public Single(float f) { d32_ = (@Unsigned int)Float.floatToIntBits(f); }
+		public Single(@Unsigned int d32) { this.d32_ = d32; }
 
 		/**
 		 *  The value encoded by this Single must be greater or equal to +0.0.
@@ -308,7 +312,7 @@ public class Ieee {
 		}
 
 		/** Returns the single's bit as uint64. */
-		public int AsUint32() {
+		public @Unsigned int AsUint32() {
 			return d32_;
 		}
 
@@ -321,7 +325,7 @@ public class Ieee {
 			return biased_e - kExponentBias;
 		}
 
-		public long Significand() {
+		public @Unsigned long Significand() {
 			int d32 = AsUint32();
 			int significand = d32 & kSignificandMask;
 			if (!IsDenormal()) {
@@ -416,7 +420,8 @@ public class Ieee {
 			return physical_significand_is_zero && (Exponent() != kDenormalExponent);
 		}
 
-		public float value() { return Float.intBitsToFloat(d32_); }
+		@SuppressWarnings("cast.unsafe")
+		public float value() { return Float.intBitsToFloat((@Signed int)d32_); }
 
 		public static float Infinity() {
 			return new Single(kInfinity).value();
@@ -426,13 +431,13 @@ public class Ieee {
 			return new Single(kNaN).value();
 		}
 
-		private static final int kExponentBias = 0x7F + kPhysicalSignificandSize;
-		private static final int kDenormalExponent = -kExponentBias + 1;
-		private static final int kMaxExponent = 0xFF - kExponentBias;
-		private static final int kInfinity = 0x7F800000;
-		private static final int kNaN = 0x7FC00000;
+		private static final @Unsigned int kExponentBias = 0x7F + kPhysicalSignificandSize;
+		private static final @Unsigned int kDenormalExponent = -kExponentBias + 1;
+		private static final @Unsigned int kMaxExponent = 0xFF - kExponentBias;
+		private static final @Unsigned int kInfinity = 0x7F800000;
+		private static final @Unsigned int kNaN = 0x7FC00000;
 
-  		private final int d32_;
+  		private final @Unsigned int d32_;
 	}
 
 }
