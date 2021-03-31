@@ -27,6 +27,7 @@ package org.squiddev.cobalt.lib;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.ConsAltNode;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
@@ -112,7 +113,7 @@ public class BaseLib implements LuaLibrary {
 		next = env.rawget("next");
 		inext = env.rawget("__inext");
 
-		env.rawset("_VERSION", valueOf("Lua 5.1"));
+		env.rawset("_VERSION", valueOf(LuaC.isLua52 ? "Lua 5.2" : "Lua 5.1"));
 
 		return env;
 	}

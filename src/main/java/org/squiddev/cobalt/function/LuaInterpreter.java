@@ -685,6 +685,7 @@ public final class LuaInterpreter {
 						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, newp.isLua52 ? null : (LuaTable)upvalues[0].getValue());
 						if (newp.isLua52) {
 							for (int j = 0; j < newp.nups; ++j) {
+
 								int b = newp.upvalue_info[j];
 								if ((b >> 8) != 0) {
 									DebugFrame frame = di;

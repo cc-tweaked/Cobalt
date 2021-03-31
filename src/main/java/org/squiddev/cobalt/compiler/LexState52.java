@@ -111,7 +111,6 @@ public class LexState52 {
 		VKNUM = 5,    /* nval = numerical value */
 		VLOCAL = 6,    /* info = local register */
 		VUPVAL = 7,       /* info = index of upvalue in `upvalues' */
-		VGLOBAL = 8,    /* info = index of table, aux = index of global name in `k' */
 		VINDEXED = 9,    /* info = table register, aux = index register (or `k') */
 		VJMP = 10,        /* info = instruction pc */
 		VRELOCABLE = 11,    /* info = instruction pc */
@@ -313,7 +312,7 @@ public class LexState52 {
 
 	private void inclineNumber() throws CompileException {
 		int old = current;
-		LuaC._assert(currIsNewline());
+		LuaC._assert(currIsNewline(), linenumber);
 		nextChar(); /* skip '\n' or '\r' */
 		if (currIsNewline() && current != old) {
 			nextChar(); /* skip '\n\r' or '\r\n' */
@@ -392,7 +391,7 @@ public class LexState52 {
 	}
 
 	private void read_numeral(SemInfo seminfo) throws CompileException {
-		LuaC._assert(isDigit(current));
+		LuaC._assert(isDigit(current), linenumber);
 
 		int first = current;
 		save_and_next();
@@ -417,7 +416,7 @@ public class LexState52 {
 	private int skip_sep() throws CompileException {
 		int count = 0;
 		int s = current;
-		LuaC._assert(s == '[' || s == ']');
+		LuaC._assert(s == '[' || s == ']', linenumber);
 		save_and_next();
 		while (current == '=') {
 			save_and_next();
@@ -738,7 +737,7 @@ public class LexState52 {
 				}
 				default: {
 					if (isSpace(current)) {
-						LuaC._assert(!currIsNewline());
+						LuaC._assert(!currIsNewline(), linenumber);
 						nextChar();
 					} else if (isDigit(current)) {
 						read_numeral(seminfo);
@@ -777,7 +776,7 @@ public class LexState52 {
 	}
 
 	private void lookahead() throws CompileException {
-		LuaC._assert(lookahead.token == TK_EOS);
+		LuaC._assert(lookahead.token == TK_EOS, linenumber);
 		lookahead.token = llex(lookahead.seminfo);
 	}
 
@@ -795,10 +794,13 @@ public class LexState52 {
 
 		static class U { // originally a union
 			static class S {
-				int info, aux;
+				int idx;
+				int t;
+				int vt;
 			}
 
-			final S s = new S();
+			final S ind = new S();
+			int info;
 			private LuaValue _nval;
 
 			public void setNval(LuaValue r) {
@@ -806,7 +808,7 @@ public class LexState52 {
 			}
 
 			public LuaValue nval() {
-				return _nval == null ? LuaInteger.valueOf(s.info) : _nval;
+				return _nval == null ? LuaInteger.valueOf(info) : _nval;
 			}
 		}
 
@@ -818,7 +820,7 @@ public class LexState52 {
 			this.f.i = NO_JUMP;
 			this.t.i = NO_JUMP;
 			this.k = k;
-			this.u.s.info = i;
+			this.u.info = i;
 		}
 
 		boolean hasjumps() {
@@ -832,8 +834,10 @@ public class LexState52 {
 		public void setvalue(expdesc other) {
 			this.k = other.k;
 			this.u._nval = other.u._nval;
-			this.u.s.info = other.u.s.info;
-			this.u.s.aux = other.u.s.aux;
+			this.u.info = other.u.info;
+			this.u.ind.idx = other.u.ind.idx;
+			this.u.ind.t = other.u.ind.t;
+			this.u.ind.vt = other.u.ind.vt;
 			this.t.i = other.t.i;
 			this.f.i = other.f.i;
 		}
@@ -955,11 +959,12 @@ public class LexState52 {
 	private void singlevar(expdesc var) throws CompileException {
 		LuaString varname = str_checkname();
 		FuncState52 fs = this.fs;
-		if (fs.singlevaraux(varname, var, 1) == VGLOBAL) {
+		if (fs.singlevaraux(varname, var, 1) == VVOID) {
 			expdesc key = new expdesc();
 			fs.singlevaraux(LuaString.valueOf("_ENV"), var, 1);
+			LuaC._assert(var.k == LexState52.VLOCAL || var.k == LexState52.VUPVAL, linenumber);
 			codestring(key, varname);
-			// todo
+			fs.indexed(var, key);
 		}
 	}
 
@@ -1000,28 +1005,28 @@ public class LexState52 {
 		nCcalls--;
 	}
 
-	private void pushclosure(FuncState52 func, expdesc v) throws CompileException {
-		FuncState52 fs = this.fs;
+	Prototype addprototype() {
+		Prototype clp;
 		Prototype f = fs.f;
-		if (f.p == null || fs.np + 1 > f.p.length) {
+		if (f.p == null || fs.np >= f.p.length) {
 			f.p = LuaC.realloc(f.p, fs.np * 2 + 1);
 		}
-		f.p[fs.np++] = func.f;
-		v.init(VRELOCABLE, fs.codeABx(Lua.OP_CLOSURE, 0, fs.np - 1));
-		for (int i = 0; i < func.f.nups; i++) {
-			int o = func.upvalues[i].k == VLOCAL ? Lua.OP_MOVE
-				: Lua.OP_GETUPVAL;
-			fs.codeABC(o, 0, func.upvalues[i].info, 0);
-		}
+		f.p[fs.np++] = clp = new Prototype();
+		return clp;
+	}
+
+	private void codeclosure(expdesc v) throws CompileException {
+		FuncState52 fs = this.fs.prev;
+		v.init(LexState52.VRELOCABLE, fs.codeABx(Lua52.OP_CLOSURE, 0, fs.np - 1));
+		fs.exp2nextreg(v);
 	}
 
 	void open_func(FuncState52 fs) {
-		Prototype f = new Prototype();
+		Prototype f = fs.f;
 		if (this.fs != null) {
 			f.source = this.fs.f.source;
 		}
-		f.isLua52 = false; // temporary!
-		fs.f = f;
+		f.isLua52 = true;
 		fs.prev = this.fs;  /* linked list of FuncState52s */
 		fs.ls = this;
 		this.fs = fs;
@@ -1053,7 +1058,7 @@ public class LexState52 {
 		// f.sizelocvars = fs.nlocvars;
 		f.upvalues = LuaC.realloc(f.upvalues, f.nups);
 		// LuaC._assert (CheckCode.checkcode(f));
-		LuaC._assert(fs.bl == null);
+		LuaC._assert(fs.bl == null, linenumber);
 		this.fs = fs.prev;
 //		L.top -= 2; /* remove table and prototype from the stack */
 		// /* last token read was anchored in defunct function; must reanchor it
@@ -1118,7 +1123,7 @@ public class LexState52 {
 		this.checknext('=');
 		rkkey = fs.exp2RK(key);
 		this.expr(val);
-		fs.codeABC(Lua.OP_SETTABLE, cc.t.u.s.info, rkkey, fs.exp2RK(val));
+		fs.codeABC(Lua52.OP_SETTABLE, cc.t.u.info, rkkey, fs.exp2RK(val));
 		fs.freereg = reg; /* free registers */
 	}
 
@@ -1134,7 +1139,7 @@ public class LexState52 {
 		/* constructor -> ?? */
 		FuncState52 fs = this.fs;
 		int line = this.linenumber;
-		int pc = fs.codeABC(Lua.OP_NEWTABLE, 0, 0, 0);
+		int pc = fs.codeABC(Lua52.OP_NEWTABLE, 0, 0, 0);
 		ConsControl cc = new ConsControl();
 		cc.na = cc.nh = cc.tostore = 0;
 		cc.t = t;
@@ -1143,7 +1148,7 @@ public class LexState52 {
 		fs.exp2nextreg(t); /* fix it at stack top (for gc) */
 		this.checknext('{');
 		do {
-			LuaC._assert(cc.v.k == VVOID || cc.tostore > 0);
+			LuaC._assert(cc.v.k == VVOID || cc.tostore > 0, linenumber);
 			if (this.t.token == '}') {
 				break;
 			}
@@ -1214,9 +1219,9 @@ public class LexState52 {
 						if (LUA_COMPAT_VARARG) {
 							/* use `arg' as default name */
 							this.new_localvarliteral("arg", nparams++);
-							f.is_vararg = Lua.VARARG_HASARG | Lua.VARARG_NEEDSARG;
+							f.is_vararg = Lua52.VARARG_HASARG | Lua52.VARARG_NEEDSARG;
 						}
-						f.is_vararg |= Lua.VARARG_ISVARARG;
+						f.is_vararg |= Lua52.VARARG_ISVARARG;
 						break;
 					}
 					default:
@@ -1225,7 +1230,7 @@ public class LexState52 {
 			} while (f.is_vararg == 0 && this.testnext(','));
 		}
 		this.adjustlocalvars(nparams);
-		f.numparams = fs.nactvar - (f.is_vararg & Lua.VARARG_HASARG);
+		f.numparams = fs.nactvar - (f.is_vararg & Lua52.VARARG_HASARG);
 		fs.reserveregs(fs.nactvar);  /* reserve register for parameters */
 	}
 
@@ -1233,8 +1238,9 @@ public class LexState52 {
 	private void body(expdesc e, boolean needself, int line) throws CompileException {
 		/* body -> `(' parlist `)' chunk END */
 		FuncState52 new_fs = new FuncState52();
-		open_func(new_fs);
+		new_fs.f = this.addprototype();
 		new_fs.f.linedefined = line;
+		open_func(new_fs);
 		this.checknext('(');
 		if (needself) {
 			new_localvarliteral("self", 0);
@@ -1245,8 +1251,8 @@ public class LexState52 {
 		this.chunk();
 		new_fs.f.lastlinedefined = this.linenumber;
 		this.check_match(TK_END, TK_FUNCTION, line);
+		this.codeclosure(e);
 		this.close_func();
-		this.pushclosure(new_fs, e);
 	}
 
 	private int explist1(expdesc v) throws CompileException {
@@ -1295,17 +1301,17 @@ public class LexState52 {
 				throw syntaxError("function arguments expected");
 			}
 		}
-		LuaC._assert(f.k == VNONRELOC);
-		base = f.u.s.info; /* base register for call */
+		LuaC._assert(f.k == VNONRELOC, linenumber);
+		base = f.u.info; /* base register for call */
 		if (hasmultret(args.k)) {
-			nparams = Lua.LUA_MULTRET; /* open call */
+			nparams = Lua52.LUA_MULTRET; /* open call */
 		} else {
 			if (args.k != VVOID) {
 				fs.exp2nextreg(args); /* close last argument */
 			}
 			nparams = fs.freereg - (base + 1);
 		}
-		f.init(VCALL, fs.codeABC(Lua.OP_CALL, base, nparams + 1, 2));
+		f.init(VCALL, fs.codeABC(Lua52.OP_CALL, base, nparams + 1, 2));
 		fs.fixline(line);
 		fs.freereg = base + 1;  /* call remove function and arguments and leaves
 		 * (unless changed) one result */
@@ -1413,8 +1419,8 @@ public class LexState52 {
 				FuncState52 fs = this.fs;
 				this.check_condition(fs.f.is_vararg != 0, "cannot use " + LUA_QL("...")
 					+ " outside a vararg function");
-				fs.f.is_vararg &= ~Lua.VARARG_NEEDSARG; /* don't need 'arg' */
-				v.init(VVARARG, fs.codeABC(Lua.OP_VARARG, 0, 1, 0));
+				fs.f.is_vararg &= ~Lua52.VARARG_NEEDSARG; /* don't need 'arg' */
+				v.init(VVARARG, fs.codeABC(Lua52.OP_VARARG, 0, 1, 0));
 				break;
 			}
 			case '{': { /* constructor */
@@ -1575,7 +1581,7 @@ public class LexState52 {
 		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
 		fs.enterblock(bl, false);
 		this.chunk();
-		LuaC._assert(bl.breaklist.i == NO_JUMP);
+		LuaC._assert(bl.breaklist.i == NO_JUMP, linenumber);
 		fs.leaveblock();
 	}
 
@@ -1603,18 +1609,19 @@ public class LexState52 {
 		boolean conflict = false;
 		for (; lh != null; lh = lh.prev) {
 			if (lh.v.k == VINDEXED) {
-				if (lh.v.u.s.info == v.u.s.info) {  /* conflict? */
+				if (lh.v.u.ind.vt == v.k && lh.v.u.ind.t == v.u.info) {  /* conflict? */
 					conflict = true;
-					lh.v.u.s.info = extra;  /* previous assignment will use safe copy */
+					lh.v.u.ind.vt = VLOCAL;
+					lh.v.u.ind.t = extra;  /* previous assignment will use safe copy */
 				}
-				if (lh.v.u.s.aux == v.u.s.info) {  /* conflict? */
+				if (v.k == VLOCAL && lh.v.u.ind.idx == v.u.info) {  /* conflict? */
 					conflict = true;
-					lh.v.u.s.aux = extra;  /* previous assignment will use safe copy */
+					lh.v.u.ind.idx = extra;  /* previous assignment will use safe copy */
 				}
 			}
 		}
 		if (conflict) {
-			fs.codeABC(Lua.OP_MOVE, fs.freereg, v.u.s.info, 0); /* make copy */
+			fs.codeABC(Lua52.OP_MOVE, fs.freereg, v.u.info, 0); /* make copy */
 			fs.reserveregs(1);
 		}
 	}
@@ -1678,7 +1685,7 @@ public class LexState52 {
 			throw syntaxError("no loop to break");
 		}
 		if (upval) {
-			fs.codeABC(Lua.OP_CLOSE, bl.nactvar, 0, 0);
+			fs.codeABC(Lua52.OP_CLOSE, bl.nactvar, 0, 0);
 		}
 		fs.concat(bl.breaklist, fs.jump());
 	}
@@ -1745,17 +1752,22 @@ public class LexState52 {
 		int prep, endfor;
 		this.adjustlocalvars(3); /* control variables */
 		this.checknext(TK_DO);
-		prep = isnum ? fs.codeAsBx(Lua.OP_FORPREP, base, NO_JUMP) : fs.jump();
+		prep = isnum ? fs.codeAsBx(Lua52.OP_FORPREP, base, NO_JUMP) : fs.jump();
 		fs.enterblock(bl, false); /* scope for declared variables */
 		this.adjustlocalvars(nvars);
 		fs.reserveregs(nvars);
 		this.block();
 		fs.leaveblock(); /* end of scope for declared variables */
 		fs.patchtohere(prep);
-		endfor = isnum ? fs.codeAsBx(Lua.OP_FORLOOP, base, NO_JUMP) : fs
-			.codeABC(Lua.OP_TFORLOOP, base, 0, nvars);
-		fs.fixline(line); /* pretend that `Lua.OP_FOR' starts the loop */
-		fs.patchlist(isnum ? endfor : fs.jump(), prep + 1);
+		if (isnum)  /* numeric for? */
+			endfor = fs.codeAsBx(Lua52.OP_FORLOOP, base, NO_JUMP);
+		else {  /* generic for */
+			fs.codeABC(Lua52.OP_TFORCALL, base, 0, nvars);
+			fs.fixline(line);
+			endfor = fs.codeAsBx(Lua52.OP_TFORLOOP, base + 2, NO_JUMP);
+		}
+		fs.patchlist(endfor, prep + 1);
+		fs.fixline(line); /* pretend that `Lua52.OP_FOR' starts the loop */
 	}
 
 
@@ -1774,7 +1786,7 @@ public class LexState52 {
 		if (this.testnext(',')) {
 			this.exp1(); /* optional step */
 		} else { /* default step = 1 */
-			fs.codeABx(Lua.OP_LOADK, fs.freereg, fs.numberK(LuaInteger.valueOf(1)));
+			fs.codeABx(Lua52.OP_LOADK, fs.freereg, fs.numberK(LuaInteger.valueOf(1)));
 			fs.reserveregs(1);
 		}
 		this.forbody(base, line, 1, true);
@@ -1952,18 +1964,18 @@ public class LexState52 {
 			if (hasmultret(e.k)) {
 				fs.setmultret(e);
 				if (e.k == VCALL && nret == 1) { /* tail call? */
-					LuaC.SET_OPCODE(fs.getcodePtr(e), Lua.OP_TAILCALL);
-					LuaC._assert(Lua.GETARG_A(fs.getcode(e)) == fs.nactvar);
+					LuaC.SET_OPCODE(fs.getcodePtr(e), Lua52.OP_TAILCALL);
+					LuaC._assert(Lua52.GETARG_A(fs.getcode(e)) == fs.nactvar, linenumber);
 				}
 				first = fs.nactvar;
-				nret = Lua.LUA_MULTRET; /* return all values */
+				nret = Lua52.LUA_MULTRET; /* return all values */
 			} else {
 				if (nret == 1) /* only one single value? */ {
 					first = fs.exp2anyreg(e);
 				} else {
 					fs.exp2nextreg(e); /* values must go to the `stack' */
 					first = fs.nactvar; /* return all `active' values */
-					LuaC._assert(nret == fs.freereg - first);
+					LuaC._assert(nret == fs.freereg - first, linenumber);
 				}
 			}
 		}
@@ -2033,7 +2045,7 @@ public class LexState52 {
 			islast = this.statement();
 			this.testnext(';');
 			LuaC._assert(this.fs.f.maxstacksize >= this.fs.freereg
-				&& this.fs.freereg >= this.fs.nactvar);
+				&& this.fs.freereg >= this.fs.nactvar, linenumber);
 			this.fs.freereg = this.fs.nactvar; /* free registers */
 		}
 		this.leavelevel();

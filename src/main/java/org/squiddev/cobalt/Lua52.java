@@ -262,7 +262,7 @@ public class Lua52 {
 	                        							if R(A+3) ~= nil then R(A+2)=R(A+3) else pc++	*/
 	public static final int OP_SETLIST = 36; /*	A B C	R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B		*/
 
-	public static final int OP_CLOSURE = 37; /*	A Bx	R(A) := closure(KPROTO[Bx], R(A), ... ,R(A+n))	*/
+	public static final int OP_CLOSURE = 37; /*	A Bx	R(A) := closure(KPROTO[Bx])						*/
 	public static final int OP_VARARG = 38; /*	A B		R(A), R(A+1), ..., R(A+B-1) = vararg			*/
 	public static final int OP_EXTRAARG = 39;/* Ax		extra (larger) argument for previous opcode 	*/
 
@@ -352,9 +352,8 @@ public class Lua52 {
 		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),		/* OP_FORLOOP */
 		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),		/* OP_FORPREP */
 		(0 << 7) | (0 << 6) | (OpArgN << 4) | (OpArgU << 2) | (iABC),		/* OP_TFORCALL */
-		(1 << 7) | (0 << 6) | (OpArgN << 4) | (OpArgU << 2) | (iABC),		/* OP_TFORLOOP */
+		(0 << 7) | (1 << 6) | (OpArgR << 4) | (OpArgN << 2) | (iAsBx),		/* OP_TFORLOOP */
 		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iABC),		/* OP_SETLIST */
-		(0 << 7) | (0 << 6) | (OpArgN << 4) | (OpArgN << 2) | (iABC),		/* OP_CLOSE */
 		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABx),		/* OP_CLOSURE */
 		(0 << 7) | (1 << 6) | (OpArgU << 4) | (OpArgN << 2) | (iABC),		/* OP_VARARG */
 		(0 << 7) | (0 << 6) | (OpArgU << 4) | (OpArgU << 2) | (iAx),		/* OP_EXTRAARG */

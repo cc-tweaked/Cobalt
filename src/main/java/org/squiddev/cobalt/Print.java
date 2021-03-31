@@ -121,7 +121,6 @@ public class Print {
 		"TFORCALL",
 		"TFORLOOP",
 		"SETLIST",
-		"CLOSE",
 		"CLOSURE",
 		"VARARG",
 		"EXTRAARG",

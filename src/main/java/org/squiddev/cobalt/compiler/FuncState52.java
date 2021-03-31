@@ -33,13 +33,13 @@ import org.squiddev.cobalt.function.LocalVariable;
 import java.util.Hashtable;
 
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Lua.*;
+import static org.squiddev.cobalt.Lua52.*;
 import static org.squiddev.cobalt.compiler.LuaC.*;
 
 public class FuncState52 {
 	class upvaldesc {
-		short k;
-		short info;
+		boolean instack;
+		short idx;
 		LuaString name;
 	}
 
@@ -79,11 +79,11 @@ public class FuncState52 {
 	// =============================================================
 
 	InstructionPtr getcodePtr(expdesc e) {
-		return new InstructionPtr(f.code, e.u.s.info);
+		return new InstructionPtr(f.code, e.u.info);
 	}
 
 	int getcode(expdesc e) {
-		return f.code[e.u.s.info];
+		return f.code[e.u.info];
 	}
 
 	int codeAsBx(int o, int A, int sBx) throws CompileException {
@@ -117,31 +117,29 @@ public class FuncState52 {
 	}
 
 
-	private int indexupvalue(LuaString name, expdesc v) throws CompileException {
-		int i;
-		for (i = 0; i < f.nups; i++) {
-			if (upvalues[i].k == v.k && upvalues[i].info == v.u.s.info) {
-				_assert(f.upvalues[i] == name);
-				return i;
-			}
-		}
+	int newupvalue(LuaString name, expdesc v) throws CompileException {
 		/* new one */
 		checklimit(f.nups + 1, LUAI_MAXUPVALUES, "upvalues");
 		if (f.upvalues == null || f.nups + 1 > f.upvalues.length) {
 			f.upvalues = realloc(f.upvalues, f.nups * 2 + 1);
 		}
+		if (f.upvalue_info == null || f.nups + 1 > f.upvalue_info.length) {
+			f.upvalue_info = realloc(f.upvalue_info, f.nups * 2 + 1);
+		}
 		f.upvalues[f.nups] = name;
+		f.upvalue_info[f.nups] = ((v.k == LexState52.VLOCAL ? 1 : 0) << 8) | v.u.info;
 		_assert(v.k == LexState52.VLOCAL || v.k == LexState52.VUPVAL);
 		upvalues[f.nups] = new upvaldesc();
-		upvalues[f.nups].k = (short) (v.k);
-		upvalues[f.nups].info = (short) (v.u.s.info);
+		upvalues[f.nups].instack = (v.k == LexState52.VLOCAL);
+		upvalues[f.nups].idx = (short) (v.u.info);
+		upvalues[f.nups].name = name;
 		return f.nups++;
 	}
 
 	private int searchupvalue(LuaString n) {
 		int i;
 		for (i = 0; i < f.nups; i++) {
-			if (f.upvalues[i] == n) return i;
+			if (f.upvalues[i].equals(n)) return i;
 		}
 		return -1;  /* not found */
 	}
@@ -183,9 +181,7 @@ public class FuncState52 {
 				if (prev.singlevaraux(n, var, 0) == LexState52.VVOID) {
 					return LexState52.VVOID;
 				}
-				var.u.s.info = indexupvalue(n, var); /* else was LOCAL or UPVAL */
-				var.k = LexState52.VUPVAL; /* upvalue in this level */
-				return LexState52.VUPVAL;
+				idx = this.newupvalue(n, var); /* else was LOCAL or UPVAL */
 			}
 			var.init(LexState52.VUPVAL, idx);
 			return LexState52.VUPVAL;
@@ -220,9 +216,9 @@ public class FuncState52 {
 		BlockCnt bl = this.bl;
 		this.bl = bl.previous;
 		ls.removevars(bl.nactvar);
-		if (bl.upval) {
+		/*if (bl.upval) {
 			this.codeABC(OP_CLOSE, bl.nactvar, 0, 0);
-		}
+		}*/
 		/* a block either controls scope or breaks (never both) */
 		_assert(!bl.isbreakable || !bl.upval);
 		_assert(bl.nactvar == this.nactvar);
@@ -237,7 +233,7 @@ public class FuncState52 {
 		this.exp2nextreg(cc.v);
 		cc.v.k = LexState52.VVOID;
 		if (cc.tostore == LFIELDS_PER_FLUSH) {
-			this.setlist(cc.t.u.s.info, cc.na, cc.tostore); /* flush */
+			this.setlist(cc.t.u.info, cc.na, cc.tostore); /* flush */
 			cc.tostore = 0; /* no more items pending */
 		}
 	}
@@ -250,13 +246,13 @@ public class FuncState52 {
 		if (cc.tostore == 0) return;
 		if (hasmultret(cc.v.k)) {
 			this.setmultret(cc.v);
-			this.setlist(cc.t.u.s.info, cc.na, LUA_MULTRET);
+			this.setlist(cc.t.u.info, cc.na, LUA_MULTRET);
 			cc.na--;  /* do not count last expression (unknown number of elements) */
 		} else {
 			if (cc.v.k != LexState52.VVOID) {
 				this.exp2nextreg(cc.v);
 			}
-			this.setlist(cc.t.u.s.info, cc.na, cc.tostore);
+			this.setlist(cc.t.u.info, cc.na, cc.tostore);
 		}
 	}
 
@@ -276,10 +272,10 @@ public class FuncState52 {
 				previous = new InstructionPtr(this.f.code, this.pc - 1);
 				if (GET_OPCODE(previous.get()) == OP_LOADNIL) {
 					int pfrom = GETARG_A(previous.get());
-					int pto = GETARG_B(previous.get());
-					if (pfrom <= from && from <= pto + 1) { /* can connect both? */
-						if (from + n - 1 > pto) {
-							SETARG_B(previous, from + n - 1);
+					int pn = GETARG_B(previous.get());
+					if (pfrom <= from && from <= pfrom + pn) { /* can connect both? */
+						if (from + n - 1 > pfrom + n - 1) {
+							SETARG_B(previous, n);
 						}
 						return;
 					}
@@ -287,7 +283,7 @@ public class FuncState52 {
 			}
 		}
 		/* else no optimization */
-		this.codeABC(OP_LOADNIL, from, from + n - 1, 0);
+		this.codeABC(OP_LOADNIL, from, n, 0);
 	}
 
 
@@ -462,7 +458,7 @@ public class FuncState52 {
 
 	private void freeexp(expdesc e) throws CompileException {
 		if (e.k == LexState52.VNONRELOC) {
-			this.freereg(e.u.s.info);
+			this.freereg(e.u.info);
 		}
 	}
 
@@ -518,7 +514,7 @@ public class FuncState52 {
 	void setoneret(expdesc e) {
 		if (e.k == LexState52.VCALL) { /* expression is an open function call? */
 			e.k = LexState52.VNONRELOC;
-			e.u.s.info = GETARG_A(this.getcode(e));
+			e.u.info = GETARG_A(this.getcode(e));
 		} else if (e.k == LexState52.VVARARG) {
 			SETARG_B(this.getcodePtr(e), 2);
 			e.k = LexState52.VRELOCABLE; /* can relocate its simple result */
@@ -532,20 +528,18 @@ public class FuncState52 {
 				break;
 			}
 			case LexState52.VUPVAL: {
-				e.u.s.info = this.codeABC(OP_GETUPVAL, 0, e.u.s.info, 0);
-				e.k = LexState52.VRELOCABLE;
-				break;
-			}
-			case LexState52.VGLOBAL: {
-				e.u.s.info = this.codeABx(OP_GETGLOBAL, 0, e.u.s.info);
+				e.u.info = this.codeABC(OP_GETUPVAL, 0, e.u.info, 0);
 				e.k = LexState52.VRELOCABLE;
 				break;
 			}
 			case LexState52.VINDEXED: {
-				this.freereg(e.u.s.aux);
-				this.freereg(e.u.s.info);
-				e.u.s.info = this
-					.codeABC(OP_GETTABLE, 0, e.u.s.info, e.u.s.aux);
+				int op = Lua52.OP_GETTABUP;
+				this.freereg(e.u.ind.idx);
+				if (e.u.ind.vt == LexState52.VLOCAL) {
+					this.freereg(e.u.ind.t);
+					op = Lua52.OP_GETTABLE;
+				}
+				e.u.info = this.codeABC(op, 0, e.u.ind.t, e.u.ind.idx);
 				e.k = LexState52.VRELOCABLE;
 				break;
 			}
@@ -578,7 +572,7 @@ public class FuncState52 {
 				break;
 			}
 			case LexState52.VK: {
-				this.codeABx(OP_LOADK, reg, e.u.s.info);
+				this.codeABx(OP_LOADK, reg, e.u.info);
 				break;
 			}
 			case LexState52.VKNUM: {
@@ -591,8 +585,8 @@ public class FuncState52 {
 				break;
 			}
 			case LexState52.VNONRELOC: {
-				if (reg != e.u.s.info) {
-					this.codeABC(OP_MOVE, reg, e.u.s.info, 0);
+				if (reg != e.u.info) {
+					this.codeABC(OP_MOVE, reg, e.u.info, 0);
 				}
 				break;
 			}
@@ -601,7 +595,7 @@ public class FuncState52 {
 				return; /* nothing to do... */
 			}
 		}
-		e.u.s.info = reg;
+		e.u.info = reg;
 		e.k = LexState52.VNONRELOC;
 	}
 
@@ -615,7 +609,7 @@ public class FuncState52 {
 	private void exp2reg(expdesc e, int reg) throws CompileException {
 		this.discharge2reg(e, reg);
 		if (e.k == LexState52.VJMP) {
-			this.concat(e.t, e.u.s.info); /* put this jump in `t' list */
+			this.concat(e.t, e.u.info); /* put this jump in `t' list */
 		}
 		if (e.hasjumps()) {
 			int _final; /* position after whole expression */
@@ -633,7 +627,7 @@ public class FuncState52 {
 			this.patchlistaux(e.t.i, _final, reg, p_t);
 		}
 		e.f.i = e.t.i = LexState52.NO_JUMP;
-		e.u.s.info = reg;
+		e.u.info = reg;
 		e.k = LexState52.VNONRELOC;
 	}
 
@@ -648,15 +642,15 @@ public class FuncState52 {
 		this.dischargevars(e);
 		if (e.k == LexState52.VNONRELOC) {
 			if (!e.hasjumps()) {
-				return e.u.s.info; /* exp is already in a register */
+				return e.u.info; /* exp is already in a register */
 			}
-			if (e.u.s.info >= this.nactvar) { /* reg. is not a local? */
-				this.exp2reg(e, e.u.s.info); /* put value on it */
-				return e.u.s.info;
+			if (e.u.info >= this.nactvar) { /* reg. is not a local? */
+				this.exp2reg(e, e.u.info); /* put value on it */
+				return e.u.info;
 			}
 		}
 		this.exp2nextreg(e); /* default */
-		return e.u.s.info;
+		return e.u.info;
 	}
 
 	void exp2val(expdesc e) throws CompileException {
@@ -675,18 +669,18 @@ public class FuncState52 {
 			case LexState52.VFALSE:
 			case LexState52.VNIL: {
 				if (this.nk <= MAXINDEXRK) { /* constant fit in RK operand? */
-					e.u.s.info = (e.k == LexState52.VNIL) ? this.nilK()
+					e.u.info = (e.k == LexState52.VNIL) ? this.nilK()
 						: (e.k == LexState52.VKNUM) ? this.numberK(e.u.nval())
 						: this.boolK((e.k == LexState52.VTRUE));
 					e.k = LexState52.VK;
-					return RKASK(e.u.s.info);
+					return RKASK(e.u.info);
 				} else {
 					break;
 				}
 			}
 			case LexState52.VK: {
-				if (e.u.s.info <= MAXINDEXRK) /* constant fit in argC? */ {
-					return RKASK(e.u.s.info);
+				if (e.u.info <= MAXINDEXRK) /* constant fit in argC? */ {
+					return RKASK(e.u.info);
 				} else {
 					break;
 				}
@@ -702,22 +696,18 @@ public class FuncState52 {
 		switch (var.k) {
 			case LexState52.VLOCAL: {
 				this.freeexp(ex);
-				this.exp2reg(ex, var.u.s.info);
+				this.exp2reg(ex, var.u.info);
 				return;
 			}
 			case LexState52.VUPVAL: {
 				int e = this.exp2anyreg(ex);
-				this.codeABC(OP_SETUPVAL, e, var.u.s.info, 0);
-				break;
-			}
-			case LexState52.VGLOBAL: {
-				int e = this.exp2anyreg(ex);
-				this.codeABx(OP_SETGLOBAL, e, var.u.s.info);
+				this.codeABC(OP_SETUPVAL, e, var.u.info, 0);
 				break;
 			}
 			case LexState52.VINDEXED: {
+				int op = var.u.ind.vt == LexState52.VLOCAL ? Lua52.OP_SETTABLE : Lua52.OP_SETTABUP;
 				int e = this.exp2RK(ex);
-				this.codeABC(OP_SETTABLE, var.u.s.info, var.u.s.aux, e);
+				this.codeABC(op, var.u.ind.t, var.u.ind.idx, e);
 				break;
 			}
 			default: {
@@ -734,14 +724,14 @@ public class FuncState52 {
 		this.freeexp(e);
 		func = this.freereg;
 		this.reserveregs(2);
-		this.codeABC(OP_SELF, func, e.u.s.info, this.exp2RK(key));
+		this.codeABC(OP_SELF, func, e.u.info, this.exp2RK(key));
 		this.freeexp(key);
-		e.u.s.info = func;
+		e.u.info = func;
 		e.k = LexState52.VNONRELOC;
 	}
 
 	private void invertjump(expdesc e) throws CompileException {
-		InstructionPtr pc = this.getjumpcontrol(e.u.s.info);
+		InstructionPtr pc = this.getjumpcontrol(e.u.info);
 		_assert(testTMode(GET_OPCODE(pc.get()))
 			&& GET_OPCODE(pc.get()) != OP_TESTSET && Lua
 			.GET_OPCODE(pc.get()) != OP_TEST);
@@ -762,7 +752,7 @@ public class FuncState52 {
 		}
 		this.discharge2anyreg(e);
 		this.freeexp(e);
-		return this.condjump(OP_TESTSET, NO_REG, e.u.s.info, cond);
+		return this.condjump(OP_TESTSET, NO_REG, e.u.info, cond);
 	}
 
 	void goiftrue(expdesc e) throws CompileException {
@@ -781,7 +771,7 @@ public class FuncState52 {
 			}
 			case LexState52.VJMP: {
 				this.invertjump(e);
-				pc = e.u.s.info;
+				pc = e.u.info;
 				break;
 			}
 			default: {
@@ -808,7 +798,7 @@ public class FuncState52 {
 				break;
 			}
 			case LexState52.VJMP: {
-				pc = e.u.s.info;
+				pc = e.u.info;
 				break;
 			}
 			default: {
@@ -843,7 +833,7 @@ public class FuncState52 {
 			case LexState52.VNONRELOC: {
 				this.discharge2anyreg(e);
 				this.freeexp(e);
-				e.u.s.info = this.codeABC(OP_NOT, 0, e.u.s.info, 0);
+				e.u.info = this.codeABC(OP_NOT, 0, e.u.info, 0);
 				e.k = LexState52.VRELOCABLE;
 				break;
 			}
@@ -863,7 +853,9 @@ public class FuncState52 {
 	}
 
 	void indexed(expdesc t, expdesc k) throws CompileException {
-		t.u.s.aux = this.exp2RK(k);
+		t.u.ind.t = t.u.info;
+		t.u.ind.idx = this.exp2RK(k);
+		t.u.ind.vt = t.k == LexState52.VUPVAL ? LexState52.VUPVAL : LexState52.VLOCAL;
 		t.k = LexState52.VINDEXED;
 	}
 
@@ -930,7 +922,7 @@ public class FuncState52 {
 				this.freeexp(e2);
 				this.freeexp(e1);
 			}
-			e1.u.s.info = this.codeABC(op, 0, o1, o2);
+			e1.u.info = this.codeABC(op, 0, o1, o2);
 			e1.k = LexState52.VRELOCABLE;
 		}
 	}
@@ -947,7 +939,7 @@ public class FuncState52 {
 			o2 = temp; /* o1 <==> o2 */
 			cond = 1;
 		}
-		e1.u.s.info = this.condjump(op, cond, o1, o2);
+		e1.u.info = this.condjump(op, cond, o1, o2);
 		e1.k = LexState52.VJMP;
 	}
 
@@ -1030,11 +1022,11 @@ public class FuncState52 {
 				this.exp2val(e2);
 				if (e2.k == LexState52.VRELOCABLE
 					&& GET_OPCODE(this.getcode(e2)) == OP_CONCAT) {
-					_assert(e1.u.s.info == GETARG_B(this.getcode(e2)) - 1);
+					_assert(e1.u.info == GETARG_B(this.getcode(e2)) - 1);
 					this.freeexp(e1);
-					SETARG_B(this.getcodePtr(e2), e1.u.s.info);
+					SETARG_B(this.getcodePtr(e2), e1.u.info);
 					e1.k = LexState52.VRELOCABLE;
-					e1.u.s.info = e2.u.s.info;
+					e1.u.info = e2.u.info;
 				} else {
 					this.exp2nextreg(e2); /* operand must be on the 'stack' */
 					this.codearith(OP_CONCAT, e1, e2);

@@ -71,10 +71,12 @@ import static org.squiddev.cobalt.compiler.LoadState.checkMode;
 public class LuaC implements LuaCompiler {
 	public static final LuaC INSTANCE = new LuaC();
 
-	protected static void _assert(boolean b) throws CompileException {
+	protected static void _assert(boolean b) throws CompileException { _assert(b, 0); }
+
+	protected static void _assert(boolean b, int line) throws CompileException {
 		if (!b) {
 			// So technically this should fire a runtime exception but...
-			System.err.println("compiler assert failed\nstack trace:");
+			System.err.println("compiler assert failed on line " + line + "\nstack trace:");
 			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
 				System.err.println(ste);
 			}
@@ -85,6 +87,7 @@ public class LuaC implements LuaCompiler {
 	public static final int MAXSTACK = 250;
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;
+	public static boolean isLua52 = true;
 
 
 	public static void SET_OPCODE(InstructionPtr i, int o) {
@@ -215,7 +218,7 @@ public class LuaC implements LuaCompiler {
 			return LoadState.loadBinaryChunk(firstByte, stream, name);
 		} else {
 			checkMode(mode, "text");
-			return luaY_parser(firstByte, stream, name);
+			return isLua52 ? luaY_parser52(firstByte, stream, name) : luaY_parser(firstByte, stream, name);
 		}
 	}
 
@@ -228,26 +231,38 @@ public class LuaC implements LuaCompiler {
 		// lexstate.buff = buff;
 		lexstate.setinput(firstByte, z, name);
 		lexstate.open_func(funcstate);
-		funcstate.f.isLua52 = false; // temporary!
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
 		funcstate.f.source = name;
-		if (funcstate.f.isLua52) {
-			LexState.expdesc v = new LexState.expdesc();
-			v.init(LexState.VLOCAL, 0);
-			funcstate.f.upvalues = new LuaString[1];
-			funcstate.f.upvalues[0] = LuaString.valueOf("_ENV");
-			funcstate.f.nups = 1;
-			funcstate.upvalues[0] = funcstate.new upvaldesc();
-			funcstate.upvalues[0].k = LexState.VLOCAL;
-			funcstate.upvalues[0].info = (short) v.u.s.info;
-		}
 		lexstate.nextToken(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);
 		lexstate.close_func();
 		LuaC._assert(funcstate.prev == null);
-		LuaC._assert(funcstate.f.nups == (funcstate.f.isLua52 ? 1 : 0));
+		LuaC._assert(funcstate.f.nups == 0);
+		LuaC._assert(lexstate.fs == null);
+		return funcstate.f;
+	}
+
+	private static Prototype luaY_parser52(int firstByte, InputStream z, LuaString name) throws CompileException {
+		LexState52 lexstate = new LexState52(z);
+		FuncState52 funcstate = new FuncState52();
+		// lexstate.buff = buff;
+		lexstate.setinput(firstByte, z, name);
+		funcstate.f = new Prototype();
+		lexstate.open_func(funcstate);
+		/* main func. is always vararg */
+		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
+		funcstate.f.source = name;
+		LexState52.expdesc v = new LexState52.expdesc();
+		v.init(LexState52.VLOCAL, 0);
+		funcstate.newupvalue(LuaString.valueOf("_ENV"), v);
+		lexstate.nextToken(); /* read first token */
+		lexstate.chunk();
+		lexstate.check(LexState.TK_EOS);
+		lexstate.close_func();
+		LuaC._assert(funcstate.prev == null);
+		LuaC._assert(funcstate.f.nups == 1);
 		LuaC._assert(lexstate.fs == null);
 		return funcstate.f;
 	}
