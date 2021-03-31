@@ -30,11 +30,18 @@
 
 package org.squiddev.cobalt.lib.fmt;
 
+import org.checkerframework.checker.signedness.qual.SignedPositive;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 
 public class BigNumDtoa {
+
+	@SuppressWarnings("ImplicitNumericConversion")
+	private static final int ASCII_ZERO = '0';
+	@SuppressWarnings("ImplicitNumericConversion")
+	private static final int ASCII_NINE = '9';
+
 	public enum BignumDtoaMode {
 		/**
 		 *  Return the shortest correct representation.
@@ -57,8 +64,8 @@ public class BigNumDtoa {
 	}
 
 	private static int NormalizedExponent(@Unsigned long significand, int exponent) {
-		DOUBLE_CONVERSION_ASSERT(significand != 0);
-		while ((significand & Ieee.Double.kHiddenBit) == 0) {
+		DOUBLE_CONVERSION_ASSERT(significand != 0L);
+		while ((significand & Ieee.Double.kHiddenBit) == 0L) {
 			significand = significand << 1;
 			exponent = exponent - 1;
 		}
@@ -98,15 +105,15 @@ public class BigNumDtoa {
 	 */
 	public static void BignumDtoa(double v, BignumDtoaMode mode, int requested_digits,
 						   char[] buffer, int[] length, int[] decimal_point) {
-		DOUBLE_CONVERSION_ASSERT(v > 0);
+		DOUBLE_CONVERSION_ASSERT(v > 0.0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
 		long significand;
 		int exponent;
 		boolean lower_boundary_is_closer;
 		if (mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE) {
 			float f = (float)v;
-			DOUBLE_CONVERSION_ASSERT(f == v);
-			significand = new Ieee.Single(f).Significand();
+			DOUBLE_CONVERSION_ASSERT((double)f == v);
+			significand = Integer.toUnsignedLong((@SignedPositive int)new Ieee.Single(f).Significand());
 			exponent = new Ieee.Single(f).Exponent();
 			lower_boundary_is_closer = new Ieee.Single(f).LowerBoundaryIsCloser();
 		} else {
@@ -117,7 +124,7 @@ public class BigNumDtoa {
 		boolean need_boundary_deltas =
 				(mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST || mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE);
 
-		boolean is_even = (significand & 1) == 0;
+		boolean is_even = (significand & 1L) == 0L;
 		int normalized_exponent = NormalizedExponent(significand, exponent);
 		// estimated_power might be too low by 1.
 		int estimated_power = EstimatePower(normalized_exponent);
@@ -212,7 +219,7 @@ public class BigNumDtoa {
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
-			buffer[length[0]++] = (char)(digit + '0');
+			buffer[length[0]++] = (char)(digit + ASCII_ZERO);
 
 			// Can we stop already?
 			// If the remainder of the division is less than the distance to the lower
@@ -255,7 +262,7 @@ public class BigNumDtoa {
 					// loop would have stopped earlier.
 					// We still have an assert here in case the preconditions were not
 					// satisfied.
-					DOUBLE_CONVERSION_ASSERT(buffer[length[0] - 1] != '9');
+					DOUBLE_CONVERSION_ASSERT((int) buffer[length[0] - 1] != ASCII_NINE);
 					buffer[length[0] - 1]++;
 				} else {
 					// Halfway case.
@@ -263,10 +270,10 @@ public class BigNumDtoa {
 					//   For now let's round towards even (since this is what Gay seems to
 					//   do).
 
-					if ((buffer[length[0] - 1] - '0') % 2 == 0) {
+					if (((int) buffer[length[0] - 1] - ASCII_ZERO) % 2 == 0) {
 						// Round down => Do nothing.
 					} else {
-						DOUBLE_CONVERSION_ASSERT(buffer[length[0] - 1] != '9');
+						DOUBLE_CONVERSION_ASSERT((int) buffer[length[0] - 1] != ASCII_NINE);
 						buffer[length[0] - 1]++;
 					}
 				}
@@ -280,7 +287,7 @@ public class BigNumDtoa {
 				// stopped the loop earlier.
 				// We still have an DOUBLE_CONVERSION_ASSERT here, in case the preconditions were not
 				// satisfied.
-				DOUBLE_CONVERSION_ASSERT(buffer[length[0] -1] != '9');
+				DOUBLE_CONVERSION_ASSERT((int) buffer[length[0] - 1] != ASCII_NINE);
 				buffer[length[0] - 1]++;
 				return;
 			}
@@ -310,7 +317,7 @@ public class BigNumDtoa {
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
-			buffer[i] = (char)(digit + '0');
+			buffer[i] = (char)(digit + ASCII_ZERO);
 			// Prepare for next iteration.
 			numerator.Times10();
 		}
@@ -321,15 +328,16 @@ public class BigNumDtoa {
 			digit++;
 		}
 		DOUBLE_CONVERSION_ASSERT(digit <= 10);
+		//noinspection ImplicitNumericConversion
 		buffer[count - 1] = (char)(digit + '0');
 		// Correct bad digits (in case we had a sequence of '9's). Propagate the
 		// carry until we hat a non-'9' or til we reach the first digit.
 		for (int i = count - 1; i > 0; --i) {
-			if (buffer[i] != '0' + 10) break;
+			if ((int) buffer[i] != ASCII_ZERO + 10) break;
 			buffer[i] = '0';
 			buffer[i - 1]++;
 		}
-		if (buffer[0] == '0' + 10) {
+		if ((int) buffer[0] == ASCII_ZERO + 10) {
 			// Propagate a carry past the top place.
 			buffer[0] = '1';
 			decimal_point[0]++;
@@ -431,7 +439,7 @@ public class BigNumDtoa {
 
 		// For doubles len(f) == 53 (don't forget the hidden bit).
   		final int kSignificandSize = Ieee.Double.kSignificandSize;
-		double estimate = Math.ceil((exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
+		double estimate = Math.ceil((double)(exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
 		return (int)estimate;
 	}
 

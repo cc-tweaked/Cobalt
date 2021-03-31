@@ -50,7 +50,7 @@ public class Ieee {
 		public static final int kExponentBias = 0x3FF + kPhysicalSignificandSize;
 		public static final int kMaxExponent = 0x7FF - kExponentBias;
 
-		public Double() { d64_ =0;}
+		public Double() { d64_ = 0L;}
 		@SuppressWarnings("cast.unsafe")
 		public Double(double d) {
 			this.d64_ = (@Unsigned long)java.lang.Double.doubleToRawLongBits(d);
@@ -78,11 +78,12 @@ public class Ieee {
 			int e = Exponent();
 
 			// The current double could be a denormal.
-			while ((f & kHiddenBit) == 0) {
-				f <<= 1;
+			while ((f & kHiddenBit) == 0L) {
+				f <<= 1L;
 				e--;
 			}
 			// Do the final shifts in one go.
+			//noinspection ImplicitNumericConversion
 			f <<= DiyFp.kSignificandSize - kSignificandSize;
 			e -= DiyFp.kSignificandSize - kSignificandSize;
 			return new DiyFp(UnsignedLong.uValueOf(f), e);
@@ -97,24 +98,24 @@ public class Ieee {
 		/** Returns the next greater double. Returns +infinity on input +infinity. */
 		public double NextDouble() {
 			if (d64_ == kInfinity) return new Double(kInfinity).value();
-			if (Sign() < 0 && Significand() == 0) {
+			if (Sign() < 0 && Significand() == 0L) {
 				// -0.0
 				return 0.0;
 			}
 			if (Sign() < 0) {
-				return new Double(d64_ - 1).value();
+				return new Double(d64_ - 1L).value();
 			} else {
-				return new Double(d64_ + 1).value();
+				return new Double(d64_ + 1L).value();
 			}
 		}
 
 		public double PreviousDouble() {
 			if (d64_ == (kInfinity | kSignMask)) return -Infinity();
 			if (Sign() < 0) {
-				return new Double(d64_ + 1).value();
+				return new Double(d64_ + 1L).value();
 			} else {
-				if (Significand() == 0) return -0.0;
-				return new Double(d64_ - 1).value();
+				if (Significand() == 0L) return -0.0;
+				return new Double(d64_ - 1L).value();
 			}
 		}
 
@@ -141,7 +142,7 @@ public class Ieee {
 		/** Returns true if the double is a denormal. */
 		public boolean IsDenormal() {
 			long d64 = AsUint64();
-			return (d64 & kExponentMask) == 0;
+			return (d64 & kExponentMask) == 0L;
 		}
 
 		/**
@@ -156,27 +157,27 @@ public class Ieee {
 		public boolean IsNan() {
 			long d64 = AsUint64();
 			return ((d64 & kExponentMask) == kExponentMask) &&
-					((d64 & kSignificandMask) != 0);
+					((d64 & kSignificandMask) != 0L);
 		}
 
 		public boolean IsQuietNan() {
-			return IsNan() && ((AsUint64() & kQuietNanBit) != 0);
+			return IsNan() && ((AsUint64() & kQuietNanBit) != 0L);
 		}
 
 		public boolean IsSignalingNan() {
-			return IsNan() && ((AsUint64() & kQuietNanBit) == 0);
+			return IsNan() && ((AsUint64() & kQuietNanBit) == 0L);
 		}
 
 
 		public boolean IsInfinite() {
 			long d64 = AsUint64();
 			return ((d64 & kExponentMask) == kExponentMask) &&
-					((d64 & kSignificandMask) == 0);
+					((d64 & kSignificandMask) == 0L);
 		}
 
 		public int Sign() {
 			long d64 = AsUint64();
-			return (d64 & kSignMask) == 0? 1: -1;
+			return (d64 & kSignMask) == 0L ? 1: -1;
 		}
 
 		/**
@@ -185,7 +186,7 @@ public class Ieee {
 		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return new DiyFp(UnsignedLong.uValueOf((Significand() * 2) + 1),
+			return new DiyFp(UnsignedLong.uValueOf((Significand() * 2L) + 1L),
 					Exponent() - 1);
 		}
 
@@ -220,7 +221,7 @@ public class Ieee {
 			// The only exception is for the smallest normal: the largest denormal is
 			// at the same distance as its successor.
 			// Note: denormals have the same exponent as the smallest normals.
-			boolean physical_significand_is_zero = ((AsUint64() & kSignificandMask) == 0);
+			boolean physical_significand_is_zero = ((AsUint64() & kSignificandMask) == 0L);
 			return physical_significand_is_zero && (Exponent() != kDenormalExponent);
 		}
 
@@ -269,16 +270,17 @@ public class Ieee {
 				return kInfinity;
 			}
 			if (exponent < kDenormalExponent) {
-				return 0;
+				return 0L;
 			}
-			while (exponent > kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0)) {
+			while (exponent > kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0L)) {
 				significand = significand.shl(1);
 				exponent--;
 			}
 			long biased_exponent;
-			if (exponent == kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0)) {
-				biased_exponent = 0;
+			if (exponent == kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0L)) {
+				biased_exponent = 0L;
 			} else {
+				//noinspection ImplicitNumericConversion
 				biased_exponent = (exponent + kExponentBias);
 			}
 			return significand.bitAndU(kSignificandMask).unsafeLongValue() |
@@ -325,7 +327,7 @@ public class Ieee {
 			return biased_e - kExponentBias;
 		}
 
-		public @Unsigned long Significand() {
+		public @Unsigned int Significand() {
 			int d32 = AsUint32();
 			int significand = d32 & kSignificandMask;
 			if (!IsDenormal()) {
@@ -383,7 +385,7 @@ public class Ieee {
 		 *  Precondition: the value encoded by this Single must be greater than 0.
 		 */
 		void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
-			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
+			DOUBLE_CONVERSION_ASSERT(value() > 0.0F);
 			DiyFp v = this.AsDiyFp();
 			DiyFp m_plus = DiyFp.Normalize(new DiyFp(v.f().shl(1).plus(ONE), v.e() - 1));
 			DiyFp m_minus;

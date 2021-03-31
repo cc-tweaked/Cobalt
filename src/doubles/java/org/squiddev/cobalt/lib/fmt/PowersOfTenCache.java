@@ -160,7 +160,7 @@ public class PowersOfTenCache {
 			DiyFp[] power,
 			int[] decimal_exponent) {
 		int kQ = DiyFp.kSignificandSize;
-		double k = Math.ceil((min_exponent + kQ - 1) * kD_1_LOG2_10);
+		double k = Math.ceil((double)(min_exponent + kQ - 1) * kD_1_LOG2_10);
 		int foo = kCachedPowersOffset;
 		int index =
 				(foo + ((int)k) - 1) / kDecimalExponentDistance + 1;
@@ -169,7 +169,7 @@ public class PowersOfTenCache {
 		DOUBLE_CONVERSION_ASSERT(min_exponent <= cached_power.binary_exponent);
 		//max_exponent;  // Mark variable as used.
 		DOUBLE_CONVERSION_ASSERT(cached_power.binary_exponent <= max_exponent);
-		decimal_exponent[0] = cached_power.decimal_exponent;
+		decimal_exponent[0] = (int) cached_power.decimal_exponent;
 		power[0] = new DiyFp(UnsignedLong.uValueOf(cached_power.significand), cached_power.binary_exponent);
 	}
 

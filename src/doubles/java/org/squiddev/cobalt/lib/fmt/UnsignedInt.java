@@ -218,7 +218,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 
 	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt divideExact(long divisor) {
-		if ((divisor & NOT_INT_MASK) != 0) throw new ArithmeticException("divisor must fit in 32 bits");
+		if ((divisor & NOT_INT_MASK) != 0L) throw new ArithmeticException("divisor must fit in 32 bits");
 		return new UnsignedInt(
 				Integer.divideUnsigned(val, (@Unsigned int)divisor));
 	}
@@ -249,7 +249,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 
 	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt modExact(long divisor) {
-		if ((divisor & NOT_INT_MASK) != 0) throw new ArithmeticException("divisor must fit in 32 bits");
+		if ((divisor & NOT_INT_MASK) != 0L) throw new ArithmeticException("divisor must fit in 32 bits");
 		return new UnsignedInt(
 				Integer.remainderUnsigned(val, (@Unsigned int)divisor));
 	}
@@ -261,7 +261,7 @@ public class UnsignedInt implements Comparable<UnsignedInt> {
 
 	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt timesExact(long multiplier) {
-		if ((multiplier & NOT_INT_MASK) != 0) throw new ArithmeticException("multiplier must fit in 32 bits");
+		if ((multiplier & NOT_INT_MASK) != 0L) throw new ArithmeticException("multiplier must fit in 32 bits");
 		return new UnsignedInt(val * (@Unsigned int)multiplier);
 	}
 

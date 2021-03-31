@@ -88,6 +88,8 @@ public class DoubleToStringConverter {
 	 *  'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
 	 */
 	public static final int kMaxCharsEcmaScriptShortest = 25;
+	@SuppressWarnings("ImplicitNumericConversion")
+	private static final int ASCII_ZERO = '0';
 
 	public static class Flags {
 		public static final int NO_FLAGS = 0;
@@ -222,6 +224,7 @@ public class DoubleToStringConverter {
 	 *  max_leading_padding_zeroes_in_precision_mode: 6
 	 *  max_trailing_padding_zeroes_in_precision_mode: 0
 	 */
+	@SuppressWarnings("ImplicitNumericConversion")
 	public static DoubleToStringConverter EcmaScriptConverter() {
 		int flags = Flags.UNIQUE_ZERO | Flags.EMIT_POSITIVE_EXPONENT_SIGN;
 		return new DoubleToStringConverter(flags,
@@ -279,6 +282,7 @@ public class DoubleToStringConverter {
 
 	/** Same as ToShortest, but for single-precision floats. */
 	public boolean ToShortestSingle(float value, StringBuilder result_builder) {
+		//noinspection ImplicitNumericConversion
 		return ToShortestIeeeNumber(value, result_builder, DtoaMode.SHORTEST_SINGLE);
 	}
 
@@ -292,7 +296,7 @@ public class DoubleToStringConverter {
 		Ieee.Double double_inspect = new Ieee.Double(value);
 		if (double_inspect.IsInfinite()) {
 			if (infinity_symbol_ == null) return false;
-			if (value < 0) {
+			if (value < 0.0) {
 				result_builder.append('-');
 			}
 			result_builder.append(infinity_symbol_);
@@ -329,24 +333,24 @@ public class DoubleToStringConverter {
 				result_builder.append('+');
 			}
 		}
-		DOUBLE_CONVERSION_ASSERT(exponent < 1e4);
+		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
 		// Changing this constant requires updating the comment of DoubleToStringConverter constructor
 		final int kMaxExponentLength = 5;
 		char[] buffer = new char[kMaxExponentLength + 1];
 		buffer[kMaxExponentLength] = '\0';
 		int first_char_pos = kMaxExponentLength;
 		if (exponent == 0) {
-			buffer[--first_char_pos] = '0';
+			buffer[--first_char_pos] = (char) ASCII_ZERO;
 		} else {
 			while (exponent > 0) {
-				buffer[--first_char_pos] = (char) ('0' + (exponent % 10));
+				buffer[--first_char_pos] = (char) (ASCII_ZERO + (exponent % 10));
 				exponent /= 10;
 			}
 		}
 		// Add prefix '0' to make exponent width >= min(min_exponent_with_, kMaxExponentLength)
 		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
 		while(kMaxExponentLength - first_char_pos < Math.min(min_exponent_width_, kMaxExponentLength)) {
-			buffer[--first_char_pos] = '0';
+			buffer[--first_char_pos] = (char) ASCII_ZERO;
 		}
 		// TODO verify this is equivalent
 		result_builder.append(buffer, first_char_pos, kMaxExponentLength -first_char_pos);
@@ -363,23 +367,23 @@ public class DoubleToStringConverter {
 		// Create a representation that is padded with zeros if needed.
 		if (decimal_point <= 0) {
 			// "0.00000decimal_rep" or "0.000decimal_rep00".
-			result_builder.append('0');
+			result_builder.append(ASCII_ZERO);
 			if (digits_after_point > 0) {
 				result_builder.append('.');
 
-				addPadding(result_builder, '0', -decimal_point);
+				addPadding(result_builder, ASCII_ZERO, -decimal_point);
 				DOUBLE_CONVERSION_ASSERT(length <= digits_after_point - (-decimal_point));
 				result_builder.append(decimal_digits);
 				int remaining_digits = digits_after_point - (-decimal_point) - length;
-				addPadding(result_builder, '0', remaining_digits);
+				addPadding(result_builder, ASCII_ZERO, remaining_digits);
 			}
 		} else if (decimal_point >= length) {
 			// "decimal_rep0000.00000" or "decimal_rep.0000".
 			result_builder.append(decimal_digits);
-			addPadding(result_builder, '0', decimal_point - length);
+			addPadding(result_builder, ASCII_ZERO, decimal_point - length);
 			if (digits_after_point > 0) {
 				result_builder.append('.');
-				addPadding(result_builder, '0', digits_after_point);
+				addPadding(result_builder, ASCII_ZERO, digits_after_point);
 			}
 		} else {
 			// "decima.l_rep000".
@@ -389,14 +393,14 @@ public class DoubleToStringConverter {
 			DOUBLE_CONVERSION_ASSERT(length - decimal_point <= digits_after_point);
 			result_builder.append(decimal_digits, decimal_point, length - decimal_point);
 			int remaining_digits = digits_after_point - (length - decimal_point);
-			addPadding(result_builder, '0', remaining_digits);
+			addPadding(result_builder, ASCII_ZERO, remaining_digits);
 		}
 		if (digits_after_point == 0) {
 			if ((flags_ & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) {
 				result_builder.append('.');
 			}
 			if ((flags_ & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
-				result_builder.append('0');
+				result_builder.append(ASCII_ZERO);
 			}
 		}
 	}
@@ -577,7 +581,7 @@ public class DoubleToStringConverter {
 			DOUBLE_CONVERSION_ASSERT(decimal_rep_length[0] <= requested_digits + 1);
 
 			for (int i = decimal_rep_length[0]; i < requested_digits + 1; ++i) {
-				decimal_rep[i] = '0';
+				decimal_rep[i] = (char) ASCII_ZERO;
 			}
 			decimal_rep_length[0] = requested_digits + 1;
 		}
@@ -683,7 +687,7 @@ public class DoubleToStringConverter {
 			// Truncate trailing zeros that occur after the decimal point (if exponential,
 			// that is everything after the first digit).
 			int stop = as_exponential ? 1 : Math.max(1, decimal_point);
-			while (decimal_rep_length > stop && decimal_rep[decimal_rep_length - 1] == '0') {
+			while (decimal_rep_length > stop && (int) decimal_rep[decimal_rep_length - 1] == ASCII_ZERO) {
 				--decimal_rep_length;
 			}
 			// Clamp precision to avoid the code below re-adding the zeros.
@@ -694,7 +698,7 @@ public class DoubleToStringConverter {
 			// Usually the buffer is already at the correct length, but 'DoubleToAscii'
 			// is allowed to return less characters.
 			for (int i = decimal_rep_length; i < precision; ++i) {
-				decimal_rep[i] = '0';
+				decimal_rep[i] = (char) ASCII_ZERO;
 			}
 
 			CreateExponentialRepresentation(decimal_rep,
@@ -807,8 +811,8 @@ public class DoubleToStringConverter {
 			return;
 		}
 
-		if (v == 0) {
-			vector[0] = '0';
+		if (v == 0.0) {
+			vector[0] = (char) ASCII_ZERO;
 			vector[1] = '\0';
 			length[0] = 1;
 			point[0] = 1;
@@ -847,7 +851,7 @@ public class DoubleToStringConverter {
 	 * 	Add character padding to the builder. If count is non-positive,
 	 * 	nothing is added to the builder.
 	 */
-	private static void addPadding(StringBuilder sb, char c, int count) {
+	private static void addPadding(StringBuilder sb, int c, int count) {
 		for (int i=count; i > 0; i--) {
 			sb.append(c);
 		}

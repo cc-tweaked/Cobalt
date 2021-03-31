@@ -36,6 +36,8 @@ import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.fmt.UnsignedLong.ONE;
 
 public class FastDtoa {
+	@SuppressWarnings("ImplicitNumericConversion")
+	private static final int ASCII_ZERO = '0';
 
 	public enum  FastDtoaMode {
 		/**
@@ -203,7 +205,7 @@ public class FastDtoa {
 		//   Since too_low = too_high - unsafe_interval this is equivalent to
 		//      [too_high - unsafe_interval + 4 ulp; too_high - 2 ulp]
 		//   Conceptually we have: rest ~= too_high - buffer
-		return ( unit.times(2).le(rest) ) && ( rest.le( unsafe_interval.minus(unit.times(4)) ) );
+		return ( unit.times(2L).le(rest) ) && ( rest.le( unsafe_interval.minus(unit.times(4L)) ) );
 	}
 
 
@@ -240,7 +242,7 @@ public class FastDtoa {
 		// over/underflow.)
 		if (ten_kappa.minus(unit).le(unit)) return false;
 		// If 2 * (rest + unit) <= 10^kappa we can safely round down.
-		if ((ten_kappa.minus(rest).ge(rest)) && (ten_kappa.minus(rest.times(2)).ge(unit.times(2)))) {
+		if ((ten_kappa.minus(rest).ge(rest)) && (ten_kappa.minus(rest.times(2L)).ge(unit.times(2L)))) {
 			return true;
 		}
 		// If 2 * (rest - unit) >= 10^kappa, then we can safely round up.
@@ -248,8 +250,8 @@ public class FastDtoa {
 			// Increment the last digit recursively until we find a non '9' digit.
 			buffer[length - 1]++;
 			for (int i = length - 1; i > 0; --i) {
-				if (buffer[i] != '0' + 10) break;
-				buffer[i] = '0';
+				if ((int) buffer[i] != ASCII_ZERO + 10) break;
+				buffer[i] = (char) ASCII_ZERO;
 				buffer[i - 1]++;
 			}
 			// If the first digit is now '0'+ 10 we had a buffer with all '9's. With the
@@ -257,7 +259,7 @@ public class FastDtoa {
 			// exception of the first digit all digits are now '0'. Simply switch the
 			// first digit to '1' and adjust the kappa. Example: "99" becomes "10" and
 			// the power (the kappa) is increased.
-			if (buffer[0] == '0' + 10) {
+			if ((int) buffer[0] == ASCII_ZERO + 10) {
 				buffer[0] = '1';
 				kappa[0] += 1;
 			}
@@ -406,7 +408,7 @@ public class FastDtoa {
 		while (kappa[0] > 0) {
 			int digit = integrals.divideBy(divisor).unsafeIntValue();
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (char)('0' + digit);
+			buffer[length[0]] = (char)(ASCII_ZERO + digit);
 			length[0]++;
 			integrals = integrals.mod(divisor);
 			kappa[0]--;
@@ -433,15 +435,15 @@ public class FastDtoa {
 		// and thus one.e >= -60.
 		DOUBLE_CONVERSION_ASSERT(one.e() >= -60);
 		DOUBLE_CONVERSION_ASSERT(fractionals.lt(one.f()));
-		DOUBLE_CONVERSION_ASSERT( UnsignedLong.uValueOf(0xFFFFFFFFFFFFFFFFL).divideBy(10).ge(one.f()) );
+		DOUBLE_CONVERSION_ASSERT( UnsignedLong.uValueOf(0xFFFFFFFFFFFFFFFFL).divideBy(10L).ge(one.f()) );
 		for (;;) {
-			fractionals = fractionals.times(10);
-			unit = unit.times(10);
-			unsafe_interval.set_f(unsafe_interval.f().times(10));
+			fractionals = fractionals.times(10L);
+			unit = unit.times(10L);
+			unsafe_interval.set_f(unsafe_interval.f().times(10L));
 			// Integer division by one.
 			int digit = fractionals.shr(-one.e()).shortValueExact();
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (char)('0' + digit);
+			buffer[length[0]] = (char)(ASCII_ZERO + digit);
 			length[0]++;
 			fractionals = fractionals.bitAnd(one.f().minus(ONE));  // Modulo by one.
 			kappa[0]--;
@@ -523,7 +525,7 @@ public class FastDtoa {
 		while (kappa[0] > 0) {
 			int digit = (@Signed int)integrals.divideBy(divisor).unsafeIntValue();
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (@Unsigned char)('0' + digit);
+			buffer[length[0]] = (@Unsigned char)(ASCII_ZERO + digit);
 			length[0]++;
 			requested_digits--;
 			integrals = integrals.mod(divisor);
@@ -549,14 +551,14 @@ public class FastDtoa {
 		// and thus one.e >= -60.
 		DOUBLE_CONVERSION_ASSERT(one.e() >= -60);
 		DOUBLE_CONVERSION_ASSERT(fractionals.lt(one.f()));
-		DOUBLE_CONVERSION_ASSERT( UnsignedLong.uValueOf(0xFFFFFFFFFFFFFFFFL).divideBy(10).ge(one.f()) );
+		DOUBLE_CONVERSION_ASSERT( UnsignedLong.uValueOf(0xFFFFFFFFFFFFFFFFL).divideBy(10L).ge(one.f()) );
 		while (requested_digits > 0 && fractionals.gt(w_error)) {
-			fractionals = fractionals.times(10);
-			w_error  = w_error.times(10);
+			fractionals = fractionals.times(10L);
+			w_error  = w_error.times(10L);
 			// Integer division by one.
 			int digit = fractionals.shr(-one.e()).shortValueExact();
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (char)('0' + digit);
+			buffer[length[0]] = (char)(ASCII_ZERO + digit);
 			length[0]++;
 			requested_digits--;
 			fractionals = fractionals.bitAnd(one.f().minus(ONE));  // Modulo by one.
@@ -751,7 +753,7 @@ public class FastDtoa {
 								   char[] buffer,
 								   int[] length,
 								   int[] decimal_point) {
-		DOUBLE_CONVERSION_ASSERT(v > 0);
+		DOUBLE_CONVERSION_ASSERT(v > 0.0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
 
 		boolean result = false;

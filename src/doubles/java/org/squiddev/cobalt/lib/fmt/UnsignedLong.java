@@ -10,8 +10,8 @@ import org.checkerframework.common.value.qual.IntRange;
  * A wrapper to long to help safely keep an unsigned value
  */
 public class UnsignedLong implements Comparable<UnsignedLong> {
-	public static final UnsignedLong ZERO = new UnsignedLong(0);
-	public static final UnsignedLong ONE = new UnsignedLong(1);
+	public static final UnsignedLong ZERO = new UnsignedLong(0L);
+	public static final UnsignedLong ONE = new UnsignedLong(1L);
 
 	private static final long LONG_SIGN_BIT = 0x8000_0000_0000_0000L;
 	private static final long UNSIGNED_MASK = 0x7fff_ffff_ffff_ffffL;
@@ -47,7 +47,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	 */
 	@SuppressWarnings("cast.unsafe")
 	public static UnsignedLong valueOf(@SignedPositive long val) {
-		if ((val & LONG_SIGN_BIT) != 0) throw new ArithmeticException("Can't assign a signed value");
+		if ((val & LONG_SIGN_BIT) != 0L) throw new ArithmeticException("Can't assign a signed value");
 		return new UnsignedLong((@Unsigned long)val);
 	}
 
@@ -95,26 +95,18 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	}
 
 	public boolean isZero() {
-		return val == 0;
+		return val == 0L;
 	}
 
 	public boolean isEven() {
-		return (val & 1) == 0;
+		return (val & 1L) == 0L;
 	}
 
 
 	// requires overloading to prevent accidental sign extending
 
-	public boolean eq(short shortValue) {
-		if (shortValue < 0) return false;
-		return val == shortValue;
-	}
-	public boolean eq(int intValue) {
-		if (intValue < 0) return false;
-		return val == intValue;
-	}
 	public boolean eq(long longValue) {
-		if (longValue < 0) return false;
+		if (longValue < 0L) return false;
 		return val == longValue;
 	}
 
@@ -158,7 +150,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	 * @return true if value can fit in an {@link UnsignedInt}
 	 */
 	public boolean isUIntValue() {
-		return (val & NOT_INT_MASK) == 0;
+		return (val & NOT_INT_MASK) == 0L;
 	}
 
 	/**
@@ -174,7 +166,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	 */
 	@SuppressWarnings("cast.unsafe")
 	public UnsignedInt uIntValueExact() {
-		if ((val & NOT_INT_MASK) != 0) throw new ArithmeticException("Value too large");
+		if ((val & NOT_INT_MASK) != 0L) throw new ArithmeticException("Value too large");
 		return UnsignedInt.valueOf((@SignednessGlb int)val);
 	}
 
@@ -183,12 +175,12 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	 * @throws ArithmeticException if value could not fit in an {@link UnsignedInt} value
 	 */
 	public @Unsigned short shortValueExact() {
-		if ((val & NOT_SHORT_MASK) != 0) throw new ArithmeticException("Value too large");
+		if ((val & NOT_SHORT_MASK) != 0L) throw new ArithmeticException("Value too large");
 		return (@Unsigned short) val;
 	}
 
 	public @Unsigned int intValueExact() {
-		if ((val & NOT_INT_MASK) != 0) throw new ArithmeticException("Value too large");
+		if ((val & NOT_INT_MASK) != 0L) throw new ArithmeticException("Value too large");
 		return (@Unsigned int) val;
 	}
 
@@ -203,19 +195,19 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 
 	@SuppressWarnings("cast.unsafe")
 	public @Signed long longValueExact() {
-		if ((val & LONG_SIGN_BIT) != 0) throw new ArithmeticException("Value too large");
+		if ((val & LONG_SIGN_BIT) != 0L) throw new ArithmeticException("Value too large");
 		return (@Signed long)val;
 	}
 
 	public float floatValue() {
 		float f = (float) (val & UNSIGNED_MASK);
-		if ((val & LONG_SIGN_BIT) != 0) f += 0x1.0p63f;
+		if ((val & LONG_SIGN_BIT) != 0L) f += 0x1.0p63f;
 		return f;
 	}
 
 	public double doubleValue() {
 		double f = (double) (val & UNSIGNED_MASK);
-		if ((val & LONG_SIGN_BIT) != 0) f += 0x1.0p63d;
+		if ((val & LONG_SIGN_BIT) != 0L) f += 0x1.0p63d;
 		return f;
 	}
 
@@ -264,7 +256,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	}
 
 	public UnsignedLong divideBy(long divisor) {
-		if (divisor < 0) throw new IllegalArgumentException("divisor must be positive");
+		if (divisor < 0L) throw new IllegalArgumentException("divisor must be positive");
 		return new UnsignedLong(
 				Long.divideUnsigned(val, divisor));
 	}
@@ -275,7 +267,7 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	}
 
 	public UnsignedLong mod(long divisor) {
-		if (divisor < 0) throw new IllegalArgumentException("divisor must be positive");
+		if (divisor < 0L) throw new IllegalArgumentException("divisor must be positive");
 		return new UnsignedLong(
 				Long.remainderUnsigned(val, divisor));
 	}
@@ -286,14 +278,14 @@ public class UnsignedLong implements Comparable<UnsignedLong> {
 	}
 
 	public @Unsigned int mod10() {
-		return (@Unsigned int)Long.remainderUnsigned(val, 10);
+		return (@Unsigned int)Long.remainderUnsigned(val, 10L);
 	}
 
 	/**
 	 * return this % 10^7 (10,000,000)
 	 */
 	public UnsignedInt modTen7() {
-		return UnsignedInt.uValueOf((int)Long.remainderUnsigned(val, 10_000_000));
+		return UnsignedInt.uValueOf((int)Long.remainderUnsigned(val, 10_000_000L));
 	}
 
 

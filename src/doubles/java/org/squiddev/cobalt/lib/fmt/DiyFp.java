@@ -115,18 +115,18 @@ public class DiyFp {
 	}
 
 	public void Normalize() {
-		DOUBLE_CONVERSION_ASSERT(!f_.eq(0));
+		DOUBLE_CONVERSION_ASSERT(!f_.eq(0L));
 		UnsignedLong significand = f_;
 		int exponent = e_;
 
 		// This method is mainly called for normalizing boundaries. In general,
 		// boundaries need to be shifted by 10 bits, and we optimize for this case.
 		final @Unsigned long k10MSBits = 0xFFC0000000000000L;
-		while ((significand.bitAndU(k10MSBits).eq(0))) {
+		while ((significand.bitAndU(k10MSBits).eq(0L))) {
 			significand = significand.shl(10);
 			exponent -= 10;
 		}
-		while (significand.bitAndU(kUint64MSB).eq(0)) {
+		while (significand.bitAndU(kUint64MSB).eq(0L)) {
 			significand = significand.shl(1);
 			exponent--;
 		}

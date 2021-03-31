@@ -37,6 +37,9 @@ import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
 
 public class FixedDtoa {
 
+	@SuppressWarnings("ImplicitNumericConversion")
+	private static final int ASCII_ZERO = '0';
+
 	// Represents a 128bit type. This class should be replaced by a native type on
 	// platforms that support 128bit integers.
 	// Protected for testins
@@ -47,8 +50,8 @@ public class FixedDtoa {
 		private final @Unsigned long low;
 
 		public UInt128() {
-			this.high = 0;
-			this.low = 0;
+			this.high = 0L;
+			this.low = 0L;
 		}
 
 		public UInt128(UnsignedLong high, UnsignedLong low) {
@@ -75,16 +78,16 @@ public class FixedDtoa {
 
 			accumulator = (low & kMask32) * multiplicand;
 			long part = accumulator & kMask32;
-			accumulator >>>= 32;
+			accumulator >>>= 32L;
 			accumulator = accumulator + (low >>> 32) * multiplicand;
 			long newLowBits = (accumulator << 32) + part;
-			accumulator >>>= 32;
+			accumulator >>>= 32L;
 			accumulator = accumulator + (high & kMask32) * multiplicand;
 			part = accumulator & kMask32;
-			accumulator >>>= 32;
+			accumulator >>>= 32L;
 			accumulator = accumulator + (high >>> 32) * multiplicand;
 			long newHighBits = (accumulator << 32) + part;
-			DOUBLE_CONVERSION_ASSERT((accumulator >>> 32) == 0);
+			DOUBLE_CONVERSION_ASSERT((accumulator >>> 32) == 0L);
 
 			return new UInt128(newHighBits, newLowBits);
 		}
@@ -96,9 +99,9 @@ public class FixedDtoa {
 				return this;
 			} else if (shift_amount == -64) {
 				nHigh = low;
-				nLow = 0;
+				nLow = 0L;
 			} else if (shift_amount == 64) {
-				nHigh = 0;
+				nHigh = 0L;
 				nLow = high;
 			} else if (shift_amount <= 0) {
 				nHigh = high << -shift_amount;
@@ -125,14 +128,14 @@ public class FixedDtoa {
 				long partLow = low >>> power;
 				long partHigh = high << (64 - power);
 				quotient = (int) (partLow + partHigh);
-				remHigh = 0;
+				remHigh = 0L;
 				remLow = low - (partLow << power);
 			}
 			return new QuotientRemainder(quotient, new UInt128(remHigh, remLow));
 		}
 
 		public boolean isZero() {
-			return high == 0 && low == 0;
+			return high == 0L && low == 0L;
 		}
 
 		public int bitAt(int position) {
@@ -160,7 +163,7 @@ public class FixedDtoa {
 												char[] buffer, int[] length) {
 		int len = length[0];
 		for (int i = requested_length - 1; i >= 0; --i) {
-			buffer[len + i] = (char)('0' + number.mod10());
+			buffer[len + i] = (char)(ASCII_ZERO + number.mod10());
 			number = number.divideBy(10);
 		}
   		length[0] += requested_length;
@@ -173,7 +176,7 @@ public class FixedDtoa {
 		while (!number.isZero()) {
 			int digit = number.mod10();
 			number  = number.divideBy(10);
-			buffer[length[0] + number_length] = (char)('0' + digit);
+			buffer[length[0] + number_length] = (char)(ASCII_ZERO + digit);
 			number_length++;
 		}
 		// Exchange the digits.
@@ -238,10 +241,10 @@ public class FixedDtoa {
 		// we reached the first digit.
 		buffer[length[0] - 1]++;
 		for (int i = length[0] - 1; i > 0; --i) {
-			if (buffer[i] != '0' + 10) {
+			if ((int) buffer[i] != ASCII_ZERO + 10) {
 				return;
 			}
-			buffer[i] = '0';
+			buffer[i] = (char)ASCII_ZERO;
 			buffer[i - 1]++;
 		}
 		// If the first digit is now '0' + 10, we would need to set it to '0' and add
@@ -249,7 +252,7 @@ public class FixedDtoa {
 		// digits had been '9' before rounding up. Now all trailing digits are '0' and
 		// we simply switch the first digit to '1' and update the decimal-point
 		// (indicating that the point is now one digit to the right).
-		if (buffer[0] == '0' + 10) {
+		if ((int) buffer[0] == ASCII_ZERO + 10) {
 			buffer[0] = '1';
 			decimal_point[0]++;
 		}
@@ -290,13 +293,13 @@ public class FixedDtoa {
 				// (even without the subtraction at the end of the loop body). At this
 				// time point will satisfy point <= 61 and therefore fractionals < 2^point
 				// and any further multiplication of fractionals by 5 will not overflow.
-				fractionals = fractionals.times(5);
+				fractionals = fractionals.times(5L);
 				point--;
 				int digit = (@Signed int)fractionals.shr(point).unsafeIntValue();
 				DOUBLE_CONVERSION_ASSERT(digit <= 9);
-				buffer[length[0]] = (char)('0' + digit);
+				buffer[length[0]] = (char)(ASCII_ZERO + digit);
 				length[0]++;
-				fractionals = fractionals.minus(UnsignedLong.valueOf(digit).shl(point));
+				fractionals = fractionals.minus(UnsignedLong.valueOf((long)digit).shl(point));
 			}
 			// If the first bit after the point is set we have to round up.
 			DOUBLE_CONVERSION_ASSERT(fractionals.isZero() || point - 1 >= 0);
@@ -313,13 +316,13 @@ public class FixedDtoa {
 				// As before: instead of multiplying by 10 we multiply by 5 and adjust the
 				// point location.
 				// This multiplication will not overflow for the same reasons as before.
-				fractionals128 = fractionals128.times(5);
+				fractionals128 = fractionals128.times(5L);
 				point--;
 				UInt128.QuotientRemainder qr = fractionals128.divModPowerOf2(point);
 				int digit = (@Signed int)qr.quotient;
 				fractionals128 = qr.remainder;
 				DOUBLE_CONVERSION_ASSERT(digit <= 9);
-				buffer[length[0]] = (char)('0' + digit);
+				buffer[length[0]] = (char)(ASCII_ZERO + digit);
 				length[0]++;
 			}
 			if (fractionals128.bitAt(point - 1) == 1) {
@@ -332,11 +335,11 @@ public class FixedDtoa {
 	// Removes leading and trailing zeros.
 	// If leading zeros are removed then the decimal point position is adjusted.
 	private static void TrimZeros(char[] buffer, int[] length, int[] decimal_point) {
-		while (length[0] > 0 && buffer[length[0] - 1] == '0') {
+		while (length[0] > 0 && (int) buffer[length[0] - 1] == ASCII_ZERO) {
 			length[0]--;
 		}
 		int first_non_zero = 0;
-		while (first_non_zero < length[0] && buffer[first_non_zero] == '0') {
+		while (first_non_zero < length[0] && (int) buffer[first_non_zero] == ASCII_ZERO) {
 			first_non_zero++;
 		}
 		if (first_non_zero != 0) {

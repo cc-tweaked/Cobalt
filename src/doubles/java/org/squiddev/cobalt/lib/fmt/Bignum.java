@@ -86,10 +86,12 @@ public class Bignum {
 		val = new BigDecimal(value);
 	}
 
+	public void AssignUInt(@Unsigned short unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void AssignUInt(@Unsigned int unsignedValue) { val = fromUnsigned(unsignedValue); }
 	public void AssignUInt(@Unsigned long unsignedValue) { val = fromUnsigned(unsignedValue); }
 
 	// special care is needed to prevent sign-extending conversions
-	public void AssignUInt16(@Unsigned int unsignedValue) { AssignUInt(unsignedValue); }
+	public void AssignUInt16(@Unsigned short unsignedValue) { AssignUInt(unsignedValue); }
 	public void AssignUInt32(@Unsigned int unsignedValue) { AssignUInt(unsignedValue); }
 	public void AssignUInt64(@Unsigned long unsignedValue) { AssignUInt(unsignedValue); }
 
@@ -110,6 +112,7 @@ public class Bignum {
 	}
 
 	public void AssignPower(int base, int exponent) {
+		//noinspection ImplicitNumericConversion
 		val = BigDecimal.valueOf(base).pow(exponent);
 	}
 
@@ -202,19 +205,19 @@ public class Bignum {
 		return PlusCompare(a, b, c) < 0;
 	}
 
-	@SuppressWarnings("cast.unsafe")
+	@SuppressWarnings({"cast.unsafe", "cast"})
 	private static BigDecimal fromUnsigned(@Unsigned short value) {
 		return new BigDecimal(BigInteger.valueOf(Short.toUnsignedLong((@Signed short)value)));
 	}
 
-	@SuppressWarnings("cast.unsafe")
+	@SuppressWarnings({"cast.unsafe", "cast"})
 	private static BigDecimal fromUnsigned(@Unsigned int value) {
 		return new BigDecimal(BigInteger.valueOf(Integer.toUnsignedLong((@Signed int)value)));
 	}
 
 	@SuppressWarnings("cast.unsafe")
 	private static BigDecimal fromUnsigned(@Unsigned long value) {
-		if ((value & LONG_SIGN_BIT) != 0) {
+		if ((value & LONG_SIGN_BIT) != 0L) {
 			return new BigDecimal(BigInteger.valueOf(value & LONG_UNSIGNED_BITS)
 					.add(BigInteger.valueOf(1L).shiftLeft(63)));
 		} else {
