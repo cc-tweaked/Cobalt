@@ -200,10 +200,17 @@ public final class LuaInterpreter {
 						break;
 
 					case OP_LOADNIL: { // A B: R(A):= ...:= R(B):= nil
-						int b = ((i >>> POS_B) & MAXARG_B);
-						do {
-							stack[b--] = NIL;
-						} while (b >= a);
+						if (p.isLua52) {
+							int b = ((i >>> POS_B) & MAXARG_B);
+							while (b >= 0) {
+								stack[a+(b--)] = NIL;
+							}
+						} else {
+							int b = ((i >>> POS_B) & MAXARG_B);
+							do {
+								stack[b--] = NIL;
+							} while (b >= a);
+						}
 						break;
 					}
 
@@ -577,7 +584,7 @@ public final class LuaInterpreter {
 					break;
 
 					case OP_TFORCALL: { // A C: R(A+3), ..., R(A+2+C) := R(A)(R(A+1), R(A+2));
-						int c = ((i >> POS_C) & MAXARG_C);
+						/*int c = ((i >> POS_C) & MAXARG_C);
 
 						LuaValue val = stack[a];
 						if (val instanceof LuaInterpretedFunction) {
@@ -595,7 +602,13 @@ public final class LuaInterpreter {
 						} else {
 							di.top = a + 3 + v.count();
 							di.extras = v;
+						}*/
+						di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
+						for (int c = (i >> POS_C) & MAXARG_C; c > 1; --c) {
+							stack[a + 2 + c] = di.extras.arg(c);
 						}
+						i = code[pc++];
+						a = ((i >> POS_A) & MAXARG_A);
 					}
 
 					case OP_TFORLOOP: {
@@ -604,19 +617,28 @@ public final class LuaInterpreter {
 								R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
 								else pc++
 							*/
-						LuaValue val;
-						Varargs v;
-						if (!p.isLua52) di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
-						v = di.extras;
-						val = v.first();
-						if (val.isNil()) {
-							pc++;
-						} else {
-							stack[a + 2] = stack[a + 3] = val;
-							for (int c = (i >> POS_C) & MAXARG_C; c > 1; --c) {
-								stack[a + 2 + c] = v.arg(c);
+						if (p.isLua52) {
+							Varargs v = di.extras;
+							LuaValue val = v.first();
+							if (!val.isNil()) {
+								stack[a] = stack[a + 1] = val;
+								di.extras = NONE;
+								pc += ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 							}
-							di.extras = NONE;
+						} else {
+							di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
+							Varargs v = di.extras;
+							LuaValue val = v.first();
+							if (val.isNil()) {
+								pc++;
+							} else {
+								for (int c = (i >> POS_C) & MAXARG_C; c > 1; --c) {
+									stack[a + 2 + c] = v.arg(c);
+								}
+								if (p.isLua52) a = ((i >> POS_A) & MAXARG_A);
+								stack[a + 2] = stack[a + 3] = val;
+								di.extras = NONE;
+							}
 						}
 						break;
 					}
