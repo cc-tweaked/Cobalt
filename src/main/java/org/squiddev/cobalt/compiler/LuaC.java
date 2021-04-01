@@ -87,7 +87,7 @@ public class LuaC implements LuaCompiler {
 	public static final int MAXSTACK = 250;
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;
-	public static boolean defaultLua52 = false;
+	public static boolean defaultLua52 = true;
 	public static boolean blockGoto = false;
 
 
@@ -199,6 +199,8 @@ public class LuaC implements LuaCompiler {
 		closure.nilUpvalues();
 		if (useLua52 && p.nups == 1) {
 			closure.setUpvalue(0, new Upvalue(env));
+		} else if (!useLua52 && p.nups == 0) {
+			closure.setfenv(env);
 		}
 		return closure;
 	}

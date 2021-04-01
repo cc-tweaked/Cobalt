@@ -400,8 +400,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 
 	private static LuaString findupvalue(LuaClosure c, int up) {
 		Prototype p = c.getPrototype();
-		if (up > 0 && p.upvalues != null && up <= p.upvalues.length) {
-			return p.upvalues[up - 1];
+		if (up > 0 && p.upvalues != null && up + (p.isLua52 ? 0 : 1) <= p.upvalues.length) {
+			return p.upvalues[up - 1 + (p.isLua52 ? 0 : 1)];
 		} else {
 			return null;
 		}

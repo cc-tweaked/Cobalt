@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.compiler;
 
+import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.Print;
 import org.squiddev.cobalt.Prototype;
 
@@ -44,7 +45,8 @@ public class CompileTestHelper {
 	 */
 	public static void compareResults(String dir, String file) throws IOException, CompileException {
 		// Compile in memory
-		String sourceBytecode = Print.show(LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), "@" + file + ".lua"));
+		// Force Lua 5.1 output since 5.2 tests haven't been written yet
+		String sourceBytecode = Print.show(LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), LuaString.valueOf("@" + file + ".lua"), null, false));
 
 		// Load expected value from jar
 		Prototype expectedPrototype = loadFromBytes(bytesFromJar(dir + file + ".lc"), file + ".lua");

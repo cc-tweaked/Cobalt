@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import com.sun.deploy.xml.XMLable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.lib.Utf8Lib;

@@ -219,15 +219,27 @@ public class BaseLib implements LuaLibrary {
 				case 6: // "print", // (...) -> void
 				{
 					return noUnwind(state, () -> {
-						LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
-						for (int i = 1, n = args.count(); i <= n; i++) {
-							if (i > 1) state.stdout.write('\t');
-							LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
-							int z = s.indexOf((byte) 0, 0);
-							state.stdout.write(s.bytes, s.offset, z >= 0 ? z : s.length);
+						LuaTable env = state.getCurrentThread().getfenv();
+						if (env != null) {
+							LuaValue tostring = OperationHelper.getTable(state, env, valueOf("tostring"));
+							for (int i = 1, n = args.count(); i <= n; i++) {
+								if (i > 1) state.stdout.write('\t');
+								LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
+								int z = s.indexOf((byte) 0, 0);
+								state.stdout.write(s.bytes, s.offset, z >= 0 ? z : s.length);
+							}
+							state.stdout.println();
+							return Constants.NONE;
+						} else {
+							for (int i = 1, n = args.count(); i <= n; i++) {
+								if (i > 1) state.stdout.write('\t');
+								LuaString s = OperationHelper.toString(state, args.arg(i)).strvalue();
+								int z = s.indexOf((byte) 0, 0);
+								state.stdout.write(s.bytes, s.offset, z >= 0 ? z : s.length);
+							}
+							state.stdout.println();
+							return Constants.NONE;
 						}
-						state.stdout.println();
-						return Constants.NONE;
 					});
 				}
 				case 7: // "select", // (f, ...) -> value1, ...

@@ -32,7 +32,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-import static org.squiddev.cobalt.Lua.*;
+import static org.squiddev.cobalt.Lua52.*;
 
 /**
  * Debug helper class to pretty-print lua bytecodes.
@@ -40,7 +40,7 @@ import static org.squiddev.cobalt.Lua.*;
  * @see Prototype
  * @see LuaClosure
  */
-public class Print {
+public class Print52 {
 	public static final String[] OPNAMES = {
 		"MOVE",
 		"LOADK",
@@ -211,10 +211,6 @@ public class Print {
 	 * @param pc the program counter to look up and print
 	 */
 	public static void printOpcode(PrintStream ps, Prototype f, int pc) {
-		if (f.isLua52) {
-			Print52.printOpcode(ps, f, pc);
-			return;
-		}
 		int[] code = f.code;
 		int i = code[pc];
 		int o = GET_OPCODE(i);

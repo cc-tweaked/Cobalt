@@ -462,7 +462,7 @@ public class LuaThread extends LuaValue {
 						LuaFunction function = func;
 						func = null;
 						if (function instanceof LuaInterpretedFunction) {
-							((LuaInterpretedFunction)function).setUpvalue(0, new Upvalue(thread.env));
+							((LuaInterpretedFunction)function).setUpvalue(((LuaInterpretedFunction) function).p.isLua52 ? 0 : -1, new Upvalue(thread.env));
 						}
 
 						Varargs res = loop(state, state.currentThread, function, threader.unpack());

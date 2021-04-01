@@ -162,12 +162,12 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 
 	@Override
 	public Upvalue getUpvalue(int i) {
-		return upvalues[i];
+		return upvalues[i+(p.isLua52 ? 0 : 1)];
 	}
 
 	@Override
 	public void setUpvalue(int i, Upvalue upvalue) {
-		upvalues[i] = upvalue;
+		upvalues[i+(p.isLua52 ? 0 : 1)] = upvalue;
 	}
 
 	@Override
