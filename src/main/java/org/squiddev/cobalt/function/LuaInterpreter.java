@@ -340,7 +340,16 @@ public final class LuaInterpreter {
 						break;
 					}
 
-					case OP_JMP: // sBx: pc+=sBx
+					case OP_JMP: // A sBx: pc+=sBx; if (A) close all upvalues >= R(A - 1)
+						if (p.isLua52 && a > 0) {
+							for (int x = openups.length; --x >= a - 1; ) {
+								Upvalue upvalue = openups[x];
+								if (upvalue != null) {
+									upvalue.close();
+									openups[x] = null;
+								}
+							}
+						}
 						pc += ((i >>> POS_Bx) & MAXARG_Bx) - MAXARG_sBx;
 						break;
 
@@ -689,15 +698,15 @@ public final class LuaInterpreter {
 
 								int b = newp.upvalue_info[j];
 								if ((b >> 8) != 0) {
-									DebugFrame frame = di;
+									/*DebugFrame frame = di;
 									for (int s = (b >> 8) - 1; s > 0 && frame != null; --s) frame = frame.previous;
 									if (frame == null) {
 										throw new IllegalStateException("Upvalue stack index out of range");
-									}
+									}*/
 									//System.out.println("Found upvalue index " + (newp.upvalue_info[j] & 0xFF) + " (named " + (frame.func instanceof LuaInterpretedFunction ? frame.closure.getPrototype().upvalues[newp.upvalue_info[j] & 0xFF] : "?") + ") with type " + frame.closure.getUpvalue(newp.upvalue_info[j] & 0xFF).getClass().getName());
-									newcl.upvalues[j] = new Upvalue(frame.stack, b & 0xFF);
-									// TODO: Add proper upvalue closing (maybe this is easy? still have to look at how the stack flag works)
-									//newcl.upvalues[j] = openups[b] != null ? openups[b] : (openups[b] = new Upvalue(frame.stack, b & 0xFF));
+									//newcl.upvalues[j] = new Upvalue(frame.stack, b & 0xFF);
+									// TODO: Make sure this is actually correct
+									newcl.upvalues[j] = openups[b & 0xFF] != null ? openups[b & 0xFF] : (openups[b & 0xFF] = new Upvalue(di.stack, b & 0xFF));
 									//newcl.upvalues[j] = openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b));
 								} else {
 									newcl.upvalues[j] = upvalues[b & 0xFF];

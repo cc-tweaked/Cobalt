@@ -1041,7 +1041,7 @@ public class LexState52 {
 		LabelDescription gt = dyd.gt[g];
 		LuaC._assert(gt.name.equals(label.name), linenumber);
 		if (gt.nactvar < label.nactvar) {
-			throw new CompileException(String.format("<goto %s> at line %d jumps into the scope of local %s",
+			throw new CompileException(String.format("<goto %s> at line %d jumps into the scope of local '%s'",
 				gt.name.toString(), gt.line, fs.getlocvar(gt.nactvar).name.toString()));
 		}
 		fs.patchlist(gt.pc, label.pc);
@@ -1091,10 +1091,9 @@ public class LexState52 {
 	}
 
 	private void findgotos(LabelDescription lb) throws CompileException {
-		LabelDescription[] gl = dyd.gt;
 		int i = fs.bl.firstgoto;
 		while (i < dyd.ngt) {
-			if (gl[i].name.equals(lb.name)) {
+			if (dyd.gt[i].name.equals(lb.name)) {
 				closegoto(i, lb);
 			} else {
 				i++;
@@ -1115,7 +1114,7 @@ public class LexState52 {
 	** message when label name is a reserved word (which can only be 'break')
 	*/
 	void /* no return */ undefgoto(LabelDescription gt) throws CompileException {
-		String msg = String.format(isReservedKeyword(gt.name.toString()) ? "<%s> at line %d not inside a loop" : "no visible label %s for <goto> at line %d",
+		String msg = String.format(isReservedKeyword(gt.name.toString()) ? "<%s> at line %d not inside a loop" : "no visible label '%s' for <goto> at line %d",
 			gt.name.toString(), gt.line);
 		throw new CompileException(msg);
 	}
@@ -1366,7 +1365,7 @@ public class LexState52 {
 		}
 		this.parlist();
 		this.checknext(')');
-		this.chunk();
+		this.statlist();
 		new_fs.f.lastlinedefined = this.linenumber;
 		this.check_match(TK_END, TK_FUNCTION, line);
 		this.codeclosure(e);
@@ -1679,14 +1678,15 @@ public class LexState52 {
 	 */
 
 
-	private boolean block_follow(int token) {
-		switch (token) {
+	private boolean block_follow(boolean withUntil) {
+		switch (t.token) {
 			case TK_ELSE:
 			case TK_ELSEIF:
 			case TK_END:
-			case TK_UNTIL:
 			case TK_EOS:
 				return true;
+			case TK_UNTIL:
+				return withUntil;
 			default:
 				return false;
 		}
@@ -1698,7 +1698,7 @@ public class LexState52 {
 		FuncState52 fs = this.fs;
 		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
 		fs.enterblock(bl, false);
-		this.chunk();
+		this.statlist();
 		//LuaC._assert(bl.breaklist.i == NO_JUMP, linenumber);
 		fs.leaveblock();
 	}
@@ -1813,7 +1813,7 @@ public class LexState52 {
 		while (t.token == ';' || t.token == TK_DBCOLON) { /* skip other no-op statements */
 			statement();
 		}
-		if (block_follow(0)) { /* label is last no-op statement in the block? */
+		if (block_follow(false)) { /* label is last no-op statement in the block? */
 			/* assume that locals are already out of scope */
 			dyd.label[l].nactvar = fs.bl.nactvar;
 		}
@@ -1848,7 +1848,7 @@ public class LexState52 {
 		fs.enterblock(bl1, true); /* loop block */
 		fs.enterblock(bl2, false); /* scope block */
 		this.nextToken(); /* skip REPEAT */
-		this.chunk();
+		this.statlist();
 		this.check_match(TK_UNTIL, TK_REPEAT, line);
 		condexit = this.cond(); /* read condition (inside scope block) */
 		if (bl2.upval) { /* upvalues? */
@@ -1966,14 +1966,38 @@ public class LexState52 {
 	}
 
 
-	private int test_then_block() throws CompileException {
+	private void test_then_block(IntPtr escapelist) throws CompileException {
 		/* test_then_block -> [IF | ELSEIF] cond THEN block */
-		int condexit;
+		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
+		int jf;
 		this.nextToken(); /* skip IF or ELSEIF */
-		condexit = this.cond();
+		expdesc v = new expdesc();
+		expr(v);
 		this.checknext(TK_THEN);
-		this.block(); /* `then' part */
-		return condexit;
+		if (t.token == TK_GOTO || t.token == TK_BREAK) {
+			fs.goiffalse(v);
+			fs.enterblock(bl, false);
+			gotostat(v.t.i);
+			while (t.token == ';' || t.token == TK_DBCOLON) { /* skip other no-op statements */
+				statement();
+			}
+			if (block_follow(false)) { /* 'goto' is the entire block? */
+				fs.leaveblock();
+				return;
+			} else {
+				jf = fs.jump();
+			}
+		} else {
+			fs.goiftrue(v);
+			fs.enterblock(bl, false);
+			jf = v.f.i;
+		}
+		this.statlist(); /* `then' part */
+		fs.leaveblock();
+		if (t.token == TK_ELSE || t.token == TK_ELSEIF) {
+			fs.concat(escapelist, fs.jump());
+		}
+		fs.patchtohere(jf);
 	}
 
 
@@ -1981,24 +2005,16 @@ public class LexState52 {
 		/* ifstat -> IF cond THEN block {ELSEIF cond THEN block} [ELSE block]
 		 * END */
 		FuncState52 fs = this.fs;
-		int flist;
 		IntPtr escapelist = new IntPtr(NO_JUMP);
-		flist = test_then_block(); /* IF cond THEN block */
+		test_then_block(escapelist); /* IF cond THEN block */
 		while (this.t.token == TK_ELSEIF) {
-			fs.concat(escapelist, fs.jump());
-			fs.patchtohere(flist);
-			flist = test_then_block(); /* ELSEIF cond THEN block */
+			test_then_block(escapelist); /* ELSEIF cond THEN block */
 		}
-		if (this.t.token == TK_ELSE) {
-			fs.concat(escapelist, fs.jump());
-			fs.patchtohere(flist);
-			this.nextToken(); /* skip ELSE (after patch, for correct line info) */
+		if (testnext(TK_ELSE)) {
 			this.block(); /* `else' part */
-		} else {
-			fs.concat(escapelist, flist);
 		}
-		fs.patchtohere(escapelist.i);
 		this.check_match(TK_END, TK_IF, line);
+		fs.patchtohere(escapelist.i);
 	}
 
 	private void localfunc() throws CompileException {
@@ -2082,7 +2098,7 @@ public class LexState52 {
 		expdesc e = new expdesc();
 		int first, nret; /* registers with returned values */
 		this.nextToken(); /* skip RETURN */
-		if (block_follow(this.t.token) || this.t.token == ';') {
+		if (block_follow(true) || this.t.token == ';') {
 			first = nret = 0; /* return no values */
 		} else {
 			nret = this.explist1(e); /* optional return values */
@@ -2108,34 +2124,39 @@ public class LexState52 {
 	}
 
 
-	private boolean statement() throws CompileException {
+	private void statement() throws CompileException {
 		int line = this.linenumber; /* may be needed for error messages */
+		enterlevel();
 		switch (this.t.token) {
+			case ';': { /* stat -> ';' (empty statement) */
+				nextToken(); /* skip ';' */
+				break;
+			}
 			case TK_IF: { /* stat -> ifstat */
 				this.ifstat(line);
-				return false;
+				break;
 			}
 			case TK_WHILE: { /* stat -> whilestat */
 				this.whilestat(line);
-				return false;
+				break;
 			}
 			case TK_DO: { /* stat -> DO block END */
 				this.nextToken(); /* skip DO */
 				this.block();
 				this.check_match(TK_END, TK_DO, line);
-				return false;
+				break;
 			}
 			case TK_FOR: { /* stat -> forstat */
 				this.forstat(line);
-				return false;
+				break;
 			}
 			case TK_REPEAT: { /* stat -> repeatstat */
 				this.repeatstat(line);
-				return false;
+				break;
 			}
 			case TK_FUNCTION: {
 				this.funcstat(line); /* stat -> funcstat */
-				return false;
+				break;
 			}
 			case TK_LOCAL: { /* stat -> localstat */
 				this.nextToken(); /* skip LOCAL */
@@ -2144,16 +2165,16 @@ public class LexState52 {
 				} else {
 					this.localstat();
 				}
-				return false;
+				break;
 			}
 			case TK_DBCOLON: { /* stat -> label */
 				this.nextToken();
 				this.labelstat(str_checkname(), line);
-				return false;
+				break;
 			}
 			case TK_RETURN: { /* stat -> retstat */
 				this.retstat();
-				return true; /* must be last statement */
+				break;
 			}
 			case TK_BREAK:  /* stat -> breakstat */
 			case TK_GOTO: { /* stat -> 'goto' NAME */
@@ -2161,27 +2182,27 @@ public class LexState52 {
 					throw lexError("illegal jump statement", this.t.token);
 				}
 				this.gotostat(fs.jump());
-				return true; /* must be last statement */
+				break;
 			}
 			default: {
 				this.exprstat();
-				return false; /* to avoid warnings */
+				break;
 			}
 		}
+		LuaC._assert(fs.f.maxstacksize >= fs.freereg && fs.freereg >= fs.nactvar, linenumber);
+		fs.freereg = fs.nactvar; /* free registers */
+		leavelevel();
 	}
 
-	void chunk() throws CompileException {
+	void statlist() throws CompileException {
 		/* chunk -> { stat [`;'] } */
-		boolean islast = false;
-		this.enterlevel();
-		while (!islast && !block_follow(this.t.token)) {
-			islast = this.statement();
-			this.testnext(';');
-			LuaC._assert(this.fs.f.maxstacksize >= this.fs.freereg
-				&& this.fs.freereg >= this.fs.nactvar, linenumber);
-			this.fs.freereg = this.fs.nactvar; /* free registers */
+		while (!block_follow(true)) {
+			if (this.t.token == TK_RETURN) {
+				statement();
+				return;  /* 'return' must be last statement */
+			}
+			this.statement();
 		}
-		this.leavelevel();
 	}
 
 	/* }====================================================================== */

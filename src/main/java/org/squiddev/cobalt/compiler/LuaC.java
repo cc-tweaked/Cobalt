@@ -264,6 +264,7 @@ public class LuaC implements LuaCompiler {
 		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
 		// lexstate.buff = buff;
 		lexstate.dyd = dyd;
+		dyd.nactvar = dyd.ngt = dyd.nlabel = 0;
 		lexstate.setinput(firstByte, z, name);
 		funcstate.f = new Prototype();
 		lexstate.open_func(funcstate, bl);
@@ -274,7 +275,7 @@ public class LuaC implements LuaCompiler {
 		v.init(LexState52.VLOCAL, 0);
 		funcstate.newupvalue(LuaString.valueOf("_ENV"), v);
 		lexstate.nextToken(); /* read first token */
-		lexstate.chunk();
+		lexstate.statlist();
 		lexstate.check(LexState52.TK_EOS);
 		lexstate.close_func();
 		LuaC._assert(funcstate.prev == null);

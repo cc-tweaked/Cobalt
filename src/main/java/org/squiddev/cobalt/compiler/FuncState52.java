@@ -813,7 +813,7 @@ public class FuncState52 {
 		e.t.i = NO_JUMP;
 	}
 
-	private void goiffalse(expdesc e) throws CompileException {
+	void goiffalse(expdesc e) throws CompileException {
 		int pc; /* pc of last jump */
 		this.dischargevars(e);
 		switch (e.k) {
@@ -1177,7 +1177,7 @@ public class FuncState52 {
 	void checkrepeated(LexState52.LabelDescription[] ll, int nll, LuaString label) throws CompileException {
 		for (int i = bl.firstlabel; i < nll; i++) {
 			if (label.equals(ll[i].name)) {
-				throw new CompileException(String.format("label %s already defined on line %d",
+				throw new CompileException(String.format("label '%s' already defined on line %d",
 					label.toString(), ll[i].line));
 			}
 		}
