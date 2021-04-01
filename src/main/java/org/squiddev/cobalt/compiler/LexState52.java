@@ -2129,7 +2129,10 @@ public class LexState52 {
 		int line = this.linenumber; /* may be needed for error messages */
 		enterlevel();
 		if (this.t.token == TK_NAME && this.t.seminfo.ts.equals(LuaString.valueOf("goto"))) {
-			this.t.token = TK_GOTO;
+			lookahead();
+			if (lookahead.token == TK_NAME) {
+				this.t.token = TK_GOTO;
+			}
 		}
 		switch (this.t.token) {
 			case ';': { /* stat -> ';' (empty statement) */
