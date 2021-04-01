@@ -5,7 +5,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public final class DoubleConversionCompatibility {
+public final class DoubleTestHelper {
 	public static void CHECK(boolean v) {
 		assertTrue(v);
 	}
@@ -45,5 +45,5 @@ public final class DoubleConversionCompatibility {
 		return i;
 	}
 
-	private DoubleConversionCompatibility() {}
+	private DoubleTestHelper() {}
 }

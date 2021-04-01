@@ -30,7 +30,7 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.junit.jupiter.api.Test;
 
-import static org.squiddev.cobalt.lib.doubles.DoubleConversionCompatibility.*;
+import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 public class BignumTest {
 	private static final int kBufferSize = 1024;
