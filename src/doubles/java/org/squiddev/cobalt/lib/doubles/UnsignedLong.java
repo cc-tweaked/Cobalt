@@ -1,4 +1,4 @@
-package org.squiddev.cobalt.lib.fmt;
+package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.SignedPositive;

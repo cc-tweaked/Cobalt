@@ -28,10 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.fmt;
+package org.squiddev.cobalt.lib.doubles;
 
-import static org.squiddev.cobalt.lib.fmt.Assert.DOUBLE_CONVERSION_ASSERT;
-import static org.squiddev.cobalt.lib.fmt.FixedDtoa.FastFixedDtoa;
+import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.FixedDtoa.FastFixedDtoa;
 
 public class DoubleToStringConverter {
 	/**

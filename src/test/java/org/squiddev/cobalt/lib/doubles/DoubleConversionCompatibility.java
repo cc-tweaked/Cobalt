@@ -1,6 +1,4 @@
-package org.squiddev.cobalt.lib.fmt;
-
-import org.junit.jupiter.api.Test;
+package org.squiddev.cobalt.lib.doubles;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;

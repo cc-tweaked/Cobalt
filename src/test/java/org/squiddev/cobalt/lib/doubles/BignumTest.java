@@ -26,11 +26,11 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.squiddev.cobalt.lib.fmt;
+package org.squiddev.cobalt.lib.doubles;
 
 import org.junit.jupiter.api.Test;
 
-import static org.squiddev.cobalt.lib.fmt.DoubleConversionCompatibility.*;
+import static org.squiddev.cobalt.lib.doubles.DoubleConversionCompatibility.*;
 
 public class BignumTest {
 	private static final int kBufferSize = 1024;

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package org.squiddev.cobalt.lib.fmt;
+package org.squiddev.cobalt.lib.doubles;
 
 final public class Assert {
 	public static void DOUBLE_CONVERSION_ASSERT(boolean expected) {
