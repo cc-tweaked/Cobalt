@@ -88,6 +88,7 @@ public class LuaC implements LuaCompiler {
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;
 	public static boolean isLua52 = true;
+	public static boolean blockGoto = false;
 
 
 	public static void SET_OPCODE(InstructionPtr i, int o) {
@@ -161,6 +162,14 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
+	public static LexState52.LabelDescription[] realloc(LexState52.LabelDescription[] v, int n) {
+		LexState52.LabelDescription[] a = new LexState52.LabelDescription[n];
+		if (v != null) {
+			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		}
+		return a;
+	}
+
 	public static int[] realloc(int[] v, int n) {
 		int[] a = new int[n];
 		if (v != null) {
@@ -218,7 +227,12 @@ public class LuaC implements LuaCompiler {
 			return LoadState.loadBinaryChunk(firstByte, stream, name);
 		} else {
 			checkMode(mode, "text");
-			return isLua52 ? luaY_parser52(firstByte, stream, name) : luaY_parser(firstByte, stream, name);
+			if (isLua52) {
+				LexState52.DynamicData dyd = new LexState52.DynamicData();
+				return luaY_parser52(firstByte, stream, dyd, name);
+			} else {
+				return luaY_parser(firstByte, stream, name);
+			}
 		}
 	}
 
@@ -244,13 +258,15 @@ public class LuaC implements LuaCompiler {
 		return funcstate.f;
 	}
 
-	private static Prototype luaY_parser52(int firstByte, InputStream z, LuaString name) throws CompileException {
+	private static Prototype luaY_parser52(int firstByte, InputStream z, LexState52.DynamicData dyd, LuaString name) throws CompileException {
 		LexState52 lexstate = new LexState52(z);
 		FuncState52 funcstate = new FuncState52();
+		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
 		// lexstate.buff = buff;
+		lexstate.dyd = dyd;
 		lexstate.setinput(firstByte, z, name);
 		funcstate.f = new Prototype();
-		lexstate.open_func(funcstate);
+		lexstate.open_func(funcstate, bl);
 		/* main func. is always vararg */
 		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
 		funcstate.f.source = name;
@@ -259,7 +275,7 @@ public class LuaC implements LuaCompiler {
 		funcstate.newupvalue(LuaString.valueOf("_ENV"), v);
 		lexstate.nextToken(); /* read first token */
 		lexstate.chunk();
-		lexstate.check(LexState.TK_EOS);
+		lexstate.check(LexState52.TK_EOS);
 		lexstate.close_func();
 		LuaC._assert(funcstate.prev == null);
 		LuaC._assert(funcstate.f.nups == 1);

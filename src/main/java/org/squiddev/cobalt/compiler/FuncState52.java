@@ -34,6 +34,7 @@ import java.util.Hashtable;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua52.*;
+import static org.squiddev.cobalt.compiler.LexState52.NO_JUMP;
 import static org.squiddev.cobalt.compiler.LuaC.*;
 
 public class FuncState52 {
@@ -45,10 +46,11 @@ public class FuncState52 {
 
 	static class BlockCnt {
 		BlockCnt previous;  /* chain */
-		IntPtr breaklist = new IntPtr();  /* list of jumps out of this loop */
+		short firstlabel;  /* index of first label in this block */
+		short firstgoto;  /* index of first pending goto in this block */
 		short nactvar;  /* # active locals outside the breakable structure */
 		boolean upval;  /* true if some variable in the block is an upvalue */
-		boolean isbreakable;  /* true if `block' is a loop */
+		boolean isloop;  /* true if `block' is a loop */
 	}
 
 	Prototype f;  /* current function header */
@@ -188,10 +190,11 @@ public class FuncState52 {
 		}
 	}
 
-	void enterblock(BlockCnt bl, boolean isbreakable) throws CompileException {
-		bl.breaklist.i = LexState52.NO_JUMP;
-		bl.isbreakable = isbreakable;
+	void enterblock(BlockCnt bl, boolean isloop) throws CompileException {
+		bl.isloop = isloop;
 		bl.nactvar = this.nactvar;
+		bl.firstlabel = ls.dyd.nlabel;
+		bl.firstgoto = ls.dyd.ngt;
 		bl.upval = false;
 		bl.previous = this.bl;
 		this.bl = bl;
@@ -214,16 +217,30 @@ public class FuncState52 {
 
 	void leaveblock() throws CompileException {
 		BlockCnt bl = this.bl;
+		if (bl.previous != null && bl.upval) {
+			/* create a 'jump to here' to close upvalues */
+			int j = jump();
+			patchclose(j, bl.nactvar);
+			patchtohere(j);
+		}
+		if (bl.isloop) {
+			ls.breaklabel();
+		}
 		this.bl = bl.previous;
 		ls.removevars(bl.nactvar);
 		/*if (bl.upval) {
 			this.codeABC(OP_CLOSE, bl.nactvar, 0, 0);
 		}*/
 		/* a block either controls scope or breaks (never both) */
-		_assert(!bl.isbreakable || !bl.upval);
+		_assert(!bl.isloop || !bl.upval);
 		_assert(bl.nactvar == this.nactvar);
 		this.freereg = this.nactvar; /* free registers */
-		this.patchtohere(bl.breaklist.i);
+		ls.dyd.nlabel = bl.firstlabel;
+		if (bl.previous != null) {
+			movegotosout(bl);
+		} else if (bl.firstgoto < ls.dyd.ngt) {
+			ls.undefgoto(ls.dyd.gt[bl.firstgoto]);
+		}
 	}
 
 	void closelistfield(ConsControl cc) throws CompileException {
@@ -289,8 +306,8 @@ public class FuncState52 {
 
 	int jump() throws CompileException {
 		int jpc = this.jpc.i; /* save list of jumps to here */
-		this.jpc.i = LexState52.NO_JUMP;
-		IntPtr j = new IntPtr(this.codeAsBx(OP_JMP, 0, LexState52.NO_JUMP));
+		this.jpc.i = NO_JUMP;
+		IntPtr j = new IntPtr(this.codeAsBx(OP_JMP, 0, NO_JUMP));
 		this.concat(j, jpc); /* keep them on hold */
 		return j.i;
 	}
@@ -307,7 +324,7 @@ public class FuncState52 {
 	private void fixjump(int pc, int dest) throws CompileException {
 		InstructionPtr jmp = new InstructionPtr(this.f.code, pc);
 		int offset = dest - (pc + 1);
-		_assert(dest != LexState52.NO_JUMP);
+		_assert(dest != NO_JUMP);
 		if (Math.abs(offset) > MAXARG_sBx) {
 			throw ls.syntaxError("control structure too long");
 		}
@@ -328,9 +345,9 @@ public class FuncState52 {
 	private int getjump(int pc) {
 		int offset = GETARG_sBx(this.f.code[pc]);
 		/* point to itself represents end of list */
-		if (offset == LexState52.NO_JUMP)
+		if (offset == NO_JUMP)
 			/* end of list */ {
-			return LexState52.NO_JUMP;
+			return NO_JUMP;
 		} else
 			/* turn offset into absolute position */ {
 			return (pc + 1) + offset;
@@ -353,7 +370,7 @@ public class FuncState52 {
 	 * produce an inverted value)
 	 */
 	private boolean need_value(int list) {
-		for (; list != LexState52.NO_JUMP; list = this.getjump(list)) {
+		for (; list != NO_JUMP; list = this.getjump(list)) {
 			int i = this.getjumpcontrol(list).get();
 			if (GET_OPCODE(i) != OP_TESTSET) {
 				return true;
@@ -381,13 +398,13 @@ public class FuncState52 {
 
 
 	private void removevalues(int list) {
-		for (; list != LexState52.NO_JUMP; list = this.getjump(list)) {
+		for (; list != NO_JUMP; list = this.getjump(list)) {
 			this.patchtestreg(list, NO_REG);
 		}
 	}
 
 	private void patchlistaux(int list, int vtarget, int reg, int dtarget) throws CompileException {
-		while (list != LexState52.NO_JUMP) {
+		while (list != NO_JUMP) {
 			int next = this.getjump(list);
 			if (this.patchtestreg(list, reg)) {
 				this.fixjump(list, vtarget);
@@ -400,7 +417,7 @@ public class FuncState52 {
 
 	private void dischargejpc() throws CompileException {
 		this.patchlistaux(this.jpc.i, this.pc, NO_REG, this.pc);
-		this.jpc.i = LexState52.NO_JUMP;
+		this.jpc.i = NO_JUMP;
 	}
 
 	void patchlist(int list, int target) throws CompileException {
@@ -412,21 +429,33 @@ public class FuncState52 {
 		}
 	}
 
+	void patchclose(int list, int level) throws CompileException {
+		level++;  /* argument is +1 to reserve 0 as non-op */
+		while (list != NO_JUMP) {
+			int next = getjump(list);
+			LuaC._assert(GET_OPCODE(f.code[list]) == OP_JMP &&
+							GETARG_A(f.code[list]) == 0 ||
+							GETARG_A(f.code[list]) >= level);
+			f.code[list] = (f.code[list] & MASK_NOT_A) | (level << POS_A);
+			list = next;
+		}
+	}
+
 	void patchtohere(int list) throws CompileException {
 		this.getlabel();
 		this.concat(this.jpc, list);
 	}
 
 	void concat(IntPtr l1, int l2) throws CompileException {
-		if (l2 == LexState52.NO_JUMP) {
+		if (l2 == NO_JUMP) {
 			return;
 		}
-		if (l1.i == LexState52.NO_JUMP) {
+		if (l1.i == NO_JUMP) {
 			l1.i = l2;
 		} else {
 			int list = l1.i;
 			int next;
-			while ((next = this.getjump(list)) != LexState52.NO_JUMP)
+			while ((next = this.getjump(list)) != NO_JUMP)
 				/* find last element */ {
 				list = next;
 			}
@@ -613,10 +642,10 @@ public class FuncState52 {
 		}
 		if (e.hasjumps()) {
 			int _final; /* position after whole expression */
-			int p_f = LexState52.NO_JUMP; /* position of an eventual LOAD false */
-			int p_t = LexState52.NO_JUMP; /* position of an eventual LOAD true */
+			int p_f = NO_JUMP; /* position of an eventual LOAD false */
+			int p_t = NO_JUMP; /* position of an eventual LOAD true */
 			if (this.need_value(e.t.i) || this.need_value(e.f.i)) {
-				int fj = (e.k == LexState52.VJMP) ? LexState52.NO_JUMP : this
+				int fj = (e.k == LexState52.VJMP) ? NO_JUMP : this
 					.jump();
 				p_f = this.code_label(reg, 0, 1);
 				p_t = this.code_label(reg, 1, 0);
@@ -626,7 +655,7 @@ public class FuncState52 {
 			this.patchlistaux(e.f.i, _final, reg, p_f);
 			this.patchlistaux(e.t.i, _final, reg, p_t);
 		}
-		e.f.i = e.t.i = LexState52.NO_JUMP;
+		e.f.i = e.t.i = NO_JUMP;
 		e.u.info = reg;
 		e.k = LexState52.VNONRELOC;
 	}
@@ -762,7 +791,7 @@ public class FuncState52 {
 			case LexState52.VK:
 			case LexState52.VKNUM:
 			case LexState52.VTRUE: {
-				pc = LexState52.NO_JUMP; /* always true; do nothing */
+				pc = NO_JUMP; /* always true; do nothing */
 				break;
 			}
 			case LexState52.VFALSE: {
@@ -781,7 +810,7 @@ public class FuncState52 {
 		}
 		this.concat(e.f, pc); /* insert last jump in `f' list */
 		this.patchtohere(e.t.i);
-		e.t.i = LexState52.NO_JUMP;
+		e.t.i = NO_JUMP;
 	}
 
 	private void goiffalse(expdesc e) throws CompileException {
@@ -790,7 +819,7 @@ public class FuncState52 {
 		switch (e.k) {
 			case LexState52.VNIL:
 			case LexState52.VFALSE: {
-				pc = LexState52.NO_JUMP; /* always false; do nothing */
+				pc = NO_JUMP; /* always false; do nothing */
 				break;
 			}
 			case LexState52.VTRUE: {
@@ -808,7 +837,7 @@ public class FuncState52 {
 		}
 		this.concat(e.t, pc); /* insert last jump in `t' list */
 		this.patchtohere(e.f.i);
-		e.f.i = LexState52.NO_JUMP;
+		e.f.i = NO_JUMP;
 	}
 
 	private void codenot(expdesc e) throws CompileException {
@@ -1003,7 +1032,7 @@ public class FuncState52 {
 	void posfix(int op, expdesc e1, expdesc e2) throws CompileException {
 		switch (op) {
 			case LexState52.OPR_AND: {
-				_assert(e1.t.i == LexState52.NO_JUMP); /* list must be closed */
+				_assert(e1.t.i == NO_JUMP); /* list must be closed */
 				this.dischargevars(e2);
 				this.concat(e2.f, e1.f.i);
 				// *e1 = *e2;
@@ -1011,7 +1040,7 @@ public class FuncState52 {
 				break;
 			}
 			case LexState52.OPR_OR: {
-				_assert(e1.f.i == LexState52.NO_JUMP); /* list must be closed */
+				_assert(e1.f.i == NO_JUMP); /* list must be closed */
 				this.dischargevars(e2);
 				this.concat(e2.t, e1.t.i);
 				// *e1 = *e2;
@@ -1124,5 +1153,33 @@ public class FuncState52 {
 			this.code(c, this.ls.lastline);
 		}
 		this.freereg = base + 1; /* free registers with list values */
+	}
+
+	private void movegotosout(BlockCnt bl) throws CompileException {
+		int i = bl.firstgoto;
+		LexState52.LabelDescription[] gl = ls.dyd.gt;
+		/* correct pending gotos to current block and try to close it
+     		with visible labels */
+		while (i < ls.dyd.ngt) {
+			LexState52.LabelDescription gt = gl[i];
+			if (gt.nactvar > bl.nactvar) {
+				if (bl.upval) {
+					patchclose(gt.pc, bl.nactvar);
+				}
+				gt.nactvar = bl.nactvar;
+			}
+			if (!ls.findlabel(i)) {
+				i++;  /* move to the next one */
+			}
+		}
+	}
+
+	void checkrepeated(LexState52.LabelDescription[] ll, int nll, LuaString label) throws CompileException {
+		for (int i = bl.firstlabel; i < nll; i++) {
+			if (label.equals(ll[i].name)) {
+				throw new CompileException(String.format("label %s already defined on line %d",
+					label.toString(), ll[i].line));
+			}
+		}
 	}
 }

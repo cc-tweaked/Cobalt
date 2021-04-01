@@ -24,10 +24,10 @@
  */
 package org.squiddev.cobalt.compiler;
 
+import com.sun.deploy.xml.XMLable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.lib.Utf8Lib;
-import org.squiddev.cobalt.compiler.FuncState52;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -148,14 +148,15 @@ public class LexState52 {
 	private byte decpoint;  /* locale decimal point */
 	public int nCcalls;
 	private final HashMap<LuaString, LuaString> strings = new HashMap<>();
+	DynamicData dyd;
 
 	/* ORDER RESERVED */
 	private final static String[] luaX_tokens = {
 		"and", "break", "do", "else", "elseif",
-		"end", "false", "for", "function", "if",
+		"end", "false", "for", "function", "goto", "if",
 		"in", "local", "nil", "not", "or", "repeat",
 		"return", "then", "true", "until", "while",
-		"..", "...", "==", ">=", "<=", "~=",
+		"..", "...", "==", ">=", "<=", "~=", "::",
 		"<eof>",
 		"<number>", "<name>", "<string>",
 	};
@@ -163,13 +164,13 @@ public class LexState52 {
 	final static int
 		// terminal symbols denoted by reserved words
 		TK_AND = 257, TK_BREAK = 258, TK_DO = 259, TK_ELSE = 260, TK_ELSEIF = 261,
-		TK_END = 262, TK_FALSE = 263, TK_FOR = 264, TK_FUNCTION = 265, TK_IF = 266,
-		TK_IN = 267, TK_LOCAL = 268, TK_NIL = 269, TK_NOT = 270, TK_OR = 271, TK_REPEAT = 272,
-		TK_RETURN = 273, TK_THEN = 274, TK_TRUE = 275, TK_UNTIL = 276, TK_WHILE = 277,
+		TK_END = 262, TK_FALSE = 263, TK_FOR = 264, TK_FUNCTION = 265, TK_GOTO = 266, TK_IF = 267,
+		TK_IN = 268, TK_LOCAL = 269, TK_NIL = 270, TK_NOT = 271, TK_OR = 272, TK_REPEAT = 273,
+		TK_RETURN = 274, TK_THEN = 275, TK_TRUE = 276, TK_UNTIL = 277, TK_WHILE = 278,
 	// other terminal symbols
-	TK_CONCAT = 278, TK_DOTS = 279, TK_EQ = 280, TK_GE = 281, TK_LE = 282, TK_NE = 283,
-		TK_EOS = 284,
-		TK_NUMBER = 285, TK_NAME = 286, TK_STRING = 287;
+	TK_CONCAT = 279, TK_DOTS = 280, TK_EQ = 281, TK_GE = 282, TK_LE = 283, TK_NE = 284, TK_DBCOLON = 285,
+		TK_EOS = 286,
+		TK_NUMBER = 287, TK_NAME = 288, TK_STRING = 289;
 
 	private final static int FIRST_RESERVED = TK_AND;
 	private final static int NUM_RESERVED = TK_WHILE + 1 - FIRST_RESERVED;
@@ -712,6 +713,15 @@ public class LexState52 {
 						return TK_NE;
 					}
 				}
+				case ':': {
+					nextChar();
+					if (current != ':') {
+						return ':';
+					} else {
+						nextChar();
+						return TK_DBCOLON;
+					}
+				}
 				case '"':
 				case '\'': {
 					read_string(current, seminfo);
@@ -840,6 +850,28 @@ public class LexState52 {
 			this.u.ind.vt = other.u.ind.vt;
 			this.t.i = other.t.i;
 			this.f.i = other.f.i;
+		}
+	}
+
+	static class LabelDescription {
+		LuaString name; /* label identifier */
+		int pc; /* position in code */
+		int line; /* line where it appeared */
+		short nactvar; /* local level where it appears in current block */
+	}
+
+	static class DynamicData {
+		short[] actvar;
+		int nactvar;
+		LabelDescription[] gt;
+		short ngt;
+		LabelDescription[] label;
+		short nlabel;
+
+		DynamicData() {
+			actvar = null; nactvar = 0;
+			gt = null; ngt = 0;
+			label = null; nlabel = 0;
 		}
 	}
 
@@ -1005,6 +1037,89 @@ public class LexState52 {
 		nCcalls--;
 	}
 
+	private void closegoto(int g, LabelDescription label) throws CompileException {
+		LabelDescription gt = dyd.gt[g];
+		LuaC._assert(gt.name.equals(label.name), linenumber);
+		if (gt.nactvar < label.nactvar) {
+			throw new CompileException(String.format("<goto %s> at line %d jumps into the scope of local %s",
+				gt.name.toString(), gt.line, fs.getlocvar(gt.nactvar).name.toString()));
+		}
+		fs.patchlist(gt.pc, label.pc);
+		for (int i = g; i < dyd.ngt - 1; i++) {
+			dyd.gt[i] = dyd.gt[i+1];
+		}
+		dyd.ngt--;
+	}
+
+	boolean findlabel(int g) throws CompileException {
+		LabelDescription gt = dyd.gt[g];
+		for (int i = fs.bl.firstlabel; i < dyd.nlabel; i++) {
+			LabelDescription lb = dyd.label[i];
+			if (lb.name.equals(gt.name)) {
+				if (gt.nactvar > lb.nactvar && (fs.bl.upval || dyd.nlabel > fs.bl.firstlabel)) {
+					fs.patchclose(gt.pc, lb.nactvar);
+				}
+				closegoto(g, lb);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private int newlabelentry(DynamicData dyd, boolean islabel, LuaString name, int line, int pc) {
+		if (islabel) {
+			if (dyd.label == null || dyd.label.length < dyd.nlabel + 1) {
+				dyd.label = LuaC.realloc(dyd.label, dyd.nlabel * 2 + 1);
+			}
+			dyd.label[dyd.nlabel] = new LabelDescription();
+			dyd.label[dyd.nlabel].name = name;
+			dyd.label[dyd.nlabel].line = line;
+			dyd.label[dyd.nlabel].nactvar = fs.nactvar;
+			dyd.label[dyd.nlabel].pc = pc;
+			return dyd.nlabel++;
+		} else {
+			if (dyd.gt == null || dyd.gt.length < dyd.ngt + 1) {
+				dyd.gt = LuaC.realloc(dyd.gt, dyd.ngt * 2 + 1);
+			}
+			dyd.gt[dyd.ngt] = new LabelDescription();
+			dyd.gt[dyd.ngt].name = name;
+			dyd.gt[dyd.ngt].line = line;
+			dyd.gt[dyd.ngt].nactvar = fs.nactvar;
+			dyd.gt[dyd.ngt].pc = pc;
+			return dyd.ngt++;
+		}
+	}
+
+	private void findgotos(LabelDescription lb) throws CompileException {
+		LabelDescription[] gl = dyd.gt;
+		int i = fs.bl.firstgoto;
+		while (i < dyd.ngt) {
+			if (gl[i].name.equals(lb.name)) {
+				closegoto(i, lb);
+			} else {
+				i++;
+			}
+		}
+	}
+
+	/*
+    ** create a label named "break" to resolve break statements
+    */
+	void breaklabel() throws CompileException {
+		int l = newlabelentry(dyd, true, LuaString.valueOf("break"), 0, fs.pc);
+		findgotos(dyd.label[l]);
+	}
+
+	/*
+	** generates an error for an undefined 'goto'; choose appropriate
+	** message when label name is a reserved word (which can only be 'break')
+	*/
+	void /* no return */ undefgoto(LabelDescription gt) throws CompileException {
+		String msg = String.format(isReservedKeyword(gt.name.toString()) ? "<%s> at line %d not inside a loop" : "no visible label %s for <goto> at line %d",
+			gt.name.toString(), gt.line);
+		throw new CompileException(msg);
+	}
+
 	Prototype addprototype() {
 		Prototype clp;
 		Prototype f = fs.f;
@@ -1021,7 +1136,7 @@ public class LexState52 {
 		fs.exp2nextreg(v);
 	}
 
-	void open_func(FuncState52 fs) {
+	void open_func(FuncState52 fs, FuncState52.BlockCnt bl) throws CompileException {
 		Prototype f = fs.f;
 		if (this.fs != null) {
 			f.source = this.fs.f.source;
@@ -1042,6 +1157,7 @@ public class LexState52 {
 		f.maxstacksize = 2;  /* registers 0/1 are always valid */
 		//fs.h = new LTable();
 		fs.htable = new Hashtable<>();
+		fs.enterblock(bl, false);
 	}
 
 	void close_func() throws CompileException {
@@ -1049,6 +1165,7 @@ public class LexState52 {
 		Prototype f = fs.f;
 		this.removevars(0);
 		fs.ret(0, 0); /* final return */
+		fs.leaveblock();
 		f.code = LuaC.realloc(f.code, fs.pc);
 		f.lineinfo = LuaC.realloc(f.lineinfo, fs.pc);
 		// f.sizelineinfo = fs.pc;
@@ -1238,9 +1355,10 @@ public class LexState52 {
 	private void body(expdesc e, boolean needself, int line) throws CompileException {
 		/* body -> `(' parlist `)' chunk END */
 		FuncState52 new_fs = new FuncState52();
+		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
 		new_fs.f = this.addprototype();
 		new_fs.f.linedefined = line;
-		open_func(new_fs);
+		open_func(new_fs, bl);
 		this.checknext('(');
 		if (needself) {
 			new_localvarliteral("self", 0);
@@ -1581,7 +1699,7 @@ public class LexState52 {
 		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
 		fs.enterblock(bl, false);
 		this.chunk();
-		LuaC._assert(bl.breaklist.i == NO_JUMP, linenumber);
+		//LuaC._assert(bl.breaklist.i == NO_JUMP, linenumber);
 		fs.leaveblock();
 	}
 
@@ -1672,24 +1790,35 @@ public class LexState52 {
 		return v.f.i;
 	}
 
-
-	private void breakstat() throws CompileException {
-		FuncState52 fs = this.fs;
-		FuncState52.BlockCnt bl = fs.bl;
-		boolean upval = false;
-		while (bl != null && !bl.isbreakable) {
-			upval |= bl.upval;
-			bl = bl.previous;
+	private void gotostat(int pc) throws CompileException {
+		LuaString label;
+		if (testnext(TK_GOTO)) {
+			label = str_checkname();
+		} else {
+			this.nextToken();
+			label = LuaString.valueOf("break");
 		}
-		if (bl == null) {
-			throw syntaxError("no loop to break");
-		}
-		if (upval) {
-			fs.codeABC(Lua52.OP_CLOSE, bl.nactvar, 0, 0);
-		}
-		fs.concat(bl.breaklist, fs.jump());
+		int g = newlabelentry(dyd, false, label, linenumber, pc);
+		findlabel(g);
 	}
 
+
+
+	private void labelstat(LuaString label, int line) throws CompileException {
+		/* label -> '::' NAME '::' */
+		fs.checkrepeated(dyd.label, dyd.nlabel, label); /* check for repeated labels */
+		checknext(TK_DBCOLON); /* skip double colon */
+		/* create new entry for this label */
+		int l = newlabelentry(dyd, true, label, line, fs.pc); /* index of new label being created */
+		while (t.token == ';' || t.token == TK_DBCOLON) { /* skip other no-op statements */
+			statement();
+		}
+		if (block_follow(0)) { /* label is last no-op statement in the block? */
+			/* assume that locals are already out of scope */
+			dyd.label[l].nactvar = fs.bl.nactvar;
+		}
+		findgotos(dyd.label[l]);
+	}
 
 	private void whilestat(int line) throws CompileException {
 		/* whilestat -> WHILE cond DO block END */
@@ -1722,15 +1851,11 @@ public class LexState52 {
 		this.chunk();
 		this.check_match(TK_UNTIL, TK_REPEAT, line);
 		condexit = this.cond(); /* read condition (inside scope block) */
-		if (!bl2.upval) { /* no upvalues? */
-			fs.leaveblock(); /* finish scope */
-			fs.patchlist(condexit, repeat_init); /* close the loop */
-		} else { /* complete semantics when there are upvalues */
-			this.breakstat(); /* if condition then break */
-			fs.patchtohere(condexit); /* else... */
-			fs.leaveblock(); /* finish scope... */
-			fs.patchlist(fs.jump(), repeat_init); /* and repeat */
+		if (bl2.upval) { /* upvalues? */
+			fs.patchclose(condexit, bl2.nactvar);
 		}
+		fs.leaveblock(); /* finish scope */
+		fs.patchlist(condexit, repeat_init); /* close the loop */
 		fs.leaveblock(); /* finish loop */
 	}
 
@@ -2021,13 +2146,21 @@ public class LexState52 {
 				}
 				return false;
 			}
+			case TK_DBCOLON: { /* stat -> label */
+				this.nextToken();
+				this.labelstat(str_checkname(), line);
+				return false;
+			}
 			case TK_RETURN: { /* stat -> retstat */
 				this.retstat();
 				return true; /* must be last statement */
 			}
-			case TK_BREAK: { /* stat -> breakstat */
-				this.nextToken(); /* skip BREAK */
-				this.breakstat();
+			case TK_BREAK:  /* stat -> breakstat */
+			case TK_GOTO: { /* stat -> 'goto' NAME */
+				if (this.t.token == TK_GOTO && LuaC.blockGoto) {
+					throw lexError("illegal jump statement", this.t.token);
+				}
+				this.gotostat(fs.jump());
 				return true; /* must be last statement */
 			}
 			default: {
