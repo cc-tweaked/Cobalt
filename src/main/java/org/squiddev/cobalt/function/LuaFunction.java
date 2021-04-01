@@ -200,6 +200,11 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	}
 
 	@Override
+	public void onTailCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
+		call(state, TAILCALL);
+	}
+
+	@Override
 	public void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
 		call(state, RETURN);
 	}

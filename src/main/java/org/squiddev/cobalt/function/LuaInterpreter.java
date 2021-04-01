@@ -141,7 +141,8 @@ public final class LuaInterpreter {
 
 		if (!ds.inhook && ds.hookcall) {
 			// Pretend we are at the first instruction for the hook.
-			ds.hookCall(di);
+			if ((flags & FLAG_TAIL) != 0) ds.hookTailCall(di);
+			else ds.hookCall(di);
 		}
 
 		di.top = 0;
@@ -695,6 +696,7 @@ public final class LuaInterpreter {
 									}
 									//System.out.println("Found upvalue index " + (newp.upvalue_info[j] & 0xFF) + " (named " + (frame.func instanceof LuaInterpretedFunction ? frame.closure.getPrototype().upvalues[newp.upvalue_info[j] & 0xFF] : "?") + ") with type " + frame.closure.getUpvalue(newp.upvalue_info[j] & 0xFF).getClass().getName());
 									newcl.upvalues[j] = new Upvalue(frame.stack, b & 0xFF);
+									// TODO: Add proper upvalue closing (maybe this is easy? still have to look at how the stack flag works)
 									//newcl.upvalues[j] = openups[b] != null ? openups[b] : (openups[b] = new Upvalue(frame.stack, b & 0xFF));
 									//newcl.upvalues[j] = openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b));
 								} else {
