@@ -759,7 +759,7 @@ public class LexState52 {
 							save_and_next();
 						} while (isAlphaNum(current) || current == '_');
 						ts = newString(buff, 0, nbuff);
-						if (RESERVED.containsKey(ts)) {
+						if (RESERVED.containsKey(ts) && !ts.equals(LuaString.valueOf("goto"))) {
 							return RESERVED.get(ts);
 						} else {
 							seminfo.ts = ts;
@@ -2121,12 +2121,16 @@ public class LexState52 {
 			}
 		}
 		fs.ret(first, nret);
+		testnext(';');
 	}
 
 
 	private void statement() throws CompileException {
 		int line = this.linenumber; /* may be needed for error messages */
 		enterlevel();
+		if (this.t.token == TK_NAME && this.t.seminfo.ts.equals(LuaString.valueOf("goto"))) {
+			this.t.token = TK_GOTO;
+		}
 		switch (this.t.token) {
 			case ';': { /* stat -> ';' (empty statement) */
 				nextToken(); /* skip ';' */
