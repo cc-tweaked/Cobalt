@@ -200,14 +200,13 @@ public final class LuaInterpreter {
 						if (((i >>> POS_C) & MAXARG_C) != 0) pc++; // skip next instruction (if C)
 						break;
 
-					case OP_LOADNIL: { // A B: R(A):= ...:= R(B):= nil
+					case OP_LOADNIL: { // A B: R(A):= ...:= R([A+]B):= nil
+						int b = ((i >>> POS_B) & MAXARG_B);
 						if (p.isLua52) {
-							int b = ((i >>> POS_B) & MAXARG_B);
 							while (b >= 0) {
 								stack[a+(b--)] = NIL;
 							}
 						} else {
-							int b = ((i >>> POS_B) & MAXARG_B);
 							do {
 								stack[b--] = NIL;
 							} while (b >= a);

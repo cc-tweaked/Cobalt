@@ -134,6 +134,11 @@ public final class LuaState {
 	 */
 	boolean abandoned;
 
+	/**
+	 * Whether to compile for Lua 5.1 or 5.2.
+	 */
+	public boolean useLua52;
+
 	public LuaState() {
 		this(new LuaState.Builder());
 	}
@@ -153,6 +158,7 @@ public final class LuaState {
 		this.debug = builder.debug;
 		this.timezone = builder.timezone;
 		this.threader = new YieldThreader(builder.coroutineExecutor);
+		this.useLua52 = LuaC.defaultLua52;
 	}
 
 	/**

@@ -87,7 +87,7 @@ public class LuaC implements LuaCompiler {
 	public static final int MAXSTACK = 250;
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;
-	public static boolean isLua52 = true;
+	public static boolean defaultLua52 = false;
 	public static boolean blockGoto = false;
 
 
@@ -193,14 +193,19 @@ public class LuaC implements LuaCompiler {
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
 	@Override
-	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
-		Prototype p = compile(stream, name, mode);
+	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env, boolean useLua52) throws IOException, CompileException {
+		Prototype p = compile(stream, name, mode, useLua52);
 		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
 		closure.nilUpvalues();
-		if (p.isLua52 && p.nups == 1) {
+		if (useLua52 && p.nups == 1) {
 			closure.setUpvalue(0, new Upvalue(env));
 		}
 		return closure;
+	}
+
+	@Override
+	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
+		return load(stream, name, mode, env, defaultLua52);
 	}
 
 	public static Prototype compile(InputStream stream, String name) throws IOException, CompileException {
@@ -221,13 +226,17 @@ public class LuaC implements LuaCompiler {
 	}
 
 	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws IOException, CompileException {
+		return compile(stream, name, mode, defaultLua52);
+	}
+
+	public static Prototype compile(InputStream stream, LuaString name, LuaString mode, boolean lua52) throws IOException, CompileException {
 		int firstByte = stream.read();
 		if (firstByte == '\033') {
 			checkMode(mode, "binary");
 			return LoadState.loadBinaryChunk(firstByte, stream, name);
 		} else {
 			checkMode(mode, "text");
-			if (isLua52) {
+			if (lua52) {
 				LexState52.DynamicData dyd = new LexState52.DynamicData();
 				return luaY_parser52(firstByte, stream, dyd, name);
 			} else {

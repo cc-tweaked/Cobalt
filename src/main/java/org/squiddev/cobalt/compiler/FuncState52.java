@@ -280,6 +280,7 @@ public class FuncState52 {
 
 	void nil(int from, int n) throws CompileException {
 		InstructionPtr previous;
+		int l = from + n - 1;
 		if (this.pc > this.lasttarget) { /* no jumps to current position? */
 			if (this.pc == 0) { /* function start? */
 				if (from >= this.nactvar) {
@@ -289,18 +290,20 @@ public class FuncState52 {
 				previous = new InstructionPtr(this.f.code, this.pc - 1);
 				if (GET_OPCODE(previous.get()) == OP_LOADNIL) {
 					int pfrom = GETARG_A(previous.get());
-					int pn = GETARG_B(previous.get());
-					if (pfrom <= from && from <= pfrom + pn) { /* can connect both? */
-						if (from + n - 1 > pfrom + n - 1) {
-							SETARG_B(previous, n);
-						}
+					int pl = pfrom + GETARG_B(previous.get());
+					if ((pfrom <= from && from <= pl + 1) ||
+						(from <= pfrom && pfrom <= l + 1)) { /* can connect both? */
+						if (pfrom < from) from = pfrom;
+						if (pl > l) l = pl;
+						SETARG_A(previous, from);
+						SETARG_B(previous, l - from);
 						return;
 					}
 				}
 			}
 		}
 		/* else no optimization */
-		this.codeABC(OP_LOADNIL, from, n, 0);
+		this.codeABC(OP_LOADNIL, from, n - 1, 0);
 	}
 
 

@@ -112,7 +112,7 @@ public class BaseLib implements LuaLibrary {
 		next = env.rawget("next");
 		inext = env.rawget("__inext");
 
-		env.rawset("_VERSION", valueOf(LuaC.isLua52 ? "Lua 5.2" : "Lua 5.1"));
+		env.rawset("_VERSION", valueOf(state.useLua52 ? "Lua 5.2" : "Lua 5.1"));
 
 		return env;
 	}
@@ -339,6 +339,12 @@ public class BaseLib implements LuaLibrary {
 
 				case 2: // "load", // ( func|str [,chunkname[, mode[, env]]] ) -> chunk | nil, msg
 				{
+					// We'd typically rely on the argument checks in LuaValue, but those don't give us argument numbers so we do arg checks ahead of time.
+					Varargs.argCheck(args.arg(1).isFunction() || args.arg(1).isString(), 1, "expected function or string, got " + args.arg(1).typeName());
+					Varargs.argCheck(args.isNoneOrNil(2) || args.arg(2).isString(), 2, "expected string, got " + args.arg(2).typeName());
+					Varargs.argCheck(args.isNoneOrNil(3) || args.arg(3).isString(), 3, "expected string, got " + args.arg(3).typeName());
+					Varargs.argCheck(args.isNoneOrNil(4) || args.arg(4).isTable(), 4, "expected table, got " + args.arg(4).typeName());
+
 					LuaValue scriptGen = args.arg(1);
 					LuaString chunkName = args.arg(2).optLuaString(null);
 					LuaString mode = args.arg(3).optLuaString(LOAD_MODE);

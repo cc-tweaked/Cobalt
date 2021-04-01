@@ -96,7 +96,6 @@ public class PackageLib implements LuaLibrary {
 		PackageLib lib;
 
 		public PkgLib1(LuaTable env, String name, int opcode, PackageLib lib) {
-			this.env = env;
 			this.name = name;
 			this.opcode = opcode;
 			this.lib = lib;
@@ -126,7 +125,6 @@ public class PackageLib implements LuaLibrary {
 		PackageLib lib;
 
 		public PkgLibV(LuaTable env, String name, int opcode, PackageLib lib) {
-			this.env = env;
 			this.name = name;
 			this.opcode = opcode;
 			this.lib = lib;
