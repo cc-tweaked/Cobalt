@@ -34,7 +34,8 @@ import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
-import static org.squiddev.cobalt.lib.doubles.UnsignedLong.ONE;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUlong;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
 
 public class Ieee {
 
@@ -67,7 +68,7 @@ public class Ieee {
 		public DiyFp AsDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
-			return new DiyFp(UnsignedLong.uValueOf(Significand()),
+			return new DiyFp(Significand(),
 					Exponent());
 		}
 
@@ -86,7 +87,7 @@ public class Ieee {
 			//noinspection ImplicitNumericConversion
 			f <<= DiyFp.kSignificandSize - kSignificandSize;
 			e -= DiyFp.kSignificandSize - kSignificandSize;
-			return new DiyFp(UnsignedLong.uValueOf(f), e);
+			return new DiyFp(f, e);
 		}
 
 		// Returns the double's bit as uint64.
@@ -186,7 +187,7 @@ public class Ieee {
 		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return new DiyFp(UnsignedLong.uValueOf((Significand() * 2L) + 1L),
+			return new DiyFp((Significand() * 2L) + 1L,
 					Exponent() - 1);
 		}
 
@@ -199,14 +200,14 @@ public class Ieee {
 		public void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
 			DiyFp v = this.AsDiyFp();
-			DiyFp mPlus = DiyFp.Normalize(new DiyFp(v.f().shl(1).plus(ONE), v.e() - 1));
+			DiyFp mPlus = DiyFp.Normalize(new DiyFp((v.f() << 1) + 1L, v.e() - 1));
 			DiyFp mMinus;
 			if (LowerBoundaryIsCloser()) {
-				mMinus = new DiyFp(v.f().shl(2).minus(ONE), v.e() - 2);
+				mMinus = new DiyFp((v.f() << 2) - 1L, v.e() - 2);
 			} else {
-				mMinus = new DiyFp(v.f().shl(1).minus(ONE), v.e() - 1);
+				mMinus = new DiyFp((v.f() << 1) - 1L, v.e() - 1);
 			}
-			mMinus.set_f(mMinus.f().shl(mMinus.e() - mPlus.e()));
+			mMinus.set_f(mMinus.f() << (mMinus.e() - mPlus.e()));
 			mMinus.set_e(mPlus.e());
 			out_m_plus[0] = mPlus;
 			out_m_minus[0] = mMinus;
@@ -259,11 +260,10 @@ public class Ieee {
 		private final @Unsigned long d64_;
 
 		private static @Unsigned long DiyFpToUint64(DiyFp diy_fp) {
-			UnsignedLong significand = diy_fp.f();
+			@Unsigned long significand = diy_fp.f();
 			int exponent = diy_fp.e();
-			while (significand.gt(
-					UnsignedLong.uValueOf(kHiddenBit + kSignificandMask))) {
-				significand = significand.shr(1);
+			while (ulongGT(significand, kHiddenBit + kSignificandMask)) {
+				significand >>>= 1L;
 				exponent++;
 			}
 			if (exponent >= kMaxExponent) {
@@ -272,18 +272,17 @@ public class Ieee {
 			if (exponent < kDenormalExponent) {
 				return 0L;
 			}
-			while (exponent > kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0L)) {
-				significand = significand.shl(1);
+			while (exponent > kDenormalExponent && (significand & kHiddenBit) == 0L) {
+				significand <<= 1L;
 				exponent--;
 			}
 			long biased_exponent;
-			if (exponent == kDenormalExponent && significand.bitAndU(kHiddenBit).eq(0L)) {
+			if (exponent == kDenormalExponent && (significand & kHiddenBit) == 0L) {
 				biased_exponent = 0L;
 			} else {
-				//noinspection ImplicitNumericConversion
-				biased_exponent = (exponent + kExponentBias);
+				biased_exponent = toUlong(exponent + kExponentBias);
 			}
-			return significand.bitAndU(kSignificandMask).unsafeLongValue() |
+			return (significand & kSignificandMask) |
 					(biased_exponent << kPhysicalSignificandSize);
 		}
 
@@ -310,7 +309,7 @@ public class Ieee {
 		public DiyFp AsDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
 			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
-			return new DiyFp(UnsignedLong.uValueOf(Significand()), Exponent());
+			return new DiyFp(toUlong(Significand()), Exponent());
 		}
 
 		/** Returns the single's bit as uint64. */
@@ -387,14 +386,14 @@ public class Ieee {
 		void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0F);
 			DiyFp v = this.AsDiyFp();
-			DiyFp m_plus = DiyFp.Normalize(new DiyFp(v.f().shl(1).plus(ONE), v.e() - 1));
+			DiyFp m_plus = DiyFp.Normalize(new DiyFp((v.f() << 1) + 1L, v.e() - 1));
 			DiyFp m_minus;
 			if (LowerBoundaryIsCloser()) {
-				m_minus = new DiyFp(v.f().shl(2).minus(ONE), v.e() - 2);
+				m_minus = new DiyFp((v.f() << 2) - 1L, v.e() - 2);
 			} else {
-				m_minus = new DiyFp(v.f().shl(1).minus(ONE), v.e() - 1);
+				m_minus = new DiyFp((v.f() << 1) - 1L, v.e() - 1);
 			}
-			m_minus.set_f(m_minus.f().shl(m_minus.e() - m_plus.e()));
+			m_minus.set_f(m_minus.f() << (m_minus.e() - m_plus.e()));
 			m_minus.set_e(m_plus.e());
     		out_m_plus[0] = m_plus;
     		out_m_minus[0] = m_minus;
@@ -406,7 +405,7 @@ public class Ieee {
 		 */
 		public DiyFp UpperBoundary() {
 			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return new DiyFp(UnsignedLong.uValueOf((Significand() * 2) + 1), Exponent() - 1);
+			return new DiyFp((toUlong(Significand()) * 2L) + 1L, Exponent() - 1);
 		}
 
 		public boolean LowerBoundaryIsCloser() {

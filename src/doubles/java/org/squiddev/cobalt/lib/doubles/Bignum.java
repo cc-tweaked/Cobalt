@@ -40,7 +40,6 @@ public class Bignum {
 	private static final long LONG_SIGN_BIT = 0x8000_0000_0000_0000L;
 	private static final long LONG_UNSIGNED_BITS = 0x7fff_ffff_ffff_ffffL;
 
-
 	private BigDecimal val;
 
 	public Bignum() {
@@ -164,9 +163,9 @@ public class Bignum {
 	//  this = this % other;
 	// In the worst case this function is in O(this/other).
 	int DivideModuloIntBignum(Bignum other) {
-		int quotient = val.divide(other.val, RoundingMode.DOWN).intValue();
-		val = val.remainder(other.val);
-		return quotient;
+		BigDecimal[] rets = val.divideAndRemainder(other.val);
+		val = rets[1]; // remainder
+		return rets[0].intValue(); // quotient
 	}
 
 //	bool ToHexString(char* buffer, const int buffer_size) const;

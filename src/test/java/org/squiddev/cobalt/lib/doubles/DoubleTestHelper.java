@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -54,14 +55,6 @@ public final class DoubleTestHelper {
 		assertEquals(expected, stringOf(actual));
 	}
 
-	public static void CHECK_EQ(UnsignedLong expected, @Unsigned long actual) {
-		assertEquals(expected.unsafeLongValue(), actual);
-	}
-
-
-	public static void CHECK_EQ(@Unsigned long expected, UnsignedLong actual) {
-		assertEquals(expected, actual.unsafeLongValue());
-	}
 
 	/** comparing booleans with numeric values, that's so 1990s */
 	public static void CHECK_EQ(int expected, boolean actual) {
@@ -73,6 +66,9 @@ public final class DoubleTestHelper {
 		assertEquals(expected, actual);
 	}
 
+	public static String stringOf(char[] chars, int len) {
+		return String.copyValueOf(chars, 0, len);
+	}
 
 	public static String stringOf(char[] chars) {
 		return String.copyValueOf(chars, 0, strlen(chars));

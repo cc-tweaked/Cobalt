@@ -49,6 +49,19 @@ public class FastDtoaTest {
 		buf[i + 1] = '\0';
 	}
 
+	@Test
+	public void temp() {
+		char[] buffer = new char[kBufferSize];
+		int[] length = new int[1];
+		int[] point = new int[1];
+		boolean status;
+
+		status = FastDtoa.FastDtoa(4.1855804968213567e298, FastDtoaMode.FAST_DTOA_SHORTEST, 0,
+				buffer, length, point);
+		CHECK(status);
+		CHECK_EQ("4185580496821357", buffer);
+		CHECK_EQ(299, point[0]);
+	}
 
 	@Test
 	public void shortedVariousDoubles() {
@@ -410,5 +423,7 @@ public class FastDtoaTest {
 		// However with less than 15 digits almost the algorithm should almost always
 		// succeed.
 		assertThat(state.succeeded15*1.0/state.total15, is(greaterThan(0.9999)));
+
+		System.out.println("gay-precision tests run :" + Integer.toString(state.total));
 	}
 }

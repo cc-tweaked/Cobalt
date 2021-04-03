@@ -170,7 +170,7 @@ public class PowersOfTenCache {
 		//max_exponent;  // Mark variable as used.
 		DOUBLE_CONVERSION_ASSERT(cached_power.binary_exponent <= max_exponent);
 		decimal_exponent[0] = (int) cached_power.decimal_exponent;
-		power[0] = new DiyFp(UnsignedLong.uValueOf(cached_power.significand), cached_power.binary_exponent);
+		power[0] = new DiyFp(cached_power.significand, cached_power.binary_exponent);
 	}
 
 	/**
@@ -188,7 +188,7 @@ public class PowersOfTenCache {
 		int index =
 				(requested_exponent + kCachedPowersOffset) / kDecimalExponentDistance;
 		CachedPower cached_power = kCachedPowers[index];
-		power[0] = new DiyFp(UnsignedLong.uValueOf(cached_power.significand), cached_power.binary_exponent);
+		power[0] = new DiyFp(cached_power.significand, cached_power.binary_exponent);
 		found_exponent[0] = cached_power.decimal_exponent;
 		DOUBLE_CONVERSION_ASSERT(found_exponent[0] <= requested_exponent);
 		DOUBLE_CONVERSION_ASSERT(requested_exponent < found_exponent[0] + kDecimalExponentDistance);

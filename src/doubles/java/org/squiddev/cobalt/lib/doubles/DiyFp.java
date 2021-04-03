@@ -33,6 +33,7 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
 
 /**
  * This "Do It Yourself Floating Point" class implements a floating-point number
@@ -45,8 +46,8 @@ import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
 public class DiyFp {
 	public static final int kSignificandSize = 64;
 
-	DiyFp() { this.f_ = UnsignedLong.ZERO; this.e_ = 0; }
-	DiyFp(final UnsignedLong significand, final int exponent) { this.f_ = significand; this.e_ = exponent; }
+	DiyFp() { this.f_ = 0L; this.e_ = 0; }
+	DiyFp(@Unsigned long significand, final int exponent) { this.f_ = significand; this.e_ = exponent; }
 
 	public DiyFp copy() {
 		return new DiyFp(this.f_, this.e_);
@@ -60,8 +61,8 @@ public class DiyFp {
 	 */
 	public void Subtract(DiyFp other) {
 		DOUBLE_CONVERSION_ASSERT(e_ == other.e_);
-		DOUBLE_CONVERSION_ASSERT(f_.ge(other.f_));
-		f_ = f_.minus(other.f_);
+		DOUBLE_CONVERSION_ASSERT(ulongGE(f_, other.f_));
+		f_ = f_ - other.f_;
 	}
 
 	/**
@@ -83,14 +84,11 @@ public class DiyFp {
 		// However: the resulting number only contains 64 bits. The least
 		// significant 64 bits are only used for rounding the most significant 64
 		// bits.
-		@Unsigned
-		long f = f_.unsafeLongValue();
-		@Unsigned
-		long otherF = other.f_.unsafeLongValue();
+		@Unsigned long otherF = other.f_;
 
 		final long kM32 = 0xFFFFFFFFL;
-		final long a = f >>> 32;
-		final long b = f & kM32;
+		final long a = f_ >>> 32;
+		final long b = f_ & kM32;
 		final long c = otherF >>> 32;
 		final long d = otherF & kM32;
 		final long ac = a * c;
@@ -101,7 +99,7 @@ public class DiyFp {
 		// Halfway cases will be rounded up.
 		final long tmp = (bd >>> 32) + (ad & kM32) + (bc & kM32) + (1L << 31);
 		e_ += other.e_ + 64;
-		f_ = UnsignedLong.uValueOf(ac + (ad >>> 32) + (bc >>> 32) + (tmp >>> 32));
+		this.f_ = ac + (ad >>> 32) + (bc >>> 32) + (tmp >>> 32);
 	}
 
 
@@ -115,19 +113,19 @@ public class DiyFp {
 	}
 
 	public void Normalize() {
-		DOUBLE_CONVERSION_ASSERT(!f_.eq(0L));
-		UnsignedLong significand = f_;
+		DOUBLE_CONVERSION_ASSERT(f_ != 0L);
+		@Unsigned long significand = f_;
 		int exponent = e_;
 
 		// This method is mainly called for normalizing boundaries. In general,
 		// boundaries need to be shifted by 10 bits, and we optimize for this case.
-		final @Unsigned long k10MSBits = 0xFFC0000000000000L;
-		while ((significand.bitAndU(k10MSBits).eq(0L))) {
-			significand = significand.shl(10);
+		final @Unsigned long k10MSBits = 0xFFC0_0000_0000_0000L;
+		while ((significand & k10MSBits) == 0L) {
+			significand <<= 10L;
 			exponent -= 10;
 		}
-		while (significand.bitAndU(kUint64MSB).eq(0L)) {
-			significand = significand.shl(1);
+		while ((significand & kUint64MSB) == 0L) {
+			significand <<= 1L;
 			exponent--;
 		}
 		f_ = significand;
@@ -140,14 +138,14 @@ public class DiyFp {
 		return result;
 	}
 
-	public UnsignedLong f() { return f_; }
+	public @Unsigned long f() { return f_; }
 	public int e()  { return e_; }
 
-	public void set_f(UnsignedLong new_value) { f_ = new_value; }
+	public void set_f(@Unsigned long new_value) { f_ = new_value; }
 	public void set_e(int new_value) { e_ = new_value; }
 
 	private static final long kUint64MSB = 0x80000000_00000000L;
 
-	private UnsignedLong f_;
+	private @Unsigned long f_;
 	private int e_;
 }

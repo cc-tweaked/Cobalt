@@ -787,7 +787,7 @@ public class DoubleToStringConverter {
 	 * 	 enough.
 	 *
 	 */
-	public static void DoubleToAscii(double v,
+	public static boolean DoubleToAscii(double v,
 							  DtoaMode mode,
 							  int requested_digits,
 							  char[] vector,
@@ -808,7 +808,7 @@ public class DoubleToStringConverter {
 		if (mode == DtoaMode.PRECISION && requested_digits == 0) {
 			vector[0] = '\0';
 			length[0] = 0;
-			return;
+			return true;
 		}
 
 		if (v == 0.0) {
@@ -816,7 +816,7 @@ public class DoubleToStringConverter {
 			vector[1] = '\0';
 			length[0] = 1;
 			point[0] = 1;
-			return;
+			return true;
 		}
 
 		boolean fast_worked;
@@ -839,12 +839,13 @@ public class DoubleToStringConverter {
 				fast_worked = false;
 				throw new IllegalStateException("Unreachable");
 		}
-		if (fast_worked) return;
+		if (fast_worked) return true;
 
 		// If the fast dtoa didn't succeed use the slower bignum version.
 		BigNumDtoa.BignumDtoaMode bignum_mode = DtoaToBignumDtoaMode(mode);
 		BigNumDtoa.BignumDtoa(v, bignum_mode, requested_digits, vector, length, point);
 		vector[length[0]] = '\0';
+		return false;
 	}
 
 	/**

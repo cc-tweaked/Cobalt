@@ -40,6 +40,18 @@ public class FixedDtoaTest {
 	private static final int kBufferSize = 500;
 
 	@Test
+	public void temp() {
+		char[] buffer = new char[kBufferSize];
+		int[] length = new int[1];
+		int[] point = new int[1];
+
+		CHECK(FixedDtoa.FastFixedDtoa(4294967296.0, 5, buffer, length, point));
+		CHECK_EQ("4294967296", buffer);
+		CHECK_EQ(10, point[0]);
+	}
+
+
+	@Test
 	public void variousDoubles() {
 		char[] buffer = new char[kBufferSize];
 		int[] length = new int[1];
@@ -496,6 +508,7 @@ public class FixedDtoaTest {
 	static class DataTestState {
 		char[] buffer = new char[kBufferSize];
 		public String underTest = "";
+		int total = 0;
 	}
 
 	@Test
@@ -507,6 +520,8 @@ public class FixedDtoaTest {
 				int[] point = new int[1];
 				boolean[] sign = new boolean[1];
 				boolean status;
+
+				st.total++;
 
 				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
 				status = FixedDtoa.FastFixedDtoa(v, numberDigits,
@@ -522,5 +537,7 @@ public class FixedDtoaTest {
 		} catch (Assert.DoubleConversionAssertionError e) {
 			fail("Assertion failed for test " + state.underTest, e);
 		}
+
+		System.out.println("day-precision tests run :" + Integer.toString(state.total));
 	}
 }

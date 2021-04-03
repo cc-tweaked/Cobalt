@@ -29,11 +29,10 @@
  */
 package org.squiddev.cobalt.lib.doubles;
 
-import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
-import static org.squiddev.cobalt.lib.doubles.UnsignedLong.ONE;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class FastDtoa {
 	@SuppressWarnings("ImplicitNumericConversion")
@@ -103,13 +102,13 @@ public class FastDtoa {
 	 */
 	private static boolean RoundWeed(char[] buffer,
 						  int length,
-						 UnsignedLong distance_too_high_w,
-						 UnsignedLong unsafe_interval,
-						 UnsignedLong rest,
-						 UnsignedLong ten_kappa,
-						 UnsignedLong unit) {
-		UnsignedLong small_distance = distance_too_high_w.minus(unit);
-		UnsignedLong big_distance = distance_too_high_w.plus(unit);
+						 @Unsigned long distance_too_high_w,
+						 @Unsigned long unsafe_interval,
+						 @Unsigned long rest,
+						 @Unsigned long ten_kappa,
+						 @Unsigned long unit) {
+		@Unsigned long small_distance = distance_too_high_w - unit;
+		@Unsigned long big_distance = distance_too_high_w + unit;
 		// Let w_low  = too_high - big_distance, and
 		//     w_high = too_high - small_distance.
 		// Note: w_low < w < w_high
@@ -181,22 +180,22 @@ public class FastDtoa {
 		// Conceptually rest ~= too_high - buffer
 		// We need to do the following tests in this order to avoid over- and
 		// underflows.
-		DOUBLE_CONVERSION_ASSERT( rest.le(unsafe_interval) );
-		while (rest.lt(small_distance) &&  // Negated condition 1
-				unsafe_interval.minus(rest).ge(ten_kappa) &&  // Negated condition 2
-				( rest.plus(ten_kappa).lt(small_distance) ||  // buffer{-1} > w_high
-						small_distance.minus(rest).ge(rest.plus(ten_kappa).minus(small_distance)))) {
+		DOUBLE_CONVERSION_ASSERT(ulongLE(rest, unsafe_interval));
+		while (ulongLT(rest, small_distance) &&  // Negated condition 1
+				ulongGE(unsafe_interval - rest, ten_kappa) &&  // Negated condition 2
+				( ulongLT( rest + ten_kappa, small_distance) ||  // buffer{-1} > w_high
+						ulongGE(small_distance - rest, rest + ten_kappa - small_distance))) {
 			buffer[length - 1]--;
-			rest = rest.plus(ten_kappa);
+			rest += ten_kappa;
 		}
 
 		// We have approached w+ as much as possible. We now test if approaching w-
 		// would require changing the buffer. If yes, then we have two possible
 		// representations close to w, but we cannot decide which one is closer.
-		if (rest.lt(big_distance) &&
-				unsafe_interval.minus(rest).ge(ten_kappa) &&
-				( rest.plus(ten_kappa).lt(big_distance) ||
-						big_distance.minus(rest).gt(rest.plus(ten_kappa).minus(big_distance)))) {
+		if (ulongLT(rest, big_distance) &&
+				ulongGE(unsafe_interval - rest, ten_kappa) &&
+				( ulongLT(rest + ten_kappa, big_distance) ||
+						ulongGT(big_distance - rest, rest + ten_kappa - big_distance))) {
 			return false;
 		}
 
@@ -205,7 +204,7 @@ public class FastDtoa {
 		//   Since too_low = too_high - unsafe_interval this is equivalent to
 		//      [too_high - unsafe_interval + 4 ulp; too_high - 2 ulp]
 		//   Conceptually we have: rest ~= too_high - buffer
-		return ( unit.times(2L).le(rest) ) && ( rest.le( unsafe_interval.minus(unit.times(4L)) ) );
+		return ulongLE(2L * unit, rest) && ulongLE(rest, unsafe_interval - 4L * unit);
 	}
 
 
@@ -225,28 +224,28 @@ public class FastDtoa {
 	 */
 	private static boolean RoundWeedCounted(char[] buffer,
 								 int length,
-								 UnsignedLong rest,
-								 UnsignedLong ten_kappa,
-								 UnsignedLong unit,
+								 @Unsigned long rest,
+								 @Unsigned long ten_kappa,
+								 @Unsigned long unit,
 								 int[] kappa) {
-		DOUBLE_CONVERSION_ASSERT(rest.lt(ten_kappa));
+		DOUBLE_CONVERSION_ASSERT(ulongLT(rest, ten_kappa));
 		// The following tests are done in a specific order to avoid overflows. They
 		// will work correctly with any uint64 values of rest < ten_kappa and unit.
 		//
 		// If the unit is too big, then we don't know which way to round. For example
 		// a unit of 50 means that the real number lies within rest +/- 50. If
 		// 10^kappa == 40 then there is no way to tell which way to round.
-		if (unit.ge(ten_kappa)) return false;
+		if (ulongGE(unit, ten_kappa)) return false;
 		// Even if unit is just half the size of 10^kappa we are already completely
 		// lost. (And after the previous test we know that the expression will not
 		// over/underflow.)
-		if (ten_kappa.minus(unit).le(unit)) return false;
+		if (ulongLE(ten_kappa - unit, unit)) return false;
 		// If 2 * (rest + unit) <= 10^kappa we can safely round down.
-		if ((ten_kappa.minus(rest).ge(rest)) && (ten_kappa.minus(rest.times(2L)).ge(unit.times(2L)))) {
+		if (ulongGT(ten_kappa - rest, rest) && ulongGE(ten_kappa - 2L * rest, 2L * unit)) {
 			return true;
 		}
 		// If 2 * (rest - unit) >= 10^kappa, then we can safely round up.
-		if ( rest.gt(unit) && ten_kappa.minus( rest.minus(unit) ).le( rest.minus(unit) )) {
+		if ( ulongGT(rest, unit) && ulongLE((ten_kappa - (rest - unit)), (rest - unit)) ) {
 			// Increment the last digit recursively until we find a non '9' digit.
 			buffer[length - 1]++;
 			for (int i = length - 1; i > 0; --i) {
@@ -286,21 +285,22 @@ public class FastDtoa {
 	 *  The number of bits must be <= 32.
 	 *  Precondition: number < (1 << (number_bits + 1)).
 	 */
-	static void BiggestPowerTen(UnsignedInt number,
+	static void BiggestPowerTen(@Unsigned int number,
 								int number_bits,
-								UnsignedInt[] power,
+								@Unsigned int[] power,
 								int[] exponent_plus_one) {
-		DOUBLE_CONVERSION_ASSERT( number.lt(UnsignedInt.ONE.shl(number_bits + 1)) );
+		if (uintGE(number, 1 << (number_bits + 1)))
+			throw new IllegalArgumentException("number must fit in number_bits");
 		// 1233/4096 is approximately 1/lg(10).
 		int exponent_plus_one_guess = ((number_bits + 1) * 1233 >> 12);
 		// We increment to skip over the first entry in the kPowersOf10 table.
 		// Note: kPowersOf10[i] == 10^(i-1).
 		exponent_plus_one_guess++;
-		UnsignedInt pow = UnsignedInt.uValueOf(kSmallPowersOfTen[exponent_plus_one_guess]);
+		@Unsigned int pow = kSmallPowersOfTen[exponent_plus_one_guess];
 		// We don't have any guarantees that 2^number_bits <= number.
-		if (number.lt(pow)) {
+		if (uintLT(number, pow)) {
 			exponent_plus_one_guess--;
-			pow = UnsignedInt.uValueOf(kSmallPowersOfTen[exponent_plus_one_guess]);
+			pow = kSmallPowersOfTen[exponent_plus_one_guess];
 		}
 	    power[0] = pow;
 		exponent_plus_one[0] = exponent_plus_one_guess;
@@ -358,7 +358,7 @@ public class FastDtoa {
 						 int[] length,
 						 int[] kappa) {
 		DOUBLE_CONVERSION_ASSERT(low.e() == w.e() && w.e() == high.e() );
-		DOUBLE_CONVERSION_ASSERT( low.f().plus(ONE).le( high.f().minus(ONE) ) );
+		DOUBLE_CONVERSION_ASSERT( ulongLE(low.f() + 1L, high.f() - 1L) );
 		DOUBLE_CONVERSION_ASSERT(kMinimalTargetExponent <= w.e() && w.e() <= kMaximalTargetExponent);
 		// low, w and high are imprecise, but by less than one ulp (unit in the last
 		// place).
@@ -371,9 +371,9 @@ public class FastDtoa {
 		// We will now start by generating the digits within the uncertain
 		// interval. Later we will weed out representations that lie outside the safe
 		// interval and thus _might_ lie outside the correct interval.
-		UnsignedLong unit = ONE;
-		DiyFp too_low = new DiyFp(low.f().minus(unit), low.e());
-		DiyFp too_high = new DiyFp(high.f().plus(unit), high.e());
+		@Unsigned long unit = 1L;
+		DiyFp too_low = new DiyFp(low.f() - unit, low.e());
+		DiyFp too_high = new DiyFp(high.f() + unit, high.e());
 		// too_low and too_high are guaranteed to lie outside the interval we want the
 		// generated number in.
 		DiyFp unsafe_interval = DiyFp.Minus(too_high, too_low);
@@ -384,16 +384,16 @@ public class FastDtoa {
 		// such that:   too_low < buffer * 10^kappa < too_high
 		// We use too_high for the digit_generation and stop as soon as possible.
 		// If we stop early we effectively round down.
-		DiyFp one = new DiyFp(ONE.shl(-w.e()), w.e());
+		DiyFp one = new DiyFp(1L << -w.e(), w.e());
 		// Division by one is a shift.
-		UnsignedInt integrals = too_high.f().shr(-one.e()).uIntValueExact();
+		@Unsigned int integrals = toUint(too_high.f() >>> -one.e());
 		// Modulo by one is an and.
-		UnsignedLong fractionals = too_high.f().bitAnd(one.f().minus(ONE));
-		UnsignedInt divisor;
+		@Unsigned long fractionals = too_high.f() & (one.f() - 1L);
+		@Unsigned int divisor;
 		int divisor_exponent_plus_one;
 		{
 			int[] inDivisorExponentPlusOne = new int[1];
-			UnsignedInt[] uiInDivisor = new UnsignedInt[1];
+			@Unsigned int[] uiInDivisor = new int[1];
 			BiggestPowerTen(integrals, DiyFp.kSignificandSize - (-one.e()),
 					uiInDivisor, inDivisorExponentPlusOne);
 			divisor = uiInDivisor[0];
@@ -406,25 +406,23 @@ public class FastDtoa {
 		// with the divisor exponent + 1. And the divisor is the biggest power of ten
 		// that is smaller than integrals.
 		while (kappa[0] > 0) {
-			int digit = integrals.divideBy(divisor).unsafeIntValue();
-			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (char)(ASCII_ZERO + digit);
+			buffer[length[0]] = digitToChar(uDivide(integrals, divisor));
 			length[0]++;
-			integrals = integrals.mod(divisor);
+			integrals = uRemainder(integrals, divisor);
 			kappa[0]--;
 			// Note that kappa now equals the exponent of the divisor and that the
 			// invariant thus holds again.
-			UnsignedLong rest = integrals.uLongValue().shl(-one.e()).plus(fractionals);
+			@Unsigned long rest = (toUlong(integrals) << -one.e()) + fractionals;
 			// Invariant: too_high = buffer * 10^kappa + DiyFp(rest, one.e())
 			// Reminder: unsafe_interval.e() == one.e()
-			if (rest.lt(unsafe_interval.f())) {
+			if (ulongLT(rest, unsafe_interval.f())) {
 				// Rounding down (by not emitting the remaining digits) yields a number
 				// that lies within the unsafe interval.
 				return RoundWeed(buffer, length[0], DiyFp.Minus(too_high, w).f(),
 						unsafe_interval.f(), rest,
-						divisor.uLongValue().shl(-one.e()), unit);
+						toUlong(divisor) << -one.e(), unit);
 			}
-			divisor = divisor.divideBy(10);
+			divisor = uDivide(divisor, 10);
 		}
 
 		// The integrals have been generated. We are at the point of the decimal
@@ -434,21 +432,19 @@ public class FastDtoa {
 		// Note that the multiplication by 10 does not overflow, because w.e >= -60
 		// and thus one.e >= -60.
 		DOUBLE_CONVERSION_ASSERT(one.e() >= -60);
-		DOUBLE_CONVERSION_ASSERT(fractionals.lt(one.f()));
-		DOUBLE_CONVERSION_ASSERT( UnsignedLong.uValueOf(0xFFFFFFFFFFFFFFFFL).divideBy(10L).ge(one.f()) );
+		DOUBLE_CONVERSION_ASSERT(ulongLT(fractionals, one.f()));
+		DOUBLE_CONVERSION_ASSERT( ulongGT( uDivide(0xFFFFFFFFFFFFFFFFL, 10L), one.f())  );
 		for (;;) {
-			fractionals = fractionals.times(10L);
-			unit = unit.times(10L);
-			unsafe_interval.set_f(unsafe_interval.f().times(10L));
+			fractionals = fractionals * 10L;
+			unit *= 10L;
+			unsafe_interval.set_f(unsafe_interval.f() * 10L);
 			// Integer division by one.
-			int digit = (@Signed int)fractionals.shr(-one.e()).intValueExact();
-			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (char)(ASCII_ZERO + digit);
+			buffer[length[0]] = digitToChar(fractionals >>> -one.e());
 			length[0]++;
-			fractionals = fractionals.bitAnd(one.f().minus(ONE));  // Modulo by one.
+			fractionals &= one.f() - 1L;  // Modulo by one.
 			kappa[0]--;
-			if (fractionals.lt(unsafe_interval.f())) {
-				return RoundWeed(buffer, length[0], DiyFp.Minus(too_high, w).f().times(unit),
+			if (ulongLT(fractionals, unsafe_interval.f())) {
+				return RoundWeed(buffer, length[0], DiyFp.Minus(too_high, w).f() * unit,
 						unsafe_interval.f(), fractionals, one.f(), unit);
 			}
 		}
@@ -494,21 +490,21 @@ public class FastDtoa {
 		DOUBLE_CONVERSION_ASSERT(kMaximalTargetExponent <= -32);
 		// w is assumed to have an error less than 1 unit. Whenever w is scaled we
 		// also scale its error.
-		UnsignedLong w_error = ONE;
+		@Unsigned long w_error = 1L;
 		// We cut the input number into two parts: the integral digits and the
 		// fractional digits. We don't emit any decimal separator, but adapt kappa
 		// instead. Example: instead of writing "1.2" we put "12" into the buffer and
 		// increase kappa by 1.
-		DiyFp one = new DiyFp(ONE.shl(-w.e()), w.e());
+		DiyFp one = new DiyFp(1L << -w.e(), w.e());
 		// Division by one is a shift.
-		UnsignedInt integrals = w.f().shr(-one.e()).uIntValueExact();
+		@Unsigned int integrals = toUint(w.f() >>> -one.e());
 		// Modulo by one is an and.
-		UnsignedLong fractionals = w.f().bitAnd(one.f().minus(ONE));
-		UnsignedInt divisor;
+		@Unsigned long fractionals = w.f() & (one.f() - 1L);
+		@Unsigned int divisor;
 		int divisorExponentPlusOne;
 		{
 			int[] inDivisorExponentPlusOne = new int[1];
-			UnsignedInt[] inDivisor = new UnsignedInt[1];
+			@Unsigned int[] inDivisor = new int[1];
 			BiggestPowerTen(integrals, DiyFp.kSignificandSize - (-one.e()),
 					inDivisor, inDivisorExponentPlusOne);
 			divisor = inDivisor[0];
@@ -523,23 +519,21 @@ public class FastDtoa {
 		// with the divisor exponent + 1. And the divisor is the biggest power of ten
 		// that is smaller than 'integrals'.
 		while (kappa[0] > 0) {
-			int digit = (@Signed int)integrals.divideBy(divisor).unsafeIntValue();
-			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (@Unsigned char)(ASCII_ZERO + digit);
+			buffer[length[0]] = digitToChar(uDivide(integrals, divisor));
 			length[0]++;
 			requested_digits--;
-			integrals = integrals.mod(divisor);
+			integrals = uRemainder(integrals, divisor);
 			kappa[0]--;
 			// Note that kappa now equals the exponent of the divisor and that the
 			// invariant thus holds again.
 			if (requested_digits == 0) break;
-			divisor = divisor.divideBy(10);
+			divisor = uDivide(divisor, 10);
 		}
 
 		if (requested_digits == 0) {
-			UnsignedLong ulRest = integrals.uLongValue().shl(-one.e()).plus(fractionals);
-			return RoundWeedCounted(buffer, length[0], ulRest,
-					divisor.uLongValue().shl(-one.e()), w_error,
+			@Unsigned long rest = (toUlong(integrals) << -one.e()) + fractionals;
+			return RoundWeedCounted(buffer, length[0], rest,
+					toUlong(divisor) << -one.e(), w_error,
 					kappa);
 		}
 
@@ -550,18 +544,16 @@ public class FastDtoa {
 		// Note that the multiplication by 10 does not overflow, because w.e >= -60
 		// and thus one.e >= -60.
 		DOUBLE_CONVERSION_ASSERT(one.e() >= -60);
-		DOUBLE_CONVERSION_ASSERT(fractionals.lt(one.f()));
-		DOUBLE_CONVERSION_ASSERT( UnsignedLong.uValueOf(0xFFFFFFFFFFFFFFFFL).divideBy(10L).ge(one.f()) );
-		while (requested_digits > 0 && fractionals.gt(w_error)) {
-			fractionals = fractionals.times(10L);
-			w_error  = w_error.times(10L);
+		DOUBLE_CONVERSION_ASSERT(ulongLT(fractionals, one.f()));
+		DOUBLE_CONVERSION_ASSERT( ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f() ));
+		while (requested_digits > 0 && ulongGT(fractionals, w_error)) {
+			fractionals *= 10L;
+			w_error *= 10L;
 			// Integer division by one.
-			int digit = (@Signed int)fractionals.shr(-one.e()).intValueExact();
-			DOUBLE_CONVERSION_ASSERT(digit <= 9);
-			buffer[length[0]] = (char)(ASCII_ZERO + digit);
+			buffer[length[0]] = digitToChar(fractionals >>> -one.e());
 			length[0]++;
 			requested_digits--;
-			fractionals = fractionals.bitAnd(one.f().minus(ONE));  // Modulo by one.
+			fractionals &= one.f() - 1L;  // Modulo by one.
 			kappa[0]--;
 		}
 		if (requested_digits != 0) return false;
@@ -717,7 +709,6 @@ public class FastDtoa {
 		decimal_exponent[0] = -mk + inKappa[0];
 		return result;
 	}
-
 
 	/**
 	 *  Provides a decimal representation of v.

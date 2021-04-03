@@ -76,7 +76,7 @@ public class IeeeTest {
 		diy_fp = new Ieee.Double(min_double64).AsDiyFp();
 		CHECK_EQ(-0x3FF - 52 + 1, diy_fp.e());
 		// This is a denormal; so no hidden bit.
-		CHECK_EQ(1, diy_fp.f());  // NOLINT
+		CHECK_EQ(1L, diy_fp.f());  // NOLINT
 
 		@Unsigned long max_double64 = 0x7fefffff_ffffffffL;
 		diy_fp = new Ieee.Double(max_double64).AsDiyFp();
@@ -91,18 +91,18 @@ public class IeeeTest {
 		DiyFp diy_fp = new Ieee.Single(ordered).AsDiyFp();
 		CHECK_EQ(0x2 - 0x7F - 23, diy_fp.e());
 		// The 23 mantissa bits, plus the implicit 1 in bit 24 as a @Unsigned int.
-		CHECK_EQ(0xA34567, diy_fp.f());
+		CHECK_EQ(0xA34567L, diy_fp.f());
 
 		@Unsigned int min_float32 = 0x00000001;
 		diy_fp = new Ieee.Single(min_float32).AsDiyFp();
 		CHECK_EQ(-0x7F - 23 + 1, diy_fp.e());
 		// This is a denormal; so no hidden bit.
-		CHECK_EQ(1, diy_fp.f());
+		CHECK_EQ(1L, diy_fp.f());
 
 		@Unsigned int max_float32 = 0x7f7fffff;
 		diy_fp = new Ieee.Single(max_float32).AsDiyFp();
 		CHECK_EQ(0xFE - 0x7F - 23, diy_fp.e());
-		CHECK_EQ(0x00ffffff, diy_fp.f());
+		CHECK_EQ(0x00ffffffL, diy_fp.f());
 	}
 
 
@@ -291,8 +291,8 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// 1.5 does not have a significand of the form 2^p (for some p).
 		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
-		CHECK_EQ((1 << 10) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
+		CHECK_EQ((1L << 10) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 
 		diy_fp = new Ieee.Double(1.0).AsNormalizedDiyFp();
 		new Ieee.Double(1.0).NormalizedBoundaries(boundary_minus, boundary_plus);
@@ -300,9 +300,9 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// 1.0 does have a significand of the form 2^p (for some p).
 		// Therefore its lower boundary is twice as close as the upper boundary.
-		CHECK_GT(boundary_plus[0].f().minus(diy_fp.f()) , diy_fp.f().minus(boundary_minus[0].f()));
-		CHECK_EQ((1 << 9) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
-		CHECK_EQ((1 << 10) , boundary_plus[0].f().minus(diy_fp.f()));  // NOLINT
+		CHECK_GT(boundary_plus[0].f() - diy_fp.f() , diy_fp.f() - boundary_minus[0].f());
+		CHECK_EQ((1L << 9) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
+		CHECK_EQ((1L << 10) , boundary_plus[0].f() - diy_fp.f());  // NOLINT
 
 		@Unsigned long min_double64 = 0x00000000_00000001L;
 		diy_fp = new Ieee.Double(min_double64).AsNormalizedDiyFp();
@@ -311,10 +311,10 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// min-value does not have a significand of the form 2^p (for some p).
 		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
 		// Denormals have their boundaries much closer.
-		CHECK_EQ((((@Unsigned long)1) << 62) ,
-				diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ((1L << 62) ,
+				diy_fp.f() - boundary_minus[0].f());  // NOLINT
 
 		@Unsigned long smallest_normal64 = 0x00100000_00000000L;
 		diy_fp = new Ieee.Double(smallest_normal64).AsNormalizedDiyFp();
@@ -324,8 +324,8 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// Even though the significand is of the form 2^p (for some p), its boundaries
 		// are at the same distance. (This is the only exception).
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
-		CHECK_EQ((1 << 10) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
+		CHECK_EQ((1L << 10) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 
 		@Unsigned long largest_denormal64 = 0x000FFFFF_FFFFFFFFL;
 		diy_fp = new Ieee.Double(largest_denormal64).AsNormalizedDiyFp();
@@ -333,8 +333,8 @@ public class IeeeTest {
                                                   boundary_plus);
 		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
-		CHECK_EQ((1 << 11) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
+		CHECK_EQ((1L << 11) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 
 		@Unsigned long max_double64 = 0x7fefffff_ffffffffL;
 		diy_fp = new Ieee.Double(max_double64).AsNormalizedDiyFp();
@@ -343,8 +343,8 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// max-value does not have a significand of the form 2^p (for some p).
 		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
-		CHECK_EQ((1 << 10) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
+		CHECK_EQ((1L << 10) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 	}
 
 
@@ -360,10 +360,10 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// 1.5 does not have a significand of the form 2^p (for some p).
 		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
 		// Normalization shifts the significand by 8 bits. Add 32 bits for the bigger
 		// data-type, and remove 1 because boundaries are at half a ULP.
-		CHECK_EQ((kOne64 << 39) , diy_fp.f().minus(boundary_minus[0].f()));
+		CHECK_EQ((kOne64 << 39) , diy_fp.f() - boundary_minus[0].f());
 
 		diy_fp = new Ieee.Single(1.0f).AsDiyFp();
 		diy_fp.Normalize();
@@ -372,9 +372,9 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// 1.0 does have a significand of the form 2^p (for some p).
 		// Therefore its lower boundary is twice as close as the upper boundary.
-		CHECK_GT(boundary_plus[0].f().minus(diy_fp.f()) , diy_fp.f().minus(boundary_minus[0].f()));
-		CHECK_EQ((kOne64 << 38) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
-		CHECK_EQ((kOne64 << 39) , boundary_plus[0].f().minus(diy_fp.f()));  // NOLINT
+		CHECK_GT(boundary_plus[0].f() - diy_fp.f() , diy_fp.f() - boundary_minus[0].f());
+		CHECK_EQ((kOne64 << 38) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
+		CHECK_EQ((kOne64 << 39) , boundary_plus[0].f() - diy_fp.f());  // NOLINT
 
 		@Unsigned int min_float32 = 0x00000001;
 		diy_fp = new Ieee.Single(min_float32).AsDiyFp();
@@ -384,9 +384,9 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// min-value does not have a significand of the form 2^p (for some p).
 		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
 		// Denormals have their boundaries much closer.
-		CHECK_EQ((kOne64 << 62) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ((kOne64 << 62) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 
 		@Unsigned int smallest_normal32 = 0x00800000;
 		diy_fp = new Ieee.Single(smallest_normal32).AsDiyFp();
@@ -397,8 +397,8 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// Even though the significand is of the form 2^p (for some p), its boundaries
 		// are at the same distance. (This is the only exception).
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
-		CHECK_EQ((kOne64 << 39) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
+		CHECK_EQ((kOne64 << 39) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 
 		@Unsigned int largest_denormal32 = 0x007FFFFF;
 		diy_fp = new Ieee.Single(largest_denormal32).AsDiyFp();
@@ -407,8 +407,8 @@ public class IeeeTest {
                                                   boundary_plus);
 		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
-		CHECK_EQ((kOne64 << 40) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
+		CHECK_EQ((kOne64 << 40) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 
 		@Unsigned int max_float32 = 0x7f7fffff;
 		diy_fp = new Ieee.Single(max_float32).AsDiyFp();
@@ -418,8 +418,8 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// max-value does not have a significand of the form 2^p (for some p).
 		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f().minus(boundary_minus[0].f()) , boundary_plus[0].f().minus(diy_fp.f()));
-		CHECK_EQ((kOne64 << 39) , diy_fp.f().minus(boundary_minus[0].f()));  // NOLINT
+		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
+		CHECK_EQ((kOne64 << 39) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 	}
 
 
