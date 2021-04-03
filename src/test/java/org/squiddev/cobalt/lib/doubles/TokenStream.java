@@ -114,9 +114,19 @@ public class TokenStream {
 		if (tt == StreamTokenizer.TT_EOF) {
 			throw new EofException("line " + st.lineno());
 		} else if (tt != expectedType) {
-			throw new TokenException(expectedMessage +
-					(tt > 0 ? " got '"+(char)tt+"' " : "") +
+			throw new TokenException(expectedMessage + " got " + ttToSring(tt) +
 					 " line " + st.lineno());
+		}
+	}
+
+	private String ttToSring(int tt) {
+		if (tt > 0) return String.format("'%c'", tt);
+		switch (tt) {
+			case StreamTokenizer.TT_EOF: return "'TT_EOF'";
+			case StreamTokenizer.TT_NUMBER: return "'TT_NUMBER'" + Double.toString(st.nval);
+			case StreamTokenizer.TT_WORD: return "'TT_WORD':" + st.sval;
+			case StreamTokenizer.TT_EOL: return "'TT_EOL'";
+			default: return "unknown("+Integer.valueOf(tt)+")";
 		}
 	}
 
