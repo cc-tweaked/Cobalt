@@ -516,7 +516,7 @@ public class FixedDtoaTest {
 				assertThat(st.underTest, point[0], is(equalTo(decimalPoint)));
 
 				assertThat(st.underTest, point[0], is(equalTo(decimalPoint)));
-				assertThat(st.underTest, (length[0] - point[0]), is(lessThan(numberDigits)));
+				assertThat(st.underTest, (length[0] - point[0]), is(lessThanOrEqualTo(numberDigits)));
 				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
 			});
 		} catch (Assert.DoubleConversionAssertionError e) {

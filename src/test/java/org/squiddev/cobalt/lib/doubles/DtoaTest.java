@@ -485,7 +485,7 @@ public class DtoaTest {
 				doubleToAscii(v, DtoaMode.FIXED, numberDigits, st.buffer, sign, length, point);
 				assertThat(st.underTest, sign[0], is(false)); // All precomputed numbers are positive.
 				assertThat(st.underTest, point[0], is(equalTo(decimalPoint)));
-				assertThat(st.underTest, (length[0] - point[0]), is(greaterThanOrEqualTo(numberDigits)));
+				assertThat(st.underTest, (length[0] - point[0]), is(lessThanOrEqualTo(numberDigits)));
 				trimRepresentation(st.buffer);
 				assertThat(st.underTest, bufToString(st.buffer), is(equalTo(representation)));
 			});
