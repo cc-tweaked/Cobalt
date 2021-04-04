@@ -34,6 +34,7 @@ import org.checkerframework.checker.signedness.qual.SignedPositive;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class BigNumDtoa {
 
@@ -113,7 +114,7 @@ public class BigNumDtoa {
 		if (mode == BignumDtoaMode.SHORTEST_SINGLE) {
 			float f = (float)v;
 			DOUBLE_CONVERSION_ASSERT((double)f == v);
-			significand = Integer.toUnsignedLong((@SignedPositive int)new Ieee.Single(f).significand());
+			significand = toUlong( new Ieee.Single(f).significand() );
 			exponent = new Ieee.Single(f).exponent();
 			lowerBoundaryIsCloser = new Ieee.Single(f).lowerBoundaryIsCloser();
 		} else {
@@ -214,12 +215,10 @@ public class BigNumDtoa {
 		}
   		length[0] = 0;
 		for (;;) {
-			int digit;
-			digit = numerator.divideModuloIntBignum(denominator);
-			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
+			@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
-			buffer[length[0]++] = (char)(digit + ASCII_ZERO);
+			buffer[length[0]++] = digitToChar(digit);
 
 			// Can we stop already?
 			// If the remainder of the division is less than the distance to the lower
@@ -312,24 +311,20 @@ public class BigNumDtoa {
 									  char[] buffer, int[] length) {
 		DOUBLE_CONVERSION_ASSERT(count >= 0);
 		for (int i = 0; i < count - 1; ++i) {
-			int digit;
-			digit = numerator.divideModuloIntBignum(denominator);
-			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
+			@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
-			buffer[i] = (char)(digit + ASCII_ZERO);
+			buffer[i] = digitToChar(digit);
 			// Prepare for next iteration.
 			numerator.times10();
 		}
 		// Generate the last digit.
-		int digit;
-		digit = numerator.divideModuloIntBignum(denominator);
+		@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
 		if (Bignum.plusCompare(numerator, numerator, denominator) >= 0) {
 			digit++;
 		}
-		DOUBLE_CONVERSION_ASSERT(digit <= 10);
 		//noinspection ImplicitNumericConversion
-		buffer[count - 1] = (char)(digit + '0');
+		buffer[count - 1] = digitToCharWithOverflow(digit);
 		// Correct bad digits (in case we had a sequence of '9's). Propagate the
 		// carry until we hat a non-'9' or til we reach the first digit.
 		for (int i = count - 1; i > 0; --i) {

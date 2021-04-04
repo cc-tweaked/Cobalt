@@ -67,7 +67,7 @@ public class PowersOfTenCache {
 		DOUBLE_CONVERSION_ASSERT(minExponent <= cachedPower.binaryExponent);
 		//maxExponent;  // Mark variable as used.
 		DOUBLE_CONVERSION_ASSERT(cachedPower.binaryExponent <= maxExponent);
-		decimalExponent[0] = (int) cachedPower.decimalExponent;
+		decimalExponent[0] = cachedPower.decimalExponent;
 		power[0] = new DiyFp(cachedPower.significand, cachedPower.binaryExponent);
 	}
 

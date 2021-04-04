@@ -30,6 +30,7 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
+import org.checkerframework.checker.signedness.qual.SignedPositive;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
@@ -235,7 +236,7 @@ public class FixedDtoa {
 		// we reached the first digit.
 		buffer[length[0] - 1]++;
 		for (int i = length[0] - 1; i > 0; --i) {
-			if (buffer[i] != ASCII_ZERO + 10) {
+			if ((int)buffer[i] != ASCII_ZERO + 10) {
 				return;
 			}
 			buffer[i] = (char)ASCII_ZERO;
@@ -378,6 +379,9 @@ public class FixedDtoa {
 		// Given a 64 bit integer we have 11 0s followed by 53 potentially non-zero
 		// bits:  0..11*..0xxx..53*..xx
 		if (exponent + DOUBLE_SIGNIFICAND_SIZE > 64) {
+			// compile-time promise that exponent is positive
+			@SuppressWarnings("cast.unsafe")
+			@SignedPositive int positiveExponent = (@SignedPositive int)exponent;
 			// The exponent must be > 11.
 			//
 			// We know that v = significand * 2^exponent.
@@ -388,7 +392,7 @@ public class FixedDtoa {
 			// Dividing by 10^17 is equivalent to dividing by 5^17*2^17.
     		final @Unsigned long kFive17 = 0xB1_A2BC2EC5L;  // 5^17
 			@Unsigned long divisor = kFive17;
-			int divisorPower = 17;
+			@SignedPositive int divisorPower = 17;
 			@Unsigned long dividend = significand;
 			@Unsigned int quotient;
 			@Unsigned long remainder;
@@ -403,11 +407,11 @@ public class FixedDtoa {
 			//   f  = q * 5^17 * 2^(17-e) + r/2^e
 			if (exponent > divisorPower) {
 				// We only allow exponents of up to 20 and therefore (17 - e) <= 3
-				dividend <<= toUlongS(exponent - divisorPower);
+				dividend <<= toUlongFromSigned(positiveExponent - divisorPower);
 				quotient = toUint( uDivide(dividend, divisor) );
 				remainder = uRemainder( dividend, divisor) << divisorPower;
 			} else {
-				divisor <<= toUlongS( divisorPower - exponent );
+				divisor <<= toUlongFromSigned( divisorPower - positiveExponent );
 				quotient = toUint( uDivide(dividend, divisor) );
 				remainder = uRemainder( dividend, divisor) << exponent;
 			}

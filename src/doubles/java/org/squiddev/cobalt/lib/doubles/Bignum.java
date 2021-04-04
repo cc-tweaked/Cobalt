@@ -30,6 +30,9 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 import java.math.BigInteger;
 import java.util.Objects;
 
+import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUint;
+
 /**
  * A mutable proxy object to java BigDecimal.  Probably can be
  *   optimized away at some point, but for now it will get the things into a functional state.
@@ -37,6 +40,9 @@ import java.util.Objects;
 public class Bignum {
 	private static final long LONG_SIGN_BIT = 0x8000_0000_0000_0000L;
 	private static final long LONG_UNSIGNED_BITS = 0x7fff_ffff_ffff_ffffL;
+	private static final BigInteger INT_MASK = BigInteger.valueOf(0xffff_ffffL);
+	private static final BigInteger NOT_INT_MASK = INT_MASK.not();
+
 
 	private BigInteger val;
 
@@ -137,7 +143,7 @@ public class Bignum {
 
 	// only used in tests
 	void multiplyByPowerOfTen(final int exponent) {
-		val = val.multiply(BigInteger.valueOf(10).pow(exponent));
+		val = val.multiply(BigInteger.valueOf(10L).pow(exponent));
 	}
 
 	private void multiply(BigInteger exponent) {
@@ -153,10 +159,13 @@ public class Bignum {
 	//  int result = this / other;
 	//  this = this % other;
 	// In the worst case this function is in O(this/other).
-	int divideModuloIntBignum(Bignum other) {
+	@SuppressWarnings("return.type.incompatible") // values verified positive at beginning of method
+	@Unsigned int divideModuloIntBignum(Bignum other) {
+		if (val.signum() < 0 || other.val.signum() < 0) throw new IllegalArgumentException("values must be positive");
 		BigInteger[] rets = val.divideAndRemainder(other.val);
 		val = rets[1]; // remainder
-		return rets[0].intValue(); // quotient
+
+		return toUint( rets[0] ); // quotient
 	}
 
 //	bool toHexString(char* buffer, const int buffer_size) const;
