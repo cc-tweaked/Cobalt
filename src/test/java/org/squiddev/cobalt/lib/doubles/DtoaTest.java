@@ -490,8 +490,7 @@ public class DtoaTest {
 		}
 	}
 
-	// FIXME: very slow
-	//@Test
+	@Test
 	public void dtoaGayPrecision() throws Exception {
 		DataTestState state = new DataTestState();
 		try {
@@ -501,11 +500,8 @@ public class DtoaTest {
 				boolean[] sign = new boolean[1];
 
 				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
-				long t = System.currentTimeMillis();
 				doubleToAscii(v, DtoaMode.PRECISION, numberDigits,
 						st.buffer, sign, length, point);
-				t = System.currentTimeMillis() - t;
-				//assertThat(st.underTest, t, is(lessThanOrEqualTo(50L)));
 				assertThat(st.underTest, sign[0], is(false)); // All precomputed numbers are positive.
 				assertThat(st.underTest, point[0], is(equalTo(decimalPoint)));
 				assertThat(st.underTest, length[0], is(greaterThanOrEqualTo(numberDigits)));
