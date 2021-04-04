@@ -480,7 +480,7 @@ public class DoubleToStringConverter {
 	 *  (one additional character for the sign, and one for the decimal point).
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
-	boolean toFixed(double value,
+	public boolean toFixed(double value,
 					int requestedDigits,
 					StringBuilder resultBuilder) {
 		DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
@@ -545,7 +545,7 @@ public class DoubleToStringConverter {
 	 *  decimal point, the decimal point, the exponent character, the
 	 *  exponent's sign, and at most 3 exponent digits).
 	 */
-	boolean toExponential(double value,
+	public boolean toExponential(double value,
 						  int requestedDigits,
 						  StringBuilder resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
@@ -637,7 +637,7 @@ public class DoubleToStringConverter {
 	 *  exponent character, the exponent's sign, and at most 3 exponent digits).
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
-	boolean toPrecision(double value,
+	public boolean toPrecision(double value,
 						int precision,
 						StringBuilder resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
