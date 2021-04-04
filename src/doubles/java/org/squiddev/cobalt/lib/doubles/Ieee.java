@@ -37,158 +37,158 @@ import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUlong;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
 
-public class Ieee {
+public final class Ieee {
 
 	public static class Double {
-		public static final @Unsigned long kSignMask = 0x8000000000000000L;
-		public static final @Unsigned long kExponentMask = 0x7FF0000000000000L;
-		public static final @Unsigned long kSignificandMask = 0x000FFFFFFFFFFFFFL;
-		public static final @Unsigned long kHiddenBit = 0x0010000000000000L;
-		public static final @Unsigned long kQuietNanBit = 0x0008000000000000L;
+		public static final @Unsigned long SIGN_MASK = 0x8000000000000000L;
+		public static final @Unsigned long EXPONENT_MASK = 0x7FF0000000000000L;
+		public static final @Unsigned long SIGNIFICAND_MASK = 0x000FFFFFFFFFFFFFL;
+		public static final @Unsigned long HIDDEN_BIT = 0x0010000000000000L;
+		public static final @Unsigned long QUIET_NAN_BIT = 0x0008000000000000L;
 
-		public static final int kPhysicalSignificandSize = 52;  // Excludes the hidden bit.
-		public static final int kSignificandSize = 53;
-		public static final int kExponentBias = 0x3FF + kPhysicalSignificandSize;
-		public static final int kMaxExponent = 0x7FF - kExponentBias;
+		public static final int PHYSICAL_SIGNIFICAND_SIZE = 52;  // Excludes the hidden bit.
+		public static final int SIGNIFICAND_SIZE = 53;
+		public static final int EXPONENT_BIAS = 0x3FF + PHYSICAL_SIGNIFICAND_SIZE;
+		public static final int MAX_EXPONENT = 0x7FF - EXPONENT_BIAS;
 
-		public Double() { d64_ = 0L;}
+		public Double() { bits = 0L;}
 		@SuppressWarnings("cast.unsafe")
 		public Double(double d) {
-			this.d64_ = (@Unsigned long)java.lang.Double.doubleToRawLongBits(d);
+			this.bits = (@Unsigned long)java.lang.Double.doubleToRawLongBits(d);
 		}
-		public Double(@Unsigned long d64) { this.d64_ = d64; }
-		public Double(DiyFp diy_fp) {
-			d64_ = DiyFpToUint64(diy_fp);
+		public Double(@Unsigned long d64) { this.bits = d64; }
+		public Double(DiyFp diyFp) {
+			bits = diyFpToUint64(diyFp);
 		}
 
 		/**
 		 *  The value encoded by this Double must be greater or equal to +0.0.
 		 *  It must not be special (infinity, or NaN).
 		 */
-		public DiyFp AsDiyFp() {
-			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
-			return new DiyFp(Significand(),
-					Exponent());
+		public DiyFp asDiyFp() {
+			DOUBLE_CONVERSION_ASSERT(sign() > 0);
+			DOUBLE_CONVERSION_ASSERT(!isSpecial());
+			return new DiyFp(significand(),
+					exponent());
 		}
 
 		// The value encoded by this Double must be strictly greater than 0.
-		public DiyFp AsNormalizedDiyFp() {
+		public DiyFp asNormalizedDiyFp() {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
-			@Unsigned long f = Significand();
-			int e = Exponent();
+			@Unsigned long f = significand();
+			int e = exponent();
 
 			// The current double could be a denormal.
-			while ((f & kHiddenBit) == 0L) {
+			while ((f & HIDDEN_BIT) == 0L) {
 				f <<= 1L;
 				e--;
 			}
 			// Do the final shifts in one go.
 			//noinspection ImplicitNumericConversion
-			f <<= DiyFp.kSignificandSize - kSignificandSize;
-			e -= DiyFp.kSignificandSize - kSignificandSize;
+			f <<= DiyFp.SIGNIFICAND_SIZE - SIGNIFICAND_SIZE;
+			e -= DiyFp.SIGNIFICAND_SIZE - SIGNIFICAND_SIZE;
 			return new DiyFp(f, e);
 		}
 
 		// Returns the double's bit as uint64.
-		public @Unsigned long AsUint64() {
-			return d64_;
+		public @Unsigned long asUint64() {
+			return bits;
 		}
 
 
 		/** Returns the next greater double. Returns +infinity on input +infinity. */
-		public double NextDouble() {
-			if (d64_ == kInfinity) return new Double(kInfinity).value();
-			if (Sign() < 0 && Significand() == 0L) {
+		public double nextDouble() {
+			if (bits == INFINITY) return new Double(INFINITY).value();
+			if (sign() < 0 && significand() == 0L) {
 				// -0.0
 				return 0.0;
 			}
-			if (Sign() < 0) {
-				return new Double(d64_ - 1L).value();
+			if (sign() < 0) {
+				return new Double(bits - 1L).value();
 			} else {
-				return new Double(d64_ + 1L).value();
+				return new Double(bits + 1L).value();
 			}
 		}
 
-		public double PreviousDouble() {
-			if (d64_ == (kInfinity | kSignMask)) return -Infinity();
-			if (Sign() < 0) {
-				return new Double(d64_ + 1L).value();
+		public double previousDouble() {
+			if (bits == (INFINITY | SIGN_MASK)) return -infinity();
+			if (sign() < 0) {
+				return new Double(bits + 1L).value();
 			} else {
-				if (Significand() == 0L) return -0.0;
-				return new Double(d64_ - 1L).value();
+				if (significand() == 0L) return -0.0;
+				return new Double(bits - 1L).value();
 			}
 		}
 
-		public int Exponent() {
-			if (IsDenormal()) return kDenormalExponent;
+		public int exponent() {
+			if (isDenormal()) return DENORMAL_EXPONENT;
 
-			long d64 = AsUint64();
+			long d64 = asUint64();
 			// Type Safety - Okay to cast, because the Shift-right is 52 bits
-			int biased_e =
-					(int)((d64 & kExponentMask) >> kPhysicalSignificandSize);
-			return biased_e - kExponentBias;
+			int biasedE =
+					(int)((d64 & EXPONENT_MASK) >> PHYSICAL_SIGNIFICAND_SIZE);
+			return biasedE - EXPONENT_BIAS;
 		}
 
-		public @Unsigned long Significand() {
-			@Unsigned long d64 = AsUint64();
-			@Unsigned long significand = d64 & kSignificandMask;
-			if (!IsDenormal()) {
-				return significand + kHiddenBit;
+		public @Unsigned long significand() {
+			@Unsigned long d64 = asUint64();
+			@Unsigned long significand = d64 & SIGNIFICAND_MASK;
+			if (!isDenormal()) {
+				return significand + HIDDEN_BIT;
 			} else {
 				return significand;
 			}
 		}
 
 		/** Returns true if the double is a denormal. */
-		public boolean IsDenormal() {
-			long d64 = AsUint64();
-			return (d64 & kExponentMask) == 0L;
+		public boolean isDenormal() {
+			long d64 = asUint64();
+			return (d64 & EXPONENT_MASK) == 0L;
 		}
 
 		/**
 		 *  We consider denormals not to be special.
 		 *  Hence only Infinity and NaN are special.
 		 */
-		public boolean IsSpecial() {
-			long d64 = AsUint64();
-			return (d64 & kExponentMask) == kExponentMask;
+		public boolean isSpecial() {
+			long d64 = asUint64();
+			return (d64 & EXPONENT_MASK) == EXPONENT_MASK;
 		}
 
-		public boolean IsNan() {
-			long d64 = AsUint64();
-			return ((d64 & kExponentMask) == kExponentMask) &&
-					((d64 & kSignificandMask) != 0L);
+		public boolean isNan() {
+			long d64 = asUint64();
+			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
+					((d64 & SIGNIFICAND_MASK) != 0L);
 		}
 
-		public boolean IsQuietNan() {
-			return IsNan() && ((AsUint64() & kQuietNanBit) != 0L);
+		public boolean isQuietNan() {
+			return isNan() && ((asUint64() & QUIET_NAN_BIT) != 0L);
 		}
 
-		public boolean IsSignalingNan() {
-			return IsNan() && ((AsUint64() & kQuietNanBit) == 0L);
+		public boolean isSignalingNan() {
+			return isNan() && ((asUint64() & QUIET_NAN_BIT) == 0L);
 		}
 
 
-		public boolean IsInfinite() {
-			long d64 = AsUint64();
-			return ((d64 & kExponentMask) == kExponentMask) &&
-					((d64 & kSignificandMask) == 0L);
+		public boolean isInfinite() {
+			long d64 = asUint64();
+			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
+					((d64 & SIGNIFICAND_MASK) == 0L);
 		}
 
-		public int Sign() {
-			long d64 = AsUint64();
-			return (d64 & kSignMask) == 0L ? 1: -1;
+		public int sign() {
+			long d64 = asUint64();
+			return (d64 & SIGN_MASK) == 0L ? 1: -1;
 		}
 
 		/**
 		 * Precondition: the value encoded by this Double must be greater or equal
 		 * than +0.0.
 		 */
-		public DiyFp UpperBoundary() {
-			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return new DiyFp((Significand() * 2L) + 1L,
-					Exponent() - 1);
+		public DiyFp upperBoundary() {
+			DOUBLE_CONVERSION_ASSERT(sign() > 0);
+			return new DiyFp((significand() * 2L) + 1L,
+					exponent() - 1);
 		}
 
 		/**
@@ -197,23 +197,23 @@ public class Ieee {
 		 * exponent as m_plus.
 		 * Precondition: the value encoded by this Double must be greater than 0.
 		 */
-		public void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
+		public void normalizedBoundaries(DiyFp[] outMMinus, DiyFp[] outMPlus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
-			DiyFp v = this.AsDiyFp();
-			DiyFp mPlus = DiyFp.Normalize(new DiyFp((v.f() << 1) + 1L, v.e() - 1));
+			DiyFp v = this.asDiyFp();
+			DiyFp mPlus = DiyFp.normalize(new DiyFp((v.f() << 1) + 1L, v.e() - 1));
 			DiyFp mMinus;
-			if (LowerBoundaryIsCloser()) {
+			if (lowerBoundaryIsCloser()) {
 				mMinus = new DiyFp((v.f() << 2) - 1L, v.e() - 2);
 			} else {
 				mMinus = new DiyFp((v.f() << 1) - 1L, v.e() - 1);
 			}
-			mMinus.set_f(mMinus.f() << (mMinus.e() - mPlus.e()));
-			mMinus.set_e(mPlus.e());
-			out_m_plus[0] = mPlus;
-			out_m_minus[0] = mMinus;
+			mMinus.setF(mMinus.f() << (mMinus.e() - mPlus.e()));
+			mMinus.setE(mPlus.e());
+			outMPlus[0] = mPlus;
+			outMMinus[0] = mMinus;
 		}
 
-		public boolean LowerBoundaryIsCloser() {
+		public boolean lowerBoundaryIsCloser() {
 			// The boundary is closer if the significand is of the form f == 2^p-1 then
 			// the lower boundary is closer.
 			// Think of v = 1000e10 and v- = 9999e9.
@@ -222,12 +222,12 @@ public class Ieee {
 			// The only exception is for the smallest normal: the largest denormal is
 			// at the same distance as its successor.
 			// Note: denormals have the same exponent as the smallest normals.
-			boolean physical_significand_is_zero = ((AsUint64() & kSignificandMask) == 0L);
-			return physical_significand_is_zero && (Exponent() != kDenormalExponent);
+			boolean physicalSignificandIsZero = ((asUint64() & SIGNIFICAND_MASK) == 0L);
+			return physicalSignificandIsZero && (exponent() != DENORMAL_EXPONENT);
 		}
 
 		@SuppressWarnings("cast.unsafe")
-		public double value() { return java.lang.Double.longBitsToDouble((@Signed long)d64_); }
+		public double value() { return java.lang.Double.longBitsToDouble((@Signed long) bits); }
 
 		/**
 		 *  Returns the significand size for a given order of magnitude.
@@ -237,144 +237,144 @@ public class Ieee {
 		 *  kSignificandSize. The only exceptions are denormals. They start with
 		 *  leading zeroes and their effective significand-size is hence smaller.
 		 */
-		public static int SignificandSizeForOrderOfMagnitude(int order) {
-			if (order >= (kDenormalExponent + kSignificandSize)) {
-				return kSignificandSize;
+		public static int significandSizeForOrderOfMagnitude(int order) {
+			if (order >= (DENORMAL_EXPONENT + SIGNIFICAND_SIZE)) {
+				return SIGNIFICAND_SIZE;
 			}
-			if (order <= kDenormalExponent) return 0;
-			return order - kDenormalExponent;
+			if (order <= DENORMAL_EXPONENT) return 0;
+			return order - DENORMAL_EXPONENT;
 		}
 
-		public static double Infinity() {
-			return new Double(kInfinity).value();
+		public static double infinity() {
+			return new Double(INFINITY).value();
 		}
 
-		public static double NaN() {
-			return new Double(kNaN).value();
+		public static double nan() {
+			return new Double(NAN).value();
 		}
 
-		private static final int kDenormalExponent = -kExponentBias + 1;
-		private static final @Unsigned long kInfinity = 0x7FF0000000000000L;
-		private static final @Unsigned long kNaN = 0x7FF8000000000000L;
+		private static final int DENORMAL_EXPONENT = -EXPONENT_BIAS + 1;
+		private static final @Unsigned long INFINITY = 0x7FF0000000000000L;
+		private static final @Unsigned long NAN = 0x7FF8000000000000L;
 
-		private final @Unsigned long d64_;
+		private final @Unsigned long bits;
 
-		private static @Unsigned long DiyFpToUint64(DiyFp diy_fp) {
-			@Unsigned long significand = diy_fp.f();
-			int exponent = diy_fp.e();
-			while (ulongGT(significand, kHiddenBit + kSignificandMask)) {
+		private static @Unsigned long diyFpToUint64(DiyFp diyFp) {
+			@Unsigned long significand = diyFp.f();
+			int exponent = diyFp.e();
+			while (ulongGT(significand, HIDDEN_BIT + SIGNIFICAND_MASK)) {
 				significand >>>= 1L;
 				exponent++;
 			}
-			if (exponent >= kMaxExponent) {
-				return kInfinity;
+			if (exponent >= MAX_EXPONENT) {
+				return INFINITY;
 			}
-			if (exponent < kDenormalExponent) {
+			if (exponent < DENORMAL_EXPONENT) {
 				return 0L;
 			}
-			while (exponent > kDenormalExponent && (significand & kHiddenBit) == 0L) {
+			while (exponent > DENORMAL_EXPONENT && (significand & HIDDEN_BIT) == 0L) {
 				significand <<= 1L;
 				exponent--;
 			}
-			long biased_exponent;
-			if (exponent == kDenormalExponent && (significand & kHiddenBit) == 0L) {
-				biased_exponent = 0L;
+			long biasedExponent;
+			if (exponent == DENORMAL_EXPONENT && (significand & HIDDEN_BIT) == 0L) {
+				biasedExponent = 0L;
 			} else {
-				biased_exponent = toUlong(exponent + kExponentBias);
+				biasedExponent = toUlong(exponent + EXPONENT_BIAS);
 			}
-			return (significand & kSignificandMask) |
-					(biased_exponent << kPhysicalSignificandSize);
+			return (significand & SIGNIFICAND_MASK) |
+					(biasedExponent << PHYSICAL_SIGNIFICAND_SIZE);
 		}
 
 	}
 
 	public static class Single {
-		public static final @Unsigned int kSignMask = 0x80000000;
-		public static final @Unsigned int kExponentMask = 0x7F800000;
-		public static final @Unsigned int kSignificandMask = 0x007FFFFF;
-		public static final @Unsigned int kHiddenBit = 0x00800000;
-		public static final @Unsigned int kQuietNanBit = 0x00400000;
-		public static final int kPhysicalSignificandSize = 23;  // Excludes the hidden bit.
-		public static final int kSignificandSize = 24;
+		public static final @Unsigned int SIGN_MASK = 0x80000000;
+		public static final @Unsigned int EXPONENT_MASK = 0x7F800000;
+		public static final @Unsigned int SIGNIFICAND_MASK = 0x007FFFFF;
+		public static final @Unsigned int HIDDEN_BIT = 0x00800000;
+		public static final @Unsigned int QUIET_NAN_BIT = 0x00400000;
+		public static final int PHYSICAL_SIGNIFICAND_SIZE = 23;  // Excludes the hidden bit.
+		public static final int SIGNIFICAND_SIZE = 24;
 
-		public Single() { this.d32_ = 0; }
+		public Single() { this.bits = 0; }
 		@SuppressWarnings("cast.unsafe")
-		public Single(float f) { d32_ = (@Unsigned int)Float.floatToIntBits(f); }
-		public Single(@Unsigned int d32) { this.d32_ = d32; }
+		public Single(float f) { bits = (@Unsigned int)Float.floatToIntBits(f); }
+		public Single(@Unsigned int d32) { this.bits = d32; }
 
 		/**
 		 *  The value encoded by this Single must be greater or equal to +0.0.
 		 *  It must not be special (infinity, or NaN).
 		 */
-		public DiyFp AsDiyFp() {
-			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			DOUBLE_CONVERSION_ASSERT(!IsSpecial());
-			return new DiyFp(toUlong(Significand()), Exponent());
+		public DiyFp asDiyFp() {
+			DOUBLE_CONVERSION_ASSERT(sign() > 0);
+			DOUBLE_CONVERSION_ASSERT(!isSpecial());
+			return new DiyFp(toUlong(significand()), exponent());
 		}
 
 		/** Returns the single's bit as uint64. */
-		public @Unsigned int AsUint32() {
-			return d32_;
+		public @Unsigned int asUint32() {
+			return bits;
 		}
 
-		int Exponent() {
-			if (IsDenormal()) return kDenormalExponent;
+		int exponent() {
+			if (isDenormal()) return DENORMAL_EXPONENT;
 
-			int d32 = AsUint32();
-			int biased_e =
-					((d32 & kExponentMask) >>> kPhysicalSignificandSize);
-			return biased_e - kExponentBias;
+			int d32 = asUint32();
+			int biasedE =
+					((d32 & EXPONENT_MASK) >>> PHYSICAL_SIGNIFICAND_SIZE);
+			return biasedE - EXPONENT_BIAS;
 		}
 
-		public @Unsigned int Significand() {
-			int d32 = AsUint32();
-			int significand = d32 & kSignificandMask;
-			if (!IsDenormal()) {
-				return significand + kHiddenBit;
+		public @Unsigned int significand() {
+			int d32 = asUint32();
+			int significand = d32 & SIGNIFICAND_MASK;
+			if (!isDenormal()) {
+				return significand + HIDDEN_BIT;
 			} else {
 				return significand;
 			}
 		}
 
 		/** Returns true if the single is a denormal. */
-		public boolean IsDenormal() {
-			int d32 = AsUint32();
-			return (d32 & kExponentMask) == 0;
+		public boolean isDenormal() {
+			int d32 = asUint32();
+			return (d32 & EXPONENT_MASK) == 0;
 		}
 
 		/**
 		 *  We consider denormals not to be special.
 		 *  Hence only Infinity and NaN are special.
 		 */
-		public boolean IsSpecial() {
-			int d32 = AsUint32();
-			return (d32 & kExponentMask) == kExponentMask;
+		public boolean isSpecial() {
+			int d32 = asUint32();
+			return (d32 & EXPONENT_MASK) == EXPONENT_MASK;
 		}
 
-		public boolean IsNan() {
-			int d32 = AsUint32();
-			return ((d32 & kExponentMask) == kExponentMask) &&
-					((d32 & kSignificandMask) != 0);
+		public boolean isNan() {
+			int d32 = asUint32();
+			return ((d32 & EXPONENT_MASK) == EXPONENT_MASK) &&
+					((d32 & SIGNIFICAND_MASK) != 0);
 		}
 
-		public boolean IsQuietNan() {
-			return IsNan() && ((AsUint32() & kQuietNanBit) != 0);
+		public boolean isQuietNan() {
+			return isNan() && ((asUint32() & QUIET_NAN_BIT) != 0);
 		}
 
-		public boolean IsSignalingNan() {
-			return IsNan() && ((AsUint32() & kQuietNanBit) == 0);
+		public boolean isSignalingNan() {
+			return isNan() && ((asUint32() & QUIET_NAN_BIT) == 0);
 		}
 
 
-		public boolean IsInfinite() {
-			int d32 = AsUint32();
-			return ((d32 & kExponentMask) == kExponentMask) &&
-					((d32 & kSignificandMask) == 0);
+		public boolean isInfinite() {
+			int d32 = asUint32();
+			return ((d32 & EXPONENT_MASK) == EXPONENT_MASK) &&
+					((d32 & SIGNIFICAND_MASK) == 0);
 		}
 
-		public int Sign() {
-			int d32 = AsUint32();
-			return (d32 & kSignMask) == 0? 1: -1;
+		public int sign() {
+			int d32 = asUint32();
+			return (d32 & SIGN_MASK) == 0? 1: -1;
 		}
 
 		/**
@@ -383,32 +383,32 @@ public class Ieee {
 		 *  exponent as m_plus.
 		 *  Precondition: the value encoded by this Single must be greater than 0.
 		 */
-		void NormalizedBoundaries(DiyFp[] out_m_minus, DiyFp[] out_m_plus) {
+		void normalizedBoundaries(DiyFp[] outMMinus, DiyFp[] outMPlus) {
 			DOUBLE_CONVERSION_ASSERT(value() > 0.0F);
-			DiyFp v = this.AsDiyFp();
-			DiyFp m_plus = DiyFp.Normalize(new DiyFp((v.f() << 1) + 1L, v.e() - 1));
-			DiyFp m_minus;
-			if (LowerBoundaryIsCloser()) {
-				m_minus = new DiyFp((v.f() << 2) - 1L, v.e() - 2);
+			DiyFp v = this.asDiyFp();
+			DiyFp mPlus = DiyFp.normalize(new DiyFp((v.f() << 1) + 1L, v.e() - 1));
+			DiyFp mMinus;
+			if (lowerBoundaryIsCloser()) {
+				mMinus = new DiyFp((v.f() << 2) - 1L, v.e() - 2);
 			} else {
-				m_minus = new DiyFp((v.f() << 1) - 1L, v.e() - 1);
+				mMinus = new DiyFp((v.f() << 1) - 1L, v.e() - 1);
 			}
-			m_minus.set_f(m_minus.f() << (m_minus.e() - m_plus.e()));
-			m_minus.set_e(m_plus.e());
-    		out_m_plus[0] = m_plus;
-    		out_m_minus[0] = m_minus;
+			mMinus.setF(mMinus.f() << (mMinus.e() - mPlus.e()));
+			mMinus.setE(mPlus.e());
+    		outMPlus[0] = mPlus;
+    		outMMinus[0] = mMinus;
 		}
 
 		/**
 		 *  Precondition: the value encoded by this Single must be greater or equal
 		 *  than +0.0.
 		 */
-		public DiyFp UpperBoundary() {
-			DOUBLE_CONVERSION_ASSERT(Sign() > 0);
-			return new DiyFp((toUlong(Significand()) * 2L) + 1L, Exponent() - 1);
+		public DiyFp upperBoundary() {
+			DOUBLE_CONVERSION_ASSERT(sign() > 0);
+			return new DiyFp((toUlong(significand()) * 2L) + 1L, exponent() - 1);
 		}
 
-		public boolean LowerBoundaryIsCloser() {
+		public boolean lowerBoundaryIsCloser() {
 			// The boundary is closer if the significand is of the form f == 2^p-1 then
 			// the lower boundary is closer.
 			// Think of v = 1000e10 and v- = 9999e9.
@@ -417,28 +417,29 @@ public class Ieee {
 			// The only exception is for the smallest normal: the largest denormal is
 			// at the same distance as its successor.
 			// Note: denormals have the same exponent as the smallest normals.
-			boolean physical_significand_is_zero = ((AsUint32() & kSignificandMask) == 0);
-			return physical_significand_is_zero && (Exponent() != kDenormalExponent);
+			boolean physicalSignificandIsZero = ((asUint32() & SIGNIFICAND_MASK) == 0);
+			return physicalSignificandIsZero && (exponent() != DENORMAL_EXPONENT);
 		}
 
 		@SuppressWarnings("cast.unsafe")
-		public float value() { return Float.intBitsToFloat((@Signed int)d32_); }
+		public float value() { return Float.intBitsToFloat((@Signed int) bits); }
 
-		public static float Infinity() {
-			return new Single(kInfinity).value();
+		public static float infinity() {
+			return new Single(INFINITY).value();
 		}
 
-		public static float NaN() {
-			return new Single(kNaN).value();
+		public static float nan() {
+			return new Single(NAN).value();
 		}
 
-		private static final @Unsigned int kExponentBias = 0x7F + kPhysicalSignificandSize;
-		private static final @Unsigned int kDenormalExponent = -kExponentBias + 1;
-		private static final @Unsigned int kMaxExponent = 0xFF - kExponentBias;
-		private static final @Unsigned int kInfinity = 0x7F800000;
-		private static final @Unsigned int kNaN = 0x7FC00000;
+		private static final @Unsigned int EXPONENT_BIAS = 0x7F + PHYSICAL_SIGNIFICAND_SIZE;
+		private static final @Unsigned int DENORMAL_EXPONENT = -EXPONENT_BIAS + 1;
+		private static final @Unsigned int MAX_EXPONENT = 0xFF - EXPONENT_BIAS;
+		private static final @Unsigned int INFINITY = 0x7F800000;
+		private static final @Unsigned int NAN = 0x7FC00000;
 
-  		private final @Unsigned int d32_;
+  		private final @Unsigned int bits;
 	}
 
+	private Ieee() {}
 }

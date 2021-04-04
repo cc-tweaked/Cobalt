@@ -39,7 +39,7 @@ import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 public class DtoaTest {
 
 
-	static boolean doubleToAscii(double v, DtoaMode test_mode, int requested_digits,
+	static void doubleToAscii(double v, DtoaMode test_mode, int requested_digits,
 							  char[] buffer, boolean[] sign, int[] length,
 							  int[] point) {
 		DoubleToStringConverter.DtoaMode mode = DtoaMode.SHORTEST;
@@ -57,12 +57,12 @@ public class DtoaTest {
 				mode = DtoaMode.PRECISION;
 				break;
 		}
-		return DoubleToStringConverter.DoubleToAscii(v, mode, requested_digits,
+		DoubleToStringConverter.doubleToAscii(v, mode, requested_digits,
 				buffer, buffer.length,
 				sign, length, point);
 	}
 
-	static final int kBufferSize = 100;
+	static final int BUFFER_SIZE = 100;
 
 	private static int trimRepresentation(char[] buf) {
 		return trimRepresentation(buf, strlen(buf));
@@ -79,7 +79,7 @@ public class DtoaTest {
 
 	@Test
 	public void dtoaVariousDoubles() {
-		char[] buffer = new char[kBufferSize];
+		char[] buffer = new char[BUFFER_SIZE];
 		int[] length = new int[1];
 		int[] point = new int[1];
 		boolean[] sign = new boolean[1];
@@ -335,7 +335,7 @@ public class DtoaTest {
 
 	@Test
 	public void dtoaSign() {
-		char[] buffer = new char[kBufferSize];
+		char[] buffer = new char[BUFFER_SIZE];
 		int[] length = new int[1];
 		int[] point = new int[1];
 		boolean[] sign = new boolean[1];
@@ -392,7 +392,7 @@ public class DtoaTest {
 
 	@Test
 	public void dtoaCorners() {
-		char[] buffer = new char[kBufferSize];
+		char[] buffer = new char[BUFFER_SIZE];
 		int[] length = new int[1];
 		int[] point = new int[1];
 		boolean[] sign = new boolean[1];
@@ -420,10 +420,9 @@ public class DtoaTest {
 
 
 	static class DataTestState {
-		char[] buffer = new char[kBufferSize];
+		char[] buffer = new char[BUFFER_SIZE];
 		public String underTest = "";
 		int total = 0;
-		int usesFast = 0;
 	}
 
 	// disabled because file removed from this branch history
@@ -501,12 +500,10 @@ public class DtoaTest {
 				int[] point = new int[1];
 				boolean[] sign = new boolean[1];
 
-				st.total++;
 				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
 				long t = System.currentTimeMillis();
-				if (doubleToAscii(v, DtoaMode.PRECISION, numberDigits,
-						st.buffer, sign, length, point))
-					st.usesFast++;
+				doubleToAscii(v, DtoaMode.PRECISION, numberDigits,
+						st.buffer, sign, length, point);
 				t = System.currentTimeMillis() - t;
 				//assertThat(st.underTest, t, is(lessThanOrEqualTo(50L)));
 				assertThat(st.underTest, sign[0], is(false)); // All precomputed numbers are positive.
@@ -518,7 +515,5 @@ public class DtoaTest {
 		} catch (Assert.DoubleConversionAssertionError e) {
 			fail("Assertion failed for test " + state.underTest, e);
 		}
-
-		System.out.println("Tests using fast method: " + state.usesFast + "/" + state.total);
 	}
 }

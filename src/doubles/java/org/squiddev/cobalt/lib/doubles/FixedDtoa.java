@@ -30,8 +30,6 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.checkerframework.checker.interning.qual.UsesObjectEquals;
-import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
@@ -46,7 +44,7 @@ public class FixedDtoa {
 	// platforms that support 128bit integers.
 	// Protected for testins
 	static class UInt128 {
-		private static final @Unsigned long kMask32 = 0xFFFFFFFFL;
+		private static final @Unsigned long MASK_32 = 0xFFFFFFFFL;
 		// Value == (high_bits_ << 64) + low_bits_
 		private final @Unsigned long high;
 		private final @Unsigned long low;
@@ -74,14 +72,14 @@ public class FixedDtoa {
 		public UInt128 times(@Unsigned long multiplicand) {
 			long accumulator;
 
-			accumulator = (low & kMask32) * multiplicand;
-			long part = accumulator & kMask32;
+			accumulator = (low & MASK_32) * multiplicand;
+			long part = accumulator & MASK_32;
 			accumulator >>>= 32L;
 			accumulator = accumulator + (low >>> 32) * multiplicand;
 			long newLowBits = (accumulator << 32) + part;
 			accumulator >>>= 32L;
-			accumulator = accumulator + (high & kMask32) * multiplicand;
-			part = accumulator & kMask32;
+			accumulator = accumulator + (high & MASK_32) * multiplicand;
+			part = accumulator & MASK_32;
 			accumulator >>>= 32L;
 			accumulator = accumulator + (high >>> 32) * multiplicand;
 			long newHighBits = (accumulator << 32) + part;
@@ -155,31 +153,31 @@ public class FixedDtoa {
 		}
 	}
 
-	private static final int kDoubleSignificandSize = 53;  // Includes the hidden bit.
+	private static final int DOUBLE_SIGNIFICAND_SIZE = 53;  // Includes the hidden bit.
 
-	private static void FillDigits32FixedLength(@Unsigned int number, int requested_length,
+	private static void fillDigits32FixedLength(@Unsigned int number, int requestedLength,
 												char[] buffer, int[] length) {
 		int len = length[0];
-		for (int i = requested_length - 1; i >= 0; --i) {
+		for (int i = requestedLength - 1; i >= 0; --i) {
 			buffer[len + i] = digitToChar(uRemainder(number, 10));
 			number = uDivide(number, 10);
 		}
-  		length[0] += requested_length;
+  		length[0] += requestedLength;
 	}
 
 
-	private static void FillDigits32(@Unsigned int number, char[] buffer, int[] length) {
-		int number_length = 0;
+	private static void fillDigits32(@Unsigned int number, char[] buffer, int[] length) {
+		int numberLength = 0;
 		// We fill the digits in reverse order and exchange them afterwards.
 		while (number != 0) {
 			@Unsigned int digit = uRemainder(number, 10);
 			number  = uDivide(number, 10);
-			buffer[length[0] + number_length] = digitToChar(digit);
-			number_length++;
+			buffer[length[0] + numberLength] = digitToChar(digit);
+			numberLength++;
 		}
 		// Exchange the digits.
 		int i = length[0];
-		int j = length[0] + number_length - 1;
+		int j = length[0] + numberLength - 1;
 		while (i < j) {
 			char tmp = buffer[i];
 			buffer[i] = buffer[j];
@@ -187,11 +185,11 @@ public class FixedDtoa {
 			i++;
 			j--;
 		}
-  		length[0] += number_length;
+  		length[0] += numberLength;
 	}
 
 
-	private static void FillDigits64FixedLength(@Unsigned long number,
+	private static void fillDigits64FixedLength(@Unsigned long number,
 												char[] buffer, int[] length) {
   		final @Unsigned long kTen7 = 10000000L;
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
@@ -200,13 +198,13 @@ public class FixedDtoa {
 		@Unsigned int part1 = toUint( uRemainder(number, kTen7) );
 		@Unsigned int part0 = toUint( uDivide(number, kTen7) );
 
-		FillDigits32FixedLength(part0, 3, buffer, length);
-		FillDigits32FixedLength(part1, 7, buffer, length);
-		FillDigits32FixedLength(part2, 7, buffer, length);
+		fillDigits32FixedLength(part0, 3, buffer, length);
+		fillDigits32FixedLength(part1, 7, buffer, length);
+		fillDigits32FixedLength(part2, 7, buffer, length);
 	}
 
 
-	private static void FillDigits64(@Unsigned long number, char[] buffer, int[] length) {
+	private static void fillDigits64(@Unsigned long number, char[] buffer, int[] length) {
   		final @Unsigned long kTen7 = 10000000L;
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
 		@Unsigned int part2 = toUint( uRemainder(number, kTen7) );
@@ -215,23 +213,23 @@ public class FixedDtoa {
 		@Unsigned int part0 = toUint( uDivide(number, kTen7) );
 
 		if (part0 != 0) {
-			FillDigits32(part0, buffer, length);
-			FillDigits32FixedLength(part1, 7, buffer, length);
-			FillDigits32FixedLength(part2, 7, buffer, length);
+			fillDigits32(part0, buffer, length);
+			fillDigits32FixedLength(part1, 7, buffer, length);
+			fillDigits32FixedLength(part2, 7, buffer, length);
 		} else if (part1 != 0) {
-			FillDigits32(part1, buffer, length);
-			FillDigits32FixedLength(part2, 7, buffer, length);
+			fillDigits32(part1, buffer, length);
+			fillDigits32FixedLength(part2, 7, buffer, length);
 		} else {
-			FillDigits32(part2, buffer, length);
+			fillDigits32(part2, buffer, length);
 		}
 	}
 
 
-	private static void RoundUp(char[] buffer, int[] length, int[] decimal_point) {
+	private static void roundUp(char[] buffer, int[] length, int[] decimalPoint) {
 		// An empty buffer represents 0.
 		if (length[0] == 0) {
 			buffer[0] = '1';
-    		decimal_point[0] = 1;
+    		decimalPoint[0] = 1;
     		length[0] = 1;
 			return;
 		}
@@ -252,7 +250,7 @@ public class FixedDtoa {
 		// (indicating that the point is now one digit to the right).
 		if ((int) buffer[0] == ASCII_ZERO + 10) {
 			buffer[0] = '1';
-			decimal_point[0]++;
+			decimalPoint[0]++;
 		}
 	}
 
@@ -268,9 +266,9 @@ public class FixedDtoa {
 	// might be updated. If this function generates the digits 99 and the buffer
 	// already contained "199" (thus yielding a buffer of "19999") then a
 	// rounding-up will change the contents of the buffer to "20000".
-	private static void FillFractionals(@Unsigned long fractionals, int exponent,
-										int fractional_count, char[] buffer,
-										int[] length, int[] decimal_point) {
+	private static void fillFractionals(@Unsigned long fractionals, int exponent,
+										int fractionalCount, char[] buffer,
+										int[] length, int[] decimalPoint) {
 		DOUBLE_CONVERSION_ASSERT(-128 <= exponent && exponent <= 0);
 		// 'fractionals' is a fixed-point number, with binary point at bit
 		// (-exponent). Inside the function the non-converted remainder of fractionals
@@ -279,7 +277,7 @@ public class FixedDtoa {
 			// One 64 bit number is sufficient.
 			DOUBLE_CONVERSION_ASSERT(fractionals >>> 56 == 0L);
 			int point = -exponent;
-			for (int i = 0; i < fractional_count; ++i) {
+			for (int i = 0; i < fractionalCount; ++i) {
 				if (fractionals == 0L) break;
 				// Instead of multiplying by 10 we multiply by 5 and adjust the point
 				// location. This way the fractionals variable will not overflow.
@@ -301,14 +299,14 @@ public class FixedDtoa {
 			// If the first bit after the point is set we have to round up.
 			DOUBLE_CONVERSION_ASSERT(fractionals == 0L || point - 1 >= 0);
 			if (fractionals != 0L && ((fractionals >>> (point - 1)) & 1L) == 1L) {
-				RoundUp(buffer, length, decimal_point);
+				roundUp(buffer, length, decimalPoint);
 			}
 		} else {  // We need 128 bits.
 			DOUBLE_CONVERSION_ASSERT(64 < -exponent && -exponent <= 128);
 			UInt128 fractionals128 = new UInt128(fractionals, 0L);
 			fractionals128 = fractionals128.shift(-exponent - 64);
 			int point = 128;
-			for (int i = 0; i < fractional_count; ++i) {
+			for (int i = 0; i < fractionalCount; ++i) {
 				if (fractionals128.isZero()) break;
 				// As before: instead of multiplying by 10 we multiply by 5 and adjust the
 				// point location.
@@ -322,7 +320,7 @@ public class FixedDtoa {
 				length[0]++;
 			}
 			if (fractionals128.bitAt(point - 1) == 1) {
-				RoundUp(buffer, length, decimal_point);
+				roundUp(buffer, length, decimalPoint);
 			}
 		}
 	}
@@ -330,57 +328,58 @@ public class FixedDtoa {
 
 	// Removes leading and trailing zeros.
 	// If leading zeros are removed then the decimal point position is adjusted.
-	private static void TrimZeros(char[] buffer, int[] length, int[] decimal_point) {
+	private static void trimZeros(char[] buffer, int[] length, int[] decimal_point) {
 		while (length[0] > 0 && (int) buffer[length[0] - 1] == ASCII_ZERO) {
 			length[0]--;
 		}
-		int first_non_zero = 0;
-		while (first_non_zero < length[0] && (int) buffer[first_non_zero] == ASCII_ZERO) {
-			first_non_zero++;
+		int firstNonZero = 0;
+		while (firstNonZero < length[0] && (int) buffer[firstNonZero] == ASCII_ZERO) {
+			firstNonZero++;
 		}
-		if (first_non_zero != 0) {
-			for (int i = first_non_zero; i < length[0]; ++i) {
-				buffer[i - first_non_zero] = buffer[i];
+		if (firstNonZero != 0) {
+			for (int i = firstNonZero; i < length[0]; ++i) {
+				buffer[i - firstNonZero] = buffer[i];
 			}
-    		length[0] -= first_non_zero;
-    		decimal_point[0] -= first_non_zero;
+    		length[0] -= firstNonZero;
+    		decimal_point[0] -= firstNonZero;
 		}
 	}
 
 
 	// Produces digits necessary to print a given number with
-	// 'fractional_count' digits after the decimal point.
+	// 'fractionalCount' digits after the decimal point.
 	// The buffer must be big enough to hold the result plus one terminating null
 	// character.
 	//
 	// The produced digits might be too short in which case the caller has to fill
 	// the gaps with '0's.
-	// Example: FastFixedDtoa(0.001, 5, ...) is allowed to return buffer = "1", and
-	// decimal_point = -2.
+	// Example: fastFixedDtoa(0.001, 5, ...) is allowed to return buffer = "1", and
+	// decimalPoint = -2.
 	// Halfway cases are rounded towards +/-Infinity (away from 0). The call
-	// FastFixedDtoa(0.15, 2, ...) thus returns buffer = "2", decimal_point = 0.
+	// fastFixedDtoa(0.15, 2, ...) thus returns buffer = "2", decimalPoint = 0.
 	// The returned buffer may contain digits that would be truncated from the
 	// shortest representation of the input.
 	//
 	// This method only works for some parameters. If it can't handle the input it
 	// returns false. The output is null-terminated when the function succeeds.
-	public static boolean FastFixedDtoa(double v, int fractional_count,
-										char[] buffer, int[] length, int[] decimal_point) {
+	public static boolean fastFixedDtoa(double v, int fractionalCount,
+										char[] buffer, int[] length, int[] decimalPoint) {
   		final @Unsigned long kMaxUInt32 = 0xFFFF_FFFFL;
-		@Unsigned long significand = new Ieee.Double(v).Significand();
-		int exponent = new Ieee.Double(v).Exponent();
+		@Unsigned long significand = new Ieee.Double(v).significand();
+		int exponent = new Ieee.Double(v).exponent();
 		// v = significand * 2^exponent (with significand a 53bit integer).
 		// If the exponent is larger than 20 (i.e. we may have a 73bit number) then we
 		// don't know how to compute the representation. 2^73 ~= 9.5*10^21.
 		// If necessary this limit could probably be increased, but we don't need
 		// more.
 		if (exponent > 20) return false;
-		if (fractional_count > 20) return false;
+		if (fractionalCount > 20) return false;
+
   		length[0] = 0;
 		// At most kDoubleSignificandSize bits of the significand are non-zero.
 		// Given a 64 bit integer we have 11 0s followed by 53 potentially non-zero
 		// bits:  0..11*..0xxx..53*..xx
-		if (exponent + kDoubleSignificandSize > 64) {
+		if (exponent + DOUBLE_SIGNIFICAND_SIZE > 64) {
 			// The exponent must be > 11.
 			//
 			// We know that v = significand * 2^exponent.
@@ -391,7 +390,7 @@ public class FixedDtoa {
 			// Dividing by 10^17 is equivalent to dividing by 5^17*2^17.
     		final @Unsigned long kFive17 = 0xB1_A2BC2EC5L;  // 5^17
 			@Unsigned long divisor = kFive17;
-			int divisor_power = 17;
+			int divisorPower = 17;
 			@Unsigned long dividend = significand;
 			@Unsigned int quotient;
 			@Unsigned long remainder;
@@ -404,54 +403,54 @@ public class FixedDtoa {
 			//   f * 2^(e-17) = q * 5^17        + r/2^17
 			// else
 			//   f  = q * 5^17 * 2^(17-e) + r/2^e
-			if (exponent > divisor_power) {
+			if (exponent > divisorPower) {
 				// We only allow exponents of up to 20 and therefore (17 - e) <= 3
-				dividend <<= toUlongS(exponent - divisor_power);
+				dividend <<= toUlongS(exponent - divisorPower);
 				quotient = toUint( uDivide(dividend, divisor) );
-				remainder = uRemainder( dividend, divisor) << divisor_power;
+				remainder = uRemainder( dividend, divisor) << divisorPower;
 			} else {
-				divisor <<= toUlongS( divisor_power - exponent );
+				divisor <<= toUlongS( divisorPower - exponent );
 				quotient = toUint( uDivide(dividend, divisor) );
 				remainder = uRemainder( dividend, divisor) << exponent;
 			}
-			FillDigits32(quotient, buffer, length);
-			FillDigits64FixedLength(remainder, buffer, length);
-    		decimal_point[0] = length[0];
+			fillDigits32(quotient, buffer, length);
+			fillDigits64FixedLength(remainder, buffer, length);
+    		decimalPoint[0] = length[0];
 		} else if (exponent >= 0) {
 			// 0 <= exponent <= 11
 			significand = significand << exponent;
-			FillDigits64(significand, buffer, length);
-    		decimal_point[0] = length[0];
-		} else if (exponent > -kDoubleSignificandSize) {
+			fillDigits64(significand, buffer, length);
+    		decimalPoint[0] = length[0];
+		} else if (exponent > -DOUBLE_SIGNIFICAND_SIZE) {
 			// We have to cut the number.
 			@Unsigned long integrals = significand >>> -exponent;
 			@Unsigned long fractionals = significand - (integrals << -exponent);
 			if (!isAssignableToUint(integrals)) {
-				FillDigits64(integrals, buffer, length);
+				fillDigits64(integrals, buffer, length);
 			} else {
-				FillDigits32(toUint(integrals), buffer, length);
+				fillDigits32(toUint(integrals), buffer, length);
 			}
-    		decimal_point[0] = length[0];
-			FillFractionals(fractionals, exponent, fractional_count,
-					buffer, length, decimal_point);
+    		decimalPoint[0] = length[0];
+			fillFractionals(fractionals, exponent, fractionalCount,
+					buffer, length, decimalPoint);
 		} else if (exponent < -128) {
 			// This configuration (with at most 20 digits) means that all digits must be
 			// 0.
-			DOUBLE_CONVERSION_ASSERT(fractional_count <= 20);
+			DOUBLE_CONVERSION_ASSERT(fractionalCount <= 20);
 			buffer[0] = '\0';
     		length[0] = 0;
-    		decimal_point[0] = -fractional_count;
+    		decimalPoint[0] = -fractionalCount;
 		} else {
-    		decimal_point[0] = 0;
-			FillFractionals(significand, exponent, fractional_count,
-					buffer, length, decimal_point);
+    		decimalPoint[0] = 0;
+			fillFractionals(significand, exponent, fractionalCount,
+					buffer, length, decimalPoint);
 		}
-		TrimZeros(buffer, length, decimal_point);
+		trimZeros(buffer, length, decimalPoint);
 		buffer[length[0]] = '\0';
 		if (length[0] == 0) {
-			// The string is empty and the decimal_point thus has no importance. Mimick
-			// Gay's dtoa and and set it to -fractional_count.
-    		decimal_point[0] = -fractional_count;
+			// The string is empty and the decimalPoint thus has no importance. Mimick
+			// Gay's dtoa and and set it to -fractionalCount.
+    		decimalPoint[0] = -fractionalCount;
 		}
 		return true;
 	}

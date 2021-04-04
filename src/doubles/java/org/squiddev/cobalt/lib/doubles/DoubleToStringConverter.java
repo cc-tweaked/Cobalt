@@ -31,45 +31,45 @@
 package org.squiddev.cobalt.lib.doubles;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
-import static org.squiddev.cobalt.lib.doubles.FixedDtoa.FastFixedDtoa;
+import static org.squiddev.cobalt.lib.doubles.FixedDtoa.fastFixedDtoa;
 
 public class DoubleToStringConverter {
 	/**
-	 *  When calling ToFixed with a double > 10^kMaxFixedDigitsBeforePoint
+	 *  When calling toFixed with a double > 10^kMaxFixedDigitsBeforePoint
 	 *  or a requested_digits parameter > kMaxFixedDigitsAfterPoint then the
 	 *  function returns false.
 	 */
-	public static final int kMaxFixedDigitsBeforePoint = 60;
-	public static final int kMaxFixedDigitsAfterPoint = 100;
+	public static final int MAX_FIXED_DIGITS_BEFORE_POINT = 60;
+	public static final int MAX_FIXED_DIGITS_AFTER_POINT = 100;
 
 	/**
-	 *  When calling ToExponential with a requested_digits
+	 *  When calling toExponential with a requested_digits
 	 *  parameter > kMaxExponentialDigits then the function returns false.
 	 */
-	public static final int kMaxExponentialDigits = 120;
+	public static final int MAX_EXPONENTIAL_DIGITS = 120;
 
 	/**
-	 *  When calling ToPrecision with a requested_digits
+	 *  When calling toPrecision with a requested_digits
 	 *  parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
 	 *  then the function returns false.
 	 */
-	public static final int kMinPrecisionDigits = 1;
+	public static final int MIN_PRECISION_DIGITS = 1;
 	/**
-	 *  When calling ToPrecision with a requested_digits
+	 *  When calling toPrecision with a requested_digits
 	 *  parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
 	 *  then the function returns false.
 	 */
-	public static final int kMaxPrecisionDigits = 120;
+	public static final int MAX_PRECISION_DIGITS = 120;
 
 	/**
 	 * 	 The maximal number of digits that are needed to emit a double in base 10.
 	 * 	 A higher precision can be achieved by using more digits, but the shortest
 	 * 	 accurate representation of any double will never use more digits than
 	 * 	 kBase10MaximalLength.
-	 * 	 Note that DoubleToAscii null-terminates its input. So the given buffer
+	 * 	 Note that doubleToAscii null-terminates its input. So the given buffer
 	 * 	 should be at least kBase10MaximalLength + 1 characters long.
 	 */
-	public static final int kBase10MaximalLength = 17;
+	public static final int BASE_10_MAXIMAL_LENGTH = 17;
 
 	/**
 	 *  The maximal number of digits that are needed to emit a single in base 10.
@@ -77,17 +77,17 @@ public class DoubleToStringConverter {
 	 *  accurate representation of any single will never use more digits than
 	 *  kBase10MaximalLengthSingle.
 	 */
-	public static final int kBase10MaximalLengthSingle = 9;
+	public static final int BASE_10_MAXIMAL_LENGTH_SINGLE = 9;
 
 	/**
 	 *  The length of the longest string that 'ToShortest' can produce when the
 	 *  converter is instantiated with EcmaScript defaults (see
-	 *  'EcmaScriptConverter')
+	 *  'ecmaScriptConverter')
 	 *  This value does not include the trailing '\0' character.
 	 *  This amount of characters is needed for negative values that hit the
 	 *  'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
 	 */
-	public static final int kMaxCharsEcmaScriptShortest = 25;
+	public static final int MAX_CHARS_ECMA_SCRIPT_SHORTEST = 25;
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 
@@ -101,32 +101,32 @@ public class DoubleToStringConverter {
 	}
 
 
-	private final int flags_;
-	private final String infinity_symbol_;
-	private final String nan_symbol_;
-	private final int exponent_character_;
-	private final int decimal_in_shortest_low_;
-	private final int decimal_in_shortest_high_;
-	private final int max_leading_padding_zeroes_in_precision_mode_;
-	private final int max_trailing_padding_zeroes_in_precision_mode_;
-	private final int min_exponent_width_;
+	private final int flags;
+	private final String infinitySymbol;
+	private final String nanSymbol;
+	private final int exponentCharacter;
+	private final int decimalInShortestLow;
+	private final int decimalInShortestHigh;
+	private final int maxLeadingPaddingZeroesInPrecisionMode;
+	private final int maxTrailingPaddingZeroesInPrecisionMode;
+	private final int minExponentWidth;
 
 	public DoubleToStringConverter(int flags,
-								String infinity_symbol,
-								String nan_symbol,
-								int exponent_character,
-								int decimal_in_shortest_low,
-								int decimal_in_shortest_high,
-								int max_leading_padding_zeroes_in_precision_mode,
-								int max_trailing_padding_zeroes_in_precision_mode) {
+								   String infinitySymbol,
+								   String nanSymbol,
+								   int exponentCharacter,
+								   int decimalInShortestLow,
+								   int decimalInShortestHigh,
+								   int maxLeadingPaddingZeroesInPrecisionMode,
+								   int maxTrailingPaddingZeroesInPrecisionMode) {
 		this(flags,
-			infinity_symbol,
-			nan_symbol,
-			exponent_character,
-			decimal_in_shortest_low,
-			decimal_in_shortest_high,
-			max_leading_padding_zeroes_in_precision_mode,
-			max_trailing_padding_zeroes_in_precision_mode, 0);
+			infinitySymbol,
+			nanSymbol,
+			exponentCharacter,
+			decimalInShortestLow,
+			decimalInShortestHigh,
+			maxLeadingPaddingZeroesInPrecisionMode,
+			maxTrailingPaddingZeroesInPrecisionMode, 0);
 	}
 
 	/**
@@ -147,66 +147,66 @@ public class DoubleToStringConverter {
 	 * 	When EMIT_TRAILING_ZERO_AFTER_POINT is also given, one trailing zero is
 	 * 	preserved.
 	 *
-	 *  Infinity symbol and nan_symbol provide the string representation for these
+	 *  Infinity symbol and nanSymbol provide the string representation for these
 	 *  special values. If the string is NULL and the special value is encountered
 	 *  then the conversion functions return false.
 	 *
-	 *  The exponent_character is used in exponential representations. It is
+	 *  The exponentCharacter is used in exponential representations. It is
 	 *  usually 'e' or 'E'.
 	 *
 	 *  When converting to the shortest representation the converter will
 	 *  represent input numbers in decimal format if they are in the interval
-	 *  [10^decimal_in_shortest_low; 10^decimal_in_shortest_high[
+	 *  [10^decimalInShortestLow; 10^decimalInShortestHigh[
 	 * 	(lower boundary included, greater boundary excluded).
-	 *  Example: with decimal_in_shortest_low = -6 and
-	 * 			   decimal_in_shortest_high = 21:
-	 *    ToShortest(0.000001)  -> "0.000001"
-	 *    ToShortest(0.0000001) -> "1e-7"
-	 *    ToShortest(111111111111111111111.0)  -> "111111111111111110000"
-	 *    ToShortest(100000000000000000000.0)  -> "100000000000000000000"
-	 *    ToShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
+	 *  Example: with decimalInShortestLow = -6 and
+	 * 			   decimalInShortestHigh = 21:
+	 *    toShortest(0.000001)  -> "0.000001"
+	 *    toShortest(0.0000001) -> "1e-7"
+	 *    toShortest(111111111111111111111.0)  -> "111111111111111110000"
+	 *    toShortest(100000000000000000000.0)  -> "100000000000000000000"
+	 *    toShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
 	 *
 	 *  When converting to precision mode the converter may add
 	 *  max_leading_padding_zeroes before returning the number in exponential
 	 *  format.
-	 *  Example with max_leading_padding_zeroes_in_precision_mode = 6.
-	 *    ToPrecision(0.0000012345, 2) -> "0.0000012"
-	 *    ToPrecision(0.00000012345, 2) -> "1.2e-7"
+	 *  Example with maxLeadingPaddingZeroesInPrecisionMode = 6.
+	 *    toPrecision(0.0000012345, 2) -> "0.0000012"
+	 *    toPrecision(0.00000012345, 2) -> "1.2e-7"
 	 *  Similarily the converter may add up to
-	 *  max_trailing_padding_zeroes_in_precision_mode in precision mode to avoid
+	 *  maxTrailingPaddingZeroesInPrecisionMode in precision mode to avoid
 	 *  returning an exponential representation. A zero added by the
 	 *  EMIT_TRAILING_ZERO_AFTER_POINT flag is counted for this limit.
-	 *  Examples for max_trailing_padding_zeroes_in_precision_mode = 1:
-	 *    ToPrecision(230.0, 2) -> "230"
-	 *    ToPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
-	 *    ToPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
+	 *  Examples for maxTrailingPaddingZeroesInPrecisionMode = 1:
+	 *    toPrecision(230.0, 2) -> "230"
+	 *    toPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
+	 *    toPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
 	 *
-	 *  The min_exponent_width is used for exponential representations.
+	 *  The minExponentWidth is used for exponential representations.
 	 *  The converter adds leading '0's to the exponent until the exponent
-	 *  is at least min_exponent_width digits long.
-	 *  The min_exponent_width is clamped to 5.
+	 *  is at least minExponentWidth digits long.
+	 *  The minExponentWidth is clamped to 5.
 	 *  As such, the exponent may never have more than 5 digits in total.
 	 */
 	public DoubleToStringConverter(int flags,
-							String infinity_symbol,
-						    String nan_symbol,
-							int exponent_character,
-							int decimal_in_shortest_low,
-							int decimal_in_shortest_high,
-							int max_leading_padding_zeroes_in_precision_mode,
-							int max_trailing_padding_zeroes_in_precision_mode,
-							int min_exponent_width) {
-        this.flags_ = flags;
-		this.infinity_symbol_ = infinity_symbol;
-		this.nan_symbol_ = nan_symbol;
-		this.exponent_character_ = exponent_character;
-		this.decimal_in_shortest_low_ = decimal_in_shortest_low;
-		this.decimal_in_shortest_high_ = decimal_in_shortest_high;
-		this.max_leading_padding_zeroes_in_precision_mode_ =
-			max_leading_padding_zeroes_in_precision_mode;
-		this.max_trailing_padding_zeroes_in_precision_mode_ =
-			max_trailing_padding_zeroes_in_precision_mode;
-		this.min_exponent_width_ = min_exponent_width;
+								   String infinitySymbol,
+								   String nanSymbol,
+								   int exponentCharacter,
+								   int decimalInShortestLow,
+								   int decimalInShortestHigh,
+								   int maxLeadingPaddingZeroesInPrecisionMode,
+								   int maxTrailingPaddingZeroesInPrecisionMode,
+								   int minExponentWidth) {
+        this.flags = flags;
+		this.infinitySymbol = infinitySymbol;
+		this.nanSymbol = nanSymbol;
+		this.exponentCharacter = exponentCharacter;
+		this.decimalInShortestLow = decimalInShortestLow;
+		this.decimalInShortestHigh = decimalInShortestHigh;
+		this.maxLeadingPaddingZeroesInPrecisionMode =
+			maxLeadingPaddingZeroesInPrecisionMode;
+		this.maxTrailingPaddingZeroesInPrecisionMode =
+			maxTrailingPaddingZeroesInPrecisionMode;
+		this.minExponentWidth = minExponentWidth;
 		// When 'trailing zero after the point' is set, then 'trailing point'
 		// must be set too.
 		DOUBLE_CONVERSION_ASSERT(((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) ||
@@ -225,7 +225,7 @@ public class DoubleToStringConverter {
 	 *  max_trailing_padding_zeroes_in_precision_mode: 0
 	 */
 	@SuppressWarnings("ImplicitNumericConversion")
-	public static DoubleToStringConverter EcmaScriptConverter() {
+	public static DoubleToStringConverter ecmaScriptConverter() {
 		int flags = Flags.UNIQUE_ZERO | Flags.EMIT_POSITIVE_EXPONENT_SIGN;
 		return new DoubleToStringConverter(flags,
 				"Infinity",
@@ -245,11 +245,11 @@ public class DoubleToStringConverter {
 	 * 			  decimal_in_shortest_high = 21,
 	 * 			  EMIT_POSITIVE_EXPONENT_SIGN activated, and
 	 * 			  EMIT_TRAILING_DECIMAL_POINT deactived:
-	 *    ToShortest(0.000001)  -> "0.000001"
-	 *    ToShortest(0.0000001) -> "1e-7"
-	 *    ToShortest(111111111111111111111.0)  -> "111111111111111110000"
-	 *    ToShortest(100000000000000000000.0)  -> "100000000000000000000"
-	 *    ToShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
+	 *    toShortest(0.000001)  -> "0.000001"
+	 *    toShortest(0.0000001) -> "1e-7"
+	 *    toShortest(111111111111111111111.0)  -> "111111111111111110000"
+	 *    toShortest(100000000000000000000.0)  -> "100000000000000000000"
+	 *    toShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"
 	 *
 	 *  Note: the conversion may round the output if the returned string
 	 *  is accurate enough to uniquely identify the input-number.
@@ -268,7 +268,7 @@ public class DoubleToStringConverter {
 	 * 	  "-100000000000000000000", "-1000000000000000.0"
 	 *  - the longest string in range [0; -10^decimal_in_shortest_low]. Generally,
 	 *    this string is 3 + kBase10MaximalLength - decimal_in_shortest_low.
-	 *    (Sign, '0', decimal point, padding zeroes for decimal_in_shortest_low,
+	 *    (sign, '0', decimal point, padding zeroes for decimal_in_shortest_low,
 	 *    and the significant digits).
 	 * 	  "-0.0000033333333333333333", "-0.0012345678901234567"
 	 *  - the longest exponential representation. (A negative number with
@@ -276,14 +276,14 @@ public class DoubleToStringConverter {
 	 * 	  "-1.7976931348623157e+308", "-1.7976931348623157E308"
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
-	public boolean ToShortest(double value, StringBuilder result_builder) {
-		return ToShortestIeeeNumber(value, result_builder, DtoaMode.SHORTEST);
+	public boolean toShortest(double value, StringBuilder resultBuilder) {
+		return toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST);
 	}
 
-	/** Same as ToShortest, but for single-precision floats. */
-	public boolean ToShortestSingle(float value, StringBuilder result_builder) {
+	/** Same as toShortest, but for single-precision floats. */
+	public boolean toShortestSingle(float value, StringBuilder resultBuilder) {
 		//noinspection ImplicitNumericConversion
-		return ToShortestIeeeNumber(value, result_builder, DtoaMode.SHORTEST_SINGLE);
+		return toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST_SINGLE);
 	}
 
 	/**
@@ -292,19 +292,19 @@ public class DoubleToStringConverter {
 	 * 	 If either of them is NULL or the value is not special then the
 	 * 	 function returns false.
 	 */
-	private boolean HandleSpecialValues(double value, StringBuilder result_builder) {
-		Ieee.Double double_inspect = new Ieee.Double(value);
-		if (double_inspect.IsInfinite()) {
-			if (infinity_symbol_ == null) return false;
+	private boolean handleSpecialValues(double value, StringBuilder resultBuilder) {
+		Ieee.Double doubleInspect = new Ieee.Double(value);
+		if (doubleInspect.isInfinite()) {
+			if (infinitySymbol == null) return false;
 			if (value < 0.0) {
-				result_builder.append('-');
+				resultBuilder.append('-');
 			}
-			result_builder.append(infinity_symbol_);
+			resultBuilder.append(infinitySymbol);
 			return true;
 		}
-		if (double_inspect.IsNan()) {
-			if (nan_symbol_ == null) return false;
-			result_builder.append(nan_symbol_);
+		if (doubleInspect.isNan()) {
+			if (nanSymbol == null) return false;
+			resultBuilder.append(nanSymbol);
 			return true;
 		}
 		return false;
@@ -314,23 +314,23 @@ public class DoubleToStringConverter {
 	 * 	 Constructs an exponential representation (i.e. 1.234e56).
 	 * 	 The given exponent assumes a decimal point after the first decimal digit.
 	 */
-	private void CreateExponentialRepresentation(final char[] decimal_digits,
+	private void createExponentialRepresentation(final char[] decimalDigits,
 												 int length,
 												 int exponent,
-												 StringBuilder result_builder) {
+												 StringBuilder resultBuilder) {
 		DOUBLE_CONVERSION_ASSERT(length != 0);
-		result_builder.append(decimal_digits[0]);
+		resultBuilder.append(decimalDigits[0]);
 		if (length != 1) {
-			result_builder.append('.');
-			result_builder.append(decimal_digits, 1, length-1);
+			resultBuilder.append('.');
+			resultBuilder.append(decimalDigits, 1, length-1);
 		}
-		result_builder.append(exponent_character_);
+		resultBuilder.append(exponentCharacter);
 		if (exponent < 0) {
-			result_builder.append('-');
+			resultBuilder.append('-');
 			exponent = -exponent;
 		} else {
-			if ((flags_ & Flags.EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
-				result_builder.append('+');
+			if ((flags & Flags.EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
+				resultBuilder.append('+');
 			}
 		}
 		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
@@ -338,106 +338,106 @@ public class DoubleToStringConverter {
 		final int kMaxExponentLength = 5;
 		char[] buffer = new char[kMaxExponentLength + 1];
 		buffer[kMaxExponentLength] = '\0';
-		int first_char_pos = kMaxExponentLength;
+		int firstCharPos = kMaxExponentLength;
 		if (exponent == 0) {
-			buffer[--first_char_pos] = (char) ASCII_ZERO;
+			buffer[--firstCharPos] = (char) ASCII_ZERO;
 		} else {
 			while (exponent > 0) {
-				buffer[--first_char_pos] = (char) (ASCII_ZERO + (exponent % 10));
+				buffer[--firstCharPos] = (char) (ASCII_ZERO + (exponent % 10));
 				exponent /= 10;
 			}
 		}
 		// Add prefix '0' to make exponent width >= min(min_exponent_with_, kMaxExponentLength)
 		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
-		while(kMaxExponentLength - first_char_pos < Math.min(min_exponent_width_, kMaxExponentLength)) {
-			buffer[--first_char_pos] = (char) ASCII_ZERO;
+		while(kMaxExponentLength - firstCharPos < Math.min(minExponentWidth, kMaxExponentLength)) {
+			buffer[--firstCharPos] = (char) ASCII_ZERO;
 		}
 		// TODO verify this is equivalent
-		result_builder.append(buffer, first_char_pos, kMaxExponentLength -first_char_pos);
-//		result_builder->AddSubstring(&buffer[first_char_pos],
-//				kMaxExponentLength - first_char_pos);
+		resultBuilder.append(buffer, firstCharPos, kMaxExponentLength -firstCharPos);
+//		resultBuilder->AddSubstring(&buffer[firstCharPos],
+//				kMaxExponentLength - firstCharPos);
 	}
 
 	/** Creates a decimal representation (i.e 1234.5678). */
-	private void CreateDecimalRepresentation(final char[] decimal_digits,
+	private void createDecimalRepresentation(final char[] decimalDigits,
 											 int length,
-											 int decimal_point,
-											 int digits_after_point,
-											 StringBuilder result_builder) {
+											 int decimalPoint,
+											 int digitsAfterPoint,
+											 StringBuilder resultBuilder) {
 		// Create a representation that is padded with zeros if needed.
-		if (decimal_point <= 0) {
+		if (decimalPoint <= 0) {
 			// "0.00000decimal_rep" or "0.000decimal_rep00".
-			result_builder.append(ASCII_ZERO);
-			if (digits_after_point > 0) {
-				result_builder.append('.');
+			resultBuilder.append(ASCII_ZERO);
+			if (digitsAfterPoint > 0) {
+				resultBuilder.append('.');
 
-				addPadding(result_builder, ASCII_ZERO, -decimal_point);
-				DOUBLE_CONVERSION_ASSERT(length <= digits_after_point - (-decimal_point));
-				result_builder.append(decimal_digits);
-				int remaining_digits = digits_after_point - (-decimal_point) - length;
-				addPadding(result_builder, ASCII_ZERO, remaining_digits);
+				addPadding(resultBuilder, ASCII_ZERO, -decimalPoint);
+				DOUBLE_CONVERSION_ASSERT(length <= digitsAfterPoint - (-decimalPoint));
+				resultBuilder.append(decimalDigits);
+				int remainingDigits = digitsAfterPoint - (-decimalPoint) - length;
+				addPadding(resultBuilder, ASCII_ZERO, remainingDigits);
 			}
-		} else if (decimal_point >= length) {
-			// "decimal_rep0000.00000" or "decimal_rep.0000".
-			result_builder.append(decimal_digits);
-			addPadding(result_builder, ASCII_ZERO, decimal_point - length);
-			if (digits_after_point > 0) {
-				result_builder.append('.');
-				addPadding(result_builder, ASCII_ZERO, digits_after_point);
+		} else if (decimalPoint >= length) {
+			// "decimal_rep0000.00000" or "decimalRep.0000".
+			resultBuilder.append(decimalDigits);
+			addPadding(resultBuilder, ASCII_ZERO, decimalPoint - length);
+			if (digitsAfterPoint > 0) {
+				resultBuilder.append('.');
+				addPadding(resultBuilder, ASCII_ZERO, digitsAfterPoint);
 			}
 		} else {
 			// "decima.l_rep000".
-			DOUBLE_CONVERSION_ASSERT(digits_after_point > 0);
-			result_builder.append(decimal_digits, 0, decimal_point+1);
-			result_builder.append('.');
-			DOUBLE_CONVERSION_ASSERT(length - decimal_point <= digits_after_point);
-			result_builder.append(decimal_digits, decimal_point, length - decimal_point);
-			int remaining_digits = digits_after_point - (length - decimal_point);
-			addPadding(result_builder, ASCII_ZERO, remaining_digits);
+			DOUBLE_CONVERSION_ASSERT(digitsAfterPoint > 0);
+			resultBuilder.append(decimalDigits, 0, decimalPoint+1);
+			resultBuilder.append('.');
+			DOUBLE_CONVERSION_ASSERT(length - decimalPoint <= digitsAfterPoint);
+			resultBuilder.append(decimalDigits, decimalPoint, length - decimalPoint);
+			int remainingDigits = digitsAfterPoint - (length - decimalPoint);
+			addPadding(resultBuilder, ASCII_ZERO, remainingDigits);
 		}
-		if (digits_after_point == 0) {
-			if ((flags_ & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) {
-				result_builder.append('.');
+		if (digitsAfterPoint == 0) {
+			if ((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) {
+				resultBuilder.append('.');
 			}
-			if ((flags_ & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
-				result_builder.append(ASCII_ZERO);
+			if ((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
+				resultBuilder.append(ASCII_ZERO);
 			}
 		}
 	}
 
-	/** Implementation for ToShortest and ToShortestSingle. */
-	private boolean ToShortestIeeeNumber(double value,
-										 StringBuilder result_builder,
+	/** Implementation for toShortest and toShortestSingle. */
+	private boolean toShortestIeeeNumber(double value,
+										 StringBuilder resultBuilder,
 										 DtoaMode mode) {
 		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE);
-		if (new Ieee.Double(value).IsSpecial()) {
-			return HandleSpecialValues(value, result_builder);
+		if (new Ieee.Double(value).isSpecial()) {
+			return handleSpecialValues(value, resultBuilder);
 		}
 
-		int[] decimal_point = new int[1];
+		int[] decimalPoint = new int[1];
 		boolean[] sign = new boolean[1];
-		final int kDecimalRepCapacity = kBase10MaximalLength + 1;
-		char[] decimal_rep = new char[kDecimalRepCapacity];
-		int[] decimal_rep_length = new int[1];
+		final int kDecimalRepCapacity = BASE_10_MAXIMAL_LENGTH + 1;
+		char[] decimalRep = new char[kDecimalRepCapacity];
+		int[] decimalRepLength = new int[1];
 
-		DoubleToAscii(value, mode, 0, decimal_rep, kDecimalRepCapacity,
-				sign, decimal_rep_length, decimal_point);
+		doubleToAscii(value, mode, 0, decimalRep, kDecimalRepCapacity,
+				sign, decimalRepLength, decimalPoint);
 
-		boolean unique_zero = (flags_ & Flags.UNIQUE_ZERO) != 0;
+		boolean unique_zero = (flags & Flags.UNIQUE_ZERO) != 0;
 		if (sign[0] && (value != 0.0 || !unique_zero)) {
-			result_builder.append('-');
+			resultBuilder.append('-');
 		}
 
-		int exponent = decimal_point[0] - 1;
-		if ((decimal_in_shortest_low_ <= exponent) &&
-				(exponent < decimal_in_shortest_high_)) {
-			CreateDecimalRepresentation(decimal_rep, decimal_rep_length[0],
-					decimal_point[0],
-					Math.max(0, decimal_rep_length[0] - decimal_point[0]),
-					result_builder);
+		int exponent = decimalPoint[0] - 1;
+		if ((decimalInShortestLow <= exponent) &&
+				(exponent < decimalInShortestHigh)) {
+			createDecimalRepresentation(decimalRep, decimalRepLength[0],
+					decimalPoint[0],
+					Math.max(0, decimalRepLength[0] - decimalPoint[0]),
+					resultBuilder);
 		} else {
-			CreateExponentialRepresentation(decimal_rep, decimal_rep_length[0], exponent,
-					result_builder);
+			createExponentialRepresentation(decimalRep, decimalRepLength[0], exponent,
+					resultBuilder);
 		}
 		return true;
 	}
@@ -448,18 +448,18 @@ public class DoubleToStringConverter {
 	 *  decimal point. The last emitted digit is rounded.
 	 *
 	 *  Examples:
-	 *    ToFixed(3.12, 1) -> "3.1"
-	 *    ToFixed(3.1415, 3) -> "3.142"
-	 *    ToFixed(1234.56789, 4) -> "1234.5679"
-	 *    ToFixed(1.23, 5) -> "1.23000"
-	 *    ToFixed(0.1, 4) -> "0.1000"
-	 *    ToFixed(1e30, 2) -> "1000000000000000019884624838656.00"
-	 *    ToFixed(0.1, 30) -> "0.100000000000000005551115123126"
-	 *    ToFixed(0.1, 17) -> "0.10000000000000001"
+	 *    toFixed(3.12, 1) -> "3.1"
+	 *    toFixed(3.1415, 3) -> "3.142"
+	 *    toFixed(1234.56789, 4) -> "1234.5679"
+	 *    toFixed(1.23, 5) -> "1.23000"
+	 *    toFixed(0.1, 4) -> "0.1000"
+	 *    toFixed(1e30, 2) -> "1000000000000000019884624838656.00"
+	 *    toFixed(0.1, 30) -> "0.100000000000000005551115123126"
+	 *    toFixed(0.1, 17) -> "0.10000000000000001"
 	 *
-	 *  If requested_digits equals 0, then the tail of the result depends on
+	 *  If requestedDigits equals 0, then the tail of the result depends on
 	 *  the EMIT_TRAILING_DECIMAL_POINT and EMIT_TRAILING_ZERO_AFTER_POINT.
-	 *  Examples, for requested_digits == 0,
+	 *  Examples, for requestedDigits == 0,
 	 *    let EMIT_TRAILING_DECIMAL_POINT and EMIT_TRAILING_ZERO_AFTER_POINT be
 	 * 	- false and false: then 123.45 -> 123
 	 * 							 0.678 -> 1
@@ -473,129 +473,129 @@ public class DoubleToStringConverter {
 	 *    - the input value is special and no infinity_symbol or nan_symbol has
 	 * 	 been provided to the constructor,
 	 *    - 'value' > 10^kMaxFixedDigitsBeforePoint, or
-	 *    - 'requested_digits' > kMaxFixedDigitsAfterPoint.
+	 *    - 'requestedDigits' > kMaxFixedDigitsAfterPoint.
 	 *  The last two conditions imply that the result for non-special values never
 	 *  contains more than
 	 *   1 + kMaxFixedDigitsBeforePoint + 1 + kMaxFixedDigitsAfterPoint characters
 	 *  (one additional character for the sign, and one for the decimal point).
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
-	boolean ToFixed(double value,
-				 int requested_digits,
-				 StringBuilder result_builder) {
-		DOUBLE_CONVERSION_ASSERT(kMaxFixedDigitsBeforePoint == 60);
+	boolean toFixed(double value,
+					int requestedDigits,
+					StringBuilder resultBuilder) {
+		DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
   		final double kFirstNonFixed = 1e60;
 
-		if (new Ieee.Double(value).IsSpecial()) {
-			return HandleSpecialValues(value, result_builder);
+		if (new Ieee.Double(value).isSpecial()) {
+			return handleSpecialValues(value, resultBuilder);
 		}
 
-		if (requested_digits > kMaxFixedDigitsAfterPoint) return false;
+		if (requestedDigits > MAX_FIXED_DIGITS_AFTER_POINT) return false;
 		if (value >= kFirstNonFixed || value <= -kFirstNonFixed) return false;
 
 		// Find a sufficiently precise decimal representation of n.
-		int[] decimal_point = new int[1];
+		int[] decimalPoint = new int[1];
 		boolean[] sign = new boolean[1];
 		// Add space for the '\0' byte.
   		final int kDecimalRepCapacity =
-				kMaxFixedDigitsBeforePoint + kMaxFixedDigitsAfterPoint + 1;
-		char[] decimal_rep = new char[kDecimalRepCapacity];
-		int[] decimal_rep_length = new int[1];
-		DoubleToAscii(value, DtoaMode.FIXED, requested_digits,
-				decimal_rep, kDecimalRepCapacity,
-				sign, decimal_rep_length, decimal_point);
+				MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
+		char[] decimalRep = new char[kDecimalRepCapacity];
+		int[] decimalRepLength = new int[1];
+		doubleToAscii(value, DtoaMode.FIXED, requestedDigits,
+				decimalRep, kDecimalRepCapacity,
+				sign, decimalRepLength, decimalPoint);
 
-		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
-		if (sign[0] && (value != 0.0 || !unique_zero)) {
-			result_builder.append('-');
+		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
+		if (sign[0] && (value != 0.0 || !uniqueZero)) {
+			resultBuilder.append('-');
 		}
 
-		CreateDecimalRepresentation(decimal_rep, decimal_rep_length[0], decimal_point[0],
-				requested_digits, result_builder);
+		createDecimalRepresentation(decimalRep, decimalRepLength[0], decimalPoint[0],
+				requestedDigits, resultBuilder);
 		return true;
 	}
 
 	/**
-	 *  Computes a representation in exponential format with requested_digits
+	 *  Computes a representation in exponential format with requestedDigits
 	 *  after the decimal point. The last emitted digit is rounded.
-	 *  If requested_digits equals -1, then the shortest exponential representation
+	 *  If requestedDigits equals -1, then the shortest exponential representation
 	 *  is computed.
 	 *
 	 *  Examples with EMIT_POSITIVE_EXPONENT_SIGN deactivated, and
 	 *  exponent_character set to 'e'.
-	 *  ToExponential(3.12, 1) -> "3.1e0"
-	 *  ToExponential(5.0, 3) -> "5.000e0"
-	 *  ToExponential(0.001, 2) -> "1.00e-3"
-	 *  ToExponential(3.1415, -1) -> "3.1415e0"
-	 *  ToExponential(3.1415, 4) -> "3.1415e0"
-	 *  ToExponential(3.1415, 3) -> "3.142e0"
-	 *  ToExponential(123456789000000, 3) -> "1.235e14"
-	 *  ToExponential(1000000000000000019884624838656.0, -1) -> "1e30"
-	 *  ToExponential(1000000000000000019884624838656.0, 32) ->
+	 *  toExponential(3.12, 1) -> "3.1e0"
+	 *  toExponential(5.0, 3) -> "5.000e0"
+	 *  toExponential(0.001, 2) -> "1.00e-3"
+	 *  toExponential(3.1415, -1) -> "3.1415e0"
+	 *  toExponential(3.1415, 4) -> "3.1415e0"
+	 *  toExponential(3.1415, 3) -> "3.142e0"
+	 *  toExponential(123456789000000, 3) -> "1.235e14"
+	 *  toExponential(1000000000000000019884624838656.0, -1) -> "1e30"
+	 *  toExponential(1000000000000000019884624838656.0, 32) ->
 	 *  "1.00000000000000001988462483865600e30"
-	 *  ToExponential(1234, 0) -> "1e3"
+	 *  toExponential(1234, 0) -> "1e3"
 	 *
 	 *  Returns true if the conversion succeeds. The conversion always succeeds
 	 *  except for the following cases:
 	 *  - the input value is special and no infinity_symbol or nan_symbol has
 	 *  been provided to the constructor,
-	 *  - 'requested_digits' > kMaxExponentialDigits.
+	 *  - 'requestedDigits' > kMaxExponentialDigits.
 	 *  The last condition implies that the result will never contains more than
 	 *  kMaxExponentialDigits + 8 characters (the sign, the digit before the
 	 *  decimal point, the decimal point, the exponent character, the
 	 *  exponent's sign, and at most 3 exponent digits).
 	 */
-	boolean ToExponential(double value,
-					   int requested_digits,
-					   StringBuilder result_builder) {
-		if (new Ieee.Double(value).IsSpecial()) {
-			return HandleSpecialValues(value, result_builder);
+	boolean toExponential(double value,
+						  int requestedDigits,
+						  StringBuilder resultBuilder) {
+		if (new Ieee.Double(value).isSpecial()) {
+			return handleSpecialValues(value, resultBuilder);
 		}
 
-		if (requested_digits < -1) return false;
-		if (requested_digits > kMaxExponentialDigits) return false;
+		if (requestedDigits < -1) return false;
+		if (requestedDigits > MAX_EXPONENTIAL_DIGITS) return false;
 
-		int[] decimal_point = new int[1];
+		int[] decimalPoint = new int[1];
 		boolean[] sign = new boolean[1];
 		// Add space for digit before the decimal point and the '\0' character.
-  		final int kDecimalRepCapacity = kMaxExponentialDigits + 2;
-		DOUBLE_CONVERSION_ASSERT(kDecimalRepCapacity > kBase10MaximalLength);
-		char[] decimal_rep = new char[kDecimalRepCapacity];
+  		final int kDecimalRepCapacity = MAX_EXPONENTIAL_DIGITS + 2;
+		DOUBLE_CONVERSION_ASSERT(kDecimalRepCapacity > BASE_10_MAXIMAL_LENGTH);
+		char[] decimalRep = new char[kDecimalRepCapacity];
 		// TODO make sure this isn't a problem in java
 //#ifndef NDEBUG
 //		// Problem: there is an assert in StringBuilder::AddSubstring() that
 //		// will pass this buffer to strlen(), and this buffer is not generally
 //		// null-terminated.
-//		memset(decimal_rep, 0, sizeof(decimal_rep));
+//		memset(decimalRep, 0, sizeof(decimalRep));
 //#endif
-		int[] decimal_rep_length = new int[1];
+		int[] decimalRepLength = new int[1];
 
-		if (requested_digits == -1) {
-			DoubleToAscii(value, DtoaMode.SHORTEST, 0,
-					decimal_rep, kDecimalRepCapacity,
-					sign, decimal_rep_length, decimal_point);
+		if (requestedDigits == -1) {
+			doubleToAscii(value, DtoaMode.SHORTEST, 0,
+					decimalRep, kDecimalRepCapacity,
+					sign, decimalRepLength, decimalPoint);
 		} else {
-			DoubleToAscii(value, DtoaMode.PRECISION, requested_digits + 1,
-					decimal_rep, kDecimalRepCapacity,
-					sign, decimal_rep_length, decimal_point);
-			DOUBLE_CONVERSION_ASSERT(decimal_rep_length[0] <= requested_digits + 1);
+			doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
+					decimalRep, kDecimalRepCapacity,
+					sign, decimalRepLength, decimalPoint);
+			DOUBLE_CONVERSION_ASSERT(decimalRepLength[0] <= requestedDigits + 1);
 
-			for (int i = decimal_rep_length[0]; i < requested_digits + 1; ++i) {
-				decimal_rep[i] = (char) ASCII_ZERO;
+			for (int i = decimalRepLength[0]; i < requestedDigits + 1; ++i) {
+				decimalRep[i] = (char) ASCII_ZERO;
 			}
-			decimal_rep_length[0] = requested_digits + 1;
+			decimalRepLength[0] = requestedDigits + 1;
 		}
 
-		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
-		if (sign[0] && (value != 0.0 || !unique_zero)) {
-			result_builder.append('-');
+		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
+		if (sign[0] && (value != 0.0 || !uniqueZero)) {
+			resultBuilder.append('-');
 		}
 
-		int exponent = decimal_point[0] - 1;
-		CreateExponentialRepresentation(decimal_rep,
-				decimal_rep_length[0],
+		int exponent = decimalPoint[0] - 1;
+		createExponentialRepresentation(decimalRep,
+				decimalRepLength[0],
 				exponent,
-				result_builder);
+				resultBuilder);
 		return true;
 	}
 
@@ -607,23 +607,23 @@ public class DoubleToStringConverter {
 	 *  The last computed digit is rounded.
 	 *
 	 *  Example with max_leading_padding_zeroes_in_precision_mode = 6.
-	 *    ToPrecision(0.0000012345, 2) -> "0.0000012"
-	 *    ToPrecision(0.00000012345, 2) -> "1.2e-7"
+	 *    toPrecision(0.0000012345, 2) -> "0.0000012"
+	 *    toPrecision(0.00000012345, 2) -> "1.2e-7"
 	 *  Similarily the converter may add up to
 	 *  max_trailing_padding_zeroes_in_precision_mode in precision mode to avoid
 	 *  returning an exponential representation. A zero added by the
 	 *  EMIT_TRAILING_ZERO_AFTER_POINT flag is counted for this limit.
 	 *  Examples for max_trailing_padding_zeroes_in_precision_mode = 1:
-	 *    ToPrecision(230.0, 2) -> "230"
-	 *    ToPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
-	 *    ToPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
+	 *    toPrecision(230.0, 2) -> "230"
+	 *    toPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
+	 *    toPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
 	 *  Examples for max_trailing_padding_zeroes_in_precision_mode = 3, and no
 	 * 	EMIT_TRAILING_ZERO_AFTER_POINT:
-	 *    ToPrecision(123450.0, 6) -> "123450"
-	 *    ToPrecision(123450.0, 5) -> "123450"
-	 *    ToPrecision(123450.0, 4) -> "123500"
-	 *    ToPrecision(123450.0, 3) -> "123000"
-	 *    ToPrecision(123450.0, 2) -> "1.2e5"
+	 *    toPrecision(123450.0, 6) -> "123450"
+	 *    toPrecision(123450.0, 5) -> "123450"
+	 *    toPrecision(123450.0, 4) -> "123500"
+	 *    toPrecision(123450.0, 3) -> "123000"
+	 *    toPrecision(123450.0, 2) -> "1.2e5"
 	 *
 	 *  Returns true if the conversion succeeds. The conversion always succeeds
 	 *  except for the following cases:
@@ -637,78 +637,78 @@ public class DoubleToStringConverter {
 	 *  exponent character, the exponent's sign, and at most 3 exponent digits).
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
-	boolean ToPrecision(double value,
-					 int precision,
-					 StringBuilder result_builder) {
-		if (new Ieee.Double(value).IsSpecial()) {
-			return HandleSpecialValues(value, result_builder);
+	boolean toPrecision(double value,
+						int precision,
+						StringBuilder resultBuilder) {
+		if (new Ieee.Double(value).isSpecial()) {
+			return handleSpecialValues(value, resultBuilder);
 		}
 
-		if (precision < kMinPrecisionDigits || precision > kMaxPrecisionDigits) {
+		if (precision < MIN_PRECISION_DIGITS || precision > MAX_PRECISION_DIGITS) {
 			return false;
 		}
 
 		// Find a sufficiently precise decimal representation of n.
-		int decimal_point;
+		int decimalPoint;
 		boolean sign;
 		// Add one for the terminating null character.
-  		final int kDecimalRepCapacity = kMaxPrecisionDigits + 1;
-		char[] decimal_rep = new char[kDecimalRepCapacity];
-		int decimal_rep_length;
+  		final int kDecimalRepCapacity = MAX_PRECISION_DIGITS + 1;
+		char[] decimalRep = new char[kDecimalRepCapacity];
+		int decimalRepLength;
 
 		{
 			int[] inDecimalPoint = new int[1];
 			boolean[] inSign = new boolean[1];
 			int[] inDecimalRepLength = new int[1];
-			DoubleToAscii(value, DtoaMode.PRECISION, precision,
-					decimal_rep, kDecimalRepCapacity,
+			doubleToAscii(value, DtoaMode.PRECISION, precision,
+					decimalRep, kDecimalRepCapacity,
 					inSign, inDecimalRepLength, inDecimalPoint);
 			DOUBLE_CONVERSION_ASSERT(inDecimalRepLength[0] <= precision);
-			decimal_point = inDecimalPoint[0];
+			decimalPoint = inDecimalPoint[0];
 			sign = inSign[0];
-			decimal_rep_length = inDecimalRepLength[0];
+			decimalRepLength = inDecimalRepLength[0];
 		}
 
-		boolean unique_zero = ((flags_ & Flags.UNIQUE_ZERO) != 0);
-		if (sign && (value != 0.0 || !unique_zero)) {
-			result_builder.append('-');
+		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
+		if (sign && (value != 0.0 || !uniqueZero)) {
+			resultBuilder.append('-');
 		}
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
 		// decimal point after the first digit.
-		int exponent = decimal_point - 1;
+		int exponent = decimalPoint - 1;
 
-		int extra_zero = ((flags_ & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) ? 1 : 0;
-		boolean as_exponential =
-				(-decimal_point + 1 > max_leading_padding_zeroes_in_precision_mode_) ||
-						(decimal_point - precision + extra_zero >
-								max_trailing_padding_zeroes_in_precision_mode_);
-		if ((flags_ & Flags.NO_TRAILING_ZERO) != 0) {
+		int extraZero = ((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) ? 1 : 0;
+		boolean asExponential =
+				(-decimalPoint + 1 > maxLeadingPaddingZeroesInPrecisionMode) ||
+						(decimalPoint - precision + extraZero >
+								maxTrailingPaddingZeroesInPrecisionMode);
+		if ((flags & Flags.NO_TRAILING_ZERO) != 0) {
 			// Truncate trailing zeros that occur after the decimal point (if exponential,
 			// that is everything after the first digit).
-			int stop = as_exponential ? 1 : Math.max(1, decimal_point);
-			while (decimal_rep_length > stop && (int) decimal_rep[decimal_rep_length - 1] == ASCII_ZERO) {
-				--decimal_rep_length;
+			int stop = asExponential ? 1 : Math.max(1, decimalPoint);
+			while (decimalRepLength > stop && (int) decimalRep[decimalRepLength - 1] == ASCII_ZERO) {
+				--decimalRepLength;
 			}
 			// Clamp precision to avoid the code below re-adding the zeros.
-			precision = Math.min(precision, decimal_rep_length);
+			precision = Math.min(precision, decimalRepLength);
 		}
-		if (as_exponential) {
+		if (asExponential) {
 			// Fill buffer to contain 'precision' digits.
-			// Usually the buffer is already at the correct length, but 'DoubleToAscii'
+			// Usually the buffer is already at the correct length, but 'doubleToAscii'
 			// is allowed to return less characters.
-			for (int i = decimal_rep_length; i < precision; ++i) {
-				decimal_rep[i] = (char) ASCII_ZERO;
+			for (int i = decimalRepLength; i < precision; ++i) {
+				decimalRep[i] = (char) ASCII_ZERO;
 			}
 
-			CreateExponentialRepresentation(decimal_rep,
+			createExponentialRepresentation(decimalRep,
 					precision,
 					exponent,
-					result_builder);
+					resultBuilder);
 		} else {
-			CreateDecimalRepresentation(decimal_rep, decimal_rep_length, decimal_point,
-					Math.max(0, precision - decimal_point),
-					result_builder);
+			createDecimalRepresentation(decimalRep, decimalRepLength, decimalPoint,
+					Math.max(0, precision - decimalPoint),
+					resultBuilder);
 		}
 		return true;
 	}
@@ -728,14 +728,14 @@ public class DoubleToStringConverter {
 		PRECISION
 	}
 
-	private static BigNumDtoa.BignumDtoaMode DtoaToBignumDtoaMode(
-			DoubleToStringConverter.DtoaMode dtoa_mode) {
-		switch (dtoa_mode) {
-			case SHORTEST:  return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_SHORTEST;
+	private static BigNumDtoa.BignumDtoaMode dtoaToBignumDtoaMode(
+			DoubleToStringConverter.DtoaMode dtoaMode) {
+		switch (dtoaMode) {
+			case SHORTEST:  return BigNumDtoa.BignumDtoaMode.SHORTEST;
 			case SHORTEST_SINGLE:
-				return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE;
-			case FIXED:     return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_FIXED;
-			case PRECISION: return BigNumDtoa.BignumDtoaMode.BIGNUM_DTOA_PRECISION;
+				return BigNumDtoa.BignumDtoaMode.SHORTEST_SINGLE;
+			case FIXED:     return BigNumDtoa.BignumDtoaMode.FIXED;
+			case PRECISION: return BigNumDtoa.BignumDtoaMode.PRECISION;
 			default:
 				throw new IllegalStateException("Unreachable");
 		}
@@ -761,54 +761,54 @@ public class DoubleToStringConverter {
 	 * 	   'v' again. The outBuffer will choose the representation that is closest to
 	 * 	   'v'. If there are two at the same distance, than the one farther away
 	 * 	   from 0 is chosen (halfway cases - ending with 5 - are rounded up).
-	 * 	   In this mode the 'requested_digits' parameter is ignored.
+	 * 	   In this mode the 'requestedDigits' parameter is ignored.
 	 * 	  - SHORTEST_SINGLE: same as SHORTEST but with single-precision.
 	 * 	  - FIXED: produces digits necessary to print a given number with
-	 * 	   'requested_digits' digits after the decimal outPoint. The produced digits
+	 * 	   'requestedDigits' digits after the decimal outPoint. The produced digits
 	 * 	   might be too short in which case the caller has to fill the remainder
 	 * 	   with '0's.
-	 * 	   Example: ToFixed(0.001, 5) is allowed to return outBuffer="1", outPoint=-2.
+	 * 	   Example: toFixed(0.001, 5) is allowed to return outBuffer="1", outPoint=-2.
 	 * 	   Halfway cases are rounded towards +/-Infinity (away from 0). The call
-	 * 	   ToFixed(0.15, 2) thus returns outBuffer="2", outPoint=0.
+	 * 	   toFixed(0.15, 2) thus returns outBuffer="2", outPoint=0.
 	 * 	   The returned outBuffer may contain digits that would be truncated from the
 	 * 	   shortest representation of the input.
-	 * 	  - PRECISION: produces 'requested_digits' where the first digit is not '0'.
+	 * 	  - PRECISION: produces 'requestedDigits' where the first digit is not '0'.
 	 * 	   Even though the outLength of produced digits usually equals
-	 * 	   'requested_digits', the function is allowed to return fewer digits, in
+	 * 	   'requestedDigits', the function is allowed to return fewer digits, in
 	 * 	   which case the caller has to fill the missing digits with '0's.
 	 * 	   Halfway cases are again rounded away from 0.
-	 * 	 DoubleToAscii expects the given outBuffer to be big enough to hold all
+	 * 	 doubleToAscii expects the given outBuffer to be big enough to hold all
 	 * 	 digits and a terminating null-character. In SHORTEST-mode it expects a
 	 * 	 outBuffer of at least kBase10MaximalLength + 1. In all other modes the
-	 * 	 requested_digits parameter and the padding-zeroes limit the size of the
+	 * 	 requestedDigits parameter and the padding-zeroes limit the size of the
 	 * 	 output. Don't forget the decimal outPoint, the exponent character and the
 	 * 	 terminating null-character when computing the maximal output size.
 	 * 	 The given outLength is only used in debug mode to ensure the outBuffer is big
 	 * 	 enough.
 	 *
 	 */
-	public static boolean DoubleToAscii(double v,
-							  DtoaMode mode,
-							  int requested_digits,
-							  char[] vector,
-							  int buffer_length,
-							  boolean[] sign,
-							  int[] length,
-							  int[] point) {
-		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
-		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE || requested_digits >= 0);
+	public static void doubleToAscii(double v,
+										DtoaMode mode,
+										int requestedDigits,
+										char[] vector,
+										int bufferLength,
+										boolean[] sign,
+										int[] length,
+										int[] point) {
+		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
+		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE || requestedDigits >= 0);
 
-		if (new Ieee.Double(v).Sign() < 0) {
+		if (new Ieee.Double(v).sign() < 0) {
 			sign[0] = true;
 			v = -v;
 		} else {
     		sign[0] = false;
 		}
 
-		if (mode == DtoaMode.PRECISION && requested_digits == 0) {
+		if (mode == DtoaMode.PRECISION && requestedDigits == 0) {
 			vector[0] = '\0';
 			length[0] = 0;
-			return true;
+			return;
 		}
 
 		if (v == 0.0) {
@@ -816,36 +816,35 @@ public class DoubleToStringConverter {
 			vector[1] = '\0';
 			length[0] = 1;
 			point[0] = 1;
-			return true;
+			return;
 		}
 
-		boolean fast_worked;
+		boolean fastWorked;
 		switch (mode) {
 			case SHORTEST:
-				fast_worked = FastDtoa.FastDtoa(v, FastDtoa.FastDtoaMode.FAST_DTOA_SHORTEST, 0, vector, length, point);
+				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST, 0, vector, length, point);
 				break;
 			case SHORTEST_SINGLE:
-				fast_worked = FastDtoa.FastDtoa(v, FastDtoa.FastDtoaMode.FAST_DTOA_SHORTEST_SINGLE, 0,
+				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST_SINGLE, 0,
 						vector, length, point);
 				break;
 			case FIXED:
-				fast_worked = FastFixedDtoa(v, requested_digits, vector, length, point);
+				fastWorked = fastFixedDtoa(v, requestedDigits, vector, length, point);
 				break;
 			case PRECISION:
-				fast_worked = FastDtoa.FastDtoa(v, FastDtoa.FastDtoaMode.FAST_DTOA_PRECISION, requested_digits,
+				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.PRECISION, requestedDigits,
 						vector, length, point);
 				break;
 			default:
-				fast_worked = false;
+				fastWorked = false;
 				throw new IllegalStateException("Unreachable");
 		}
-		if (fast_worked) return true;
+		if (fastWorked) return;
 
 		// If the fast dtoa didn't succeed use the slower bignum version.
-		BigNumDtoa.BignumDtoaMode bignum_mode = DtoaToBignumDtoaMode(mode);
-		BigNumDtoa.BignumDtoa(v, bignum_mode, requested_digits, vector, length, point);
+		BigNumDtoa.BignumDtoaMode dtoaMode = dtoaToBignumDtoaMode(mode);
+		BigNumDtoa.bignumDtoa(v, dtoaMode, requestedDigits, vector, length, point);
 		vector[length[0]] = '\0';
-		return false;
 	}
 
 	/**

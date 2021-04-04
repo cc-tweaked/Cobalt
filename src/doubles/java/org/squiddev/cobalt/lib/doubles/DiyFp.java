@@ -44,13 +44,13 @@ import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
  * doubles (NaN and Infinity).
  */
 public class DiyFp {
-	public static final int kSignificandSize = 64;
+	public static final int SIGNIFICAND_SIZE = 64;
 
-	DiyFp() { this.f_ = 0L; this.e_ = 0; }
-	DiyFp(@Unsigned long significand, final int exponent) { this.f_ = significand; this.e_ = exponent; }
+	DiyFp() { this.f = 0L; this.e = 0; }
+	DiyFp(@Unsigned long significand, final int exponent) { this.f = significand; this.e = exponent; }
 
 	public DiyFp copy() {
-		return new DiyFp(this.f_, this.e_);
+		return new DiyFp(this.f, this.e);
 	}
 
 	/**
@@ -59,10 +59,10 @@ public class DiyFp {
 	 * must be greater or equal than the significand of other.
 	 * The result will not be normalized.
 	 */
-	public void Subtract(DiyFp other) {
-		DOUBLE_CONVERSION_ASSERT(e_ == other.e_);
-		DOUBLE_CONVERSION_ASSERT(ulongGE(f_, other.f_));
-		f_ = f_ - other.f_;
+	public void subtract(DiyFp other) {
+		DOUBLE_CONVERSION_ASSERT(e == other.e);
+		DOUBLE_CONVERSION_ASSERT(ulongGE(f, other.f));
+		f = f - other.f;
 	}
 
 	/**
@@ -70,25 +70,25 @@ public class DiyFp {
 	 * The exponents of both numbers must be the same and a must be greater
 	 * or equal than b. The result will not be normalized.
 	 */
-	public static DiyFp Minus(DiyFp a, DiyFp b) {
+	public static DiyFp minus(DiyFp a, DiyFp b) {
 		DiyFp result = a.copy();
-		result.Subtract(b);
+		result.subtract(b);
 		return result;
 	}
 
 	/**
 	 * this *= other.
 	 */
-	public void Multiply(DiyFp other) {
+	public void multiply(DiyFp other) {
 		// Simply "emulates" a 128 bit multiplication.
 		// However: the resulting number only contains 64 bits. The least
 		// significant 64 bits are only used for rounding the most significant 64
 		// bits.
-		@Unsigned long otherF = other.f_;
+		@Unsigned long otherF = other.f;
 
 		final long kM32 = 0xFFFFFFFFL;
-		final long a = f_ >>> 32;
-		final long b = f_ & kM32;
+		final long a = f >>> 32;
+		final long b = f & kM32;
 		final long c = otherF >>> 32;
 		final long d = otherF & kM32;
 		final long ac = a * c;
@@ -98,24 +98,24 @@ public class DiyFp {
 		// By adding 1U << 31 to tmp we round the final result.
 		// Halfway cases will be rounded up.
 		final long tmp = (bd >>> 32) + (ad & kM32) + (bc & kM32) + (1L << 31);
-		e_ += other.e_ + 64;
-		this.f_ = ac + (ad >>> 32) + (bc >>> 32) + (tmp >>> 32);
+		e += other.e + 64;
+		this.f = ac + (ad >>> 32) + (bc >>> 32) + (tmp >>> 32);
 	}
 
 
 	/**
 	 * returns a * b;
 	 */
-	public static DiyFp Times(DiyFp a, DiyFp b) {
+	public static DiyFp times(DiyFp a, DiyFp b) {
 		DiyFp result = a.copy();
-		result.Multiply(b);
+		result.multiply(b);
 		return result;
 	}
 
-	public void Normalize() {
-		DOUBLE_CONVERSION_ASSERT(f_ != 0L);
-		@Unsigned long significand = f_;
-		int exponent = e_;
+	public void normalize() {
+		DOUBLE_CONVERSION_ASSERT(f != 0L);
+		@Unsigned long significand = f;
+		int exponent = e;
 
 		// This method is mainly called for normalizing boundaries. In general,
 		// boundaries need to be shifted by 10 bits, and we optimize for this case.
@@ -124,28 +124,28 @@ public class DiyFp {
 			significand <<= 10L;
 			exponent -= 10;
 		}
-		while ((significand & kUint64MSB) == 0L) {
+		while ((significand & UINT_64_MSB) == 0L) {
 			significand <<= 1L;
 			exponent--;
 		}
-		f_ = significand;
-		e_ = exponent;
+		f = significand;
+		e = exponent;
 	}
 
-	public static DiyFp Normalize(DiyFp a) {
+	public static DiyFp normalize(DiyFp a) {
 		DiyFp result = a.copy();
-		result.Normalize();
+		result.normalize();
 		return result;
 	}
 
-	public @Unsigned long f() { return f_; }
-	public int e()  { return e_; }
+	public @Unsigned long f() { return f; }
+	public int e()  { return e; }
 
-	public void set_f(@Unsigned long new_value) { f_ = new_value; }
-	public void set_e(int new_value) { e_ = new_value; }
+	public void setF(@Unsigned long new_value) { f = new_value; }
+	public void setE(int new_value) { e = new_value; }
 
-	private static final long kUint64MSB = 0x80000000_00000000L;
+	private static final long UINT_64_MSB = 0x80000000_00000000L;
 
-	private @Unsigned long f_;
-	private int e_;
+	private @Unsigned long f;
+	private int e;
 }

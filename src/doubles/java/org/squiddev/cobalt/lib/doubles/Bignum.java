@@ -29,7 +29,6 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
@@ -66,7 +65,7 @@ public class Bignum {
 	/**
 	 * Only used in tests, so doesn't have to be efficient
 	 */
-	boolean ToHexString(char[] buffer, final int buffer_size) {
+	boolean toHexString(char[] buffer, final int buffer_size) {
 		String hex = val.toBigInteger().toString(16).toUpperCase();
 		hex.getChars(0, hex.length(), buffer, 0);
 		buffer[hex.length()] = '\0';
@@ -77,75 +76,75 @@ public class Bignum {
 		return new Bignum(val);
 	}
 
-	public void AssignHexString(String value) {
+	public void assignHexString(String value) {
 		val = new BigDecimal(new BigInteger(value, 16));
 	}
 
-	public void AssignDecimalString(String value) {
+	public void assignDecimalString(String value) {
 		val = new BigDecimal(value);
 	}
 
-	public void AssignUInt(@Unsigned short unsignedValue) { val = fromUnsigned(unsignedValue); }
-	public void AssignUInt(@Unsigned int unsignedValue) { val = fromUnsigned(unsignedValue); }
-	public void AssignUInt(@Unsigned long unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void assignUInt(@Unsigned short unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void assignUInt(@Unsigned int unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void assignUInt(@Unsigned long unsignedValue) { val = fromUnsigned(unsignedValue); }
 
 	// special care is needed to prevent sign-extending conversions
-	public void AssignUInt16(@Unsigned short unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt32(@Unsigned int unsignedValue) { AssignUInt(unsignedValue); }
-	public void AssignUInt64(@Unsigned long unsignedValue) { AssignUInt(unsignedValue); }
+	public void assignUInt16(@Unsigned short unsignedValue) { assignUInt(unsignedValue); }
+	public void assignUInt32(@Unsigned int unsignedValue) { assignUInt(unsignedValue); }
+	public void assignUInt64(@Unsigned long unsignedValue) { assignUInt(unsignedValue); }
 
-	public void AssignBignum(Bignum other) {
+	public void assignBignum(Bignum other) {
 		this.val = other.val;
 	}
 
-	public void AssignDecimalString(char[] value) {
+	public void assignDecimalString(char[] value) {
 		this.val = new BigDecimal(value);
 	}
-	public void AssignHexString(char[] value) {
+	public void assignHexString(char[] value) {
 		this.val = new BigDecimal(new BigInteger(String.valueOf(value), 16));
 	}
 
 
-	public void AssignPowerUInt16(int base, int exponent) {
-		AssignPower(base, exponent);
+	public void assignPowerUInt16(int base, int exponent) {
+		assignPower(base, exponent);
 	}
 
-	public void AssignPower(int base, int exponent) {
+	public void assignPower(int base, int exponent) {
 		//noinspection ImplicitNumericConversion
 		val = BigDecimal.valueOf(base).pow(exponent);
 	}
 
-	public void AddUInt64(@Unsigned long operand) { add(fromUnsigned(operand)); }
+	public void addUInt64(@Unsigned long operand) { add(fromUnsigned(operand)); }
 
 	private void add(BigDecimal operand) {
 		val = val.add(operand);
 	}
 
-	public void AddBignum(Bignum other) {
+	public void addBignum(Bignum other) {
 		val = val.add(other.val);
 	}
 
 	// Precondition: this >= other.
-	public void SubtractBignum(Bignum other) {
+	public void subtractBignum(Bignum other) {
 		val = val.subtract(other.val);
 	}
 
-	public void Square() {
+	public void square() {
 		val = val.multiply(val);
 	}
 
-	public void ShiftLeft(int shift_amount) {
+	public void shiftLeft(int shift_amount) {
 		val = new BigDecimal(val.toBigIntegerExact().shiftLeft(shift_amount));
 	}
 
 
 	// special care is needed to prevent sign-extending conversions
-	public void MultiplyByUInt32(@Unsigned int unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+	public void multiplyByUInt32(@Unsigned int unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
 
 	// special care is needed to prevent sign-extending conversions
-	void MultiplyByUInt64(@Unsigned long unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+	void multiplyByUInt64(@Unsigned long unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
 
-	public void MultiplyByPowerOfTen(final int exponent) {
+	public void multiplyByPowerOfTen(final int exponent) {
 		val = val.scaleByPowerOfTen(exponent);
 	}
 
@@ -154,54 +153,54 @@ public class Bignum {
 	}
 
 
-//	void MultiplyByPowerOfTen(int exponent);
+//	void multiplyByPowerOfTen(int exponent);
 
-	void Times10() { MultiplyByUInt32(10); }
+	void times10() { multiplyByUInt32(10); }
 
 	// Pseudocode:
 	//  int result = this / other;
 	//  this = this % other;
 	// In the worst case this function is in O(this/other).
-	int DivideModuloIntBignum(Bignum other) {
+	int divideModuloIntBignum(Bignum other) {
 		BigDecimal[] rets = val.divideAndRemainder(other.val);
 		val = rets[1]; // remainder
 		return rets[0].intValue(); // quotient
 	}
 
-//	bool ToHexString(char* buffer, const int buffer_size) const;
+//	bool toHexString(char* buffer, const int buffer_size) const;
 
 	// Returns
 	//  -1 if a < b,
 	//   0 if a == b, and
 	//  +1 if a > b.
-	static int Compare(Bignum a, Bignum b) {
+	static int compare(Bignum a, Bignum b) {
 		return a.val.compareTo(b.val);
 	}
 
-	static boolean Equal(Bignum a, Bignum b) {
-		return Compare(a, b) == 0;
+	static boolean equal(Bignum a, Bignum b) {
+		return compare(a, b) == 0;
 	}
-	static boolean LessEqual(Bignum a, Bignum b) {
-		return Compare(a, b) <= 0;
+	static boolean lessEqual(Bignum a, Bignum b) {
+		return compare(a, b) <= 0;
 	}
-	static boolean Less(Bignum a, Bignum b) {
-		return Compare(a, b) < 0;
+	static boolean less(Bignum a, Bignum b) {
+		return compare(a, b) < 0;
 	}
-	// Returns Compare(a + b, c);
-	static int PlusCompare(Bignum a, Bignum b, Bignum c) {
+	// Returns compare(a + b, c);
+	static int plusCompare(Bignum a, Bignum b, Bignum c) {
 		return a.val.add(b.val).compareTo(c.val);
 	}
 	// Returns a + b == c
-	static boolean PlusEqual(Bignum a, Bignum b, Bignum c) {
-		return PlusCompare(a, b, c) == 0;
+	static boolean plusEqual(Bignum a, Bignum b, Bignum c) {
+		return plusCompare(a, b, c) == 0;
 	}
 	// Returns a + b <= c
-	static boolean PlusLessEqual(Bignum a, Bignum b, Bignum c) {
-		return PlusCompare(a, b, c) <= 0;
+	static boolean plusLessEqual(Bignum a, Bignum b, Bignum c) {
+		return plusCompare(a, b, c) <= 0;
 	}
 	// Returns a + b < c
-	static boolean PlusLess(Bignum a, Bignum b, Bignum c) {
-		return PlusCompare(a, b, c) < 0;
+	static boolean plusLess(Bignum a, Bignum b, Bignum c) {
+		return plusCompare(a, b, c) < 0;
 	}
 
 	@SuppressWarnings({"cast.unsafe", "cast"})

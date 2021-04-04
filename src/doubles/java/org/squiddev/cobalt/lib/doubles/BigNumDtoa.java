@@ -48,24 +48,24 @@ public class BigNumDtoa {
 		 *  For example the output of 0.299999999999999988897 is (the less accurate but
 		 *  correct) 0.3.
 		 */
-		BIGNUM_DTOA_SHORTEST,
+		SHORTEST,
 		/**
 		 * Same as BIGNUM_DTOA_SHORTEST but for single-precision floats.
 		 */
-		BIGNUM_DTOA_SHORTEST_SINGLE,
+		SHORTEST_SINGLE,
 		/**
 		 *  Return a fixed number of digits after the decimal point.
 		 *  For instance fixed(0.1, 4) becomes 0.1000
 		 *  If the input number is big, the output will be big.
 		 */
-		BIGNUM_DTOA_FIXED,
+		FIXED,
 		/** Return a fixed number of digits, no matter what the exponent is. */
-		BIGNUM_DTOA_PRECISION
+		PRECISION
 	}
 
-	private static int NormalizedExponent(@Unsigned long significand, int exponent) {
+	private static int normalizedExponent(@Unsigned long significand, int exponent) {
 		DOUBLE_CONVERSION_ASSERT(significand != 0L);
-		while ((significand & Ieee.Double.kHiddenBit) == 0L) {
+		while ((significand & Ieee.Double.HIDDEN_BIT) == 0L) {
 			significand = significand << 1;
 			exponent = exponent - 1;
 		}
@@ -85,97 +85,97 @@ public class BigNumDtoa {
 	 *    (together with the correct exponent) then reading this number will give
 	 *    'v' again. The buffer will choose the representation that is closest to
 	 *    'v'. If there are two at the same distance, than the number is round up.
-	 *    In this mode the 'requested_digits' parameter is ignored.
+	 *    In this mode the 'requestedDigits' parameter is ignored.
 	 *   - FIXED: produces digits necessary to print a given number with
-	 *    'requested_digits' digits after the decimal point. The produced digits
+	 *    'requestedDigits' digits after the decimal point. The produced digits
 	 *    might be too short in which case the caller has to fill the gaps with '0's.
-	 *    Example: ToFixed(0.001, 5) is allowed to return buffer="1", point=-2.
-	 *    Halfway cases are rounded up. The call ToFixed(0.15, 2) thus returns
+	 *    Example: toFixed(0.001, 5) is allowed to return buffer="1", point=-2.
+	 *    Halfway cases are rounded up. The call toFixed(0.15, 2) thus returns
 	 * 	 buffer="2", point=0.
 	 *    Note: the length of the returned buffer has no meaning wrt the significance
 	 *    of its digits. That is, just because it contains '0's does not mean that
 	 *    any other digit would not satisfy the internal identity requirement.
-	 *   - PRECISION: produces 'requested_digits' where the first digit is not '0'.
+	 *   - PRECISION: produces 'requestedDigits' where the first digit is not '0'.
 	 *    Even though the length of produced digits usually equals
-	 *    'requested_digits', the function is allowed to return fewer digits, in
+	 *    'requestedDigits', the function is allowed to return fewer digits, in
 	 *    which case the caller has to fill the missing digits with '0's.
 	 *    Halfway cases are again rounded up.
-	 *  'BignumDtoa' expects the given buffer to be big enough to hold all digits
+	 *  'bignumDtoa' expects the given buffer to be big enough to hold all digits
 	 *  and a terminating null-character.
 	 */
-	public static void BignumDtoa(double v, BignumDtoaMode mode, int requested_digits,
-						   char[] buffer, int[] length, int[] decimal_point) {
+	public static void bignumDtoa(double v, BignumDtoaMode mode, int requestedDigits,
+						   char[] buffer, int[] length, int[] decimalPoint) {
 		DOUBLE_CONVERSION_ASSERT(v > 0.0);
-		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).IsSpecial());
+		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
 		long significand;
 		int exponent;
-		boolean lower_boundary_is_closer;
-		if (mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE) {
+		boolean lowerBoundaryIsCloser;
+		if (mode == BignumDtoaMode.SHORTEST_SINGLE) {
 			float f = (float)v;
 			DOUBLE_CONVERSION_ASSERT((double)f == v);
-			significand = Integer.toUnsignedLong((@SignedPositive int)new Ieee.Single(f).Significand());
-			exponent = new Ieee.Single(f).Exponent();
-			lower_boundary_is_closer = new Ieee.Single(f).LowerBoundaryIsCloser();
+			significand = Integer.toUnsignedLong((@SignedPositive int)new Ieee.Single(f).significand());
+			exponent = new Ieee.Single(f).exponent();
+			lowerBoundaryIsCloser = new Ieee.Single(f).lowerBoundaryIsCloser();
 		} else {
-			significand = new Ieee.Double(v).Significand();
-			exponent = new Ieee.Double(v).Exponent();
-			lower_boundary_is_closer = new Ieee.Double(v).LowerBoundaryIsCloser();
+			significand = new Ieee.Double(v).significand();
+			exponent = new Ieee.Double(v).exponent();
+			lowerBoundaryIsCloser = new Ieee.Double(v).lowerBoundaryIsCloser();
 		}
-		boolean need_boundary_deltas =
-				(mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST || mode == BignumDtoaMode.BIGNUM_DTOA_SHORTEST_SINGLE);
+		boolean needBoundaryDeltas =
+				(mode == BignumDtoaMode.SHORTEST || mode == BignumDtoaMode.SHORTEST_SINGLE);
 
-		boolean is_even = (significand & 1L) == 0L;
-		int normalized_exponent = NormalizedExponent(significand, exponent);
-		// estimated_power might be too low by 1.
-		int estimated_power = EstimatePower(normalized_exponent);
+		boolean isEven = (significand & 1L) == 0L;
+		int normalizedExponent = normalizedExponent(significand, exponent);
+		// estimatePower might be too low by 1.
+		int estimatePower = estimatePower(normalizedExponent);
 
 		// Shortcut for Fixed.
 		// The requested digits correspond to the digits after the point. If the
 		// number is much too small, then there is no need in trying to get any
 		// digits.
-		if (mode == BignumDtoaMode.BIGNUM_DTOA_FIXED && -estimated_power - 1 > requested_digits) {
+		if (mode == BignumDtoaMode.FIXED && -estimatePower - 1 > requestedDigits) {
 			buffer[0] = '\0';
     		length[0] = 0;
-			// Set decimal-point to -requested_digits. This is what Gay does.
+			// Set decimal-point to -requestedDigits. This is what Gay does.
 			// Note that it should not have any effect anyways since the string is
 			// empty.
-    		decimal_point[0] = -requested_digits;
+    		decimalPoint[0] = -requestedDigits;
 			return;
 		}
 
 		Bignum numerator = new Bignum();
 		Bignum denominator = new Bignum();
-		Bignum delta_minus = new Bignum();
-		Bignum delta_plus = new Bignum();
+		Bignum deltaMinus = new Bignum();
+		Bignum deltaPlus = new Bignum();
 		// Make sure the bignum can grow large enough. The smallest double equals
 		// 4e-324. In this case the denominator needs fewer than 324*4 binary digits.
 		// The maximum double is 1.7976931348623157e308 which needs fewer than
 		// 308*4 binary digits.
 		//DOUBLE_CONVERSION_ASSERT(Bignum.kMaxSignificantBits >= 324*4);
-		InitialScaledStartValues(significand, exponent, lower_boundary_is_closer,
-				estimated_power, need_boundary_deltas,
+		initialScaledStartValues(significand, exponent, lowerBoundaryIsCloser,
+				estimatePower, needBoundaryDeltas,
 				numerator, denominator,
-                           delta_minus, delta_plus);
-		// We now have v = (numerator / denominator) * 10^estimated_power.
-		FixupMultiply10(estimated_power, is_even, decimal_point,
+                           deltaMinus, deltaPlus);
+		// We now have v = (numerator / denominator) * 10^estimatePower.
+		fixupMultiply10(estimatePower, isEven, decimalPoint,
 				numerator, denominator,
-                  delta_minus, delta_plus);
-		// We now have v = (numerator / denominator) * 10^(decimal_point-1), and
-		//  1 <= (numerator + delta_plus) / denominator < 10
+                  deltaMinus, deltaPlus);
+		// We now have v = (numerator / denominator) * 10^(decimalPoint-1), and
+		//  1 <= (numerator + deltaPlus) / denominator < 10
 		switch (mode) {
-			case BIGNUM_DTOA_SHORTEST:
-			case BIGNUM_DTOA_SHORTEST_SINGLE:
-				GenerateShortestDigits(numerator, denominator,
-                             delta_minus, delta_plus,
-					is_even, buffer, length);
+			case SHORTEST:
+			case SHORTEST_SINGLE:
+				generateShortestDigits(numerator, denominator,
+                             deltaMinus, deltaPlus,
+					isEven, buffer, length);
 				break;
-			case BIGNUM_DTOA_FIXED:
-				BignumToFixed(requested_digits, decimal_point,
+			case FIXED:
+				bignumToFixed(requestedDigits, decimalPoint,
 						numerator, denominator,
 					buffer, length);
 				break;
-			case BIGNUM_DTOA_PRECISION:
-				GenerateCountedDigits(requested_digits, decimal_point,
+			case PRECISION:
+				generateCountedDigits(requestedDigits, decimalPoint,
 						numerator, denominator,
 					buffer, length);
 				break;
@@ -195,27 +195,27 @@ public class BigNumDtoa {
 	 *  double, so it converts to v when read.
 	 *
 	 *  This is true if d, the decimal representation, is between m- and m+, the
-	 *  upper and lower boundaries. d must be strictly between them if !is_even.
-	 * 		   m- := (numerator - delta_minus) / denominator
-	 * 		   m+ := (numerator + delta_plus) / denominator
+	 *  upper and lower boundaries. d must be strictly between them if !isEven.
+	 * 		   m- := (numerator - deltaMinus) / denominator
+	 * 		   m+ := (numerator + deltaPlus) / denominator
 	 *
-	 *  Precondition: 0 <= (numerator+delta_plus) / denominator < 10.
-	 *    If 1 <= (numerator+delta_plus) / denominator < 10 then no leading 0 digit
+	 *  Precondition: 0 <= (numerator+deltaPlus) / denominator < 10.
+	 *    If 1 <= (numerator+deltaPlus) / denominator < 10 then no leading 0 digit
 	 *    will be produced. This should be the standard precondition.
 	 */
-	private static void GenerateShortestDigits(Bignum numerator, Bignum denominator,
-									   Bignum delta_minus, Bignum delta_plus,
-									   boolean is_even,
+	private static void generateShortestDigits(Bignum numerator, Bignum denominator,
+									   Bignum deltaMinus, Bignum deltaPlus,
+									   boolean isEven,
 									   char[] buffer, int[] length) {
-		// Small optimization: if delta_minus and delta_plus are the same just reuse
+		// Small optimization: if deltaMinus and deltaPlus are the same just reuse
 		// one of the two bignums.
-		if (Bignum.Equal(delta_minus, delta_plus)) {
-			delta_plus = delta_minus;
+		if (Bignum.equal(deltaMinus, deltaPlus)) {
+			deltaPlus = deltaMinus;
 		}
   		length[0] = 0;
 		for (;;) {
 			int digit;
-			digit = numerator.DivideModuloIntBignum(denominator);
+			digit = numerator.divideModuloIntBignum(denominator);
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
@@ -226,34 +226,34 @@ public class BigNumDtoa {
 			// boundary we can stop. In this case we simply round down (discarding the
 			// remainder).
 			// Similarly we test if we can round up (using the upper boundary).
-			boolean in_delta_room_minus;
-			boolean in_delta_room_plus;
-			if (is_even) {
-				in_delta_room_minus = Bignum.LessEqual(numerator, delta_minus);
+			boolean inDeltaRoomMinus;
+			boolean inDeltaRoomPlus;
+			if (isEven) {
+				inDeltaRoomMinus = Bignum.lessEqual(numerator, deltaMinus);
 			} else {
-				in_delta_room_minus = Bignum.Less(numerator, delta_minus);
+				inDeltaRoomMinus = Bignum.less(numerator, deltaMinus);
 			}
-			if (is_even) {
-				in_delta_room_plus =
-						Bignum.PlusCompare(numerator, delta_plus, denominator) >= 0;
+			if (isEven) {
+				inDeltaRoomPlus =
+						Bignum.plusCompare(numerator, deltaPlus, denominator) >= 0;
 			} else {
-				in_delta_room_plus =
-						Bignum.PlusCompare(numerator, delta_plus, denominator) > 0;
+				inDeltaRoomPlus =
+						Bignum.plusCompare(numerator, deltaPlus, denominator) > 0;
 			}
-			if (!in_delta_room_minus && !in_delta_room_plus) {
+			if (!inDeltaRoomMinus && !inDeltaRoomPlus) {
 				// Prepare for next iteration.
-				numerator.Times10();
-				delta_minus.Times10();
-				// We optimized delta_plus to be equal to delta_minus (if they share the
-				// same value). So don't multiply delta_plus if they point to the same
+				numerator.times10();
+				deltaMinus.times10();
+				// We optimized deltaPlus to be equal to deltaMinus (if they share the
+				// same value). So don't multiply deltaPlus if they point to the same
 				// object.
-				if (!delta_minus.equals(delta_plus)) {
-					delta_plus.Times10();
+				if (!deltaMinus.equals(deltaPlus)) {
+					deltaPlus.times10();
 				}
-			} else if (in_delta_room_minus && in_delta_room_plus) {
+			} else if (inDeltaRoomMinus && inDeltaRoomPlus) {
 				// Let's see if 2*numerator < denominator.
 				// If yes, then the next digit would be < 5 and we can round down.
-				int compare = Bignum.PlusCompare(numerator, numerator, denominator);
+				int compare = Bignum.plusCompare(numerator, numerator, denominator);
 				if (compare < 0) {
 					// Remaining digits are less than .5. -> Round down (== do nothing).
 				} else if (compare > 0) {
@@ -278,10 +278,10 @@ public class BigNumDtoa {
 					}
 				}
 				return;
-			} else if (in_delta_room_minus) {
+			} else if (inDeltaRoomMinus) {
 				// Round down (== do nothing).
 				return;
-			} else {  // in_delta_room_plus
+			} else {  // inDeltaRoomPlus
 				// Round up.
 				// Note again that the last digit could not be '9' since this would have
 				// stopped the loop earlier.
@@ -298,33 +298,33 @@ public class BigNumDtoa {
 	 *  Generates 'count' digits of numerator/denominator.
 	 *  Once 'count' digits have been produced rounds the result depending on the
 	 *  remainder (remainders of exactly .5 round upwards). Might update the
-	 *  decimal_point when rounding up (for example for 0.9999).
+	 *  decimalPoint when rounding up (for example for 0.9999).
 	 *
 	 *  Let v = numerator / denominator < 10.
 	 *  Then we generate 'count' digits of d = x.xxxxx... (without the decimal point)
 	 *  from left to right. Once 'count' digits have been produced we decide wether
 	 *  to round up or down. Remainders of exactly .5 round upwards. Numbers such
 	 *  as 9.999999 propagate a carry all the way, and change the
-	 *  exponent (decimal_point), when rounding upwards.
+	 *  exponent (decimalPoint), when rounding upwards.
 	 */
-	private static void GenerateCountedDigits(int count, int[] decimal_point,
+	private static void generateCountedDigits(int count, int[] decimalPoint,
 									  Bignum numerator, Bignum denominator,
 									  char[] buffer, int[] length) {
 		DOUBLE_CONVERSION_ASSERT(count >= 0);
 		for (int i = 0; i < count - 1; ++i) {
 			int digit;
-			digit = numerator.DivideModuloIntBignum(denominator);
+			digit = numerator.divideModuloIntBignum(denominator);
 			DOUBLE_CONVERSION_ASSERT(digit <= 9);  // digit is a uint16_t and therefore always positive.
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
 			buffer[i] = (char)(digit + ASCII_ZERO);
 			// Prepare for next iteration.
-			numerator.Times10();
+			numerator.times10();
 		}
 		// Generate the last digit.
 		int digit;
-		digit = numerator.DivideModuloIntBignum(denominator);
-		if (Bignum.PlusCompare(numerator, numerator, denominator) >= 0) {
+		digit = numerator.divideModuloIntBignum(denominator);
+		if (Bignum.plusCompare(numerator, numerator, denominator) >= 0) {
 			digit++;
 		}
 		DOUBLE_CONVERSION_ASSERT(digit <= 10);
@@ -340,46 +340,46 @@ public class BigNumDtoa {
 		if ((int) buffer[0] == ASCII_ZERO + 10) {
 			// Propagate a carry past the top place.
 			buffer[0] = '1';
-			decimal_point[0]++;
+			decimalPoint[0]++;
 		}
   		length[0] = count;
 	}
 
 	/**
-	 *  Generates 'requested_digits' after the decimal point. It might omit
+	 *  Generates 'requestedDigits' after the decimal point. It might omit
 	 *  trailing '0's. If the input number is too small then no digits at all are
 	 *  generated (ex.: 2 fixed digits for 0.00001).
 	 *
 	 *  Input verifies:  1 <= (numerator + delta) / denominator < 10.
 	 */
-	private static void BignumToFixed(int requested_digits, int[] decimal_point,
+	private static void bignumToFixed(int requestedDigits, int[] decimalPoint,
 							  Bignum numerator, Bignum denominator,
 							  char[] buffer, int[] length) {
-		// Note that we have to look at more than just the requested_digits, since
-		// a number could be rounded up. Example: v=0.5 with requested_digits=0.
+		// Note that we have to look at more than just the requestedDigits, since
+		// a number could be rounded up. Example: v=0.5 with requestedDigits=0.
 		// Even though the power of v equals 0 we can't just stop here.
-		if (-decimal_point[0] > requested_digits) {
+		if (-decimalPoint[0] > requestedDigits) {
 			// The number is definitively too small.
-			// Ex: 0.001 with requested_digits == 1.
-			// Set decimal-point to -requested_digits. This is what Gay does.
+			// Ex: 0.001 with requestedDigits == 1.
+			// Set decimal-point to -requestedDigits. This is what Gay does.
 			// Note that it should not have any effect anyways since the string is
 			// empty.
-			decimal_point[0] = -requested_digits;
+			decimalPoint[0] = -requestedDigits;
 			length[0] = 0;
 			return;
-		} else if (-decimal_point[0] == requested_digits) {
+		} else if (-decimalPoint[0] == requestedDigits) {
 			// We only need to verify if the number rounds down or up.
-			// Ex: 0.04 and 0.06 with requested_digits == 1.
-			DOUBLE_CONVERSION_ASSERT(decimal_point[0] == -requested_digits);
+			// Ex: 0.04 and 0.06 with requestedDigits == 1.
+			DOUBLE_CONVERSION_ASSERT(decimalPoint[0] == -requestedDigits);
 			// Initially the fraction lies in range (1, 10]. Multiply the denominator
 			// by 10 so that we can compare more easily.
-			denominator.Times10();
-			if (Bignum.PlusCompare(numerator, numerator, denominator) >= 0) {
+			denominator.times10();
+			if (Bignum.plusCompare(numerator, numerator, denominator) >= 0) {
 				// If the fraction is >= 0.5 then we have to include the rounded
 				// digit.
 				buffer[0] = '1';
       			length[0] = 1;
-				decimal_point[0]++;
+				decimalPoint[0]++;
 			} else {
 				// Note that we caught most of similar cases earlier.
       			length[0] = 0;
@@ -387,9 +387,9 @@ public class BigNumDtoa {
 			return;
 		} else {
 			// The requested digits correspond to the digits after the point.
-			// The variable 'needed_digits' includes the digits before the point.
-			int needed_digits = decimal_point[0] + requested_digits;
-			GenerateCountedDigits(needed_digits, decimal_point,
+			// The variable 'neededDigits' includes the digits before the point.
+			int neededDigits = decimalPoint[0] + requestedDigits;
+			generateCountedDigits(neededDigits, decimalPoint,
 					numerator, denominator,
 					buffer, length);
 		}
@@ -408,12 +408,12 @@ public class BigNumDtoa {
 	 *    (see explanation below).
 	 *
 	 *  Examples:
-	 *   EstimatePower(0)   => 16
-	 *   EstimatePower(-52) => 0
+	 *   estimatePower(0)   => 16
+	 *   estimatePower(-52) => 0
 	 *
 	 *  Note: e >= 0 => EstimatedPower(e) > 0. No similar claim can be made for e<0.
 	 */
-	private static int EstimatePower(int exponent) {
+	private static int estimatePower(int exponent) {
 		// This function estimates log10 of v where v = f*2^e (with e == exponent).
 		// Note that 10^floor(log10(v)) <= v, but v <= 10^ceil(log10(v)).
 		// Note that f is bounded by its container size. Let p = 53 (the double's
@@ -438,7 +438,7 @@ public class BigNumDtoa {
   		final double k1Log10 = 0.30102999566398114;  // 1/lg(10)
 
 		// For doubles len(f) == 53 (don't forget the hidden bit).
-  		final int kSignificandSize = Ieee.Double.kSignificandSize;
+  		final int kSignificandSize = Ieee.Double.SIGNIFICAND_SIZE;
 		double estimate = Math.ceil((double)(exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
 		return (int)estimate;
 	}
@@ -446,34 +446,34 @@ public class BigNumDtoa {
 
 	/**
 	 *  Let v = significand * 2^exponent.
-	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
-	 *  and denominator. The functions GenerateShortestDigits and
-	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  Computes v / 10^estimatedPower exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions generateShortestDigits and
+	 *  generateCountedDigits will then convert this ratio to its decimal
 	 *  representation d, with the required accuracy.
-	 *  Then d * 10^estimated_power is the representation of v.
-	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  Then d * 10^estimatedPower is the representation of v.
+	 *  (Note: the fraction and the estimatedPower might get adjusted before
 	 *  generating the decimal representation.)
 	 *
 	 *  The initial start values consist of:
-	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 *   - a scaled (common) denominator.
-	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   optionally (used by generateShortestDigits to decide if it has the shortest
 	 *   decimal converting back to v):
 	 *   - v - m-: the distance to the lower boundary.
 	 *   - m+ - v: the distance to the upper boundary.
 	 *
 	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
 	 *
-	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *  Let ep == estimatedPower, then the returned values will satisfy:
 	 *   v / 10^ep = numerator / denominator.
 	 *   v's boundaries m- and m+:
-	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
-	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 * 	m- / 10^ep == v / 10^ep - deltaMinus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + deltaPlus / denominator
 	 *   Or in other words:
-	 * 	m- == v - delta_minus * 10^ep / denominator;
-	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 * 	m- == v - deltaMinus * 10^ep / denominator;
+	 * 	m+ == v + deltaPlus * 10^ep / denominator;
 	 *
-	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 *   or       10^k <= v < 10^(k+1)
 	 *   we then have 0.1 <= numerator/denominator < 1
 	 * 		   or    1 <= numerator/denominator < 10
@@ -483,68 +483,68 @@ public class BigNumDtoa {
 	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
-	private static void InitialScaledStartValuesPositiveExponent(
+	private static void initialScaledStartValuesPositiveExponent(
 			@Unsigned long significand, int exponent,
-			int estimated_power, boolean need_boundary_deltas,
+			int estimatedPower, boolean needBoundaryDeltas,
 			Bignum numerator, Bignum denominator,
-			Bignum delta_minus, Bignum delta_plus) {
+			Bignum deltaMinus, Bignum deltaPlus) {
 		// A positive exponent implies a positive power.
-		DOUBLE_CONVERSION_ASSERT(estimated_power >= 0);
-		// Since the estimated_power is positive we simply multiply the denominator
-		// by 10^estimated_power.
+		DOUBLE_CONVERSION_ASSERT(estimatedPower >= 0);
+		// Since the estimatedPower is positive we simply multiply the denominator
+		// by 10^estimatedPower.
 
 		// numerator = v.
-		numerator.AssignUInt64(significand);
-		numerator.ShiftLeft(exponent);
-		// denominator = 10^estimated_power.
-		denominator.AssignPower(10, estimated_power);
+		numerator.assignUInt64(significand);
+		numerator.shiftLeft(exponent);
+		// denominator = 10^estimatedPower.
+		denominator.assignPower(10, estimatedPower);
 
-		if (need_boundary_deltas) {
+		if (needBoundaryDeltas) {
 			// Introduce a common denominator so that the deltas to the boundaries are
 			// integers.
-			denominator.ShiftLeft(1);
-			numerator.ShiftLeft(1);
+			denominator.shiftLeft(1);
+			numerator.shiftLeft(1);
 			// Let v = f * 2^e, then m+ - v = 1/2 * 2^e; With the common
-			// denominator (of 2) delta_plus equals 2^e.
-			delta_plus.AssignUInt(1);
-			delta_plus.ShiftLeft(exponent);
-			// Same for delta_minus. The adjustments if f == 2^p-1 are done later.
-			delta_minus.AssignUInt(1);
-			delta_minus.ShiftLeft(exponent);
+			// denominator (of 2) deltaPlus equals 2^e.
+			deltaPlus.assignUInt(1);
+			deltaPlus.shiftLeft(exponent);
+			// Same for deltaMinus. The adjustments if f == 2^p-1 are done later.
+			deltaMinus.assignUInt(1);
+			deltaMinus.shiftLeft(exponent);
 		}
 	}
 
 
 	/**
 	 *  Let v = significand * 2^exponent.
-	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
-	 *  and denominator. The functions GenerateShortestDigits and
-	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  Computes v / 10^estimatedPower exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions generateShortestDigits and
+	 *  generateCountedDigits will then convert this ratio to its decimal
 	 *  representation d, with the required accuracy.
-	 *  Then d * 10^estimated_power is the representation of v.
-	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  Then d * 10^estimatedPower is the representation of v.
+	 *  (Note: the fraction and the estimatedPower might get adjusted before
 	 *  generating the decimal representation.)
 	 *
 	 *  The initial start values consist of:
-	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 *   - a scaled (common) denominator.
-	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   optionally (used by generateShortestDigits to decide if it has the shortest
 	 *   decimal converting back to v):
 	 *   - v - m-: the distance to the lower boundary.
 	 *   - m+ - v: the distance to the upper boundary.
 	 *
 	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
 	 *
-	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *  Let ep == estimatedPower, then the returned values will satisfy:
 	 *   v / 10^ep = numerator / denominator.
 	 *   v's boundaries m- and m+:
-	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
-	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 * 	m- / 10^ep == v / 10^ep - deltaMinus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + deltaPlus / denominator
 	 *   Or in other words:
-	 * 	m- == v - delta_minus * 10^ep / denominator;
-	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 * 	m- == v - deltaMinus * 10^ep / denominator;
+	 * 	m+ == v + deltaPlus * 10^ep / denominator;
 	 *
-	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 *   or       10^k <= v < 10^(k+1)
 	 *   we then have 0.1 <= numerator/denominator < 1
 	 * 		   or    1 <= numerator/denominator < 10
@@ -554,69 +554,69 @@ public class BigNumDtoa {
 	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
-	private static void InitialScaledStartValuesNegativeExponentPositivePower(
+	private static void initialScaledStartValuesNegativeExponentPositivePower(
 			@Unsigned long ulSignificand, int exponent,
-			int estimated_power, boolean need_boundary_deltas,
+			int estimatedPower, boolean needBoundaryDeltas,
 			Bignum numerator, Bignum denominator,
-			Bignum delta_minus, Bignum delta_plus) {
-		// v = f * 2^e with e < 0, and with estimated_power >= 0.
-		// This means that e is close to 0 (have a look at how estimated_power is
+			Bignum deltaMinus, Bignum deltaPlus) {
+		// v = f * 2^e with e < 0, and with estimatedPower >= 0.
+		// This means that e is close to 0 (have a look at how estimatedPower is
 		// computed).
 
 		// numerator = significand
 		//  since v = significand * 2^exponent this is equivalent to
 		//  numerator = v * / 2^-exponent
-		numerator.AssignUInt64(ulSignificand);
-		// denominator = 10^estimated_power * 2^-exponent (with exponent < 0)
-		denominator.AssignPower(10, estimated_power);
-		denominator.ShiftLeft(-exponent);
+		numerator.assignUInt64(ulSignificand);
+		// denominator = 10^estimatedPower * 2^-exponent (with exponent < 0)
+		denominator.assignPower(10, estimatedPower);
+		denominator.shiftLeft(-exponent);
 
-		if (need_boundary_deltas) {
+		if (needBoundaryDeltas) {
 			// Introduce a common denominator so that the deltas to the boundaries are
 			// integers.
-			denominator.ShiftLeft(1);
-			numerator.ShiftLeft(1);
+			denominator.shiftLeft(1);
+			numerator.shiftLeft(1);
 			// Let v = f * 2^e, then m+ - v = 1/2 * 2^e; With the common
-			// denominator (of 2) delta_plus equals 2^e.
+			// denominator (of 2) deltaPlus equals 2^e.
 			// Given that the denominator already includes v's exponent the distance
 			// to the boundaries is simply 1.
-			delta_plus.AssignUInt(1);
-			// Same for delta_minus. The adjustments if f == 2^p-1 are done later.
-			delta_minus.AssignUInt(1);
+			deltaPlus.assignUInt(1);
+			// Same for deltaMinus. The adjustments if f == 2^p-1 are done later.
+			deltaMinus.assignUInt(1);
 		}
 	}
 
 
 	/**
 	 *  Let v = significand * 2^exponent.
-	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
-	 *  and denominator. The functions GenerateShortestDigits and
-	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  Computes v / 10^estimatedPower exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions generateShortestDigits and
+	 *  generateCountedDigits will then convert this ratio to its decimal
 	 *  representation d, with the required accuracy.
-	 *  Then d * 10^estimated_power is the representation of v.
-	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  Then d * 10^estimatedPower is the representation of v.
+	 *  (Note: the fraction and the estimatedPower might get adjusted before
 	 *  generating the decimal representation.)
 	 *
 	 *  The initial start values consist of:
-	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 *   - a scaled (common) denominator.
-	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   optionally (used by generateShortestDigits to decide if it has the shortest
 	 *   decimal converting back to v):
 	 *   - v - m-: the distance to the lower boundary.
 	 *   - m+ - v: the distance to the upper boundary.
 	 *
 	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
 	 *
-	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *  Let ep == estimatedPower, then the returned values will satisfy:
 	 *   v / 10^ep = numerator / denominator.
 	 *   v's boundaries m- and m+:
-	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
-	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 * 	m- / 10^ep == v / 10^ep - deltaMinus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + deltaPlus / denominator
 	 *   Or in other words:
-	 * 	m- == v - delta_minus * 10^ep / denominator;
-	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 * 	m- == v - deltaMinus * 10^ep / denominator;
+	 * 	m+ == v + deltaPlus * 10^ep / denominator;
 	 *
-	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 *   or       10^k <= v < 10^(k+1)
 	 *   we then have 0.1 <= numerator/denominator < 1
 	 * 		   or    1 <= numerator/denominator < 10
@@ -626,46 +626,46 @@ public class BigNumDtoa {
 	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
-	private static void InitialScaledStartValuesNegativeExponentNegativePower(
+	private static void initialScaledStartValuesNegativeExponentNegativePower(
 			@Unsigned long ulSignificand, int exponent,
-			int estimated_power, boolean need_boundary_deltas,
+			int estimatedPower, boolean needBoundaryDeltas,
 			Bignum numerator, Bignum denominator,
-			Bignum delta_minus, Bignum delta_plus) {
-		// Instead of multiplying the denominator with 10^estimated_power we
-		// multiply all values (numerator and deltas) by 10^-estimated_power.
+			Bignum deltaMinus, Bignum deltaPlus) {
+		// Instead of multiplying the denominator with 10^estimatedPower we
+		// multiply all values (numerator and deltas) by 10^-estimatedPower.
 
-		// Use numerator as temporary container for power_ten.
-		Bignum power_ten = numerator;
-		power_ten.AssignPower(10, -estimated_power);
+		// Use numerator as temporary container for powerTen.
+		Bignum powerTen = numerator;
+		powerTen.assignPower(10, -estimatedPower);
 
-		if (need_boundary_deltas) {
-			// Since power_ten == numerator we must make a copy of 10^estimated_power
+		if (needBoundaryDeltas) {
+			// Since powerTen == numerator we must make a copy of 10^estimatedPower
 			// before we complete the computation of the numerator.
-			// delta_plus = delta_minus = 10^estimated_power
-			delta_plus.AssignBignum(power_ten);
-			delta_minus.AssignBignum(power_ten);
+			// deltaPlus = deltaMinus = 10^estimatedPower
+			deltaPlus.assignBignum(powerTen);
+			deltaMinus.assignBignum(powerTen);
 		}
 
-		// numerator = significand * 2 * 10^-estimated_power
+		// numerator = significand * 2 * 10^-estimatedPower
 		//  since v = significand * 2^exponent this is equivalent to
-		// numerator = v * 10^-estimated_power * 2 * 2^-exponent.
-		// Remember: numerator has been abused as power_ten. So no need to assign it
+		// numerator = v * 10^-estimatedPower * 2 * 2^-exponent.
+		// Remember: numerator has been abused as powerTen. So no need to assign it
 		//  to itself.
-		DOUBLE_CONVERSION_ASSERT(numerator.equals(power_ten));
-		numerator.MultiplyByUInt64(ulSignificand);
+		DOUBLE_CONVERSION_ASSERT(numerator.equals(powerTen));
+		numerator.multiplyByUInt64(ulSignificand);
 
 		// denominator = 2 * 2^-exponent with exponent < 0.
-		denominator.AssignUInt(1);
-		denominator.ShiftLeft(-exponent);
+		denominator.assignUInt(1);
+		denominator.shiftLeft(-exponent);
 
-		if (need_boundary_deltas) {
+		if (needBoundaryDeltas) {
 			// Introduce a common denominator so that the deltas to the boundaries are
 			// integers.
-			numerator.ShiftLeft(1);
-			denominator.ShiftLeft(1);
+			numerator.shiftLeft(1);
+			denominator.shiftLeft(1);
 			// With this shift the boundaries have their correct value, since
-			// delta_plus = 10^-estimated_power, and
-			// delta_minus = 10^-estimated_power.
+			// deltaPlus = 10^-estimatedPower, and
+			// deltaMinus = 10^-estimatedPower.
 			// These assignments have been done earlier.
 			// The adjustments if f == 2^p-1 (lower boundary is closer) are done later.
 		}
@@ -673,34 +673,34 @@ public class BigNumDtoa {
 
 	/**
 	 *  Let v = significand * 2^exponent.
-	 *  Computes v / 10^estimated_power exactly, as a ratio of two bignums, numerator
-	 *  and denominator. The functions GenerateShortestDigits and
-	 *  GenerateCountedDigits will then convert this ratio to its decimal
+	 *  Computes v / 10^estimatedPower exactly, as a ratio of two bignums, numerator
+	 *  and denominator. The functions generateShortestDigits and
+	 *  generateCountedDigits will then convert this ratio to its decimal
 	 *  representation d, with the required accuracy.
-	 *  Then d * 10^estimated_power is the representation of v.
-	 *  (Note: the fraction and the estimated_power might get adjusted before
+	 *  Then d * 10^estimatedPower is the representation of v.
+	 *  (Note: the fraction and the estimatedPower might get adjusted before
 	 *  generating the decimal representation.)
 	 *
 	 *  The initial start values consist of:
-	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimated_power.
+	 *   - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 *   - a scaled (common) denominator.
-	 *   optionally (used by GenerateShortestDigits to decide if it has the shortest
+	 *   optionally (used by generateShortestDigits to decide if it has the shortest
 	 *   decimal converting back to v):
 	 *   - v - m-: the distance to the lower boundary.
 	 *   - m+ - v: the distance to the upper boundary.
 	 *
 	 *  v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
 	 *
-	 *  Let ep == estimated_power, then the returned values will satisfy:
+	 *  Let ep == estimatedPower, then the returned values will satisfy:
 	 *   v / 10^ep = numerator / denominator.
 	 *   v's boundaries m- and m+:
-	 * 	m- / 10^ep == v / 10^ep - delta_minus / denominator
-	 * 	m+ / 10^ep == v / 10^ep + delta_plus / denominator
+	 * 	m- / 10^ep == v / 10^ep - deltaMinus / denominator
+	 * 	m+ / 10^ep == v / 10^ep + deltaPlus / denominator
 	 *   Or in other words:
-	 * 	m- == v - delta_minus * 10^ep / denominator;
-	 * 	m+ == v + delta_plus * 10^ep / denominator;
+	 * 	m- == v - deltaMinus * 10^ep / denominator;
+	 * 	m+ == v + deltaPlus * 10^ep / denominator;
 	 *
-	 *  Since 10^(k-1) <= v < 10^k    (with k == estimated_power)
+	 *  Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 *   or       10^k <= v < 10^(k+1)
 	 *   we then have 0.1 <= numerator/denominator < 1
 	 * 		   or    1 <= numerator/denominator < 10
@@ -710,35 +710,35 @@ public class BigNumDtoa {
 	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
 	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
 	 */
-	private static void InitialScaledStartValues(@Unsigned long ulSignificand,
+	private static void initialScaledStartValues(@Unsigned long ulSignificand,
 										 int exponent,
-										 boolean lower_boundary_is_closer,
-										 int estimated_power,
-										 boolean need_boundary_deltas,
+										 boolean lowerBoundaryIsCloser,
+										 int estimatedPower,
+										 boolean needBoundaryDeltas,
 										 Bignum numerator,
 										 Bignum denominator,
-										 Bignum delta_minus,
-										 Bignum delta_plus) {
+										 Bignum deltaMinus,
+										 Bignum deltaPlus) {
 		if (exponent >= 0) {
-			InitialScaledStartValuesPositiveExponent(
-					ulSignificand, exponent, estimated_power, need_boundary_deltas,
-					numerator, denominator, delta_minus, delta_plus);
-		} else if (estimated_power >= 0) {
-			InitialScaledStartValuesNegativeExponentPositivePower(
-					ulSignificand, exponent, estimated_power, need_boundary_deltas,
-					numerator, denominator, delta_minus, delta_plus);
+			initialScaledStartValuesPositiveExponent(
+					ulSignificand, exponent, estimatedPower, needBoundaryDeltas,
+					numerator, denominator, deltaMinus, deltaPlus);
+		} else if (estimatedPower >= 0) {
+			initialScaledStartValuesNegativeExponentPositivePower(
+					ulSignificand, exponent, estimatedPower, needBoundaryDeltas,
+					numerator, denominator, deltaMinus, deltaPlus);
 		} else {
-			InitialScaledStartValuesNegativeExponentNegativePower(
-					ulSignificand, exponent, estimated_power, need_boundary_deltas,
-					numerator, denominator, delta_minus, delta_plus);
+			initialScaledStartValuesNegativeExponentNegativePower(
+					ulSignificand, exponent, estimatedPower, needBoundaryDeltas,
+					numerator, denominator, deltaMinus, deltaPlus);
 		}
 
-		if (need_boundary_deltas && lower_boundary_is_closer) {
+		if (needBoundaryDeltas && lowerBoundaryIsCloser) {
 			// The lower boundary is closer at half the distance of "normal" numbers.
-			// Increase the common denominator and adapt all but the delta_minus.
-			denominator.ShiftLeft(1);  // *2
-			numerator.ShiftLeft(1);    // *2
-			delta_plus.ShiftLeft(1);   // *2
+			// Increase the common denominator and adapt all but the deltaMinus.
+			denominator.shiftLeft(1);  // *2
+			numerator.shiftLeft(1);    // *2
+			deltaPlus.shiftLeft(1);   // *2
 		}
 	}
 
@@ -746,48 +746,48 @@ public class BigNumDtoa {
 
 	/**
 	 *  Multiplies numerator/denominator so that its values lies in the range 1-10.
-	 *  Returns decimal_point s.t.
-	 *   v = numerator'/denominator' * 10^(decimal_point-1)
+	 *  Returns decimalPoint s.t.
+	 *   v = numerator'/denominator' * 10^(decimalPoint-1)
 	 * 	 where numerator' and denominator' are the values of numerator and
 	 * 	 denominator after the call to this function.
 	 *
 	 *  This routine multiplies numerator/denominator so that its values lies in the
 	 *  range 1-10. That is after a call to this function we have:
-	 * 	1 <= (numerator + delta_plus) /denominator < 10.
+	 * 	1 <= (numerator + deltaPlus) /denominator < 10.
 	 *  Let numerator the input before modification and numerator' the argument
-	 *  after modification, then the output-parameter decimal_point is such that
-	 *   numerator / denominator * 10^estimated_power ==
-	 * 	numerator' / denominator' * 10^(decimal_point - 1)
-	 *  In some cases estimated_power was too low, and this is already the case. We
+	 *  after modification, then the output-parameter decimalPoint is such that
+	 *   numerator / denominator * 10^estimatedPower ==
+	 * 	numerator' / denominator' * 10^(decimalPoint - 1)
+	 *  In some cases estimatedPower was too low, and this is already the case. We
 	 *  then simply adjust the power so that 10^(k-1) <= v < 10^k (with k ==
-	 *  estimated_power) but do not touch the numerator or denominator.
+	 *  estimatedPower) but do not touch the numerator or denominator.
 	 *  Otherwise the routine multiplies the numerator and the deltas by 10.
 	 */
-	private static void FixupMultiply10(int estimated_power, boolean is_even,
-								int[] decimal_point,
+	private static void fixupMultiply10(int estimatedPower, boolean isEven,
+								int[] decimalPoint,
 								Bignum numerator, Bignum denominator,
-								Bignum delta_minus, Bignum delta_plus) {
-		boolean in_range;
-		if (is_even) {
+								Bignum deltaMinus, Bignum deltaPlus) {
+		boolean inRange;
+		if (isEven) {
 			// For IEEE doubles half-way cases (in decimal system numbers ending with 5)
 			// are rounded to the closest floating-point number with even significand.
-			in_range = Bignum.PlusCompare(numerator, delta_plus, denominator) >= 0;
+			inRange = Bignum.plusCompare(numerator, deltaPlus, denominator) >= 0;
 		} else {
-			in_range = Bignum.PlusCompare(numerator, delta_plus, denominator) > 0;
+			inRange = Bignum.plusCompare(numerator, deltaPlus, denominator) > 0;
 		}
-		if (in_range) {
-			// Since numerator + delta_plus >= denominator we already have
-			// 1 <= numerator/denominator < 10. Simply update the estimated_power.
-    		decimal_point[0] = estimated_power + 1;
+		if (inRange) {
+			// Since numerator + deltaPlus >= denominator we already have
+			// 1 <= numerator/denominator < 10. Simply update the estimatedPower.
+    		decimalPoint[0] = estimatedPower + 1;
 		} else {
-    		decimal_point[0] = estimated_power;
-			numerator.Times10();
-			if (Bignum.Equal(delta_minus, delta_plus)) {
-				delta_minus.Times10();
-				delta_plus.AssignBignum(delta_minus);
+    		decimalPoint[0] = estimatedPower;
+			numerator.times10();
+			if (Bignum.equal(deltaMinus, deltaPlus)) {
+				deltaMinus.times10();
+				deltaPlus.assignBignum(deltaMinus);
 			} else {
-				delta_minus.Times10();
-				delta_plus.Times10();
+				deltaMinus.times10();
+				deltaPlus.times10();
 			}
 		}
 	}
