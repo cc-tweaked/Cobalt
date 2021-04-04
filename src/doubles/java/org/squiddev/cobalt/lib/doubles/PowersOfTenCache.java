@@ -43,6 +43,55 @@ public class PowersOfTenCache {
 	public static final int MIN_DECIMAL_EXPONENT = -348;
 	public static final int MAX_DECIMAL_EXPONENT = 340;
 
+	/** -1 * the first decimal_exponent. */
+	private static final int CACHED_POWERS_OFFSET = 348;
+	/** 1 / lg(10) */
+	private static final double D_1_LOG2_10 = 0.30102999566398114;
+
+	/**
+	 * Returns a cached power-of-ten with a binary exponent in the range
+	 * [minExponent; maxExponent] (boundaries included).
+	 */
+	public static void getCachedPowerForBinaryExponentRange(
+			int minExponent,
+			int maxExponent,
+			DiyFp[] power,
+			int[] decimalExponent) {
+		int kQ = DiyFp.SIGNIFICAND_SIZE;
+		double k = Math.ceil((double)(minExponent + kQ - 1) * D_1_LOG2_10);
+		int foo = CACHED_POWERS_OFFSET;
+		int index =
+				(foo + ((int)k) - 1) / DECIMAL_EXPONENT_DISTANCE + 1;
+		DOUBLE_CONVERSION_ASSERT(0 <= index && index < CACHED_POWERS.length);
+		CachedPower cachedPower = CACHED_POWERS[index];
+		DOUBLE_CONVERSION_ASSERT(minExponent <= cachedPower.binaryExponent);
+		//maxExponent;  // Mark variable as used.
+		DOUBLE_CONVERSION_ASSERT(cachedPower.binaryExponent <= maxExponent);
+		decimalExponent[0] = (int) cachedPower.decimalExponent;
+		power[0] = new DiyFp(cachedPower.significand, cachedPower.binaryExponent);
+	}
+
+	/**
+	 *  Returns a cached power of ten x ~= 10^k such that
+	 *    k <= decimal_exponent < k + kCachedPowersDecimalDistance.
+	 *  The given decimal_exponent must satisfy
+	 *    kMinDecimalExponent <= requestedExponent, and
+	 *    requestedExponent < kMaxDecimalExponent + kDecimalExponentDistance.
+	 */
+	void getCachedPowerForDecimalExponent(int requestedExponent,
+			DiyFp[] power,
+			int[] foundExponent) {
+		DOUBLE_CONVERSION_ASSERT(MIN_DECIMAL_EXPONENT <= requestedExponent);
+		DOUBLE_CONVERSION_ASSERT(requestedExponent < MAX_DECIMAL_EXPONENT + DECIMAL_EXPONENT_DISTANCE);
+		int index =
+				(requestedExponent + CACHED_POWERS_OFFSET) / DECIMAL_EXPONENT_DISTANCE;
+		CachedPower cachedPower = CACHED_POWERS[index];
+		power[0] = new DiyFp(cachedPower.significand, cachedPower.binaryExponent);
+		foundExponent[0] = cachedPower.decimalExponent;
+		DOUBLE_CONVERSION_ASSERT(foundExponent[0] <= requestedExponent);
+		DOUBLE_CONVERSION_ASSERT(requestedExponent < foundExponent[0] + DECIMAL_EXPONENT_DISTANCE);
+	}
+
 	static class CachedPower {
 		@Unsigned long significand;
 		int binaryExponent;
@@ -144,54 +193,5 @@ public class PowersOfTenCache {
 			new CachedPower(0xeb96_bf6e_badf_77d9L, 1039, 332),
 			new CachedPower(0xaf87_023b_9bf0_ee6bL, 1066, 340)
 	};
-
-	/** -1 * the first decimal_exponent. */
-	private static final int CACHED_POWERS_OFFSET = 348;
-	/** 1 / lg(10) */
-	private static final double D_1_LOG2_10 = 0.30102999566398114;
-
-	/**
-	 * Returns a cached power-of-ten with a binary exponent in the range
-	 * [minExponent; maxExponent] (boundaries included).
-	 */
-	public static void getCachedPowerForBinaryExponentRange(
-			int minExponent,
-			int maxExponent,
-			DiyFp[] power,
-			int[] decimalExponent) {
-		int kQ = DiyFp.SIGNIFICAND_SIZE;
-		double k = Math.ceil((double)(minExponent + kQ - 1) * D_1_LOG2_10);
-		int foo = CACHED_POWERS_OFFSET;
-		int index =
-				(foo + ((int)k) - 1) / DECIMAL_EXPONENT_DISTANCE + 1;
-		DOUBLE_CONVERSION_ASSERT(0 <= index && index < CACHED_POWERS.length);
-		CachedPower cachedPower = CACHED_POWERS[index];
-		DOUBLE_CONVERSION_ASSERT(minExponent <= cachedPower.binaryExponent);
-		//maxExponent;  // Mark variable as used.
-		DOUBLE_CONVERSION_ASSERT(cachedPower.binaryExponent <= maxExponent);
-		decimalExponent[0] = (int) cachedPower.decimalExponent;
-		power[0] = new DiyFp(cachedPower.significand, cachedPower.binaryExponent);
-	}
-
-	/**
-	 *  Returns a cached power of ten x ~= 10^k such that
-	 *    k <= decimal_exponent < k + kCachedPowersDecimalDistance.
-	 *  The given decimal_exponent must satisfy
-	 *    kMinDecimalExponent <= requestedExponent, and
-	 *    requestedExponent < kMaxDecimalExponent + kDecimalExponentDistance.
-	 */
-	void getCachedPowerForDecimalExponent(int requestedExponent,
-										  DiyFp[] power,
-										  int[] foundExponent) {
-		DOUBLE_CONVERSION_ASSERT(MIN_DECIMAL_EXPONENT <= requestedExponent);
-		DOUBLE_CONVERSION_ASSERT(requestedExponent < MAX_DECIMAL_EXPONENT + DECIMAL_EXPONENT_DISTANCE);
-		int index =
-				(requestedExponent + CACHED_POWERS_OFFSET) / DECIMAL_EXPONENT_DISTANCE;
-		CachedPower cachedPower = CACHED_POWERS[index];
-		power[0] = new DiyFp(cachedPower.significand, cachedPower.binaryExponent);
-		foundExponent[0] = cachedPower.decimalExponent;
-		DOUBLE_CONVERSION_ASSERT(foundExponent[0] <= requestedExponent);
-		DOUBLE_CONVERSION_ASSERT(requestedExponent < foundExponent[0] + DECIMAL_EXPONENT_DISTANCE);
-	}
 
 }

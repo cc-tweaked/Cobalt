@@ -51,6 +51,12 @@ public final class Ieee {
 		public static final int EXPONENT_BIAS = 0x3FF + PHYSICAL_SIGNIFICAND_SIZE;
 		public static final int MAX_EXPONENT = 0x7FF - EXPONENT_BIAS;
 
+		private static final int DENORMAL_EXPONENT = -EXPONENT_BIAS + 1;
+		private static final @Unsigned long INFINITY = 0x7FF0000000000000L;
+		private static final @Unsigned long NAN = 0x7FF8000000000000L;
+
+		private final @Unsigned long bits;
+
 		public Double() { bits = 0L;}
 		@SuppressWarnings("cast.unsafe")
 		public Double(double d) {
@@ -253,12 +259,6 @@ public final class Ieee {
 			return new Double(NAN).value();
 		}
 
-		private static final int DENORMAL_EXPONENT = -EXPONENT_BIAS + 1;
-		private static final @Unsigned long INFINITY = 0x7FF0000000000000L;
-		private static final @Unsigned long NAN = 0x7FF8000000000000L;
-
-		private final @Unsigned long bits;
-
 		private static @Unsigned long diyFpToUint64(DiyFp diyFp) {
 			@Unsigned long significand = diyFp.f();
 			int exponent = diyFp.e();
@@ -296,6 +296,14 @@ public final class Ieee {
 		public static final @Unsigned int QUIET_NAN_BIT = 0x00400000;
 		public static final int PHYSICAL_SIGNIFICAND_SIZE = 23;  // Excludes the hidden bit.
 		public static final int SIGNIFICAND_SIZE = 24;
+
+		private static final @Unsigned int EXPONENT_BIAS = 0x7F + PHYSICAL_SIGNIFICAND_SIZE;
+		private static final @Unsigned int DENORMAL_EXPONENT = -EXPONENT_BIAS + 1;
+		private static final @Unsigned int MAX_EXPONENT = 0xFF - EXPONENT_BIAS;
+		private static final @Unsigned int INFINITY = 0x7F800000;
+		private static final @Unsigned int NAN = 0x7FC00000;
+
+		private final @Unsigned int bits;
 
 		public Single() { this.bits = 0; }
 		@SuppressWarnings("cast.unsafe")
@@ -431,14 +439,6 @@ public final class Ieee {
 		public static float nan() {
 			return new Single(NAN).value();
 		}
-
-		private static final @Unsigned int EXPONENT_BIAS = 0x7F + PHYSICAL_SIGNIFICAND_SIZE;
-		private static final @Unsigned int DENORMAL_EXPONENT = -EXPONENT_BIAS + 1;
-		private static final @Unsigned int MAX_EXPONENT = 0xFF - EXPONENT_BIAS;
-		private static final @Unsigned int INFINITY = 0x7F800000;
-		private static final @Unsigned int NAN = 0x7FC00000;
-
-  		private final @Unsigned int bits;
 	}
 
 	private Ieee() {}

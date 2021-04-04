@@ -46,6 +46,11 @@ import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
 public class DiyFp {
 	public static final int SIGNIFICAND_SIZE = 64;
 
+	private static final long UINT_64_MSB = 0x80000000_00000000L;
+
+	private @Unsigned long f;
+	private int e;
+
 	DiyFp() { this.f = 0L; this.e = 0; }
 	DiyFp(@Unsigned long significand, final int exponent) { this.f = significand; this.e = exponent; }
 
@@ -143,9 +148,4 @@ public class DiyFp {
 
 	public void setF(@Unsigned long new_value) { f = new_value; }
 	public void setE(int new_value) { e = new_value; }
-
-	private static final long UINT_64_MSB = 0x80000000_00000000L;
-
-	private @Unsigned long f;
-	private int e;
 }

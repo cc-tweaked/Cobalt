@@ -36,9 +36,9 @@ import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class FixedDtoa {
-
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
+	private static final int DOUBLE_SIGNIFICAND_SIZE = 53;  // Includes the hidden bit.
 
 	// Represents a 128bit type. This class should be replaced by a native type on
 	// platforms that support 128bit integers.
@@ -152,8 +152,6 @@ public class FixedDtoa {
 			}
 		}
 	}
-
-	private static final int DOUBLE_SIGNIFICAND_SIZE = 53;  // Includes the hidden bit.
 
 	private static void fillDigits32FixedLength(@Unsigned int number, int requestedLength,
 												char[] buffer, int[] length) {
