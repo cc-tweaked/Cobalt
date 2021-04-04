@@ -324,7 +324,7 @@ public class DoubleToStringConverter {
 			resultBuilder.append('.');
 			resultBuilder.append(decimalDigits, 1, length-1);
 		}
-		resultBuilder.append(exponentCharacter);
+		resultBuilder.append((char)exponentCharacter);
 		if (exponent < 0) {
 			resultBuilder.append('-');
 			exponent = -exponent;
@@ -388,7 +388,7 @@ public class DoubleToStringConverter {
 		} else {
 			// "decima.l_rep000".
 			DOUBLE_CONVERSION_ASSERT(digitsAfterPoint > 0);
-			resultBuilder.append(decimalDigits, 0, decimalPoint+1);
+			resultBuilder.append(decimalDigits, 0, decimalPoint);
 			resultBuilder.append('.');
 			DOUBLE_CONVERSION_ASSERT(length - decimalPoint <= digitsAfterPoint);
 			resultBuilder.append(decimalDigits, decimalPoint, length - decimalPoint);
