@@ -39,17 +39,17 @@ import static org.squiddev.cobalt.Constants.*;
  */
 public final class BytecodeLoader {
 	/**
-	 * format corresponding to non-number-patched lua, all numbers are floats or doubles
+	 * format corresponding to non-number-patched Lua, all numbers are floats or doubles
 	 */
 	public static final int NUMBER_FORMAT_FLOATS_OR_DOUBLES = 0;
 
 	/**
-	 * format corresponding to non-number-patched lua, all numbers are ints
+	 * format corresponding to non-number-patched Lua, all numbers are ints
 	 */
 	public static final int NUMBER_FORMAT_INTS_ONLY = 1;
 
 	/**
-	 * format corresponding to number-patched lua, all numbers are 32-bit (4 byte) ints
+	 * format corresponding to number-patched Lua, all numbers are 32-bit (4 byte) ints
 	 */
 	public static final int NUMBER_FORMAT_NUM_PATCH_INT32 = 4;
 
@@ -161,9 +161,9 @@ public final class BytecodeLoader {
 	}
 
 	/**
-	 * Load a lua strin gvalue from the input stream
+	 * Load a Lua string value from the input stream
 	 *
-	 * @return the {@link LuaString} value laoded.
+	 * @return the {@link LuaString} value loaded.
 	 */
 	private LuaString loadString() throws IOException {
 		int size = this.luacSizeofSizeT == 8 ? (int) loadInt64() : loadInt();
@@ -256,7 +256,7 @@ public final class BytecodeLoader {
 	}
 
 	/**
-	 * Load the debug infor for a function prototype
+	 * Load the debug info for a function prototype
 	 *
 	 * @param f the function Prototype
 	 * @throws IOException if there is an i/o exception
@@ -325,7 +325,7 @@ public final class BytecodeLoader {
 	}
 
 	/**
-	 * Load the lua chunk header values.
+	 * Load the Lua chunk header values.
 	 *
 	 * @throws IOException      if an i/o exception occurs.
 	 * @throws CompileException If the bytecode is invalid.

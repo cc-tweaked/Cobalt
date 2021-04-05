@@ -134,11 +134,6 @@ public final class LuaState {
 	 */
 	boolean abandoned;
 
-	/**
-	 * Whether to compile for Lua 5.1 or 5.2.
-	 */
-	public boolean useLua52;
-
 	public LuaState() {
 		this(new LuaState.Builder());
 	}
@@ -158,7 +153,6 @@ public final class LuaState {
 		this.debug = builder.debug;
 		this.timezone = builder.timezone;
 		this.threader = new YieldThreader(builder.coroutineExecutor);
-		this.useLua52 = builder.useLua52;
 	}
 
 	/**
@@ -236,7 +230,6 @@ public final class LuaState {
 		private DebugHandler debug = DebugHandler.INSTANCE;
 		private TimeZone timezone = TimeZone.getDefault();
 		private Executor coroutineExecutor = defaultCoroutineExecutor;
-		private boolean useLua52 = LuaC.defaultLua52;
 
 		/**
 		 * Build a Lua state from this builder
@@ -411,17 +404,6 @@ public final class LuaState {
 		public Builder coroutineExecutor(Executor coroutineExecutor) {
 			if (coroutineExecutor == null) throw new NullPointerException("coroutineExecutor cannot be null");
 			this.coroutineExecutor = coroutineExecutor;
-			return this;
-		}
-
-		/**
-		 * Set whether the state generates Lua 5.2 bytecode.
-		 *
-		 * @param lua52 Whether to use Lua 5.2
-		 * @return This builder
-		 */
-		public Builder useLua52(boolean lua52) {
-			this.useLua52 = lua52;
 			return this;
 		}
 	}

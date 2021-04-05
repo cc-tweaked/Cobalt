@@ -112,7 +112,7 @@ public class BaseLib implements LuaLibrary {
 		next = env.rawget("next");
 		inext = env.rawget("__inext");
 
-		env.rawset("_VERSION", valueOf(state.useLua52 ? "Lua 5.2" : "Lua 5.1"));
+		env.rawset("_VERSION", valueOf("Lua 5.2"));
 
 		return env;
 	}

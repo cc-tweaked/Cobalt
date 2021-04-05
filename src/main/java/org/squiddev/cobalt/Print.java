@@ -83,50 +83,6 @@ public class Print {
 		null,
 	};
 
-	public static final String[] OPNAMES_52 = {
-		"MOVE",
-		"LOADK",
-		"LOADKX",
-		"LOADBOOL",
-		"LOADNIL",
-		"GETUPVAL",
-		"GETTABUP",
-		"GETTABLE",
-		"SETTABUP",
-		"SETUPVAL",
-		"SETTABLE",
-		"NEWTABLE",
-		"SELF",
-		"ADD",
-		"SUB",
-		"MUL",
-		"DIV",
-		"MOD",
-		"POW",
-		"UNM",
-		"NOT",
-		"LEN",
-		"CONCAT",
-		"JMP",
-		"EQ",
-		"LT",
-		"LE",
-		"TEST",
-		"TESTSET",
-		"CALL",
-		"TAILCALL",
-		"RETURN",
-		"FORLOOP",
-		"FORPREP",
-		"TFORCALL",
-		"TFORLOOP",
-		"SETLIST",
-		"CLOSURE",
-		"VARARG",
-		"EXTRAARG",
-		null,
-	};
-
 
 	static void printString(PrintStream ps, final LuaString s) {
 
@@ -230,7 +186,7 @@ public class Print {
 		} else {
 			ps.print("[-]  ");
 		}
-		ps.print((f.isLua52 ? OPNAMES_52[o] : OPNAMES[o]) + "  ");
+		ps.print(OPNAMES[o] + "  ");
 		switch (getOpMode(o)) {
 			case iABC:
 				ps.print(a);

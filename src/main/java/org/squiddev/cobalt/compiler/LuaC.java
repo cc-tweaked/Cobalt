@@ -43,14 +43,14 @@ import static org.squiddev.cobalt.compiler.LoadState.checkMode;
 /**
  * Compiler for Lua.
  *
- * Compiles lua source files into lua bytecode within a {@link Prototype},
- * loads lua binary files directly into a{@link Prototype},
+ * Compiles Lua source files into Lua bytecode within a {@link Prototype},
+ * loads Lua binary files directly into a{@link Prototype},
  * and optionaly instantiates a {@link LuaInterpretedFunction} around the result
  * using a user-supplied environment.
  *
  * Implements the {@link LuaCompiler} interface for loading
  * initialized chunks, which is an interface common to
- * lua bytecode compiling and java bytecode compiling.
+ * Lua bytecode compiling and java bytecode compiling.
  *
  * The {@link LuaC} compiler is installed by default by the
  * {@link JsePlatform} class
@@ -87,45 +87,44 @@ public class LuaC implements LuaCompiler {
 	public static final int MAXSTACK = 250;
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;
-	public static boolean defaultLua52 = true;
 	public static boolean blockGoto = false;
 
 
 	public static void SET_OPCODE(InstructionPtr i, int o) {
-		i.set((i.get() & (Lua.MASK_NOT_OP)) | ((o << Lua.POS_OP) & Lua.MASK_OP));
+		i.set((i.get() & (Lua52.MASK_NOT_OP)) | ((o << Lua52.POS_OP) & Lua52.MASK_OP));
 	}
 
 	public static void SETARG_A(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_A)) | ((u << Lua.POS_A) & Lua.MASK_A));
+		i.set((i.get() & (Lua52.MASK_NOT_A)) | ((u << Lua52.POS_A) & Lua52.MASK_A));
 	}
 
 	public static void SETARG_B(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_B)) | ((u << Lua.POS_B) & Lua.MASK_B));
+		i.set((i.get() & (Lua52.MASK_NOT_B)) | ((u << Lua52.POS_B) & Lua52.MASK_B));
 	}
 
 	public static void SETARG_C(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_C)) | ((u << Lua.POS_C) & Lua.MASK_C));
+		i.set((i.get() & (Lua52.MASK_NOT_C)) | ((u << Lua52.POS_C) & Lua52.MASK_C));
 	}
 
 	public static void SETARG_Bx(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_Bx)) | ((u << Lua.POS_Bx) & Lua.MASK_Bx));
+		i.set((i.get() & (Lua52.MASK_NOT_Bx)) | ((u << Lua52.POS_Bx) & Lua52.MASK_Bx));
 	}
 
 	public static void SETARG_sBx(InstructionPtr i, int u) {
-		SETARG_Bx(i, u + Lua.MAXARG_sBx);
+		SETARG_Bx(i, u + Lua52.MAXARG_sBx);
 	}
 
 	public static int CREATE_ABC(int o, int a, int b, int c) {
-		return ((o << Lua.POS_OP) & Lua.MASK_OP) |
-			((a << Lua.POS_A) & Lua.MASK_A) |
-			((b << Lua.POS_B) & Lua.MASK_B) |
-			((c << Lua.POS_C) & Lua.MASK_C);
+		return ((o << Lua52.POS_OP) & Lua52.MASK_OP) |
+			((a << Lua52.POS_A) & Lua52.MASK_A) |
+			((b << Lua52.POS_B) & Lua52.MASK_B) |
+			((c << Lua52.POS_C) & Lua52.MASK_C);
 	}
 
 	public static int CREATE_ABx(int o, int a, int bc) {
-		return ((o << Lua.POS_OP) & Lua.MASK_OP) |
-			((a << Lua.POS_A) & Lua.MASK_A) |
-			((bc << Lua.POS_Bx) & Lua.MASK_Bx);
+		return ((o << Lua52.POS_OP) & Lua52.MASK_OP) |
+			((a << Lua52.POS_A) & Lua52.MASK_A) |
+			((bc << Lua52.POS_Bx) & Lua52.MASK_Bx);
 	}
 
 	// vector reallocation
@@ -162,8 +161,8 @@ public class LuaC implements LuaCompiler {
 		return a;
 	}
 
-	public static LexState52.LabelDescription[] realloc(LexState52.LabelDescription[] v, int n) {
-		LexState52.LabelDescription[] a = new LexState52.LabelDescription[n];
+	public static LexState.LabelDescription[] realloc(LexState.LabelDescription[] v, int n) {
+		LexState.LabelDescription[] a = new LexState.LabelDescription[n];
 		if (v != null) {
 			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
 		}
@@ -193,21 +192,16 @@ public class LuaC implements LuaCompiler {
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
 	@Override
-	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env, boolean useLua52) throws IOException, CompileException {
-		Prototype p = compile(stream, name, mode, useLua52);
+	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
+		Prototype p = compile(stream, name, mode);
 		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
 		closure.nilUpvalues();
-		if (useLua52 && p.nups == 1) {
+		if (p.isLua52 && p.nups == 1) {
 			closure.setUpvalue(0, new Upvalue(env));
-		} else if (!useLua52 && p.nups == 0) {
+		} else if (!p.isLua52 && p.nups == 0) {
 			closure.setfenv(env);
 		}
 		return closure;
-	}
-
-	@Override
-	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
-		return load(stream, name, mode, env, defaultLua52);
 	}
 
 	public static Prototype compile(InputStream stream, String name) throws IOException, CompileException {
@@ -228,51 +222,21 @@ public class LuaC implements LuaCompiler {
 	}
 
 	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws IOException, CompileException {
-		return compile(stream, name, mode, defaultLua52);
-	}
-
-	public static Prototype compile(InputStream stream, LuaString name, LuaString mode, boolean lua52) throws IOException, CompileException {
 		int firstByte = stream.read();
 		if (firstByte == '\033') {
 			checkMode(mode, "binary");
 			return LoadState.loadBinaryChunk(firstByte, stream, name);
 		} else {
 			checkMode(mode, "text");
-			if (lua52) {
-				LexState52.DynamicData dyd = new LexState52.DynamicData();
-				return luaY_parser52(firstByte, stream, dyd, name);
-			} else {
-				return luaY_parser(firstByte, stream, name);
-			}
+			LexState.DynamicData dyd = new LexState.DynamicData();
+			return luaY_parser(firstByte, stream, dyd, name);
 		}
 	}
 
-	/**
-	 * Parse the input
-	 */
-	private static Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
+	private static Prototype luaY_parser(int firstByte, InputStream z, LexState.DynamicData dyd, LuaString name) throws CompileException {
 		LexState lexstate = new LexState(z);
 		FuncState funcstate = new FuncState();
-		// lexstate.buff = buff;
-		lexstate.setinput(firstByte, z, name);
-		lexstate.open_func(funcstate);
-		/* main func. is always vararg */
-		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
-		funcstate.f.source = name;
-		lexstate.nextToken(); /* read first token */
-		lexstate.chunk();
-		lexstate.check(LexState.TK_EOS);
-		lexstate.close_func();
-		LuaC._assert(funcstate.prev == null);
-		LuaC._assert(funcstate.f.nups == 0);
-		LuaC._assert(lexstate.fs == null);
-		return funcstate.f;
-	}
-
-	private static Prototype luaY_parser52(int firstByte, InputStream z, LexState52.DynamicData dyd, LuaString name) throws CompileException {
-		LexState52 lexstate = new LexState52(z);
-		FuncState52 funcstate = new FuncState52();
-		FuncState52.BlockCnt bl = new FuncState52.BlockCnt();
+		FuncState.BlockCnt bl = new FuncState.BlockCnt();
 		// lexstate.buff = buff;
 		lexstate.dyd = dyd;
 		dyd.nactvar = dyd.ngt = dyd.nlabel = 0;
@@ -280,14 +244,14 @@ public class LuaC implements LuaCompiler {
 		funcstate.f = new Prototype();
 		lexstate.open_func(funcstate, bl);
 		/* main func. is always vararg */
-		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
+		funcstate.f.is_vararg = Lua52.VARARG_ISVARARG;
 		funcstate.f.source = name;
-		LexState52.expdesc v = new LexState52.expdesc();
-		v.init(LexState52.VLOCAL, 0);
+		LexState.expdesc v = new LexState.expdesc();
+		v.init(LexState.VLOCAL, 0);
 		funcstate.newupvalue(LuaString.valueOf("_ENV"), v);
 		lexstate.nextToken(); /* read first token */
 		lexstate.statlist();
-		lexstate.check(LexState52.TK_EOS);
+		lexstate.check(LexState.TK_EOS);
 		lexstate.close_func();
 		LuaC._assert(funcstate.prev == null);
 		LuaC._assert(funcstate.f.nups == 1);

@@ -74,21 +74,6 @@ public final class LoadState {
 	 * @see #load(InputStream, LuaString, LuaString, LuaTable)
 	 */
 	public interface LuaCompiler {
-
-		/**
-		 * Load into a Closure or LuaFunction from a Stream and initializes the environment
-		 *
-		 * @param stream   Stream to read
-		 * @param filename Name of chunk
-		 * @param mode
-		 * @param env      Environment to load
-		 * @param useLua52 Whether to load as Lua 5.2
-		 * @return The loaded function
-		 * @throws IOException      On stream read error
-		 * @throws CompileException If the stream cannot be loaded.
-		 */
-		LuaFunction load(InputStream stream, LuaString filename, LuaString mode, LuaTable env, boolean useLua52) throws IOException, CompileException;
-
 		/**
 		 * Load into a Closure or LuaFunction from a Stream and initializes the environment
 		 *
@@ -135,7 +120,7 @@ public final class LoadState {
 	}
 
 	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
-		if (state.compiler != null) return state.compiler.load(stream, name, mode, env, state.useLua52);
+		if (state.compiler != null) return state.compiler.load(stream, name, mode, env);
 
 		int firstByte = stream.read();
 		if (firstByte != LUA_SIGNATURE[0]) throw new CompileException("no compiler");

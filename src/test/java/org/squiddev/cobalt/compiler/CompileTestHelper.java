@@ -45,8 +45,8 @@ public class CompileTestHelper {
 	 */
 	public static void compareResults(String dir, String file) throws IOException, CompileException {
 		// Compile in memory
-		// Force Lua 5.1 output since 5.2 tests haven't been written yet
-		String sourceBytecode = Print.show(LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), LuaString.valueOf("@" + file + ".lua"), null, false));
+		// This is going to fail until Lua 5.2 bytecode tests are written
+		String sourceBytecode = Print.show(LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), LuaString.valueOf("@" + file + ".lua"), null));
 
 		// Load expected value from jar
 		Prototype expectedPrototype = loadFromBytes(bytesFromJar(dir + file + ".lc"), file + ".lua");
