@@ -65,12 +65,12 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 		return state.functionMetatable;
 	}
 
-	@Override
+	@Override @Deprecated
 	public LuaTable getfenv() {
 		return null;
 	}
 
-	@Override
+	@Override @Deprecated
 	public void setfenv(LuaTable env) {
 
 	}

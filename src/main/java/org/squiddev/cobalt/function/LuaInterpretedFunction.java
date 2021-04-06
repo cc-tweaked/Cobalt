@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.LexState;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
@@ -112,8 +113,16 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	public LuaInterpretedFunction(Prototype p, LuaTable env) {
 		super(env);
 		this.p = p;
-		if (p.isLua52) this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
-		else {
+		if (p.isLua52) {
+			this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+			if (env != null) {
+				for (int i = 0; i < p.nups; i++) {
+					if (p.upvalues[i].equals(LuaString.valueOf("_ENV"))) {
+						this.upvalues[i] = new Upvalue(env);
+					}
+				}
+			}
+		} else {
 			this.upvalues = new Upvalue[p.nups + 1];
 			this.upvalues[0] = new Upvalue(env);
 		}
@@ -123,7 +132,7 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 		int nups = p.nups;
 		if (nups > 0) {
 			Upvalue[] upvalues = this.upvalues;
-			for (int i = 1; i < nups; i++) {
+			for (int i = p.isLua52 ? 0 : 1; i < nups; i++) {
 				upvalues[i] = new Upvalue(Constants.NIL);
 			}
 		}
@@ -155,10 +164,30 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	}
 
 	@Override
-	public LuaTable getfenv() { return (LuaTable)upvalues[0].getValue(); }
+	public LuaTable getfenv() {
+		if (!p.isLua52) return (LuaTable)upvalues[0].getValue();
+		else {
+			for (int i = 0; i < p.nups; i++) {
+				if (p.upvalues[i].equals(LexState.ENV)) {
+					return (LuaTable)upvalues[i].getValue();
+				}
+			}
+			return null;
+		}
+	}
 
 	@Override
-	public void setfenv(LuaTable env) { upvalues[0].setValue(env); }
+	public void setfenv(LuaTable env) {
+		if (env == null) throw new NullPointerException("environment must not be null");
+		if (!p.isLua52) upvalues[0].setValue(env);
+		else {
+			for (int i = 0; i < p.nups; i++) {
+				if (p.upvalues[i].equals(LexState.ENV)) {
+					upvalues[i].setValue(env);
+				}
+			}
+		}
+	}
 
 	@Override
 	public Upvalue getUpvalue(int i) {

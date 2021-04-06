@@ -259,7 +259,7 @@ public class LuaOperationsTest {
 		// those closures created not in any other function get the thread's enviroment
 		Prototype p2 = createPrototype("return loadstring('return a')", "threadtester");
 		{
-			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p2, _G), _G);
+			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p2, _G));
 			Varargs v = LuaThread.run(t, Constants.NONE);
 			LuaValue f = v.arg(1);
 			assertEquals(Constants.TFUNCTION, f.type());
@@ -267,19 +267,9 @@ public class LuaOperationsTest {
 			assertEquals(_G, f.getfenv());
 		}
 		{
-			// change the thread environment after creation!
-			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p2, _G), _G);
-			t.setfenv(newenv);
-			Varargs v = LuaThread.run(t, Constants.NONE);
-			LuaValue f = v.arg(1);
-			assertEquals(Constants.TFUNCTION, f.type());
-			assertEquals(eee, OperationHelper.call(state, f));
-			assertEquals(newenv, f.getfenv());
-		}
-		{
 			// let the closure have a different environment from the thread
 			Prototype p3 = createPrototype("return function() return a end", "envtester");
-			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p3, newenv), _G);
+			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p3, newenv));
 			Varargs v = LuaThread.run(t, Constants.NONE);
 			LuaValue f = v.arg(1);
 			assertEquals(Constants.TFUNCTION, f.type());

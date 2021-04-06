@@ -59,6 +59,8 @@ public class LexState {
 		}
 	}
 
+	public static final LuaString ENV = LuaString.valueOf("_ENV");
+
 	private static final int EOZ = -1;
 	private static final int MAXSRC = 80;
 	private static final int MAX_INT = Integer.MAX_VALUE - 2;
@@ -992,7 +994,7 @@ public class LexState {
 		FuncState fs = this.fs;
 		if (fs.singlevaraux(varname, var, 1) == VVOID) {
 			expdesc key = new expdesc();
-			fs.singlevaraux(LuaString.valueOf("_ENV"), var, 1);
+			fs.singlevaraux(LexState.ENV, var, 1);
 			LuaC._assert(var.k == LexState.VLOCAL || var.k == LexState.VUPVAL, linenumber);
 			codestring(key, varname);
 			fs.indexed(var, key);

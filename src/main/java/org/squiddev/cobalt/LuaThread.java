@@ -108,11 +108,6 @@ public class LuaThread extends LuaValue {
 	private final LuaState luaState;
 
 	/**
-	 * The environment this thread has.
-	 */
-	private LuaTable env;
-
-	/**
 	 * The function called when handling errors
 	 */
 	private LuaValue errFunc;
@@ -131,14 +126,12 @@ public class LuaThread extends LuaValue {
 	 * Constructor for main thread only
 	 *
 	 * @param state The current lua state
-	 * @param env   The thread's environment
 	 */
-	public LuaThread(LuaState state, LuaTable env) {
+	public LuaThread(LuaState state) {
 		super(Constants.TTHREAD);
 		this.state = new State(this, STATUS_RUNNING);
 		this.luaState = state;
 		this.debugState = new DebugState(state);
-		this.env = env;
 		this.function = null;
 	}
 
@@ -147,15 +140,13 @@ public class LuaThread extends LuaValue {
 	 *
 	 * @param state The current lua state
 	 * @param func  The function to execute
-	 * @param env   The environment to apply to the thread
 	 */
-	public LuaThread(LuaState state, LuaFunction func, LuaTable env) {
+	public LuaThread(LuaState state, LuaFunction func) {
 		super(Constants.TTHREAD);
 		if (func == null) throw new IllegalArgumentException("function cannot be null");
 		this.state = new State(this, STATUS_INITIAL);
 		this.luaState = state;
 		this.debugState = new DebugState(state);
-		this.env = env;
 		this.function = func;
 	}
 
@@ -174,15 +165,13 @@ public class LuaThread extends LuaValue {
 		return state.threadMetatable;
 	}
 
-	@Override
+	@Override @Deprecated
 	public LuaTable getfenv() {
-		return env;
+		return luaState.globalTable;
 	}
 
-	@Override
-	public void setfenv(LuaTable env) {
-		this.env = env;
-	}
+	@Override @Deprecated
+	public void setfenv(LuaTable env) { }
 
 	public String getStatus() {
 		return STATUS_NAMES[state.status];
@@ -462,7 +451,7 @@ public class LuaThread extends LuaValue {
 						LuaFunction function = func;
 						func = null;
 						if (function instanceof LuaInterpretedFunction) {
-							((LuaInterpretedFunction)function).setUpvalue(((LuaInterpretedFunction) function).p.isLua52 ? 0 : -1, new Upvalue(thread.env));
+							((LuaInterpretedFunction)function).setUpvalue(((LuaInterpretedFunction) function).p.isLua52 ? 0 : -1, new Upvalue(state.globalTable));
 						}
 
 						Varargs res = loop(state, state.currentThread, function, threader.unpack());

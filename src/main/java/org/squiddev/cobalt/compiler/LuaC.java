@@ -248,7 +248,7 @@ public class LuaC implements LuaCompiler {
 		funcstate.f.source = name;
 		LexState.expdesc v = new LexState.expdesc();
 		v.init(LexState.VLOCAL, 0);
-		funcstate.newupvalue(LuaString.valueOf("_ENV"), v);
+		funcstate.newupvalue(LexState.ENV, v);
 		lexstate.nextToken(); /* read first token */
 		lexstate.statlist();
 		lexstate.check(LexState.TK_EOS);

@@ -215,7 +215,6 @@ public class Print52 {
 				}
 				break;
 			case OP_GETTABUP:
-			case OP_SETTABUP:
 				ps.print("  ; ");
 				if (f.upvalues.length > b) {
 					printValue(ps, f.upvalues[b]);
@@ -225,6 +224,18 @@ public class Print52 {
 				ps.print("[");
 				printConstant(ps, f, c);
 				ps.print("]");
+				break;
+			case OP_SETTABUP:
+				ps.print("  ; ");
+				if (f.upvalues.length > a) {
+					printValue(ps, f.upvalues[a]);
+				} else {
+					ps.print("-");
+				}
+				ps.print("[");
+				printConstant(ps, f, b);
+				ps.print("] = ");
+				printConstant(ps, f, c);
 				break;
 			case OP_GETTABLE:
 			case OP_SELF:

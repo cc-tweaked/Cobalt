@@ -207,7 +207,7 @@ public class PackageLib implements LuaLibrary {
 		LuaTable module;
 		if (!value.isTable()) { /* not found? */
 			/* try global variable (and create one if it does not exist) */
-			LuaTable globals = state.getCurrentThread().getfenv();
+			LuaTable globals = state.globalTable;
 			module = findtable(state, globals, modname);
 			if (module == null) {
 				throw new LuaError("name conflict for module '" + modname + "'");

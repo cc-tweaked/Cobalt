@@ -1120,7 +1120,10 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return {@link LuaValue} currently set as the instances environent.
 	 * @throws LuaError If this has no environment.
+	 *
+	 * @deprecated This will no longer work on anything except Lua functions. Look for the _ENV upvalue instead.
 	 */
+	@Deprecated
 	public LuaTable getfenv() throws LuaError {
 		throw ErrorFactory.typeError(this, "function or thread");
 	}
@@ -1137,7 +1140,10 @@ public abstract class LuaValue extends Varargs {
 	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
 	 * @throws LuaError If this has no environment.
 	 * @see JsePlatform
+	 *
+	 * @deprecated This will no longer work on anything except Lua functions. Use load with an environment argument instead.
 	 */
+	@Deprecated
 	public void setfenv(LuaTable env) throws LuaError {
 		throw ErrorFactory.typeError(this, "function or thread");
 	}
