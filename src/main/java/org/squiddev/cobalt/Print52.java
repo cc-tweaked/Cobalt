@@ -222,7 +222,8 @@ public class Print52 {
 					ps.print("-");
 				}
 				ps.print("[");
-				printConstant(ps, f, c);
+				if (c > 0xff) printConstant(ps, f, c & 0x0ff);
+				else ps.print("-");
 				ps.print("]");
 				break;
 			case OP_SETTABUP:
@@ -233,9 +234,11 @@ public class Print52 {
 					ps.print("-");
 				}
 				ps.print("[");
-				printConstant(ps, f, b);
+				if (b > 0xff) printConstant(ps, f, b & 0x0ff);
+				else ps.print("-");
 				ps.print("] = ");
-				printConstant(ps, f, c);
+				if (c > 0xff) printConstant(ps, f, c & 0x0ff);
+				else ps.print("-");
 				break;
 			case OP_GETTABLE:
 			case OP_SELF:

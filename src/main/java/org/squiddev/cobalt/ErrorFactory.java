@@ -108,8 +108,8 @@ public class ErrorFactory {
 			if (info != null && info.closure != null) {
 				if (stack < info.closure.getPrototype().maxstacksize) {
 					kind = info.closure.getPrototype().isLua52 ? DebugHelpers52.getObjectName(info, stack) : DebugHelpers.getObjectName(info, stack);
-		}
-	}
+				}
+			}
 		}
 
 		if (kind != null) {

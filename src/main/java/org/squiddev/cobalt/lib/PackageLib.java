@@ -113,7 +113,7 @@ public class PackageLib implements LuaLibrary {
 						t.setMetatable(state, m = ValueFactory.tableOf());
 					}
 					LuaTable mt = m;
-					noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
+					noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.globalTable));
 					return Constants.NONE;
 				}
 			}

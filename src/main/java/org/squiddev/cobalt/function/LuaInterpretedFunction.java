@@ -179,11 +179,11 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	@Override
 	public void setfenv(LuaTable env) {
 		if (env == null) throw new NullPointerException("environment must not be null");
-		if (!p.isLua52) upvalues[0].setValue(env);
+		if (!p.isLua52) upvalues[0] = new Upvalue(env);
 		else {
 			for (int i = 0; i < p.nups; i++) {
 				if (p.upvalues[i].equals(LexState.ENV)) {
-					upvalues[i].setValue(env);
+					upvalues[i] = new Upvalue(env);
 				}
 			}
 		}
