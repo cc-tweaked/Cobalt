@@ -250,7 +250,7 @@ public class DumpState {
 				dumpChar(f.upvalue_info[i] >> 8);
 				dumpChar(f.upvalue_info[i] & 0xFF);
 			}
-			if (f.source == null || f.source.equals(string) || strip) {
+			if (f.source == null || strip) {
 				dumpInt(0);
 			} else {
 				dumpString(f.source);

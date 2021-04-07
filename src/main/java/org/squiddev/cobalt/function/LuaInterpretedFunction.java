@@ -116,7 +116,7 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 		if (p.isLua52) {
 			this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
 			if (env != null) {
-				for (int i = 0; i < p.nups; i++) {
+				for (int i = 0; i < p.nups && i < p.upvalues.length; i++) {
 					if (p.upvalues[i].equals(LuaString.valueOf("_ENV"))) {
 						this.upvalues[i] = new Upvalue(env);
 					}
@@ -167,12 +167,12 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	public LuaTable getfenv() {
 		if (!p.isLua52) return (LuaTable)upvalues[0].getValue();
 		else {
-			for (int i = 0; i < p.nups; i++) {
+			for (int i = 0; i < p.nups && i < p.upvalues.length; i++) {
 				if (p.upvalues[i].equals(LexState.ENV)) {
 					return (LuaTable)upvalues[i].getValue();
 				}
 			}
-			return null;
+			return null; // TODO: maybe this should return _G (state.globalTable) instead?
 		}
 	}
 
@@ -181,7 +181,7 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 		if (env == null) throw new NullPointerException("environment must not be null");
 		if (!p.isLua52) upvalues[0] = new Upvalue(env);
 		else {
-			for (int i = 0; i < p.nups; i++) {
+			for (int i = 0; i < p.nups && i < p.upvalues.length; i++) {
 				if (p.upvalues[i].equals(LexState.ENV)) {
 					upvalues[i] = new Upvalue(env);
 				}

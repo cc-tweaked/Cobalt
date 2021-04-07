@@ -189,11 +189,7 @@ public class Print52 {
 				}
 				break;
 			case iAsBx:
-				if (o == OP_JMP) {
-					ps.print(sbx);
-				} else {
-					ps.print(a + " " + sbx);
-				}
+				ps.print(a + " " + sbx);
 				break;
 		}
 		switch (o) {
