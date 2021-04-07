@@ -599,11 +599,11 @@ public class FuncState {
 				break;
 			}
 			case LexState.VK: {
-				this.codeABx(OP_LOADK, reg, e.u.info);
+				this.codek(reg, e.u.info);
 				break;
 			}
 			case LexState.VKNUM: {
-				this.codeABx(OP_LOADK, reg, this.numberK(e.u.nval()));
+				this.codek(reg, this.numberK(e.u.nval()));
 				break;
 			}
 			case LexState.VRELOCABLE: {
@@ -1139,6 +1139,23 @@ public class FuncState {
 	}
 
 
+	private int codeextraarg(int a) throws CompileException {
+		_assert(a <= MAXARG_Ax);
+		return code(CREATE_Ax(OP_EXTRAARG, a), this.ls.lastline);
+	}
+
+
+	int codek(int reg, int k) throws CompileException {
+		if (k <= MAXARG_Bx) {
+			return codeABx(OP_LOADK, reg, k);
+		} else {
+			int p = codeABx(OP_LOADKX, reg, 0);
+			codeextraarg(k);
+			return p;
+		}
+	}
+
+
 	private void setlist(int base, int nelems, int tostore) throws CompileException {
 		int c = (nelems - 1) / LFIELDS_PER_FLUSH + 1;
 		int b = (tostore == LUA_MULTRET) ? 0 : tostore;
@@ -1147,7 +1164,7 @@ public class FuncState {
 			this.codeABC(OP_SETLIST, base, b, c);
 		} else {
 			this.codeABC(OP_SETLIST, base, b, 0);
-			this.code(c, this.ls.lastline);
+			this.codeextraarg(c);
 		}
 		this.freereg = base + 1; /* free registers with list values */
 	}

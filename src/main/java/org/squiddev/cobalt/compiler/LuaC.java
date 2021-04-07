@@ -123,6 +123,11 @@ public class LuaC implements LuaCompiler {
 			((bc << Lua52.POS_Bx) & Lua52.MASK_Bx);
 	}
 
+	public static int CREATE_Ax(int o, int a) {
+		return ((o << Lua52.POS_OP) & Lua52.MASK_OP) |
+				((a << Lua52.POS_Ax) & Lua52.MASK_Ax);
+	}
+
 	// vector reallocation
 
 	public static LuaValue[] realloc(LuaValue[] v, int n) {

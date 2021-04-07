@@ -597,25 +597,6 @@ public final class LuaInterpreter {
 					break;
 
 					case OP_TFORCALL: { // A C: R(A+3), ..., R(A+2+C) := R(A)(R(A+1), R(A+2));
-						/*int c = ((i >> POS_C) & MAXARG_C);
-
-						LuaValue val = stack[a];
-						if (val instanceof LuaInterpretedFunction) {
-							function = (LuaInterpretedFunction) val;
-							di = setupCall(state, function, stack[a + 1], stack[a + 2], 0);
-							continue newFrame;
-						}
-
-						Varargs v = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
-						i = code[pc++];
-						a = ((i >> POS_A) & MAXARG_A);
-						if (c > 0) {
-							while (--c > 0) stack[a + 3 + c] = v.arg(c);
-							v = NONE;
-						} else {
-							di.top = a + 3 + v.count();
-							di.extras = v;
-						}*/
 						di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
 						for (int c = (i >> POS_C) & MAXARG_C; c > 1; --c) {
 							stack[a + 2 + c] = di.extras.arg(c);
@@ -659,7 +640,7 @@ public final class LuaInterpreter {
 					case OP_SETLIST: { // A B C: R(A)[(C-1)*FPF+i]:= R(A+i), 1 <= i <= B
 						int b = (i >>> POS_B) & MAXARG_B;
 						int c = (i >> POS_C) & MAXARG_C;
-						if (c == 0) c = code[pc++];
+						if (c == 0) c = p.isLua52 ? GETARG_Ax(code[pc++]) : code[pc++];
 
 						int offset = (c - 1) * LFIELDS_PER_FLUSH;
 						LuaTable tbl = stack[a].checkTable();
