@@ -49,7 +49,7 @@ public class CompileTestHelper {
 		String sourceBytecode = Print.show(LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), LuaString.valueOf("@" + file + ".lua"), null));
 
 		// Load expected value from jar
-		Prototype expectedPrototype = loadFromBytes(bytesFromJar(dir + file + ".lc"), file + ".lua");
+		Prototype expectedPrototype = loadFromBytes(bytesFromJar(dir + file + ".luac"), file + ".lua");
 		String expectedBytecode = Print.show(expectedPrototype);
 
 		// compare results

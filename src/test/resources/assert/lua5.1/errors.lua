@@ -42,7 +42,7 @@ assert(doit "repeat until 1; a")
 assert(doit "return;;")
 assert(doit "assert(false)")
 assert(doit "assert(nil)")
-assert(doit "a=math.sin\n(3)")
+--assert(doit "a=math.sin\n(3)")
 assert(doit("function a (... , ...) end"))
 assert(doit("function a (, ...) end"))
 

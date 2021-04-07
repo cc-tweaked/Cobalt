@@ -35,6 +35,7 @@ import java.util.Hashtable;
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua52.*;
 import static org.squiddev.cobalt.compiler.LexState.NO_JUMP;
+import static org.squiddev.cobalt.compiler.LexState.VUPVAL;
 import static org.squiddev.cobalt.compiler.LuaC.*;
 
 public class FuncState {
@@ -282,23 +283,17 @@ public class FuncState {
 		InstructionPtr previous;
 		int l = from + n - 1;
 		if (this.pc > this.lasttarget) { /* no jumps to current position? */
-			if (this.pc == 0) { /* function start? */
-				if (from >= this.nactvar) {
-					return; /* positions are already clean */
-				}
-			} else {
-				previous = new InstructionPtr(this.f.code, this.pc - 1);
-				if (GET_OPCODE(previous.get()) == OP_LOADNIL) {
-					int pfrom = GETARG_A(previous.get());
-					int pl = pfrom + GETARG_B(previous.get());
-					if ((pfrom <= from && from <= pl + 1) ||
-						(from <= pfrom && pfrom <= l + 1)) { /* can connect both? */
-						if (pfrom < from) from = pfrom;
-						if (pl > l) l = pl;
-						SETARG_A(previous, from);
-						SETARG_B(previous, l - from);
-						return;
-					}
+			previous = new InstructionPtr(this.f.code, this.pc - 1);
+			if (GET_OPCODE(previous.get()) == OP_LOADNIL) {
+				int pfrom = GETARG_A(previous.get());
+				int pl = pfrom + GETARG_B(previous.get());
+				if ((pfrom <= from && from <= pl + 1) ||
+					(from <= pfrom && pfrom <= l + 1)) { /* can connect both? */
+					if (pfrom < from) from = pfrom;
+					if (pl > l) l = pl;
+					SETARG_A(previous, from);
+					SETARG_B(previous, l - from);
+					return;
 				}
 			}
 		}
@@ -685,6 +680,12 @@ public class FuncState {
 		return e.u.info;
 	}
 
+	void exp2anyregup(expdesc e) throws CompileException {
+		if (e.k != VUPVAL || e.hasjumps()) {
+			this.exp2anyreg(e);
+		}
+	}
+
 	void exp2val(expdesc e) throws CompileException {
 		if (e.hasjumps()) {
 			this.exp2anyreg(e);
@@ -696,19 +697,22 @@ public class FuncState {
 	int exp2RK(expdesc e) throws CompileException {
 		this.exp2val(e);
 		switch (e.k) {
-			case LexState.VKNUM:
 			case LexState.VTRUE:
 			case LexState.VFALSE:
 			case LexState.VNIL: {
 				if (this.nk <= MAXINDEXRK) { /* constant fit in RK operand? */
 					e.u.info = (e.k == LexState.VNIL) ? this.nilK()
-						: (e.k == LexState.VKNUM) ? this.numberK(e.u.nval())
 						: this.boolK((e.k == LexState.VTRUE));
 					e.k = LexState.VK;
 					return RKASK(e.u.info);
 				} else {
 					break;
 				}
+			}
+			case LexState.VKNUM: {
+				e.u.info = this.numberK(e.u.nval());
+				e.k = LexState.VK;
+				/* go through */
 			}
 			case LexState.VK: {
 				if (e.u.info <= MAXINDEXRK) /* constant fit in argC? */ {
@@ -791,19 +795,15 @@ public class FuncState {
 		int pc; /* pc of last jump */
 		this.dischargevars(e);
 		switch (e.k) {
+			case LexState.VJMP: {
+				this.invertjump(e);
+				pc = e.u.info;
+				break;
+			}
 			case LexState.VK:
 			case LexState.VKNUM:
 			case LexState.VTRUE: {
 				pc = NO_JUMP; /* always true; do nothing */
-				break;
-			}
-			case LexState.VFALSE: {
-				pc = this.jump(); /* always jump */
-				break;
-			}
-			case LexState.VJMP: {
-				this.invertjump(e);
-				pc = e.u.info;
 				break;
 			}
 			default: {
@@ -820,17 +820,13 @@ public class FuncState {
 		int pc; /* pc of last jump */
 		this.dischargevars(e);
 		switch (e.k) {
+			case LexState.VJMP: {
+				pc = e.u.info;
+				break;
+			}
 			case LexState.VNIL:
 			case LexState.VFALSE: {
 				pc = NO_JUMP; /* always false; do nothing */
-				break;
-			}
-			case LexState.VTRUE: {
-				pc = this.jump(); /* always jump */
-				break;
-			}
-			case LexState.VJMP: {
-				pc = e.u.info;
 				break;
 			}
 			default: {
@@ -934,14 +930,11 @@ public class FuncState {
 			return false;
 		}
 
-		if (Double.isNaN(r.toDouble())) {
-			return false; /* do not attempt to produce NaN */
-		}
 		e1.u.setNval(r);
 		return true;
 	}
 
-	private void codearith(int op, expdesc e1, expdesc e2) throws CompileException {
+	private void codearith(int op, expdesc e1, expdesc e2, int line) throws CompileException {
 		if (constfolding(op, e1, e2)) {
 		} else {
 			int o2 = (op != OP_UNM && op != OP_LEN) ? this.exp2RK(e2)
@@ -956,6 +949,7 @@ public class FuncState {
 			}
 			e1.u.info = this.codeABC(op, 0, o1, o2);
 			e1.k = LexState.VRELOCABLE;
+			fixline(line);
 		}
 	}
 
@@ -975,7 +969,7 @@ public class FuncState {
 		e1.k = LexState.VJMP;
 	}
 
-	void prefix(int /* UnOpr */op, expdesc e) throws CompileException {
+	void prefix(int /* UnOpr */op, expdesc e, int line) throws CompileException {
 		expdesc e2 = new expdesc();
 		e2.init(LexState.VKNUM, 0);
 		switch (op) {
@@ -983,7 +977,7 @@ public class FuncState {
 				if (e.k == LexState.VK) {
 					this.exp2anyreg(e); /* cannot operate on non-numeric constants */
 				}
-				this.codearith(OP_UNM, e, e2);
+				this.codearith(OP_UNM, e, e2, line);
 				break;
 			}
 			case LexState.OPR_NOT:
@@ -991,7 +985,7 @@ public class FuncState {
 				break;
 			case LexState.OPR_LEN: {
 				this.exp2anyreg(e); /* cannot operate on constants */
-				this.codearith(OP_LEN, e, e2);
+				this.codearith(OP_LEN, e, e2, line);
 				break;
 			}
 			default:
@@ -1032,7 +1026,7 @@ public class FuncState {
 	}
 
 
-	void posfix(int op, expdesc e1, expdesc e2) throws CompileException {
+	void posfix(int op, expdesc e1, expdesc e2, int line) throws CompileException {
 		switch (op) {
 			case LexState.OPR_AND: {
 				_assert(e1.t.i == NO_JUMP); /* list must be closed */
@@ -1061,27 +1055,27 @@ public class FuncState {
 					e1.u.info = e2.u.info;
 				} else {
 					this.exp2nextreg(e2); /* operand must be on the 'stack' */
-					this.codearith(OP_CONCAT, e1, e2);
+					this.codearith(OP_CONCAT, e1, e2, line);
 				}
 				break;
 			}
 			case LexState.OPR_ADD:
-				this.codearith(OP_ADD, e1, e2);
+				this.codearith(OP_ADD, e1, e2, line);
 				break;
 			case LexState.OPR_SUB:
-				this.codearith(OP_SUB, e1, e2);
+				this.codearith(OP_SUB, e1, e2, line);
 				break;
 			case LexState.OPR_MUL:
-				this.codearith(OP_MUL, e1, e2);
+				this.codearith(OP_MUL, e1, e2, line);
 				break;
 			case LexState.OPR_DIV:
-				this.codearith(OP_DIV, e1, e2);
+				this.codearith(OP_DIV, e1, e2, line);
 				break;
 			case LexState.OPR_MOD:
-				this.codearith(OP_MOD, e1, e2);
+				this.codearith(OP_MOD, e1, e2, line);
 				break;
 			case LexState.OPR_POW:
-				this.codearith(OP_POW, e1, e2);
+				this.codearith(OP_POW, e1, e2, line);
 				break;
 			case LexState.OPR_EQ:
 				this.codecomp(OP_EQ, 1, e1, e2);

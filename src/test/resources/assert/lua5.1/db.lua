@@ -132,7 +132,7 @@ a=1
 while a<=3 do
   a=a+1
 end
-]], { 2, 3, 4, 3, 4, 3, 4, 3, 5 })
+]], { 1, 2, 3, 4, 3, 4, 3, 4, 3, 5 })
 
 test([[while math.sin(1) do
   if math.sin(1)

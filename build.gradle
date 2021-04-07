@@ -113,5 +113,4 @@ test {
     testLogging {
         events "skipped", "failed"
     }
-	exclude "org/squiddev/cobalt/compiler/**" // excluded until Lua 5.2 tests are written
 }

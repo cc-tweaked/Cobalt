@@ -984,6 +984,7 @@ public class LexState {
 
 	void removevars(int tolevel) {
 		FuncState fs = this.fs;
+		fs.ls.dyd.nactvar -= (fs.nactvar - tolevel);
 		while (fs.nactvar > tolevel) {
 			fs.getlocvar(--fs.nactvar).endpc = fs.pc;
 		}
@@ -1146,7 +1147,7 @@ public class LexState {
 		fs.ls = this;
 		this.fs = fs;
 		fs.pc = 0;
-		fs.lasttarget = -1;
+		fs.lasttarget = 0;
 		fs.jpc = new IntPtr(NO_JUMP);
 		fs.freereg = 0;
 		fs.nk = 0;
@@ -1163,7 +1164,6 @@ public class LexState {
 	void close_func() throws CompileException {
 		FuncState fs = this.fs;
 		Prototype f = fs.f;
-		this.removevars(0);
 		fs.ret(0, 0); /* final return */
 		fs.leaveblock();
 		f.code = LuaC.realloc(f.code, fs.pc);
@@ -1191,7 +1191,7 @@ public class LexState {
 		/* field -> ['.' | ':'] NAME */
 		FuncState fs = this.fs;
 		expdesc key = new expdesc();
-		fs.exp2anyreg(v);
+		fs.exp2anyregup(v);
 		this.nextToken(); /* skip the dot or colon */
 		this.checkname(key);
 		fs.indexed(v, key);
@@ -1386,16 +1386,12 @@ public class LexState {
 	}
 
 
-	private void funcargs(expdesc f) throws CompileException {
+	private void funcargs(expdesc f, int line) throws CompileException {
 		FuncState fs = this.fs;
 		expdesc args = new expdesc();
 		int base, nparams;
-		int line = this.linenumber;
 		switch (this.t.token) {
 			case '(': { /* funcargs -> `(' [ explist1 ] `)' */
-				if (line != this.lastline) {
-					throw syntaxError("ambiguous syntax (function call x new statement)");
-				}
 				this.nextToken();
 				if (this.t.token == ')') /* arg list is empty? */ {
 					args.k = VVOID;
@@ -1442,8 +1438,8 @@ public class LexState {
 	 ** =======================================================================
 	 */
 
-	private void prefixexp(expdesc v) throws CompileException {
-		/* prefixexp -> NAME | '(' expr ')' */
+	private void primaryexp(expdesc v) throws CompileException {
+		/* primaryexp -> NAME | '(' expr ')' */
 		switch (this.t.token) {
 			case '(': {
 				int line = this.linenumber;
@@ -1464,13 +1460,14 @@ public class LexState {
 	}
 
 
-	private void primaryexp(expdesc v) throws CompileException {
+	private void suffixedexp(expdesc v) throws CompileException {
 		/*
-		 * primaryexp -> prefixexp { `.' NAME | `[' exp `]' | `:' NAME funcargs |
+		 * suffixedexp -> prefixexp { `.' NAME | `[' exp `]' | `:' NAME funcargs |
 		 * funcargs }
 		 */
 		FuncState fs = this.fs;
-		this.prefixexp(v);
+		int line = linenumber;
+		this.primaryexp(v);
 		for (; ; ) {
 			switch (this.t.token) {
 				case '.': { /* field */
@@ -1479,7 +1476,7 @@ public class LexState {
 				}
 				case '[': { /* `[' exp1 `]' */
 					expdesc key = new expdesc();
-					fs.exp2anyreg(v);
+					fs.exp2anyregup(v);
 					this.yindex(key);
 					fs.indexed(v, key);
 					break;
@@ -1489,14 +1486,14 @@ public class LexState {
 					this.nextToken();
 					this.checkname(key);
 					fs.self(v, key);
-					this.funcargs(v);
+					this.funcargs(v, line);
 					break;
 				}
 				case '(':
 				case TK_STRING:
 				case '{': { /* funcargs */
 					fs.exp2nextreg(v);
-					this.funcargs(v);
+					this.funcargs(v, line);
 					break;
 				}
 				default:
@@ -1509,7 +1506,7 @@ public class LexState {
 	private void simpleexp(expdesc v) throws CompileException {
 		/*
 		 * simpleexp -> NUMBER | STRING | NIL | true | false | ... | constructor |
-		 * FUNCTION body | primaryexp
+		 * FUNCTION body | suffixedexp
 		 */
 		switch (this.t.token) {
 			case TK_NUMBER: {
@@ -1551,7 +1548,7 @@ public class LexState {
 				return;
 			}
 			default: {
-				this.primaryexp(v);
+				this.suffixedexp(v);
 				return;
 			}
 		}
@@ -1642,9 +1639,10 @@ public class LexState {
 		this.enterlevel();
 		uop = getunopr(this.t.token);
 		if (uop != OPR_NOUNOPR) {
+			int line = linenumber;
 			this.nextToken();
 			this.subexpr(v, UNARY_PRIORITY);
-			fs.prefix(uop, v);
+			fs.prefix(uop, v, line);
 		} else {
 			this.simpleexp(v);
 		}
@@ -1653,11 +1651,12 @@ public class LexState {
 		while (op != OPR_NOBINOPR && priority[op].left > limit) {
 			expdesc v2 = new expdesc();
 			int nextop;
+			int line = linenumber;
 			this.nextToken();
 			fs.infix(op, v);
 			/* read sub-expression with higher priority */
 			nextop = this.subexpr(v2, priority[op].right);
-			fs.posfix(op, v, v2);
+			fs.posfix(op, v, v2, line);
 			op = nextop;
 		}
 		this.leavelevel();
@@ -1750,10 +1749,10 @@ public class LexState {
 		expdesc e = new expdesc();
 		this.check_condition(VLOCAL <= lh.v.k && lh.v.k <= VINDEXED,
 			"syntax error");
-		if (this.testnext(',')) {  /* assignment -> `,' primaryexp assignment */
+		if (this.testnext(',')) {  /* assignment -> `,' suffixedexp assignment */
 			LHS_assign nv = new LHS_assign();
 			nv.prev = lh;
-			this.primaryexp(nv.v);
+			this.suffixedexp(nv.v);
 			if (nv.v.k == VLOCAL) {
 				this.check_conflict(lh, nv.v);
 			}
@@ -1863,11 +1862,9 @@ public class LexState {
 
 	private int exp1() throws CompileException {
 		expdesc e = new expdesc();
-		int k;
 		this.expr(e);
-		k = e.k;
 		fs.exp2nextreg(e);
-		return k;
+		return e.u.info;
 	}
 
 
@@ -2019,15 +2016,11 @@ public class LexState {
 	}
 
 	private void localfunc() throws CompileException {
-		expdesc v = new expdesc();
 		expdesc b = new expdesc();
 		FuncState fs = this.fs;
 		this.new_localvar(this.str_checkname(), 0);
-		v.init(VLOCAL, fs.freereg);
-		fs.reserveregs(1);
 		this.adjustlocalvars(1);
 		this.body(b, false, this.linenumber);
-		fs.storevar(v, b);
 		/* debug information will only see the variable after this point! */
 		fs.getlocvar(fs.nactvar - 1).startpc = fs.pc;
 	}
@@ -2084,7 +2077,7 @@ public class LexState {
 		/* stat -> func | assignment */
 		FuncState fs = this.fs;
 		LHS_assign v = new LHS_assign();
-		this.primaryexp(v.v);
+		this.suffixedexp(v.v);
 		if (v.v.k == VCALL) /* stat -> func */ {
 			LuaC.SETARG_C(fs.getcodePtr(v.v), 1); /* call statement uses no results */
 		} else { /* stat -> assignment */
