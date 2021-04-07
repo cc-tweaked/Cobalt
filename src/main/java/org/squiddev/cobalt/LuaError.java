@@ -76,7 +76,6 @@ public final class LuaError extends Exception {
 		level = 1;
 		calculateLevel = true;
 		value = ValueFactory.valueOf("vm error: " + cause.toString());
-		cause.printStackTrace(System.err);
 	}
 
 	/**

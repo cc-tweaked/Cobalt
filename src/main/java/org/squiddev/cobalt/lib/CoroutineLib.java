@@ -93,7 +93,6 @@ public class CoroutineLib extends ResumableVarArgFunction<Object> implements Lua
 					Varargs result = LuaThread.resume(state, thread, args.subargs(2));
 					return varargsOf(Constants.TRUE, result);
 				} catch (LuaError le) {
-					le.printStackTrace(System.out);
 					return varargsOf(Constants.FALSE, le.value);
 				}
 			}

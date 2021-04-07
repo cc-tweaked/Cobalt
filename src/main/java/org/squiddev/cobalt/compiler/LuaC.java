@@ -76,10 +76,6 @@ public class LuaC implements LuaCompiler {
 	protected static void _assert(boolean b, int line) throws CompileException {
 		if (!b) {
 			// So technically this should fire a runtime exception but...
-			System.err.println("compiler assert failed on line " + line + "\nstack trace:");
-			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-				System.err.println(ste);
-			}
 			throw new CompileException("compiler assert failed");
 		}
 	}
