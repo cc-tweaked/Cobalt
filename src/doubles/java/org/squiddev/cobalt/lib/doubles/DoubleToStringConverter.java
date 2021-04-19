@@ -645,7 +645,8 @@ public class DoubleToStringConverter {
 		}
 
 		if (precision < MIN_PRECISION_DIGITS || precision > MAX_PRECISION_DIGITS) {
-			return false;
+			throw new IllegalArgumentException(String.format(
+					"argument precision must be in range (%d,%d)", MIN_PRECISION_DIGITS, MAX_PRECISION_DIGITS ));
 		}
 
 		// Find a sufficiently precise decimal representation of n.
