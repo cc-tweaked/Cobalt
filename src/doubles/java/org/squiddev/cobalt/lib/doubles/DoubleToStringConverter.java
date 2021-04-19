@@ -417,7 +417,7 @@ public class DoubleToStringConverter {
 		char[] decimalRep = new char[kDecimalRepCapacity];
 		int[] decimalRepLength = new int[1];
 
-		doubleToAscii(value, mode, 0, decimalRep, kDecimalRepCapacity,
+		doubleToAscii(value, mode, 0, decimalRep,
 				sign, decimalRepLength, decimalPoint);
 
 		boolean unique_zero = (flags & Flags.UNIQUE_ZERO) != 0;
@@ -499,7 +499,7 @@ public class DoubleToStringConverter {
 		char[] decimalRep = new char[kDecimalRepCapacity];
 		int[] decimalRepLength = new int[1];
 		doubleToAscii(value, DtoaMode.FIXED, requestedDigits,
-				decimalRep, kDecimalRepCapacity,
+				decimalRep,
 				sign, decimalRepLength, decimalPoint);
 
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
@@ -569,11 +569,11 @@ public class DoubleToStringConverter {
 
 		if (requestedDigits == -1) {
 			doubleToAscii(value, DtoaMode.SHORTEST, 0,
-					decimalRep, kDecimalRepCapacity,
+					decimalRep,
 					sign, decimalRepLength, decimalPoint);
 		} else {
 			doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
-					decimalRep, kDecimalRepCapacity,
+					decimalRep,
 					sign, decimalRepLength, decimalPoint);
 			DOUBLE_CONVERSION_ASSERT(decimalRepLength[0] <= requestedDigits + 1);
 
@@ -659,7 +659,7 @@ public class DoubleToStringConverter {
 			boolean[] inSign = new boolean[1];
 			int[] inDecimalRepLength = new int[1];
 			doubleToAscii(value, DtoaMode.PRECISION, precision,
-					decimalRep, kDecimalRepCapacity,
+					decimalRep,
 					inSign, inDecimalRepLength, inDecimalPoint);
 			DOUBLE_CONVERSION_ASSERT(inDecimalRepLength[0] <= precision);
 			decimalPoint = inDecimalPoint[0];
@@ -788,8 +788,7 @@ public class DoubleToStringConverter {
 	public static void doubleToAscii(double v,
 										DtoaMode mode,
 										int requestedDigits,
-										char[] vector,
-										int bufferLength,
+										char[] buffer,
 										boolean[] sign,
 										int[] length,
 										int[] point) {
@@ -804,14 +803,14 @@ public class DoubleToStringConverter {
 		}
 
 		if (mode == DtoaMode.PRECISION && requestedDigits == 0) {
-			vector[0] = '\0';
+			buffer[0] = '\0';
 			length[0] = 0;
 			return;
 		}
 
 		if (v == 0.0) {
-			vector[0] = (char) ASCII_ZERO;
-			vector[1] = '\0';
+			buffer[0] = (char) ASCII_ZERO;
+			buffer[1] = '\0';
 			length[0] = 1;
 			point[0] = 1;
 			return;
@@ -820,18 +819,18 @@ public class DoubleToStringConverter {
 		boolean fastWorked;
 		switch (mode) {
 			case SHORTEST:
-				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST, 0, vector, length, point);
+				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST, 0, buffer, length, point);
 				break;
 			case SHORTEST_SINGLE:
 				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST_SINGLE, 0,
-						vector, length, point);
+						buffer, length, point);
 				break;
 			case FIXED:
-				fastWorked = fastFixedDtoa(v, requestedDigits, vector, length, point);
+				fastWorked = fastFixedDtoa(v, requestedDigits, buffer, length, point);
 				break;
 			case PRECISION:
 				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.PRECISION, requestedDigits,
-						vector, length, point);
+						buffer, length, point);
 				break;
 			default:
 				fastWorked = false;
@@ -841,8 +840,8 @@ public class DoubleToStringConverter {
 
 		// If the fast dtoa didn't succeed use the slower bignum version.
 		BigNumDtoa.BignumDtoaMode dtoaMode = dtoaToBignumDtoaMode(mode);
-		BigNumDtoa.bignumDtoa(v, dtoaMode, requestedDigits, vector, length, point);
-		vector[length[0]] = '\0';
+		BigNumDtoa.bignumDtoa(v, dtoaMode, requestedDigits, buffer, length, point);
+		buffer[length[0]] = '\0';
 	}
 
 	/**

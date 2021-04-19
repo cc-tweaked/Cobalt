@@ -58,7 +58,7 @@ public class DtoaTest {
 				break;
 		}
 		DoubleToStringConverter.doubleToAscii(v, mode, requested_digits,
-				buffer, buffer.length,
+				buffer,
 				sign, length, point);
 	}
 
