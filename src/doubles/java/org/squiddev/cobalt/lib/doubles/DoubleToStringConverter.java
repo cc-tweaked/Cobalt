@@ -352,10 +352,7 @@ public class DoubleToStringConverter {
 		while(kMaxExponentLength - firstCharPos < Math.min(minExponentWidth, kMaxExponentLength)) {
 			buffer[--firstCharPos] = (char) ASCII_ZERO;
 		}
-		// TODO verify this is equivalent
 		resultBuilder.append(buffer, firstCharPos, kMaxExponentLength -firstCharPos);
-//		resultBuilder->AddSubstring(&buffer[firstCharPos],
-//				kMaxExponentLength - firstCharPos);
 	}
 
 	/** Creates a decimal representation (i.e 1234.5678). */
