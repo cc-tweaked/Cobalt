@@ -1,5 +1,9 @@
 /*
  * Copyright 2006-2008 the V8 project authors. All rights reserved.
+ * Copyright 2021 sir-maniac. All Rights reserved.
+ *
+ * Ported to Java by sir-maniac
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
