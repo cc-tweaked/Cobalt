@@ -34,7 +34,6 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.checkerframework.checker.signedness.qual.SignedPositive;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
@@ -109,7 +108,7 @@ public class BigNumDtoa {
 	 *  and a terminating null-character.
 	 */
 	public static void bignumDtoa(double v, BignumDtoaMode mode, int requestedDigits,
-						   char[] buffer, int[] length, int[] decimalPoint) {
+						   DecimalRepBuf buf) {
 		DOUBLE_CONVERSION_ASSERT(v > 0.0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
 		long significand;
@@ -139,15 +138,15 @@ public class BigNumDtoa {
 		// number is much too small, then there is no need in trying to get any
 		// digits.
 		if (mode == BignumDtoaMode.FIXED && -estimatePower - 1 > requestedDigits) {
-			buffer[0] = '\0';
-    		length[0] = 0;
+			buf.clearBuf();
 			// Set decimal-point to -requestedDigits. This is what Gay does.
 			// Note that it should not have any effect anyways since the string is
 			// empty.
-    		decimalPoint[0] = -requestedDigits;
+			buf.setPointPosition(-requestedDigits);
 			return;
 		}
 
+		int[] estimatedPoint = new int[1];
 		Bignum numerator = new Bignum();
 		Bignum denominator = new Bignum();
 		Bignum deltaMinus = new Bignum();
@@ -162,32 +161,27 @@ public class BigNumDtoa {
 				numerator, denominator,
                            deltaMinus, deltaPlus);
 		// We now have v = (numerator / denominator) * 10^estimatePower.
-		fixupMultiply10(estimatePower, isEven, decimalPoint,
+		fixupMultiply10(estimatePower, isEven, estimatedPoint,
 				numerator, denominator,
                   deltaMinus, deltaPlus);
+		buf.setPointPosition(estimatedPoint[0]);
 		// We now have v = (numerator / denominator) * 10^(decimalPoint-1), and
 		//  1 <= (numerator + deltaPlus) / denominator < 10
 		switch (mode) {
 			case SHORTEST:
 			case SHORTEST_SINGLE:
 				generateShortestDigits(numerator, denominator,
-                             deltaMinus, deltaPlus,
-					isEven, buffer, length);
+                             deltaMinus, deltaPlus, isEven, buf);
 				break;
 			case FIXED:
-				bignumToFixed(requestedDigits, decimalPoint,
-						numerator, denominator,
-					buffer, length);
+				bignumToFixed(requestedDigits, numerator, denominator, buf);
 				break;
 			case PRECISION:
-				generateCountedDigits(requestedDigits, decimalPoint,
-						numerator, denominator,
-					buffer, length);
+				generateCountedDigits(requestedDigits, numerator, denominator, buf);
 				break;
 			default:
 				throw new IllegalStateException("Unreachable");
 		}
-		buffer[length[0]] = '\0';
 	}
 
 	/**
@@ -211,18 +205,18 @@ public class BigNumDtoa {
 	private static void generateShortestDigits(Bignum numerator, Bignum denominator,
 									   Bignum deltaMinus, Bignum deltaPlus,
 									   boolean isEven,
-									   char[] buffer, int[] length) {
+									   DecimalRepBuf buf) {
 		// Small optimization: if deltaMinus and deltaPlus are the same just reuse
 		// one of the two bignums.
 		if (Bignum.equal(deltaMinus, deltaPlus)) {
 			deltaPlus = deltaMinus;
 		}
-  		length[0] = 0;
+		buf.clearBuf();
 		for (;;) {
 			@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
-			buffer[length[0]++] = digitToChar(digit);
+			buf.append(digit);
 
 			// Can we stop already?
 			// If the remainder of the division is less than the distance to the lower
@@ -265,19 +259,17 @@ public class BigNumDtoa {
 					// loop would have stopped earlier.
 					// We still have an assert here in case the preconditions were not
 					// satisfied.
-					DOUBLE_CONVERSION_ASSERT((int) buffer[length[0] - 1] != ASCII_NINE);
-					buffer[length[0] - 1]++;
+					buf.incrementLastNoOverflow();
 				} else {
 					// Halfway case.
 					// TODO(floitsch): need a way to solve half-way cases.
 					//   For now let's round towards even (since this is what Gay seems to
 					//   do).
 
-					if (((int) buffer[length[0] - 1] - ASCII_ZERO) % 2 == 0) {
+					if (((int) buf.lastChar() - ASCII_ZERO) % 2 == 0) {
 						// Round down => Do nothing.
 					} else {
-						DOUBLE_CONVERSION_ASSERT((int) buffer[length[0] - 1] != ASCII_NINE);
-						buffer[length[0] - 1]++;
+						buf.incrementLastNoOverflow();
 					}
 				}
 				return;
@@ -290,8 +282,7 @@ public class BigNumDtoa {
 				// stopped the loop earlier.
 				// We still have an DOUBLE_CONVERSION_ASSERT here, in case the preconditions were not
 				// satisfied.
-				DOUBLE_CONVERSION_ASSERT((int) buffer[length[0] - 1] != ASCII_NINE);
-				buffer[length[0] - 1]++;
+				buf.incrementLastNoOverflow();
 				return;
 			}
 		}
@@ -310,38 +301,27 @@ public class BigNumDtoa {
 	 *  as 9.999999 propagate a carry all the way, and change the
 	 *  exponent (decimalPoint), when rounding upwards.
 	 */
-	private static void generateCountedDigits(int count, int[] decimalPoint,
+	private static void generateCountedDigits(int count,
 									  Bignum numerator, Bignum denominator,
-									  char[] buffer, int[] length) {
+									  DecimalRepBuf buf) {
 		DOUBLE_CONVERSION_ASSERT(count >= 0);
 		for (int i = 0; i < count - 1; ++i) {
 			@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
 			// digit = numerator / denominator (integer division).
 			// numerator = numerator % denominator.
-			buffer[i] = digitToChar(digit);
+			buf.append(digit);
 			// Prepare for next iteration.
 			numerator.times10();
 		}
 		// Generate the last digit.
 		@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
+		buf.append(digit);
 		if (Bignum.plusCompare(numerator, numerator, denominator) >= 0) {
-			digit++;
+			// Correct bad digits (in case we had a sequence of '9's). Propagate the
+			// carry until we hat a non-'9' or til we reach the first digit.
+			// If the first digit is reached, the decimal point is moved one to the right.
+			buf.roundUp();
 		}
-		//noinspection ImplicitNumericConversion
-		buffer[count - 1] = digitToCharWithOverflow(digit);
-		// Correct bad digits (in case we had a sequence of '9's). Propagate the
-		// carry until we hat a non-'9' or til we reach the first digit.
-		for (int i = count - 1; i > 0; --i) {
-			if ((int) buffer[i] != ASCII_ZERO + 10) break;
-			buffer[i] = '0';
-			buffer[i - 1]++;
-		}
-		if ((int) buffer[0] == ASCII_ZERO + 10) {
-			// Propagate a carry past the top place.
-			buffer[0] = '1';
-			decimalPoint[0]++;
-		}
-  		length[0] = count;
 	}
 
 	/**
@@ -351,46 +331,47 @@ public class BigNumDtoa {
 	 *
 	 *  Input verifies:  1 <= (numerator + delta) / denominator < 10.
 	 */
-	private static void bignumToFixed(int requestedDigits, int[] decimalPoint,
+	private static void bignumToFixed(int requestedDigits,
 							  Bignum numerator, Bignum denominator,
-							  char[] buffer, int[] length) {
+							  DecimalRepBuf buf) {
+		int decimalPoint = buf.getPointPosition();
 		// Note that we have to look at more than just the requestedDigits, since
 		// a number could be rounded up. Example: v=0.5 with requestedDigits=0.
 		// Even though the power of v equals 0 we can't just stop here.
-		if (-decimalPoint[0] > requestedDigits) {
+		if (-decimalPoint > requestedDigits) {
 			// The number is definitively too small.
 			// Ex: 0.001 with requestedDigits == 1.
 			// Set decimal-point to -requestedDigits. This is what Gay does.
 			// Note that it should not have any effect anyways since the string is
 			// empty.
-			decimalPoint[0] = -requestedDigits;
-			length[0] = 0;
+			buf.clearBuf();
+			buf.setPointPosition(-requestedDigits);
 			return;
-		} else if (-decimalPoint[0] == requestedDigits) {
+		} else if (-decimalPoint == requestedDigits) {
 			// We only need to verify if the number rounds down or up.
 			// Ex: 0.04 and 0.06 with requestedDigits == 1.
-			DOUBLE_CONVERSION_ASSERT(decimalPoint[0] == -requestedDigits);
+			DOUBLE_CONVERSION_ASSERT(decimalPoint == -requestedDigits);
 			// Initially the fraction lies in range (1, 10]. Multiply the denominator
 			// by 10 so that we can compare more easily.
 			denominator.times10();
 			if (Bignum.plusCompare(numerator, numerator, denominator) >= 0) {
 				// If the fraction is >= 0.5 then we have to include the rounded
 				// digit.
-				buffer[0] = '1';
-      			length[0] = 1;
-				decimalPoint[0]++;
+				buf.clearBuf();
+				buf.appendIntegral(1);
+				buf.setPointPosition( decimalPoint + 1 );
 			} else {
 				// Note that we caught most of similar cases earlier.
-      			length[0] = 0;
+      			buf.clearBuf();
 			}
 			return;
 		} else {
 			// The requested digits correspond to the digits after the point.
 			// The variable 'neededDigits' includes the digits before the point.
-			int neededDigits = decimalPoint[0] + requestedDigits;
-			generateCountedDigits(neededDigits, decimalPoint,
+			int neededDigits = decimalPoint + requestedDigits;
+			generateCountedDigits(neededDigits,
 					numerator, denominator,
-					buffer, length);
+					buf);
 		}
 	}
 

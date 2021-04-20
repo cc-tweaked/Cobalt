@@ -29,13 +29,10 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.checkerframework.checker.signedness.qual.Unsigned;
-
 import java.io.BufferedReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -57,10 +54,13 @@ public final class DoubleTestHelper {
 	}
 
 	/** special case when comparing buffers */
-	public static void CHECK_EQ(String expected, char[] actual) {
+	public static void CHECK_EQ(String expected, DecimalRepBuf actual) {
 		assertEquals(expected, stringOf(actual));
 	}
 
+	public static void CHECK_EQ(String expected, char[] actual) {
+		assertEquals(expected, String.valueOf(actual));
+	}
 
 	/** comparing booleans with numeric values, that's so 1990s */
 	public static void CHECK_EQ(int expected, boolean actual) {
@@ -68,26 +68,28 @@ public final class DoubleTestHelper {
 		assertEquals(ex, actual);
 	}
 
-	public static <T, U> void CHECK_EQ(T expected, U actual) {
+	public static void CHECK_EQ(String expected, String actual) {
 		assertEquals(expected, actual);
 	}
 
-	public static String stringOf(char[] chars, int len) {
-		return String.copyValueOf(chars, 0, len);
+	public static void CHECK_EQ(int expected, int actual) {
+		assertEquals(expected, actual);
 	}
 
-	public static String stringOf(char[] chars) {
-		return String.copyValueOf(chars, 0, strlen(chars));
+	public static void CHECK_EQ(long expected, long actual) {
+		assertEquals(expected, actual);
 	}
 
-	public static int strlen(char[] chars) {
-		int len = chars.length;
-		int i = 0;
-		while (i < len) {
-			if (chars[i] == '\0') return i;
-			i++;
-		}
-		return i;
+	public static void CHECK_EQ(double expected, double actual) {
+		assertEquals(expected, actual);
+	}
+
+//	public static <T, U> void CHECK_EQ(T expected, U actual) {
+//		assertEquals(expected, actual);
+//	}
+
+	public static String stringOf(DecimalRepBuf digits) {
+		return digits.toString();
 	}
 
 	@SuppressWarnings("InfiniteLoopStatement")

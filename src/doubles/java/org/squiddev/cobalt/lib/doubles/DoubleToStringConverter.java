@@ -34,8 +34,9 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
+
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
-import static org.squiddev.cobalt.lib.doubles.FixedDtoa.fastFixedDtoa;
 
 public class DoubleToStringConverter {
 	/**
@@ -108,7 +109,7 @@ public class DoubleToStringConverter {
 	private final int flags;
 	private final String infinitySymbol;
 	private final String nanSymbol;
-	private final int exponentCharacter;
+	private final @Unsigned int exponentCharacter;
 	private final int decimalInShortestLow;
 	private final int decimalInShortestHigh;
 	private final int maxLeadingPaddingZeroesInPrecisionMode;
@@ -118,7 +119,7 @@ public class DoubleToStringConverter {
 	public DoubleToStringConverter(int flags,
 								   String infinitySymbol,
 								   String nanSymbol,
-								   int exponentCharacter,
+								   @Unsigned int exponentCharacter,
 								   int decimalInShortestLow,
 								   int decimalInShortestHigh,
 								   int maxLeadingPaddingZeroesInPrecisionMode,
@@ -194,7 +195,7 @@ public class DoubleToStringConverter {
 	public DoubleToStringConverter(int flags,
 								   String infinitySymbol,
 								   String nanSymbol,
-								   int exponentCharacter,
+								   @Unsigned int exponentCharacter,
 								   int decimalInShortestLow,
 								   int decimalInShortestHigh,
 								   int maxLeadingPaddingZeroesInPrecisionMode,
@@ -318,15 +319,16 @@ public class DoubleToStringConverter {
 	 * 	 Constructs an exponential representation (i.e. 1.234e56).
 	 * 	 The given exponent assumes a decimal point after the first decimal digit.
 	 */
-	private void createExponentialRepresentation(final char[] decimalDigits,
+	private void createExponentialRepresentation(final DecimalRepBuf decimalDigits,
 												 int length,
 												 int exponent,
 												 StringBuilder resultBuilder) {
-		DOUBLE_CONVERSION_ASSERT(length != 0);
-		resultBuilder.append(decimalDigits[0]);
+		if (decimalDigits.length() == 0) throw new IllegalArgumentException("decimalDigits is empty");
+		if (length > decimalDigits.length()) throw new IllegalArgumentException("length larger then decimalDigits");
+		resultBuilder.append(decimalDigits.charAt(0));
 		if (length != 1) {
 			resultBuilder.append('.');
-			resultBuilder.append(decimalDigits, 1, length-1);
+			resultBuilder.append(decimalDigits.getBuffer(), 1, length-1);
 		}
 		resultBuilder.append((char)exponentCharacter);
 		if (exponent < 0) {
@@ -340,9 +342,8 @@ public class DoubleToStringConverter {
 		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
 		// Changing this constant requires updating the comment of DoubleToStringConverter constructor
 		final int kMaxExponentLength = 5;
-		char[] buffer = new char[kMaxExponentLength + 1];
-		buffer[kMaxExponentLength] = '\0';
-		int firstCharPos = kMaxExponentLength;
+		char[] buffer = new char[kMaxExponentLength];
+		int firstCharPos = kMaxExponentLength - 1;
 		if (exponent == 0) {
 			buffer[--firstCharPos] = (char) ASCII_ZERO;
 		} else {
@@ -356,15 +357,15 @@ public class DoubleToStringConverter {
 		while(kMaxExponentLength - firstCharPos < Math.min(minExponentWidth, kMaxExponentLength)) {
 			buffer[--firstCharPos] = (char) ASCII_ZERO;
 		}
-		resultBuilder.append(buffer, firstCharPos, kMaxExponentLength -firstCharPos);
+		resultBuilder.append(buffer, firstCharPos, kMaxExponentLength - firstCharPos);
 	}
 
 	/** Creates a decimal representation (i.e 1234.5678). */
-	private void createDecimalRepresentation(final char[] decimalDigits,
-											 int length,
-											 int decimalPoint,
+	private void createDecimalRepresentation(DecimalRepBuf decimalDigits,
 											 int digitsAfterPoint,
 											 StringBuilder resultBuilder) {
+		int decimalPoint = decimalDigits.getPointPosition();
+		int length = decimalDigits.length();
 		// Create a representation that is padded with zeros if needed.
 		if (decimalPoint <= 0) {
 			// "0.00000decimal_rep" or "0.000decimal_rep00".
@@ -374,13 +375,13 @@ public class DoubleToStringConverter {
 
 				addPadding(resultBuilder, ASCII_ZERO, -decimalPoint);
 				DOUBLE_CONVERSION_ASSERT(length <= digitsAfterPoint - (-decimalPoint));
-				resultBuilder.append(decimalDigits);
+				resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
 				int remainingDigits = digitsAfterPoint - (-decimalPoint) - length;
 				addPadding(resultBuilder, ASCII_ZERO, remainingDigits);
 			}
 		} else if (decimalPoint >= length) {
 			// "decimal_rep0000.00000" or "decimalRep.0000".
-			resultBuilder.append(decimalDigits);
+			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
 			addPadding(resultBuilder, ASCII_ZERO, decimalPoint - length);
 			if (digitsAfterPoint > 0) {
 				resultBuilder.append('.');
@@ -389,10 +390,10 @@ public class DoubleToStringConverter {
 		} else {
 			// "decima.l_rep000".
 			DOUBLE_CONVERSION_ASSERT(digitsAfterPoint > 0);
-			resultBuilder.append(decimalDigits, 0, decimalPoint);
+			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalPoint);
 			resultBuilder.append('.');
 			DOUBLE_CONVERSION_ASSERT(length - decimalPoint <= digitsAfterPoint);
-			resultBuilder.append(decimalDigits, decimalPoint, length - decimalPoint);
+			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, length - decimalPoint);
 			int remainingDigits = digitsAfterPoint - (length - decimalPoint);
 			addPadding(resultBuilder, ASCII_ZERO, remainingDigits);
 		}
@@ -415,29 +416,26 @@ public class DoubleToStringConverter {
 			return handleSpecialValues(value, resultBuilder);
 		}
 
-		int[] decimalPoint = new int[1];
-		boolean[] sign = new boolean[1];
 		final int kDecimalRepCapacity = BASE_10_MAXIMAL_LENGTH + 1;
-		char[] decimalRep = new char[kDecimalRepCapacity];
-		int[] decimalRepLength = new int[1];
+		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
 
-		doubleToAscii(value, mode, 0, decimalRep,
-				sign, decimalRepLength, decimalPoint);
+		doubleToAscii(value, mode, 0, decimalRep);
 
 		boolean unique_zero = (flags & Flags.UNIQUE_ZERO) != 0;
-		if (sign[0] && (value != 0.0 || !unique_zero)) {
+		if (decimalRep.getSign() && (value != 0.0 || !unique_zero)) {
 			resultBuilder.append('-');
 		}
 
-		int exponent = decimalPoint[0] - 1;
+		int length = decimalRep.length();
+		int decimalPoint = decimalRep.getPointPosition();
+		int exponent = decimalPoint - 1;
 		if ((decimalInShortestLow <= exponent) &&
 				(exponent < decimalInShortestHigh)) {
-			createDecimalRepresentation(decimalRep, decimalRepLength[0],
-					decimalPoint[0],
-					Math.max(0, decimalRepLength[0] - decimalPoint[0]),
+			createDecimalRepresentation(decimalRep,
+					Math.max(0, length - decimalPoint),
 					resultBuilder);
 		} else {
-			createExponentialRepresentation(decimalRep, decimalRepLength[0], exponent,
+			createExponentialRepresentation(decimalRep, decimalRep.length(), exponent,
 					resultBuilder);
 		}
 		return true;
@@ -495,24 +493,18 @@ public class DoubleToStringConverter {
 		if (value >= kFirstNonFixed || value <= -kFirstNonFixed) return false;
 
 		// Find a sufficiently precise decimal representation of n.
-		int[] decimalPoint = new int[1];
-		boolean[] sign = new boolean[1];
 		// Add space for the '\0' byte.
   		final int kDecimalRepCapacity =
 				MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
-		char[] decimalRep = new char[kDecimalRepCapacity];
-		int[] decimalRepLength = new int[1];
-		doubleToAscii(value, DtoaMode.FIXED, requestedDigits,
-				decimalRep,
-				sign, decimalRepLength, decimalPoint);
+		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
+		doubleToAscii(value, DtoaMode.FIXED, requestedDigits, decimalRep);
 
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if (sign[0] && (value != 0.0 || !uniqueZero)) {
+		if (decimalRep.getSign() && (value != 0.0 || !uniqueZero)) {
 			resultBuilder.append('-');
 		}
 
-		createDecimalRepresentation(decimalRep, decimalRepLength[0], decimalPoint[0],
-				requestedDigits, resultBuilder);
+		createDecimalRepresentation(decimalRep, requestedDigits, resultBuilder);
 		return true;
 	}
 
@@ -556,12 +548,10 @@ public class DoubleToStringConverter {
 		if (requestedDigits < -1) return false;
 		if (requestedDigits > MAX_EXPONENTIAL_DIGITS) return false;
 
-		int[] decimalPoint = new int[1];
-		boolean[] sign = new boolean[1];
 		// Add space for digit before the decimal point and the '\0' character.
   		final int kDecimalRepCapacity = MAX_EXPONENTIAL_DIGITS + 2;
 		DOUBLE_CONVERSION_ASSERT(kDecimalRepCapacity > BASE_10_MAXIMAL_LENGTH);
-		char[] decimalRep = new char[kDecimalRepCapacity];
+		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
 		// TODO make sure this isn't a problem in java
 //#ifndef NDEBUG
 //		// Problem: there is an assert in StringBuilder::AddSubstring() that
@@ -569,32 +559,25 @@ public class DoubleToStringConverter {
 //		// null-terminated.
 //		memset(decimalRep, 0, sizeof(decimalRep));
 //#endif
-		int[] decimalRepLength = new int[1];
 
 		if (requestedDigits == -1) {
-			doubleToAscii(value, DtoaMode.SHORTEST, 0,
-					decimalRep,
-					sign, decimalRepLength, decimalPoint);
+			doubleToAscii(value, DtoaMode.SHORTEST, 0, decimalRep);
 		} else {
 			doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
-					decimalRep,
-					sign, decimalRepLength, decimalPoint);
-			DOUBLE_CONVERSION_ASSERT(decimalRepLength[0] <= requestedDigits + 1);
+					decimalRep);
+			DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= requestedDigits + 1);
 
-			for (int i = decimalRepLength[0]; i < requestedDigits + 1; ++i) {
-				decimalRep[i] = (char) ASCII_ZERO;
-			}
-			decimalRepLength[0] = requestedDigits + 1;
+			decimalRep.zeroExtend(requestedDigits);
 		}
 
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if (sign[0] && (value != 0.0 || !uniqueZero)) {
+		if (decimalRep.getSign() && (value != 0.0 || !uniqueZero)) {
 			resultBuilder.append('-');
 		}
 
-		int exponent = decimalPoint[0] - 1;
+		int exponent = decimalRep.getPointPosition() - 1;
 		createExponentialRepresentation(decimalRep,
-				decimalRepLength[0],
+				decimalRep.length(),
 				exponent,
 				resultBuilder);
 		return true;
@@ -651,33 +634,20 @@ public class DoubleToStringConverter {
 		}
 
 		// Find a sufficiently precise decimal representation of n.
-		int decimalPoint;
-		boolean sign;
 		// Add one for the terminating null character.
   		final int kDecimalRepCapacity = MAX_PRECISION_DIGITS + 1;
-		char[] decimalRep = new char[kDecimalRepCapacity];
-		int decimalRepLength;
-
-		{
-			int[] inDecimalPoint = new int[1];
-			boolean[] inSign = new boolean[1];
-			int[] inDecimalRepLength = new int[1];
-			doubleToAscii(value, DtoaMode.PRECISION, precision,
-					decimalRep,
-					inSign, inDecimalRepLength, inDecimalPoint);
-			DOUBLE_CONVERSION_ASSERT(inDecimalRepLength[0] <= precision);
-			decimalPoint = inDecimalPoint[0];
-			sign = inSign[0];
-			decimalRepLength = inDecimalRepLength[0];
-		}
+		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
+		doubleToAscii(value, DtoaMode.PRECISION, precision, decimalRep);
+		DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= precision);
 
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if (sign && (value != 0.0 || !uniqueZero)) {
+		if (decimalRep.getSign() && (value != 0.0 || !uniqueZero)) {
 			resultBuilder.append('-');
 		}
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
 		// decimal point after the first digit.
+		int decimalPoint = decimalRep.getPointPosition();
 		int exponent = decimalPoint - 1;
 
 		int extraZero = ((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) ? 1 : 0;
@@ -688,28 +658,23 @@ public class DoubleToStringConverter {
 		if ((flags & Flags.NO_TRAILING_ZERO) != 0) {
 			// Truncate trailing zeros that occur after the decimal point (if exponential,
 			// that is everything after the first digit).
-			int stop = asExponential ? 1 : Math.max(1, decimalPoint);
-			while (decimalRepLength > stop && (int) decimalRep[decimalRepLength - 1] == ASCII_ZERO) {
-				--decimalRepLength;
-			}
+			decimalRep.truncateZeros(asExponential);
 			// Clamp precision to avoid the code below re-adding the zeros.
-			precision = Math.min(precision, decimalRepLength);
+			precision = Math.min(precision, decimalRep.length());
 		}
 		if (asExponential) {
 			// Fill buffer to contain 'precision' digits.
 			// Usually the buffer is already at the correct length, but 'doubleToAscii'
 			// is allowed to return less characters.
-			for (int i = decimalRepLength; i < precision; ++i) {
-				decimalRep[i] = (char) ASCII_ZERO;
-			}
+			decimalRep.zeroExtend(precision);
 
 			createExponentialRepresentation(decimalRep,
 					precision,
 					exponent,
 					resultBuilder);
 		} else {
-			createDecimalRepresentation(decimalRep, decimalRepLength, decimalPoint,
-					Math.max(0, precision - decimalPoint),
+			createDecimalRepresentation(decimalRep,
+					Math.max(0, precision - decimalRep.getPointPosition()),
 					resultBuilder);
 		}
 		return true;
@@ -792,49 +757,42 @@ public class DoubleToStringConverter {
 	public static void doubleToAscii(double v,
 										DtoaMode mode,
 										int requestedDigits,
-										char[] buffer,
-										boolean[] sign,
-										int[] length,
-										int[] point) {
+										DecimalRepBuf buf) {
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
 		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE || requestedDigits >= 0);
 
+		// begin with an empty buffer
+		buf.reset();
+
 		if (new Ieee.Double(v).sign() < 0) {
-			sign[0] = true;
+			buf.setSign(true);
 			v = -v;
 		} else {
-    		sign[0] = false;
+			buf.setSign(false);
 		}
 
 		if (mode == DtoaMode.PRECISION && requestedDigits == 0) {
-			buffer[0] = '\0';
-			length[0] = 0;
 			return;
 		}
 
 		if (v == 0.0) {
-			buffer[0] = (char) ASCII_ZERO;
-			buffer[1] = '\0';
-			length[0] = 1;
-			point[0] = 1;
+			buf.appendIntegral(0);
 			return;
 		}
 
 		boolean fastWorked;
 		switch (mode) {
 			case SHORTEST:
-				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST, 0, buffer, length, point);
+				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST, 0, buf);
 				break;
 			case SHORTEST_SINGLE:
-				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST_SINGLE, 0,
-						buffer, length, point);
+				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST_SINGLE, 0, buf);
 				break;
 			case FIXED:
-				fastWorked = fastFixedDtoa(v, requestedDigits, buffer, length, point);
+				fastWorked = FixedDtoa.fastFixedDtoa(v, requestedDigits, buf);
 				break;
 			case PRECISION:
-				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.PRECISION, requestedDigits,
-						buffer, length, point);
+				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.PRECISION, requestedDigits, buf);
 				break;
 			default:
 				fastWorked = false;
@@ -842,10 +800,10 @@ public class DoubleToStringConverter {
 		}
 		if (fastWorked) return;
 
+		buf.reset();
 		// If the fast dtoa didn't succeed use the slower bignum version.
 		BigNumDtoa.BignumDtoaMode dtoaMode = dtoaToBignumDtoaMode(mode);
-		BigNumDtoa.bignumDtoa(v, dtoaMode, requestedDigits, buffer, length, point);
-		buffer[length[0]] = '\0';
+		BigNumDtoa.bignumDtoa(v, dtoaMode, requestedDigits, buf);
 	}
 
 	/**

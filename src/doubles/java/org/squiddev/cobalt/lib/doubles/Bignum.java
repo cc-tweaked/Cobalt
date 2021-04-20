@@ -76,11 +76,8 @@ public class Bignum {
 	/**
 	 * Only used in tests, so doesn't have to be efficient
 	 */
-	boolean toHexString(char[] buffer, final int buffer_size) {
-		String hex = val.toString(16).toUpperCase();
-		hex.getChars(0, hex.length(), buffer, 0);
-		buffer[hex.length()] = '\0';
-		return true;
+	String toHexString() {
+		return val.toString(16).toUpperCase();
 	}
 
 	public Bignum copy() {

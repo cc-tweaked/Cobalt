@@ -137,6 +137,7 @@ public final class UnsignedValues {
 
 	private UnsignedValues() {}
 
+	// method overridden to avoid implicit casts
 	@SuppressWarnings({"cast.unsafe", "ImplicitNumericConversion"})
 	public static char digitToChar(@Unsigned long digit) {
 		if (ulongGT(digit, 9))
@@ -151,6 +152,23 @@ public final class UnsignedValues {
 		return (char)(digit + ASCII_ZERO);
 	}
 
+	// method overridden to avoid implicit casts
+	/**
+	 * convert to integer value to character equivilent, works like {@link #digitToChar}, but allows
+	 *  {@code digit} to be 10 that is corrected later.
+	 */
+	@SuppressWarnings({"cast.unsafe", "ImplicitNumericConversion"})
+	public static char digitToCharWithOverflow(@Unsigned long digit) {
+		if (ulongGT(digit, 10))
+			throw new IllegalArgumentException("digit must be 0-9");
+		return (char)(digit + ASCII_ZERO);
+	}
+
+	/**
+	 * convert to integer value to character equivilent, works like {@link #digitToChar}, but allows
+	 *  {@code digit} to be 10 that is corrected later.
+	 */
+	@SuppressWarnings("cast.unsafe")
 	public static char digitToCharWithOverflow(@Unsigned int digit) {
 		if (uintGT(digit, 10))
 			throw new IllegalArgumentException("digit must be 0-9");

@@ -104,13 +104,12 @@ public class FastDtoa {
 	 * 	representable number to the input.
 	 *   Modifies the generated digits in the buffer to approach (round towards) w.
 	 */
-	private static boolean roundWeed(char[] buffer,
-						  int length,
-						 @Unsigned long distanceTooHighW,
-						 @Unsigned long unsafeInterval,
-						 @Unsigned long rest,
-						 @Unsigned long tenKappa,
-						 @Unsigned long unit) {
+	private static boolean roundWeed(DecimalRepBuf buf,
+									 @Unsigned long distanceTooHighW,
+									 @Unsigned long unsafeInterval,
+									 @Unsigned long rest,
+									 @Unsigned long tenKappa,
+									 @Unsigned long unit) {
 		@Unsigned long smallDistance = distanceTooHighW - unit;
 		@Unsigned long bigDistance = distanceTooHighW + unit;
 		// Let w_low  = too_high - bigDistance, and
@@ -189,7 +188,7 @@ public class FastDtoa {
 				ulongGE(unsafeInterval - rest, tenKappa) &&  // Negated condition 2
 				( ulongLT( rest + tenKappa, smallDistance) ||  // buffer{-1} > w_high
 						ulongGE(smallDistance - rest, rest + tenKappa - smallDistance))) {
-			buffer[length - 1]--;
+			buf.decrementLast();
 			rest += tenKappa;
 		}
 
@@ -226,12 +225,11 @@ public class FastDtoa {
 	 *
 	 *  Precondition: rest < tenKappa.
 	 */
-	private static boolean roundWeedCounted(char[] buffer,
-								 int length,
-								 @Unsigned long rest,
-								 @Unsigned long tenKappa,
-								 @Unsigned long unit,
-								 int[] kappa) {
+	private static boolean roundWeedCounted(DecimalRepBuf buf,
+											@Unsigned long rest,
+											@Unsigned long tenKappa,
+											@Unsigned long unit,
+											int[] kappa) {
 		DOUBLE_CONVERSION_ASSERT(ulongLT(rest, tenKappa));
 		// The following tests are done in a specific order to avoid overflows. They
 		// will work correctly with any uint64 values of rest < tenKappa and unit.
@@ -250,22 +248,7 @@ public class FastDtoa {
 		}
 		// If 2 * (rest - unit) >= 10^kappa, then we can safely round up.
 		if ( ulongGT(rest, unit) && ulongLE((tenKappa - (rest - unit)), (rest - unit)) ) {
-			// Increment the last digit recursively until we find a non '9' digit.
-			buffer[length - 1]++;
-			for (int i = length - 1; i > 0; --i) {
-				if ((int) buffer[i] != ASCII_ZERO + 10) break;
-				buffer[i] = (char) ASCII_ZERO;
-				buffer[i - 1]++;
-			}
-			// If the first digit is now '0'+ 10 we had a buffer with all '9's. With the
-			// If the first digit is now '0'+ 10 we had a buffer with all '9's. With the
-			// exception of the first digit all digits are now '0'. Simply switch the
-			// first digit to '1' and adjust the kappa. Example: "99" becomes "10" and
-			// the power (the kappa) is increased.
-			if ((int) buffer[0] == ASCII_ZERO + 10) {
-				buffer[0] = '1';
-				kappa[0] += 1;
-			}
+			kappa[0] += buf.incrementLast();
 			return true;
 		}
 		return false;
@@ -358,8 +341,7 @@ public class FastDtoa {
 	private static boolean digitGen(DiyFp low,
 						 DiyFp w,
 						 DiyFp high,
-						 char[] buffer,
-						 int[] length,
+						 DecimalRepBuf buf,
 						 int[] kappa) {
 		DOUBLE_CONVERSION_ASSERT(low.e() == w.e() && w.e() == high.e() );
 		DOUBLE_CONVERSION_ASSERT( ulongLE(low.f() + 1L, high.f() - 1L) );
@@ -404,14 +386,13 @@ public class FastDtoa {
 			divisorExponentPlusOne = inDivisorExponentPlusOne[0];
 		}
 		kappa[0] = divisorExponentPlusOne;
-		length[0] = 0;
+		buf.clearBuf();
 		// Loop invariant: buffer = tooHigh / 10^kappa  (integer division)
 		// The invariant holds for the first iteration: kappa has been initialized
 		// with the divisor exponent + 1. And the divisor is the biggest power of ten
 		// that is smaller than integrals.
 		while (kappa[0] > 0) {
-			buffer[length[0]] = digitToChar(uDivide(integrals, divisor));
-			length[0]++;
+			buf.append(uDivide(integrals, divisor));
 			integrals = uRemainder(integrals, divisor);
 			kappa[0]--;
 			// Note that kappa now equals the exponent of the divisor and that the
@@ -422,7 +403,7 @@ public class FastDtoa {
 			if (ulongLT(rest, unsafeInterval.f())) {
 				// Rounding down (by not emitting the remaining digits) yields a number
 				// that lies within the unsafe interval.
-				return roundWeed(buffer, length[0], DiyFp.minus(tooHigh, w).f(),
+				return roundWeed(buf, DiyFp.minus(tooHigh, w).f(),
 						unsafeInterval.f(), rest,
 						toUlong(divisor) << -one.e(), unit);
 			}
@@ -443,12 +424,11 @@ public class FastDtoa {
 			unit *= 10L;
 			unsafeInterval.setF(unsafeInterval.f() * 10L);
 			// Integer division by one.
-			buffer[length[0]] = digitToChar(fractionals >>> -one.e());
-			length[0]++;
+			buf.append(fractionals >>> -one.e());
 			fractionals &= one.f() - 1L;  // Modulo by one.
 			kappa[0]--;
 			if (ulongLT(fractionals, unsafeInterval.f())) {
-				return roundWeed(buffer, length[0], DiyFp.minus(tooHigh, w).f() * unit,
+				return roundWeed(buf, DiyFp.minus(tooHigh, w).f() * unit,
 						unsafeInterval.f(), fractionals, one.f(), unit);
 			}
 		}
@@ -486,8 +466,7 @@ public class FastDtoa {
 	 */
 	private static boolean digitGenCounted(DiyFp w,
 								int requestedDigits,
-								char[] buffer,
-								int[] length,
+								DecimalRepBuf buf,
 								int[] kappa) {
 		DOUBLE_CONVERSION_ASSERT(MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT);
 		DOUBLE_CONVERSION_ASSERT(MINIMAL_TARGET_EXPONENT >= -60);
@@ -516,15 +495,14 @@ public class FastDtoa {
 		}
 
 		kappa[0] = divisorExponentPlusOne;
-		length[0] = 0;
+		buf.clearBuf();
 
 		// Loop invariant: buffer = w / 10^kappa  (integer division)
 		// The invariant holds for the first iteration: kappa has been initialized
 		// with the divisor exponent + 1. And the divisor is the biggest power of ten
 		// that is smaller than 'integrals'.
 		while (kappa[0] > 0) {
-			buffer[length[0]] = digitToChar(uDivide(integrals, divisor));
-			length[0]++;
+			buf.append(uDivide(integrals, divisor));
 			requestedDigits--;
 			integrals = uRemainder(integrals, divisor);
 			kappa[0]--;
@@ -536,7 +514,7 @@ public class FastDtoa {
 
 		if (requestedDigits == 0) {
 			@Unsigned long rest = (toUlong(integrals) << -one.e()) + fractionals;
-			return roundWeedCounted(buffer, length[0], rest,
+			return roundWeedCounted(buf, rest,
 					toUlong(divisor) << -one.e(), wError,
 					kappa);
 		}
@@ -554,14 +532,13 @@ public class FastDtoa {
 			fractionals *= 10L;
 			wError *= 10L;
 			// Integer division by one.
-			buffer[length[0]] = digitToChar(fractionals >>> -one.e());
-			length[0]++;
+			buf.append(fractionals >>> -one.e());
 			requestedDigits--;
 			fractionals &= one.f() - 1L;  // Modulo by one.
 			kappa[0]--;
 		}
 		if (requestedDigits != 0) return false;
-		return roundWeedCounted(buffer, length[0], fractionals, one.f(), wError,
+		return roundWeedCounted(buf, fractionals, one.f(), wError,
 				kappa);
 	}
 
@@ -581,8 +558,7 @@ public class FastDtoa {
 	 */
 	private static boolean grisu3(double v,
 					   FastDtoaMode mode,
-					   char[] buffer,
-					   int[] length,
+					   DecimalRepBuf buf,
 					   int[] decimalExponent) {
 		DiyFp w = new Ieee.Double(v).asNormalizedDiyFp();
 		// boundaryMinus and boundaryPlus are the boundaries between v and its
@@ -652,7 +628,7 @@ public class FastDtoa {
 		// decreased by 2.
 		int[] kappa = new int[1];
 		boolean result = digitGen(scaledBoundaryMinus, scaledW, scaledBoundaryPlus,
-				buffer, length, kappa);
+				buf, kappa);
 		decimalExponent[0] = -mk + kappa[0];
 		return result;
 	}
@@ -667,8 +643,7 @@ public class FastDtoa {
 	 */
 	private static boolean grisu3Counted(double v,
 							  int requestedDigits,
-							  char[] buffer,
-							  int[] length,
+							  DecimalRepBuf buf,
 							  int[] decimalExponent) {
 		DiyFp w = new Ieee.Double(v).asNormalizedDiyFp();
 		DiyFp ten_mk;  // Cached power of ten: 10^-k
@@ -709,7 +684,7 @@ public class FastDtoa {
 		// limited number of digits.)
 		int[] inKappa = new int[1];
 		boolean result = digitGenCounted(scaledW, requestedDigits,
-				buffer, length, inKappa);
+				buf, inKappa);
 		decimalExponent[0] = -mk + inKappa[0];
 		return result;
 	}
@@ -745,9 +720,7 @@ public class FastDtoa {
 	public static boolean fastDtoa(double v,
 								   FastDtoaMode mode,
 								   int requestedDigits,
-								   char[] buffer,
-								   int[] length,
-								   int[] decimalPoint) {
+								   DecimalRepBuf buf) {
 		DOUBLE_CONVERSION_ASSERT(v > 0.0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
 
@@ -756,18 +729,19 @@ public class FastDtoa {
 		switch (mode) {
 			case SHORTEST:
 			case SHORTEST_SINGLE:
-				result = grisu3(v, mode, buffer, length, decimalExponent);
+				result = grisu3(v, mode, buf, decimalExponent);
 				break;
 			case PRECISION:
 				result = grisu3Counted(v, requestedDigits,
-						buffer, length, decimalExponent);
+						buf, decimalExponent);
 				break;
 			default:
 				throw new IllegalStateException("Unreachable");
 		}
 		if (result) {
-			decimalPoint[0] = length[0] + decimalExponent[0];
-			buffer[length[0]] = '\0';
+			buf.setPointPosition(buf.length() + decimalExponent[0]);
+		} else {
+			buf.reset();
 		}
 		return result;
 	}
