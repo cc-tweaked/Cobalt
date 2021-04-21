@@ -92,7 +92,6 @@ public class DoubleToStringConverter {
 	 *  The length of the longest string that 'ToShortest' can produce when the
 	 *  converter is instantiated with EcmaScript defaults (see
 	 *  'ecmaScriptConverter')
-	 *  This value does not include the trailing '\0' character.
 	 *  This amount of characters is needed for negative values that hit the
 	 *  'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
 	 */
@@ -545,7 +544,6 @@ public class DoubleToStringConverter {
 		}
 
 		// Find a sufficiently precise decimal representation of n.
-		// Add space for the '\0' byte.
 		DecimalRepBuf decimalRep = new DecimalRepBuf(FIXED_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.FIXED, requestedDigits, decimalRep);
 
@@ -600,7 +598,6 @@ public class DoubleToStringConverter {
 								  MAX_EXPONENTIAL_DIGITS, requestedDigits));
 		}
 
-		// Add space for digit before the decimal point and the '\0' character.
 		// DOUBLE_CONVERSION_ASSERT(EXPONENTIAL_REP_CAPACITY > BASE_10_MAXIMAL_LENGTH);
 		DecimalRepBuf decimalRep = new DecimalRepBuf(EXPONENTIAL_REP_CAPACITY);
 
@@ -811,8 +808,8 @@ public class DoubleToStringConverter {
 	 * <code>doubleToAscii</code> expects the given buffer to be big enough to hold all
 	 *   digits. In SHORTEST-mode it expects a buffer of at least BASE_10_MAXIMAL_LENGTH. In
 	 *   all other modes the requestedDigits parameter and the padding-zeroes limit the size of the
-	 *   output. Don't forget the decimal point, the exponent character and the
-	 *   terminating null-character when computing the maximal output size.
+	 *   output. Don't forget the decimal point and the exponent character when
+	 *   computing the maximal output size.
 	 *
 	 * @param v the value to be converted to digits
 	 * <p/>

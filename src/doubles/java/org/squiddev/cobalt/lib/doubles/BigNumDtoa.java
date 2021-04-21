@@ -79,7 +79,6 @@ public class BigNumDtoa {
 	/**
 	 *  Converts the given double 'v' to ascii.
 	 *  The result should be interpreted as buffer * 10^(point-length).
-	 *  The buffer will be null-terminated.
 	 *
 	 *  The input v must be > 0 and different from NaN, and Infinity.
 	 *
@@ -104,8 +103,7 @@ public class BigNumDtoa {
 	 *    'requestedDigits', the function is allowed to return fewer digits, in
 	 *    which case the caller has to fill the missing digits with '0's.
 	 *    Halfway cases are again rounded up.
-	 *  'bignumDtoa' expects the given buffer to be big enough to hold all digits
-	 *  and a terminating null-character.
+	 *  'bignumDtoa' expects the given buffer to be big enough to hold all digits.
 	 */
 	public static void bignumDtoa(double v, BignumDtoaMode mode, int requestedDigits,
 						   DecimalRepBuf buf) {

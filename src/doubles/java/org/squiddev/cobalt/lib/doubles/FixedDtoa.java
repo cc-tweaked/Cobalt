@@ -285,8 +285,7 @@ public class FixedDtoa {
 
 	// Produces digits necessary to print a given number with
 	// 'fractionalCount' digits after the decimal point.
-	// The buffer must be big enough to hold the result plus one terminating null
-	// character.
+	// The buffer must be big enough to hold the result.
 	//
 	// The produced digits might be too short in which case the caller has to fill
 	// the gaps with '0's.
@@ -298,7 +297,7 @@ public class FixedDtoa {
 	// shortest representation of the input.
 	//
 	// This method only works for some parameters. If it can't handle the input it
-	// returns false. The output is null-terminated when the function succeeds.
+	// returns false.
 	public static boolean fastFixedDtoa(double v, int fractionalCount, DecimalRepBuf buf) {
   		final @Unsigned long kMaxUInt32 = 0xFFFF_FFFFL;
 		@Unsigned long significand = new Ieee.Double(v).significand();

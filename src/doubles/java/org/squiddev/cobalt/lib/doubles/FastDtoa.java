@@ -59,8 +59,7 @@ public class FastDtoa {
 	}
 
 	/**
-	 *   fastDtoa will produce at most FAST_DTOA_MAXIMAL_LENGTH digits. This does not
-	 * 	 include the terminating '\0' character.
+	 *   fastDtoa will produce at most FAST_DTOA_MAXIMAL_LENGTH digits.
 	 */
 	public static final int FAST_DTOA_MAXIMAL_LENGTH = 17;
 	/** Same for single-precision numbers. */
@@ -311,7 +310,7 @@ public class FastDtoa {
 	 *   * MINIMAL_TARGET_EXPONENT <= w.e() <= MAXIMAL_TARGET_EXPONENT
 	 *  Postconditions: returns false if procedure fails.
 	 *    otherwise:
-	 *      * buffer is not null-terminated, but len contains the number of digits.
+	 *      * length contains the number of digits.
 	 *      * buffer contains the shortest possible decimal digit-sequence
 	 *        such that LOW < buffer * 10^kappa < HIGH, where LOW and HIGH are the
 	 *        correct values of low and high (without their error).
@@ -450,8 +449,7 @@ public class FastDtoa {
 	 *
 	 *  Postconditions: returns false if procedure fails.
 	 *    otherwise:
-	 *      * buffer is not null-terminated, but length contains the number of
-	 *        digits.
+	 *      * length contains the number of digits.
 	 *      * the representation in buffer is the most precise representation of
 	 *        requestedDigits digits.
 	 *      * buffer contains at most requestedDigits digits of w. If there are less
@@ -546,7 +544,7 @@ public class FastDtoa {
 	/**
 	 * Provides a decimal representation of v.
 	 * Returns true if it succeeds, otherwise the result cannot be trusted.
-	 * There will be *outLength digits inside the buffer (not null-terminated).
+	 * There will be length digits inside the buffer.
 	 * If the function returns true then
 	 * 	v == (double) (buffer * 10^outDecimalExponent).
 	 * The digits in the buffer are the shortest representation possible: no
@@ -697,7 +695,6 @@ public class FastDtoa {
 	 *    * v must be a strictly positive finite double.
 	 *
 	 *  Returns true if it succeeds, otherwise the result can not be trusted.
-	 *  There will be *outLength digits inside the buffer followed by a null terminator.
 	 *  If the function returns true and mode equals
 	 *    - FAST_DTOA_SHORTEST, then
 	 *      the parameter requestedDigits is ignored.
