@@ -178,10 +178,10 @@ public class DoubleToStringConverter {
 	 * @param flags the bit-or combination of {@link Flags}
 	 * @param symbols the symbols output for special values, and the exponent character,
 	 *                see {@link Symbols#Symbols(String, String, int)}
-	 * @param shortestPolicy the parameters that configures when {@link #toShortest(double, StringBuilder)} output
+	 * @param shortestPolicy the parameters that configures when {@link #toShortest} output
 	 *                       switches to an exponential representation, see
 	 *                       {@link ShortestPolicy#ShortestPolicy(int, int)}
-	 * @param precisionPolicy the parameters that configure when {@link #toPrecision(double, int, StringBuilder)}
+	 * @param precisionPolicy the parameters that configure when {@link #toPrecision}
 	 *                        output switches to exponential representation, see
 	 *                        {@link PrecisionPolicy#PrecisionPolicy(int, int)}
      *
@@ -232,10 +232,10 @@ public class DoubleToStringConverter {
 	 * @param flags the bit-or combination of {@link Flags}
 	 * @param symbols the symbols output for special values, and the exponent character,
 	 *                see {@link Symbols#Symbols(String, String, int)}
-     * @param shortestPolicy the parameters that configures when {@link #toShortest(double, StringBuilder)} output
+     * @param shortestPolicy the parameters that configures when {@link #toShortest} output
 	 *                       switches to an exponential representation, see
 	 *                       {@link ShortestPolicy#ShortestPolicy(int, int)}
-	 * @param precisionPolicy the parameters that configure when {@link #toPrecision(double, int, StringBuilder)}
+	 * @param precisionPolicy the parameters that configure when {@link #toPrecision}
 	 *                        output switches to exponential representation, see
 	 *                        {@link PrecisionPolicy#PrecisionPolicy(int, int)}
 	 * @param minExponentWidth The converter adds leading '0's to the exponent until the exponent
@@ -323,16 +323,16 @@ public class DoubleToStringConverter {
 	 *        "-1.7976931348623157e+308", "-1.7976931348623157E308"</li>
 	 *  </ul>
 	 */
-	public void toShortest(double value, StringBuilder resultBuilder) {
+	public void toShortest(double value, Appendable resultBuilder) {
 		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST);
 	}
 
 	/**
 	 * Same as toShortest, but for single-precision floats.
 	 *
-	 * @see #toShortest(double, StringBuilder)
+	 * @see #toShortest
 	 * */
-	public void toShortestSingle(float value, StringBuilder resultBuilder) {
+	public void toShortestSingle(float value, Appendable resultBuilder) {
 		//noinspection ImplicitNumericConversion
 		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST_SINGLE);
 	}
@@ -343,7 +343,7 @@ public class DoubleToStringConverter {
 	 * 	 If either of them is NULL or the value is not special then the
 	 * 	 function returns false.
 	 */
-	private void handleSpecialValues(double value, StringBuilder resultBuilder) {
+	private void handleSpecialValues(double value, Appendable resultBuilder) {
 		Ieee.Double doubleInspect = new Ieee.Double(value);
 		if (doubleInspect.isInfinite()) {
 			if (value < 0.0) {
@@ -363,7 +363,7 @@ public class DoubleToStringConverter {
 	private void createExponentialRepresentation(final DecimalRepBuf decimalDigits,
 												 int length,
 												 int exponent,
-												 StringBuilder resultBuilder) {
+												 Appendable resultBuilder) {
 		if (decimalDigits.length() == 0) throw new IllegalArgumentException("decimalDigits is empty");
 		if (length > decimalDigits.length()) throw new IllegalArgumentException("length larger then decimalDigits");
 		resultBuilder.append(decimalDigits.charAt(0));
@@ -403,7 +403,7 @@ public class DoubleToStringConverter {
 	/** Creates a decimal representation (i.e 1234.5678). */
 	private void createDecimalRepresentation(DecimalRepBuf decimalDigits,
 											 int digitsAfterPoint,
-											 StringBuilder resultBuilder) {
+											 Appendable resultBuilder) {
 		int decimalPoint = decimalDigits.getPointPosition();
 		int length = decimalDigits.length();
 		// Create a representation that is padded with zeros if needed.
@@ -449,7 +449,7 @@ public class DoubleToStringConverter {
 
 	/** Implementation for toShortest and toShortestSingle. */
 	private void toShortestIeeeNumber(double value,
-										 StringBuilder resultBuilder,
+										 Appendable resultBuilder,
 										 DtoaMode mode) {
 		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE);
 		if (new Ieee.Double(value).isSpecial()) {
@@ -526,7 +526,7 @@ public class DoubleToStringConverter {
 	 */
 	public void toFixed(double value,
 					int requestedDigits,
-					StringBuilder resultBuilder) {
+					Appendable resultBuilder) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
 		if (new Ieee.Double(value).isSpecial()) {
@@ -586,7 +586,7 @@ public class DoubleToStringConverter {
 	 */
 	public void toExponential(double value,
 						  int requestedDigits,
-						  StringBuilder resultBuilder) {
+						  Appendable resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
 			handleSpecialValues(value, resultBuilder);
 			return;
@@ -667,7 +667,7 @@ public class DoubleToStringConverter {
 	 */
 	public void toPrecision(double value,
 						int precision,
-						StringBuilder resultBuilder) {
+						Appendable resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
 			handleSpecialValues(value, resultBuilder);
 			return;
@@ -880,7 +880,7 @@ public class DoubleToStringConverter {
 	 * 	Add character padding to the builder. If count is non-positive,
 	 * 	nothing is added to the builder.
 	 */
-	private static void addZeros(StringBuilder sb, int count) {
+	private static void addZeros(Appendable sb, int count) {
 		for (int i=count; i > 0; i--) {
 			sb.append('0');
 		}
@@ -930,7 +930,7 @@ public class DoubleToStringConverter {
 	}
 
 	/**
-	 * Parameter object configuring usage of {@link DoubleToStringConverter#toShortest(double, StringBuilder)}
+	 * Parameter object configuring usage of {@link DoubleToStringConverter#toShortest}
 	 *
 	 * @see #ShortestPolicy(int, int)
 	 */
@@ -973,7 +973,7 @@ public class DoubleToStringConverter {
 	}
 
 	/**
-	 * Parameter object configuring usage of {@link DoubleToStringConverter#toPrecision(double, int, StringBuilder)}
+	 * Parameter object configuring usage of {@link DoubleToStringConverter#toPrecision}
 	 *
 	 * @see #PrecisionPolicy(int, int)
 	 */

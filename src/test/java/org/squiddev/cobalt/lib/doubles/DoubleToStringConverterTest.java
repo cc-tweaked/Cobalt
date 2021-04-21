@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DoubleToStringConverterTest {
 	private DoubleToStringConverter conv;
-	private StringBuilder sb = new StringBuilder();
+	private final StringAppendable appendable = new StringAppendable();
 
 	@Test
 	void toShortest() {
@@ -124,27 +124,27 @@ class DoubleToStringConverterTest {
 	}
 
 	private void assertPrec(String expected, double val, int requestedDigits) {
-		sb.setLength(0);
-		conv.toPrecision(val, requestedDigits, sb);
-		assertEquals(expected, sb.toString());
+		appendable.setLength(0);
+		conv.toPrecision(val, requestedDigits, appendable);
+		assertEquals(expected, appendable.toString());
 	}
 
 	private void assertExp(String expected, double val, int requestedDigits) {
-		sb.setLength(0);
-		conv.toExponential(val, requestedDigits, sb);
-		assertEquals(expected, sb.toString());
+		appendable.setLength(0);
+		conv.toExponential(val, requestedDigits, appendable);
+		assertEquals(expected, appendable.toString());
 	}
 
 	private void assertFixed(String expected, double val, int requestedDigits) {
-		sb.setLength(0);
-		conv.toFixed(val, requestedDigits, sb);
-		assertEquals(expected, sb.toString());
+		appendable.setLength(0);
+		conv.toFixed(val, requestedDigits, appendable);
+		assertEquals(expected, appendable.toString());
 	}
 
 	private void assertShortest(String expected, double val) {
-		sb.setLength(0);
-		conv.toShortest(val, sb);
-		assertEquals(expected, sb.toString());
+		appendable.setLength(0);
+		conv.toShortest(val, appendable);
+		assertEquals(expected, appendable.toString());
 	}
 
 	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros) {
@@ -159,5 +159,36 @@ class DoubleToStringConverterTest {
 			   new Symbols("Infinity", "NaN", 'e'),
 			   new ShortestPolicy(-6, 21),
 			   new PrecisionPolicy(6, 0));
+	}
+
+	private static class StringAppendable implements Appendable {
+		final StringBuilder sb = new StringBuilder();
+
+		@Override
+		public String toString() {
+			return sb.toString();
+		}
+
+		public void setLength(int newLength) {
+			sb.setLength(newLength);
+		}
+
+		@Override
+		public StringAppendable append(String string) {
+			sb.append(sb);
+			return this;
+		}
+
+		@Override
+		public StringAppendable append(char character) {
+			sb.append(character);
+			return this;
+		}
+
+		@Override
+		public StringAppendable append(char[] chars, int offset, int len) {
+			sb.append(chars, offset, len);
+			return this;
+		}
 	}
 }
