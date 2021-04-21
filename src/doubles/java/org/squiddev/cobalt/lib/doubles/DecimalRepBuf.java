@@ -125,7 +125,9 @@ public class DecimalRepBuf {
 
 
 	public void incrementLastNoOverflow() {
-		if ( (int) buffer[length - 1] == (int) '9') throw new IllegalStateException("Last digit cannot be '9'");
+		if ( (int) buffer[length - 1] == (int) '9') {
+			throw new ArithmeticException("Last digit is '9' and so would overflow");
+		}
 		buffer[length - 1]++;
 	}
 
@@ -181,7 +183,7 @@ public class DecimalRepBuf {
 	}
 
 	public void setCharAt(int index, @Unsigned int digit) {
-		if (index >= length) throw new IllegalArgumentException("index out of bounds: " + index);
+		if (index >= length) throw new IndexOutOfBoundsException("index: " + index);
 		buffer[index] = digitToChar(digit);
 	}
 
