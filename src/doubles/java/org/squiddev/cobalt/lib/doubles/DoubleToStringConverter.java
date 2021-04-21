@@ -93,6 +93,15 @@ public class DoubleToStringConverter {
 	 *  'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
 	 */
 	public static final int MAX_CHARS_ECMA_SCRIPT_SHORTEST = 25;
+
+	public static final int EXPONENTIAL_REP_CAPACITY = MAX_EXPONENTIAL_DIGITS + 2;
+	public static final int FIXED_REP_CAPACITY = MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
+	public static final int PRECISION_REP_CAPACITY = MAX_PRECISION_DIGITS + 1;
+	public static final int SHORTEST_REP_CAPACITY = BASE_10_MAXIMAL_LENGTH + 1;
+
+	public static final int MAX_EXPONENT_LENGTH = 5;
+
+
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 
@@ -341,9 +350,8 @@ public class DoubleToStringConverter {
 		}
 		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
 		// Changing this constant requires updating the comment of DoubleToStringConverter constructor
-		final int kMaxExponentLength = 5;
-		char[] buffer = new char[kMaxExponentLength];
-		int firstCharPos = kMaxExponentLength - 1;
+		char[] buffer = new char[MAX_EXPONENT_LENGTH];
+		int firstCharPos = MAX_EXPONENT_LENGTH - 1;
 		if (exponent == 0) {
 			buffer[--firstCharPos] = (char) ASCII_ZERO;
 		} else {
@@ -354,10 +362,10 @@ public class DoubleToStringConverter {
 		}
 		// Add prefix '0' to make exponent width >= min(min_exponent_with_, MAX_EXPONENT_LENGTH)
 		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
-		while(kMaxExponentLength - firstCharPos < Math.min(minExponentWidth, kMaxExponentLength)) {
+		while(MAX_EXPONENT_LENGTH - firstCharPos < Math.min(minExponentWidth, MAX_EXPONENT_LENGTH)) {
 			buffer[--firstCharPos] = (char) ASCII_ZERO;
 		}
-		resultBuilder.append(buffer, firstCharPos, kMaxExponentLength - firstCharPos);
+		resultBuilder.append(buffer, firstCharPos, MAX_EXPONENT_LENGTH - firstCharPos);
 	}
 
 	/** Creates a decimal representation (i.e 1234.5678). */
@@ -416,8 +424,7 @@ public class DoubleToStringConverter {
 			return handleSpecialValues(value, resultBuilder);
 		}
 
-		final int kDecimalRepCapacity = BASE_10_MAXIMAL_LENGTH + 1;
-		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
+		DecimalRepBuf decimalRep = new DecimalRepBuf(SHORTEST_REP_CAPACITY);
 
 		doubleToAscii(value, mode, 0, decimalRep);
 
@@ -482,7 +489,7 @@ public class DoubleToStringConverter {
 	public boolean toFixed(double value,
 					int requestedDigits,
 					StringBuilder resultBuilder) {
-		DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
+		//DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
   		final double kFirstNonFixed = 1e60;
 
 		if (new Ieee.Double(value).isSpecial()) {
@@ -494,9 +501,7 @@ public class DoubleToStringConverter {
 
 		// Find a sufficiently precise decimal representation of n.
 		// Add space for the '\0' byte.
-  		final int kDecimalRepCapacity =
-				MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
-		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
+		DecimalRepBuf decimalRep = new DecimalRepBuf(FIXED_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.FIXED, requestedDigits, decimalRep);
 
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
@@ -545,13 +550,16 @@ public class DoubleToStringConverter {
 			return handleSpecialValues(value, resultBuilder);
 		}
 
-		if (requestedDigits < -1) return false;
-		if (requestedDigits > MAX_EXPONENTIAL_DIGITS) return false;
+		if (requestedDigits < -1) throw new IllegalArgumentException("requestedDigits can't be negative");
+		if (requestedDigits > MAX_EXPONENTIAL_DIGITS) {
+			throw new IllegalArgumentException(
+					String.format("requestedDigits must be less than %d. got: %d",
+								  MAX_EXPONENTIAL_DIGITS, requestedDigits));
+		}
 
 		// Add space for digit before the decimal point and the '\0' character.
-  		final int kDecimalRepCapacity = MAX_EXPONENTIAL_DIGITS + 2;
-		DOUBLE_CONVERSION_ASSERT(kDecimalRepCapacity > BASE_10_MAXIMAL_LENGTH);
-		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
+		DOUBLE_CONVERSION_ASSERT(EXPONENTIAL_REP_CAPACITY > BASE_10_MAXIMAL_LENGTH);
+		DecimalRepBuf decimalRep = new DecimalRepBuf(EXPONENTIAL_REP_CAPACITY);
 		// TODO make sure this isn't a problem in java
 //#ifndef NDEBUG
 //		// Problem: there is an assert in StringBuilder::AddSubstring() that
@@ -635,8 +643,7 @@ public class DoubleToStringConverter {
 
 		// Find a sufficiently precise decimal representation of n.
 		// Add one for the terminating null character.
-  		final int kDecimalRepCapacity = MAX_PRECISION_DIGITS + 1;
-		DecimalRepBuf decimalRep = new DecimalRepBuf(kDecimalRepCapacity);
+		DecimalRepBuf decimalRep = new DecimalRepBuf(PRECISION_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.PRECISION, precision, decimalRep);
 		DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= precision);
 

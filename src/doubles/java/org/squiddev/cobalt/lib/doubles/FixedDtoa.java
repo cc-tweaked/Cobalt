@@ -41,7 +41,8 @@ import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class FixedDtoa {
-	private static final int DOUBLE_SIGNIFICAND_SIZE = 53;  // Includes the hidden bit.
+	private static final int DOUBLE_SIGNIFICAND_SIZE = Ieee.Double.SIGNIFICAND_SIZE;  // Includes the hidden bit.
+	private static final @Unsigned long TEN_POW_OF_7 = 10000000L;
 
 	// Represents a 128bit type. This class should be replaced by a native type on
 	// platforms that support 128bit integers.
@@ -181,12 +182,11 @@ public class FixedDtoa {
 
 	private static void fillDigits64FixedLength(@Unsigned long number,
 												DecimalRepBuf buf) {
-  		final @Unsigned long kTen7 = 10000000L;
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
-		@Unsigned int part2 = toUint( uRemainder(number, kTen7) );
-		number = uDivide(number, kTen7);
-		@Unsigned int part1 = toUint( uRemainder(number, kTen7) );
-		@Unsigned int part0 = toUint( uDivide(number, kTen7) );
+		@Unsigned int part2 = toUint( uRemainder(number, TEN_POW_OF_7) );
+		number = uDivide(number, TEN_POW_OF_7);
+		@Unsigned int part1 = toUint( uRemainder(number, TEN_POW_OF_7) );
+		@Unsigned int part0 = toUint( uDivide(number, TEN_POW_OF_7) );
 
 		fillDigits32FixedLength(part0, 3, buf);
 		fillDigits32FixedLength(part1, 7, buf);
@@ -195,12 +195,11 @@ public class FixedDtoa {
 
 
 	private static void fillDigits64(@Unsigned long number, DecimalRepBuf buf) {
-  		final @Unsigned long kTen7 = 10000000L;
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
-		@Unsigned int part2 = toUint( uRemainder(number, kTen7) );
-		number = uDivide(number, kTen7);
-		@Unsigned int part1 = toUint( uRemainder(number, kTen7) );
-		@Unsigned int part0 = toUint( uDivide(number, kTen7) );
+		@Unsigned int part2 = toUint( uRemainder(number, TEN_POW_OF_7) );
+		number = uDivide(number, TEN_POW_OF_7);
+		@Unsigned int part1 = toUint( uRemainder(number, TEN_POW_OF_7) );
+		@Unsigned int part0 = toUint( uDivide(number, TEN_POW_OF_7) );
 
 		if (part0 != 0) {
 			fillDigits32(part0, buf);
@@ -313,7 +312,7 @@ public class FixedDtoa {
 		if (fractionalCount > 20) return false;
 
 		buf.clearBuf();
-		// At most kDoubleSignificandSize bits of the significand are non-zero.
+		// At most DOUBLE_SIGNIFICAND_SIZE bits of the significand are non-zero.
 		// Given a 64 bit integer we have 11 0s followed by 53 potentially non-zero
 		// bits:  0..11*..0xxx..53*..xx
 		if (exponent + DOUBLE_SIGNIFICAND_SIZE > 64) {
