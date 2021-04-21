@@ -789,9 +789,11 @@ public class DoubleToStringConverter {
 		}
 	}
 
+	@SuppressWarnings("operation.mixed.unsignedrhs")
 	private void appendSign(double value, FormatOptions formatOptions, Appendable resultBuilder) {
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if (value < 0 && (value != 0.0 || !uniqueZero)) {
+		if ((Double.doubleToRawLongBits(value) & Ieee.Double.SIGN_MASK) != 0 &&
+				(value != 0.0 || !uniqueZero)) {
 			resultBuilder.append('-');
 		} else if (formatOptions.isSpaceWhenPositive()) {
 			resultBuilder.append(' ');
