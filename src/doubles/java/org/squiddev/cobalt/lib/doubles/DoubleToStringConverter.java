@@ -400,6 +400,8 @@ public class DoubleToStringConverter {
 		if (length != 1) {
 			resultBuilder.append('.');
 			resultBuilder.append(decimalDigits.getBuffer(), 1, length-1);
+		} else if (fo.isEmitTrailingPoint()){
+			resultBuilder.append('.');
 		}
 		resultBuilder.append((char)fo.getSymbols().getExponentCharacter());
 		resultBuilder.append(exponentPart.getBuffer(), exponentPart.getStart(), exponentPart.length());

@@ -101,9 +101,12 @@ class DoubleToStringConverterTest {
 				1000000000000000019884624838656.0, 32);
 		testExp("1e3", 1234, 0);
 
-		conv = newConv(Flags.EMIT_POSITIVE_EXPONENT_SIGN);
-		testExp("0.000000e+0", 0.0, 6);
-		testExp("1.000000e+0", 1.0, 6);
+		conv = newCobaltConv();
+		testExp("0.000000e+00", 0.0, 6);
+		testExp("1.000000e+00", 1.0, 6);
+
+		testExp("0.e+00", 0.0, 0, formatOptTrailingPoint());
+		testExp("1.e+00", 1.0, 0, formatOptTrailingPoint());
 
 	}
 
@@ -145,8 +148,12 @@ class DoubleToStringConverterTest {
 	}
 
 	private void testExp(String expected, double val, int requestedDigits) {
+		testExp(expected, val, requestedDigits, FORMAT_OPTIONS);
+	}
+
+	private void testExp(String expected, double val, int requestedDigits, FormatOptions fo) {
 		appendable.setLength(0);
-		conv.toExponential(val, requestedDigits, FORMAT_OPTIONS, appendable);
+		conv.toExponential(val, requestedDigits, fo, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
@@ -178,17 +185,35 @@ class DoubleToStringConverterTest {
 				false);
 	}
 
+	private FormatOptions formatOptTrailingPoint() {
+		return new FormatOptions(SYMBOLS,
+				false,
+				false,
+				true,
+				-1,
+				false,
+				false);
+	}
+
 	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros) {
 		return new DoubleToStringConverter(flags,
 				new ShortestPolicy(-6, 21),
-				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros));
+				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), 0);
 	}
 
 	private DoubleToStringConverter newConv(int flags) {
 		return new DoubleToStringConverter(flags,
 			   new ShortestPolicy(-6, 21),
-			   new PrecisionPolicy(6, 0));
+			   new PrecisionPolicy(6, 0), 0);
 	}
+
+	private DoubleToStringConverter newCobaltConv() {
+		int flags = Flags.EMIT_POSITIVE_EXPONENT_SIGN | Flags.NO_TRAILING_ZERO;
+		return new DoubleToStringConverter(flags,
+			   new ShortestPolicy(-6, 21),
+			   new PrecisionPolicy(6, 0), 2);
+	}
+
 
 	private static class StringAppendable implements Appendable {
 		final StringBuilder sb = new StringBuilder();
