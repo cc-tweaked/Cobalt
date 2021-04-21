@@ -45,54 +45,54 @@ class DoubleToStringConverterTest {
 	void toShortest() {
 		conv = DoubleToStringConverter.ecmaScriptConverter();
 
-		assertShortest("0.000001", 0.000001);
-		assertShortest("1e-7", 0.0000001);
-		assertShortest("111111111111111110000", 111111111111111111111.0);
-		assertShortest("100000000000000000000", 100000000000000000000.0);
-		assertShortest("1.1111111111111111e+21", 1111111111111111111111.0);
+		testShortest("0.000001", 0.000001);
+		testShortest("1e-7", 0.0000001);
+		testShortest("111111111111111110000", 111111111111111111111.0);
+		testShortest("100000000000000000000", 100000000000000000000.0);
+		testShortest("1.1111111111111111e+21", 1111111111111111111111.0);
 	}
 
 	@Test
 	void toFixed() {
 		conv = DoubleToStringConverter.ecmaScriptConverter();
 
-		assertFixed("3.1", 3.12, 1);
-		assertFixed("3.142", 3.1415, 3);
-		assertFixed("1234.5679", 1234.56789, 4);
-		assertFixed("1.23000", 1.23, 5);
-		assertFixed("0.1000", 0.1, 4);
-		assertFixed("1000000000000000019884624838656.00", 1e30, 2);
-		assertFixed("0.100000000000000005551115123126", 0.1, 30);
-		assertFixed("0.10000000000000001", 0.1, 17);
+		testFixed("3.1", 3.12, 1);
+		testFixed("3.142", 3.1415, 3);
+		testFixed("1234.5679", 1234.56789, 4);
+		testFixed("1.23000", 1.23, 5);
+		testFixed("0.1000", 0.1, 4);
+		testFixed("1000000000000000019884624838656.00", 1e30, 2);
+		testFixed("0.100000000000000005551115123126", 0.1, 30);
+		testFixed("0.10000000000000001", 0.1, 17);
 
 		conv = newConv(Flags.NO_FLAGS);
-		assertFixed("123", 123.45, 0);
-		assertFixed("1", 0.678, 0);
+		testFixed("123", 123.45, 0);
+		testFixed("1", 0.678, 0);
 
 		conv = newConv(Flags.EMIT_TRAILING_DECIMAL_POINT);
-		assertFixed("123.", 123.45, 0);
-		assertFixed("1.", 0.678, 0);
+		testFixed("123.", 123.45, 0);
+		testFixed("1.", 0.678, 0);
 
 		conv = newConv(Flags.EMIT_TRAILING_DECIMAL_POINT | Flags.EMIT_TRAILING_ZERO_AFTER_POINT);
-		assertFixed("123.0", 123.45, 0);
-		assertFixed("1.0", 0.678, 0);
+		testFixed("123.0", 123.45, 0);
+		testFixed("1.0", 0.678, 0);
 	}
 
 	@Test
 	void toExponential() {
 		conv = newConv(0);
 
-		assertExp("3.1e0",    3.12, 1);
-		assertExp("5.000e0",  5.0, 3);
-		assertExp("1.00e-3",  0.001, 2);
-		assertExp("3.1415e0", 3.1415, -1);
-		assertExp("3.1415e0", 3.1415, 4);
-		assertExp("3.142e0",  3.1415, 3);
-		assertExp("1.235e14", 123456789000000.0, 3);
-		assertExp("1e30", 1000000000000000019884624838656.0, -1);
-		assertExp("1.00000000000000001988462483865600e30",
+		testExp("3.1e0",    3.12, 1);
+		testExp("5.000e0",  5.0, 3);
+		testExp("1.00e-3",  0.001, 2);
+		testExp("3.1415e0", 3.1415, -1);
+		testExp("3.1415e0", 3.1415, 4);
+		testExp("3.142e0",  3.1415, 3);
+		testExp("1.235e14", 123456789000000.0, 3);
+		testExp("1e30", 1000000000000000019884624838656.0, -1);
+		testExp("1.00000000000000001988462483865600e30",
 				1000000000000000019884624838656.0, 32);
-		assertExp("1e3", 1234, 0);
+		testExp("1e3", 1234, 0);
 	}
 
 	@Test
@@ -101,47 +101,47 @@ class DoubleToStringConverterTest {
 		int maxTrailingZeros = 0;
 		conv = newConvPrec(0, maxLeadingZeros, maxTrailingZeros);
 
-		assertPrec("0.0000012", 0.0000012345,  2);
-		assertPrec("1.2e-7",    0.00000012345, 2);
+		testPrec("0.0000012", 0.0000012345,  2);
+		testPrec("1.2e-7",    0.00000012345, 2);
 
 		/// EMIT_TRAILING_ZERO_AFTER_POINT is counted toward the maxTrailingZeros limit
 		maxTrailingZeros = 1;
 		conv = newConvPrec(0, maxLeadingZeros, maxTrailingZeros);
-		assertPrec("230", 230.0, 2);
+		testPrec("230", 230.0, 2);
 		conv = newConvPrec(Flags.EMIT_TRAILING_DECIMAL_POINT, maxLeadingZeros, maxTrailingZeros);
-		assertPrec("230.", 230.0, 2);
+		testPrec("230.", 230.0, 2);
 		conv = newConvPrec(Flags.EMIT_TRAILING_DECIMAL_POINT | Flags.EMIT_TRAILING_ZERO_AFTER_POINT,
 				maxLeadingZeros, maxTrailingZeros);
-		assertPrec("2.3e2", 230.0, 2);
+		testPrec("2.3e2", 230.0, 2);
 
 		maxTrailingZeros = 3;
 		conv = newConvPrec(0, maxLeadingZeros, maxTrailingZeros);
-		assertPrec("123450", 123450.0, 6);
-		assertPrec("123450", 123450.0, 5);
-		assertPrec("123500", 123450.0, 4);
-		assertPrec("123000", 123450.0, 3);
-		assertPrec("1.2e5", 123450.0, 2);
+		testPrec("123450", 123450.0, 6);
+		testPrec("123450", 123450.0, 5);
+		testPrec("123500", 123450.0, 4);
+		testPrec("123000", 123450.0, 3);
+		testPrec("1.2e5", 123450.0, 2);
 	}
 
-	private void assertPrec(String expected, double val, int requestedDigits) {
+	private void testPrec(String expected, double val, int requestedDigits) {
 		appendable.setLength(0);
 		conv.toPrecision(val, requestedDigits, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
-	private void assertExp(String expected, double val, int requestedDigits) {
+	private void testExp(String expected, double val, int requestedDigits) {
 		appendable.setLength(0);
 		conv.toExponential(val, requestedDigits, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
-	private void assertFixed(String expected, double val, int requestedDigits) {
+	private void testFixed(String expected, double val, int requestedDigits, int padWidth) {
 		appendable.setLength(0);
 		conv.toFixed(val, requestedDigits, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
-	private void assertShortest(String expected, double val) {
+	private void testFixed(String expected, double val, int requestedDigits) {
 		appendable.setLength(0);
 		conv.toShortest(val, appendable);
 		assertEquals(expected, appendable.toString());
@@ -156,9 +156,9 @@ class DoubleToStringConverterTest {
 
 	private DoubleToStringConverter newConv(int flags) {
 		return new DoubleToStringConverter(flags,
-			   new Symbols("Infinity", "NaN", 'e'),
-			   new ShortestPolicy(-6, 21),
-			   new PrecisionPolicy(6, 0));
+				new Symbols("Infinity", "NaN", 'e'),
+				new ShortestPolicy(-6, 21),
+				new PrecisionPolicy(6, 0));
 	}
 
 	private static class StringAppendable implements Appendable {
