@@ -677,7 +677,7 @@ public class DoubleToStringConverter {
 					decimalRep);
 			DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= requestedDigits + 1);
 
-			decimalRep.zeroExtend(requestedDigits);
+			decimalRep.zeroExtend(requestedDigits+1);
 		}
 
 		int exponent = decimalRep.getPointPosition() - 1;

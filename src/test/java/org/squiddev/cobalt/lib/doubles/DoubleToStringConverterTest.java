@@ -100,6 +100,11 @@ class DoubleToStringConverterTest {
 		testExp("1.00000000000000001988462483865600e30",
 				1000000000000000019884624838656.0, 32);
 		testExp("1e3", 1234, 0);
+
+		conv = newConv(Flags.EMIT_POSITIVE_EXPONENT_SIGN);
+		testExp("0.000000e+0", 0.0, 6);
+		testExp("1.000000e+0", 1.0, 6);
+
 	}
 
 	@Test
