@@ -40,16 +40,15 @@ import static java.util.Objects.requireNonNull;
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
 
 public class DoubleToStringConverter {
+	public static final Symbols ECMA_SCRIPT_SYMBOLS = new Symbols("Infinity", "NaN", 'e');
 	/**
 	 *  When calling toFixed with a double > 10^MAX_FIXED_DIGITS_BEFORE_POINT
 	 *  or a requested_digits parameter > MAX_FIXED_DIGITS_AFTER_POINT then the
 	 *  function returns false.
 	 */
-	public static final int MAX_FIXED_DIGITS_BEFORE_POINT = 60;
-	private static final double FIRST_NON_FIXED = 1e60; // exponent must be the same as MAX_FIXED_DIGITS_BEFORE_POINT
+	public static final int MAX_FIXED_DIGITS_BEFORE_POINT = 308;
+	private static final double FIRST_NON_FIXED = 1e308; // exponent must be the same as MAX_FIXED_DIGITS_BEFORE_POINT
 	public static final int MAX_FIXED_DIGITS_AFTER_POINT = 100;
-
-
 
 	/**
 	 *  When calling toExponential with a requested_digits
@@ -147,7 +146,6 @@ public class DoubleToStringConverter {
 
 
 	private final int flags;
-	private final Symbols symbols;
 	private final ShortestPolicy shortestPolicy;
 	private final PrecisionPolicy precisionPolicy;
 	private final int minExponentWidth;
@@ -176,8 +174,6 @@ public class DoubleToStringConverter {
 	 *  <p/>
 	 *
 	 * @param flags the bit-or combination of {@link Flags}
-	 * @param symbols the symbols output for special values, and the exponent character,
-	 *                see {@link Symbols#Symbols(String, String, int)}
 	 * @param shortestPolicy the parameters that configures when {@link #toShortest} output
 	 *                       switches to an exponential representation, see
 	 *                       {@link ShortestPolicy#ShortestPolicy(int, int)}
@@ -190,12 +186,10 @@ public class DoubleToStringConverter {
 	 * @see PrecisionPolicy#PrecisionPolicy(int, int)
 	 */
 	public DoubleToStringConverter(int flags,
-								   Symbols symbols,
-								   ShortestPolicy shortestPolicy,
-								   PrecisionPolicy precisionPolicy) {
+			ShortestPolicy shortestPolicy,
+			PrecisionPolicy precisionPolicy) {
 		this(flags,
-			 symbols,
-			 shortestPolicy,
+				shortestPolicy,
 			 precisionPolicy,
 			 0);
 	}
@@ -230,9 +224,7 @@ public class DoubleToStringConverter {
 	 *  As such, the exponent may never have more than 5 digits in total.<br/>
 	 *
 	 * @param flags the bit-or combination of {@link Flags}
-	 * @param symbols the symbols output for special values, and the exponent character,
-	 *                see {@link Symbols#Symbols(String, String, int)}
-     * @param shortestPolicy the parameters that configures when {@link #toShortest} output
+	 * @param shortestPolicy the parameters that configures when {@link #toShortest} output
 	 *                       switches to an exponential representation, see
 	 *                       {@link ShortestPolicy#ShortestPolicy(int, int)}
 	 * @param precisionPolicy the parameters that configure when {@link #toPrecision}
@@ -246,12 +238,10 @@ public class DoubleToStringConverter {
 	 * @see PrecisionPolicy#PrecisionPolicy(int, int)
 	 */
 	public DoubleToStringConverter(int flags,
-								   Symbols symbols,
-								   ShortestPolicy shortestPolicy,
-								   PrecisionPolicy precisionPolicy,
-								   int minExponentWidth) {
+			ShortestPolicy shortestPolicy,
+			PrecisionPolicy precisionPolicy,
+			int minExponentWidth) {
         this.flags = flags;
-        this.symbols = requireNonNull( symbols );
         this.shortestPolicy = requireNonNull( shortestPolicy );
         this.precisionPolicy = requireNonNull( precisionPolicy );
 		this.minExponentWidth = minExponentWidth;
@@ -276,9 +266,8 @@ public class DoubleToStringConverter {
 	public static DoubleToStringConverter ecmaScriptConverter() {
 		int flags = Flags.UNIQUE_ZERO | Flags.EMIT_POSITIVE_EXPONENT_SIGN;
 		return new DoubleToStringConverter(flags,
-										   new Symbols("Infinity", "NaN", 'e'),
-										   new ShortestPolicy(-6, 21),
-										   new PrecisionPolicy(6, 0));
+				new ShortestPolicy(-6, 21),
+				new PrecisionPolicy(6, 0));
 	}
 
 
@@ -323,8 +312,8 @@ public class DoubleToStringConverter {
 	 *        "-1.7976931348623157e+308", "-1.7976931348623157E308"</li>
 	 *  </ul>
 	 */
-	public void toShortest(double value, Appendable resultBuilder) {
-		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST);
+	public void toShortest(double value, FormatOptions formatOptions, Appendable resultBuilder) {
+		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST, formatOptions);
 	}
 
 	/**
@@ -332,9 +321,9 @@ public class DoubleToStringConverter {
 	 *
 	 * @see #toShortest
 	 * */
-	public void toShortestSingle(float value, Appendable resultBuilder) {
+	public void toShortestSingle(float value, FormatOptions formatOptions, Appendable resultBuilder) {
 		//noinspection ImplicitNumericConversion
-		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST_SINGLE);
+		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST_SINGLE, formatOptions);
 	}
 
 	/**
@@ -343,16 +332,35 @@ public class DoubleToStringConverter {
 	 * 	 If either of them is NULL or the value is not special then the
 	 * 	 function returns false.
 	 */
-	private void handleSpecialValues(double value, Appendable resultBuilder) {
+	private void handleSpecialValues(double value, FormatOptions fo, Appendable resultBuilder) {
+		boolean sign = value < 0.0;
+
+		int effectiveWidth = fo.getPadWidth();
+		if (sign || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) effectiveWidth--;
+
+		String symbol;
 		Ieee.Double doubleInspect = new Ieee.Double(value);
-		if (doubleInspect.isInfinite()) {
-			if (value < 0.0) {
-				resultBuilder.append('-');
-			}
-			resultBuilder.append(symbols.getInfinitySymbol());
+		boolean isInfinite = doubleInspect.isInfinite();
+		if (isInfinite) {
+			symbol = fo.getSymbols().getInfinitySymbol();
 		}
-		if (doubleInspect.isNan()) {
-			resultBuilder.append(symbols.getNanSymbol());
+		else if (doubleInspect.isNan()) {
+			symbol = fo.getSymbols().getNanSymbol();
+		} else {
+			throw new IllegalStateException("Unreachable");
+		}
+
+		if (fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
+			addPadding(resultBuilder, ' ', effectiveWidth - symbol.length());
+		}
+
+		if (value < 0.0 && isInfinite) {
+			resultBuilder.append('-');
+		}
+		resultBuilder.append(symbol);
+
+		if (!fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
+			addPadding(resultBuilder, ' ', effectiveWidth - symbol.length());
 		}
 	}
 
@@ -361,29 +369,56 @@ public class DoubleToStringConverter {
 	 * 	 The given exponent assumes a decimal point after the first decimal digit.
 	 */
 	private void createExponentialRepresentation(final DecimalRepBuf decimalDigits,
-												 int length,
-												 int exponent,
-												 Appendable resultBuilder) {
+			double value,
+			int length,
+			int exponent,
+			FormatOptions fo,
+			Appendable resultBuilder) {
 		if (decimalDigits.length() == 0) throw new IllegalArgumentException("decimalDigits is empty");
 		if (length > decimalDigits.length()) throw new IllegalArgumentException("length larger then decimalDigits");
+
+		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
+		ExponentPart exponentPart = createExponentPart(exponent);
+
+		// length of digits + exponent digits + decimal point + exponent character
+		int valueWidth = length + exponentPart.length() + 2;
+		if (decimalDigits.getSign() || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
+			valueWidth++;
+		}
+
+		if (!fo.isLeftAdjust() && !fo.isZeroPad() && fo.getPadWidth() > valueWidth) {
+			addPadding(resultBuilder, ' ', fo.getPadWidth() - valueWidth);
+		}
+
+		appendSign(value, fo, resultBuilder);
+
+		if (!fo.isLeftAdjust() && fo.isZeroPad() && fo.getPadWidth() > valueWidth) {
+			addPadding(resultBuilder, '0', fo.getPadWidth() - valueWidth);
+		}
+
 		resultBuilder.append(decimalDigits.charAt(0));
 		if (length != 1) {
 			resultBuilder.append('.');
 			resultBuilder.append(decimalDigits.getBuffer(), 1, length-1);
 		}
-		resultBuilder.append((char)symbols.getExponentCharacter());
-		if (exponent < 0) {
-			resultBuilder.append('-');
-			exponent = -exponent;
-		} else {
-			if ((flags & Flags.EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
-				resultBuilder.append('+');
-			}
+		resultBuilder.append((char)fo.getSymbols().getExponentCharacter());
+		resultBuilder.append(exponentPart.getBuffer(), exponentPart.getStart(), exponentPart.length());
+
+		if (fo.isLeftAdjust() && fo.getPadWidth() > valueWidth) {
+			addPadding(resultBuilder, ' ', fo.getPadWidth() - valueWidth);
 		}
-		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
-		// Changing this constant requires updating the comment of DoubleToStringConverter constructor
-		char[] buffer = new char[MAX_EXPONENT_LENGTH];
-		int firstCharPos = MAX_EXPONENT_LENGTH;
+	}
+
+	private ExponentPart createExponentPart(int exponent) {
+		boolean sign = false;
+		if (exponent < 0) {
+			sign = true;
+			exponent = -exponent;
+		}
+
+		// +1 to make room for '-' or '+'
+		char[] buffer = new char[MAX_EXPONENT_LENGTH + 1];
+		int firstCharPos = MAX_EXPONENT_LENGTH + 1;
 		if (exponent == 0) {
 			buffer[--firstCharPos] = '0';
 		} else {
@@ -394,18 +429,56 @@ public class DoubleToStringConverter {
 		}
 		// Add prefix '0' to make exponent width >= min(min_exponent_with_, MAX_EXPONENT_LENGTH)
 		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
-		while(MAX_EXPONENT_LENGTH - firstCharPos < Math.min(minExponentWidth, MAX_EXPONENT_LENGTH)) {
+		while((MAX_EXPONENT_LENGTH + 1) - firstCharPos < Math.min(minExponentWidth, MAX_EXPONENT_LENGTH)) {
 			buffer[--firstCharPos] = '0';
 		}
-		resultBuilder.append(buffer, firstCharPos, MAX_EXPONENT_LENGTH - firstCharPos);
+
+		if (sign) {
+			buffer[--firstCharPos] = '-';
+		} else {
+			if ((flags & Flags.EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
+				buffer[--firstCharPos] = '+';
+			}
+		}
+
+		return new ExponentPart(buffer, firstCharPos, (MAX_EXPONENT_LENGTH + 1) - firstCharPos);
 	}
 
 	/** Creates a decimal representation (i.e 1234.5678). */
 	private void createDecimalRepresentation(DecimalRepBuf decimalDigits,
-											 int digitsAfterPoint,
-											 Appendable resultBuilder) {
+			double value,
+			int digitsAfterPoint,
+			FormatOptions fo,
+			Appendable resultBuilder) {
 		int decimalPoint = decimalDigits.getPointPosition();
 		int length = decimalDigits.length();
+
+		boolean emitTrailingPoint = fo.isEmitTrailingPoint() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
+		boolean emitTrailingZero = (flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0;
+
+		int effectivePadWidth = 0;
+		if (fo.getPadWidth() > digitsAfterPoint) {
+			int valueWidth =
+					(decimalPoint <= 0 ? 2 : decimalPoint + 1) // the digits before the point(including point), or "0."
+					+ digitsAfterPoint;
+			if (decimalDigits.getSign() || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
+				valueWidth++;
+			}
+			effectivePadWidth = fo.getPadWidth() - valueWidth;
+		}
+
+		// space padding before the number and sign
+		if (effectivePadWidth > 0 && !fo.isLeftAdjust() && !fo.isZeroPad()) {
+			addPadding(resultBuilder, ' ', effectivePadWidth);
+		}
+
+		appendSign(value, fo, resultBuilder);
+
+		// zero padding after the sign, before the rest of the number
+		if (effectivePadWidth > 0 && !fo.isLeftAdjust() && fo.isZeroPad()) {
+			addPadding(resultBuilder, '0', effectivePadWidth);
+		}
+
 		// Create a representation that is padded with zeros if needed.
 		if (decimalPoint <= 0) {
 			// "0.00000decimal_rep" or "0.000decimal_rep00".
@@ -413,19 +486,19 @@ public class DoubleToStringConverter {
 			if (digitsAfterPoint > 0) {
 				resultBuilder.append('.');
 
-				addZeros(resultBuilder, -decimalPoint);
+				addPadding(resultBuilder, '0', -decimalPoint);
 				DOUBLE_CONVERSION_ASSERT(length <= digitsAfterPoint - (-decimalPoint));
 				resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
 				int remainingDigits = digitsAfterPoint - (-decimalPoint) - length;
-				addZeros(resultBuilder, remainingDigits);
+				addPadding(resultBuilder, '0', remainingDigits);
 			}
 		} else if (decimalPoint >= length) {
 			// "decimal_rep0000.00000" or "decimalRep.0000".
 			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
-			addZeros(resultBuilder, decimalPoint - length);
+			addPadding(resultBuilder, '0', decimalPoint - length);
 			if (digitsAfterPoint > 0) {
 				resultBuilder.append('.');
-				addZeros(resultBuilder, digitsAfterPoint);
+				addPadding(resultBuilder, '0', digitsAfterPoint);
 			}
 		} else {
 			// "decima.l_rep000".
@@ -435,25 +508,28 @@ public class DoubleToStringConverter {
 			DOUBLE_CONVERSION_ASSERT(length - decimalPoint <= digitsAfterPoint);
 			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, length - decimalPoint);
 			int remainingDigits = digitsAfterPoint - (length - decimalPoint);
-			addZeros(resultBuilder, remainingDigits);
+			addPadding(resultBuilder, '0', remainingDigits);
 		}
-		if (digitsAfterPoint == 0) {
-			if ((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) {
-				resultBuilder.append('.');
-			}
-			if ((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
+		if (digitsAfterPoint == 0 && emitTrailingPoint) {
+			resultBuilder.append('.');
+			if (emitTrailingZero) {
 				resultBuilder.append('0');
 			}
+		}
+
+		if (effectivePadWidth > 0 && fo.isLeftAdjust()) {
+			addPadding(resultBuilder, '0', effectivePadWidth);
 		}
 	}
 
 	/** Implementation for toShortest and toShortestSingle. */
 	private void toShortestIeeeNumber(double value,
-										 Appendable resultBuilder,
-										 DtoaMode mode) {
+			Appendable resultBuilder,
+			DtoaMode mode,
+			FormatOptions formatOptions) {
 		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE);
 		if (new Ieee.Double(value).isSpecial()) {
-			handleSpecialValues(value, resultBuilder);
+			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
 
@@ -461,21 +537,16 @@ public class DoubleToStringConverter {
 
 		doubleToAscii(value, mode, 0, decimalRep);
 
-		boolean unique_zero = (flags & Flags.UNIQUE_ZERO) != 0;
-		if (decimalRep.getSign() && (value != 0.0 || !unique_zero)) {
-			resultBuilder.append('-');
-		}
-
 		int length = decimalRep.length();
 		int decimalPoint = decimalRep.getPointPosition();
 		int exponent = decimalPoint - 1;
 		if ((shortestPolicy.getDecimalLow() <= exponent) &&
 				(exponent < shortestPolicy.getDecimalHigh())) {
 			createDecimalRepresentation(decimalRep,
-					Math.max(0, length - decimalPoint),
-					resultBuilder);
+					value, Math.max(0, length - decimalPoint),
+					formatOptions, resultBuilder);
 		} else {
-			createExponentialRepresentation(decimalRep, decimalRep.length(), exponent,
+			createExponentialRepresentation(decimalRep, value, decimalRep.length(), exponent, formatOptions,
 					resultBuilder);
 		}
 	}
@@ -514,6 +585,7 @@ public class DoubleToStringConverter {
 	 *
 	 * @param requestedDigits the number of digits to the right of the decimal point, the last emitted digit is rounded
 	 *
+	 * @param formatOptions
 	 * @throws IllegalArgumentException if <code>requestedDigits > MAX_FIXED_DIGITS_BEFORE_POINT</code> or
 	 *                                  if <code>value > 10^MAX_FIXED_DIGITS_BEFORE_POINT</code>
 	 *                                  <p/>
@@ -525,12 +597,13 @@ public class DoubleToStringConverter {
 	 *
 	 */
 	public void toFixed(double value,
-					int requestedDigits,
-					Appendable resultBuilder) {
+			int requestedDigits,
+			FormatOptions formatOptions,
+			Appendable resultBuilder) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
 		if (new Ieee.Double(value).isSpecial()) {
-			handleSpecialValues(value, resultBuilder);
+			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
 
@@ -538,21 +611,16 @@ public class DoubleToStringConverter {
 			throw new IllegalArgumentException("requestedDigits too large. max: " + MAX_FIXED_DIGITS_BEFORE_POINT +
 					"(MAX_FIXED_DIGITS_BEFORE_POINT) got: " + requestedDigits);
 		}
-		if (value >= FIRST_NON_FIXED || value <= -FIRST_NON_FIXED) {
-			throw new IllegalArgumentException("value greater than 10^"+MAX_FIXED_DIGITS_BEFORE_POINT +
-													   "(MAX_FIXED_DIGITS_BEFORE_POINT)");
+		if (value > FIRST_NON_FIXED || value < -FIRST_NON_FIXED) {
+			throw new IllegalArgumentException("value >= 10^"+ MAX_FIXED_DIGITS_BEFORE_POINT +
+													   "(10^MAX_FIXED_DIGITS_BEFORE_POINT) got: " + value);
 		}
 
 		// Find a sufficiently precise decimal representation of n.
 		DecimalRepBuf decimalRep = new DecimalRepBuf(FIXED_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.FIXED, requestedDigits, decimalRep);
 
-		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if (decimalRep.getSign() && (value != 0.0 || !uniqueZero)) {
-			resultBuilder.append('-');
-		}
-
-		createDecimalRepresentation(decimalRep, requestedDigits, resultBuilder);
+		createDecimalRepresentation(decimalRep, value, requestedDigits, formatOptions, resultBuilder);
 	}
 
 	/**
@@ -582,13 +650,14 @@ public class DoubleToStringConverter {
 	 * @param requestedDigits number of digits after the decimal point(last digit rounded), or
 	 *                        <code>-1</code> for the shortest representation
 	 *
+	 * @param formatOptions
 	 * @throws IllegalArgumentException if <code>requestedDigits > MAX_EXPONENTIAL_DIGITS</code>
 	 */
 	public void toExponential(double value,
-						  int requestedDigits,
-						  Appendable resultBuilder) {
+			int requestedDigits,
+			FormatOptions formatOptions, Appendable resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
-			handleSpecialValues(value, resultBuilder);
+			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
 
@@ -611,15 +680,12 @@ public class DoubleToStringConverter {
 			decimalRep.zeroExtend(requestedDigits);
 		}
 
-		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if (decimalRep.getSign() && (value != 0.0 || !uniqueZero)) {
-			resultBuilder.append('-');
-		}
-
 		int exponent = decimalRep.getPointPosition() - 1;
 		createExponentialRepresentation(decimalRep,
+				value,
 				decimalRep.length(),
 				exponent,
+				formatOptions,
 				resultBuilder);
 	}
 
@@ -667,9 +733,10 @@ public class DoubleToStringConverter {
 	 */
 	public void toPrecision(double value,
 						int precision,
+						FormatOptions formatOptions,
 						Appendable resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
-			handleSpecialValues(value, resultBuilder);
+			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
 
@@ -683,11 +750,6 @@ public class DoubleToStringConverter {
 		DecimalRepBuf decimalRep = new DecimalRepBuf(PRECISION_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.PRECISION, precision, decimalRep);
 		DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= precision);
-
-		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if (decimalRep.getSign() && (value != 0.0 || !uniqueZero)) {
-			resultBuilder.append('-');
-		}
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
 		// decimal point after the first digit.
@@ -713,13 +775,28 @@ public class DoubleToStringConverter {
 			decimalRep.zeroExtend(precision);
 
 			createExponentialRepresentation(decimalRep,
+					value,
 					precision,
 					exponent,
+					formatOptions,
 					resultBuilder);
 		} else {
 			createDecimalRepresentation(decimalRep,
+					value,
 					Math.max(0, precision - decimalRep.getPointPosition()),
+					formatOptions,
 					resultBuilder);
+		}
+	}
+
+	private void appendSign(double value, FormatOptions formatOptions, Appendable resultBuilder) {
+		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
+		if (value < 0 && (value != 0.0 || !uniqueZero)) {
+			resultBuilder.append('-');
+		} else if (formatOptions.isSpaceWhenPositive()) {
+			resultBuilder.append(' ');
+		} else if (formatOptions.isExplicitPlus()) {
+			resultBuilder.append('+');
 		}
 	}
 
@@ -880,9 +957,9 @@ public class DoubleToStringConverter {
 	 * 	Add character padding to the builder. If count is non-positive,
 	 * 	nothing is added to the builder.
 	 */
-	private static void addZeros(Appendable sb, int count) {
+	private static void addPadding(Appendable sb, @Unsigned int character, int count) {
 		for (int i=count; i > 0; i--) {
-			sb.append('0');
+			sb.append((char)character);
 		}
 	}
 
@@ -1017,6 +1094,91 @@ public class DoubleToStringConverter {
 
 		public int getMaxTrailingZeroes() {
 			return maxTrailingZeroes;
+		}
+	}
+
+	public static class FormatOptions {
+		private final Symbols symbols;
+		private final boolean explicitPlus;
+		private final boolean spaceWhenPositive;
+		private final boolean emitTrailingPoint;
+		private final int padWidth;
+		private final boolean zeroPad;
+		private final boolean leftAdjust;
+
+		/**
+		 * @param explicitPlus if true, and the number is positive a '+' is emitted before the number
+		 * @param emitTrailingPoint if true, the formatted output will end with '.' even if fractional part is zero
+		 * @param padWidth total width to pad the number ot <code>-1</code> if no padding requested
+		 * @param zeroPad pad with zeros instead of spaces
+		 * @param leftAdjust add padding to the end of instead of the beginning
+		 */
+		public FormatOptions(Symbols symbols,
+				boolean explicitPlus,
+				boolean spaceWhenPositive,
+				boolean emitTrailingPoint,
+				int padWidth,
+				boolean zeroPad,
+				boolean leftAdjust) {
+			this.symbols = symbols;
+			this.explicitPlus = explicitPlus;
+			this.spaceWhenPositive = spaceWhenPositive;
+			this.emitTrailingPoint = emitTrailingPoint;
+			this.padWidth = padWidth;
+			this.zeroPad = zeroPad;
+			this.leftAdjust = leftAdjust;
+		}
+
+		public Symbols getSymbols() {
+			return symbols;
+		}
+
+		public boolean isExplicitPlus() {
+			return explicitPlus;
+		}
+
+		public boolean isSpaceWhenPositive() {
+			return spaceWhenPositive;
+		}
+
+		public boolean isEmitTrailingPoint() {
+			return emitTrailingPoint;
+		}
+
+		public int getPadWidth() {
+			return padWidth;
+		}
+
+		public boolean isZeroPad() {
+			return zeroPad;
+		}
+
+		public boolean isLeftAdjust() {
+			return leftAdjust;
+		}
+	}
+
+	private static class ExponentPart {
+		private final char[] buffer;
+		private final int start;
+		private final int length;
+
+		public ExponentPart(char[] buffer, int start, int length) {
+			this.buffer = buffer;
+			this.start = start;
+			this.length = length;
+		}
+
+		public char[] getBuffer() {
+			return buffer;
+		}
+
+		public int getStart() {
+			return start;
+		}
+
+		public int length() {
+			return length;
 		}
 	}
 }

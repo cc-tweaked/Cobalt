@@ -30,14 +30,14 @@
 package org.squiddev.cobalt.lib.doubles;
 
 import org.junit.jupiter.api.Test;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.Flags;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.PrecisionPolicy;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.ShortestPolicy;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.Symbols;
+import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class DoubleToStringConverterTest {
+	private static final Symbols SYMBOLS = new Symbols("Infinity", "NaN", 'e');
+	private static final FormatOptions FORMAT_OPTIONS =
+			new FormatOptions(SYMBOLS, false, false, false, -1, false, false);
 	private DoubleToStringConverter conv;
 	private final StringAppendable appendable = new StringAppendable();
 
@@ -76,6 +76,13 @@ class DoubleToStringConverterTest {
 		conv = newConv(Flags.EMIT_TRAILING_DECIMAL_POINT | Flags.EMIT_TRAILING_ZERO_AFTER_POINT);
 		testFixed("123.0", 123.45, 0);
 		testFixed("1.0", 0.678, 0);
+
+		// from string-issues.lua:3
+		conv = newConv(0);
+		testFixed("20.00", 20.0, 2, 5); // %5.2f
+		testFixed(" 0.05", 5.2e-2, 2, 5); // %5.2f
+		testFixed("52.30", 52.3, 2, 5); // %5.2f
+
 	}
 
 	@Test
@@ -121,44 +128,61 @@ class DoubleToStringConverterTest {
 		testPrec("123500", 123450.0, 4);
 		testPrec("123000", 123450.0, 3);
 		testPrec("1.2e5", 123450.0, 2);
+
+		conv = newConvPrec(Flags.NO_TRAILING_ZERO, maxLeadingZeros, maxTrailingZeros);
+		testPrec("32300", 32.3 * 1000.0, 14);
 	}
 
 	private void testPrec(String expected, double val, int requestedDigits) {
 		appendable.setLength(0);
-		conv.toPrecision(val, requestedDigits, appendable);
+		conv.toPrecision(val, requestedDigits, FORMAT_OPTIONS, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
 	private void testExp(String expected, double val, int requestedDigits) {
 		appendable.setLength(0);
-		conv.toExponential(val, requestedDigits, appendable);
+		conv.toExponential(val, requestedDigits, FORMAT_OPTIONS, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
 	private void testFixed(String expected, double val, int requestedDigits, int padWidth) {
 		appendable.setLength(0);
-		conv.toFixed(val, requestedDigits, appendable);
+		conv.toFixed(val, requestedDigits, formatOptPadding(padWidth) , appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
 	private void testFixed(String expected, double val, int requestedDigits) {
 		appendable.setLength(0);
-		conv.toShortest(val, appendable);
+		conv.toFixed(val, requestedDigits, FORMAT_OPTIONS , appendable);
 		assertEquals(expected, appendable.toString());
+	}
+
+	private void testShortest(String expected, double val) {
+		appendable.setLength(0);
+		conv.toShortest(val, FORMAT_OPTIONS, appendable);
+		assertEquals(expected, appendable.toString());
+	}
+
+	private FormatOptions formatOptPadding(int padWidth) {
+		return new FormatOptions(SYMBOLS,
+				false,
+				false,
+				false,
+				padWidth,
+				false,
+				false);
 	}
 
 	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros) {
 		return new DoubleToStringConverter(flags,
-				new Symbols("Infinity", "NaN", 'e'),
 				new ShortestPolicy(-6, 21),
 				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros));
 	}
 
 	private DoubleToStringConverter newConv(int flags) {
 		return new DoubleToStringConverter(flags,
-				new Symbols("Infinity", "NaN", 'e'),
-				new ShortestPolicy(-6, 21),
-				new PrecisionPolicy(6, 0));
+			   new ShortestPolicy(-6, 21),
+			   new PrecisionPolicy(6, 0));
 	}
 
 	private static class StringAppendable implements Appendable {
