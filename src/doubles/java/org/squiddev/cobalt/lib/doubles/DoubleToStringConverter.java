@@ -850,7 +850,8 @@ public class DoubleToStringConverter {
 		}
 
 		if (v == 0.0) {
-			buffer.appendIntegral(0);
+			buffer.append(0);
+			buffer.setPointPosition(1);
 			return;
 		}
 

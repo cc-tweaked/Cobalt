@@ -77,14 +77,6 @@ public class DecimalRepBuf {
 		doAppend(digitToChar(digit));
 	}
 
-	/**
-	 * appends digit, increments {@code point}
-	 */
-	public void appendIntegral(@Unsigned int digit) {
-		buffer[length++] = digitToChar(digit);
-		pointPosition++;
-	}
-
 	public char charAt(int pos) {
 		return buffer[pos];
 	}
@@ -181,7 +173,8 @@ public class DecimalRepBuf {
 	public void roundUp() {
 		if (length() == 0) {
 			// An empty buffer represents 0.
-			appendIntegral(1);
+			append(1);
+			setPointPosition(1);
 		} else {
 			pointPosition += incrementLast();
 		}

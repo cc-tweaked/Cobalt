@@ -358,7 +358,7 @@ public class BigNumDtoa {
 				// If the fraction is >= 0.5 then we have to include the rounded
 				// digit.
 				buf.clearBuf();
-				buf.appendIntegral(1);
+				buf.append(1);
 				buf.setPointPosition( decimalPoint + 1 );
 			} else {
 				// Note that we caught most of similar cases earlier.
