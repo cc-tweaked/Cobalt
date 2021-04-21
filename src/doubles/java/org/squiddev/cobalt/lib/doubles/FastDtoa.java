@@ -55,7 +55,7 @@ public class FastDtoa {
 	}
 
 	/**
-	 *   fastDtoa will produce at most kFastDtoaMaximalLength digits. This does not
+	 *   fastDtoa will produce at most FAST_DTOA_MAXIMAL_LENGTH digits. This does not
 	 * 	 include the terminating '\0' character.
 	 */
 	public static final int FAST_DTOA_MAXIMAL_LENGTH = 17;
@@ -293,8 +293,8 @@ public class FastDtoa {
 			throw new IllegalArgumentException("number must fit in numberBits");
 		// 1233/4096 is approximately 1/lg(10).
 		int exponentPlusOneGuess = ((numberBits + 1) * 1233 >> 12);
-		// We increment to skip over the first entry in the kPowersOf10 table.
-		// Note: kPowersOf10[i] == 10^(i-1).
+		// We increment to skip over the first entry in the SMALL_POWERS_OF_TEN table.
+		// Note: SMALL_POWERS_OF_TEN[i] == 10^(i-1).
 		exponentPlusOneGuess++;
 		@Unsigned int pow = SMALL_POWERS_OF_TEN[exponentPlusOneGuess];
 		// We don't have any guarantees that 2^numberBits <= number.
@@ -310,8 +310,8 @@ public class FastDtoa {
 	/**
 	 *  Generates the digits of input number w.
 	 *  w is a floating-point number (DiyFp), consisting of a significand and an
-	 *  exponent. Its exponent is bounded by kMinimalTargetExponent and
-	 *  kMaximalTargetExponent.
+	 *  exponent. Its exponent is bounded by MINIMAL_TARGET_EXPONENT and
+	 *  MAXIMAL_TARGET_EXPONENT.
 	 *        Hence -60 <= w.e() <= -32.
 	 *
 	 *  Returns false if it fails, in which case the generated digits in the buffer
@@ -321,7 +321,7 @@ public class FastDtoa {
 	 *     is, their error must be less than a unit of their last digits.
 	 *   * low.e() == w.e() == high.e()
 	 *   * low < w < high, and taking into account their error: low~ <= high~
-	 *   * kMinimalTargetExponent <= w.e() <= kMaximalTargetExponent
+	 *   * MINIMAL_TARGET_EXPONENT <= w.e() <= MAXIMAL_TARGET_EXPONENT
 	 *  Postconditions: returns false if procedure fails.
 	 *    otherwise:
 	 *      * buffer is not null-terminated, but len contains the number of digits.
@@ -453,8 +453,8 @@ public class FastDtoa {
 	/**
 	 *  Generates (at most) requestedDigits digits of input number w.
 	 *  w is a floating-point number (DiyFp), consisting of a significand and an
-	 *  exponent. Its exponent is bounded by kMinimalTargetExponent and
-	 *  kMaximalTargetExponent.
+	 *  exponent. Its exponent is bounded by MAXIMAL_TARGET_EXPONENT and
+	 *  MAXIMAL_TARGET_EXPONENT.
 	 *        Hence -60 <= w.e() <= -32.
 	 *
 	 *  Returns false if it fails, in which case the generated digits in the buffer
@@ -462,7 +462,7 @@ public class FastDtoa {
 	 *  Preconditions:
 	 *   * w is correct up to 1 ulp (unit in the last place). That
 	 *     is, its error must be strictly less than a unit of its last digit.
-	 *   * kMinimalTargetExponent <= w.e() <= kMaximalTargetExponent
+	 *   * MINIMAL_TARGET_EXPONENT <= w.e() <= MAXIMAL_TARGET_EXPONENT
 	 *
 	 *  Postconditions: returns false if procedure fails.
 	 *    otherwise:

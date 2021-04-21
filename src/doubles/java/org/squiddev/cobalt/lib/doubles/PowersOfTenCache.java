@@ -36,7 +36,7 @@ import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
 public class PowersOfTenCache {
 	/**
 	 *  Not all powers of ten are cached. The decimal exponent of two neighboring
-	 *  cached numbers will differ by kDecimalExponentDistance.
+	 *  cached numbers will differ by DECIMAL_EXPONENT_DISTANCE.
 	 */
 	public static final int DECIMAL_EXPONENT_DISTANCE = 8;
 
@@ -75,8 +75,8 @@ public class PowersOfTenCache {
 	 *  Returns a cached power of ten x ~= 10^k such that
 	 *    k <= decimal_exponent < k + kCachedPowersDecimalDistance.
 	 *  The given decimal_exponent must satisfy
-	 *    kMinDecimalExponent <= requestedExponent, and
-	 *    requestedExponent < kMaxDecimalExponent + kDecimalExponentDistance.
+	 *    MIN_DECIMAL_EXPONENT <= requestedExponent, and
+	 *    requestedExponent < MAX_DECIMAL_EXPONENT + DECIMAL_EXPONENT_DISTANCE.
 	 */
 	void getCachedPowerForDecimalExponent(int requestedExponent,
 			DiyFp[] power,

@@ -35,8 +35,8 @@ import static org.squiddev.cobalt.lib.doubles.FixedDtoa.fastFixedDtoa;
 
 public class DoubleToStringConverter {
 	/**
-	 *  When calling toFixed with a double > 10^kMaxFixedDigitsBeforePoint
-	 *  or a requested_digits parameter > kMaxFixedDigitsAfterPoint then the
+	 *  When calling toFixed with a double > 10^MAX_FIXED_DIGITS_BEFORE_POINT
+	 *  or a requested_digits parameter > MAX_FIXED_DIGITS_AFTER_POINT then the
 	 *  function returns false.
 	 */
 	public static final int MAX_FIXED_DIGITS_BEFORE_POINT = 60;
@@ -44,19 +44,19 @@ public class DoubleToStringConverter {
 
 	/**
 	 *  When calling toExponential with a requested_digits
-	 *  parameter > kMaxExponentialDigits then the function returns false.
+	 *  parameter > MAX_EXPONENTIAL_DIGITS then the function returns false.
 	 */
 	public static final int MAX_EXPONENTIAL_DIGITS = 120;
 
 	/**
 	 *  When calling toPrecision with a requested_digits
-	 *  parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
+	 *  parameter < MIN_PRECISION_DIGITS or requested_digits > MAX_PRECISION_DIGITS
 	 *  then the function returns false.
 	 */
 	public static final int MIN_PRECISION_DIGITS = 1;
 	/**
 	 *  When calling toPrecision with a requested_digits
-	 *  parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
+	 *  parameter < MIN_PRECISION_DIGITS or requested_digits > MAX_PRECISION_DIGITS
 	 *  then the function returns false.
 	 */
 	public static final int MAX_PRECISION_DIGITS = 120;
@@ -65,9 +65,9 @@ public class DoubleToStringConverter {
 	 * 	 The maximal number of digits that are needed to emit a double in base 10.
 	 * 	 A higher precision can be achieved by using more digits, but the shortest
 	 * 	 accurate representation of any double will never use more digits than
-	 * 	 kBase10MaximalLength.
+	 * 	 BASE_10_MAXIMAL_LENGTH.
 	 * 	 Note that doubleToAscii null-terminates its input. So the given buffer
-	 * 	 should be at least kBase10MaximalLength + 1 characters long.
+	 * 	 should be at least BASE_10_MAXIMAL_LENGTH + 1 characters long.
 	 */
 	public static final int BASE_10_MAXIMAL_LENGTH = 17;
 
@@ -75,7 +75,7 @@ public class DoubleToStringConverter {
 	 *  The maximal number of digits that are needed to emit a single in base 10.
 	 *  A higher precision can be achieved by using more digits, but the shortest
 	 *  accurate representation of any single will never use more digits than
-	 *  kBase10MaximalLengthSingle.
+	 *  BASE_10_MAXIMAL_LENGTH_SINGLE.
 	 */
 	public static final int BASE_10_MAXIMAL_LENGTH_SINGLE = 9;
 
@@ -267,12 +267,12 @@ public class DoubleToStringConverter {
 	 *  - -10^(decimal_in_shortest_high - 1):
 	 * 	  "-100000000000000000000", "-1000000000000000.0"
 	 *  - the longest string in range [0; -10^decimal_in_shortest_low]. Generally,
-	 *    this string is 3 + kBase10MaximalLength - decimal_in_shortest_low.
+	 *    this string is 3 + BASE_10_MAXIMAL_LENGTH - decimal_in_shortest_low.
 	 *    (sign, '0', decimal point, padding zeroes for decimal_in_shortest_low,
 	 *    and the significant digits).
 	 * 	  "-0.0000033333333333333333", "-0.0012345678901234567"
 	 *  - the longest exponential representation. (A negative number with
-	 *    kBase10MaximalLength significant digits).
+	 *    BASE_10_MAXIMAL_LENGTH significant digits).
 	 * 	  "-1.7976931348623157e+308", "-1.7976931348623157E308"
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
@@ -347,7 +347,7 @@ public class DoubleToStringConverter {
 				exponent /= 10;
 			}
 		}
-		// Add prefix '0' to make exponent width >= min(min_exponent_with_, kMaxExponentLength)
+		// Add prefix '0' to make exponent width >= min(min_exponent_with_, MAX_EXPONENT_LENGTH)
 		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
 		while(kMaxExponentLength - firstCharPos < Math.min(minExponentWidth, kMaxExponentLength)) {
 			buffer[--firstCharPos] = (char) ASCII_ZERO;
@@ -469,11 +469,11 @@ public class DoubleToStringConverter {
 	 *  except for the following cases:
 	 *    - the input value is special and no infinity_symbol or nan_symbol has
 	 * 	 been provided to the constructor,
-	 *    - 'value' > 10^kMaxFixedDigitsBeforePoint, or
-	 *    - 'requestedDigits' > kMaxFixedDigitsAfterPoint.
+	 *    - 'value' > 10^MAX_FIXED_DIGITS_BEFORE_POINT, or
+	 *    - 'requestedDigits' > MAX_FIXED_DIGITS_AFTER_POINT.
 	 *  The last two conditions imply that the result for non-special values never
 	 *  contains more than
-	 *   1 + kMaxFixedDigitsBeforePoint + 1 + kMaxFixedDigitsAfterPoint characters
+	 *   1 + MAX_FIXED_DIGITS_BEFORE_POINT + 1 + MAX_FIXED_DIGITS_AFTER_POINT characters
 	 *  (one additional character for the sign, and one for the decimal point).
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
@@ -536,9 +536,9 @@ public class DoubleToStringConverter {
 	 *  except for the following cases:
 	 *  - the input value is special and no infinity_symbol or nan_symbol has
 	 *  been provided to the constructor,
-	 *  - 'requestedDigits' > kMaxExponentialDigits.
+	 *  - 'requestedDigits' > MAX_EXPONENTIAL_DIGITS.
 	 *  The last condition implies that the result will never contains more than
-	 *  kMaxExponentialDigits + 8 characters (the sign, the digit before the
+	 *  MAX_EXPONENTIAL_DIGITS + 8 characters (the sign, the digit before the
 	 *  decimal point, the decimal point, the exponent character, the
 	 *  exponent's sign, and at most 3 exponent digits).
 	 */
@@ -626,11 +626,11 @@ public class DoubleToStringConverter {
 	 *  except for the following cases:
 	 *    - the input value is special and no infinity_symbol or nan_symbol has
 	 * 	 been provided to the constructor,
-	 *    - precision < kMinPericisionDigits
-	 *    - precision > kMaxPrecisionDigits
+	 *    - precision < MIN_PRECISION_DIGITS
+	 *    - precision > MAX_PRECISION_DIGITS
 	 *
 	 *  The last condition implies that the result never contains more than
-	 *  kMaxPrecisionDigits + 7 characters (the sign, the decimal point, the
+	 *  MAX_PRECISION_DIGITS + 7 characters (the sign, the decimal point, the
 	 *  exponent character, the exponent's sign, and at most 3 exponent digits).
 	 *  In addition, the buffer must be able to hold the trailing '\0' character.
 	 */
@@ -777,7 +777,7 @@ public class DoubleToStringConverter {
 	 * 	   Halfway cases are again rounded away from 0.
 	 * 	 doubleToAscii expects the given outBuffer to be big enough to hold all
 	 * 	 digits and a terminating null-character. In SHORTEST-mode it expects a
-	 * 	 outBuffer of at least kBase10MaximalLength + 1. In all other modes the
+	 * 	 outBuffer of at least BASE_10_MAXIMAL_LENGTH + 1. In all other modes the
 	 * 	 requestedDigits parameter and the padding-zeroes limit the size of the
 	 * 	 output. Don't forget the decimal outPoint, the exponent character and the
 	 * 	 terminating null-character when computing the maximal output size.
