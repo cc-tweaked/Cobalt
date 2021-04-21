@@ -105,7 +105,6 @@ public class DoubleToStringConverter {
 
 	public static final int MAX_EXPONENT_LENGTH = 5;
 
-
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 
@@ -385,9 +384,9 @@ public class DoubleToStringConverter {
 		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
 		// Changing this constant requires updating the comment of DoubleToStringConverter constructor
 		char[] buffer = new char[MAX_EXPONENT_LENGTH];
-		int firstCharPos = MAX_EXPONENT_LENGTH - 1;
+		int firstCharPos = MAX_EXPONENT_LENGTH;
 		if (exponent == 0) {
-			buffer[--firstCharPos] = (char) ASCII_ZERO;
+			buffer[--firstCharPos] = '0';
 		} else {
 			while (exponent > 0) {
 				buffer[--firstCharPos] = (char) (ASCII_ZERO + (exponent % 10));
@@ -397,7 +396,7 @@ public class DoubleToStringConverter {
 		// Add prefix '0' to make exponent width >= min(min_exponent_with_, MAX_EXPONENT_LENGTH)
 		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
 		while(MAX_EXPONENT_LENGTH - firstCharPos < Math.min(minExponentWidth, MAX_EXPONENT_LENGTH)) {
-			buffer[--firstCharPos] = (char) ASCII_ZERO;
+			buffer[--firstCharPos] = '0';
 		}
 		resultBuilder.append(buffer, firstCharPos, MAX_EXPONENT_LENGTH - firstCharPos);
 	}
@@ -411,23 +410,23 @@ public class DoubleToStringConverter {
 		// Create a representation that is padded with zeros if needed.
 		if (decimalPoint <= 0) {
 			// "0.00000decimal_rep" or "0.000decimal_rep00".
-			resultBuilder.append(ASCII_ZERO);
+			resultBuilder.append('0');
 			if (digitsAfterPoint > 0) {
 				resultBuilder.append('.');
 
-				addPadding(resultBuilder, ASCII_ZERO, -decimalPoint);
+				addZeros(resultBuilder, -decimalPoint);
 				DOUBLE_CONVERSION_ASSERT(length <= digitsAfterPoint - (-decimalPoint));
 				resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
 				int remainingDigits = digitsAfterPoint - (-decimalPoint) - length;
-				addPadding(resultBuilder, ASCII_ZERO, remainingDigits);
+				addZeros(resultBuilder, remainingDigits);
 			}
 		} else if (decimalPoint >= length) {
 			// "decimal_rep0000.00000" or "decimalRep.0000".
 			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
-			addPadding(resultBuilder, ASCII_ZERO, decimalPoint - length);
+			addZeros(resultBuilder, decimalPoint - length);
 			if (digitsAfterPoint > 0) {
 				resultBuilder.append('.');
-				addPadding(resultBuilder, ASCII_ZERO, digitsAfterPoint);
+				addZeros(resultBuilder, digitsAfterPoint);
 			}
 		} else {
 			// "decima.l_rep000".
@@ -437,14 +436,14 @@ public class DoubleToStringConverter {
 			DOUBLE_CONVERSION_ASSERT(length - decimalPoint <= digitsAfterPoint);
 			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, length - decimalPoint);
 			int remainingDigits = digitsAfterPoint - (length - decimalPoint);
-			addPadding(resultBuilder, ASCII_ZERO, remainingDigits);
+			addZeros(resultBuilder, remainingDigits);
 		}
 		if (digitsAfterPoint == 0) {
 			if ((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) {
 				resultBuilder.append('.');
 			}
 			if ((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
-				resultBuilder.append(ASCII_ZERO);
+				resultBuilder.append('0');
 			}
 		}
 	}
@@ -884,9 +883,9 @@ public class DoubleToStringConverter {
 	 * 	Add character padding to the builder. If count is non-positive,
 	 * 	nothing is added to the builder.
 	 */
-	private static void addPadding(StringBuilder sb, int c, int count) {
+	private static void addZeros(StringBuilder sb, int count) {
 		for (int i=count; i > 0; i--) {
-			sb.append(c);
+			sb.append('0');
 		}
 	}
 
