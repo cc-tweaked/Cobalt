@@ -160,7 +160,7 @@ public final class UnsignedValues {
 	@SuppressWarnings({"cast.unsafe", "ImplicitNumericConversion"})
 	public static char digitToCharWithOverflow(@Unsigned long digit) {
 		if (ulongGT(digit, 10))
-			throw new IllegalArgumentException("digit must be 0-9");
+			throw new IllegalArgumentException("digit must be 0-10");
 		return (char)(digit + ASCII_ZERO);
 	}
 
@@ -171,7 +171,7 @@ public final class UnsignedValues {
 	@SuppressWarnings("cast.unsafe")
 	public static char digitToCharWithOverflow(@Unsigned int digit) {
 		if (uintGT(digit, 10))
-			throw new IllegalArgumentException("digit must be 0-9");
+			throw new IllegalArgumentException("digit must be 0-10");
 		return (char)(digit + ASCII_ZERO);
 	}
 }
