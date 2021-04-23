@@ -31,6 +31,7 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,6 +42,11 @@ import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 public class FastDtoaTest {
 
 	private static final int BUFFER_SIZE = 100;
+
+	@BeforeAll
+	static void initAll() {
+		Assert.setEnabled(true);
+	}
 
 	@Test
 	public void precisionVariousDoubles() {

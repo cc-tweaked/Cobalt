@@ -34,6 +34,7 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
+import static org.squiddev.cobalt.lib.doubles.Assert.assertEnabled;
 
 public class BigNumDtoa {
 
@@ -54,7 +55,7 @@ public class BigNumDtoa {
 	}
 
 	private static int normalizedExponent(@Unsigned long significand, int exponent) {
-		assertThat(significand != 0L);
+		if (assertEnabled()) assertThat(significand != 0L);
 		while ((significand & Ieee.Double.HIDDEN_BIT) == 0L) {
 			significand = significand << 1;
 			exponent = exponent - 1;
@@ -87,8 +88,10 @@ public class BigNumDtoa {
 	 */
 	public static void bignumDtoa(double v, BignumDtoaMode mode, int requestedDigits,
 						   DecimalRepBuf buf) {
-		assertThat(v > 0.0);
-		assertThat(!new Ieee.Double(v).isSpecial());
+		if (assertEnabled()) {
+			assertThat(v > 0.0);
+			assertThat(!new Ieee.Double(v).isSpecial());
+		}
 		@Unsigned long significand;
 		int exponent;
 		significand = new Ieee.Double(v).significand();
@@ -161,7 +164,7 @@ public class BigNumDtoa {
 	private static void generateCountedDigits(int count,
 									  Bignum numerator, Bignum denominator,
 									  DecimalRepBuf buf) {
-		assertThat(count >= 0);
+		if (assertEnabled()) assertThat(count >= 0);
 		for (int i = 0; i < count - 1; ++i) {
 			@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
 			// digit = numerator / denominator (integer division).
@@ -207,7 +210,7 @@ public class BigNumDtoa {
 		} else if (-decimalPoint == requestedDigits) {
 			// We only need to verify if the number rounds down or up.
 			// Ex: 0.04 and 0.06 with requestedDigits == 1.
-			assertThat(decimalPoint == -requestedDigits);
+			if (assertEnabled()) assertThat(decimalPoint == -requestedDigits);
 			// Initially the fraction lies in range (1, 10]. Multiply the denominator
 			// by 10 so that we can compare more easily.
 			denominator.times10();
@@ -445,7 +448,7 @@ public class BigNumDtoa {
 		// numerator = v * 10^-estimatedPower * 2 * 2^-exponent.
 		// Remember: numerator has been abused as powerTen. So no need to assign it
 		//  to itself.
-		assertThat(numerator.equals(powerTen));
+		if (assertEnabled()) assertThat(numerator.equals(powerTen));
 		numerator.multiplyByUInt64(ulSignificand);
 
 		// denominator = 2 * 2^-exponent with exponent < 0.

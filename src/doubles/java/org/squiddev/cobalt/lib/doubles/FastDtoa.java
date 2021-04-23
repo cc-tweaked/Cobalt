@@ -32,7 +32,7 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
+import static org.squiddev.cobalt.lib.doubles.Assert.*;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class FastDtoa {
@@ -83,7 +83,7 @@ public class FastDtoa {
 											@Unsigned long tenKappa,
 											@Unsigned long unit,
 											int[] kappa) {
-		assertThat(ulongLT(rest, tenKappa));
+		if (assertEnabled()) assertThat(ulongLT(rest, tenKappa));
 		// The following tests are done in a specific order to avoid overflows. They
 		// will work correctly with any uint64 values of rest < tenKappa and unit.
 		//
@@ -129,8 +129,7 @@ public class FastDtoa {
 								int numberBits,
 								@Unsigned int[] power,
 								int[] exponentPlusOne) {
-		if (uintGE(number, 1 << (numberBits + 1)))
-			throw new IllegalArgumentException("number must fit in numberBits");
+		requireArg(uintLT(number, 1 << (numberBits + 1)), "number must fit in numberBits");
 		// 1233/4096 is approximately 1/lg(10).
 		int exponentPlusOneGuess = ((numberBits + 1) * 1233 >> 12);
 		// We increment to skip over the first entry in the SMALL_POWERS_OF_TEN table.
@@ -179,9 +178,9 @@ public class FastDtoa {
 								int requestedDigits,
 								DecimalRepBuf buf,
 								int[] kappa) {
-		assertThat(MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT);
-		assertThat(MINIMAL_TARGET_EXPONENT >= -60);
-		assertThat(MAXIMAL_TARGET_EXPONENT <= -32);
+		if (assertEnabled()) assertThat(MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT);
+		if (assertEnabled()) assertThat(MINIMAL_TARGET_EXPONENT >= -60);
+		if (assertEnabled()) assertThat(MAXIMAL_TARGET_EXPONENT <= -32);
 		// w is assumed to have an error less than 1 unit. Whenever w is scaled we
 		// also scale its error.
 		@Unsigned long wError = 1L;
@@ -236,9 +235,11 @@ public class FastDtoa {
 		// data (the 'unit'), too.
 		// Note that the multiplication by 10 does not overflow, because w.e >= -60
 		// and thus one.e >= -60.
-		assertThat(one.e() >= -60);
-		assertThat(ulongLT(fractionals, one.f()));
-		assertThat( ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f() ));
+		if (assertEnabled()) {
+			assertThat(one.e() >= -60);
+			assertThat(ulongLT(fractionals, one.f()));
+			assertThat( ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f() ));
+		}
 		while (requestedDigits > 0 && ulongGT(fractionals, wError)) {
 			fractionals *= 10L;
 			wError *= 10L;
@@ -282,10 +283,12 @@ public class FastDtoa {
 			ten_mk = inTenMk[0];
 			mk = inMk[0];
 		}
-		assertThat((MINIMAL_TARGET_EXPONENT <= w.e() + ten_mk.e() +
-				DiyFp.SIGNIFICAND_SIZE) &&
-				(MAXIMAL_TARGET_EXPONENT >= w.e() + ten_mk.e() +
-						DiyFp.SIGNIFICAND_SIZE));
+		if (assertEnabled()) {
+			assertThat((MINIMAL_TARGET_EXPONENT <= w.e() + ten_mk.e() +
+					DiyFp.SIGNIFICAND_SIZE) &&
+					(MAXIMAL_TARGET_EXPONENT >= w.e() + ten_mk.e() +
+							DiyFp.SIGNIFICAND_SIZE));
+		}
 		// Note that ten_mk is only an approximation of 10^-k. A DiyFp only contains a
 		// 64 bit significand and ten_mk is thus only precise up to 64 bits.
 
@@ -329,8 +332,10 @@ public class FastDtoa {
 	public static boolean fastDtoa(double v,
 			int requestedDigits,
 			DecimalRepBuf buf) {
-		assertThat(v > 0.0);
-		assertThat(!new Ieee.Double(v).isSpecial());
+		if (assertEnabled()) {
+			assertThat(v > 0.0);
+			assertThat(!new Ieee.Double(v).isSpecial());
+		}
 
 		boolean result;
 		int[] decimalExponent = new int[1]; // initialized to 0

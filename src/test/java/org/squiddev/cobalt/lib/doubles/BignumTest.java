@@ -30,6 +30,7 @@
  */
 package org.squiddev.cobalt.lib.doubles;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
@@ -43,8 +44,12 @@ public class BignumTest {
 
 
 	static void assignDecimalString(Bignum bignum, String str) {
-
 		bignum.assignDecimalString(str);
+	}
+
+	@BeforeAll
+	static void initAll() {
+		Assert.setEnabled(true);
 	}
 
 	@Test

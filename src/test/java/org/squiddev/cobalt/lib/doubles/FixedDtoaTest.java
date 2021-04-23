@@ -31,6 +31,7 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,6 +41,11 @@ import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 public class FixedDtoaTest {
 	private static final int kBufferSize = 500;
+
+	@BeforeAll
+	static void initAll() {
+		Assert.setEnabled(true);
+	}
 
 	@Test
 	public void variousDoubles() {

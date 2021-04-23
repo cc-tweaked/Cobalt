@@ -32,11 +32,17 @@
 package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 public class IeeeTest {
+
+	@BeforeAll
+	static void initAll() {
+		Assert.setEnabled(true);
+	}
 
 	@Test
 	public void uint64Conversions() {

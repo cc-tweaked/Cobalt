@@ -30,6 +30,7 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.lib.doubles.FixedDtoa.UInt128;
 
@@ -37,6 +38,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UInt128Test {
+
+	@BeforeAll
+	static void initAll() {
+		Assert.setEnabled(true);
+	}
 
 	@Test
 	public void shiftOps() {

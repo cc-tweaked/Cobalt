@@ -31,12 +31,33 @@
 package org.squiddev.cobalt.lib.doubles;
 
 final public class Assert {
+	private static boolean enabled = false;
+
+	public static boolean assertEnabled() {
+		return enabled;
+	}
+
 	public static void assertThat(boolean expected) {
-		if (!expected) {
+		if (enabled && !expected) {
 			throw new DoubleConversionAssertionError("Assertion failed");
 		}
 	}
 
+	public static void setEnabled(boolean enabled) {
+		Assert.enabled = enabled;
+	}
+
+	public static void requireState(boolean condition, String msg) {
+		if (!condition) throw new IllegalStateException(msg);
+	}
+
+	public static void requireArg(boolean condition, String msg) {
+		if (!condition) throw new IllegalArgumentException(msg);
+	}
+
+	/**
+	 * A unique assertion error mainly so it can be distinguished in debugging
+	 */
 	public static class DoubleConversionAssertionError extends AssertionError {
 		private static final long serialVersionUID = 1L;
 

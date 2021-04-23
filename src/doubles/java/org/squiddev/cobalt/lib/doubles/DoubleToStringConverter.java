@@ -34,7 +34,7 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static java.util.Objects.requireNonNull;
-import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
+import static org.squiddev.cobalt.lib.doubles.Assert.*;
 
 public class DoubleToStringConverter {
 	public static final Symbols ECMA_SCRIPT_SYMBOLS = new Symbols("Infinity", "NaN", 'e');
@@ -213,8 +213,10 @@ public class DoubleToStringConverter {
 		this.minExponentWidth = minExponentWidth;
 		// When 'trailing zero after the point' is set, then 'trailing point'
 		// must be set too.
-		assertThat(((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) ||
-				!((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0));
+		if ((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) == 0 && (flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
+			throw new IllegalArgumentException("the flag EMIT_TRAILING_DECIMAL_POINT must be set when " +
+					"EMIT_TRAILING_ZERO_AFTER_POINT is set");
+		}
 	}
 
 	/**
@@ -284,10 +286,10 @@ public class DoubleToStringConverter {
 			int exponent,
 			FormatOptions fo,
 			Appendable resultBuilder) {
-		if (decimalDigits.length() == 0) throw new IllegalArgumentException("decimalDigits is empty");
-		if (length > decimalDigits.length()) throw new IllegalArgumentException("length larger then decimalDigits");
+		requireArg(decimalDigits.length() != 0, "decimalDigits must not be empty");
+		requireArg(length > decimalDigits.length(), "length must be smaller than decimalDigits");
 
-		assertThat((double)exponent < 1e4);
+		if (assertEnabled()) assertThat((double)exponent < 1e4);
 		ExponentPart exponentPart = createExponentPart(exponent);
 
 		boolean emitTrailingPoint = fo.isAlternateForm() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
@@ -407,7 +409,7 @@ public class DoubleToStringConverter {
 				resultBuilder.append('.');
 
 				addPadding(resultBuilder, '0', -decimalPoint);
-				assertThat(digitsLength <= digitsAfterPoint - (-decimalPoint));
+				if (assertEnabled()) assertThat(digitsLength <= digitsAfterPoint - (-decimalPoint));
 				resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
 				int remainingDigits = digitsAfterPoint - (-decimalPoint) - digitsLength;
 				addPadding(resultBuilder, '0', remainingDigits);
@@ -422,10 +424,10 @@ public class DoubleToStringConverter {
 			}
 		} else {
 			// "decima.l_rep000".
-			assertThat(digitsAfterPoint > 0);
+			if (assertEnabled()) assertThat(digitsAfterPoint > 0);
 			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalPoint);
 			resultBuilder.append('.');
-			assertThat(digitsLength - decimalPoint <= digitsAfterPoint);
+			if (assertEnabled()) assertThat(digitsLength - decimalPoint <= digitsAfterPoint);
 			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, digitsLength - decimalPoint);
 			int remainingDigits = digitsAfterPoint - (digitsLength - decimalPoint);
 			addPadding(resultBuilder, '0', remainingDigits);
@@ -614,7 +616,7 @@ public class DoubleToStringConverter {
 
 		doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
 				decimalRep);
-		assertThat(decimalRep.length() <= requestedDigits + 1);
+		if (assertEnabled()) assertThat(decimalRep.length() <= requestedDigits + 1);
 
 		decimalRep.zeroExtend(requestedDigits+1);
 
@@ -687,7 +689,7 @@ public class DoubleToStringConverter {
 		// Add one for the terminating null character.
 		DecimalRepBuf decimalRep = new DecimalRepBuf(PRECISION_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.PRECISION, precision, decimalRep);
-		assertThat(decimalRep.length() <= precision);
+		if (assertEnabled()) assertThat(decimalRep.length() <= precision);
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
 		// decimal point after the first digit.
@@ -821,8 +823,8 @@ public class DoubleToStringConverter {
 										DtoaMode mode,
 										int requestedDigits,
 										DecimalRepBuf buffer) {
-		assertThat(!new Ieee.Double(v).isSpecial());
-		assertThat(requestedDigits >= 0);
+		if (assertEnabled()) requireArg(!new Ieee.Double(v).isSpecial(), "value can't be a special value");
+		requireArg(requestedDigits >= 0, "requestedDigits must be >= 0");
 
 		// begin with an empty buffer
 		buffer.reset();

@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -43,6 +44,13 @@ public class CompareTest {
 		ScriptHelper helpers = new ScriptHelper("/compare/errors/");
 		helpers.setup();
 		helpers.runComparisonTest(name);
+	}
+
+	@Test
+	void tmpFormat() throws Exception {
+		ScriptHelper helpers = new ScriptHelper("/compare/");
+		helpers.setup();
+		helpers.runComparisonTest("format");
 	}
 
 	/**

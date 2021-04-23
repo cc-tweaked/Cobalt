@@ -30,6 +30,7 @@
  */
 package org.squiddev.cobalt.lib.doubles;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.DtoaMode;
 
@@ -40,6 +41,10 @@ import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 public class DtoaTest {
 
+	@BeforeAll
+	static void initAll() {
+		Assert.setEnabled(true);
+	}
 
 	static void doubleToAscii(double v, DtoaMode test_mode, int requested_digits,
 							  DecimalRepBuf buffer) {

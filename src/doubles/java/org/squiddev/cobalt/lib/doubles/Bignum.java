@@ -36,6 +36,7 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 import java.math.BigInteger;
 import java.util.Objects;
 
+import static org.squiddev.cobalt.lib.doubles.Assert.requireState;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUint;
 
 /**
@@ -163,7 +164,7 @@ public class Bignum {
 	// In the worst case this function is in O(this/other).
 	@SuppressWarnings("return.type.incompatible") // values verified positive at beginning of method
 	@Unsigned int divideModuloIntBignum(Bignum other) {
-		if (val.signum() < 0 || other.val.signum() < 0) throw new IllegalArgumentException("values must be positive");
+		requireState(val.signum() >= 0 && other.val.signum() >= 0, "values must be positive");
 		BigInteger[] rets = val.divideAndRemainder(other.val);
 		val = rets[1]; // remainder
 

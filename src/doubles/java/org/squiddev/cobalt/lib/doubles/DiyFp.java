@@ -33,7 +33,7 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
+import static org.squiddev.cobalt.lib.doubles.Assert.*;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
 
 /**
@@ -66,8 +66,8 @@ public class DiyFp {
 	 * The result will not be normalized.
 	 */
 	public void subtract(DiyFp other) {
-		assertThat(e == other.e);
-		assertThat(ulongGE(f, other.f));
+		requireArg(e == other.e, "exponents must match");
+		requireArg(ulongGE(f, other.f), "other.f must be greater than this.f");
 		f = f - other.f;
 	}
 
@@ -119,7 +119,7 @@ public class DiyFp {
 	}
 
 	public void normalize() {
-		assertThat(f != 0L);
+		if (assertEnabled()) assertThat(f != 0L);
 		@Unsigned long significand = f;
 		int exponent = e;
 
