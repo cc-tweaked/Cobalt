@@ -79,9 +79,40 @@ class DoubleToStringConverterTest {
 
 		// from string-issues.lua:3
 		conv = newConv(0);
-		testFixed("20.00", 20.0, 2, 5); // %5.2f
-		testFixed(" 0.05", 5.2e-2, 2, 5); // %5.2f
-		testFixed("52.30", 52.3, 2, 5); // %5.2f
+		testFixed("20.00", 20.0, 2, padding(5, false, false)); // %5.2f
+		testFixed(" 0.05", 5.2e-2, 2, padding(5, false, false)); // %5.2f
+		testFixed("52.30", 52.3, 2, padding(5, false, false)); // %5.2f
+
+		// padding
+		testFixed("      1.0", 1.0, 1, padding(9, false, false));
+		testFixed("1.0      ", 1.0, 1, padding(9, false, true));
+		testFixed("0000001.0", 1.0, 1, padding(9, true, false));
+
+		boolean zeroPad = true;
+		testFixed("1", 1.0, 0, padding(1, zeroPad, false));
+		testFixed("0", 0.1, 0, padding(1, zeroPad, false));
+		testFixed("01", 1.0, 0, padding(2, zeroPad, false));
+		testFixed("-1", -1.0, 0, padding(2, zeroPad, false));
+		testFixed("001", 1.0, 0, padding(3, zeroPad, false));
+		testFixed("-01", -1.0, 0, padding(3, zeroPad, false));
+
+		testFixed("123", 123.456, 0, padding(1, zeroPad, false));
+		testFixed("0", 1.23456e-05, 0, padding(1, zeroPad, false));
+
+		testFixed("100", 100.0, 0, padding(2, zeroPad, false));
+		testFixed("1000", 1000.0, 0, padding(2, zeroPad, false));
+
+		testFixed("000100", 100.0, 0, padding(6, zeroPad, false));
+		testFixed("001000", 1000.0, 0, padding(6, zeroPad, false));
+		testFixed("010000", 10000.0, 0, padding(6, zeroPad, false));
+		testFixed("100000", 100000.0, 0, padding(6, zeroPad, false));
+		testFixed("1000000", 1000000.0, 0, padding(6, zeroPad, false));
+
+		testFixed("00", 0.01, 0, padding(2, zeroPad, false));
+
+		testFixed("0.0", 0.01, 1, padding(2, false, false));
+
+		testFixed("            0.010000", 0.01, 6, padding(20, false, false));
 
 	}
 
@@ -107,6 +138,12 @@ class DoubleToStringConverterTest {
 
 		testExp("0.e+00", 0.0, 0, formatOptTrailingPoint());
 		testExp("1.e+00", 1.0, 0, formatOptTrailingPoint());
+
+		// padding
+		testExp("01e+02", 100, 0, padding(6, true, false));
+		testExp("-1e+02", -100, 0, padding(6, true, false));
+		testExp("01e+03", 1000, 0, padding(6, true, false));
+		testExp("001e+02", 100, 0, padding(7, true, false));
 
 	}
 
@@ -139,6 +176,32 @@ class DoubleToStringConverterTest {
 
 		conv = newConvPrec(Flags.NO_TRAILING_ZERO, maxLeadingZeros, maxTrailingZeros);
 		testPrec("32300", 32.3 * 1000.0, 14);
+
+		int precision = 6;
+		//conv = newConvPrec(Flags.NO_TRAILING_ZERO, -4, 0, 2);
+		conv = newCobaltConv();
+		testPrec("              100000", 100000.0, precision, padding(20, false, false));
+		testPrec("               1e+06", 1000000.0, precision, padding(20, false, false));
+		testPrec("               1e+07", 10000000.0, precision, padding(20, false, false));
+
+		FormatOptions fo = new FormatOptions(SYMBOLS,
+				true,
+				false,
+				true,
+				20,
+				false,
+				false);
+
+		testPrec("            +0.00000", 0.0, precision, fo);
+		testPrec("            +1.00000", 1.0, precision, fo);
+		testPrec("            -1.00000", -1.0, precision, fo);
+
+	}
+
+	private void testPrec(String expected, double val, int requestedDigits, FormatOptions fo) {
+		appendable.setLength(0);
+		conv.toPrecision(val, requestedDigits, fo, appendable);
+		assertEquals(expected, appendable.toString());
 	}
 
 	private void testPrec(String expected, double val, int requestedDigits) {
@@ -157,9 +220,9 @@ class DoubleToStringConverterTest {
 		assertEquals(expected, appendable.toString());
 	}
 
-	private void testFixed(String expected, double val, int requestedDigits, int padWidth) {
+	private void testFixed(String expected, double val, int precision, FormatOptions fo) {
 		appendable.setLength(0);
-		conv.toFixed(val, requestedDigits, formatOptPadding(padWidth) , appendable);
+		conv.toFixed(val, precision, fo, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
@@ -175,14 +238,14 @@ class DoubleToStringConverterTest {
 		assertEquals(expected, appendable.toString());
 	}
 
-	private FormatOptions formatOptPadding(int padWidth) {
+	private FormatOptions padding(int padWidth, boolean zeroPad, boolean leftAdjust) {
 		return new FormatOptions(SYMBOLS,
 				false,
 				false,
 				false,
 				padWidth,
-				false,
-				false);
+				zeroPad,
+				leftAdjust);
 	}
 
 	private FormatOptions formatOptTrailingPoint() {
@@ -199,6 +262,13 @@ class DoubleToStringConverterTest {
 		return new DoubleToStringConverter(flags,
 				new ShortestPolicy(-6, 21),
 				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), 0);
+	}
+
+	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros,
+			int minExponentWidth) {
+		return new DoubleToStringConverter(flags,
+				new ShortestPolicy(-6, 21),
+				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), minExponentWidth);
 	}
 
 	private DoubleToStringConverter newConv(int flags) {

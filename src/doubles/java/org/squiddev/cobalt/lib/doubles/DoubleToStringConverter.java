@@ -335,31 +335,34 @@ public class DoubleToStringConverter {
 	private void handleSpecialValues(double value, FormatOptions fo, Appendable resultBuilder) {
 		boolean sign = value < 0.0;
 
-		int effectiveWidth = fo.getPadWidth();
+		int effectiveWidth = fo.getWidth();
 		if (sign || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) effectiveWidth--;
 
 		String symbol;
-		Ieee.Double doubleInspect = new Ieee.Double(value);
-		boolean isInfinite = doubleInspect.isInfinite();
+		boolean isInfinite = Double.isInfinite(value);
 		if (isInfinite) {
 			symbol = fo.getSymbols().getInfinitySymbol();
 		}
-		else if (doubleInspect.isNan()) {
+		else if (Double.isNaN(value)) {
 			symbol = fo.getSymbols().getNanSymbol();
 		} else {
 			throw new IllegalStateException("Unreachable");
 		}
 
-		if (fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
+		if (!fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
 			addPadding(resultBuilder, ' ', effectiveWidth - symbol.length());
 		}
 
-		if (value < 0.0 && isInfinite) {
+		if (sign) {
 			resultBuilder.append('-');
+		} else if (fo.isExplicitPlus()) {
+			resultBuilder.append('+');
+		} else if (fo.isSpaceWhenPositive()) {
+			resultBuilder.append(' ');
 		}
 		resultBuilder.append(symbol);
 
-		if (!fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
+		if (fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
 			addPadding(resultBuilder, ' ', effectiveWidth - symbol.length());
 		}
 	}
@@ -380,34 +383,38 @@ public class DoubleToStringConverter {
 		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
 		ExponentPart exponentPart = createExponentPart(exponent);
 
-		// length of digits + exponent digits + decimal point + exponent character
-		int valueWidth = length + exponentPart.length() + 2;
-		if (decimalDigits.getSign() || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
-			valueWidth++;
+		boolean emitTrailingPoint = fo.isAlternateForm() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
+		boolean emitTrailingZero = (flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0;
+
+		int padWidth = 0;
+		if (fo.getWidth() > 0) {
+			int valueWidth = calculateExpWidth(length, fo, exponentPart, shouldEmitMinus(value), emitTrailingPoint, emitTrailingZero);
+			padWidth = fo.getWidth() - valueWidth;
 		}
 
-		if (!fo.isLeftAdjust() && !fo.isZeroPad() && fo.getPadWidth() > valueWidth) {
-			addPadding(resultBuilder, ' ', fo.getPadWidth() - valueWidth);
+		if (padWidth > 0 && !fo.isLeftAdjust() && !fo.isZeroPad()) {
+			addPadding(resultBuilder, ' ', padWidth);
 		}
 
 		appendSign(value, fo, resultBuilder);
 
-		if (!fo.isLeftAdjust() && fo.isZeroPad() && fo.getPadWidth() > valueWidth) {
-			addPadding(resultBuilder, '0', fo.getPadWidth() - valueWidth);
+		if (padWidth > 0 && !fo.isLeftAdjust() && fo.isZeroPad()) {
+			addPadding(resultBuilder, '0', padWidth);
 		}
 
 		resultBuilder.append(decimalDigits.charAt(0));
 		if (length != 1) {
 			resultBuilder.append('.');
 			resultBuilder.append(decimalDigits.getBuffer(), 1, length-1);
-		} else if (fo.isEmitTrailingPoint()){
+		} else if (fo.isAlternateForm()){
 			resultBuilder.append('.');
 		}
 		resultBuilder.append((char)fo.getSymbols().getExponentCharacter());
 		resultBuilder.append(exponentPart.getBuffer(), exponentPart.getStart(), exponentPart.length());
 
-		if (fo.isLeftAdjust() && fo.getPadWidth() > valueWidth) {
-			addPadding(resultBuilder, ' ', fo.getPadWidth() - valueWidth);
+		// zeroPad is ignored if leftAdjust is set
+		if (padWidth > 0 && fo.isLeftAdjust()) {
+			addPadding(resultBuilder, ' ', padWidth);
 		}
 	}
 
@@ -446,39 +453,43 @@ public class DoubleToStringConverter {
 		return new ExponentPart(buffer, firstCharPos, (MAX_EXPONENT_LENGTH + 1) - firstCharPos);
 	}
 
-	/** Creates a decimal representation (i.e 1234.5678). */
+	/**
+	 * Creates a decimal representation (i.e 1234.5678).
+	 * <p/>
+	 * @param digitsAfterPoint width of fractional part, must always be big enough to print all digits passed
+	 * */
 	private void createDecimalRepresentation(DecimalRepBuf decimalDigits,
 			double value,
 			int digitsAfterPoint,
 			FormatOptions fo,
 			Appendable resultBuilder) {
 		int decimalPoint = decimalDigits.getPointPosition();
-		int length = decimalDigits.length();
+		int digitsLength = decimalDigits.length();
 
-		boolean emitTrailingPoint = fo.isEmitTrailingPoint() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
+		if ( digitsLength > decimalPoint + digitsAfterPoint ) {
+			throw new IllegalArgumentException("too many digits for given digitAfterPoint");
+		}
+
+		boolean emitTrailingPoint = fo.isAlternateForm() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
 		boolean emitTrailingZero = (flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0;
 
-		int effectivePadWidth = 0;
-		if (fo.getPadWidth() > digitsAfterPoint) {
-			int valueWidth =
-					(decimalPoint <= 0 ? 2 : decimalPoint + 1) // the digits before the point(including point), or "0."
-					+ digitsAfterPoint;
-			if (decimalDigits.getSign() || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
-				valueWidth++;
-			}
-			effectivePadWidth = fo.getPadWidth() - valueWidth;
+		int padWidth = 0;
+		if (fo.getWidth() > 0) {
+			int valueWidth = calculateDecimalWidth(decimalDigits, fo, digitsAfterPoint,
+					shouldEmitMinus(value), emitTrailingPoint, emitTrailingZero);
+			padWidth = fo.getWidth() - valueWidth;
 		}
 
 		// space padding before the number and sign
-		if (effectivePadWidth > 0 && !fo.isLeftAdjust() && !fo.isZeroPad()) {
-			addPadding(resultBuilder, ' ', effectivePadWidth);
+		if (padWidth > 0 && !fo.isLeftAdjust() && !fo.isZeroPad()) {
+			addPadding(resultBuilder, ' ', padWidth);
 		}
 
 		appendSign(value, fo, resultBuilder);
 
 		// zero padding after the sign, before the rest of the number
-		if (effectivePadWidth > 0 && !fo.isLeftAdjust() && fo.isZeroPad()) {
-			addPadding(resultBuilder, '0', effectivePadWidth);
+		if (padWidth > 0 && !fo.isLeftAdjust() && fo.isZeroPad()) {
+			addPadding(resultBuilder, '0', padWidth);
 		}
 
 		// Create a representation that is padded with zeros if needed.
@@ -489,15 +500,15 @@ public class DoubleToStringConverter {
 				resultBuilder.append('.');
 
 				addPadding(resultBuilder, '0', -decimalPoint);
-				DOUBLE_CONVERSION_ASSERT(length <= digitsAfterPoint - (-decimalPoint));
+				DOUBLE_CONVERSION_ASSERT(digitsLength <= digitsAfterPoint - (-decimalPoint));
 				resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
-				int remainingDigits = digitsAfterPoint - (-decimalPoint) - length;
+				int remainingDigits = digitsAfterPoint - (-decimalPoint) - digitsLength;
 				addPadding(resultBuilder, '0', remainingDigits);
 			}
-		} else if (decimalPoint >= length) {
+		} else if (decimalPoint >= digitsLength) {
 			// "decimal_rep0000.00000" or "decimalRep.0000".
 			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
-			addPadding(resultBuilder, '0', decimalPoint - length);
+			addPadding(resultBuilder, '0', decimalPoint - digitsLength);
 			if (digitsAfterPoint > 0) {
 				resultBuilder.append('.');
 				addPadding(resultBuilder, '0', digitsAfterPoint);
@@ -507,9 +518,9 @@ public class DoubleToStringConverter {
 			DOUBLE_CONVERSION_ASSERT(digitsAfterPoint > 0);
 			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalPoint);
 			resultBuilder.append('.');
-			DOUBLE_CONVERSION_ASSERT(length - decimalPoint <= digitsAfterPoint);
-			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, length - decimalPoint);
-			int remainingDigits = digitsAfterPoint - (length - decimalPoint);
+			DOUBLE_CONVERSION_ASSERT(digitsLength - decimalPoint <= digitsAfterPoint);
+			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, digitsLength - decimalPoint);
+			int remainingDigits = digitsAfterPoint - (digitsLength - decimalPoint);
 			addPadding(resultBuilder, '0', remainingDigits);
 		}
 		if (digitsAfterPoint == 0 && emitTrailingPoint) {
@@ -519,9 +530,58 @@ public class DoubleToStringConverter {
 			}
 		}
 
-		if (effectivePadWidth > 0 && fo.isLeftAdjust()) {
-			addPadding(resultBuilder, '0', effectivePadWidth);
+		if (padWidth > 0 && fo.isLeftAdjust()) {
+			addPadding(resultBuilder,
+					fo.isZeroPad() ? '0' : ' ',
+					padWidth);
 		}
+	}
+
+	/**
+	 * Calculate the print width of the decimal digits.
+	 */
+	private int calculateDecimalWidth(DecimalRepBuf decimalDigits, FormatOptions fo,
+			int digitsAfterPoint, boolean emitMinus, boolean emitTrailingPoint, boolean emitTrailingZero) {
+		int decimalPoint = decimalDigits.getPointPosition();
+		int digitsLength = decimalDigits.length();
+
+		int valueWidth;
+		if (digitsLength == 0) {
+			// empty decimalDigits means "0"
+			valueWidth = 1 + (digitsAfterPoint > 0 ? 1 + digitsAfterPoint : 0);
+		} else if (decimalPoint <= 0) {
+			// "0." + digits after point
+			valueWidth = 2 + digitsAfterPoint;
+		} else {
+			if (digitsLength > 0) {
+				// digits before decimal + ("." + digits after point)
+				valueWidth = decimalPoint + (digitsAfterPoint > 0 ? 1 + digitsAfterPoint : 0);
+			} else {
+				// no digits means "0" + ("." + digits after point)
+				valueWidth = 1 + (digitsAfterPoint > 0 ? 1 + digitsAfterPoint : 0);
+			}
+		}
+		if (digitsAfterPoint == 0 && emitTrailingPoint) {
+			valueWidth += emitTrailingZero ? 2 : 1;         // trailing point, possible zero as well
+		}
+
+		if (emitMinus || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
+			valueWidth++;                                   // '-', '+', or ' '
+		}
+		return valueWidth;
+	}
+
+	private int calculateExpWidth(int digitsLength, FormatOptions fo, ExponentPart exponentPart,
+			boolean emitMinus, boolean emitTrailingPoint, boolean emitTrailingZero) {
+		// length of digits + exponent digits + decimal point + exponent character
+		int valueWidth = digitsLength + exponentPart.length() + ((digitsLength > 1) ? 2 : 1);
+		if (emitMinus || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
+			valueWidth++;
+		}
+		if (digitsLength == 1 && emitTrailingPoint) {
+			valueWidth += emitTrailingZero ? 2 : 1;
+		}
+		return valueWidth;
 	}
 
 	/** Implementation for toShortest and toShortestSingle. */
@@ -763,7 +823,7 @@ public class DoubleToStringConverter {
 				(-decimalPoint + 1 > precisionPolicy.getMaxLeadingZeroes()) ||
 						(decimalPoint - precision + extraZero >
 								precisionPolicy.getMaxTrailingZeroes());
-		if ((flags & Flags.NO_TRAILING_ZERO) != 0) {
+		if ((flags & Flags.NO_TRAILING_ZERO) != 0 && !formatOptions.isAlternateForm()) {
 			// Truncate trailing zeros that occur after the decimal point (if exponential,
 			// that is everything after the first digit).
 			decimalRep.truncateZeros(asExponential);
@@ -792,10 +852,14 @@ public class DoubleToStringConverter {
 	}
 
 	@SuppressWarnings("operation.mixed.unsignedrhs")
-	private void appendSign(double value, FormatOptions formatOptions, Appendable resultBuilder) {
+	private boolean shouldEmitMinus(double value) {
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		if ((Double.doubleToRawLongBits(value) & Ieee.Double.SIGN_MASK) != 0 &&
-				(value != 0.0 || !uniqueZero)) {
+		return (Double.doubleToRawLongBits(value) & Ieee.Double.SIGN_MASK) != 0 &&
+				(value != 0.0 || !uniqueZero);
+	}
+
+	private void appendSign(double value, FormatOptions formatOptions, Appendable resultBuilder) {
+		if (shouldEmitMinus(value)) {
 			resultBuilder.append('-');
 		} else if (formatOptions.isSpaceWhenPositive()) {
 			resultBuilder.append(' ');
@@ -1105,30 +1169,31 @@ public class DoubleToStringConverter {
 		private final Symbols symbols;
 		private final boolean explicitPlus;
 		private final boolean spaceWhenPositive;
-		private final boolean emitTrailingPoint;
-		private final int padWidth;
+		private final boolean alternateForm;
+		private final int width;
 		private final boolean zeroPad;
 		private final boolean leftAdjust;
 
 		/**
 		 * @param explicitPlus if true, and the number is positive a '+' is emitted before the number
-		 * @param emitTrailingPoint if true, the formatted output will end with '.' even if fractional part is zero
-		 * @param padWidth total width to pad the number ot <code>-1</code> if no padding requested
+		 * @param alternateForm if true, the formatted output will end with '.' even if fractional part is zero,
+		 *                      also turns off {@link Flags#NO_TRAILING_ZERO} flag
+		 * @param width total width to pad the number or <code>-1</code> if no padding requested
 		 * @param zeroPad pad with zeros instead of spaces
 		 * @param leftAdjust add padding to the end of instead of the beginning
 		 */
 		public FormatOptions(Symbols symbols,
 				boolean explicitPlus,
 				boolean spaceWhenPositive,
-				boolean emitTrailingPoint,
-				int padWidth,
+				boolean alternateForm,
+				int width,
 				boolean zeroPad,
 				boolean leftAdjust) {
 			this.symbols = symbols;
 			this.explicitPlus = explicitPlus;
 			this.spaceWhenPositive = spaceWhenPositive;
-			this.emitTrailingPoint = emitTrailingPoint;
-			this.padWidth = padWidth;
+			this.alternateForm = alternateForm;
+			this.width = width;
 			this.zeroPad = zeroPad;
 			this.leftAdjust = leftAdjust;
 		}
@@ -1145,12 +1210,12 @@ public class DoubleToStringConverter {
 			return spaceWhenPositive;
 		}
 
-		public boolean isEmitTrailingPoint() {
-			return emitTrailingPoint;
+		public boolean isAlternateForm() {
+			return alternateForm;
 		}
 
-		public int getPadWidth() {
-			return padWidth;
+		public int getWidth() {
+			return width;
 		}
 
 		public boolean isZeroPad() {
@@ -1183,6 +1248,11 @@ public class DoubleToStringConverter {
 
 		public int length() {
 			return length;
+		}
+
+		@Override
+		public String toString() {
+			return String.valueOf(buffer, start, length);
 		}
 	}
 }
