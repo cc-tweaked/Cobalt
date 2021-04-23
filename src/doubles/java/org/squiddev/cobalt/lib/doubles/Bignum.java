@@ -36,7 +36,6 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 import java.math.BigInteger;
 import java.util.Objects;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUint;
 
 /**

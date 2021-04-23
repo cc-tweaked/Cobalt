@@ -33,7 +33,7 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
 
 /**
@@ -66,8 +66,8 @@ public class DiyFp {
 	 * The result will not be normalized.
 	 */
 	public void subtract(DiyFp other) {
-		DOUBLE_CONVERSION_ASSERT(e == other.e);
-		DOUBLE_CONVERSION_ASSERT(ulongGE(f, other.f));
+		assertThat(e == other.e);
+		assertThat(ulongGE(f, other.f));
 		f = f - other.f;
 	}
 
@@ -119,7 +119,7 @@ public class DiyFp {
 	}
 
 	public void normalize() {
-		DOUBLE_CONVERSION_ASSERT(f != 0L);
+		assertThat(f != 0L);
 		@Unsigned long significand = f;
 		int exponent = e;
 

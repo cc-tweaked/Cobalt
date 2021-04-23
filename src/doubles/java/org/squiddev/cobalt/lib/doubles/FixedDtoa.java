@@ -34,7 +34,7 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.SignedPositive;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class FixedDtoa {
@@ -84,13 +84,13 @@ public class FixedDtoa {
 			accumulator >>>= 32L;
 			accumulator = accumulator + (high >>> 32) * multiplicand;
 			long newHighBits = (accumulator << 32) + part;
-			DOUBLE_CONVERSION_ASSERT((accumulator >>> 32) == 0L);
+			assertThat((accumulator >>> 32) == 0L);
 
 			return new UInt128(newHighBits, newLowBits);
 		}
 
 		public UInt128 shift(int shift_amount) {
-			DOUBLE_CONVERSION_ASSERT(-64 <= shift_amount && shift_amount <= 64);
+			assertThat(-64 <= shift_amount && shift_amount <= 64);
 			long nHigh, nLow;
 			if (shift_amount == 0) {
 				return this;
@@ -225,13 +225,13 @@ public class FixedDtoa {
 	// rounding-up will change the contents of the buffer to "20000".
 	private static void fillFractionals(@Unsigned long fractionals, int exponent,
 										int fractionalCount, DecimalRepBuf buf) {
-		DOUBLE_CONVERSION_ASSERT(-128 <= exponent && exponent <= 0);
+		assertThat(-128 <= exponent && exponent <= 0);
 		// 'fractionals' is a fixed-point number, with binary point at bit
 		// (-exponent). Inside the function the non-converted remainder of fractionals
 		// is a fixed-point number, with binary point at bit 'point'.
 		if (-exponent <= 64) {
 			// One 64 bit number is sufficient.
-			DOUBLE_CONVERSION_ASSERT(fractionals >>> 56 == 0L);
+			assertThat(fractionals >>> 56 == 0L);
 			int point = -exponent;
 			for (int i = 0; i < fractionalCount; ++i) {
 				if (fractionals == 0L) break;
@@ -252,12 +252,12 @@ public class FixedDtoa {
 				fractionals = fractionals - ( toUlong(digit) << point );
 			}
 			// If the first bit after the point is set we have to round up.
-			DOUBLE_CONVERSION_ASSERT(fractionals == 0L || point - 1 >= 0);
+			assertThat(fractionals == 0L || point - 1 >= 0);
 			if (fractionals != 0L && ((fractionals >>> (point - 1)) & 1L) == 1L) {
 				buf.roundUp();
 			}
 		} else {  // We need 128 bits.
-			DOUBLE_CONVERSION_ASSERT(64 < -exponent && -exponent <= 128);
+			assertThat(64 < -exponent && -exponent <= 128);
 			UInt128 fractionals128 = new UInt128(fractionals, 0L);
 			fractionals128 = fractionals128.shift(-exponent - 64);
 			int point = 128;
@@ -370,7 +370,7 @@ public class FixedDtoa {
 		} else if (exponent < -128) {
 			// This configuration (with at most 20 digits) means that all digits must be
 			// 0.
-			DOUBLE_CONVERSION_ASSERT(fractionalCount <= 20);
+			assertThat(fractionalCount <= 20);
 			buf.clearBuf();
 			buf.setPointPosition(-fractionalCount);
 		} else {

@@ -31,7 +31,7 @@
 package org.squiddev.cobalt.lib.doubles;
 
 final public class Assert {
-	public static void DOUBLE_CONVERSION_ASSERT(boolean expected) {
+	public static void assertThat(boolean expected) {
 		if (!expected) {
 			throw new DoubleConversionAssertionError("Assertion failed");
 		}

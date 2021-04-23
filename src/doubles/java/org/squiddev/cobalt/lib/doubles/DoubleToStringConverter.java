@@ -34,7 +34,7 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static java.util.Objects.requireNonNull;
-import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
 
 public class DoubleToStringConverter {
 	public static final Symbols ECMA_SCRIPT_SYMBOLS = new Symbols("Infinity", "NaN", 'e');
@@ -213,7 +213,7 @@ public class DoubleToStringConverter {
 		this.minExponentWidth = minExponentWidth;
 		// When 'trailing zero after the point' is set, then 'trailing point'
 		// must be set too.
-		DOUBLE_CONVERSION_ASSERT(((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) ||
+		assertThat(((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0) ||
 				!((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0));
 	}
 
@@ -287,7 +287,7 @@ public class DoubleToStringConverter {
 		if (decimalDigits.length() == 0) throw new IllegalArgumentException("decimalDigits is empty");
 		if (length > decimalDigits.length()) throw new IllegalArgumentException("length larger then decimalDigits");
 
-		DOUBLE_CONVERSION_ASSERT((double)exponent < 1e4);
+		assertThat((double)exponent < 1e4);
 		ExponentPart exponentPart = createExponentPart(exponent);
 
 		boolean emitTrailingPoint = fo.isAlternateForm() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
@@ -407,7 +407,7 @@ public class DoubleToStringConverter {
 				resultBuilder.append('.');
 
 				addPadding(resultBuilder, '0', -decimalPoint);
-				DOUBLE_CONVERSION_ASSERT(digitsLength <= digitsAfterPoint - (-decimalPoint));
+				assertThat(digitsLength <= digitsAfterPoint - (-decimalPoint));
 				resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
 				int remainingDigits = digitsAfterPoint - (-decimalPoint) - digitsLength;
 				addPadding(resultBuilder, '0', remainingDigits);
@@ -422,10 +422,10 @@ public class DoubleToStringConverter {
 			}
 		} else {
 			// "decima.l_rep000".
-			DOUBLE_CONVERSION_ASSERT(digitsAfterPoint > 0);
+			assertThat(digitsAfterPoint > 0);
 			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalPoint);
 			resultBuilder.append('.');
-			DOUBLE_CONVERSION_ASSERT(digitsLength - decimalPoint <= digitsAfterPoint);
+			assertThat(digitsLength - decimalPoint <= digitsAfterPoint);
 			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, digitsLength - decimalPoint);
 			int remainingDigits = digitsAfterPoint - (digitsLength - decimalPoint);
 			addPadding(resultBuilder, '0', remainingDigits);
@@ -614,7 +614,7 @@ public class DoubleToStringConverter {
 
 		doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
 				decimalRep);
-		DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= requestedDigits + 1);
+		assertThat(decimalRep.length() <= requestedDigits + 1);
 
 		decimalRep.zeroExtend(requestedDigits+1);
 
@@ -687,7 +687,7 @@ public class DoubleToStringConverter {
 		// Add one for the terminating null character.
 		DecimalRepBuf decimalRep = new DecimalRepBuf(PRECISION_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.PRECISION, precision, decimalRep);
-		DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= precision);
+		assertThat(decimalRep.length() <= precision);
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
 		// decimal point after the first digit.
@@ -821,8 +821,8 @@ public class DoubleToStringConverter {
 										DtoaMode mode,
 										int requestedDigits,
 										DecimalRepBuf buffer) {
-		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
-		DOUBLE_CONVERSION_ASSERT(requestedDigits >= 0);
+		assertThat(!new Ieee.Double(v).isSpecial());
+		assertThat(requestedDigits >= 0);
 
 		// begin with an empty buffer
 		buffer.reset();

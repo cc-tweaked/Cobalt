@@ -34,7 +34,7 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUlong;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
 
@@ -73,15 +73,15 @@ public final class Ieee {
 		 *  It must not be special (infinity, or NaN).
 		 */
 		public DiyFp asDiyFp() {
-			DOUBLE_CONVERSION_ASSERT(sign() > 0);
-			DOUBLE_CONVERSION_ASSERT(!isSpecial());
+			assertThat(sign() > 0);
+			assertThat(!isSpecial());
 			return new DiyFp(significand(),
 					exponent());
 		}
 
 		// The value encoded by this Double must be strictly greater than 0.
 		public DiyFp asNormalizedDiyFp() {
-			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
+			assertThat(value() > 0.0);
 			@Unsigned long f = significand();
 			int e = exponent();
 
@@ -193,7 +193,7 @@ public final class Ieee {
 		 * than +0.0.
 		 */
 		public DiyFp upperBoundary() {
-			DOUBLE_CONVERSION_ASSERT(sign() > 0);
+			assertThat(sign() > 0);
 			return new DiyFp((significand() * 2L) + 1L,
 					exponent() - 1);
 		}
@@ -205,7 +205,7 @@ public final class Ieee {
 		 * Precondition: the value encoded by this Double must be greater than 0.
 		 */
 		public void normalizedBoundaries(DiyFp[] outMMinus, DiyFp[] outMPlus) {
-			DOUBLE_CONVERSION_ASSERT(value() > 0.0);
+			assertThat(value() > 0.0);
 			DiyFp v = this.asDiyFp();
 			DiyFp mPlus = DiyFp.normalize(new DiyFp((v.f() << 1) + 1L, v.e() - 1));
 			DiyFp mMinus;

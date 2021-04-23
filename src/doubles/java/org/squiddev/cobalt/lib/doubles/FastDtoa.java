@@ -32,7 +32,7 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
+import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class FastDtoa {
@@ -83,7 +83,7 @@ public class FastDtoa {
 											@Unsigned long tenKappa,
 											@Unsigned long unit,
 											int[] kappa) {
-		DOUBLE_CONVERSION_ASSERT(ulongLT(rest, tenKappa));
+		assertThat(ulongLT(rest, tenKappa));
 		// The following tests are done in a specific order to avoid overflows. They
 		// will work correctly with any uint64 values of rest < tenKappa and unit.
 		//
@@ -179,9 +179,9 @@ public class FastDtoa {
 								int requestedDigits,
 								DecimalRepBuf buf,
 								int[] kappa) {
-		DOUBLE_CONVERSION_ASSERT(MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT);
-		DOUBLE_CONVERSION_ASSERT(MINIMAL_TARGET_EXPONENT >= -60);
-		DOUBLE_CONVERSION_ASSERT(MAXIMAL_TARGET_EXPONENT <= -32);
+		assertThat(MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT);
+		assertThat(MINIMAL_TARGET_EXPONENT >= -60);
+		assertThat(MAXIMAL_TARGET_EXPONENT <= -32);
 		// w is assumed to have an error less than 1 unit. Whenever w is scaled we
 		// also scale its error.
 		@Unsigned long wError = 1L;
@@ -236,9 +236,9 @@ public class FastDtoa {
 		// data (the 'unit'), too.
 		// Note that the multiplication by 10 does not overflow, because w.e >= -60
 		// and thus one.e >= -60.
-		DOUBLE_CONVERSION_ASSERT(one.e() >= -60);
-		DOUBLE_CONVERSION_ASSERT(ulongLT(fractionals, one.f()));
-		DOUBLE_CONVERSION_ASSERT( ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f() ));
+		assertThat(one.e() >= -60);
+		assertThat(ulongLT(fractionals, one.f()));
+		assertThat( ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f() ));
 		while (requestedDigits > 0 && ulongGT(fractionals, wError)) {
 			fractionals *= 10L;
 			wError *= 10L;
@@ -282,7 +282,7 @@ public class FastDtoa {
 			ten_mk = inTenMk[0];
 			mk = inMk[0];
 		}
-		DOUBLE_CONVERSION_ASSERT((MINIMAL_TARGET_EXPONENT <= w.e() + ten_mk.e() +
+		assertThat((MINIMAL_TARGET_EXPONENT <= w.e() + ten_mk.e() +
 				DiyFp.SIGNIFICAND_SIZE) &&
 				(MAXIMAL_TARGET_EXPONENT >= w.e() + ten_mk.e() +
 						DiyFp.SIGNIFICAND_SIZE));
@@ -329,8 +329,8 @@ public class FastDtoa {
 	public static boolean fastDtoa(double v,
 			int requestedDigits,
 			DecimalRepBuf buf) {
-		DOUBLE_CONVERSION_ASSERT(v > 0.0);
-		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
+		assertThat(v > 0.0);
+		assertThat(!new Ieee.Double(v).isSpecial());
 
 		boolean result;
 		int[] decimalExponent = new int[1]; // initialized to 0
