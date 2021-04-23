@@ -77,14 +77,6 @@ public class DoubleToStringConverter {
 	public static final int BASE_10_MAXIMAL_LENGTH = 17;
 
 	/**
-	 *  The maximal number of digits that are needed to emit a single in base 10.
-	 *  A higher precision can be achieved by using more digits, but the shortest
-	 *  accurate representation of any single will never use more digits than
-	 *  BASE_10_MAXIMAL_LENGTH_SINGLE.
-	 */
-	public static final int BASE_10_MAXIMAL_LENGTH_SINGLE = 9;
-
-	/**
 	 *  The length of the longest string that 'ToShortest' can produce when the
 	 *  converter is instantiated with EcmaScript defaults (see
 	 *  'ecmaScriptConverter')
@@ -310,17 +302,27 @@ public class DoubleToStringConverter {
 	 *  </ul>
 	 */
 	public void toShortest(double value, FormatOptions formatOptions, Appendable resultBuilder) {
-		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST, formatOptions);
-	}
+		if (new Ieee.Double(value).isSpecial()) {
+			handleSpecialValues(value, formatOptions, resultBuilder);
+			return;
+		}
 
-	/**
-	 * Same as toShortest, but for single-precision floats.
-	 *
-	 * @see #toShortest
-	 * */
-	public void toShortestSingle(float value, FormatOptions formatOptions, Appendable resultBuilder) {
-		//noinspection ImplicitNumericConversion
-		toShortestIeeeNumber(value, resultBuilder, DtoaMode.SHORTEST_SINGLE, formatOptions);
+		DecimalRepBuf decimalRep = new DecimalRepBuf(SHORTEST_REP_CAPACITY);
+
+		doubleToAscii(value, DtoaMode.SHORTEST, 0, decimalRep);
+
+		int length = decimalRep.length();
+		int decimalPoint = decimalRep.getPointPosition();
+		int exponent = decimalPoint - 1;
+		if ((shortestPolicy.getDecimalLow() <= exponent) &&
+				(exponent < shortestPolicy.getDecimalHigh())) {
+			createDecimalRepresentation(decimalRep,
+					value, Math.max(0, length - decimalPoint),
+					formatOptions, resultBuilder);
+		} else {
+			createExponentialRepresentation(decimalRep, value, decimalRep.length(), exponent, formatOptions,
+					resultBuilder);
+		}
 	}
 
 	/**
@@ -579,35 +581,6 @@ public class DoubleToStringConverter {
 			valueWidth += emitTrailingZero ? 2 : 1;
 		}
 		return valueWidth;
-	}
-
-	/** Implementation for toShortest and toShortestSingle. */
-	private void toShortestIeeeNumber(double value,
-			Appendable resultBuilder,
-			DtoaMode mode,
-			FormatOptions formatOptions) {
-		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE);
-		if (new Ieee.Double(value).isSpecial()) {
-			handleSpecialValues(value, formatOptions, resultBuilder);
-			return;
-		}
-
-		DecimalRepBuf decimalRep = new DecimalRepBuf(SHORTEST_REP_CAPACITY);
-
-		doubleToAscii(value, mode, 0, decimalRep);
-
-		int length = decimalRep.length();
-		int decimalPoint = decimalRep.getPointPosition();
-		int exponent = decimalPoint - 1;
-		if ((shortestPolicy.getDecimalLow() <= exponent) &&
-				(exponent < shortestPolicy.getDecimalHigh())) {
-			createDecimalRepresentation(decimalRep,
-					value, Math.max(0, length - decimalPoint),
-					formatOptions, resultBuilder);
-		} else {
-			createExponentialRepresentation(decimalRep, value, decimalRep.length(), exponent, formatOptions,
-					resultBuilder);
-		}
 	}
 
 
@@ -870,8 +843,6 @@ public class DoubleToStringConverter {
 		// For example the output of 0.299999999999999988897 is (the less accurate
 		// but correct) 0.3.
 		SHORTEST,
-		// Same as SHORTEST, but for single-precision floats.
-		SHORTEST_SINGLE,
 		// Produce a fixed number of digits after the decimal point.
 		// For instance fixed(0.1, 4) becomes 0.1000
 		// If the input number is big, the output will be big.
@@ -884,8 +855,6 @@ public class DoubleToStringConverter {
 			DoubleToStringConverter.DtoaMode dtoaMode) {
 		switch (dtoaMode) {
 			case SHORTEST:  return BigNumDtoa.BignumDtoaMode.SHORTEST;
-			case SHORTEST_SINGLE:
-				return BigNumDtoa.BignumDtoaMode.SHORTEST_SINGLE;
 			case FIXED:     return BigNumDtoa.BignumDtoaMode.FIXED;
 			case PRECISION: return BigNumDtoa.BignumDtoaMode.PRECISION;
 			default:
@@ -895,10 +864,7 @@ public class DoubleToStringConverter {
 
 	/**
 	 * Converts the given double <code>v</code> to digit characters. <code>v</code> must
-	 * not be <code>NaN</code>, <code>+Infinity</code>, or <code>-Infinity</code>. In
-	 * SHORTEST_SINGLE-mode this restriction also applies to <code>v</code> after it has
-	 * been casted to a single-precision float. That is, in this mode <code>(float)v</code> must
-	 * not be <code>NaN</code>, <code>+Infinity</code> or <code>-Infinity</code>.
+	 * not be <code>NaN</code>, <code>+Infinity</code>, or <code>-Infinity</code>.
 	 *   <p/>
 	 * The result should be interpreted as <code>buffer * 10^(outPoint-outLength)</code>.
 	 *   <p/>
@@ -916,10 +882,6 @@ public class DoubleToStringConverter {
 	 *    'v'. If there are two at the same distance, than the one farther away
 	 *    from 0 is chosen (halfway cases - ending with 5 - are rounded up).
 	 *    In this mode the 'requestedDigits' parameter is ignored.
-	 *    <p/>
-	 *  </li>
-	 *  <li>
-	 *      {@link DtoaMode#SHORTEST_SINGLE SHORTEST_SINGLE}: same as <code>SHORTEST</code> but with single-precision.
 	 *    <p/>
 	 *  </li>
 	 *  <li>
@@ -959,7 +921,7 @@ public class DoubleToStringConverter {
 	 * <p/>
 	 * @param requestedDigits for <b>FIXED</b> the number of digits after teh decimal point,
 	 *                        for <b>PRECISION</b> the number of digits where the first digit is not '0',
-	 *                        for <b>SHORTEST</b> and <b>SHORTEST_SINGLE</b> this value is ignored
+	 *                        for <b>SHORTEST</b> this value is ignored
 	 * <p/>
 	 * @param buffer the {@link DecimalRepBuf} initialized with enough space for the conversion(explained above). On
 	 *               successful completion this buffer contains the digits,
@@ -971,7 +933,7 @@ public class DoubleToStringConverter {
 										int requestedDigits,
 										DecimalRepBuf buffer) {
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
-		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST || mode == DtoaMode.SHORTEST_SINGLE || requestedDigits >= 0);
+		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST ||  requestedDigits >= 0);
 
 		// begin with an empty buffer
 		buffer.reset();
@@ -997,9 +959,6 @@ public class DoubleToStringConverter {
 		switch (mode) {
 			case SHORTEST:
 				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST, 0, buffer);
-				break;
-			case SHORTEST_SINGLE:
-				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST_SINGLE, 0, buffer);
 				break;
 			case FIXED:
 				fastWorked = FixedDtoa.fastFixedDtoa(v, requestedDigits, buffer);

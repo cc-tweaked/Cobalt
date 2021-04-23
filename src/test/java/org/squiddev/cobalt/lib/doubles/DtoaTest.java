@@ -48,9 +48,6 @@ public class DtoaTest {
 			case SHORTEST:
 				mode = DtoaMode.SHORTEST;
 				break;
-			case SHORTEST_SINGLE:
-				mode = DtoaMode.SHORTEST_SINGLE;
-				break;
 			case FIXED:
 				mode = DtoaMode.FIXED;
 				break;
@@ -76,10 +73,6 @@ public class DtoaTest {
 		CHECK_EQ("0", stringOf(buffer));
 		CHECK_EQ(1, buffer.getPointPosition());
 
-		doubleToAscii(0.0f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK_EQ("0", stringOf(buffer));
-		CHECK_EQ(1, buffer.getPointPosition());
-
 		doubleToAscii(0.0, DtoaMode.FIXED, 2, buffer);
 		CHECK_EQ(1, buffer.length());
 		CHECK_EQ("0", stringOf(buffer));
@@ -91,10 +84,6 @@ public class DtoaTest {
 		CHECK_EQ(1, buffer.getPointPosition());
 
 		doubleToAscii(1.0, DtoaMode.SHORTEST, 0, buffer);
-		CHECK_EQ("1", stringOf(buffer));
-		CHECK_EQ(1, buffer.getPointPosition());
-
-		doubleToAscii(1.0f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
 		CHECK_EQ("1", stringOf(buffer));
 		CHECK_EQ(1, buffer.getPointPosition());
 
@@ -111,10 +100,6 @@ public class DtoaTest {
 		CHECK_EQ(1, buffer.getPointPosition());
 
 		doubleToAscii(1.5, DtoaMode.SHORTEST, 0, buffer);
-		CHECK_EQ("15", stringOf(buffer));
-		CHECK_EQ(1, buffer.getPointPosition());
-
-		doubleToAscii(1.5f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
 		CHECK_EQ("15", stringOf(buffer));
 		CHECK_EQ(1, buffer.getPointPosition());
 
@@ -135,11 +120,6 @@ public class DtoaTest {
 		CHECK_EQ("5", stringOf(buffer));
 		CHECK_EQ(-323, buffer.getPointPosition());
 
-		float min_float = 1e-45f;
-		doubleToAscii(min_float, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK_EQ("1", stringOf(buffer));
-		CHECK_EQ(-44, buffer.getPointPosition());
-
 		doubleToAscii(min_double, DtoaMode.FIXED, 5, buffer);
 		CHECK_GE(5, buffer.length() - buffer.getPointPosition());
 		buffer.truncateAllZeros();
@@ -157,12 +137,6 @@ public class DtoaTest {
 		CHECK_EQ("17976931348623157", stringOf(buffer));
 		CHECK_EQ(309, buffer.getPointPosition());
 
-		float max_float = 3.4028234e38f;
-		doubleToAscii(max_float, DtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK_EQ("34028235", stringOf(buffer));
-		CHECK_EQ(39, buffer.getPointPosition());
-
 		doubleToAscii(max_double, DtoaMode.PRECISION, 7, buffer);
 		CHECK_GE(7, buffer.length());
 		buffer.truncateAllZeros();
@@ -171,10 +145,6 @@ public class DtoaTest {
 
 		doubleToAscii(4294967272.0, DtoaMode.SHORTEST, 0, buffer);
 		CHECK_EQ("4294967272", stringOf(buffer));
-		CHECK_EQ(10, buffer.getPointPosition());
-
-		doubleToAscii(4294967272.0f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK_EQ("42949673", stringOf(buffer));
 		CHECK_EQ(10, buffer.getPointPosition());
 
 		doubleToAscii(4294967272.0, DtoaMode.FIXED, 5, buffer);
@@ -220,13 +190,6 @@ public class DtoaTest {
 		CHECK_EQ("2147483648", stringOf(buffer));
 		CHECK_EQ(10, buffer.getPointPosition());
 
-		doubleToAscii(-2147483648.0, DtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK_EQ(1, buffer.getSign());
-		CHECK_EQ("21474836", stringOf(buffer));
-		CHECK_EQ(10, buffer.getPointPosition());
-
-
 		doubleToAscii(-2147483648.0, DtoaMode.FIXED, 2, buffer);
 		CHECK_GE(2, buffer.length() - buffer.getPointPosition());
 		buffer.truncateAllZeros();
@@ -262,12 +225,6 @@ public class DtoaTest {
 		CHECK_EQ("22250738585072014", stringOf(buffer));
 		CHECK_EQ(-307, buffer.getPointPosition());
 
-		int smallest_normal32 = 0x00800000;
-		float f = new Ieee.Single(smallest_normal32).value();
-		doubleToAscii(f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK_EQ("11754944", stringOf(buffer));
-		CHECK_EQ(-37, buffer.getPointPosition());
-
 		doubleToAscii(v, DtoaMode.PRECISION, 20, buffer);
 		CHECK_GE(20, buffer.length());
 		buffer.truncateAllZeros();
@@ -279,12 +236,6 @@ public class DtoaTest {
 		doubleToAscii(v, DtoaMode.SHORTEST, 0, buffer);
 		CHECK_EQ("2225073858507201", stringOf(buffer));
 		CHECK_EQ(-307, buffer.getPointPosition());
-
-		int largest_denormal32 = 0x007FFFFF;
-		f = new Ieee.Single(Float.intBitsToFloat(largest_denormal32)).value();
-		doubleToAscii(f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK_EQ("11754942", stringOf(buffer));
-		CHECK_EQ(-37, buffer.getPointPosition());
 
 		doubleToAscii(v, DtoaMode.PRECISION, 20, buffer);
 		CHECK_GE(20, buffer.length());
@@ -301,10 +252,6 @@ public class DtoaTest {
 		v = -3.9292015898194142585311918e-10;
 		doubleToAscii(v, DtoaMode.SHORTEST, 0, buffer);
 		CHECK_EQ("39292015898194143", stringOf(buffer));
-
-		f = -3.9292015898194142585311918e-10f;
-		doubleToAscii(f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK_EQ("39292017", stringOf(buffer));
 
 		v = 4194304.0;
 		doubleToAscii(v, DtoaMode.FIXED, 5, buffer);
@@ -335,18 +282,6 @@ public class DtoaTest {
 		CHECK(!buffer.getSign());
 
 		doubleToAscii(-1.0, DtoaMode.SHORTEST, 0, buffer);
-		CHECK(buffer.getSign());
-
-		doubleToAscii(0.0f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK(!buffer.getSign());
-
-		doubleToAscii(-0.0f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK(buffer.getSign());
-
-		doubleToAscii(1.0f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK(!buffer.getSign());
-
-		doubleToAscii(-1.0f, DtoaMode.SHORTEST_SINGLE, 0, buffer);
 		CHECK(buffer.getSign());
 
 		doubleToAscii(0.0, DtoaMode.PRECISION, 1, buffer);
@@ -417,24 +352,6 @@ public class DtoaTest {
 				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
 
 				doubleToAscii(v, DtoaMode.SHORTEST, 0, st.buffer);
-				assertThat(st.underTest, st.buffer.getSign(), is(false)); // All precomputed numbers are positive.
-				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
-			});
-		} catch (Assert.DoubleConversionAssertionError e) {
-			fail("Assertion failed for test " + state.underTest, e);
-		}
-	}
-
-	// disabled because file removed from this branch history
-	//@Test
-	public void dtoaGayShortestSingle() throws Exception {
-		DataTestState state = new DataTestState();
-		try {
-			DoubleTestHelper.eachShortestSingle(state, (st, v, representation, decimalPoint) -> {
-
-				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
-				doubleToAscii(v, DtoaMode.SHORTEST_SINGLE, 0, st.buffer);
 				assertThat(st.underTest, st.buffer.getSign(), is(false)); // All precomputed numbers are positive.
 				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
 				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));

@@ -110,81 +110,6 @@ public class FastDtoaTest {
 		}
 	}
 
-
-	@Test
-	public void shortestVariousFloats() {
-		DecimalRepBuf buffer = new DecimalRepBuf(BUFFER_SIZE);
-		boolean status;
-
-		float min_float = 1e-45f;
-		status = FastDtoa.fastDtoa(min_float, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("1", buffer);
-		CHECK_EQ(-44, buffer.getPointPosition());
-
-
-		float max_float = 3.4028234e38f;
-		status = FastDtoa.fastDtoa(max_float, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("34028235", buffer);
-		CHECK_EQ(39, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(4294967272.0f, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("42949673", buffer);
-		CHECK_EQ(10, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(3.32306998946228968226e+35f, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("332307", buffer);
-		CHECK_EQ(36, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(1.2341e-41f, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("12341", buffer);
-		CHECK_EQ(-40, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(3.3554432e7, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("33554432", buffer);
-		CHECK_EQ(8, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(3.26494756798464e14f, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("32649476", buffer);
-		CHECK_EQ(15, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(3.91132223637771935344e37f, FastDtoaMode.SHORTEST_SINGLE, 0,
-				buffer);
-		if (status) {  // Not all FastDtoa variants manage to compute this number.
-			CHECK_EQ("39113222", buffer);
-			CHECK_EQ(38, buffer.getPointPosition());
-		}
-
-		int smallest_normal32 = 0x00800000;
-		float v = new Ieee.Single(smallest_normal32).value();
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.SHORTEST_SINGLE, 0, buffer);
-		if (status) {
-			CHECK_EQ("11754944", buffer);
-			CHECK_EQ(-37, buffer.getPointPosition());
-		}
-
-		int largest_denormal32 = 0x007FFFFF;
-		v = new Ieee.Single(largest_denormal32).value();
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.SHORTEST_SINGLE, 0, buffer);
-		CHECK(status);
-		CHECK_EQ("11754942", buffer);
-		CHECK_EQ(-37, buffer.getPointPosition());
-	}
-
-
 	@Test
 	public void precisionVariousDoubles() {
 		DecimalRepBuf buffer = new DecimalRepBuf(BUFFER_SIZE);
@@ -321,37 +246,6 @@ public class FastDtoaTest {
 		assertThat("99% should succeed", state.succeeded*1.0/state.total, is(greaterThan(0.99)));
 		assertThat(state.needed_max_length, is(true));
 	}
-
-
-	// disabled because file removed from this branch history
-	//@Test
-	public void gayShortestSingle() throws Exception {
-		ShortestState state = new ShortestState();
-		try {
-			DoubleTestHelper.eachShortestSingle(state, (st, v, representation, decimalPoint) -> {
-				int[] length = new int[1];
-				int[] point = new int[1];
-				boolean status;
-
-				st.total++;
-				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
-				status = FastDtoa.fastDtoa(v, FastDtoaMode.SHORTEST_SINGLE, 0, st.buffer);
-				CHECK_GE(FastDtoa.FAST_DTOA_MAXIMAL_SINGLE_LENGTH, st.buffer.length());
-				if (status) {
-					if (st.buffer.length() == FastDtoa.FAST_DTOA_MAXIMAL_SINGLE_LENGTH) st.needed_max_length = true;
-					st.succeeded++;
-
-					assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-					assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
-				}
-			});
-		} catch (Assert.DoubleConversionAssertionError e) {
-			fail("Assertion failed for test " + state.underTest, e);
-		}
-		assertThat("98% should succeed", state.succeeded*1.0/state.total, is(greaterThan(0.98)));
-		assertThat(state.needed_max_length, is(true));
-	}
-
 
 	static class PrecisionState {
 		DecimalRepBuf buffer = new DecimalRepBuf(BUFFER_SIZE);

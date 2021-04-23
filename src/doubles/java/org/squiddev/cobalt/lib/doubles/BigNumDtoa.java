@@ -51,10 +51,6 @@ public class BigNumDtoa {
 		 */
 		SHORTEST,
 		/**
-		 * Same as BIGNUM_DTOA_SHORTEST but for single-precision floats.
-		 */
-		SHORTEST_SINGLE,
-		/**
 		 *  Return a fixed number of digits after the decimal point.
 		 *  For instance fixed(0.1, 4) becomes 0.1000
 		 *  If the input number is big, the output will be big.
@@ -109,19 +105,10 @@ public class BigNumDtoa {
 		long significand;
 		int exponent;
 		boolean lowerBoundaryIsCloser;
-		if (mode == BignumDtoaMode.SHORTEST_SINGLE) {
-			float f = (float)v;
-			DOUBLE_CONVERSION_ASSERT((double)f == v);
-			significand = toUlong( new Ieee.Single(f).significand() );
-			exponent = new Ieee.Single(f).exponent();
-			lowerBoundaryIsCloser = new Ieee.Single(f).lowerBoundaryIsCloser();
-		} else {
-			significand = new Ieee.Double(v).significand();
-			exponent = new Ieee.Double(v).exponent();
-			lowerBoundaryIsCloser = new Ieee.Double(v).lowerBoundaryIsCloser();
-		}
-		boolean needBoundaryDeltas =
-				(mode == BignumDtoaMode.SHORTEST || mode == BignumDtoaMode.SHORTEST_SINGLE);
+		significand = new Ieee.Double(v).significand();
+		exponent = new Ieee.Double(v).exponent();
+		lowerBoundaryIsCloser = new Ieee.Double(v).lowerBoundaryIsCloser();
+		boolean needBoundaryDeltas = mode == BignumDtoaMode.SHORTEST;
 
 		boolean isEven = (significand & 1L) == 0L;
 		int normalizedExponent = normalizedExponent(significand, exponent);
@@ -164,7 +151,6 @@ public class BigNumDtoa {
 		//  1 <= (numerator + deltaPlus) / denominator < 10
 		switch (mode) {
 			case SHORTEST:
-			case SHORTEST_SINGLE:
 				generateShortestDigits(numerator, denominator,
                              deltaMinus, deltaPlus, isEven, buf);
 				break;
@@ -454,8 +440,7 @@ public class BigNumDtoa {
 	 *
 	 *  It is then easy to kickstart the digit-generation routine.
 	 *
-	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
-	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValuesPositiveExponent(
 			@Unsigned long significand, int exponent,
@@ -525,8 +510,7 @@ public class BigNumDtoa {
 	 *
 	 *  It is then easy to kickstart the digit-generation routine.
 	 *
-	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
-	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValuesNegativeExponentPositivePower(
 			@Unsigned long ulSignificand, int exponent,
@@ -597,8 +581,7 @@ public class BigNumDtoa {
 	 *
 	 *  It is then easy to kickstart the digit-generation routine.
 	 *
-	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
-	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValuesNegativeExponentNegativePower(
 			@Unsigned long ulSignificand, int exponent,
@@ -681,8 +664,7 @@ public class BigNumDtoa {
 	 *
 	 *  It is then easy to kickstart the digit-generation routine.
 	 *
-	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST
-	 *  or BIGNUM_DTOA_SHORTEST_SINGLE.
+	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValues(@Unsigned long ulSignificand,
 										 int exponent,

@@ -46,8 +46,6 @@ public class FastDtoa {
 		 * 	 representations might be more accurate.
 		 */
 		SHORTEST,
-		/** Same as FAST_DTOA_SHORTEST but for single-precision floats. */
-		SHORTEST_SINGLE,
 		/**
 		 * 	 Computes a representation where the precision (number of digits) is
 		 * 	 given as input. The precision is independent of the decimal point.
@@ -59,9 +57,6 @@ public class FastDtoa {
 	 *   fastDtoa will produce at most FAST_DTOA_MAXIMAL_LENGTH digits.
 	 */
 	public static final int FAST_DTOA_MAXIMAL_LENGTH = 17;
-	/** Same for single-precision numbers. */
-	public static final int FAST_DTOA_MAXIMAL_SINGLE_LENGTH = 9;
-
 
 
 	/**
@@ -564,13 +559,7 @@ public class FastDtoa {
 		{
 			DiyFp[] inBoundaryMinus = new DiyFp[1];
 			DiyFp[] inBoundaryPlus = new DiyFp[1];
-			if (mode == FastDtoaMode.SHORTEST) {
-				new Ieee.Double(v).normalizedBoundaries(inBoundaryMinus, inBoundaryPlus);
-			} else {
-				DOUBLE_CONVERSION_ASSERT(mode == FastDtoaMode.SHORTEST_SINGLE);
-				float singleV = (float)v;
-				new Ieee.Single(singleV).normalizedBoundaries(inBoundaryMinus, inBoundaryPlus);
-			}
+			new Ieee.Double(v).normalizedBoundaries(inBoundaryMinus, inBoundaryPlus);
 			boundaryMinus = inBoundaryMinus[0];
 			boundaryPlus = inBoundaryPlus[0];
 		}
@@ -722,7 +711,6 @@ public class FastDtoa {
 		int[] decimalExponent = new int[1]; // initialized to 0
 		switch (mode) {
 			case SHORTEST:
-			case SHORTEST_SINGLE:
 				result = grisu3(v, mode, buf, decimalExponent);
 				break;
 			case PRECISION:

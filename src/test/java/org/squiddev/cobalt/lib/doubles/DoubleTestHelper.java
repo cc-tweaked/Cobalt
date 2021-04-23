@@ -193,43 +193,8 @@ public final class DoubleTestHelper {
 		} catch (TokenStream.EofException ignore) {}  // ignore the trailing tokens
 	}
 
-	@SuppressWarnings("InfiniteLoopStatement")
-	public static <T>void eachShortestSingle(T initialState, ShortestSingleCallback<T> cb) throws Exception {
-		URL rsrc = DoubleTestHelper.class.getResource("/double-convert/gay-shortest-single.txt");
-		assertThat("File 'gay-shortest-single.txt' not found", rsrc, is(notNullValue()));
-
-		float v;
-		String representation;
-		int decimalPoint;
-
-		int total = 0;
-
-		try (BufferedReader in = Files.newBufferedReader(Paths.get(rsrc.toURI()))) {
-			TokenStream ts = new TokenStream(in);
-			while (!ts.isEof()) {
-				try {
-					v = ts.t('{').nextFloat();
-					representation = ts.t(',').nextString();
-					decimalPoint = ts.t(',').nextInt();
-				} catch (TokenStream.EofException e) {
-					throw new IllegalStateException("Unepected end of file 'gay-shortest-single.txt'", e);
-				}
-
-				cb.accept(initialState, v, representation, decimalPoint);
-
-				total++;
-				ts.t('}').t(',');
-			}
-		} catch (TokenStream.EofException ignore) {}  // ignore the trailing tokens
-	}
-
-
 	public static interface ShortestCallback<T> {
 		void accept(T state, double v, String representation, int decimalPoint) throws Exception;
-	}
-
-	public static interface ShortestSingleCallback<T> {
-		void accept(T state, float v, String representation, int decimalPoint) throws Exception;
 	}
 
 	public static interface FixedCallback<T> {

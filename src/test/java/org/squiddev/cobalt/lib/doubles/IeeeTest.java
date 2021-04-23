@@ -53,20 +53,6 @@ public class IeeeTest {
 
 
 	@Test
-	public void uint32Conversions() {
-		// Start by checking the byte-order.
-		@Unsigned int ordered = 0x01234567;
-		CHECK_EQ(2.9988165487136453e-38f, new Ieee.Single(ordered).value());
-
-		@Unsigned int min_float32 = 0x00000001;
-		CHECK_EQ(1.4e-45f, new Ieee.Single(min_float32).value());
-
-		@Unsigned int max_float32 = 0x7f7fffff;
-		CHECK_EQ(3.4028234e38f, new Ieee.Single(max_float32).value());
-	}
-
-
-	@Test
 	public void double_AsDiyFp() {
 		@Unsigned long ordered = 0x01234567_89ABCDEFL;
 		DiyFp diy_fp = new Ieee.Double(ordered).asDiyFp();
@@ -84,27 +70,6 @@ public class IeeeTest {
 		diy_fp = new Ieee.Double(max_double64).asDiyFp();
 		CHECK_EQ(0x7FE - 0x3FF - 52, diy_fp.e());
 		CHECK_EQ(0x001fffff_ffffffffL, diy_fp.f());  // NOLINT
-	}
-
-
-	@Test
-	public void single_AsDiyFp() {
-		@Unsigned int ordered = 0x01234567;
-		DiyFp diy_fp = new Ieee.Single(ordered).asDiyFp();
-		CHECK_EQ(0x2 - 0x7F - 23, diy_fp.e());
-		// The 23 mantissa bits, plus the implicit 1 in bit 24 as a @Unsigned int.
-		CHECK_EQ(0xA34567L, diy_fp.f());
-
-		@Unsigned int min_float32 = 0x00000001;
-		diy_fp = new Ieee.Single(min_float32).asDiyFp();
-		CHECK_EQ(-0x7F - 23 + 1, diy_fp.e());
-		// This is a denormal; so no hidden bit.
-		CHECK_EQ(1L, diy_fp.f());
-
-		@Unsigned int max_float32 = 0x7f7fffff;
-		diy_fp = new Ieee.Single(max_float32).asDiyFp();
-		CHECK_EQ(0xFE - 0x7F - 23, diy_fp.e());
-		CHECK_EQ(0x00ffffffL, diy_fp.f());
 	}
 
 
@@ -139,18 +104,6 @@ public class IeeeTest {
 		CHECK(!new Ieee.Double(bits).isDenormal());
 	}
 
-
-	@Test
-	public void single_IsDenormal() {
-		@Unsigned int min_float32 = 0x00000001;
-		CHECK(new Ieee.Single(min_float32).isDenormal());
-		@Unsigned int bits = 0x007FFFFF;
-		CHECK(new Ieee.Single(bits).isDenormal());
-		bits = 0x00800000;
-		CHECK(!new Ieee.Single(bits).isDenormal());
-	}
-
-
 	@Test
 	public void double_IsSpecial() {
 		CHECK(new Ieee.Double(Ieee.Double.infinity()).isSpecial());
@@ -174,31 +127,6 @@ public class IeeeTest {
 		CHECK(!new Ieee.Double(-1.7976931348623157e308).isSpecial());
 	}
 
-
-	@Test
-	public void single_IsSpecial() {
-		CHECK(new Ieee.Single(Ieee.Single.infinity()).isSpecial());
-		CHECK(new Ieee.Single(-Ieee.Single.infinity()).isSpecial());
-		CHECK(new Ieee.Single(Ieee.Single.nan()).isSpecial());
-		@Unsigned int bits = 0xFFF12345;
-		CHECK(new Ieee.Single(bits).isSpecial());
-		// Denormals are not special:
-		CHECK(!new Ieee.Single(1.4e-45f).isSpecial());
-		CHECK(!new Ieee.Single(-1.4e-45f).isSpecial());
-		// And some random numbers:
-		CHECK(!new Ieee.Single(0.0f).isSpecial());
-		CHECK(!new Ieee.Single(-0.0f).isSpecial());
-		CHECK(!new Ieee.Single(1.0f).isSpecial());
-		CHECK(!new Ieee.Single(-1.0f).isSpecial());
-		CHECK(!new Ieee.Single(1000000.0f).isSpecial());
-		CHECK(!new Ieee.Single(-1000000.0f).isSpecial());
-		CHECK(!new Ieee.Single(1e23f).isSpecial());
-		CHECK(!new Ieee.Single(-1e23f).isSpecial());
-		CHECK(!new Ieee.Single(1.18e-38f).isSpecial());
-		CHECK(!new Ieee.Single(-1.18e-38f).isSpecial());
-	}
-
-
 	@Test
 	public void double_IsInfinite() {
 		CHECK(new Ieee.Double(Ieee.Double.infinity()).isInfinite());
@@ -210,20 +138,6 @@ public class IeeeTest {
 		CHECK(!new Ieee.Double(-1.0).isInfinite());
 		@Unsigned long min_double64 = 0x00000000_00000001L;
 		CHECK(!new Ieee.Double(min_double64).isInfinite());
-	}
-
-
-	@Test
-	public void single_IsInfinite() {
-		CHECK(new Ieee.Single(Ieee.Single.infinity()).isInfinite());
-		CHECK(new Ieee.Single(-Ieee.Single.infinity()).isInfinite());
-		CHECK(!new Ieee.Single(Ieee.Single.nan()).isInfinite());
-		CHECK(!new Ieee.Single(0.0f).isInfinite());
-		CHECK(!new Ieee.Single(-0.0f).isInfinite());
-		CHECK(!new Ieee.Single(1.0f).isInfinite());
-		CHECK(!new Ieee.Single(-1.0f).isInfinite());
-		@Unsigned int min_float32 = 0x00000001;
-		CHECK(!new Ieee.Single(min_float32).isInfinite());
 	}
 
 
@@ -244,22 +158,6 @@ public class IeeeTest {
 
 
 	@Test
-	public void single_IsNan() {
-		CHECK(new Ieee.Single(Ieee.Single.nan()).isNan());
-		@Unsigned int other_nan = 0xFFFFF001;
-		CHECK(new Ieee.Single(other_nan).isNan());
-		CHECK(!new Ieee.Single(Ieee.Single.infinity()).isNan());
-		CHECK(!new Ieee.Single(-Ieee.Single.infinity()).isNan());
-		CHECK(!new Ieee.Single(0.0f).isNan());
-		CHECK(!new Ieee.Single(-0.0f).isNan());
-		CHECK(!new Ieee.Single(1.0f).isNan());
-		CHECK(!new Ieee.Single(-1.0f).isNan());
-		@Unsigned int min_float32 = 0x00000001;
-		CHECK(!new Ieee.Single(min_float32).isNan());
-	}
-
-
-	@Test
 	public void double_Sign() {
 		CHECK_EQ(1, new Ieee.Double(1.0).sign());
 		CHECK_EQ(1, new Ieee.Double(Ieee.Double.infinity()).sign());
@@ -268,18 +166,6 @@ public class IeeeTest {
 		CHECK_EQ(-1, new Ieee.Double(-0.0).sign());
 		@Unsigned long min_double64 = 0x00000000_00000001L;
 		CHECK_EQ(1, new Ieee.Double(min_double64).sign());
-	}
-
-
-	@Test
-	public void single_Sign() {
-		CHECK_EQ(1, new Ieee.Single(1.0f).sign());
-		CHECK_EQ(1, new Ieee.Single(Ieee.Single.infinity()).sign());
-		CHECK_EQ(-1, new Ieee.Single(-Ieee.Single.infinity()).sign());
-		CHECK_EQ(1, new Ieee.Single(0.0f).sign());
-		CHECK_EQ(-1, new Ieee.Single(-0.0f).sign());
-		@Unsigned int min_float32 = 0x00000001;
-		CHECK_EQ(1, new Ieee.Single(min_float32).sign());
 	}
 
 
@@ -351,81 +237,6 @@ public class IeeeTest {
 
 
 	@Test
-	public void single_NormalizedBoundaries() {
-		@Unsigned long kOne64 = 1L;
-		DiyFp[] boundary_plus = new DiyFp[1];
-		DiyFp[] boundary_minus = new DiyFp[1];
-		DiyFp diy_fp = new Ieee.Single(1.5f).asDiyFp();
-		diy_fp.normalize();
-		new Ieee.Single(1.5f).normalizedBoundaries(boundary_minus, boundary_plus);
-		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
-		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		// 1.5 does not have a significand of the form 2^p (for some p).
-		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
-		// Normalization shifts the significand by 8 bits. Add 32 bits for the bigger
-		// data-type, and remove 1 because boundaries are at half a ULP.
-		CHECK_EQ((kOne64 << 39) , diy_fp.f() - boundary_minus[0].f());
-
-		diy_fp = new Ieee.Single(1.0f).asDiyFp();
-		diy_fp.normalize();
-		new Ieee.Single(1.0f).normalizedBoundaries(boundary_minus, boundary_plus);
-		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
-		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		// 1.0 does have a significand of the form 2^p (for some p).
-		// Therefore its lower boundary is twice as close as the upper boundary.
-		CHECK_GT(boundary_plus[0].f() - diy_fp.f() , diy_fp.f() - boundary_minus[0].f());
-		CHECK_EQ((kOne64 << 38) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
-		CHECK_EQ((kOne64 << 39) , boundary_plus[0].f() - diy_fp.f());  // NOLINT
-
-		@Unsigned int min_float32 = 0x00000001;
-		diy_fp = new Ieee.Single(min_float32).asDiyFp();
-		diy_fp.normalize();
-		new Ieee.Single(min_float32).normalizedBoundaries(boundary_minus, boundary_plus);
-		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
-		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		// min-value does not have a significand of the form 2^p (for some p).
-		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
-		// Denormals have their boundaries much closer.
-		CHECK_EQ((kOne64 << 62) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
-
-		@Unsigned int smallest_normal32 = 0x00800000;
-		diy_fp = new Ieee.Single(smallest_normal32).asDiyFp();
-		diy_fp.normalize();
-		new Ieee.Single(smallest_normal32).normalizedBoundaries(boundary_minus,
-                                                 boundary_plus);
-		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
-		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		// Even though the significand is of the form 2^p (for some p), its boundaries
-		// are at the same distance. (This is the only exception).
-		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
-		CHECK_EQ((kOne64 << 39) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
-
-		@Unsigned int largest_denormal32 = 0x007FFFFF;
-		diy_fp = new Ieee.Single(largest_denormal32).asDiyFp();
-		diy_fp.normalize();
-		new Ieee.Single(largest_denormal32).normalizedBoundaries(boundary_minus,
-                                                  boundary_plus);
-		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
-		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
-		CHECK_EQ((kOne64 << 40) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
-
-		@Unsigned int max_float32 = 0x7f7fffff;
-		diy_fp = new Ieee.Single(max_float32).asDiyFp();
-		diy_fp.normalize();
-		new Ieee.Single(max_float32).normalizedBoundaries(boundary_minus, boundary_plus);
-		CHECK_EQ(diy_fp.e(), boundary_minus[0].e());
-		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
-		// max-value does not have a significand of the form 2^p (for some p).
-		// Therefore its boundaries are at the same distance.
-		CHECK_EQ(diy_fp.f() - boundary_minus[0].f() , boundary_plus[0].f() - diy_fp.f());
-		CHECK_EQ((kOne64 << 39) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
-	}
-
-
-	@Test
 	public void nextDouble() {
 		CHECK_EQ(4e-324, new Ieee.Double(0.0).nextDouble());
 		CHECK_EQ(0.0, new Ieee.Double(-0.0).nextDouble());
@@ -480,15 +291,4 @@ public class IeeeTest {
 //		CHECK(new Ieee.Double(std::numeric_limits<double>::quiet_NaN()).isQuietNan());
 //		CHECK(new Ieee.Double(std::numeric_limits<double>::signaling_NaN()).isSignalingNan());
 	}
-
-	@Test
-	public void signalingNanSingle() {
-		Ieee.Single nan = new Ieee.Single(Ieee.Single.nan());
-		CHECK(nan.isNan());
-		CHECK(nan.isQuietNan());
-
-		//CHECK(new Ieee.Single(std::numeric_limits<float>::quiet_NaN()).isQuietNan());
-		//CHECK(new Ieee.Single(std::numeric_limits<float>::signaling_NaN()).isSignalingNan());
-	}
-
 }
