@@ -37,92 +37,24 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
-import static org.squiddev.cobalt.lib.doubles.FastDtoa.FastDtoaMode;
 
 public class FastDtoaTest {
 
 	private static final int BUFFER_SIZE = 100;
 
 	@Test
-	public void shortestVariousDoubles() {
-		DecimalRepBuf buffer = new DecimalRepBuf(BUFFER_SIZE);
-		boolean status;
-
-		double min_double = 5e-324;
-		status = FastDtoa.fastDtoa(min_double, FastDtoaMode.SHORTEST, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("5", buffer);
-		CHECK_EQ(-323, buffer.getPointPosition());
-
-		double max_double = 1.7976931348623157e308;
-		status = FastDtoa.fastDtoa(max_double, FastDtoaMode.SHORTEST, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("17976931348623157", buffer);
-		CHECK_EQ(309, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(4294967272.0, FastDtoaMode.SHORTEST, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("4294967272", buffer);
-		CHECK_EQ(10, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(4.1855804968213567e298, FastDtoaMode.SHORTEST, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("4185580496821357", buffer);
-		CHECK_EQ(299, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(5.5626846462680035e-309, FastDtoaMode.SHORTEST, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("5562684646268003", buffer);
-		CHECK_EQ(-308, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(2147483648.0, FastDtoaMode.SHORTEST, 0,
-				buffer);
-		CHECK(status);
-		CHECK_EQ("2147483648", buffer);
-		CHECK_EQ(10, buffer.getPointPosition());
-
-		status = FastDtoa.fastDtoa(3.5844466002796428e+298, FastDtoaMode.SHORTEST, 0,
-				buffer);
-		if (status) {  // Not all FastDtoa variants manage to compute this number.
-			CHECK_EQ("35844466002796428", buffer);
-			CHECK_EQ(299, buffer.getPointPosition());
-		}
-
-		long smallest_normal64 = 0x00100000_00000000L;
-		double v = new Ieee.Double(smallest_normal64).value();
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.SHORTEST, 0, buffer);
-		if (status) {
-			CHECK_EQ("22250738585072014", buffer);
-			CHECK_EQ(-307, buffer.getPointPosition());
-		}
-
-		long largest_denormal64 = 0x000FFFFF_FFFFFFFFL;
-		v = new Ieee.Double(largest_denormal64).value();
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.SHORTEST, 0, buffer);
-		if (status) {
-			CHECK_EQ("2225073858507201", buffer);
-			CHECK_EQ(-307, buffer.getPointPosition());
-		}
-	}
-
-	@Test
 	public void precisionVariousDoubles() {
 		DecimalRepBuf buffer = new DecimalRepBuf(BUFFER_SIZE);
 		boolean status;
 
-		status = FastDtoa.fastDtoa(1.0, FastDtoaMode.PRECISION, 3, buffer);
+		status = FastDtoa.fastDtoa(1.0, 3, buffer);
 		CHECK(status);
 		CHECK_GE(3, buffer.length());
 		buffer.truncateAllZeros();
 		CHECK_EQ("1", buffer);
 		CHECK_EQ(1, buffer.getPointPosition());
 
-		status = FastDtoa.fastDtoa(1.5, FastDtoaMode.PRECISION, 10, buffer);
+		status = FastDtoa.fastDtoa(1.5, 10, buffer);
 		if (status) {
 			CHECK_GE(10, buffer.length());
 			buffer.truncateAllZeros();
@@ -131,20 +63,20 @@ public class FastDtoaTest {
 		}
 
 		double min_double = 5e-324;
-		status = FastDtoa.fastDtoa(min_double, FastDtoaMode.PRECISION, 5,
+		status = FastDtoa.fastDtoa(min_double, 5,
 				buffer);
 		CHECK(status);
 		CHECK_EQ("49407", buffer);
 		CHECK_EQ(-323, buffer.getPointPosition());
 
 		double max_double = 1.7976931348623157e308;
-		status = FastDtoa.fastDtoa(max_double, FastDtoaMode.PRECISION, 7,
+		status = FastDtoa.fastDtoa(max_double, 7,
 				buffer);
 		CHECK(status);
 		CHECK_EQ("1797693", buffer);
 		CHECK_EQ(309, buffer.getPointPosition());
 
-		status = FastDtoa.fastDtoa(4294967272.0, FastDtoaMode.PRECISION, 14,
+		status = FastDtoa.fastDtoa(4294967272.0, 14,
 				buffer);
 		if (status) {
 			CHECK_GE(14, buffer.length());
@@ -153,25 +85,25 @@ public class FastDtoaTest {
 			CHECK_EQ(10, buffer.getPointPosition());
 		}
 
-		status = FastDtoa.fastDtoa(4.1855804968213567e298, FastDtoaMode.PRECISION, 17,
+		status = FastDtoa.fastDtoa(4.1855804968213567e298, 17,
 				buffer);
 		CHECK(status);
 		CHECK_EQ("41855804968213567", buffer);
 		CHECK_EQ(299, buffer.getPointPosition());
 
-		status = FastDtoa.fastDtoa(5.5626846462680035e-309, FastDtoaMode.PRECISION, 1,
+		status = FastDtoa.fastDtoa(5.5626846462680035e-309, 1,
 				buffer);
 		CHECK(status);
 		CHECK_EQ("6", buffer);
 		CHECK_EQ(-308, buffer.getPointPosition());
 
-		status = FastDtoa.fastDtoa(2147483648.0, FastDtoaMode.PRECISION, 5,
+		status = FastDtoa.fastDtoa(2147483648.0, 5,
 				buffer);
 		CHECK(status);
 		CHECK_EQ("21475", buffer);
 		CHECK_EQ(10, buffer.getPointPosition());
 
-		status = FastDtoa.fastDtoa(3.5844466002796428e+298, FastDtoaMode.PRECISION, 10,
+		status = FastDtoa.fastDtoa(3.5844466002796428e+298, 10,
 				buffer);
 		CHECK(status);
 		CHECK_GE(10, buffer.length());
@@ -181,14 +113,14 @@ public class FastDtoaTest {
 
 		long smallest_normal64 = 0x00100000_00000000L;
 		double v = new Ieee.Double(smallest_normal64).value();
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.PRECISION, 17, buffer);
+		status = FastDtoa.fastDtoa(v, 17, buffer);
 		CHECK(status);
 		CHECK_EQ("22250738585072014", buffer);
 		CHECK_EQ(-307, buffer.getPointPosition());
 
 		long largest_denormal64 = 0x000FFFFF_FFFFFFFFL;
 		v = new Ieee.Double(largest_denormal64).value();
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.PRECISION, 17, buffer);
+		status = FastDtoa.fastDtoa(v, 17, buffer);
 		CHECK(status);
 		CHECK_GE(20, buffer.length());
 		buffer.truncateAllZeros();
@@ -196,13 +128,13 @@ public class FastDtoaTest {
 		CHECK_EQ(-307, buffer.getPointPosition());
 
 		v = 3.3161339052167390562200598e-237;
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.PRECISION, 18, buffer);
+		status = FastDtoa.fastDtoa(v, 18, buffer);
 		CHECK(status);
 		CHECK_EQ("331613390521673906", buffer);
 		CHECK_EQ(-236, buffer.getPointPosition());
 
 		v = 7.9885183916008099497815232e+191;
-		status = FastDtoa.fastDtoa(v, FastDtoaMode.PRECISION, 4, buffer);
+		status = FastDtoa.fastDtoa(v, 4, buffer);
 		CHECK(status);
 		CHECK_EQ("7989", buffer);
 		CHECK_EQ(192, buffer.getPointPosition());
@@ -215,36 +147,6 @@ public class FastDtoaTest {
 		public int succeeded = 0;
 		public boolean needed_max_length = false;
 		public String underTest = "";
-	}
-
-	// disabled because file removed from this branch history
-	@SuppressWarnings("InfiniteLoopStatement")
-	//@Test
-	public void gayShortest() throws Exception {
-		ShortestState state = new ShortestState();
-		try {
-			DoubleTestHelper.eachShortest(state, (st, v, representation, decimalPoint) -> {
-				int[] length = new int[1];
-				int[] point = new int[1];
-				boolean status;
-
-				st.total++;
-				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
-
-				status = FastDtoa.fastDtoa(v, FastDtoaMode.SHORTEST, 0, st.buffer);
-				CHECK_GE(FastDtoa.FAST_DTOA_MAXIMAL_LENGTH, st.buffer.length());
-				if (status) {
-					if (st.buffer.length() == FastDtoa.FAST_DTOA_MAXIMAL_LENGTH) st.needed_max_length = true;
-					st.succeeded++;
-					assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-					assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
-				}
-			});
-		} catch (Assert.DoubleConversionAssertionError e) {
-			fail("Assertion failed for test " + state.underTest, e);
-		}
-		assertThat("99% should succeed", state.succeeded*1.0/state.total, is(greaterThan(0.99)));
-		assertThat(state.needed_max_length, is(true));
 	}
 
 	static class PrecisionState {
@@ -270,7 +172,7 @@ public class FastDtoaTest {
 				st.underTest = String.format("Using {%g, %d, \"%s\", %d}", v, numberDigits, representation, decimalPoint);
 				if (numberDigits <= 15) st.total15++;
 
-				status = FastDtoa.fastDtoa(v, FastDtoaMode.PRECISION, numberDigits,
+				status = FastDtoa.fastDtoa(v, numberDigits,
 						st.buffer);
 				CHECK_GE(numberDigits, st.buffer.length());
 				if (status) {

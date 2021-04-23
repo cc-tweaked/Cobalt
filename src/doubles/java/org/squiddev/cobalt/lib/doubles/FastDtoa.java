@@ -39,20 +39,6 @@ public class FastDtoa {
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 
-	public enum  FastDtoaMode {
-		/**
-		 * 	 Computes the shortest representation of the given input. The returned
-		 * 	 result will be the most accurate number of this length. Longer
-		 * 	 representations might be more accurate.
-		 */
-		SHORTEST,
-		/**
-		 * 	 Computes a representation where the precision (number of digits) is
-		 * 	 given as input. The precision is independent of the decimal point.
-		 */
-		PRECISION
-	}
-
 	/**
 	 *   fastDtoa will produce at most FAST_DTOA_MAXIMAL_LENGTH digits.
 	 */
@@ -77,130 +63,6 @@ public class FastDtoa {
 	 *  generation, but a smaller range requires more powers of ten to be cached.
 	 */
 	private static final int MAXIMAL_TARGET_EXPONENT = -32;
-
-	/**
-	 *  Adjusts the last digit of the generated number, and screens out generated
-	 *  solutions that may be inaccurate. A solution may be inaccurate if it is
-	 *  outside the safe interval, or if we cannot prove that it is closer to the
-	 *  input than a neighboring representation of the same length.
-	 *
-	 *  Input: * buffer containing the digits of too_high / 10^kappa
-	 * 		* the buffer's length
-	 * 		* distanceTooHighW == (too_high - w).f() * unit
-	 * 		* unsafeInterval == (too_high - too_low).f() * unit
-	 * 		* rest = (too_high - buffer * 10^kappa).f() * unit
-	 * 		* tenKappa = 10^kappa * unit
-	 * 		* unit = the common multiplier
-	 *  Output: returns true if the buffer is guaranteed to contain the closest
-	 * 	representable number to the input.
-	 *   Modifies the generated digits in the buffer to approach (round towards) w.
-	 */
-	private static boolean roundWeed(DecimalRepBuf buf,
-									 @Unsigned long distanceTooHighW,
-									 @Unsigned long unsafeInterval,
-									 @Unsigned long rest,
-									 @Unsigned long tenKappa,
-									 @Unsigned long unit) {
-		@Unsigned long smallDistance = distanceTooHighW - unit;
-		@Unsigned long bigDistance = distanceTooHighW + unit;
-		// Let w_low  = too_high - bigDistance, and
-		//     w_high = too_high - smallDistance.
-		// Note: w_low < w < w_high
-		//
-		// The real w (* unit) must lie somewhere inside the interval
-		// ]w_low; w_high[ (often written as "(w_low; w_high)")
-
-		// Basically the buffer currently contains a number in the unsafe interval
-		// ]too_low; too_high[ with too_low < w < too_high
-		//
-		//  too_high - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-		//                     ^v 1 unit            ^      ^                 ^      ^
-		//  boundary_high ---------------------     .      .                 .      .
-		//                     ^v 1 unit            .      .                 .      .
-		//   - - - - - - - - - - - - - - - - - - -  +  - - + - - - - - -     .      .
-		//                                          .      .         ^       .      .
-		//                                          .  bigDistance  .       .      .
-		//                                          .      .         .       .    rest
-		//                              smallDistance     .         .       .      .
-		//                                          v      .         .       .      .
-		//  w_high - - - - - - - - - - - - - - - - - -     .         .       .      .
-		//                     ^v 1 unit                   .         .       .      .
-		//  w ----------------------------------------     .         .       .      .
-		//                     ^v 1 unit                   v         .       .      .
-		//  w_low  - - - - - - - - - - - - - - - - - - - - -         .       .      .
-		//                                                           .       .      v
-		//  buffer --------------------------------------------------+-------+--------
-		//                                                           .       .
-		//                                                  safe_interval    .
-		//                                                           v       .
-		//   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -     .
-		//                     ^v 1 unit                                     .
-		//  boundary_low -------------------------                     unsafeInterval
-		//                     ^v 1 unit                                     v
-		//  too_low  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-		//
-		//
-		// Note that the value of buffer could lie anywhere inside the range too_low
-		// to too_high.
-		//
-		// boundary_low, boundary_high and w are approximations of the real boundaries
-		// and v (the input number). They are guaranteed to be precise up to one unit.
-		// In fact the error is guaranteed to be strictly less than one unit.
-		//
-		// Anything that lies outside the unsafe interval is guaranteed not to round
-		// to v when read again.
-		// Anything that lies inside the safe interval is guaranteed to round to v
-		// when read again.
-		// If the number inside the buffer lies inside the unsafe interval but not
-		// inside the safe interval then we simply do not know and bail out (returning
-		// false).
-		//
-		// Similarly we have to take into account the imprecision of 'w' when finding
-		// the closest representation of 'w'. If we have two potential
-		// representations, and one is closer to both w_low and w_high, then we know
-		// it is closer to the actual value v.
-		//
-		// By generating the digits of too_high we got the largest (closest to
-		// too_high) buffer that is still in the unsafe interval. In the case where
-		// w_high < buffer < too_high we try to decrement the buffer.
-		// This way the buffer approaches (rounds towards) w.
-		// There are 3 conditions that stop the decrementation process:
-		//   1) the buffer is already below w_high
-		//   2) decrementing the buffer would make it leave the unsafe interval
-		//   3) decrementing the buffer would yield a number below w_high and farther
-		//      away than the current number. In other words:
-		//              (buffer{-1} < w_high) && w_high - buffer{-1} > buffer - w_high
-		// Instead of using the buffer directly we use its distance to too_high.
-		// Conceptually rest ~= too_high - buffer
-		// We need to do the following tests in this order to avoid over- and
-		// underflows.
-		DOUBLE_CONVERSION_ASSERT(ulongLE(rest, unsafeInterval));
-		while (ulongLT(rest, smallDistance) &&  // Negated condition 1
-				ulongGE(unsafeInterval - rest, tenKappa) &&  // Negated condition 2
-				( ulongLT( rest + tenKappa, smallDistance) ||  // buffer{-1} > w_high
-						ulongGE(smallDistance - rest, rest + tenKappa - smallDistance))) {
-			buf.decrementLast();
-			rest += tenKappa;
-		}
-
-		// We have approached w+ as much as possible. We now test if approaching w-
-		// would require changing the buffer. If yes, then we have two possible
-		// representations close to w, but we cannot decide which one is closer.
-		if (ulongLT(rest, bigDistance) &&
-				ulongGE(unsafeInterval - rest, tenKappa) &&
-				( ulongLT(rest + tenKappa, bigDistance) ||
-						ulongGT(bigDistance - rest, rest + tenKappa - bigDistance))) {
-			return false;
-		}
-
-		// Weeding test.
-		//   The safe interval is [too_low + 2 ulp; too_high - 2 ulp]
-		//   Since too_low = too_high - unsafeInterval this is equivalent to
-		//      [too_high - unsafeInterval + 4 ulp; too_high - 2 ulp]
-		//   Conceptually we have: rest ~= too_high - buffer
-		return ulongLE(2L * unit, rest) && ulongLE(rest, unsafeInterval - 4L * unit);
-	}
-
 
 	/**
 	 *  Rounds the buffer upwards if the result is closer to v by possibly adding
@@ -282,147 +144,6 @@ public class FastDtoa {
 		}
 	    power[0] = pow;
 		exponentPlusOne[0] = exponentPlusOneGuess;
-	}
-
-
-	/**
-	 *  Generates the digits of input number w.
-	 *  w is a floating-point number (DiyFp), consisting of a significand and an
-	 *  exponent. Its exponent is bounded by MINIMAL_TARGET_EXPONENT and
-	 *  MAXIMAL_TARGET_EXPONENT.
-	 *        Hence -60 <= w.e() <= -32.
-	 *
-	 *  Returns false if it fails, in which case the generated digits in the buffer
-	 *  should not be used.
-	 *  Preconditions:
-	 *   * low, w and high are correct up to 1 ulp (unit in the last place). That
-	 *     is, their error must be less than a unit of their last digits.
-	 *   * low.e() == w.e() == high.e()
-	 *   * low < w < high, and taking into account their error: low~ <= high~
-	 *   * MINIMAL_TARGET_EXPONENT <= w.e() <= MAXIMAL_TARGET_EXPONENT
-	 *  Postconditions: returns false if procedure fails.
-	 *    otherwise:
-	 *      * length contains the number of digits.
-	 *      * buffer contains the shortest possible decimal digit-sequence
-	 *        such that LOW < buffer * 10^kappa < HIGH, where LOW and HIGH are the
-	 *        correct values of low and high (without their error).
-	 *      * if more than one decimal representation gives the minimal number of
-	 *        decimal digits then the one closest to W (where W is the correct value
-	 *        of w) is chosen.
-	 *  Remark: this procedure takes into account the imprecision of its input
-	 *    numbers. If the precision is not enough to guarantee all the postconditions
-	 *    then false is returned. This usually happens rarely (~0.5%).
-	 *
-	 *  Say, for the sake of example, that
-	 *    w.e() == -48, and w.f() == 0x1234567890abcdef
-	 *  w's value can be computed by w.f() * 2^w.e()
-	 *  We can obtain w's integral digits by simply shifting w.f() by -w.e().
-	 *   -> w's integral part is 0x1234
-	 *   w's fractional part is therefore 0x567890abcdef.
-	 *  Printing w's integral part is easy (simply print 0x1234 in decimal).
-	 *  In order to print its fraction we repeatedly multiply the fraction by 10 and
-	 *  get each digit. Example the first digit after the point would be computed by
-	 *    (0x567890abcdef * 10) >> 48. -> 3
-	 *  The whole thing becomes slightly more complicated because we want to stop
-	 *  once we have enough digits. That is, once the digits inside the buffer
-	 *  represent 'w' we can stop. Everything inside the interval low - high
-	 *  represents w. However we have to pay attention to low, high and w's
-	 *  imprecision.
-	 */
-	private static boolean digitGen(DiyFp low,
-						 DiyFp w,
-						 DiyFp high,
-						 DecimalRepBuf buf,
-						 int[] kappa) {
-		DOUBLE_CONVERSION_ASSERT(low.e() == w.e() && w.e() == high.e() );
-		DOUBLE_CONVERSION_ASSERT( ulongLE(low.f() + 1L, high.f() - 1L) );
-		DOUBLE_CONVERSION_ASSERT(MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT);
-		// low, w and high are imprecise, but by less than one ulp (unit in the last
-		// place).
-		// If we remove (resp. add) 1 ulp from low (resp. high) we are certain that
-		// the new numbers are outside of the interval we want the final
-		// representation to lie in.
-		// Inversely adding (resp. removing) 1 ulp from low (resp. high) would yield
-		// numbers that are certain to lie in the interval. We will use this fact
-		// later on.
-		// We will now start by generating the digits within the uncertain
-		// interval. Later we will weed out representations that lie outside the safe
-		// interval and thus _might_ lie outside the correct interval.
-		@Unsigned long unit = 1L;
-		DiyFp tooLow = new DiyFp(low.f() - unit, low.e());
-		DiyFp tooHigh = new DiyFp(high.f() + unit, high.e());
-		// tooLow and tooHigh are guaranteed to lie outside the interval we want the
-		// generated number in.
-		DiyFp unsafeInterval = DiyFp.minus(tooHigh, tooLow);
-		// We now cut the input number into two parts: the integral digits and the
-		// fractionals. We will not write any decimal separator though, but adapt
-		// kappa instead.
-		// Reminder: we are currently computing the digits (stored inside the buffer)
-		// such that:   tooLow < buffer * 10^kappa < tooHigh
-		// We use tooHigh for the digit_generation and stop as soon as possible.
-		// If we stop early we effectively round down.
-		DiyFp one = new DiyFp(1L << -w.e(), w.e());
-		// Division by one is a shift.
-		@Unsigned int integrals = toUint(tooHigh.f() >>> -one.e());
-		// Modulo by one is an and.
-		@Unsigned long fractionals = tooHigh.f() & (one.f() - 1L);
-		@Unsigned int divisor;
-		int divisorExponentPlusOne;
-		{
-			int[] inDivisorExponentPlusOne = new int[1];
-			@Unsigned int[] uiInDivisor = new int[1];
-			biggestPowerTen(integrals, DiyFp.SIGNIFICAND_SIZE - (-one.e()),
-					uiInDivisor, inDivisorExponentPlusOne);
-			divisor = uiInDivisor[0];
-			divisorExponentPlusOne = inDivisorExponentPlusOne[0];
-		}
-		kappa[0] = divisorExponentPlusOne;
-		buf.clearBuf();
-		// Loop invariant: buffer = tooHigh / 10^kappa  (integer division)
-		// The invariant holds for the first iteration: kappa has been initialized
-		// with the divisor exponent + 1. And the divisor is the biggest power of ten
-		// that is smaller than integrals.
-		while (kappa[0] > 0) {
-			buf.append(uDivide(integrals, divisor));
-			integrals = uRemainder(integrals, divisor);
-			kappa[0]--;
-			// Note that kappa now equals the exponent of the divisor and that the
-			// invariant thus holds again.
-			@Unsigned long rest = (toUlong(integrals) << -one.e()) + fractionals;
-			// Invariant: tooHigh = buffer * 10^kappa + DiyFp(rest, one.e())
-			// Reminder: unsafeInterval.e() == one.e()
-			if (ulongLT(rest, unsafeInterval.f())) {
-				// Rounding down (by not emitting the remaining digits) yields a number
-				// that lies within the unsafe interval.
-				return roundWeed(buf, DiyFp.minus(tooHigh, w).f(),
-						unsafeInterval.f(), rest,
-						toUlong(divisor) << -one.e(), unit);
-			}
-			divisor = uDivide(divisor, 10);
-		}
-
-		// The integrals have been generated. We are at the point of the decimal
-		// separator. In the following loop we simply multiply the remaining digits by
-		// 10 and divide by one. We just need to pay attention to multiply associated
-		// data (like the interval or 'unit'), too.
-		// Note that the multiplication by 10 does not overflow, because w.e >= -60
-		// and thus one.e >= -60.
-		DOUBLE_CONVERSION_ASSERT(one.e() >= -60);
-		DOUBLE_CONVERSION_ASSERT(ulongLT(fractionals, one.f()));
-		DOUBLE_CONVERSION_ASSERT( ulongGT( uDivide(0xFFFFFFFFFFFFFFFFL, 10L), one.f())  );
-		for (;;) {
-			fractionals = fractionals * 10L;
-			unit *= 10L;
-			unsafeInterval.setF(unsafeInterval.f() * 10L);
-			// Integer division by one.
-			buf.append(fractionals >>> -one.e());
-			fractionals &= one.f() - 1L;  // Modulo by one.
-			kappa[0]--;
-			if (ulongLT(fractionals, unsafeInterval.f())) {
-				return roundWeed(buf, DiyFp.minus(tooHigh, w).f() * unit,
-						unsafeInterval.f(), fractionals, one.f(), unit);
-			}
-		}
 	}
 
 	/**
@@ -534,91 +255,6 @@ public class FastDtoa {
 
 
 	/**
-	 * Provides a decimal representation of v.
-	 * Returns true if it succeeds, otherwise the result cannot be trusted.
-	 * There will be length digits inside the buffer.
-	 * If the function returns true then
-	 * 	v == (double) (buffer * 10^outDecimalExponent).
-	 * The digits in the buffer are the shortest representation possible: no
-	 * 0.09999999999999999 instead of 0.1. The shorter representation will even be
-	 * chosen even if the longer one would be closer to v.
-	 * The last digit will be closest to the actual v. That is, even if several
-	 * digits might correctly yield 'v' when read again, the closest will be
-	 * computed.
-	 */
-	private static boolean grisu3(double v,
-					   FastDtoaMode mode,
-					   DecimalRepBuf buf,
-					   int[] decimalExponent) {
-		DiyFp w = new Ieee.Double(v).asNormalizedDiyFp();
-		// boundaryMinus and boundaryPlus are the boundaries between v and its
-		// closest floating-point neighbors. Any number strictly between
-		// boundaryMinus and boundaryPlus will round to v when convert to a double.
-		// grisu3 will never output representations that lie exactly on a boundary.
-		DiyFp boundaryMinus, boundaryPlus;
-		{
-			DiyFp[] inBoundaryMinus = new DiyFp[1];
-			DiyFp[] inBoundaryPlus = new DiyFp[1];
-			new Ieee.Double(v).normalizedBoundaries(inBoundaryMinus, inBoundaryPlus);
-			boundaryMinus = inBoundaryMinus[0];
-			boundaryPlus = inBoundaryPlus[0];
-		}
-		DOUBLE_CONVERSION_ASSERT(boundaryPlus.e() == w.e());
-		DiyFp tenMk; // Cached power of ten: 10^-k
-		int mk;       // -k
-		{
-			DiyFp[] inTenMk = new DiyFp[1];
-			int[] inMk = new int[1];
-			int tenMkMinimalBinaryExponent =
-					MINIMAL_TARGET_EXPONENT - (w.e() + DiyFp.SIGNIFICAND_SIZE);
-			int tenMkMaximalBinaryExponent =
-					MAXIMAL_TARGET_EXPONENT - (w.e() + DiyFp.SIGNIFICAND_SIZE);
-			PowersOfTenCache.getCachedPowerForBinaryExponentRange(
-					tenMkMinimalBinaryExponent,
-					tenMkMaximalBinaryExponent,
-					inTenMk, inMk);
-			tenMk = inTenMk[0];
-			mk = inMk[0];
-		}
-		DOUBLE_CONVERSION_ASSERT((MINIMAL_TARGET_EXPONENT <= w.e() + tenMk.e() +
-				DiyFp.SIGNIFICAND_SIZE) &&
-				(MAXIMAL_TARGET_EXPONENT >= w.e() + tenMk.e() +
-						DiyFp.SIGNIFICAND_SIZE));
-		// Note that tenMk is only an approximation of 10^-k. A DiyFp only contains a
-		// 64 bit significand and tenMk is thus only precise up to 64 bits.
-
-		// The DiyFp.times procedure rounds its result, and tenMk is approximated
-		// too. The variable scaledW (as well as scaledBoundaryMinus/plus) are now
-		// off by a small amount.
-		// In fact: scaledW - w*10^k < 1ulp (unit in the last place) of scaledW.
-		// In other words: let f = scaledW.f() and e = scaledW.e(), then
-		//           (f-1) * 2^e < w*10^k < (f+1) * 2^e
-		DiyFp scaledW = DiyFp.times(w, tenMk);
-		DOUBLE_CONVERSION_ASSERT(scaledW.e() ==
-				boundaryPlus.e() + tenMk.e() + DiyFp.SIGNIFICAND_SIZE);
-		// In theory it would be possible to avoid some recomputations by computing
-		// the difference between w and boundaryMinus/plus (a power of 2) and to
-		// compute scaledBoundaryMinus/plus by subtracting/adding from
-		// scaledW. However the code becomes much less readable and the speed
-		// enhancements are not terriffic.
-		DiyFp scaledBoundaryMinus = DiyFp.times(boundaryMinus, tenMk);
-		DiyFp scaledBoundaryPlus  = DiyFp.times(boundaryPlus,  tenMk);
-
-		// digitGen will generate the digits of scaledW. Therefore we have
-		// v == (double) (scaledW * 10^-mk).
-		// Set decimalExponent == -mk and pass it to digitGen. If scaledW is not an
-		// integer than it will be updated. For instance if scaledW == 1.23 then
-		// the buffer will be filled with "123" und the decimalExponent will be
-		// decreased by 2.
-		int[] kappa = new int[1];
-		boolean result = digitGen(scaledBoundaryMinus, scaledW, scaledBoundaryPlus,
-				buf, kappa);
-		decimalExponent[0] = -mk + kappa[0];
-		return result;
-	}
-
-
-	/**
 	 * The "counted" version of grisu3 (see above) only generates requestedDigits
 	 * number of digits. This version does not generate the shortest representation,
 	 * and with enough requested digits 0.1 will at some point print as 0.9999999...
@@ -682,16 +318,6 @@ public class FastDtoa {
 	 *
 	 *  Returns true if it succeeds, otherwise the result can not be trusted.
 	 *  If the function returns true and mode equals
-	 *    - FAST_DTOA_SHORTEST, then
-	 *      the parameter requestedDigits is ignored.
-	 *      The result satisfies
-	 *          v == (double) (buffer * 10^(point - outLength)).
-	 *      The digits in the buffer are the shortest representation possible. E.g.
-	 *      if 0.099999999999 and 0.1 represent the same double then "1" is returned
-	 *      with point = 0.
-	 *      The last digit will be closest to the actual v. That is, even if several
-	 *      digits might correctly yield 'v' when read again, the buffer will contain
-	 *      the one closest to v.
 	 *    - FAST_DTOA_PRECISION, then
 	 *      the buffer contains requestedDigits digits.
 	 *      the difference v - (buffer * 10^(point-outLength)) is closest to zero for
@@ -701,25 +327,14 @@ public class FastDtoa {
 	 *  For both modes the buffer must be large enough to hold the result.
 	 */
 	public static boolean fastDtoa(double v,
-								   FastDtoaMode mode,
-								   int requestedDigits,
-								   DecimalRepBuf buf) {
+			int requestedDigits,
+			DecimalRepBuf buf) {
 		DOUBLE_CONVERSION_ASSERT(v > 0.0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
 
-		boolean result = false;
+		boolean result;
 		int[] decimalExponent = new int[1]; // initialized to 0
-		switch (mode) {
-			case SHORTEST:
-				result = grisu3(v, mode, buf, decimalExponent);
-				break;
-			case PRECISION:
-				result = grisu3Counted(v, requestedDigits,
-						buf, decimalExponent);
-				break;
-			default:
-				throw new IllegalStateException("Unreachable");
-		}
+		result = grisu3Counted(v, requestedDigits, buf, decimalExponent);
 		if (result) {
 			buf.setPointPosition(buf.length() + decimalExponent[0]);
 		} else {

@@ -34,7 +34,6 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static org.squiddev.cobalt.lib.doubles.Assert.DOUBLE_CONVERSION_ASSERT;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public class BigNumDtoa {
 
@@ -44,12 +43,6 @@ public class BigNumDtoa {
 	private static final int ASCII_NINE = '9';
 
 	public enum BignumDtoaMode {
-		/**
-		 *  Return the shortest correct representation.
-		 *  For example the output of 0.299999999999999988897 is (the less accurate but
-		 *  correct) 0.3.
-		 */
-		SHORTEST,
 		/**
 		 *  Return a fixed number of digits after the decimal point.
 		 *  For instance fixed(0.1, 4) becomes 0.1000
@@ -76,12 +69,6 @@ public class BigNumDtoa {
 	 *  The input v must be > 0 and different from NaN, and Infinity.
 	 *
 	 *  The output depends on the given mode:
-	 *   - SHORTEST: produce the least amount of digits for which the internal
-	 *    identity requirement is still satisfied. If the digits are printed
-	 *    (together with the correct exponent) then reading this number will give
-	 *    'v' again. The buffer will choose the representation that is closest to
-	 *    'v'. If there are two at the same distance, than the number is round up.
-	 *    In this mode the 'requestedDigits' parameter is ignored.
 	 *   - FIXED: produces digits necessary to print a given number with
 	 *    'requestedDigits' digits after the decimal point. The produced digits
 	 *    might be too short in which case the caller has to fill the gaps with '0's.
@@ -102,13 +89,10 @@ public class BigNumDtoa {
 						   DecimalRepBuf buf) {
 		DOUBLE_CONVERSION_ASSERT(v > 0.0);
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
-		long significand;
+		@Unsigned long significand;
 		int exponent;
-		boolean lowerBoundaryIsCloser;
 		significand = new Ieee.Double(v).significand();
 		exponent = new Ieee.Double(v).exponent();
-		lowerBoundaryIsCloser = new Ieee.Double(v).lowerBoundaryIsCloser();
-		boolean needBoundaryDeltas = mode == BignumDtoaMode.SHORTEST;
 
 		boolean isEven = (significand & 1L) == 0L;
 		int normalizedExponent = normalizedExponent(significand, exponent);
@@ -138,10 +122,10 @@ public class BigNumDtoa {
 		// The maximum double is 1.7976931348623157e308 which needs fewer than
 		// 308*4 binary digits.
 		//DOUBLE_CONVERSION_ASSERT(Bignum.kMaxSignificantBits >= 324*4);
-		initialScaledStartValues(significand, exponent, lowerBoundaryIsCloser,
-				estimatePower, needBoundaryDeltas,
-				numerator, denominator,
-                           deltaMinus, deltaPlus);
+		initialScaledStartValues(significand, exponent,
+				estimatePower,
+				numerator, denominator
+		);
 		// We now have v = (numerator / denominator) * 10^estimatePower.
 		fixupMultiply10(estimatePower, isEven, estimatedPoint,
 				numerator, denominator,
@@ -150,10 +134,6 @@ public class BigNumDtoa {
 		// We now have v = (numerator / denominator) * 10^(decimalPoint-1), and
 		//  1 <= (numerator + deltaPlus) / denominator < 10
 		switch (mode) {
-			case SHORTEST:
-				generateShortestDigits(numerator, denominator,
-                             deltaMinus, deltaPlus, isEven, buf);
-				break;
 			case FIXED:
 				bignumToFixed(requestedDigits, numerator, denominator, buf);
 				break;
@@ -162,110 +142,6 @@ public class BigNumDtoa {
 				break;
 			default:
 				throw new IllegalStateException("Unreachable");
-		}
-	}
-
-	/**
-	 *  Generates digits from the left to the right and stops when the generated
-	 *  digits yield the shortest decimal representation of v.
-	 *
-	 *  The procedure starts generating digits from the left to the right and stops
-	 *  when the generated digits yield the shortest decimal representation of v. A
-	 *  decimal representation of v is a number lying closer to v than to any other
-	 *  double, so it converts to v when read.
-	 *
-	 *  This is true if d, the decimal representation, is between m- and m+, the
-	 *  upper and lower boundaries. d must be strictly between them if !isEven.
-	 * 		   m- := (numerator - deltaMinus) / denominator
-	 * 		   m+ := (numerator + deltaPlus) / denominator
-	 *
-	 *  Precondition: 0 <= (numerator+deltaPlus) / denominator < 10.
-	 *    If 1 <= (numerator+deltaPlus) / denominator < 10 then no leading 0 digit
-	 *    will be produced. This should be the standard precondition.
-	 */
-	private static void generateShortestDigits(Bignum numerator, Bignum denominator,
-									   Bignum deltaMinus, Bignum deltaPlus,
-									   boolean isEven,
-									   DecimalRepBuf buf) {
-		// Small optimization: if deltaMinus and deltaPlus are the same just reuse
-		// one of the two bignums.
-		if (Bignum.equal(deltaMinus, deltaPlus)) {
-			deltaPlus = deltaMinus;
-		}
-		buf.clearBuf();
-		for (;;) {
-			@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
-			// digit = numerator / denominator (integer division).
-			// numerator = numerator % denominator.
-			buf.append(digit);
-
-			// Can we stop already?
-			// If the remainder of the division is less than the distance to the lower
-			// boundary we can stop. In this case we simply round down (discarding the
-			// remainder).
-			// Similarly we test if we can round up (using the upper boundary).
-			boolean inDeltaRoomMinus;
-			boolean inDeltaRoomPlus;
-			if (isEven) {
-				inDeltaRoomMinus = Bignum.lessEqual(numerator, deltaMinus);
-			} else {
-				inDeltaRoomMinus = Bignum.less(numerator, deltaMinus);
-			}
-			if (isEven) {
-				inDeltaRoomPlus =
-						Bignum.plusCompare(numerator, deltaPlus, denominator) >= 0;
-			} else {
-				inDeltaRoomPlus =
-						Bignum.plusCompare(numerator, deltaPlus, denominator) > 0;
-			}
-			if (!inDeltaRoomMinus && !inDeltaRoomPlus) {
-				// Prepare for next iteration.
-				numerator.times10();
-				deltaMinus.times10();
-				// We optimized deltaPlus to be equal to deltaMinus (if they share the
-				// same value). So don't multiply deltaPlus if they point to the same
-				// object.
-				if (!deltaMinus.equals(deltaPlus)) {
-					deltaPlus.times10();
-				}
-			} else if (inDeltaRoomMinus && inDeltaRoomPlus) {
-				// Let's see if 2*numerator < denominator.
-				// If yes, then the next digit would be < 5 and we can round down.
-				int compare = Bignum.plusCompare(numerator, numerator, denominator);
-				if (compare < 0) {
-					// Remaining digits are less than .5. -> Round down (== do nothing).
-				} else if (compare > 0) {
-					// Remaining digits are more than .5 of denominator. -> Round up.
-					// Note that the last digit could not be a '9' as otherwise the whole
-					// loop would have stopped earlier.
-					// We still have an assert here in case the preconditions were not
-					// satisfied.
-					buf.incrementLastNoOverflow();
-				} else {
-					// Halfway case.
-					// TODO(floitsch): need a way to solve half-way cases.
-					//   For now let's round towards even (since this is what Gay seems to
-					//   do).
-
-					if (((int) buf.lastChar() - ASCII_ZERO) % 2 == 0) {
-						// Round down => Do nothing.
-					} else {
-						buf.incrementLastNoOverflow();
-					}
-				}
-				return;
-			} else if (inDeltaRoomMinus) {
-				// Round down (== do nothing).
-				return;
-			} else {  // inDeltaRoomPlus
-				// Round up.
-				// Note again that the last digit could not be '9' since this would have
-				// stopped the loop earlier.
-				// We still have an DOUBLE_CONVERSION_ASSERT here, in case the preconditions were not
-				// satisfied.
-				buf.incrementLastNoOverflow();
-				return;
-			}
 		}
 	}
 
@@ -444,9 +320,8 @@ public class BigNumDtoa {
 	 */
 	private static void initialScaledStartValuesPositiveExponent(
 			@Unsigned long significand, int exponent,
-			int estimatedPower, boolean needBoundaryDeltas,
-			Bignum numerator, Bignum denominator,
-			Bignum deltaMinus, Bignum deltaPlus) {
+			int estimatedPower,
+			Bignum numerator, Bignum denominator) {
 		// A positive exponent implies a positive power.
 		DOUBLE_CONVERSION_ASSERT(estimatedPower >= 0);
 		// Since the estimatedPower is positive we simply multiply the denominator
@@ -457,20 +332,6 @@ public class BigNumDtoa {
 		numerator.shiftLeft(exponent);
 		// denominator = 10^estimatedPower.
 		denominator.assignPower(10, estimatedPower);
-
-		if (needBoundaryDeltas) {
-			// Introduce a common denominator so that the deltas to the boundaries are
-			// integers.
-			denominator.shiftLeft(1);
-			numerator.shiftLeft(1);
-			// Let v = f * 2^e, then m+ - v = 1/2 * 2^e; With the common
-			// denominator (of 2) deltaPlus equals 2^e.
-			deltaPlus.assignUInt(1);
-			deltaPlus.shiftLeft(exponent);
-			// Same for deltaMinus. The adjustments if f == 2^p-1 are done later.
-			deltaMinus.assignUInt(1);
-			deltaMinus.shiftLeft(exponent);
-		}
 	}
 
 
@@ -514,9 +375,8 @@ public class BigNumDtoa {
 	 */
 	private static void initialScaledStartValuesNegativeExponentPositivePower(
 			@Unsigned long ulSignificand, int exponent,
-			int estimatedPower, boolean needBoundaryDeltas,
-			Bignum numerator, Bignum denominator,
-			Bignum deltaMinus, Bignum deltaPlus) {
+			int estimatedPower,
+			Bignum numerator, Bignum denominator) {
 		// v = f * 2^e with e < 0, and with estimatedPower >= 0.
 		// This means that e is close to 0 (have a look at how estimatedPower is
 		// computed).
@@ -528,20 +388,6 @@ public class BigNumDtoa {
 		// denominator = 10^estimatedPower * 2^-exponent (with exponent < 0)
 		denominator.assignPower(10, estimatedPower);
 		denominator.shiftLeft(-exponent);
-
-		if (needBoundaryDeltas) {
-			// Introduce a common denominator so that the deltas to the boundaries are
-			// integers.
-			denominator.shiftLeft(1);
-			numerator.shiftLeft(1);
-			// Let v = f * 2^e, then m+ - v = 1/2 * 2^e; With the common
-			// denominator (of 2) deltaPlus equals 2^e.
-			// Given that the denominator already includes v's exponent the distance
-			// to the boundaries is simply 1.
-			deltaPlus.assignUInt(1);
-			// Same for deltaMinus. The adjustments if f == 2^p-1 are done later.
-			deltaMinus.assignUInt(1);
-		}
 	}
 
 
@@ -585,23 +431,14 @@ public class BigNumDtoa {
 	 */
 	private static void initialScaledStartValuesNegativeExponentNegativePower(
 			@Unsigned long ulSignificand, int exponent,
-			int estimatedPower, boolean needBoundaryDeltas,
-			Bignum numerator, Bignum denominator,
-			Bignum deltaMinus, Bignum deltaPlus) {
+			int estimatedPower,
+			Bignum numerator, Bignum denominator) {
 		// Instead of multiplying the denominator with 10^estimatedPower we
 		// multiply all values (numerator and deltas) by 10^-estimatedPower.
 
 		// Use numerator as temporary container for powerTen.
 		Bignum powerTen = numerator;
 		powerTen.assignPower(10, -estimatedPower);
-
-		if (needBoundaryDeltas) {
-			// Since powerTen == numerator we must make a copy of 10^estimatedPower
-			// before we complete the computation of the numerator.
-			// deltaPlus = deltaMinus = 10^estimatedPower
-			deltaPlus.assignBignum(powerTen);
-			deltaMinus.assignBignum(powerTen);
-		}
 
 		// numerator = significand * 2 * 10^-estimatedPower
 		//  since v = significand * 2^exponent this is equivalent to
@@ -614,18 +451,6 @@ public class BigNumDtoa {
 		// denominator = 2 * 2^-exponent with exponent < 0.
 		denominator.assignUInt(1);
 		denominator.shiftLeft(-exponent);
-
-		if (needBoundaryDeltas) {
-			// Introduce a common denominator so that the deltas to the boundaries are
-			// integers.
-			numerator.shiftLeft(1);
-			denominator.shiftLeft(1);
-			// With this shift the boundaries have their correct value, since
-			// deltaPlus = 10^-estimatedPower, and
-			// deltaMinus = 10^-estimatedPower.
-			// These assignments have been done earlier.
-			// The adjustments if f == 2^p-1 (lower boundary is closer) are done later.
-		}
 	}
 
 	/**
@@ -666,36 +491,25 @@ public class BigNumDtoa {
 	 *
 	 *  The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
-	private static void initialScaledStartValues(@Unsigned long ulSignificand,
-										 int exponent,
-										 boolean lowerBoundaryIsCloser,
-										 int estimatedPower,
-										 boolean needBoundaryDeltas,
-										 Bignum numerator,
-										 Bignum denominator,
-										 Bignum deltaMinus,
-										 Bignum deltaPlus) {
+	private static void initialScaledStartValues(@Unsigned long significand,
+			int exponent,
+			int estimatedPower,
+			Bignum numerator,
+			Bignum denominator) {
 		if (exponent >= 0) {
 			initialScaledStartValuesPositiveExponent(
-					ulSignificand, exponent, estimatedPower, needBoundaryDeltas,
-					numerator, denominator, deltaMinus, deltaPlus);
+					significand, exponent, estimatedPower,
+					numerator, denominator);
 		} else if (estimatedPower >= 0) {
 			initialScaledStartValuesNegativeExponentPositivePower(
-					ulSignificand, exponent, estimatedPower, needBoundaryDeltas,
-					numerator, denominator, deltaMinus, deltaPlus);
+					significand, exponent, estimatedPower,
+					numerator, denominator);
 		} else {
 			initialScaledStartValuesNegativeExponentNegativePower(
-					ulSignificand, exponent, estimatedPower, needBoundaryDeltas,
-					numerator, denominator, deltaMinus, deltaPlus);
+					significand, exponent, estimatedPower,
+					numerator, denominator);
 		}
 
-		if (needBoundaryDeltas && lowerBoundaryIsCloser) {
-			// The lower boundary is closer at half the distance of "normal" numbers.
-			// Increase the common denominator and adapt all but the deltaMinus.
-			denominator.shiftLeft(1);  // *2
-			numerator.shiftLeft(1);    // *2
-			deltaPlus.shiftLeft(1);   // *2
-		}
 	}
 
 

@@ -43,17 +43,6 @@ class DoubleToStringConverterTest {
 	private final StringAppendable appendable = new StringAppendable();
 
 	@Test
-	void toShortest() {
-		conv = DoubleToStringConverter.ecmaScriptConverter();
-
-		testShortest("0.000001", 0.000001);
-		testShortest("1e-7", 0.0000001);
-		testShortest("111111111111111110000", 111111111111111111111.0);
-		testShortest("100000000000000000000", 100000000000000000000.0);
-		testShortest("1.1111111111111111e+21", 1111111111111111111111.0);
-	}
-
-	@Test
 	void toFixed() {
 		conv = DoubleToStringConverter.ecmaScriptConverter();
 
@@ -124,11 +113,9 @@ class DoubleToStringConverterTest {
 		testExp("3.1e0",    3.12, 1);
 		testExp("5.000e0",  5.0, 3);
 		testExp("1.00e-3",  0.001, 2);
-		testExp("3.1415e0", 3.1415, -1);
 		testExp("3.1415e0", 3.1415, 4);
 		testExp("3.142e0",  3.1415, 3);
 		testExp("1.235e14", 123456789000000.0, 3);
-		testExp("1e30", 1000000000000000019884624838656.0, -1);
 		testExp("1.00000000000000001988462483865600e30",
 				1000000000000000019884624838656.0, 32);
 		testExp("1e3", 1234, 0);
@@ -233,12 +220,6 @@ class DoubleToStringConverterTest {
 		assertEquals(expected, appendable.toString());
 	}
 
-	private void testShortest(String expected, double val) {
-		appendable.setLength(0);
-		conv.toShortest(val, FORMAT_OPTIONS, appendable);
-		assertEquals(expected, appendable.toString());
-	}
-
 	private FormatOptions padding(int padWidth, boolean zeroPad, boolean leftAdjust) {
 		return new FormatOptions(SYMBOLS,
 				false,
@@ -261,28 +242,24 @@ class DoubleToStringConverterTest {
 
 	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros) {
 		return new DoubleToStringConverter(flags,
-				new ShortestPolicy(-6, 21),
 				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), 0);
 	}
 
 	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros,
 			int minExponentWidth) {
 		return new DoubleToStringConverter(flags,
-				new ShortestPolicy(-6, 21),
 				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), minExponentWidth);
 	}
 
 	private DoubleToStringConverter newConv(int flags) {
 		return new DoubleToStringConverter(flags,
-			   new ShortestPolicy(-6, 21),
-			   new PrecisionPolicy(6, 0), 0);
+				new PrecisionPolicy(6, 0), 0);
 	}
 
 	private DoubleToStringConverter newCobaltConv() {
 		int flags = Flags.EMIT_POSITIVE_EXPONENT_SIGN | Flags.NO_TRAILING_ZERO;
 		return new DoubleToStringConverter(flags,
-			   new ShortestPolicy(-6, 21),
-			   new PrecisionPolicy(6, 0), 2);
+				new PrecisionPolicy(6, 0), 2);
 	}
 
 

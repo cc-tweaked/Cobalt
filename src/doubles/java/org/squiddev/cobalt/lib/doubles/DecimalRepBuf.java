@@ -81,13 +81,6 @@ public class DecimalRepBuf {
 		return buffer[pos];
 	}
 
-	/**
-	 * decrement the last digit to fix rounding per {@link FastDtoa#roundWeed}
-	 */
-	public void decrementLast() {
-		buffer[length - 1]--;
-	}
-
 	public char lastChar() {
 		return buffer[length - 1];
 	}

@@ -50,7 +50,6 @@ public class FormatDesc {
 
 		DOUBLE_CONVERTER = new DoubleToStringConverter(
 				flags,
-				new DoubleToStringConverter.ShortestPolicy(-6, 21),
 				new DoubleToStringConverter.PrecisionPolicy(4, 0),
 				2);
 	}

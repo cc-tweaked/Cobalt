@@ -76,19 +76,9 @@ public class DoubleToStringConverter {
 	 */
 	public static final int BASE_10_MAXIMAL_LENGTH = 17;
 
-	/**
-	 *  The length of the longest string that 'ToShortest' can produce when the
-	 *  converter is instantiated with EcmaScript defaults (see
-	 *  'ecmaScriptConverter')
-	 *  This amount of characters is needed for negative values that hit the
-	 *  'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
-	 */
-	public static final int MAX_CHARS_ECMA_SCRIPT_SHORTEST = 25;
-
 	public static final int EXPONENTIAL_REP_CAPACITY = MAX_EXPONENTIAL_DIGITS + 2;
 	public static final int FIXED_REP_CAPACITY = MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
 	public static final int PRECISION_REP_CAPACITY = MAX_PRECISION_DIGITS + 1;
-	public static final int SHORTEST_REP_CAPACITY = BASE_10_MAXIMAL_LENGTH + 1;
 
 	public static final int MAX_EXPONENT_LENGTH = 5;
 
@@ -135,7 +125,6 @@ public class DoubleToStringConverter {
 
 
 	private final int flags;
-	private final ShortestPolicy shortestPolicy;
 	private final PrecisionPolicy precisionPolicy;
 	private final int minExponentWidth;
 
@@ -163,22 +152,16 @@ public class DoubleToStringConverter {
 	 *  <p/>
 	 *
 	 * @param flags the bit-or combination of {@link Flags}
-	 * @param shortestPolicy the parameters that configures when {@link #toShortest} output
-	 *                       switches to an exponential representation, see
-	 *                       {@link ShortestPolicy#ShortestPolicy(int, int)}
 	 * @param precisionPolicy the parameters that configure when {@link #toPrecision}
 	 *                        output switches to exponential representation, see
 	 *                        {@link PrecisionPolicy#PrecisionPolicy(int, int)}
      *
 	 * @see Symbols#Symbols(String, String, int)
-	 * @see ShortestPolicy#ShortestPolicy(int, int)
 	 * @see PrecisionPolicy#PrecisionPolicy(int, int)
 	 */
 	public DoubleToStringConverter(int flags,
-			ShortestPolicy shortestPolicy,
 			PrecisionPolicy precisionPolicy) {
 		this(flags,
-				shortestPolicy,
 			 precisionPolicy,
 			 0);
 	}
@@ -213,9 +196,6 @@ public class DoubleToStringConverter {
 	 *  As such, the exponent may never have more than 5 digits in total.<br/>
 	 *
 	 * @param flags the bit-or combination of {@link Flags}
-	 * @param shortestPolicy the parameters that configures when {@link #toShortest} output
-	 *                       switches to an exponential representation, see
-	 *                       {@link ShortestPolicy#ShortestPolicy(int, int)}
 	 * @param precisionPolicy the parameters that configure when {@link #toPrecision}
 	 *                        output switches to exponential representation, see
 	 *                        {@link PrecisionPolicy#PrecisionPolicy(int, int)}
@@ -223,15 +203,12 @@ public class DoubleToStringConverter {
 	 *                         is at least <code>minExponentWidth</code> digits long, clamped to 5
 	 *
 	 * @see Symbols#Symbols(String, String, int)
-	 * @see ShortestPolicy#ShortestPolicy(int, int)
 	 * @see PrecisionPolicy#PrecisionPolicy(int, int)
 	 */
 	public DoubleToStringConverter(int flags,
-			ShortestPolicy shortestPolicy,
 			PrecisionPolicy precisionPolicy,
 			int minExponentWidth) {
         this.flags = flags;
-        this.shortestPolicy = requireNonNull( shortestPolicy );
         this.precisionPolicy = requireNonNull( precisionPolicy );
 		this.minExponentWidth = minExponentWidth;
 		// When 'trailing zero after the point' is set, then 'trailing point'
@@ -246,8 +223,6 @@ public class DoubleToStringConverter {
 	 *  <b>Flags:</b> UNIQUE_ZERO and EMIT_POSITIVE_EXPONENT_SIGN.<br/>
 	 *  <b>Special values:</b> "Infinity" and "NaN".
 	 *  Lower case 'e' for exponential values.<br/>
-	 *  <b>ShortestPolicy.decimalLow</b>: -6<br/>
-	 *  <b>ShortestPolicy.decimalHigh</b>: 21<br/>
 	 *  <b>PrecisionPolicy.maxLeadingZeros</b>: 6<br/>
 	 *  <b>PrecisionPolicy.maxTrailingZeroes</b>: 0<br/>
 	 */
@@ -255,74 +230,7 @@ public class DoubleToStringConverter {
 	public static DoubleToStringConverter ecmaScriptConverter() {
 		int flags = Flags.UNIQUE_ZERO | Flags.EMIT_POSITIVE_EXPONENT_SIGN;
 		return new DoubleToStringConverter(flags,
-				new ShortestPolicy(-6, 21),
 				new PrecisionPolicy(6, 0));
-	}
-
-
-	/**
-	 *  Computes the shortest string of digits that correctly represent the input
-	 *  number. Depending on decimal_in_shortest_low and ShortestPolicy.decimalHigh
-	 *  (see constructor) it then either returns a decimal representation, or an
-	 *  exponential representation.
-	 *  <p/>
-	 *  Example with ShortestPolicy.decimalLow = -6,
-	 * 			  ShortestPolicy.decimalHigh = 21,
-	 * 			  <code>EMIT_POSITIVE_EXPONENT_SIGN</code> activated, and
-	 * 			  <code>EMIT_TRAILING_DECIMAL_POINT</code> deactivated:<br/>
-	 * <p/>
-	 * <code>
-	 *    toShortest(0.000001)  -> "0.000001"<br/>
-	 *    toShortest(0.0000001) -> "1e-7"<br/>
-	 *    toShortest(111111111111111111111.0)  -> "111111111111111110000"<br/>
-	 *    toShortest(100000000000000000000.0)  -> "100000000000000000000"<br/>
-	 *    toShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"<br/>
-	 *  </code>
-	 *  <p/>
-	 *  <b>Note:</b> the conversion may round the output if the returned string
-	 *  is accurate enough to uniquely identify the input-number.
-	 *  For example the most precise representation of the double 9e59 equals
-	 *  "899999999999999918767229449717619953810131273674690656206848", but
-	 *  the converter will return the shorter (but still correct) "9e59".
-	 *  <p/>
-	 *  The length of the longest result is the maximum of the length of the
-	 *  following string representations (each with possible examples):
-	 *  <ul>
-	 *    <li>NaN and negative infinity: "NaN", "-Infinity", "-inf".</li>
-	 *    <li>-10^(ShortestPolicy.decimalHigh - 1):
-	 *        "-100000000000000000000", "-1000000000000000.0"</li>
-	 *    <li>the longest string in range [0; -10^ShortestPolicy.decimalLow]. Generally,
-	 *        this string is 3 + BASE_10_MAXIMAL_LENGTH - ShortestPolicy.decimalLow.
-	 *        (sign, '0', decimal point, padding zeroes for ShortestPolicy.decimalLow,
-	 *         and the significant digits).
-	 *        "-0.0000033333333333333333", "-0.0012345678901234567"</li>
-	 *    <li>the longest exponential representation. (A negative number with
-	 *        BASE_10_MAXIMAL_LENGTH significant digits).
-	 *        "-1.7976931348623157e+308", "-1.7976931348623157E308"</li>
-	 *  </ul>
-	 */
-	public void toShortest(double value, FormatOptions formatOptions, Appendable resultBuilder) {
-		if (new Ieee.Double(value).isSpecial()) {
-			handleSpecialValues(value, formatOptions, resultBuilder);
-			return;
-		}
-
-		DecimalRepBuf decimalRep = new DecimalRepBuf(SHORTEST_REP_CAPACITY);
-
-		doubleToAscii(value, DtoaMode.SHORTEST, 0, decimalRep);
-
-		int length = decimalRep.length();
-		int decimalPoint = decimalRep.getPointPosition();
-		int exponent = decimalPoint - 1;
-		if ((shortestPolicy.getDecimalLow() <= exponent) &&
-				(exponent < shortestPolicy.getDecimalHigh())) {
-			createDecimalRepresentation(decimalRep,
-					value, Math.max(0, length - decimalPoint),
-					formatOptions, resultBuilder);
-		} else {
-			createExponentialRepresentation(decimalRep, value, decimalRep.length(), exponent, formatOptions,
-					resultBuilder);
-		}
 	}
 
 	/**
@@ -659,9 +567,6 @@ public class DoubleToStringConverter {
 	 *  Computes a representation in exponential format with <code>requestedDigits</code>
 	 *  after the decimal point. The last emitted digit is rounded.
 	 *  <p/>
-	 *  If <code>requestedDigits</code> equals -1, then the shortest exponential representation
-	 *  is computed.
-	 *  <p/>
 	 *  Examples with <b>EMIT_POSITIVE_EXPONENT_SIGN</b> deactivated, and
 	 *    exponent_character set to <code>'e'</code>.
 	 *  <p/>
@@ -669,18 +574,15 @@ public class DoubleToStringConverter {
 	 *   toExponential(3.12, 1) -> "3.1e0"<br/>
 	 *   toExponential(5.0, 3) -> "5.000e0"<br/>
 	 *   toExponential(0.001, 2) -> "1.00e-3"<br/>
-	 *   toExponential(3.1415, -1) -> "3.1415e0"<br/>
 	 *   toExponential(3.1415, 4) -> "3.1415e0"<br/>
 	 *   toExponential(3.1415, 3) -> "3.142e0"<br/>
 	 *   toExponential(123456789000000, 3) -> "1.235e14"<br/>
-	 *   toExponential(1000000000000000019884624838656.0, -1) -> "1e30"<br/>
 	 *   toExponential(1000000000000000019884624838656.0, 32) ->
 	 *        "1.00000000000000001988462483865600e30"<br/>
 	 *   toExponential(1234, 0) -> "1e3"<br/>
 	 *  </code>
 	 *
-	 * @param requestedDigits number of digits after the decimal point(last digit rounded), or
-	 *                        <code>-1</code> for the shortest representation
+	 * @param requestedDigits number of digits after the decimal point(last digit rounded)
 	 *
 	 * @param formatOptions
 	 * @throws IllegalArgumentException if <code>requestedDigits > MAX_EXPONENTIAL_DIGITS</code>
@@ -693,24 +595,28 @@ public class DoubleToStringConverter {
 			return;
 		}
 
+		if (requestedDigits < 0) {
+			throw new IllegalArgumentException(
+					String.format("requestedDigits must be >= 0. got: %d",
+							requestedDigits));
+		}
+
 		if (requestedDigits > MAX_EXPONENTIAL_DIGITS) {
 			throw new IllegalArgumentException(
 					String.format("requestedDigits must be less than %d. got: %d",
 								  MAX_EXPONENTIAL_DIGITS, requestedDigits));
 		}
 
+
+
 		// DOUBLE_CONVERSION_ASSERT(EXPONENTIAL_REP_CAPACITY > BASE_10_MAXIMAL_LENGTH);
 		DecimalRepBuf decimalRep = new DecimalRepBuf(EXPONENTIAL_REP_CAPACITY);
 
-		if (requestedDigits == -1) {
-			doubleToAscii(value, DtoaMode.SHORTEST, 0, decimalRep);
-		} else {
-			doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
-					decimalRep);
-			DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= requestedDigits + 1);
+		doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
+				decimalRep);
+		DOUBLE_CONVERSION_ASSERT(decimalRep.length() <= requestedDigits + 1);
 
-			decimalRep.zeroExtend(requestedDigits+1);
-		}
+		decimalRep.zeroExtend(requestedDigits+1);
 
 		int exponent = decimalRep.getPointPosition() - 1;
 		createExponentialRepresentation(decimalRep,
@@ -839,10 +745,6 @@ public class DoubleToStringConverter {
 	}
 
 	public enum DtoaMode {
-		// Produce the shortest correct representation.
-		// For example the output of 0.299999999999999988897 is (the less accurate
-		// but correct) 0.3.
-		SHORTEST,
 		// Produce a fixed number of digits after the decimal point.
 		// For instance fixed(0.1, 4) becomes 0.1000
 		// If the input number is big, the output will be big.
@@ -854,7 +756,6 @@ public class DoubleToStringConverter {
 	private static BigNumDtoa.BignumDtoaMode dtoaToBignumDtoaMode(
 			DoubleToStringConverter.DtoaMode dtoaMode) {
 		switch (dtoaMode) {
-			case SHORTEST:  return BigNumDtoa.BignumDtoaMode.SHORTEST;
 			case FIXED:     return BigNumDtoa.BignumDtoaMode.FIXED;
 			case PRECISION: return BigNumDtoa.BignumDtoaMode.PRECISION;
 			default:
@@ -874,16 +775,6 @@ public class DoubleToStringConverter {
 	 *   <p/>
 	 * The output depends on the given mode:<br/>
 	 * <ul>
-	 *  <li>
-	 *    {@link DtoaMode#SHORTEST SHORTEST}: produce the least amount of digits for which the internal
-	 *    identity requirement is still satisfied. If the digits are printed
-	 *    (together with the correct exponent) then reading this number will give
-	 *    'v' again. The  <code>buffer</code> will choose the representation that is closest to
-	 *    'v'. If there are two at the same distance, than the one farther away
-	 *    from 0 is chosen (halfway cases - ending with 5 - are rounded up).
-	 *    In this mode the 'requestedDigits' parameter is ignored.
-	 *    <p/>
-	 *  </li>
 	 *  <li>
 	 *     {@link DtoaMode#FIXED FIXED}: produces digits necessary to print a given number with
 	 *    'requestedDigits' digits after the decimal outPoint. The produced digits
@@ -910,8 +801,7 @@ public class DoubleToStringConverter {
 	 * </ul>
 	 * <p/>
 	 * <code>doubleToAscii</code> expects the given buffer to be big enough to hold all
-	 *   digits. In SHORTEST-mode it expects a buffer of at least BASE_10_MAXIMAL_LENGTH. In
-	 *   all other modes the requestedDigits parameter and the padding-zeroes limit the size of the
+	 *   digits. The requestedDigits parameter and the padding-zeroes limit the size of the
 	 *   output. Don't forget the decimal point and the exponent character when
 	 *   computing the maximal output size.
 	 *
@@ -921,7 +811,6 @@ public class DoubleToStringConverter {
 	 * <p/>
 	 * @param requestedDigits for <b>FIXED</b> the number of digits after teh decimal point,
 	 *                        for <b>PRECISION</b> the number of digits where the first digit is not '0',
-	 *                        for <b>SHORTEST</b> this value is ignored
 	 * <p/>
 	 * @param buffer the {@link DecimalRepBuf} initialized with enough space for the conversion(explained above). On
 	 *               successful completion this buffer contains the digits,
@@ -933,7 +822,7 @@ public class DoubleToStringConverter {
 										int requestedDigits,
 										DecimalRepBuf buffer) {
 		DOUBLE_CONVERSION_ASSERT(!new Ieee.Double(v).isSpecial());
-		DOUBLE_CONVERSION_ASSERT(mode == DtoaMode.SHORTEST ||  requestedDigits >= 0);
+		DOUBLE_CONVERSION_ASSERT(requestedDigits >= 0);
 
 		// begin with an empty buffer
 		buffer.reset();
@@ -957,14 +846,11 @@ public class DoubleToStringConverter {
 
 		boolean fastWorked;
 		switch (mode) {
-			case SHORTEST:
-				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.SHORTEST, 0, buffer);
-				break;
 			case FIXED:
 				fastWorked = FixedDtoa.fastFixedDtoa(v, requestedDigits, buffer);
 				break;
 			case PRECISION:
-				fastWorked = FastDtoa.fastDtoa(v, FastDtoa.FastDtoaMode.PRECISION, requestedDigits, buffer);
+				fastWorked = FastDtoa.fastDtoa(v, requestedDigits, buffer);
 				break;
 			default:
 				throw new IllegalStateException("Unreachable");
@@ -1027,49 +913,6 @@ public class DoubleToStringConverter {
 
 		public @Unsigned int getExponentCharacter() {
 			return exponentCharacter;
-		}
-	}
-
-	/**
-	 * Parameter object configuring usage of {@link DoubleToStringConverter#toShortest}
-	 *
-	 * @see #ShortestPolicy(int, int)
-	 */
-	public static class ShortestPolicy {
-		private final int decimalLow;
-		private final int decimalHigh;
-
-		/**
-		 * When converting to the shortest representation the converter will
-		 * 	 represent input numbers in decimal format if they are in the interval
-		 * 	 <p/>
-		 * 	 <code>[10^decimalLow; 10^decimalHigh[</code><br/>
-		 * 	 (lower boundary included, greater boundary excluded).
-		 * 	 <p/>
-		 * 	 Example: with decimalLow = -6 and
-		 * 	 		   decimalHigh = 21:<br/>
-		 *  <code>
-		 * 	   toShortest(0.000001)  -> "0.000001"<br/>
-		 * 	   toShortest(0.0000001) -> "1e-7"<br/>
-		 * 	   toShortest(111111111111111111111.0)  -> "111111111111111110000"<br/>
-		 * 	   toShortest(100000000000000000000.0)  -> "100000000000000000000"<br/>
-		 * 	   toShortest(1111111111111111111111.0) -> "1.1111111111111111e+21"<br/>
-		 * 	</code>
-		 *
-		 * @param decimalLow lower boundary to represent number in decimal format, inclusive
-		 * @param decimalHigh greater boundary to represent number in decimal format, exclusive
-		 */
-		public ShortestPolicy(int decimalLow, int decimalHigh) {
-			this.decimalLow = decimalLow;
-			this.decimalHigh = decimalHigh;
-		}
-
-		public int getDecimalLow() {
-			return decimalLow;
-		}
-
-		public int getDecimalHigh() {
-			return decimalHigh;
 		}
 	}
 

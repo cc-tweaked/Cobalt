@@ -163,40 +163,6 @@ public final class DoubleTestHelper {
 		}
 	}
 
-	@SuppressWarnings("InfiniteLoopStatement")
-	public static <T>void eachShortest(T initialState, ShortestCallback<T> cb) throws Exception {
-		URL rsrc = DoubleTestHelper.class.getResource("/double-convert/gay-shortest.txt");
-		assertThat("File 'gay-shortest.txt' not found", rsrc, is(notNullValue()));
-
-		double v;
-		String representation;
-		int decimalPoint;
-
-		int total = 0;
-
-		try (BufferedReader in = Files.newBufferedReader(Paths.get(rsrc.toURI()))) {
-			TokenStream ts = new TokenStream(in);
-			while (!ts.isEof()) {
-				try {
-					v = ts.t('{').nextDouble();
-					representation = ts.t(',').nextString();
-					decimalPoint = ts.t(',').nextInt();
-				} catch (TokenStream.EofException e) {
-					throw new IllegalStateException("Unepected end of file 'gay-shortest.txt'", e);
-				}
-
-				cb.accept(initialState, v, representation, decimalPoint);
-
-				total++;
-				ts.t('}').t(',');
-			}
-		} catch (TokenStream.EofException ignore) {}  // ignore the trailing tokens
-	}
-
-	public static interface ShortestCallback<T> {
-		void accept(T state, double v, String representation, int decimalPoint) throws Exception;
-	}
-
 	public static interface FixedCallback<T> {
 		void accept(T state, double v, int numberDigits, String representation, int decimalPoint) throws Exception;
 	}
