@@ -251,9 +251,9 @@ public class FormatDesc {
 			DOUBLE_CONVERTER.toExponential(number, precision,
 					doubleOpts(conversion == 'E'),
 					buf);
-		} else if (conversion == 'f' || conversion == 'F') {
+		} else if (conversion == 'f') {
 			DOUBLE_CONVERTER.toFixed(number, precision,
-					doubleOpts(conversion == 'F'),
+					doubleOpts(false),
 					buf);
 		}
 	}
