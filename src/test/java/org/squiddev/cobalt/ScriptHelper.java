@@ -35,10 +35,6 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -126,14 +122,6 @@ public class ScriptHelper extends FileResourceManipulator {
 			ps.flush();
 			String actualOutput = new String(output.toByteArray());
 			String expectedOutput = getExpectedOutput(testName);
-
-			Path dir = Paths.get("out");
-			Files.createDirectories(dir);
-			try ( BufferedWriter out = Files.newBufferedWriter(
-					Paths.get("out", testName + ".actual"), StandardOpenOption.CREATE)) {
-				out.write(actualOutput);
-				out.flush();
-			}
 			actualOutput = actualOutput.replaceAll("\r\n", "\n");
 			expectedOutput = expectedOutput.replaceAll("\r\n", "\n");
 
