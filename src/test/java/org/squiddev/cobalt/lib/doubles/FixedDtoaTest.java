@@ -527,7 +527,7 @@ public class FixedDtoaTest {
 				assertThat(st.underTest, (st.buffer.length() - st.buffer.getPointPosition()), is(lessThanOrEqualTo(numberDigits)));
 				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
 			});
-		} catch (Assert.DoubleConversionAssertionError e) {
+		} catch (Assert.DoubleConversionAssertionException e) {
 			fail("Assertion failed for test " + state.underTest, e);
 		}
 

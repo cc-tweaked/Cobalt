@@ -189,7 +189,7 @@ public class FastDtoaTest {
 					assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
 				}
 			});
-		} catch (Assert.DoubleConversionAssertionError e) {
+		} catch (Assert.DoubleConversionAssertionException e) {
 			fail("Assertion failed for test " + state.underTest, e);
 		}
 		// The precomputed numbers contain many entries with many requested

@@ -282,7 +282,7 @@ public class DtoaTest {
 				st.buffer.truncateAllZeros();
 				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
 			});
-		} catch (Assert.DoubleConversionAssertionError e) {
+		} catch (Assert.DoubleConversionAssertionException e) {
 			fail("Assertion failed for test " + state.underTest, e);
 		}
 	}
@@ -301,7 +301,7 @@ public class DtoaTest {
 				st.buffer.truncateAllZeros();
 				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
 			});
-		} catch (Assert.DoubleConversionAssertionError e) {
+		} catch (Assert.DoubleConversionAssertionException e) {
 			fail("Assertion failed for test " + state.underTest, e);
 		}
 	}

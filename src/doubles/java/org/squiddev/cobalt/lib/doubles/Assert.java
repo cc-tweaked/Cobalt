@@ -39,7 +39,7 @@ final public class Assert {
 
 	public static void assertThat(boolean expected) {
 		if (enabled && !expected) {
-			throw new DoubleConversionAssertionError("Assertion failed");
+			throw new DoubleConversionAssertionException("Assertion failed");
 		}
 	}
 
@@ -56,19 +56,20 @@ final public class Assert {
 	}
 
 	/**
-	 * A unique assertion error mainly so it can be distinguished in debugging
+	 * Error thrown on Double conversion assertion failures.
+	 * Used in tests to help isolate which test data item failed.
 	 */
-	public static class DoubleConversionAssertionError extends AssertionError {
+	public static class DoubleConversionAssertionException extends IllegalStateException {
 		private static final long serialVersionUID = 1L;
 
-		public DoubleConversionAssertionError() {
+		public DoubleConversionAssertionException() {
 		}
 
-		public DoubleConversionAssertionError(String message) {
+		public DoubleConversionAssertionException(String message) {
 			super(message, null);
 		}
 
-		public DoubleConversionAssertionError(String message, Throwable cause) {
+		public DoubleConversionAssertionException(String message, Throwable cause) {
 			super(message, cause);
 		}
 	}
