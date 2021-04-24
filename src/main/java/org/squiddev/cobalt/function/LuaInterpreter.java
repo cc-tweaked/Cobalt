@@ -788,7 +788,7 @@ public final class LuaInterpreter {
 
 		switch (((i >> POS_OP) & MAX_OP)) {
 			case OP_RETURN: {
-				int a = (i >>> POS_B) & MAXARG_B;
+				int a = (i >>> POS_A) & MAXARG_A;
 				int b = (i >>> POS_B) & MAXARG_B;
 
 				Varargs ret;
