@@ -287,7 +287,7 @@ public class DoubleToStringConverter {
 			FormatOptions fo,
 			Appendable resultBuilder) {
 		requireArg(decimalDigits.length() != 0, "decimalDigits must not be empty");
-		requireArg(length > decimalDigits.length(), "length must be smaller than decimalDigits");
+		requireArg(length <= decimalDigits.length(), "length must be smaller than decimalDigits");
 
 		if (assertEnabled()) assertThat((double)exponent < 1e4);
 		ExponentPart exponentPart = createExponentPart(exponent);
