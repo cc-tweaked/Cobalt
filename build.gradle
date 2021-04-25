@@ -23,20 +23,6 @@ configurations {
 	deployerJars
 }
 
-sourceSets {
-	doubles {
-		compileClasspath += sourceSets.main.compileClasspath
-	}
-	main {
-		compileClasspath += sourceSets.doubles.output
-		runtimeClasspath += sourceSets.doubles.output
-	}
-	test {
-		compileClasspath += sourceSets.doubles.output
-		runtimeClasspath += sourceSets.doubles.output
-	}
-}
-
 dependencies {
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
 	testImplementation 'org.junit.jupiter:junit-jupiter-params:5.6.0'
@@ -55,20 +41,14 @@ license {
 }
 
 checkerFramework {
+	// add '-PskipCheckerFramework' to the gradle command line to speed up the build
 	checkers = [
 			'org.checkerframework.checker.signedness.SignednessChecker'
 	]
-	// add '-PskipCheckerFramework' to the command line to speed up the build
+	extraJavacArgs = [
+		"-AonlyDefs=^org\\.squiddev\\.cobalt\\.lib\\.doubles\\."
+	]
 }
-tasks.withType(JavaCompile).configureEach {
-	if (name == "compileJava" || name == "compileTestJava") {
-		checkerFramework {
-			skipCheckerFramework = true;
-		}
-	}
-	options.incremental = true;
-}
-
 
 task sourcesJar(type: Jar, dependsOn: classes) {
 	classifier = 'sources'
