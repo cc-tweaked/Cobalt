@@ -25,8 +25,6 @@
 package org.squiddev.cobalt;
 
 
-import org.squiddev.cobalt.lib.doubles.Appendable;
-
 /**
  * String buffer for use in string library methods, optimized for production
  * of StrValue instances.
@@ -40,7 +38,7 @@ import org.squiddev.cobalt.lib.doubles.Appendable;
  * @see LuaValue
  * @see LuaString
  */
-public final class Buffer implements Appendable {
+public final class Buffer {
 
 	/**
 	 * Default capacity for a buffer: 64
@@ -220,7 +218,6 @@ public final class Buffer implements Appendable {
 	 * @param length The number of values to append
 	 * @return {@code this} to allow call chaining
 	 */
-	@Override
 	public Buffer append(char[] chars, int start, int length) {
 		makeRoom(0, length);
 		int j = this.offset + this.length;

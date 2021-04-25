@@ -32,6 +32,7 @@
 package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.squiddev.cobalt.Buffer;
 
 import static java.util.Objects.requireNonNull;
 import static org.squiddev.cobalt.lib.doubles.Assert.*;
@@ -241,7 +242,7 @@ public class DoubleToStringConverter {
 	 * 	 If either of them is NULL or the value is not special then the
 	 * 	 function returns false.
 	 */
-	private void handleSpecialValues(double value, FormatOptions fo, Appendable resultBuilder) {
+	private void handleSpecialValues(double value, FormatOptions fo, Buffer resultBuilder) {
 		boolean sign = value < 0.0;
 
 		int effectiveWidth = fo.getWidth();
@@ -285,7 +286,7 @@ public class DoubleToStringConverter {
 			int length,
 			int exponent,
 			FormatOptions fo,
-			Appendable resultBuilder) {
+			Buffer resultBuilder) {
 		requireArg(decimalDigits.length() != 0, "decimalDigits must not be empty");
 		requireArg(length <= decimalDigits.length(), "length must be smaller than decimalDigits");
 
@@ -371,7 +372,7 @@ public class DoubleToStringConverter {
 			double value,
 			int digitsAfterPoint,
 			FormatOptions fo,
-			Appendable resultBuilder) {
+			Buffer resultBuilder) {
 		int decimalPoint = decimalDigits.getPointPosition();
 		int digitsLength = decimalDigits.length();
 
@@ -541,7 +542,7 @@ public class DoubleToStringConverter {
 	public void toFixed(double value,
 			int requestedDigits,
 			FormatOptions formatOptions,
-			Appendable resultBuilder) {
+			Buffer resultBuilder) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
 		if (new Ieee.Double(value).isSpecial()) {
@@ -591,7 +592,7 @@ public class DoubleToStringConverter {
 	 */
 	public void toExponential(double value,
 			int requestedDigits,
-			FormatOptions formatOptions, Appendable resultBuilder) {
+			FormatOptions formatOptions, Buffer resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
@@ -674,7 +675,7 @@ public class DoubleToStringConverter {
 	public void toPrecision(double value,
 						int precision,
 						FormatOptions formatOptions,
-						Appendable resultBuilder) {
+						Buffer resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
@@ -736,7 +737,7 @@ public class DoubleToStringConverter {
 				(value != 0.0 || !uniqueZero);
 	}
 
-	private void appendSign(double value, FormatOptions formatOptions, Appendable resultBuilder) {
+	private void appendSign(double value, FormatOptions formatOptions, Buffer resultBuilder) {
 		if (shouldEmitMinus(value)) {
 			resultBuilder.append('-');
 		} else if (formatOptions.isSpaceWhenPositive()) {
@@ -869,7 +870,7 @@ public class DoubleToStringConverter {
 	 * 	Add character padding to the builder. If count is non-positive,
 	 * 	nothing is added to the builder.
 	 */
-	private static void addPadding(Appendable sb, @Unsigned int character, int count) {
+	private static void addPadding(Buffer sb, @Unsigned int character, int count) {
 		for (int i=count; i > 0; i--) {
 			sb.append((char)character);
 		}
