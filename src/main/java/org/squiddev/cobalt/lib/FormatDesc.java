@@ -240,19 +240,20 @@ public class FormatDesc {
 	}
 
 	public void format(Buffer buf, double number) {
-		if (precision == -1) precision = 6;
+		int prec = this.precision;
+		if (prec == -1) prec = 6;
 
 		if (conversion == 'g' || conversion == 'G') {
-			if (precision == 0) precision = 1;
-			DOUBLE_CONVERTER.toPrecision(number, precision,
+			if (prec == 0) prec = 1;
+			DOUBLE_CONVERTER.toPrecision(number, prec,
 					doubleOpts(conversion == 'G'),
 					buf);
 		} else if (conversion == 'e' || conversion == 'E') {
-			DOUBLE_CONVERTER.toExponential(number, precision,
+			DOUBLE_CONVERTER.toExponential(number, prec,
 					doubleOpts(conversion == 'E'),
 					buf);
 		} else if (conversion == 'f') {
-			DOUBLE_CONVERTER.toFixed(number, precision,
+			DOUBLE_CONVERTER.toFixed(number, prec,
 					doubleOpts(false),
 					buf);
 		}
