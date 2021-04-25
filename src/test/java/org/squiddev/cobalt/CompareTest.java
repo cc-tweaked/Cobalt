@@ -46,13 +46,6 @@ public class CompareTest {
 		helpers.runComparisonTest(name);
 	}
 
-	@Test
-	void tmpFormat() throws Exception {
-		ScriptHelper helpers = new ScriptHelper("/compare/");
-		helpers.setup();
-		helpers.runComparisonTest("format");
-	}
-
 	/**
 	 * Compatibility tests for the LuaJ VM
 	 *
