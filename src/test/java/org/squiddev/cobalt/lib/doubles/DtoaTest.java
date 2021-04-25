@@ -39,6 +39,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
+@SuppressWarnings("type.argument.type.incompatible")
 public class DtoaTest {
 
 	@BeforeAll

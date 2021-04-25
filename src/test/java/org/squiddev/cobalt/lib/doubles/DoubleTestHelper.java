@@ -30,6 +30,12 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
+import org.checkerframework.checker.signedness.qual.PolySigned;
+import org.checkerframework.checker.signedness.qual.SignedPositive;
+import org.checkerframework.checker.signedness.qual.SignednessGlb;
+import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.junit.jupiter.api.Assertions;
+
 import java.io.BufferedReader;
 import java.net.URL;
 import java.nio.file.Files;
@@ -39,19 +45,36 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
 public final class DoubleTestHelper {
 	public static void CHECK(boolean v) {
 		assertTrue(v);
 	}
 
-	public static <T extends Comparable<T>> void CHECK_GE(T left, T right) {
+	public static <T extends @PolySigned Comparable<T>> void CHECK_GE(T left, T right) {
 		assertThat(left,
 				greaterThanOrEqualTo(right));
 	}
 
-	public static <T extends Comparable<T>> void CHECK_GT(T left, T right) {
-		assertThat(left, greaterThan(right));
+	public static void CHECK_GE(int left, int right) {
+		assertTrue(left >= right,
+				left + " >= " + right);
+	}
+
+	public static void CHECK_GT(int left, int right) {
+		assertTrue(left > right,
+				left + " > " + right);
+	}
+
+	public static void CHECK_GT_U(@Unsigned int left, @Unsigned int right) {
+		assertTrue(uintGT(left, right),
+				left + " > " + right);
+	}
+
+	public static void CHECK_GT_U(@Unsigned long left, @Unsigned long right) {
+		assertTrue(ulongGT(left, right),
+				left + " > " + right);
 	}
 
 	/** special case when comparing buffers */
@@ -73,11 +96,13 @@ public final class DoubleTestHelper {
 		assertEquals(expected, actual);
 	}
 
-	public static void CHECK_EQ(int expected, int actual) {
+	@SuppressWarnings("argument.type.incompatible")
+	public static void CHECK_EQ(@PolySigned int expected, @PolySigned int actual) {
 		assertEquals(expected, actual);
 	}
 
-	public static void CHECK_EQ(long expected, long actual) {
+	@SuppressWarnings("argument.type.incompatible")
+	public static void CHECK_EQ(@PolySigned long expected, @PolySigned long actual) {
 		assertEquals(expected, actual);
 	}
 

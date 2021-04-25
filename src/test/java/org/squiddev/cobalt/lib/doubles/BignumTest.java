@@ -30,6 +30,7 @@
  */
 package org.squiddev.cobalt.lib.doubles;
 
+import org.checkerframework.checker.signedness.qual.Unsigned;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -387,6 +388,7 @@ public class BignumTest {
 
 
 	@Test
+	@SuppressWarnings("cast.unsafe")
 	public void multiplyUInt64() {
 		char[] buffer = new char[kBufferSize];
 		Bignum bignum = new Bignum();
@@ -435,31 +437,31 @@ public class BignumTest {
 		bignum.multiplyByUInt64(0xFFFFFFFF_FFFFFFFFL);
 		CHECK_EQ("FFFFFFFFFFFFFFFE0000000000000001", bignum.toHexString());
 
-		bignum.assignUInt16((short) 0x1);
+		bignum.assignUInt16((@Unsigned short) 0x1);
 		bignum.shiftLeft(100);
 		// "10 0000 0000 0000 0000 0000 0000"
 		bignum.multiplyByUInt64(2L);
 		CHECK_EQ("20000000000000000000000000", bignum.toHexString());
 
-		bignum.assignUInt16((short) 0x1);
+		bignum.assignUInt16((@Unsigned short) 0x1);
 		bignum.shiftLeft(100);
 		// "10 0000 0000 0000 0000 0000 0000"
 		bignum.multiplyByUInt64(0xFL);
 		CHECK_EQ("F0000000000000000000000000", bignum.toHexString());
 
-		bignum.assignUInt16((short)0xFFFF);
+		bignum.assignUInt16((@Unsigned short)0xFFFF);
 		bignum.shiftLeft(100);
 		// "FFFF0 0000 0000 0000 0000 0000 0000"
 		bignum.multiplyByUInt64(0xFFFFL);
 		CHECK_EQ("FFFE00010000000000000000000000000", bignum.toHexString());
 
-		bignum.assignUInt16((short)0xFFFF);
+		bignum.assignUInt16((@Unsigned short)0xFFFF);
 		bignum.shiftLeft(100);
 		// "FFFF0 0000 0000 0000 0000 0000 0000"
 		bignum.multiplyByUInt64(0xFFFFFFFFL);
 		CHECK_EQ("FFFEFFFF00010000000000000000000000000", bignum.toHexString());
 
-		bignum.assignUInt16((short)0xFFFF);
+		bignum.assignUInt16((@Unsigned short)0xFFFF);
 		bignum.shiftLeft(100);
 		// "FFFF0 0000 0000 0000 0000 0000 0000"
 		bignum.multiplyByUInt64(0xFFFFFFFF_FFFFFFFFL);
@@ -471,6 +473,7 @@ public class BignumTest {
 	}
 
 	@Test
+	@SuppressWarnings("cast.unsafe")
 	public void multiplyUInt32() {
 		char[] buffer = new char[kBufferSize];
 		Bignum bignum = new Bignum();

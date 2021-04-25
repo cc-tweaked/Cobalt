@@ -194,7 +194,7 @@ public class IeeeTest {
 		CHECK_EQ(diy_fp.e(), boundary_plus[0].e());
 		// 1.0 does have a significand of the form 2^p (for some p).
 		// Therefore its lower boundary is twice as close as the upper boundary.
-		CHECK_GT(boundary_plus[0].f() - diy_fp.f() , diy_fp.f() - boundary_minus[0].f());
+		CHECK_GT_U(boundary_plus[0].f() - diy_fp.f() , diy_fp.f() - boundary_minus[0].f());
 		CHECK_EQ((1L << 9) , diy_fp.f() - boundary_minus[0].f());  // NOLINT
 		CHECK_EQ((1L << 10) , boundary_plus[0].f() - diy_fp.f());  // NOLINT
 
