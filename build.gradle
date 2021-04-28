@@ -1,16 +1,20 @@
 plugins {
-    id "com.github.hierynomus.license" version "0.15.0"
+	id "com.github.hierynomus.license" version "0.15.0"
+	id "java"
+	id "maven-publish"
 }
-
-apply plugin: 'java'
-apply plugin: 'maven-publish'
-apply plugin: 'maven'
 
 group = 'org.squiddev'
 version = '0.5.1-SNAPSHOT'
 
-targetCompatibility = sourceCompatibility = 1.8
-compileTestJava.sourceCompatibility = compileTestJava.targetCompatibility = 1.8
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+
+	withSourcesJar()
+	withJavadocJar()
+}
 
 repositories {
 	mavenCentral()
@@ -26,7 +30,7 @@ dependencies {
 	testImplementation 'org.hamcrest:hamcrest-library:2.2'
 	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
 
-	testCompile 'org.openjdk.jmh:jmh-core:1.23'
+	testImplementation 'org.openjdk.jmh:jmh-core:1.23'
 	testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.23'
 
 	deployerJars "org.apache.maven.wagon:wagon-ssh:3.3.1"
@@ -37,62 +41,45 @@ license {
 	include("*.java")
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = 'sources'
-	from sourceSets.main.allSource
-}
+publishing {
+	publications {
+		maven(MavenPublication) {
+			from components.java
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-	classifier = 'javadoc'
-	from javadoc.destinationDir
-}
+			pom {
+				name = 'Cobalt'
+				description = 'A reentrant fork of LuaJ for Lua 5.1'
+				url = 'https://github.com/SquidDev/Cobalt'
 
-uploadArchives {
-	repositories {
-		if(project.hasProperty('mavenUploadUrl')) {
-			mavenDeployer {
-				configuration = configurations.deployerJars
-
-				repository(url: project.property('mavenUploadUrl')) {
-					authentication(
-						userName: project.property('mavenUploadUser'),
-						privateKey: project.property('mavenUploadKey'))
+				scm {
+					url = 'https://github.com/SquidDev/Cobalt.git'
 				}
 
-				pom.project {
-					name 'Cobalt'
-					packaging 'jar'
-					description 'A reentrant fork of LuaJ for Lua 5.1'
-					url 'https://github.com/SquidDev/Cobalt'
+				issueManagement {
+					system = 'github'
+					url = 'https://github.com/SquidDev/Cobalt/issues'
+				}
 
-					scm {
-						url 'https://github.com/SquidDev/Cobalt.git'
-					}
-
-					issueManagement {
-						system 'github'
-						url 'https://github.com/SquidDev/Cobalt/issues'
-					}
-
-					licenses {
-						license {
-							name 'MIT'
-							url 'https://github.com/SquidDev/Cobalt/blob/master/LICENSE'
-							distribution 'repo'
-						}
+				licenses {
+					license {
+						name = 'MIT'
+						url = 'https://github.com/SquidDev/Cobalt/blob/master/LICENSE'
 					}
 				}
 			}
 		}
 	}
-}
 
-publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			from components.java
-			artifact sourcesJar { classifier "sources" }
-			artifact javadocJar { classifier "javadoc" }
+	repositories {
+		if (project.hasProperty("mavenUser")) {
+			maven {
+				name = "SquidDev"
+				url = "https://squiddev.cc/maven"
+				credentials {
+					username = project.property("mavenUser") as String
+					password = project.property("mavenPass") as String
+				}
+			}
 		}
 	}
 }
@@ -109,8 +96,8 @@ task executeProfile(type: JavaExec) {
 }
 
 test {
-    useJUnitPlatform()
-    testLogging {
-        events "skipped", "failed"
-    }
+	useJUnitPlatform()
+	testLogging {
+		events "skipped", "failed"
+	}
 }
