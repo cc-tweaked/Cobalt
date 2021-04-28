@@ -1,5 +1,5 @@
 plugins {
-	id "com.github.hierynomus.license" version "0.15.0"
+	id 'org.cadixdev.licenser' version '0.6.0'
 	id "java"
 	id "maven-publish"
 }
@@ -37,7 +37,6 @@ dependencies {
 }
 
 license {
-	strictCheck true
 	include("*.java")
 }
 
