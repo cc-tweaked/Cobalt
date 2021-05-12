@@ -1087,6 +1087,11 @@ public abstract class LuaValue extends Varargs {
 		return this;
 	}
 
+	@Override
+	public void fill(LuaValue[] array, int offset) {
+		array[offset] = this;
+	}
+
 	/**
 	 * Get the metatable for this {@link LuaValue}
 	 *
@@ -1273,7 +1278,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see ValueFactory#varargsOf(LuaValue[])
 	 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 	 */
-	protected static final class ArrayVarargs extends Varargs {
+	protected static final class ArrayVarargs extends DepthVarargs {
 		private final LuaValue[] v;
 		private final Varargs r;
 
@@ -1289,6 +1294,7 @@ public abstract class LuaValue extends Varargs {
 		 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 		 */
 		public ArrayVarargs(LuaValue[] v, Varargs r) {
+			super(depth(r) + 1);
 			this.v = v;
 			this.r = r;
 		}
@@ -1313,6 +1319,12 @@ public abstract class LuaValue extends Varargs {
 			Varargs rClone = r.asImmutable();
 			return rClone == r ? this : r;
 		}
+
+		@Override
+		public void fill(LuaValue[] array, int offset) {
+			System.arraycopy(v, 0, array, offset, v.length);
+			r.fill(array, offset + v.length);
+		}
 	}
 
 	/**
@@ -1324,7 +1336,7 @@ public abstract class LuaValue extends Varargs {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
-	protected static final class ArrayPartVarargs extends Varargs {
+	protected static final class ArrayPartVarargs extends DepthVarargs {
 		private Varargs immutable;
 		private final int offset;
 		private final LuaValue[] v;
@@ -1343,6 +1355,7 @@ public abstract class LuaValue extends Varargs {
 		 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 		 */
 		public ArrayPartVarargs(LuaValue[] v, int offset, int length) {
+			super(1);
 			this.v = v;
 			this.offset = offset;
 			this.length = length;
@@ -1362,6 +1375,7 @@ public abstract class LuaValue extends Varargs {
 		 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 		 */
 		public ArrayPartVarargs(LuaValue[] v, int offset, int length, Varargs more) {
+			super(depth(more) + 1);
 			this.v = v;
 			this.offset = offset;
 			this.length = length;
@@ -1390,6 +1404,12 @@ public abstract class LuaValue extends Varargs {
 			System.arraycopy(v, offset, values, 0, length);
 			return this.immutable = new ArrayVarargs(values, more.asImmutable());
 		}
+
+		@Override
+		public void fill(LuaValue[] array, int offset) {
+			System.arraycopy(v, offset, array, offset, length);
+			more.fill(array, offset + length);
+		}
 	}
 
 	/**
@@ -1400,7 +1420,7 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @see ValueFactory#varargsOf(LuaValue, Varargs)
 	 */
-	protected static final class PairVarargs extends Varargs {
+	protected static final class PairVarargs extends DepthVarargs {
 		private final LuaValue v1;
 		private final Varargs v2;
 
@@ -1415,6 +1435,7 @@ public abstract class LuaValue extends Varargs {
 		 * @see ValueFactory#varargsOf(LuaValue, Varargs)
 		 */
 		public PairVarargs(LuaValue v1, Varargs v2) {
+			super(depth(v2) + 1);
 			this.v1 = v1;
 			this.v2 = v2;
 		}
@@ -1438,6 +1459,12 @@ public abstract class LuaValue extends Varargs {
 		public Varargs asImmutable() {
 			Varargs vClone = v2.asImmutable();
 			return vClone == v2 ? this : new PairVarargs(v1, vClone);
+		}
+
+		@Override
+		public void fill(LuaValue[] array, int offset) {
+			array[offset] = v1;
+			v2.fill(array, offset + 1);
 		}
 	}
 }

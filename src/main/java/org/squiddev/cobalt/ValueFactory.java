@@ -24,9 +24,12 @@
  */
 package org.squiddev.cobalt;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class ValueFactory {
+	private static final int MAX_DEPTH = 5;
+
 	/**
 	 * Convert java boolean to a {@link LuaValue}.
 	 *
@@ -272,14 +275,15 @@ public class ValueFactory {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
 	public static Varargs varargsOf(final LuaValue[] v, Varargs r) {
-		switch (v.length) {
-			case 0:
-				return r;
-			case 1:
-				return new LuaValue.PairVarargs(v[0], r);
-			default:
-				return new LuaValue.ArrayVarargs(v, r);
+		if (v.length == 0) return r;
+
+		if (Varargs.DepthVarargs.depth(r) > MAX_DEPTH) {
+			LuaValue[] values = Arrays.copyOf(v, v.length + r.count());
+			r.fill(values, v.length);
+			return new LuaValue.ArrayVarargs(values, Constants.NONE);
 		}
+
+		return v.length == 1 ? new LuaValue.PairVarargs(v[0], r) : new LuaValue.ArrayVarargs(v, r);
 	}
 
 	/**
@@ -317,14 +321,16 @@ public class ValueFactory {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOf(final LuaValue[] v, final int offset, final int length, Varargs more) {
-		switch (length) {
-			case 0:
-				return more;
-			case 1:
-				return new LuaValue.PairVarargs(v[offset], more);
-			default:
-				return new LuaValue.ArrayPartVarargs(v, offset, length, more);
+		if (length == 0) return more;
+
+		if (Varargs.DepthVarargs.depth(more) > MAX_DEPTH) {
+			LuaValue[] values = new LuaValue[length + more.count()];
+			System.arraycopy(v, offset, values, 0, length);
+			more.fill(values, length);
+			return new LuaValue.ArrayVarargs(values, Constants.NONE);
 		}
+
+		return length == 1 ? new LuaValue.PairVarargs(v[offset], more) : new LuaValue.ArrayPartVarargs(v, offset, length, more);
 	}
 
 	/**
@@ -339,12 +345,14 @@ public class ValueFactory {
 	 * @return {@link Varargs} wrapping the supplied values.
 	 */
 	public static Varargs varargsOf(LuaValue v, Varargs r) {
-		switch (r.count()) {
-			case 0:
-				return v;
-			default:
-				return new LuaValue.PairVarargs(v, r);
+		if (Varargs.DepthVarargs.depth(r) > MAX_DEPTH) {
+			LuaValue[] values = new LuaValue[1 + r.count()];
+			values[0] = v;
+			r.fill(values, 1);
+			return new LuaValue.ArrayVarargs(values, Constants.NONE);
 		}
+
+		return r.count() == 0 ? v : new LuaValue.PairVarargs(v, r);
 	}
 
 	/**
@@ -360,12 +368,15 @@ public class ValueFactory {
 	 * @return {@link Varargs} wrapping the supplied values.
 	 */
 	public static Varargs varargsOf(LuaValue v1, LuaValue v2, Varargs v3) {
-		switch (v3.count()) {
-			case 0:
-				return new LuaValue.PairVarargs(v1, v2);
-			default:
-				return new LuaValue.ArrayVarargs(new LuaValue[]{v1, v2}, v3);
+		if (Varargs.DepthVarargs.depth(v3) > MAX_DEPTH) {
+			LuaValue[] values = new LuaValue[2 + v3.count()];
+			values[0] = v1;
+			values[1] = v2;
+			v3.fill(values, 2);
+			return new LuaValue.ArrayVarargs(values, Constants.NONE);
 		}
+
+		return v3.count() == 0 ? new LuaValue.PairVarargs(v1, v2) : new LuaValue.ArrayVarargs(new LuaValue[]{v1, v2}, v3);
 	}
 
 	public static LuaTable weakTable(boolean weakKeys, boolean weakValues) {
