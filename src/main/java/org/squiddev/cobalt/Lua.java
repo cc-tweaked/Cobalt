@@ -97,7 +97,7 @@ public class Lua {
 	public static final int MAXARG_B = ((1 << SIZE_B) - 1);
 	public static final int MAXARG_C = ((1 << SIZE_C) - 1);
 	public static final int MAXARG_Bx = ((1 << SIZE_Bx) - 1);
-	public static final int MAXARG_sBx = (MAXARG_Bx >> 1);     	/* `sBx' is signed */
+	public static final int MAXARG_sBx = (MAXARG_Bx >> 1);        /* `sBx' is signed */
 
 	public static final int MASK_OP = ((1 << SIZE_OP) - 1) << POS_OP;
 	public static final int MASK_A = ((1 << SIZE_A) - 1) << POS_A;
@@ -140,8 +140,8 @@ public class Lua {
 
 
 	/*
-	** Macros to operate RK indices
-	*/
+	 ** Macros to operate RK indices
+	 */
 
 	/**
 	 * This bit 1 means constant (0 means register)
@@ -188,15 +188,15 @@ public class Lua {
 
 
 	/*
-	** R(x) - register
-	** Kst(x) - constant (in constant table)
-	** RK(x) == if ISK(x) then Kst(INDEXK(x)) else R(x)
-	*/
+	 ** R(x) - register
+	 ** Kst(x) - constant (in constant table)
+	 ** RK(x) == if ISK(x) then Kst(INDEXK(x)) else R(x)
+	 */
 
 
 	/*
-	** grep "ORDER OP" if you change these enums
-	*/
+	 ** grep "ORDER OP" if you change these enums
+	 */
 
 	/*----------------------------------------------------------------------
 	name		args	description
@@ -286,13 +286,13 @@ public class Lua {
 
 
 	/*
-	** masks for instruction properties. The format is:
-	** bits 0-1: op mode
-	** bits 2-3: C arg mode
-	** bits 4-5: B arg mode
-	** bit 6: instruction set register A
-	** bit 7: operator is a test
-	*/
+	 ** masks for instruction properties. The format is:
+	 ** bits 0-1: op mode
+	 ** bits 2-3: C arg mode
+	 ** bits 4-5: B arg mode
+	 ** bit 6: instruction set register A
+	 ** bit 7: operator is a test
+	 */
 
 	public static final int OpArgN = 0;  /* argument is not used */
 	public static final int OpArgU = 1;  /* argument is used */

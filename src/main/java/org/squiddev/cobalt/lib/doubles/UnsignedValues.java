@@ -31,7 +31,6 @@
 package org.squiddev.cobalt.lib.doubles;
 
 
-import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.SignedPositive;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
@@ -44,9 +43,9 @@ public final class UnsignedValues {
 	private static final @Unsigned long INT_MASK = 0xffff_ffffL;
 	private static final @Unsigned long NOT_INT_MASK = ~INT_MASK;
 	@SuppressWarnings("cast.unsafe") // The exact value needed for unsigned comparisons
-	private static final @Unsigned int INT_MIN_VALUE = (@Unsigned int)Integer.MIN_VALUE;
+	private static final @Unsigned int INT_MIN_VALUE = (@Unsigned int) Integer.MIN_VALUE;
 	@SuppressWarnings("cast.unsafe") // The exact value needed for unsigned comparisons
-	private static final @Unsigned long LONG_MIN_VALUE = (@Unsigned long)Long.MIN_VALUE;
+	private static final @Unsigned long LONG_MIN_VALUE = (@Unsigned long) Long.MIN_VALUE;
 
 	/**
 	 * return true the unsigned long value can fit into an unsigned int
@@ -60,7 +59,9 @@ public final class UnsignedValues {
 		return Integer.toUnsignedLong(value);
 	}
 
-	/** convert a signed value to an unsigned long */
+	/**
+	 * convert a signed value to an unsigned long
+	 */
 	@SuppressWarnings("argument.type.incompatible") // because API method isn't annotated
 	public static @Unsigned long toUlongFromSigned(@SignedPositive int value) {
 		if (value < 0) throw new IllegalArgumentException("value must be positive");
@@ -69,17 +70,17 @@ public final class UnsignedValues {
 
 	public static @Unsigned int toUint(@Unsigned long value) {
 		// TODO casting to int might be enough
-		return (int)(value & INT_MASK);
+		return (int) (value & INT_MASK);
 	}
 
 	/**
 	 * Convert a positive {@link BigInteger} to asn unsigned int.  Positivity is checked,
-	 * 	but Overflow is not checked.
+	 * but Overflow is not checked.
 	 */
 	@SuppressWarnings("return.type.incompatible") // value arguments is check for positivity
 	public static @Unsigned int toUint(BigInteger value) {
 		if (value.signum() < 0) throw new IllegalArgumentException("value must be positive");
-		return (int)value.and(BigInteger.valueOf(INT_MASK)).longValue();
+		return (int) value.and(BigInteger.valueOf(INT_MASK)).longValue();
 	}
 
 	public static @Unsigned int uDivide(@Unsigned int dividend, @Unsigned int divisor) {
@@ -103,6 +104,7 @@ public final class UnsignedValues {
 	public static boolean uintLE(@Unsigned int lval, @Unsigned int rval) {
 		return lval + INT_MIN_VALUE <= rval + INT_MIN_VALUE;
 	}
+
 	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean uintLT(@Unsigned int lval, @Unsigned int rval) {
 		return lval + INT_MIN_VALUE < rval + INT_MIN_VALUE;
@@ -112,6 +114,7 @@ public final class UnsignedValues {
 	public static boolean uintGE(@Unsigned int lval, @Unsigned int rval) {
 		return lval + INT_MIN_VALUE >= rval + INT_MIN_VALUE;
 	}
+
 	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean uintGT(@Unsigned int lval, @Unsigned int rval) {
 		return lval + INT_MIN_VALUE > rval + INT_MIN_VALUE;
@@ -121,6 +124,7 @@ public final class UnsignedValues {
 	public static boolean ulongGE(@Unsigned long lval, @Unsigned long rval) {
 		return lval + LONG_MIN_VALUE >= rval + LONG_MIN_VALUE;
 	}
+
 	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean ulongGT(@Unsigned long lval, @Unsigned long rval) {
 		return lval + LONG_MIN_VALUE > rval + LONG_MIN_VALUE;
@@ -130,48 +134,55 @@ public final class UnsignedValues {
 	public static boolean ulongLE(@Unsigned long lval, @Unsigned long rval) {
 		return lval + LONG_MIN_VALUE <= rval + LONG_MIN_VALUE;
 	}
+
 	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean ulongLT(@Unsigned long lval, @Unsigned long rval) {
 		return lval + LONG_MIN_VALUE < rval + LONG_MIN_VALUE;
 	}
 
-	private UnsignedValues() {}
+	private UnsignedValues() {
+	}
 
 	// method overridden to avoid implicit casts
 	@SuppressWarnings({"cast.unsafe", "ImplicitNumericConversion"})
 	public static char digitToChar(@Unsigned long digit) {
-		if (ulongGT(digit, 9))
+		if (ulongGT(digit, 9)) {
 			throw new IllegalArgumentException("digit must be 0-9");
-		return (char)(digit + ASCII_ZERO);
+		}
+		return (char) (digit + ASCII_ZERO);
 	}
 
 	@SuppressWarnings("cast.unsafe")
 	public static char digitToChar(@Unsigned int digit) {
-		if (uintGT(digit, 9))
+		if (uintGT(digit, 9)) {
 			throw new IllegalArgumentException("digit must be 0-9");
-		return (char)(digit + ASCII_ZERO);
+		}
+		return (char) (digit + ASCII_ZERO);
 	}
 
 	// method overridden to avoid implicit casts
+
 	/**
 	 * convert to integer value to character equivilent, works like {@link #digitToChar}, but allows
-	 *  {@code digit} to be 10 that is corrected later.
+	 * {@code digit} to be 10 that is corrected later.
 	 */
 	@SuppressWarnings({"cast.unsafe", "ImplicitNumericConversion"})
 	public static char digitToCharWithOverflow(@Unsigned long digit) {
-		if (ulongGT(digit, 10))
+		if (ulongGT(digit, 10)) {
 			throw new IllegalArgumentException("digit must be 0-10");
-		return (char)(digit + ASCII_ZERO);
+		}
+		return (char) (digit + ASCII_ZERO);
 	}
 
 	/**
 	 * convert to integer value to character equivilent, works like {@link #digitToChar}, but allows
-	 *  {@code digit} to be 10 that is corrected later.
+	 * {@code digit} to be 10 that is corrected later.
 	 */
 	@SuppressWarnings("cast.unsafe")
 	public static char digitToCharWithOverflow(@Unsigned int digit) {
-		if (uintGT(digit, 10))
+		if (uintGT(digit, 10)) {
 			throw new IllegalArgumentException("digit must be 0-10");
-		return (char)(digit + ASCII_ZERO);
+		}
+		return (char) (digit + ASCII_ZERO);
 	}
 }

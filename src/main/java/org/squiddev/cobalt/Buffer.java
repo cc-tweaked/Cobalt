@@ -221,7 +221,7 @@ public final class Buffer {
 	public Buffer append(char[] chars, int start, int length) {
 		makeRoom(0, length);
 		int j = this.offset + this.length;
-		for (int i = start; i < start+length; i++, j++) {
+		for (int i = start; i < start + length; i++, j++) {
 			char c = chars[i];
 			bytes[j] = c < 256 ? (byte) c : 63;
 		}

@@ -32,16 +32,19 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.*;
+import org.squiddev.cobalt.Buffer;
+import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.Flags;
+import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.FormatOptions;
+import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.PrecisionPolicy;
+import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.Symbols;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DoubleToStringConverterTest {
 	private static final Symbols SYMBOLS = new Symbols("Infinity", "NaN", 'e');
 	private static final FormatOptions FORMAT_OPTIONS =
-			new FormatOptions(SYMBOLS, false, false, false, -1, false, false);
+		new FormatOptions(SYMBOLS, false, false, false, -1, false, false);
 	private DoubleToStringConverter conv;
-	private final StringAppendable appendable = new StringAppendable();
 
 	@BeforeAll
 	static void initAll() {
@@ -116,14 +119,14 @@ class DoubleToStringConverterTest {
 	void toExponential() {
 		conv = newConv(0);
 
-		testExp("3.1e0",    3.12, 1);
-		testExp("5.000e0",  5.0, 3);
-		testExp("1.00e-3",  0.001, 2);
+		testExp("3.1e0", 3.12, 1);
+		testExp("5.000e0", 5.0, 3);
+		testExp("1.00e-3", 0.001, 2);
 		testExp("3.1415e0", 3.1415, 4);
-		testExp("3.142e0",  3.1415, 3);
+		testExp("3.142e0", 3.1415, 3);
 		testExp("1.235e14", 123456789000000.0, 3);
 		testExp("1.00000000000000001988462483865600e30",
-				1000000000000000019884624838656.0, 32);
+			1000000000000000019884624838656.0, 32);
 		testExp("1e3", 1234, 0);
 
 		conv = newCobaltConv();
@@ -147,8 +150,8 @@ class DoubleToStringConverterTest {
 		int maxTrailingZeros = 0;
 		conv = newConvPrec(0, maxLeadingZeros, maxTrailingZeros);
 
-		testPrec("0.0000012", 0.0000012345,  2);
-		testPrec("1.2e-7",    0.00000012345, 2);
+		testPrec("0.0000012", 0.0000012345, 2);
+		testPrec("1.2e-7", 0.00000012345, 2);
 
 		/// EMIT_TRAILING_ZERO_AFTER_POINT is counted toward the maxTrailingZeros limit
 		maxTrailingZeros = 1;
@@ -157,7 +160,7 @@ class DoubleToStringConverterTest {
 		conv = newConvPrec(Flags.EMIT_TRAILING_DECIMAL_POINT, maxLeadingZeros, maxTrailingZeros);
 		testPrec("230.", 230.0, 2);
 		conv = newConvPrec(Flags.EMIT_TRAILING_DECIMAL_POINT | Flags.EMIT_TRAILING_ZERO_AFTER_POINT,
-				maxLeadingZeros, maxTrailingZeros);
+			maxLeadingZeros, maxTrailingZeros);
 		testPrec("2.3e2", 230.0, 2);
 
 		maxTrailingZeros = 3;
@@ -179,12 +182,12 @@ class DoubleToStringConverterTest {
 		testPrec("               1e+07", 10000000.0, precision, padding(20, false, false));
 
 		FormatOptions fo = new FormatOptions(SYMBOLS,
-				true,
-				false,
-				true,
-				20,
-				false,
-				false);
+			true,
+			false,
+			true,
+			20,
+			false,
+			false);
 
 		testPrec("            +0.00000", 0.0, precision, fo);
 		testPrec("            +1.00000", 1.0, precision, fo);
@@ -193,13 +196,13 @@ class DoubleToStringConverterTest {
 	}
 
 	private void testPrec(String expected, double val, int requestedDigits, FormatOptions fo) {
-		appendable.setLength(0);
+		Buffer appendable = new Buffer();
 		conv.toPrecision(val, requestedDigits, fo, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
 	private void testPrec(String expected, double val, int requestedDigits) {
-		appendable.setLength(0);
+		Buffer appendable = new Buffer();
 		conv.toPrecision(val, requestedDigits, FORMAT_OPTIONS, appendable);
 		assertEquals(expected, appendable.toString());
 	}
@@ -209,94 +212,54 @@ class DoubleToStringConverterTest {
 	}
 
 	private void testExp(String expected, double val, int requestedDigits, FormatOptions fo) {
-		appendable.setLength(0);
+		Buffer appendable = new Buffer();
 		conv.toExponential(val, requestedDigits, fo, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
 	private void testFixed(String expected, double val, int precision, FormatOptions fo) {
-		appendable.setLength(0);
+		Buffer appendable = new Buffer();
 		conv.toFixed(val, precision, fo, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
 	private void testFixed(String expected, double val, int requestedDigits) {
-		appendable.setLength(0);
-		conv.toFixed(val, requestedDigits, FORMAT_OPTIONS , appendable);
+		Buffer appendable = new Buffer();
+		conv.toFixed(val, requestedDigits, FORMAT_OPTIONS, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 
 	private FormatOptions padding(int padWidth, boolean zeroPad, boolean leftAdjust) {
 		return new FormatOptions(SYMBOLS,
-				false,
-				false,
-				false,
-				padWidth,
-				zeroPad,
-				leftAdjust);
+			false,
+			false,
+			false,
+			padWidth,
+			zeroPad,
+			leftAdjust);
 	}
 
 	private FormatOptions formatOptTrailingPoint() {
 		return new FormatOptions(SYMBOLS,
-				false,
-				false,
-				true,
-				-1,
-				false,
-				false);
+			false,
+			false,
+			true,
+			-1,
+			false,
+			false
+		);
 	}
 
 	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros) {
-		return new DoubleToStringConverter(flags,
-				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), 0);
-	}
-
-	private DoubleToStringConverter newConvPrec(int flags, int maxLeadingZeros, int maxTrailingZeros,
-			int minExponentWidth) {
-		return new DoubleToStringConverter(flags,
-				new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), minExponentWidth);
+		return new DoubleToStringConverter(flags, new PrecisionPolicy(maxLeadingZeros, maxTrailingZeros), 0);
 	}
 
 	private DoubleToStringConverter newConv(int flags) {
-		return new DoubleToStringConverter(flags,
-				new PrecisionPolicy(6, 0), 0);
+		return new DoubleToStringConverter(flags, new PrecisionPolicy(6, 0), 0);
 	}
 
 	private DoubleToStringConverter newCobaltConv() {
 		int flags = Flags.EMIT_POSITIVE_EXPONENT_SIGN | Flags.NO_TRAILING_ZERO;
-		return new DoubleToStringConverter(flags,
-				new PrecisionPolicy(6, 0), 2);
-	}
-
-
-	private static class StringAppendable implements Appendable {
-		final StringBuilder sb = new StringBuilder();
-
-		@Override
-		public String toString() {
-			return sb.toString();
-		}
-
-		public void setLength(int newLength) {
-			sb.setLength(newLength);
-		}
-
-		@Override
-		public StringAppendable append(String string) {
-			sb.append(sb);
-			return this;
-		}
-
-		@Override
-		public StringAppendable append(char character) {
-			sb.append(character);
-			return this;
-		}
-
-		@Override
-		public StringAppendable append(char[] chars, int offset, int len) {
-			sb.append(chars, offset, len);
-			return this;
-		}
+		return new DoubleToStringConverter(flags, new PrecisionPolicy(6, 0), 2);
 	}
 }

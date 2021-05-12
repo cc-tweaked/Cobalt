@@ -133,21 +133,21 @@ public class DtoaTest {
 		CHECK_EQ(10, buffer.getPointPosition());
 
 		doubleToAscii(4294967272.0, DtoaMode.PRECISION, 14,
-				buffer);
+			buffer);
 		CHECK_GE(14, buffer.length());
 		buffer.truncateAllZeros();
 		CHECK_EQ("4294967272", stringOf(buffer));
 		CHECK_EQ(10, buffer.getPointPosition());
 
 		doubleToAscii(4.1855804968213567e298, DtoaMode.PRECISION, 20,
-				buffer);
+			buffer);
 		CHECK_GE(20, buffer.length());
 		buffer.truncateAllZeros();
 		CHECK_EQ("41855804968213567225", stringOf(buffer));
 		CHECK_EQ(299, buffer.getPointPosition());
 
 		doubleToAscii(5.5626846462680035e-309, DtoaMode.PRECISION, 1,
-				buffer);
+			buffer);
 		CHECK_GE(1, buffer.length());
 		buffer.truncateAllZeros();
 		CHECK_EQ("6", stringOf(buffer));
@@ -161,7 +161,7 @@ public class DtoaTest {
 		CHECK_EQ(10, buffer.getPointPosition());
 
 		doubleToAscii(-2147483648.0, DtoaMode.PRECISION, 5,
-				buffer);
+			buffer);
 		CHECK_GE(5, buffer.length());
 		buffer.truncateAllZeros();
 		CHECK_EQ(1, buffer.getSign());
@@ -169,7 +169,7 @@ public class DtoaTest {
 		CHECK_EQ(10, buffer.getPointPosition());
 
 		doubleToAscii(-3.5844466002796428e+298, DtoaMode.PRECISION, 10,
-				buffer);
+			buffer);
 		CHECK_EQ(1, buffer.getSign());
 		CHECK_GE(10, buffer.length());
 		buffer.truncateAllZeros();
@@ -295,7 +295,7 @@ public class DtoaTest {
 			DoubleTestHelper.eachPrecision(state, (st, v, numberDigits, representation, decimalPoint) -> {
 				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
 				doubleToAscii(v, DtoaMode.PRECISION, numberDigits,
-						st.buffer);
+					st.buffer);
 				assertThat(st.underTest, st.buffer.getSign(), is(false)); // All precomputed numbers are positive.
 				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
 				assertThat(st.underTest, st.buffer.length(), is(greaterThanOrEqualTo(numberDigits)));

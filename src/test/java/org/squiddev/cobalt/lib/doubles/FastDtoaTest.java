@@ -70,20 +70,20 @@ public class FastDtoaTest {
 
 		double min_double = 5e-324;
 		status = FastDtoa.fastDtoa(min_double, 5,
-				buffer);
+			buffer);
 		CHECK(status);
 		CHECK_EQ("49407", buffer);
 		CHECK_EQ(-323, buffer.getPointPosition());
 
 		double max_double = 1.7976931348623157e308;
 		status = FastDtoa.fastDtoa(max_double, 7,
-				buffer);
+			buffer);
 		CHECK(status);
 		CHECK_EQ("1797693", buffer);
 		CHECK_EQ(309, buffer.getPointPosition());
 
 		status = FastDtoa.fastDtoa(4294967272.0, 14,
-				buffer);
+			buffer);
 		if (status) {
 			CHECK_GE(14, buffer.length());
 			buffer.truncateAllZeros();
@@ -92,25 +92,25 @@ public class FastDtoaTest {
 		}
 
 		status = FastDtoa.fastDtoa(4.1855804968213567e298, 17,
-				buffer);
+			buffer);
 		CHECK(status);
 		CHECK_EQ("41855804968213567", buffer);
 		CHECK_EQ(299, buffer.getPointPosition());
 
 		status = FastDtoa.fastDtoa(5.5626846462680035e-309, 1,
-				buffer);
+			buffer);
 		CHECK(status);
 		CHECK_EQ("6", buffer);
 		CHECK_EQ(-308, buffer.getPointPosition());
 
 		status = FastDtoa.fastDtoa(2147483648.0, 5,
-				buffer);
+			buffer);
 		CHECK(status);
 		CHECK_EQ("21475", buffer);
 		CHECK_EQ(10, buffer.getPointPosition());
 
 		status = FastDtoa.fastDtoa(3.5844466002796428e+298, 10,
-				buffer);
+			buffer);
 		CHECK(status);
 		CHECK_GE(10, buffer.length());
 		buffer.truncateAllZeros();
@@ -148,7 +148,8 @@ public class FastDtoaTest {
 
 
 	static class ShortestState {
-		DecimalRepBuf buffer = new DecimalRepBuf(BUFFER_SIZE);;
+		DecimalRepBuf buffer = new DecimalRepBuf(BUFFER_SIZE);
+		;
 		public int total = 0;
 		public int succeeded = 0;
 		public boolean needed_max_length = false;
@@ -179,7 +180,7 @@ public class FastDtoaTest {
 				if (numberDigits <= 15) st.total15++;
 
 				status = FastDtoa.fastDtoa(v, numberDigits,
-						st.buffer);
+					st.buffer);
 				CHECK_GE(numberDigits, st.buffer.length());
 				if (status) {
 					st.succeeded++;
@@ -195,10 +196,10 @@ public class FastDtoaTest {
 		// The precomputed numbers contain many entries with many requested
 		// digits. These have a high failure rate and we therefore expect a lower
 		// success rate than for the shortest representation.
-		assertThat("85% should succeed", state.succeeded*1.0/state.total, is(greaterThan(0.85)));
+		assertThat("85% should succeed", state.succeeded * 1.0 / state.total, is(greaterThan(0.85)));
 		// However with less than 15 digits almost the algorithm should almost always
 		// succeed.
-		assertThat(state.succeeded15*1.0/state.total15, is(greaterThan(0.9999)));
+		assertThat(state.succeeded15 * 1.0 / state.total15, is(greaterThan(0.9999)));
 
 		System.out.println("gay-precision tests run :" + Integer.toString(state.total));
 	}

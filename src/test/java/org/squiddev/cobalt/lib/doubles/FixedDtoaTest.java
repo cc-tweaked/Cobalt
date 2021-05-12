@@ -474,22 +474,22 @@ public class FixedDtoaTest {
 		CHECK_EQ(-19, buffer.getPointPosition());
 
 		CHECK(FixedDtoa.fastFixedDtoa(9.1193616301674545152000000e+19, 0,
-				buffer));
+			buffer));
 		CHECK_EQ("91193616301674545152", buffer);
 		CHECK_EQ(20, buffer.getPointPosition());
 
 		CHECK(FixedDtoa.fastFixedDtoa(4.8184662102767651659096515e-04, 19,
-				buffer));
+			buffer));
 		CHECK_EQ("4818466210276765", buffer);
 		CHECK_EQ(-3, buffer.getPointPosition());
 
 		CHECK(FixedDtoa.fastFixedDtoa(1.9023164229540652612705182e-23, 8,
-				buffer));
+			buffer));
 		CHECK_EQ("", buffer);
 		CHECK_EQ(-8, buffer.getPointPosition());
 
 		CHECK(FixedDtoa.fastFixedDtoa(1000000000000000128.0, 0,
-				buffer));
+			buffer));
 		CHECK_EQ("1000000000000000128", buffer);
 		CHECK_EQ(19, buffer.getPointPosition());
 
@@ -518,7 +518,7 @@ public class FixedDtoaTest {
 
 				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
 				status = FixedDtoa.fastFixedDtoa(v, numberDigits,
-						st.buffer);
+					st.buffer);
 
 				assertThat(st.underTest, status, is(true));
 				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));

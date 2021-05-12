@@ -31,10 +31,7 @@
 package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.PolySigned;
-import org.checkerframework.checker.signedness.qual.SignedPositive;
-import org.checkerframework.checker.signedness.qual.SignednessGlb;
 import org.checkerframework.checker.signedness.qual.Unsigned;
-import org.junit.jupiter.api.Assertions;
 
 import java.io.BufferedReader;
 import java.net.URL;
@@ -45,7 +42,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.uintGT;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
 
 public final class DoubleTestHelper {
 	public static void CHECK(boolean v) {
@@ -54,30 +52,32 @@ public final class DoubleTestHelper {
 
 	public static <T extends @PolySigned Comparable<T>> void CHECK_GE(T left, T right) {
 		assertThat(left,
-				greaterThanOrEqualTo(right));
+			greaterThanOrEqualTo(right));
 	}
 
 	public static void CHECK_GE(int left, int right) {
 		assertTrue(left >= right,
-				left + " >= " + right);
+			left + " >= " + right);
 	}
 
 	public static void CHECK_GT(int left, int right) {
 		assertTrue(left > right,
-				left + " > " + right);
+			left + " > " + right);
 	}
 
 	public static void CHECK_GT_U(@Unsigned int left, @Unsigned int right) {
 		assertTrue(uintGT(left, right),
-				left + " > " + right);
+			left + " > " + right);
 	}
 
 	public static void CHECK_GT_U(@Unsigned long left, @Unsigned long right) {
 		assertTrue(ulongGT(left, right),
-				left + " > " + right);
+			left + " > " + right);
 	}
 
-	/** special case when comparing buffers */
+	/**
+	 * special case when comparing buffers
+	 */
 	public static void CHECK_EQ(String expected, DecimalRepBuf actual) {
 		assertEquals(expected, stringOf(actual));
 	}
@@ -86,7 +86,9 @@ public final class DoubleTestHelper {
 		assertEquals(expected, String.valueOf(actual));
 	}
 
-	/** comparing booleans with numeric values, that's so 1990s */
+	/**
+	 * comparing booleans with numeric values, that's so 1990s
+	 */
 	public static void CHECK_EQ(int expected, boolean actual) {
 		boolean ex = expected != 0;
 		assertEquals(ex, actual);
@@ -119,7 +121,7 @@ public final class DoubleTestHelper {
 	}
 
 	@SuppressWarnings("InfiniteLoopStatement")
-	public static <T>void eachFixed(T initialState, FixedCallback<T> cb) throws Exception {
+	public static <T> void eachFixed(T initialState, FixedCallback<T> cb) throws Exception {
 		URL rsrc = DoubleTestHelper.class.getResource("/double-convert/gay-fixed.txt");
 		assertThat("File 'gay-fixed.txt' not found", rsrc, is(notNullValue()));
 
@@ -154,7 +156,7 @@ public final class DoubleTestHelper {
 	}
 
 	@SuppressWarnings("InfiniteLoopStatement")
-	public static <T>void eachPrecision(T initialState, FixedCallback<T> cb) throws Exception {
+	public static <T> void eachPrecision(T initialState, FixedCallback<T> cb) throws Exception {
 		URL rsrc = DoubleTestHelper.class.getResource("/double-convert/gay-precision.txt");
 		assertThat("File 'gay-precision.txt' not found", rsrc, is(notNullValue()));
 
@@ -193,5 +195,6 @@ public final class DoubleTestHelper {
 	}
 
 
-	private DoubleTestHelper() {}
+	private DoubleTestHelper() {
+	}
 }

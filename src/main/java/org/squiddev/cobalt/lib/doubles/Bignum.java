@@ -41,7 +41,7 @@ import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUint;
 
 /**
  * A mutable proxy object to java BigDecimal.  Probably can be
- *   optimized away at some point, but for now it will get the things into a functional state.
+ * optimized away at some point, but for now it will get the things into a functional state.
  */
 public class Bignum {
 	private static final long LONG_SIGN_BIT = 0x8000_0000_0000_0000L;
@@ -92,14 +92,30 @@ public class Bignum {
 		val = new BigInteger(value);
 	}
 
-	public void assignUInt(@Unsigned short unsignedValue) { val = fromUnsigned(unsignedValue); }
-	public void assignUInt(@Unsigned int unsignedValue) { val = fromUnsigned(unsignedValue); }
-	public void assignUInt(@Unsigned long unsignedValue) { val = fromUnsigned(unsignedValue); }
+	public void assignUInt(@Unsigned short unsignedValue) {
+		val = fromUnsigned(unsignedValue);
+	}
+
+	public void assignUInt(@Unsigned int unsignedValue) {
+		val = fromUnsigned(unsignedValue);
+	}
+
+	public void assignUInt(@Unsigned long unsignedValue) {
+		val = fromUnsigned(unsignedValue);
+	}
 
 	// special care is needed to prevent sign-extending conversions
-	public void assignUInt16(@Unsigned short unsignedValue) { assignUInt(unsignedValue); }
-	public void assignUInt32(@Unsigned int unsignedValue) { assignUInt(unsignedValue); }
-	public void assignUInt64(@Unsigned long unsignedValue) { assignUInt(unsignedValue); }
+	public void assignUInt16(@Unsigned short unsignedValue) {
+		assignUInt(unsignedValue);
+	}
+
+	public void assignUInt32(@Unsigned int unsignedValue) {
+		assignUInt(unsignedValue);
+	}
+
+	public void assignUInt64(@Unsigned long unsignedValue) {
+		assignUInt(unsignedValue);
+	}
 
 	public void assignBignum(Bignum other) {
 		this.val = other.val;
@@ -114,7 +130,9 @@ public class Bignum {
 		val = BigInteger.valueOf(base).pow(exponent);
 	}
 
-	public void addUInt64(@Unsigned long operand) { add(fromUnsigned(operand)); }
+	public void addUInt64(@Unsigned long operand) {
+		add(fromUnsigned(operand));
+	}
 
 	private void add(BigInteger operand) {
 		val = val.add(operand);
@@ -139,10 +157,14 @@ public class Bignum {
 
 
 	// special care is needed to prevent sign-extending conversions
-	public void multiplyByUInt32(@Unsigned int unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+	public void multiplyByUInt32(@Unsigned int unsignedFactor) {
+		multiply(fromUnsigned(unsignedFactor));
+	}
 
 	// special care is needed to prevent sign-extending conversions
-	void multiplyByUInt64(@Unsigned long unsignedFactor) { multiply(fromUnsigned(unsignedFactor)); }
+	void multiplyByUInt64(@Unsigned long unsignedFactor) {
+		multiply(fromUnsigned(unsignedFactor));
+	}
 
 	// only used in tests
 	void multiplyByPowerOfTen(final int exponent) {
@@ -156,7 +178,9 @@ public class Bignum {
 
 //	void multiplyByPowerOfTen(int exponent);
 
-	void times10() { multiplyByUInt32(10); }
+	void times10() {
+		multiplyByUInt32(10);
+	}
 
 	// Pseudocode:
 	//  int result = this / other;
@@ -168,7 +192,7 @@ public class Bignum {
 		BigInteger[] rets = val.divideAndRemainder(other.val);
 		val = rets[1]; // remainder
 
-		return toUint( rets[0] ); // quotient
+		return toUint(rets[0]); // quotient
 	}
 
 //	bool toHexString(char* buffer, const int buffer_size) const;
@@ -184,24 +208,30 @@ public class Bignum {
 	static boolean equal(Bignum a, Bignum b) {
 		return compare(a, b) == 0;
 	}
+
 	static boolean lessEqual(Bignum a, Bignum b) {
 		return compare(a, b) <= 0;
 	}
+
 	static boolean less(Bignum a, Bignum b) {
 		return compare(a, b) < 0;
 	}
+
 	// Returns compare(a + b, c);
 	static int plusCompare(Bignum a, Bignum b, Bignum c) {
 		return a.val.add(b.val).compareTo(c.val);
 	}
+
 	// Returns a + b == c
 	static boolean plusEqual(Bignum a, Bignum b, Bignum c) {
 		return plusCompare(a, b, c) == 0;
 	}
+
 	// Returns a + b <= c
 	static boolean plusLessEqual(Bignum a, Bignum b, Bignum c) {
 		return plusCompare(a, b, c) <= 0;
 	}
+
 	// Returns a + b < c
 	static boolean plusLess(Bignum a, Bignum b, Bignum c) {
 		return plusCompare(a, b, c) < 0;
@@ -209,21 +239,21 @@ public class Bignum {
 
 	@SuppressWarnings({"cast.unsafe", "cast"})
 	private static BigInteger fromUnsigned(@Unsigned short value) {
-		return BigInteger.valueOf(Short.toUnsignedLong((@Signed short)value));
+		return BigInteger.valueOf(Short.toUnsignedLong((@Signed short) value));
 	}
 
 	@SuppressWarnings({"cast.unsafe", "cast"})
 	private static BigInteger fromUnsigned(@Unsigned int value) {
-		return BigInteger.valueOf(Integer.toUnsignedLong((@Signed int)value));
+		return BigInteger.valueOf(Integer.toUnsignedLong((@Signed int) value));
 	}
 
 	@SuppressWarnings("cast.unsafe")
 	private static BigInteger fromUnsigned(@Unsigned long value) {
 		if ((value & LONG_SIGN_BIT) != 0L) {
 			return BigInteger.valueOf(value & LONG_UNSIGNED_BITS)
-					.add(BigInteger.valueOf(1L).shiftLeft(63));
+				.add(BigInteger.valueOf(1L).shiftLeft(63));
 		} else {
-			return BigInteger.valueOf((@Signed long)value);
+			return BigInteger.valueOf((@Signed long) value);
 		}
 	}
 }

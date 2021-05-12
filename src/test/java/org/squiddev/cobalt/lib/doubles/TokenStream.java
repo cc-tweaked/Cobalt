@@ -122,7 +122,7 @@ public class TokenStream {
 			throw new EofException("line " + st.lineno());
 		} else if (tt != expectedType) {
 			throw new TokenException(expectedMessage + " got " + ttToSring(tt) +
-					 " line " + st.lineno());
+				" line " + st.lineno());
 		}
 	}
 
@@ -133,7 +133,7 @@ public class TokenStream {
 			case StreamTokenizer.TT_NUMBER: return "'TT_NUMBER'" + Double.toString(st.nval);
 			case StreamTokenizer.TT_WORD: return "'TT_WORD':" + st.sval;
 			case StreamTokenizer.TT_EOL: return "'TT_EOL'";
-			default: return "unknown("+Integer.valueOf(tt)+")";
+			default: return "unknown(" + Integer.valueOf(tt) + ")";
 		}
 	}
 

@@ -38,21 +38,16 @@ public class FormatDesc {
 	private static final int MAX_FLAGS = 5;
 
 	private static final DoubleToStringConverter.Symbols LOWER_SYMBOLS =
-			new DoubleToStringConverter.Symbols("inf", "nan", 'e');
+		new DoubleToStringConverter.Symbols("inf", "nan", 'e');
 	private static final DoubleToStringConverter.Symbols UPPER_SYMBOLS =
-			new DoubleToStringConverter.Symbols("INF", "NAN", 'E');
-	private static final DoubleToStringConverter DOUBLE_CONVERTER;
-
-	static {
-		int flags = DoubleToStringConverter.Flags.UNIQUE_ZERO |
-				DoubleToStringConverter.Flags.NO_TRAILING_ZERO |
-				DoubleToStringConverter.Flags.EMIT_POSITIVE_EXPONENT_SIGN;
-
-		DOUBLE_CONVERTER = new DoubleToStringConverter(
-				flags,
-				new DoubleToStringConverter.PrecisionPolicy(4, 0),
-				2);
-	}
+		new DoubleToStringConverter.Symbols("INF", "NAN", 'E');
+	private static final DoubleToStringConverter DOUBLE_CONVERTER = new DoubleToStringConverter(
+		DoubleToStringConverter.Flags.UNIQUE_ZERO |
+			DoubleToStringConverter.Flags.NO_TRAILING_ZERO |
+			DoubleToStringConverter.Flags.EMIT_POSITIVE_EXPONENT_SIGN,
+		new DoubleToStringConverter.PrecisionPolicy(4, 0),
+		2
+	);
 
 	private int width;
 	int precision;
@@ -245,17 +240,23 @@ public class FormatDesc {
 
 		if (conversion == 'g' || conversion == 'G') {
 			if (prec == 0) prec = 1;
-			DOUBLE_CONVERTER.toPrecision(number, prec,
-					doubleOpts(conversion == 'G'),
-					buf);
+			DOUBLE_CONVERTER.toPrecision(
+				number, prec,
+				doubleOpts(conversion == 'G'),
+				buf
+			);
 		} else if (conversion == 'e' || conversion == 'E') {
-			DOUBLE_CONVERTER.toExponential(number, prec,
-					doubleOpts(conversion == 'E'),
-					buf);
+			DOUBLE_CONVERTER.toExponential(
+				number, prec,
+				doubleOpts(conversion == 'E'),
+				buf
+			);
 		} else if (conversion == 'f') {
-			DOUBLE_CONVERTER.toFixed(number, prec,
-					doubleOpts(false),
-					buf);
+			DOUBLE_CONVERTER.toFixed(
+				number, prec,
+				doubleOpts(false),
+				buf
+			);
 		}
 	}
 
@@ -284,12 +285,13 @@ public class FormatDesc {
 
 	private DoubleToStringConverter.FormatOptions doubleOpts(boolean caps) {
 		return new DoubleToStringConverter.FormatOptions(
-				caps ? UPPER_SYMBOLS : LOWER_SYMBOLS,
-				explicitPlus,
-				space,
-				alternateForm,
-				width,
-				zeroPad,
-				leftAdjust);
+			caps ? UPPER_SYMBOLS : LOWER_SYMBOLS,
+			explicitPlus,
+			space,
+			alternateForm,
+			width,
+			zeroPad,
+			leftAdjust
+		);
 	}
 }

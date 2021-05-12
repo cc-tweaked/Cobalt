@@ -34,8 +34,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.lib.doubles.FixedDtoa.UInt128;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK_EQ;
 
 class UInt128Test {
@@ -50,10 +48,10 @@ class UInt128Test {
 		UInt128 val = new UInt128(0L, 0xffffL);
 		CHECK_EQ(0, val.shift(0).rawHigh());
 		CHECK_EQ(0xffffL, val.shift(0).rawLow());
-		CHECK_EQ( 0xffffL, val.shift(-64).rawHigh());
+		CHECK_EQ(0xffffL, val.shift(-64).rawHigh());
 		CHECK_EQ(0, val.shift(-64).rawLow());
 		val = new UInt128(0xffffL, 0L);
-		CHECK_EQ(0,  val.shift(64).rawHigh());
+		CHECK_EQ(0, val.shift(64).rawHigh());
 		CHECK_EQ(0xffffL, val.shift(64).rawLow());
 		val = new UInt128(0L, 0xffff_0000_0000_0000L);
 		CHECK_EQ(0x00ffL, val.shift(-8).rawHigh());
@@ -68,8 +66,8 @@ class UInt128Test {
 		UInt128 val = new UInt128(0L, 17L);
 		UInt128.QuotientRemainder qr = val.divModPowerOf2(3);
 		CHECK_EQ(0, qr.remainder.rawHigh());
-		CHECK_EQ(17 % (1<<3), qr.remainder.rawLow());
-		CHECK_EQ(17 / (1<<3), qr.quotient);
+		CHECK_EQ(17 % (1 << 3), qr.remainder.rawLow());
+		CHECK_EQ(17 / (1 << 3), qr.quotient);
 
 		val = new UInt128(0xffL, 0xffL);
 		qr = val.divModPowerOf2(68);

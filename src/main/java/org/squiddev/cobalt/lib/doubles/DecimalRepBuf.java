@@ -37,12 +37,12 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import java.util.Arrays;
 
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
+import static org.squiddev.cobalt.lib.doubles.UnsignedValues.digitToChar;
 
 /**
-	A decimal representation buffer, this contains the final digits ready for formatting, the position
- 		of the decimal point, and the sign of the number.
- 	Also includes point position {@code pointPosition}
+ * A decimal representation buffer, this contains the final digits ready for formatting, the position
+ * of the decimal point, and the sign of the number.
+ * Also includes point position {@code pointPosition}
  */
 public class DecimalRepBuf {
 	@SuppressWarnings("ImplicitNumericConversion")
@@ -88,7 +88,7 @@ public class DecimalRepBuf {
 	/**
 	 * Increment the last value, carrying to more significant digit if last value is '9'.
 	 * If all values are 9, the first digit is changed to '1', the remaining digits are set to '0',
-	 *   and 1 is returned as an overflow value;
+	 * and 1 is returned as an overflow value;
 	 * Used for rounding in {@link FastDtoa#roundWeedCounted}
 	 *
 	 * @return 1 if all digits were '9' (overflow) or 0 if no overflow
@@ -99,7 +99,7 @@ public class DecimalRepBuf {
 		buffer[length - 1]++;
 
 		// Increment the last digit recursively until we find a non '9' digit.
-		for(int i = length - 1; i > 0; --i) {
+		for (int i = length - 1; i > 0; --i) {
 			if ((int) buffer[i] != DECIMAL_OVERFLOW) break;
 			buffer[i] = (char) ASCII_ZERO;
 			buffer[i - 1]++;
@@ -118,7 +118,7 @@ public class DecimalRepBuf {
 
 
 	public void incrementLastNoOverflow() {
-		if ( (int) buffer[length - 1] == (int) '9') {
+		if ((int) buffer[length - 1] == (int) '9') {
 			throw new ArithmeticException("Last digit is '9' and so would overflow");
 		}
 		buffer[length - 1]++;
@@ -131,11 +131,12 @@ public class DecimalRepBuf {
 	/**
 	 * Reverse the characters of the buffer, starting with start to the end of the buffer.
 	 * Used by {@link FixedDtoa#fillDigits32(int, DecimalRepBuf)}
+	 *
 	 * @param start the start position to do the reverse
 	 */
 	public void reverseLast(int start) {
 		char t;
-		for (int i = start, j = length-1; i < j; i++, j--) {
+		for (int i = start, j = length - 1; i < j; i++, j--) {
 			t = buffer[i];
 			buffer[i] = buffer[j];
 			buffer[j] = t;
@@ -161,7 +162,7 @@ public class DecimalRepBuf {
 	 * Rounds the buffer values up.
 	 *
 	 * If the entire buffer is '9', the buffer is set to '1' with trailing zeros,
-	 * 	and the pointPosition is incremented by 1.
+	 * and the pointPosition is incremented by 1.
 	 *
 	 * Used by {@link FixedDtoa#}
 	 */
@@ -189,12 +190,12 @@ public class DecimalRepBuf {
 
 			@Override
 			public char charAt(int index) {
-				return buffer[start+index];
+				return buffer[start + index];
 			}
 
 			@Override
 			public CharSequence subSequence(int st, int e) {
-				return DecimalRepBuf.this.subSequence(start+st, start+e);
+				return DecimalRepBuf.this.subSequence(start + st, start + e);
 			}
 
 			@Override
@@ -231,9 +232,10 @@ public class DecimalRepBuf {
 
 	/**
 	 * remove trailing zeros to the right of the dsecimal point
+	 *
 	 * @param exponential if true, remove zeros up to the first character, if false,
 	 *                    stop at {@code pointPosition}
-	 * */
+	 */
 	public void truncateZeros(boolean exponential) {
 		int stop = exponential ? 1 : Math.max(1, pointPosition);
 		while (length > stop && ((int) buffer[length - 1]) == ASCII_ZERO) {
@@ -249,6 +251,7 @@ public class DecimalRepBuf {
 
 	/**
 	 * extend buffer to targetLength with zeros
+	 *
 	 * @param targetLength the length the buffer should be after extending
 	 */
 	public void zeroExtend(int targetLength) {

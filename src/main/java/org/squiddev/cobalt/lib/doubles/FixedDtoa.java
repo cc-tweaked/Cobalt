@@ -148,7 +148,7 @@ public class FixedDtoa {
 			public final @Unsigned int quotient;
 			public final UInt128 remainder;
 
-			public  QuotientRemainder(@Unsigned int quotient, UInt128 remainder) {
+			public QuotientRemainder(@Unsigned int quotient, UInt128 remainder) {
 				this.quotient = quotient;
 				this.remainder = remainder;
 			}
@@ -159,7 +159,7 @@ public class FixedDtoa {
 												DecimalRepBuf buf) {
 		int start = buf.length();
 		buf.addLength(requestedLength);
-		for (int i = buf.length()-1; i >= start; i--) {
+		for (int i = buf.length() - 1; i >= start; i--) {
 			buf.setCharAt(i, uRemainder(number, 10));
 			number = uDivide(number, 10);
 		}
@@ -171,7 +171,7 @@ public class FixedDtoa {
 		// We fill the digits in reverse order and exchange them afterwards.
 		while (number != 0) {
 			@Unsigned int digit = uRemainder(number, 10);
-			number  = uDivide(number, 10);
+			number = uDivide(number, 10);
 			buf.append(digit);
 		}
 		buf.reverseLast(start);
@@ -181,10 +181,10 @@ public class FixedDtoa {
 	private static void fillDigits64FixedLength(@Unsigned long number,
 												DecimalRepBuf buf) {
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
-		@Unsigned int part2 = toUint( uRemainder(number, TEN_POW_OF_7) );
+		@Unsigned int part2 = toUint(uRemainder(number, TEN_POW_OF_7));
 		number = uDivide(number, TEN_POW_OF_7);
-		@Unsigned int part1 = toUint( uRemainder(number, TEN_POW_OF_7) );
-		@Unsigned int part0 = toUint( uDivide(number, TEN_POW_OF_7) );
+		@Unsigned int part1 = toUint(uRemainder(number, TEN_POW_OF_7));
+		@Unsigned int part0 = toUint(uDivide(number, TEN_POW_OF_7));
 
 		fillDigits32FixedLength(part0, 3, buf);
 		fillDigits32FixedLength(part1, 7, buf);
@@ -194,10 +194,10 @@ public class FixedDtoa {
 
 	private static void fillDigits64(@Unsigned long number, DecimalRepBuf buf) {
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
-		@Unsigned int part2 = toUint( uRemainder(number, TEN_POW_OF_7) );
+		@Unsigned int part2 = toUint(uRemainder(number, TEN_POW_OF_7));
 		number = uDivide(number, TEN_POW_OF_7);
-		@Unsigned int part1 = toUint( uRemainder(number, TEN_POW_OF_7) );
-		@Unsigned int part0 = toUint( uDivide(number, TEN_POW_OF_7) );
+		@Unsigned int part1 = toUint(uRemainder(number, TEN_POW_OF_7));
+		@Unsigned int part0 = toUint(uDivide(number, TEN_POW_OF_7));
 
 		if (part0 != 0) {
 			fillDigits32(part0, buf);
@@ -210,7 +210,6 @@ public class FixedDtoa {
 			fillDigits32(part2, buf);
 		}
 	}
-
 
 
 	// The given fractionals number represents a fixed-point number with binary
@@ -250,7 +249,7 @@ public class FixedDtoa {
 				point--;
 				@Unsigned int digit = toUint(fractionals >>> point);
 				buf.append(digit);
-				fractionals = fractionals - ( toUlong(digit) << point );
+				fractionals = fractionals - (toUlong(digit) << point);
 			}
 			// If the first bit after the point is set we have to round up.
 			if (assertEnabled()) assertThat(fractionals == 0L || point - 1 >= 0);
@@ -297,7 +296,7 @@ public class FixedDtoa {
 	// This method only works for some parameters. If it can't handle the input it
 	// returns false.
 	public static boolean fastFixedDtoa(double v, int fractionalCount, DecimalRepBuf buf) {
-  		final @Unsigned long kMaxUInt32 = 0xFFFF_FFFFL;
+		final @Unsigned long kMaxUInt32 = 0xFFFF_FFFFL;
 		@Unsigned long significand = new Ieee.Double(v).significand();
 		int exponent = new Ieee.Double(v).exponent();
 		// v = significand * 2^exponent (with significand a 53bit integer).
@@ -315,7 +314,7 @@ public class FixedDtoa {
 		if (exponent + DOUBLE_SIGNIFICAND_SIZE > 64) {
 			// compile-time promise that exponent is positive
 			@SuppressWarnings("cast.unsafe")
-			@SignedPositive int positiveExponent = (@SignedPositive int)exponent;
+			@SignedPositive int positiveExponent = (@SignedPositive int) exponent;
 			// The exponent must be > 11.
 			//
 			// We know that v = significand * 2^exponent.
@@ -324,7 +323,7 @@ public class FixedDtoa {
 			// The quotient delivers the first digits, and the remainder fits into a 64
 			// bit number.
 			// Dividing by 10^17 is equivalent to dividing by 5^17*2^17.
-    		final @Unsigned long kFive17 = 0xB1_A2BC2EC5L;  // 5^17
+			final @Unsigned long kFive17 = 0xB1_A2BC2EC5L;  // 5^17
 			@Unsigned long divisor = kFive17;
 			@SignedPositive int divisorPower = 17;
 			@Unsigned long dividend = significand;
@@ -342,12 +341,12 @@ public class FixedDtoa {
 			if (exponent > divisorPower) {
 				// We only allow exponents of up to 20 and therefore (17 - e) <= 3
 				dividend <<= toUlongFromSigned(positiveExponent - divisorPower);
-				quotient = toUint( uDivide(dividend, divisor) );
-				remainder = uRemainder( dividend, divisor) << divisorPower;
+				quotient = toUint(uDivide(dividend, divisor));
+				remainder = uRemainder(dividend, divisor) << divisorPower;
 			} else {
-				divisor <<= toUlongFromSigned( divisorPower - positiveExponent );
-				quotient = toUint( uDivide(dividend, divisor) );
-				remainder = uRemainder( dividend, divisor) << exponent;
+				divisor <<= toUlongFromSigned(divisorPower - positiveExponent);
+				quotient = toUint(uDivide(dividend, divisor));
+				remainder = uRemainder(dividend, divisor) << exponent;
 			}
 			fillDigits32(quotient, buf);
 			fillDigits64FixedLength(remainder, buf);
@@ -366,7 +365,7 @@ public class FixedDtoa {
 			} else {
 				fillDigits32(toUint(integrals), buf);
 			}
-    		buf.setPointPosition(buf.length());
+			buf.setPointPosition(buf.length());
 			fillFractionals(fractionals, exponent, fractionalCount, buf);
 		} else if (exponent < -128) {
 			// This configuration (with at most 20 digits) means that all digits must be
@@ -382,7 +381,7 @@ public class FixedDtoa {
 		if (buf.length() == 0) {
 			// The string is empty and the decimalPoint thus has no importance. Mimick
 			// Gay's dtoa and and set it to -fractionalCount.
-    		buf.setPointPosition(-fractionalCount);
+			buf.setPointPosition(-fractionalCount);
 		}
 		return true;
 	}

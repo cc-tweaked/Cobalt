@@ -31,11 +31,11 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK_EQ;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK_EQ;
 
 public class DiyFpTest {
 

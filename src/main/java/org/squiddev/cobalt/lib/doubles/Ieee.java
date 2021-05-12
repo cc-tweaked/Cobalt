@@ -34,7 +34,6 @@ package org.squiddev.cobalt.lib.doubles;
 import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
 import static org.squiddev.cobalt.lib.doubles.Assert.requireState;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUlong;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
@@ -59,25 +58,32 @@ public final class Ieee {
 
 		private final @Unsigned long bits;
 
-		public Double() { bits = 0L;}
+		public Double() {
+			bits = 0L;
+		}
+
 		@SuppressWarnings("cast.unsafe")
 		public Double(double d) {
-			this.bits = (@Unsigned long)java.lang.Double.doubleToRawLongBits(d);
+			this.bits = (@Unsigned long) java.lang.Double.doubleToRawLongBits(d);
 		}
-		public Double(@Unsigned long d64) { this.bits = d64; }
+
+		public Double(@Unsigned long d64) {
+			this.bits = d64;
+		}
+
 		public Double(DiyFp diyFp) {
 			bits = diyFpToUint64(diyFp);
 		}
 
 		/**
-		 *  The value encoded by this Double must be greater or equal to +0.0.
-		 *  It must not be special (infinity, or NaN).
+		 * The value encoded by this Double must be greater or equal to +0.0.
+		 * It must not be special (infinity, or NaN).
 		 */
 		public DiyFp asDiyFp() {
 			requireState(sign() > 0, "instance must be positive");
 			requireState(!isSpecial(), "must not be special");
 			return new DiyFp(significand(),
-					exponent());
+				exponent());
 		}
 
 		// The value encoded by this Double must be strictly greater than 0.
@@ -104,7 +110,9 @@ public final class Ieee {
 		}
 
 
-		/** Returns the next greater double. Returns +infinity on input +infinity. */
+		/**
+		 * Returns the next greater double. Returns +infinity on input +infinity.
+		 */
 		public double nextDouble() {
 			if (bits == INFINITY) return new Double(INFINITY).value();
 			if (sign() < 0 && significand() == 0L) {
@@ -134,7 +142,7 @@ public final class Ieee {
 			long d64 = asUint64();
 			// Type Safety - Okay to cast, because the Shift-right is 52 bits
 			int biasedE =
-					(int)((d64 & EXPONENT_MASK) >> PHYSICAL_SIGNIFICAND_SIZE);
+				(int) ((d64 & EXPONENT_MASK) >> PHYSICAL_SIGNIFICAND_SIZE);
 			return biasedE - EXPONENT_BIAS;
 		}
 
@@ -148,15 +156,17 @@ public final class Ieee {
 			}
 		}
 
-		/** Returns true if the double is a denormal. */
+		/**
+		 * Returns true if the double is a denormal.
+		 */
 		public boolean isDenormal() {
 			long d64 = asUint64();
 			return (d64 & EXPONENT_MASK) == 0L;
 		}
 
 		/**
-		 *  We consider denormals not to be special.
-		 *  Hence only Infinity and NaN are special.
+		 * We consider denormals not to be special.
+		 * Hence only Infinity and NaN are special.
 		 */
 		public boolean isSpecial() {
 			long d64 = asUint64();
@@ -166,7 +176,7 @@ public final class Ieee {
 		public boolean isNan() {
 			long d64 = asUint64();
 			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
-					((d64 & SIGNIFICAND_MASK) != 0L);
+				((d64 & SIGNIFICAND_MASK) != 0L);
 		}
 
 		public boolean isQuietNan() {
@@ -181,12 +191,12 @@ public final class Ieee {
 		public boolean isInfinite() {
 			long d64 = asUint64();
 			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
-					((d64 & SIGNIFICAND_MASK) == 0L);
+				((d64 & SIGNIFICAND_MASK) == 0L);
 		}
 
 		public int sign() {
 			long d64 = asUint64();
-			return (d64 & SIGN_MASK) == 0L ? 1: -1;
+			return (d64 & SIGN_MASK) == 0L ? 1 : -1;
 		}
 
 		/**
@@ -196,7 +206,7 @@ public final class Ieee {
 		public DiyFp upperBoundary() {
 			requireState(sign() > 0, "instance must be positive");
 			return new DiyFp((significand() * 2L) + 1L,
-					exponent() - 1);
+				exponent() - 1);
 		}
 
 		/**
@@ -235,15 +245,17 @@ public final class Ieee {
 		}
 
 		@SuppressWarnings("cast.unsafe")
-		public double value() { return java.lang.Double.longBitsToDouble((@Signed long) bits); }
+		public double value() {
+			return java.lang.Double.longBitsToDouble((@Signed long) bits);
+		}
 
 		/**
-		 *  Returns the significand size for a given order of magnitude.
-		 *  If v = f*2^e with 2^p-1 <= f <= 2^p then p+e is v's order of magnitude.
-		 *  This function returns the number of significant binary digits v will have
-		 *  once it's encoded into a double. In almost all cases this is equal to
-		 *  kSignificandSize. The only exceptions are denormals. They start with
-		 *  leading zeroes and their effective significand-size is hence smaller.
+		 * Returns the significand size for a given order of magnitude.
+		 * If v = f*2^e with 2^p-1 <= f <= 2^p then p+e is v's order of magnitude.
+		 * This function returns the number of significant binary digits v will have
+		 * once it's encoded into a double. In almost all cases this is equal to
+		 * kSignificandSize. The only exceptions are denormals. They start with
+		 * leading zeroes and their effective significand-size is hence smaller.
 		 */
 		public static int significandSizeForOrderOfMagnitude(int order) {
 			if (order >= (DENORMAL_EXPONENT + SIGNIFICAND_SIZE)) {
@@ -285,10 +297,11 @@ public final class Ieee {
 				biasedExponent = toUlong(exponent + EXPONENT_BIAS);
 			}
 			return (significand & SIGNIFICAND_MASK) |
-					(biasedExponent << PHYSICAL_SIGNIFICAND_SIZE);
+				(biasedExponent << PHYSICAL_SIGNIFICAND_SIZE);
 		}
 
 	}
 
-	private Ieee() {}
+	private Ieee() {
+	}
 }

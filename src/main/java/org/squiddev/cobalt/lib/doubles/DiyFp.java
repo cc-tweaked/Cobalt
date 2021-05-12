@@ -52,8 +52,15 @@ public class DiyFp {
 	private @Unsigned long f;
 	private int e;
 
-	DiyFp() { this.f = 0L; this.e = 0; }
-	DiyFp(@Unsigned long significand, final int exponent) { this.f = significand; this.e = exponent; }
+	DiyFp() {
+		this.f = 0L;
+		this.e = 0;
+	}
+
+	DiyFp(@Unsigned long significand, final int exponent) {
+		this.f = significand;
+		this.e = exponent;
+	}
 
 	public DiyFp copy() {
 		return new DiyFp(this.f, this.e);
@@ -144,9 +151,19 @@ public class DiyFp {
 		return result;
 	}
 
-	public @Unsigned long f() { return f; }
-	public int e()  { return e; }
+	public @Unsigned long f() {
+		return f;
+	}
 
-	public void setF(@Unsigned long new_value) { f = new_value; }
-	public void setE(int new_value) { e = new_value; }
+	public int e() {
+		return e;
+	}
+
+	public void setF(@Unsigned long new_value) {
+		f = new_value;
+	}
+
+	public void setE(int new_value) {
+		e = new_value;
+	}
 }
