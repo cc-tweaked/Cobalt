@@ -298,7 +298,7 @@ public class BaseLib implements LuaLibrary {
 				case 16: { // "pairs" (t) -> iter-func, t, nil
 					LuaValue value = args.checkValue(1);
 					LuaValue pairs = value.metatag(state, Constants.PAIRS);
-					if(pairs.isNil()) {
+					if (pairs.isNil()) {
 						return varargsOf(baselib.next, value, Constants.NIL);
 					} else {
 						return OperationHelper.invoke(state, pairs, value);

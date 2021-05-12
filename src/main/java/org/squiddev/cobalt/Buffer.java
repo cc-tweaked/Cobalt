@@ -211,6 +211,25 @@ public final class Buffer {
 	}
 
 	/**
+	 * Append a region of characters to the buffer.
+	 *
+	 * @param chars  The characters to append
+	 * @param start  The start index
+	 * @param length The number of values to append
+	 * @return {@code this} to allow call chaining
+	 */
+	public Buffer append(char[] chars, int start, int length) {
+		makeRoom(0, length);
+		int j = this.offset + this.length;
+		for (int i = start; i < start + length; i++, j++) {
+			char c = chars[i];
+			bytes[j] = c < 256 ? (byte) c : 63;
+		}
+		this.length += length;
+		return this;
+	}
+
+	/**
 	 * Append a {@link LuaString} to the buffer.
 	 *
 	 * @param str The string to append

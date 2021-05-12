@@ -2,6 +2,7 @@ plugins {
 	id 'org.cadixdev.licenser' version '0.6.0'
 	id "java"
 	id "maven-publish"
+	id 'org.checkerframework' version '0.5.17'
 }
 
 group = 'org.squiddev'
@@ -13,7 +14,6 @@ java {
 	}
 
 	withSourcesJar()
-	withJavadocJar()
 }
 
 repositories {
@@ -38,6 +38,16 @@ dependencies {
 
 license {
 	include("*.java")
+}
+
+checkerFramework {
+	// add '-PskipCheckerFramework' to the gradle command line to speed up the build
+	checkers = [
+		'org.checkerframework.checker.signedness.SignednessChecker'
+	]
+	extraJavacArgs = [
+		"-AonlyDefs=^org\\.squiddev\\.cobalt\\.lib\\.doubles\\."
+	]
 }
 
 publishing {
