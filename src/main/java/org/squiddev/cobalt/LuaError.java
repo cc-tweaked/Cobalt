@@ -129,27 +129,27 @@ public final class LuaError extends Exception {
 	}
 
 	/**
-	 * Convert an {@link Exception} in a {@link LuaError}. This will return the original error if it is some Lua error,
+	 * Convert an {@link Throwable} in a {@link LuaError}. This will return the original error if it is some Lua error,
 	 * or a wrapped version otherwise.
 	 *
 	 * @param error The error to convert
 	 * @return The converted error
 	 */
-	public static LuaError wrap(Exception error) {
+	public static LuaError wrap(Throwable error) {
 		if (error instanceof LuaError) return (LuaError) error;
 		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause();
 		return new LuaError(error);
 	}
 
 	/**
-	 * Convert an {@link Exception} in a {@link LuaError}. This will return the original error if it is some Lua error,
+	 * Convert an {@link Throwable} in a {@link LuaError}. This will return the original error if it is some Lua error,
 	 * or an error with the same message as the orginal.
 	 *
 	 * @param error The error to convert
 	 * @return The converted error
 	 * @see #getMessage()
 	 */
-	public static LuaError wrapMessage(Exception error) {
+	public static LuaError wrapMessage(Throwable error) {
 		if (error instanceof LuaError) return ((LuaError) error);
 		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause();
 
@@ -158,13 +158,13 @@ public final class LuaError extends Exception {
 	}
 
 	/**
-	 * Extract the message from an {@link Exception} or {@link LuaError}.
+	 * Extract the message from an {@link Throwable} or {@link LuaError}.
 	 *
-	 * This is equivalent to using {@link #wrapMessage(Exception)}} and then {@link #value}.
+	 * This is equivalent to using {@link #wrapMessage(Throwable)}} and then {@link #value}.
 	 *
 	 * @param error The error to convert
 	 * @return The extracted message.
-	 * @see #wrapMessage(Exception)
+	 * @see #wrapMessage(Throwable)
 	 */
 	public static LuaValue getMessage(Exception error) {
 		if (error instanceof LuaError) return ((LuaError) error).value;
@@ -196,7 +196,7 @@ public final class LuaError extends Exception {
 			LuaValue errFunc = state.getCurrentThread().setErrorFunc(null);
 			try {
 				value = OperationHelper.call(state, errFunc, value);
-			} catch (Exception t) {
+			} catch (Exception | VirtualMachineError t) {
 				value = ValueFactory.valueOf("error in error handling");
 				state.getCurrentThread().setErrorFunc(errFunc);
 			}

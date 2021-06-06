@@ -437,7 +437,7 @@ public class BaseLib implements LuaLibrary {
 
 			state.getCurrentThread().setErrorFunc(oldErr);
 			return result;
-		} catch (Exception e) {
+		} catch (Exception | VirtualMachineError e) {
 			// Mark this frame as errored, meaning it will not be resumed.
 			DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
 			// And mark us as being in the error handler.
