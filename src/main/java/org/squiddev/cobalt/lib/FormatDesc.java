@@ -27,7 +27,7 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.Buffer;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
-import sun.misc.FormattedFloatingDecimal;
+import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter;
 
 public class FormatDesc {
 	private boolean leftAdjust;
@@ -37,13 +37,23 @@ public class FormatDesc {
 	private boolean alternateForm;
 	private static final int MAX_FLAGS = 5;
 
+	private static final DoubleToStringConverter.Symbols LOWER_SYMBOLS =
+		new DoubleToStringConverter.Symbols("inf", "nan", 'e');
+	private static final DoubleToStringConverter.Symbols UPPER_SYMBOLS =
+		new DoubleToStringConverter.Symbols("INF", "NAN", 'E');
+	private static final DoubleToStringConverter DOUBLE_CONVERTER = new DoubleToStringConverter(
+		DoubleToStringConverter.Flags.UNIQUE_ZERO |
+			DoubleToStringConverter.Flags.NO_TRAILING_ZERO |
+			DoubleToStringConverter.Flags.EMIT_POSITIVE_EXPONENT_SIGN,
+		new DoubleToStringConverter.PrecisionPolicy(4, 0),
+		2
+	);
+
 	private int width;
 	int precision;
 
 	final int conversion;
 	final int length;
-
-	private static boolean useOracleFormatting = true;
 
 	FormatDesc(LuaString strfrmt, final int start) throws LuaError {
 		int p = start, n = strfrmt.length();
@@ -225,126 +235,29 @@ public class FormatDesc {
 	}
 
 	public void format(Buffer buf, double number) {
-		int effectiveWidth = width;
-		if (number < 0 || explicitPlus || space) effectiveWidth--;
-
-		if (Double.isNaN(number)) {
-			if (!leftAdjust) pad(buf, ' ', effectiveWidth - 3);
-			appendSign(buf, number);
-			buf.append(Character.isUpperCase(conversion) ? "NAN" : "nan");
-			if (leftAdjust) pad(buf, ' ', effectiveWidth - 3);
-		} else if (Double.isInfinite(number)) {
-			if (!leftAdjust) pad(buf, ' ', effectiveWidth - 3);
-			appendSign(buf, number);
-			buf.append(Character.isUpperCase(conversion) ? "INF" : "inf");
-			if (leftAdjust) pad(buf, ' ', effectiveWidth - 3);
-		} else {
-			if (useOracleFormatting) {
-				try {
-					formatWithOracle(buf, number, effectiveWidth);
-					return;
-				} catch (LinkageError ignored) {
-					useOracleFormatting = false;
-				}
-			}
-
-			StringBuilder format = new StringBuilder("%");
-			if (alternateForm) format.append('#');
-			if (explicitPlus) format.append('+');
-			if (space) format.append(' ');
-			if (width >= 0) {
-				if (leftAdjust) format.append('-');
-				if (zeroPad) format.append('0');
-				format.append(width);
-			}
-			format.append('.').append(precision >= 0 ? precision : 6);
-			format.append((char) conversion);
-
-			buf.append(String.format(format.toString(), number));
-		}
-	}
-
-	/**
-	 * Java's handling of format strings isn't entirely correct, so we attempt to roll our own.
-	 *
-	 * It's a little ugly, and depends on Oracle internals, so we have a fallback should the propritary APIs not be
-	 * available.
-	 *
-	 * @param buf            The buffer to write to
-	 * @param number         The number to write
-	 * @param effectiveWidth The width remaining after emitting the sign
-	 */
-	private void formatWithOracle(Buffer buf, double number, int effectiveWidth) {
-		char[] mantissa, exp;
-		int expRounded;
-		StringBuilder mantissaBuilder;
-
-		int precision = this.precision;
-		if (this.precision == -1) precision = 6;
+		int prec = this.precision;
+		if (prec == -1) prec = 6;
 
 		if (conversion == 'g' || conversion == 'G') {
-			if (precision == 0) precision = 1;
-
-			if (number == 0) {
-				mantissa = new char[]{'0'};
-				exp = null;
-				expRounded = 0;
-			} else {
-				FormattedFloatingDecimal fd = FormattedFloatingDecimal.valueOf(Math.abs(number), precision, FormattedFloatingDecimal.Form.GENERAL);
-				mantissa = fd.getMantissa();
-				exp = fd.getExponent();
-				expRounded = fd.getExponentRounded();
-			}
-
-			mantissaBuilder = new StringBuilder(mantissa.length);
-			mantissaBuilder.append(mantissa);
-			stripZeros(mantissaBuilder);
-			if (alternateForm) {
-				precision -= exp != null ? 1 : expRounded + 1;
-				addZeros(mantissaBuilder, precision);
-			}
+			if (prec == 0) prec = 1;
+			DOUBLE_CONVERTER.toPrecision(
+				number, prec,
+				doubleOpts(conversion == 'G'),
+				buf
+			);
 		} else if (conversion == 'e' || conversion == 'E') {
-			FormattedFloatingDecimal fd = FormattedFloatingDecimal.valueOf(Math.abs(number), precision, FormattedFloatingDecimal.Form.SCIENTIFIC);
-			mantissa = fd.getMantissa();
-			exp = number == 0 ? new char[]{'+', '0', '0'} : fd.getExponent();
-
-			mantissaBuilder = new StringBuilder(mantissa.length);
-			mantissaBuilder.append(mantissa);
-			addZeros(mantissaBuilder, precision);
+			DOUBLE_CONVERTER.toExponential(
+				number, prec,
+				doubleOpts(conversion == 'E'),
+				buf
+			);
 		} else if (conversion == 'f') {
-			FormattedFloatingDecimal fd = FormattedFloatingDecimal.valueOf(Math.abs(number), precision, FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
-			mantissa = fd.getMantissa();
-			exp = null;
-
-			mantissaBuilder = new StringBuilder(mantissa.length);
-			mantissaBuilder.append(mantissa);
-			addZeros(mantissaBuilder, precision);
-		} else {
-			throw new IllegalStateException("Unknown converter " + conversion);
+			DOUBLE_CONVERTER.toFixed(
+				number, prec,
+				doubleOpts(false),
+				buf
+			);
 		}
-
-		// Calculate the effective width
-		effectiveWidth -= mantissaBuilder.length();
-		if (exp != null) effectiveWidth -= 1 + exp.length;
-		if (alternateForm && precision == 0) effectiveWidth--;
-
-		// Spaces must occur before the sign but 0s afterwards
-		if (!zeroPad && !leftAdjust) pad(buf, ' ', effectiveWidth);
-		appendSign(buf, number);
-		if (zeroPad && !leftAdjust) pad(buf, '0', effectiveWidth);
-
-		// Append required parts of the mantissa.
-		buf.append(mantissaBuilder.toString());
-
-		// If the precision is zero and the '#' flag is set, add the requested decimal point.
-		if (alternateForm && precision == 0) buf.append('.');
-
-		if (exp != null) {
-			buf.append(conversion <= 'Z' ? 'E' : 'e');
-			buf.append(exp);
-		}
-
-		if (leftAdjust) pad(buf, ' ', effectiveWidth);
 	}
 
 	public void format(Buffer buf, LuaString s) {
@@ -365,52 +278,20 @@ public class FormatDesc {
 		if (leftAdjust) pad(buf, ' ', nspaces);
 	}
 
-	private void appendSign(Buffer buf, double number) {
-		if (number < 0) {
-			buf.append('-');
-		} else if (explicitPlus) {
-			buf.append('+');
-		} else if (space) {
-			buf.append(' ');
-		}
-	}
-
 	private static void pad(Buffer buf, char c, int n) {
 		byte b = (byte) c;
 		while (n-- > 0) buf.append(b);
 	}
 
-	private static void addZeros(StringBuilder v, int prec) {
-		// Look for the dot.  If we don't find one, the we'll need to add
-		// it before we add the zeros.
-		int i;
-		for (i = 0; i < v.length(); i++) {
-			if (v.charAt(i) == '.') break;
-		}
-		boolean needDot = i == v.length();
-
-		// Determine existing precision.
-		int outPrec = v.length() - i - (needDot ? 0 : 1);
-		assert (outPrec <= prec);
-		if (outPrec == prec) return;
-
-		// Add dot if previously determined to be necessary.
-		if (needDot) v.append('.');
-
-		// Add zeros.
-		for (int j = 0; j < prec - outPrec; j++) v.append('0');
-	}
-
-	private static void stripZeros(StringBuilder v) {
-		// If we don't end with a zero then skip.
-		if (v.charAt(v.length() - 1) != '0') return;
-
-		// Ensure we've a dot
-		if (v.lastIndexOf(".") == -1) return;
-
-		int length = v.length();
-		while (v.charAt(length - 1) == '0') length--;
-		if (v.charAt(length - 1) == '.') length--;
-		v.setLength(length);
+	private DoubleToStringConverter.FormatOptions doubleOpts(boolean caps) {
+		return new DoubleToStringConverter.FormatOptions(
+			caps ? UPPER_SYMBOLS : LOWER_SYMBOLS,
+			explicitPlus,
+			space,
+			alternateForm,
+			width,
+			zeroPad,
+			leftAdjust
+		);
 	}
 }

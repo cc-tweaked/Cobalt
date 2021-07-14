@@ -84,6 +84,8 @@ public abstract class Varargs {
 	 */
 	public abstract Varargs asImmutable();
 
+	public abstract void fill(LuaValue[] array, int offset);
+
 	// -----------------------------------------------------------------------
 	// utilities to get specific arguments and type-check them.
 	// -----------------------------------------------------------------------
@@ -203,17 +205,30 @@ public abstract class Varargs {
 		return end < start ? Constants.NONE : new SubVarargs(this, start, end);
 	}
 
+	protected abstract static class DepthVarargs extends Varargs {
+		protected final int depth;
+
+		protected DepthVarargs(int depth) {
+			this.depth = depth;
+		}
+
+		public static int depth(Varargs varargs) {
+			return varargs instanceof DepthVarargs ? ((DepthVarargs) varargs).depth : 1;
+		}
+	}
+
 	/**
 	 * Implementation of Varargs for use in the Varargs.subargs() function.
 	 *
 	 * @see Varargs#subargs(int)
 	 */
-	private static class SubVarargs extends Varargs {
+	private static class SubVarargs extends LuaValue.DepthVarargs {
 		private final Varargs v;
 		private final int start;
 		private final int end;
 
 		public SubVarargs(Varargs varargs, int start, int end) {
+			super(depth(varargs));
 			this.v = varargs;
 			this.start = start;
 			this.end = end;
@@ -234,6 +249,12 @@ public abstract class Varargs {
 		public Varargs asImmutable() {
 			Varargs vClone = v.asImmutable();
 			return vClone == v ? this : new SubVarargs(vClone, start, end);
+		}
+
+		@Override
+		public void fill(LuaValue[] array, int offset) {
+			int size = end + 1 - start;
+			for (int i = 0; i < size; i++) array[offset + i] = v.arg(start + i);
 		}
 
 		@Override

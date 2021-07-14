@@ -625,7 +625,7 @@ public final class OperationHelper {
 	 * @return This value as a string.
 	 * @see <a href="https://www.lua.org/source/5.3/lauxlib.c.html#luaL_tolstring">luaL_tolstring</a>
 	 */
-	public static LuaString toStringDirect(LuaValue value)  {
+	public static LuaString toStringDirect(LuaValue value) {
 		LuaValue v = value.toLuaString();
 		return v.isNil() ? LuaString.valueOf(value.toString()) : (LuaString) v;
 	}

@@ -300,7 +300,7 @@ public class BaseLib implements LuaLibrary {
 				case 16: { // "pairs" (t) -> iter-func, t, nil
 					LuaValue value = args.checkValue(1);
 					LuaValue pairs = value.metatag(state, Constants.PAIRS);
-					if(pairs.isNil()) {
+					if (pairs.isNil()) {
 						return varargsOf(baselib.next, value, Constants.NIL);
 					} else {
 						return OperationHelper.invoke(state, pairs, value);
@@ -445,7 +445,7 @@ public class BaseLib implements LuaLibrary {
 
 			state.getCurrentThread().setErrorFunc(oldErr);
 			return result;
-		} catch (Exception e) {
+		} catch (Exception | VirtualMachineError e) {
 			// Mark this frame as errored, meaning it will not be resumed.
 			DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
 			// And mark us as being in the error handler.

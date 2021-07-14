@@ -511,7 +511,7 @@ public class LuaThread extends LuaValue {
 
 					try {
 						args = toExecute.invoke(state, args);
-					} catch (Exception e) {
+					} catch (Exception | VirtualMachineError e) {
 						args = null;
 						le = LuaError.wrap(e);
 					}
@@ -559,7 +559,7 @@ public class LuaThread extends LuaValue {
 
 								args = frame.resume(state, args);
 							}
-						} catch (Exception e) {
+						} catch (Exception | VirtualMachineError e) {
 							args = null;
 							le = LuaError.wrap(e);
 						}

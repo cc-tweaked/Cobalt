@@ -286,5 +286,9 @@ public class Constants {
 		public String toString() {
 			return "none";
 		}
+
+		@Override
+		public void fill(LuaValue[] array, int offset) {
+		}
 	}
 }

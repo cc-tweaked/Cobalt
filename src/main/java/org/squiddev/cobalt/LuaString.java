@@ -53,7 +53,7 @@ import java.io.InputStream;
 public final class LuaString extends LuaBaseString {
 	/**
 	 * Size of cache of recent short strings. This is the maximum number of LuaStrings that
-	 * will be retained in the cache of recent short strings.
+	 * will be retained in the cache of recent short strings. Must be a power of 2.
 	 */
 	public static final int RECENT_STRINGS_CACHE_SIZE = 128;
 

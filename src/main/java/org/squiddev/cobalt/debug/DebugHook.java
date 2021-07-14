@@ -47,7 +47,7 @@ public interface DebugHook {
 	 * @param state Current lua state
 	 * @param ds    The current debug state
 	 * @param frame The current frame
-	 * @throws LuaError On a runtime error.
+	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
 	void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
@@ -69,7 +69,7 @@ public interface DebugHook {
 	 * @param state Current lua state
 	 * @param ds    The current debug state
 	 * @param frame The current frame
-	 * @throws LuaError On a runtime error.
+	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
 	void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
@@ -80,7 +80,7 @@ public interface DebugHook {
 	 * @param state Current lua state
 	 * @param ds    The current debug state
 	 * @param frame The current frame
-	 * @throws LuaError On a runtime error.
+	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
 	void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
@@ -92,7 +92,7 @@ public interface DebugHook {
 	 * @param ds      The current debug state
 	 * @param frame   The current frame
 	 * @param newLine The new new line
-	 * @throws LuaError On a runtime error.
+	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
 	void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable;
