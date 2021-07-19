@@ -609,6 +609,8 @@ public final class LuaString extends LuaBaseString {
 		if ((base == 10 || base == 16) && (bytes[i] == '0' && i + 1 < j && (bytes[i + 1] == 'x' || bytes[i + 1] == 'X'))) {
 			base = 16;
 			i += 2;
+
+			if (i >= j) return Double.NaN;
 		}
 
 		double l = scanLong(base, i, j);
@@ -627,8 +629,7 @@ public final class LuaString extends LuaBaseString {
 	 */
 	private double scanLong(int base, int start, int end) {
 		long x = 0;
-		boolean neg = (bytes[start] == '-');
-		for (int i = (neg ? start + 1 : start); i < end; i++) {
+		for (int i = start; i < end; i++) {
 			int digit = bytes[i] - (base <= 10 || (bytes[i] >= '0' && bytes[i] <= '9') ? '0' :
 				bytes[i] >= 'A' && bytes[i] <= 'Z' ? ('A' - 10) : ('a' - 10));
 			if (digit < 0 || digit >= base) {
@@ -636,7 +637,7 @@ public final class LuaString extends LuaBaseString {
 			}
 			x = x * base + digit;
 		}
-		return neg ? -x : x;
+		return x;
 	}
 
 	/**

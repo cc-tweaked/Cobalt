@@ -99,7 +99,7 @@ public final class LuaRope extends LuaBaseString {
 
 	@Override
 	public double scanNumber(int base) {
-		return string.scanNumber(base);
+		return strvalue().scanNumber(base);
 	}
 
 	@Override
