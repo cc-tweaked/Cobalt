@@ -13,3 +13,6 @@ assert(not ok and err:find("table index is nil"))
 
 local ok, err = pcall(rawset, {}, 0 / 0, 1)
 assert(not ok and err:find("table index is NaN"))
+
+assert(tonumber("0x") == nil)
+assert(tonumber("-") == nil)
