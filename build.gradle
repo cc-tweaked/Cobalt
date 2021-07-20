@@ -1,12 +1,12 @@
 plugins {
-	id 'org.cadixdev.licenser' version '0.6.0'
+	id "com.github.hierynomus.license" version "0.16.1"
 	id "java"
 	id "maven-publish"
 	id 'org.checkerframework' version '0.5.17'
 }
 
 group = 'org.squiddev'
-version = '0.5.2-SNAPSHOT'
+version = '0.5.3.0'
 
 java {
 	toolchain {
@@ -100,7 +100,7 @@ gradle.projectsEvaluated {
 }
 
 task executeProfile(type: JavaExec) {
-	main = "org.squiddev.cobalt.PerformanceBenchmark"
+	mainClass = "org.squiddev.cobalt.PerformanceBenchmark"
 	classpath = sourceSets.test.runtimeClasspath
 }
 
