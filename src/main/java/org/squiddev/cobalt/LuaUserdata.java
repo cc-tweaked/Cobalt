@@ -40,11 +40,6 @@ public class LuaUserdata extends LuaValue {
 		this.metatable = metatable;
 	}
 
-	@Override
-	public String toString() {
-		return String.valueOf(instance);
-	}
-
 	public int hashCode() {
 		return instance.hashCode();
 	}

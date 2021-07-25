@@ -459,8 +459,7 @@ public class TypeTest {
 		assertEquals(String.valueOf(sampledouble), stringdouble.toString());
 		assertEquals("thread: ", thread.toString().substring(0, 8));
 		assertEquals("table: ", table.toString().substring(0, 7));
-		assertEquals(sampleobject.toString(), userdataobj.toString());
-		assertEquals(sampledata.toString(), userdatacls.toString());
+		assertEquals("userdata: ", userdataobj.toString().substring(0, 10));
 		assertEquals("function: ", somefunc.toString().substring(0, 10));
 		assertEquals("function: ", someclosure.toString().substring(0, 10));
 	}
