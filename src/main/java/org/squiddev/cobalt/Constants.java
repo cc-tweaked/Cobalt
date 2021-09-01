@@ -235,6 +235,11 @@ public class Constants {
 	 * LuaString constant with value "__pairs" for use as metatag
 	 */
 	public static final LuaString PAIRS = valueOf("__pairs");
+	
+	/**
+	 * LuaString constant with value "__ipairs" for use as metatag
+	 */
+	public static final LuaString IPAIRS = valueOf("__ipairs");
 
 	/**
 	 * LuaString constant with value ""
