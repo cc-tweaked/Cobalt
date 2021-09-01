@@ -304,8 +304,15 @@ public class BaseLib implements LuaLibrary {
 						return OperationHelper.invoke(state, pairs, value);
 					}
 				}
-				case 17: // "ipairs", // (t) -> iter-func, t, 0
-					return varargsOf(baselib.inext, args.arg(1).checkTable(), Constants.ZERO);
+				case 17: { // "ipairs", // (t) -> iter-func, t, 0
+					LuaValue value = args.checkValue(1);
+					LuaValue ipairs = value.metatag(state, Constants.IPAIRS);
+					if (ipairs.isNil()) {
+						return varargsOf(baselib.inext, value, Constants.ZERO);
+					} else {
+						return OperationHelper.invoke(state, ipairs, value);
+					}
+				}
 				case 18: // "next"  ( table, [index] ) -> next-index, next-value
 					return args.arg(1).checkTable().next(args.arg(2));
 				case 19: // "inext" ( table, [int-index] ) -> next-index, next-value
