@@ -316,7 +316,7 @@ public class BaseLib implements LuaLibrary {
 				case 18: // "next"  ( table, [index] ) -> next-index, next-value
 					return args.arg(1).checkTable().next(args.arg(2));
 				case 19: // "inext" ( table, [int-index] ) -> next-index, next-value
-					return args.arg(1).checkTable().inext(args.arg(2));
+					return args.arg(1).checkTable().inext(state, args.arg(2));
 				case 20: {  // "rawlen" ( table | string ) -> int
 					LuaValue v = args.arg(1);
 					switch (v.type()) {
