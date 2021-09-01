@@ -485,7 +485,7 @@ public final class LuaTable extends LuaValue {
 	 * @see Varargs#arg(int)
 	 * @see #isNil()
 	 */
-	public Varargs inext(LuaState state, LuaValue key) throws LuaError {
+	public Varargs inext(LuaState state, LuaValue key) throws LuaError, UnwindThrowable {
 		int k = key.checkInteger() + 1;
 		LuaValue v = OperationHelper.getTable(state, this, LuaInteger.valueOf(k));
 		return v.isNil() ? NONE : varargsOf(LuaInteger.valueOf(k), v);
