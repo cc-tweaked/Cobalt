@@ -335,7 +335,7 @@ public class BaseLib implements LuaLibrary {
 				case 0: // "pcall", // (f, arg1, ...) -> status, result1, ...
 					return pcall(state, di, args.checkValue(1), args.subargs(2), null);
 				case 1: // "xpcall", // (f, err) -> result1, ...
-					return pcall(state, di, args.checkValue(1), Constants.NONE, args.checkValue(2));
+					return pcall(state, di, args.checkValue(1), args.subargs(3), args.checkValue(2));
 
 				case 2: // "load", // ( func|str [,chunkname[, mode[, env]]] ) -> chunk | nil, msg
 				{
