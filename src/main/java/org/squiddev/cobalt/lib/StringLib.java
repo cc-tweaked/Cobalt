@@ -273,23 +273,28 @@ public class StringLib implements LuaLibrary {
 
 
 	/**
-	 * string.rep (s, n)
+	 * string.rep (s, n [, sep])
 	 *
-	 * Returns a string that is the concatenation of n copies of the string s.
+	 * Returns a string that is the concatenation of n copies of the string s separated
+	 * by the string sep. The default value for sep is the empty string (that is, no separator).
 	 */
 	static Varargs rep(Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int n = args.arg(2).checkInteger();
+		LuaString sep = args.arg(3).optLuaString(EMPTYSTRING);
 		int len = s.length();
+		int seplen = sep.length();
 
-		if (n <= 0 || len == 0) {
+		if (n <= 0 || (len == 0 && seplen == 0)) {
 			return Constants.EMPTYSTRING;
 		} else if (n == 1) {
 			return s;
 		} else {
-			final byte[] bytes = new byte[len * n];
-			for (int offset = 0; offset < bytes.length; offset += len) {
+			final byte[] bytes = new byte[len * n + seplen * (n - 1)];
+			for (int offset = 0; offset < bytes.length; offset += len + seplen) {
 				s.copyTo(0, bytes, offset, len);
+				if (offset + len + seplen < bytes.length)
+					sep.copyTo(0, bytes, offset + len, seplen);
 			}
 			return LuaString.valueOf(bytes);
 		}
