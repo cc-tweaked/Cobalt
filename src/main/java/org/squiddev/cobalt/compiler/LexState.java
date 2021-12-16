@@ -60,6 +60,7 @@ public class LexState {
 	}
 
 	public static final LuaString ENV = LuaString.valueOf("_ENV");
+	private static final LuaString GOTO = LuaString.valueOf("goto");
 
 	private static final int EOZ = -1;
 	private static final int MAXSRC = 80;
@@ -2122,7 +2123,7 @@ public class LexState {
 	private void statement() throws CompileException {
 		int line = this.linenumber; /* may be needed for error messages */
 		enterlevel();
-		if (this.t.token == TK_NAME && this.t.seminfo.ts.equals(LuaString.valueOf("goto"))) {
+		if (this.t.token == TK_NAME && !LuaC.blockGoto && this.t.seminfo.ts.equals(GOTO)) {
 			lookahead();
 			if (lookahead.token == TK_NAME) {
 				this.t.token = TK_GOTO;
@@ -2179,9 +2180,6 @@ public class LexState {
 			}
 			case TK_BREAK:  /* stat -> breakstat */
 			case TK_GOTO: { /* stat -> 'goto' NAME */
-				if (this.t.token == TK_GOTO && LuaC.blockGoto) {
-					throw lexError("illegal jump statement", this.t.token);
-				}
 				this.gotostat(fs.jump());
 				break;
 			}
