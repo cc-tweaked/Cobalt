@@ -391,7 +391,8 @@ class StringPacker {
 				}
 				case ZSTR: {
 					int len = 0;
-					for (int i = str.offset + pos, end = str.offset + str.length; i < end; i++, len++) {
+					for (int i = str.offset + pos, end = str.offset + str.length; i <= end; i++, len++) {
+						if (i == end) throw ErrorFactory.argError(2, "unfinished string for format 'z'");
 						if (str.bytes[i] == 0) break;
 					}
 
