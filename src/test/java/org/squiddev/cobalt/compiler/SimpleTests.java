@@ -112,6 +112,15 @@ public class SimpleTests {
 		doTest(s);
 	}
 
+	@Test
+	public void testZap() {
+		String s = "print('\\z";
+		assertThrows(CompileException.class, () -> {
+			InputStream is = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
+			LuaC.INSTANCE.load(is, valueOf("script"), null, _G);
+		});
+	}
+
 	private static final int[] samehash = {0, 1, -1, 2, -2, 4, 8, 16, 32, Integer.MAX_VALUE, Integer.MIN_VALUE};
 	private static final double[] diffhash = {.5, 1, 1.5, 1, .5, 1.5, 1.25, 2.5};
 

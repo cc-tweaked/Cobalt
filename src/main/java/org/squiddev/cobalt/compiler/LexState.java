@@ -538,7 +538,7 @@ public class LexState {
 						case 'z': { // "zap" following span of spaces
 							nbuff--;
 							nextChar(); // Skip z and remove '\\'
-							while (isSpace(current)) {
+							while (current != EOZ && isSpace(current)) {
 								if (currIsNewline()) inclineNumber();
 								nextChar();
 							}
