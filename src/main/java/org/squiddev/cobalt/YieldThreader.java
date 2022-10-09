@@ -24,6 +24,9 @@
  */
 package org.squiddev.cobalt;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -33,6 +36,7 @@ public final class YieldThreader implements Executor {
 	private final Executor executor;
 	final Lock lock = new ReentrantLock();
 	final Condition loop = lock.newCondition();
+	final Set<Thread> threads = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	volatile boolean running;
 	volatile Varargs args;

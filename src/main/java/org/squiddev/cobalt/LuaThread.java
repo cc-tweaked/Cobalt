@@ -447,15 +447,18 @@ public class LuaThread extends LuaValue {
 
 				@Override
 				public void run() {
+					Thread currentThread = Thread.currentThread();
+
 					try {
 						threader.lock.lockInterruptibly();
 					} catch (InterruptedException ignored) {
-						Thread.currentThread().interrupt();
-						System.out.println("Interrupted");
+						currentThread.interrupt();
 						return;
 					}
 
 					try {
+						threader.threads.add(currentThread);
+
 						// Clear the function after the first run
 						LuaFunction function = func;
 						func = null;
@@ -475,6 +478,7 @@ public class LuaThread extends LuaValue {
 						threader.running = false;
 						threader.loop.signal();
 					} finally {
+						threader.threads.remove(currentThread);
 						threader.lock.unlock();
 					}
 				}

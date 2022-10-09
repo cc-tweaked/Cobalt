@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
 import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
@@ -37,6 +38,7 @@ import java.util.TimeZone;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Global lua state
@@ -199,6 +201,43 @@ public final class LuaState {
 		LuaThread thread = new LuaThread(this, environment);
 		mainThread = thread;
 		currentThread = thread;
+	}
+
+	/**
+	 * Print some information about the internal execution state.
+	 * <p>
+	 * This includes the current Lua coroutine trace and the native Java stacktrace for all threads currently associated
+	 * with the VM.
+	 * <p>
+	 * This function is purely intended for debugging, its output should not be relied on in any way.
+	 *
+	 * @param out The buffer to write to.
+	 */
+	public void printExecutionState(StringBuilder out) {
+		LuaThread currentThread = this.currentThread;
+		if (currentThread != null) {
+			out.append("Current coroutine: ").append(currentThread.state).append("\n");
+			try {
+				DebugHelpers.traceback(out, currentThread, 0);
+			} catch (RuntimeException e) {
+				// This function will be called from a separate thread, so the stack could unwind from under us. Catch
+				// any possible out-of-bounds/NPEs.
+				out.append("Failed printing current coroutine (").append(e).append(")");
+			}
+
+			out.append("\n");
+		}
+
+		for (Thread thread : threader.threads) {
+			out.append("Thread ").append(thread.getName()).append(" is currently ").append(thread.getState()).append('\n');
+
+			Object blocking = LockSupport.getBlocker(thread);
+			if(blocking != null) out.append("  on ").append(blocking).append('\n');
+
+			for (StackTraceElement element : thread.getStackTrace()) {
+				out.append("  at ").append(element).append('\n');
+			}
+		}
 	}
 
 	public static LuaState.Builder builder() {
