@@ -33,6 +33,7 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
+import org.checkerframework.checker.signedness.qual.SignednessGlb;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import java.util.Arrays;
@@ -160,10 +161,10 @@ public class DecimalRepBuf {
 
 	/**
 	 * Rounds the buffer values up.
-	 *
+	 * <p>
 	 * If the entire buffer is '9', the buffer is set to '1' with trailing zeros,
 	 * and the pointPosition is incremented by 1.
-	 *
+	 * <p>
 	 * Used by {@link FixedDtoa#}
 	 */
 	public void roundUp() {
@@ -256,7 +257,7 @@ public class DecimalRepBuf {
 	 */
 	public void zeroExtend(int targetLength) {
 		if (length < targetLength) {
-			Arrays.fill(buffer, length, targetLength, '0');
+			Arrays.fill((@SignednessGlb char[]) buffer, length, targetLength, '0');
 			length = targetLength;
 		}
 	}

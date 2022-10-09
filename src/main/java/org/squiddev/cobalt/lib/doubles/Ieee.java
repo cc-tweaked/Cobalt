@@ -83,7 +83,7 @@ public final class Ieee {
 			requireState(sign() > 0, "instance must be positive");
 			requireState(!isSpecial(), "must not be special");
 			return new DiyFp(significand(),
-				exponent());
+					exponent());
 		}
 
 		// The value encoded by this Double must be strictly greater than 0.
@@ -141,8 +141,8 @@ public final class Ieee {
 
 			long d64 = asUint64();
 			// Type Safety - Okay to cast, because the Shift-right is 52 bits
-			int biasedE =
-				(int) ((d64 & EXPONENT_MASK) >> PHYSICAL_SIGNIFICAND_SIZE);
+			@SuppressWarnings({"shift.signed", "cast.unsafe"})
+			int biasedE = (@Signed int) ((d64 & EXPONENT_MASK) >> PHYSICAL_SIGNIFICAND_SIZE);
 			return biasedE - EXPONENT_BIAS;
 		}
 
@@ -176,7 +176,7 @@ public final class Ieee {
 		public boolean isNan() {
 			long d64 = asUint64();
 			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
-				((d64 & SIGNIFICAND_MASK) != 0L);
+					((d64 & SIGNIFICAND_MASK) != 0L);
 		}
 
 		public boolean isQuietNan() {
@@ -191,7 +191,7 @@ public final class Ieee {
 		public boolean isInfinite() {
 			long d64 = asUint64();
 			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
-				((d64 & SIGNIFICAND_MASK) == 0L);
+					((d64 & SIGNIFICAND_MASK) == 0L);
 		}
 
 		public int sign() {
@@ -206,7 +206,7 @@ public final class Ieee {
 		public DiyFp upperBoundary() {
 			requireState(sign() > 0, "instance must be positive");
 			return new DiyFp((significand() * 2L) + 1L,
-				exponent() - 1);
+					exponent() - 1);
 		}
 
 		/**
@@ -297,7 +297,7 @@ public final class Ieee {
 				biasedExponent = toUlong(exponent + EXPONENT_BIAS);
 			}
 			return (significand & SIGNIFICAND_MASK) |
-				(biasedExponent << PHYSICAL_SIGNIFICAND_SIZE);
+					(biasedExponent << PHYSICAL_SIGNIFICAND_SIZE);
 		}
 
 	}

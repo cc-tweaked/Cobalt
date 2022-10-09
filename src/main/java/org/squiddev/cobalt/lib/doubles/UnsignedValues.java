@@ -54,7 +54,7 @@ public final class UnsignedValues {
 		return (value & NOT_INT_MASK) == 0L;
 	}
 
-	@SuppressWarnings("argument.type.incompatible") // because API method isn't annotated
+	@SuppressWarnings("argument") // because API method isn't annotated
 	public static @Unsigned long toUlong(@Unsigned int value) {
 		return Integer.toUnsignedLong(value);
 	}
@@ -62,7 +62,6 @@ public final class UnsignedValues {
 	/**
 	 * convert a signed value to an unsigned long
 	 */
-	@SuppressWarnings("argument.type.incompatible") // because API method isn't annotated
 	public static @Unsigned long toUlongFromSigned(@SignedPositive int value) {
 		if (value < 0) throw new IllegalArgumentException("value must be positive");
 		return Integer.toUnsignedLong(value);
@@ -77,7 +76,7 @@ public final class UnsignedValues {
 	 * Convert a positive {@link BigInteger} to asn unsigned int.  Positivity is checked,
 	 * but Overflow is not checked.
 	 */
-	@SuppressWarnings("return.type.incompatible") // value arguments is check for positivity
+	@SuppressWarnings("return") // value arguments is check for positivity
 	public static @Unsigned int toUint(BigInteger value) {
 		if (value.signum() < 0) throw new IllegalArgumentException("value must be positive");
 		return (int) value.and(BigInteger.valueOf(INT_MASK)).longValue();
