@@ -81,8 +81,16 @@ publishing {
 	}
 }
 
-tasks.withType(JavaCompile::class).configureEach {
-	options.compilerArgs.add("-Xlint")
+sourceSets.configureEach {
+	val sourceSet = this
+	tasks.named(compileJavaTaskName, JavaCompile::class) {
+		options.compilerArgs.add("-Xlint")
+
+		// Only enable skipCheckerFramework on main.
+		extensions.configure(org.checkerframework.gradle.plugin.CheckerFrameworkTaskExtension::class) {
+			skipCheckerFramework = sourceSet.name != "main"
+		}
+	}
 }
 
 tasks.test {
