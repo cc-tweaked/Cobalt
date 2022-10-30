@@ -90,6 +90,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString ISVARARG = valueOf("isvararg");
 	private static final LuaString ISTAILCALL = valueOf("istailcall");
 
+	private final LuaTable registry = new LuaTable();
+
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
@@ -388,8 +390,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		}
 	}
 
-	private static Varargs _getregistry(Varargs args) {
-		return new LuaTable();
+	private Varargs _getregistry(Varargs args) {
+		return registry;
 	}
 
 	private static LuaString findupvalue(LuaClosure c, int up) {
