@@ -371,7 +371,7 @@ public final class LuaTable extends LuaValue {
 				if (j > ((long)Integer.MAX_VALUE*2)-2) {
 					i = 1;
 					while (!rawget((int)i).isNil()) i++;
-					return (int)i;
+					return (int)i - 1;
 				}
 			}
 
