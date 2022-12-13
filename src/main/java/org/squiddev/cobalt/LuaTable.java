@@ -186,7 +186,7 @@ public final class LuaTable extends LuaValue {
 	 */
 	public void presize(int nArray) {
 		if (nArray > array.length) {
-			array = setArrayVector(array, 1 << log2(nArray), false, weakValues);
+			resize(getHashLength(), 1 << log2(nArray), false);
 		}
 	}
 

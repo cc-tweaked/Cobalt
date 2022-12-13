@@ -367,4 +367,15 @@ public class TableTest {
 		}
 	}
 
+	@Test
+	public void testPresizeRehashes() throws LuaError {
+		// Set presize correctly moves items from the hash part to the array part.
+		// See https://github.com/SquidDev/Cobalt/pull/61.
+		LuaTable t = new LuaTable();
+		t.rawset(7, valueOf(123));
+		t.presize(8);
+
+		assertEquals(Constants.NIL, t.next(valueOf(7)));
+	}
+
 }

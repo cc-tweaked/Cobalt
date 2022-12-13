@@ -148,6 +148,18 @@ public final class LuaInterpreter {
 		return di;
 	}
 
+	/*
+	 ** converts back a "floating point byte" to an integer.
+	 ** The floating point byte  is represented as
+	 ** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
+	 ** eeeee != 0 and (xxx) otherwise.
+	 */
+	private static int luaO_fb2int (int x) {
+		int e = (x >> 3) & 31;
+		if (e == 0) return x;
+		else return ((x & 7)+8) << (e - 1);
+	}
+
 	static Varargs execute(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
 		final DebugState ds = DebugHandler.getDebugState(state);
 		final DebugHandler handler = state.debug;
@@ -229,7 +241,7 @@ public final class LuaInterpreter {
 					}
 
 					case OP_NEWTABLE: // A B C: R(A):= {} (size = B,C)
-						stack[a] = new LuaTable((i >>> POS_B) & MAXARG_B, (i >>> POS_C) & MAXARG_C);
+						stack[a] = new LuaTable(luaO_fb2int((i >>> POS_B) & MAXARG_B), luaO_fb2int((i >>> POS_C) & MAXARG_C));
 						break;
 
 					case OP_SELF: { // A B C: R(A+1):= R(B): R(A):= R(B)[RK(C)]
