@@ -339,20 +339,53 @@ public final class LuaTable extends LuaValue {
 
 	public int length() {
 		int a = getArrayLength();
-		int n = a + 1, m = 0;
-		while (!rawget(n).isNil()) {
-			m = n;
-			n += a + getHashLength() + 1;
-		}
-		while (n > m + 1) {
-			int k = (n + m) / 2;
-			if (!rawget(k).isNil()) {
-				m = k;
-			} else {
-				n = k;
+		/**
+		 * Array cannot contain nil value, except if that array is statically allocated
+		 * So if the last element is nil it means we need to binary search the array to find
+		 * the first element non nil followed with a nil value
+		 */
+		if (a > 0 && rawget(a).isNil()) {
+			int n = a+1, m = 0;
+			while (n - m > 1) {
+				int k = (m + n) / 2;
+
+				if (rawget(k).isNil() && rawget(k+1).isNil()) {
+					n = k;
+				} else {
+					m = k;
+				}
 			}
+			return m;
+		} else if (nodes.length == 0) {
+			// When no nodes are present and the last item is not nil,
+			// the size of the table is the exact same size its capacity,
+			// so we can directly return the array.length
+			return a;
+		} else {
+			long i = a;
+			long j = i+1;
+			while (!rawget((int) j).isNil()) {
+				i = j;
+				j *= 2;
+				// Fallback to linear search, something is wrong
+				if (j > ((long)Integer.MAX_VALUE*2)-2) {
+					i = 1;
+					while (!rawget((int)i).isNil()) i++;
+					return (int)i;
+				}
+			}
+
+			// Binary search
+			while (j - i > 1) {
+				int k = ((int)i + (int)j) / 2;
+				if (!rawget(k).isNil()) {
+					i = k;
+				} else {
+					j = k;
+				}
+			}
+			return (int)i;
 		}
-		return m;
 	}
 
 	/**
