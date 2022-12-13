@@ -349,7 +349,7 @@ public final class LuaTable extends LuaValue {
 			while (n - m > 1) {
 				int k = (m + n) / 2;
 
-				if (rawget(k).isNil() && rawget(k+1).isNil()) {
+				if (rawget(k).isNil()) {
 					n = k;
 				} else {
 					m = k;
