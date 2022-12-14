@@ -114,7 +114,7 @@ public class TableLib implements LuaLibrary {
 				case 0: { // "sort" (table [, comp]) -> void
 					LuaTable table = args.arg(1).checkTable();
 					LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
-					int n = table.prepSort();
+					int n = table.length();
 					if (n > 1) {
 						SortState res = new SortState(table, n, compare);
 						di.state = res;
@@ -341,7 +341,7 @@ public class TableLib implements LuaLibrary {
 				int end = counter;
 				try {
 					for (; end > 0; ) {
-						table.swap(end, 0);
+						table.swap(end + 1, 1);
 						normalSiftDown(state, table, 0, --end, compare, res);
 					}
 				} catch (UnwindThrowable e) {
@@ -360,14 +360,14 @@ public class TableLib implements LuaLibrary {
 				siftState = 0;
 
 				child = root * 2 + 1;
-				if (child < end && table.compare(state, child, child + 1, compare)) {
+				if (child < end && table.compare(state, child + 1, child + 2, compare)) {
 					++child;
 				}
 
 				siftState = 1;
 
-				if (table.compare(state, root, child, compare)) {
-					table.swap(root, child);
+				if (table.compare(state, root + 1, child +  1, compare)) {
+					table.swap(root + 1, child + 1);
 					root = child;
 				} else {
 					return;
@@ -394,7 +394,7 @@ public class TableLib implements LuaLibrary {
 				// This is technically state 1 now, but we care about the exit
 				// point rather than the entry point
 				try {
-					value = table.compare(state, root, child, compare);
+					value = table.compare(state, root + 1, child + 1, compare);
 				} catch (UnwindThrowable e) {
 					res.child = child;
 					res.siftState = 1;
@@ -403,7 +403,7 @@ public class TableLib implements LuaLibrary {
 				// Allow fall through
 			case 1:
 				if (value) {
-					table.swap(root, child);
+					table.swap(root + 1, child + 1);
 					return child;
 				} else {
 					return -1;
