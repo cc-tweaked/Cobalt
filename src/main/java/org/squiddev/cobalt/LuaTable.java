@@ -660,40 +660,22 @@ public final class LuaTable extends LuaValue {
 	// ----------------- sort support -----------------------------
 	//
 	// implemented heap sort from wikipedia
-	//
-	// Only sorts the contiguous array part.
-	//
-
-	/**
-	 * Prepare the table for being sorted. Trimming unused values
-	 *
-	 * @return The length of this array.
-	 * @throws LuaError On a runtime error.
-	 */
-	public int prepSort() throws LuaError {
-		if (weakValues) dropWeakArrayValues();
-		int n = array.length;
-		while (n > 0 && array[n - 1] == NIL) {
-			--n;
-		}
-
-		return n;
-	}
-
 	public boolean compare(LuaState state, int i, int j, LuaValue cmpfunc) throws LuaError, UnwindThrowable {
 		LuaValue a, b;
 
 		a = strengthen(rawget(i));
 		b = strengthen(rawget(j));
 
-		if (a.isNil() && b.isNil()) {
-			return false;
-		}
 		if (!cmpfunc.isNil()) {
 			return OperationHelper.call(state, cmpfunc, a, b).toBoolean();
-		} else {
-			return OperationHelper.lt(state, a, b);
 		}
+		// To avoid breaking sort on tables that do contain nil values, but are not specifying a comparison function
+		// we should ensure that the behaviour is the same has before
+		// this means not swapping A B if either A or B is nil
+		if (a.isNil() || b.isNil()) {
+			return false;
+		}
+		return OperationHelper.lt(state, a, b);
 	}
 
 	public void swap(int i, int j) {
