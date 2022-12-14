@@ -328,12 +328,7 @@ public final class LuaTable extends LuaValue {
 
 	@Override
 	public LuaValue getn() {
-		for (int n = getArrayLength(); n > 0; --n) {
-			if (!rawget(n).isNil()) {
-				return LuaInteger.valueOf(n);
-			}
-		}
-		return ZERO;
+		return LuaInteger.valueOf(length());
 	}
 
 
@@ -688,10 +683,10 @@ public final class LuaTable extends LuaValue {
 	public boolean compare(LuaState state, int i, int j, LuaValue cmpfunc) throws LuaError, UnwindThrowable {
 		LuaValue a, b;
 
-		a = strengthen(array[i]);
-		b = strengthen(array[j]);
+		a = strengthen(rawget(i));
+		b = strengthen(rawget(j));
 
-		if (a.isNil() || b.isNil()) {
+		if (a.isNil() && b.isNil()) {
 			return false;
 		}
 		if (!cmpfunc.isNil()) {
@@ -702,9 +697,9 @@ public final class LuaTable extends LuaValue {
 	}
 
 	public void swap(int i, int j) {
-		Object a = array[i];
-		array[i] = array[j];
-		array[j] = a;
+		LuaValue a = rawget(i);
+		rawset(i, rawget(j));
+		rawset(j, a);
 	}
 
 	/**
