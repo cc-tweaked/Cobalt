@@ -1,6 +1,6 @@
 -- Ensure table.sort on sparse tables behaves identically to PUC Lua.
 
-local testTable = {[1]="e",[2]="a",[3]="b",[4]="c",[8]="d"}
+local testTable = {[1]="e",[2]="a",[3]="d",[4]="c",[8]="b"}
 
 table.sort(testTable, function(a, b)
   if not a then
@@ -9,8 +9,8 @@ table.sort(testTable, function(a, b)
   if not b then
     return true
   end
-  return a < b end
-end
+  return a < b
+end)
 
 assert(testTable[1]=="a")
 assert(testTable[2]=="b")
