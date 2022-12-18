@@ -207,16 +207,17 @@ public class StringLib implements LuaLibrary {
 		int l = s.length;
 		int posi = posRelative(args.arg(2).optInteger(1), l);
 		int pose = posRelative(args.arg(3).optInteger(posi), l);
-		int n, i;
 		if (posi <= 0) posi = 1;
 		if (pose > l) pose = l;
-		if (posi > pose) return NONE;  /* empty interval; return no values */
-		n = pose - posi + 1;
+		if (posi == pose) return valueOf(s.luaByte(posi - 1)); // Do the common case first.
+
+		if (posi > pose) return NONE; // empty interval; return no values
+		int n = pose - posi + 1;
 		if (posi + n <= pose)  /* overflow? */ {
 			throw new LuaError("string slice too long");
 		}
 		LuaValue[] v = new LuaValue[n];
-		for (i = 0; i < n; i++) {
+		for (int i = 0; i < n; i++) {
 			v[i] = valueOf(s.luaByte(posi + i - 1));
 		}
 		return varargsOf(v);
