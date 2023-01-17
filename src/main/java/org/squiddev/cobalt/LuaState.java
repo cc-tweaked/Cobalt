@@ -39,6 +39,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Consumer;
 
 /**
  * Global lua state
@@ -136,6 +137,11 @@ public final class LuaState {
 	 */
 	boolean abandoned;
 
+	/**
+	 * Report an internal VM error.
+	 */
+	private final Consumer<Throwable> reportError;
+
 	public LuaState() {
 		this(new LuaState.Builder());
 	}
@@ -155,6 +161,7 @@ public final class LuaState {
 		this.debug = builder.debug;
 		this.timezone = builder.timezone;
 		this.threader = new YieldThreader(builder.coroutineExecutor);
+		this.reportError = builder.reportError;
 	}
 
 	/**
@@ -232,12 +239,16 @@ public final class LuaState {
 			out.append("Thread ").append(thread.getName()).append(" is currently ").append(thread.getState()).append('\n');
 
 			Object blocking = LockSupport.getBlocker(thread);
-			if(blocking != null) out.append("  on ").append(blocking).append('\n');
+			if (blocking != null) out.append("  on ").append(blocking).append('\n');
 
 			for (StackTraceElement element : thread.getStackTrace()) {
 				out.append("  at ").append(element).append('\n');
 			}
 		}
+	}
+
+	public void reportInternalError(Throwable error) {
+		if (reportError != null) reportError.accept(error);
 	}
 
 	public static LuaState.Builder builder() {
@@ -269,6 +280,7 @@ public final class LuaState {
 		private DebugHandler debug = DebugHandler.INSTANCE;
 		private TimeZone timezone = TimeZone.getDefault();
 		private Executor coroutineExecutor = defaultCoroutineExecutor;
+		private Consumer<Throwable> reportError;
 
 		/**
 		 * Build a Lua state from this builder
@@ -433,7 +445,6 @@ public final class LuaState {
 			return this;
 		}
 
-
 		/**
 		 * Set the coroutine executor for this state.
 		 *
@@ -443,6 +454,12 @@ public final class LuaState {
 		public Builder coroutineExecutor(Executor coroutineExecutor) {
 			if (coroutineExecutor == null) throw new NullPointerException("coroutineExecutor cannot be null");
 			this.coroutineExecutor = coroutineExecutor;
+			return this;
+		}
+
+		public Builder errorReporter(Consumer<Throwable> reporter) {
+			if (reporter == null) throw new NullPointerException("report cannot be null");
+			this.reportError = reporter;
 			return this;
 		}
 	}

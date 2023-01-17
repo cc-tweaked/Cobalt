@@ -32,10 +32,10 @@ import static org.squiddev.cobalt.LuaString.valueOf;
 
 /**
  * RuntimeException that is thrown and caught in response to a lua error.
- *
+ * <p>
  * {@link LuaError} is used wherever a lua call to {@code error()}
  * would be used within a script.
- *
+ * <p>
  * Since it is an unchecked exception inheriting from {@link RuntimeException},
  * Java method signatures do notdeclare this exception, althoug it can
  * be thrown on almost any luaj Java operation.
@@ -66,7 +66,7 @@ public final class LuaError extends Exception {
 
 	/**
 	 * Construct LuaError when a program exception occurs.
-	 *
+	 * <p>
 	 * All errors generated from lua code should throw LuaError(String) instead.
 	 *
 	 * @param cause the Throwable that caused the error, if known.
@@ -159,7 +159,7 @@ public final class LuaError extends Exception {
 
 	/**
 	 * Extract the message from an {@link Throwable} or {@link LuaError}.
-	 *
+	 * <p>
 	 * This is equivalent to using {@link #wrapMessage(Throwable)}} and then {@link #value}.
 	 *
 	 * @param error The error to convert
@@ -204,6 +204,8 @@ public final class LuaError extends Exception {
 	}
 
 	private void fillTracebackImpl(LuaState state) {
+		if (getCause() != null) state.reportInternalError(getCause());
+
 		LuaThread thread = state.getCurrentThread();
 		if (level > 0 && value.isString()) {
 			String fileLine;
