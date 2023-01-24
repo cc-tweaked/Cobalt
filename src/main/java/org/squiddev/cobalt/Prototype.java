@@ -24,17 +24,16 @@
  */
 package org.squiddev.cobalt;
 
+import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 
-import static org.squiddev.cobalt.compiler.LoadState.getShortName;
-
 /**
  * Prototype representing compiled lua code.
- *
+ * <p>
  * This is both a straight translation of the corresponding C type,
  * and the main data structure for execution of compiled lua bytecode.
- *
+ * <p>
  * See documentatation on {@link LuaInterpretedFunction} for information on how to load
  * and execute a {@link Prototype}.
  *
@@ -53,6 +52,7 @@ public final class Prototype {
 	/* upvalue names */
 	public LuaString[] upvalues;
 	public LuaString source;
+	private LuaString shortSource;
 	public int nups;
 	public int linedefined;
 	public int lastlinedefined;
@@ -61,7 +61,8 @@ public final class Prototype {
 	public int maxstacksize;
 
 	public LuaString sourceShort() {
-		return getShortName(source);
+		LuaString shortSource = this.shortSource;
+		return shortSource != null ? shortSource : LoadState.getShortName(source);
 	}
 
 	public String toString() {
