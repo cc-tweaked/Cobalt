@@ -85,7 +85,7 @@ public final class LoadState {
 		 * @throws IOException      On stream read error
 		 * @throws CompileException If the stream cannot be loaded.
 		 */
-		LuaFunction load(InputStream stream, LuaString filename, LuaString mode, LuaTable env) throws IOException, CompileException;
+		LuaClosure load(InputStream stream, LuaString filename, LuaString mode, LuaTable env) throws IOException, CompileException;
 	}
 
 	/**
@@ -99,7 +99,7 @@ public final class LoadState {
 	public static final LuaString SOURCE_BINARY_STRING = valueOf("=?");
 
 
-	public static LuaFunction load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException, CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException, CompileException {
 		return load(state, stream, valueOf(name), env);
 	}
 
@@ -115,11 +115,11 @@ public final class LoadState {
 	 * @throws IOException              If an IOException occurs
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
-	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
 		return load(state, stream, name, null, env);
 	}
 
-	public static LuaFunction load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
 		if (state.compiler != null) return state.compiler.load(stream, name, mode, env);
 
 		int firstByte = stream.read();

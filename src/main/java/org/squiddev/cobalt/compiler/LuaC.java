@@ -28,6 +28,7 @@ package org.squiddev.cobalt.compiler;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState.LuaCompiler;
 import org.squiddev.cobalt.function.LocalVariable;
+import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.BaseLib;
@@ -176,7 +177,7 @@ public class LuaC implements LuaCompiler {
 	 * Load into a Closure or LuaFunction, with the supplied initial environment
 	 */
 	@Override
-	public LuaFunction load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
+	public LuaClosure load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
 		Prototype p = compile(stream, name, mode);
 		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
 		closure.nilUpvalues();
