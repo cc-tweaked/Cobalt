@@ -276,7 +276,7 @@ public class PackageLib implements LuaLibrary {
 	private static void modinit(LuaState state, LuaValue module, LuaString modname) throws LuaError, UnwindThrowable {
 		/* module._M = module */
 		OperationHelper.setTable(state, module, _M, module);
-		int e = modname.lastIndexOf(_DOT);
+		int e = modname.lastIndexOf('.');
 		OperationHelper.setTable(state, module, _NAME, modname);
 		LuaValue value = (e < 0 ? Constants.EMPTYSTRING : modname.substring(0, e + 1));
 		OperationHelper.setTable(state, module, _PACKAGE, value);

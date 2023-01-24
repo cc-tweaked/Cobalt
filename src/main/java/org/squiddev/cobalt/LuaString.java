@@ -387,18 +387,14 @@ public final class LuaString extends LuaBaseString {
 	}
 
 	/**
-	 * Find the last index of a string in this string
+	 * Find the last index of a character in this string
 	 *
-	 * @param s the string to search for
+	 * @param c the character to search for
 	 * @return index of last match found, or -1 if not found.
 	 */
-	public int lastIndexOf(LuaString s) {
-		final int slen = s.length();
-		final int limit = offset + length - slen;
-		for (int i = limit; i >= offset; --i) {
-			if (equals(bytes, i, s.bytes, s.offset, slen)) {
-				return i;
-			}
+	public int lastIndexOf(char c) {
+		for (int i = offset + length - 1; i >= offset; i--) {
+			if (bytes[i] == c) return i;
 		}
 		return -1;
 	}
