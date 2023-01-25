@@ -26,10 +26,8 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LuaClosure;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.function.Consumer;
 
 import static org.squiddev.cobalt.Lua.*;
@@ -84,7 +82,7 @@ public class Print {
 	};
 
 
-	static void printString(PrintStream ps, final LuaString s) {
+	static void printString(PrintWriter ps, final LuaString s) {
 
 		ps.print('"');
 		for (int i = 0, n = s.length; i < n; i++) {
@@ -130,7 +128,7 @@ public class Print {
 		ps.print('"');
 	}
 
-	private static void printValue(PrintStream ps, LuaValue v) {
+	private static void printValue(PrintWriter ps, LuaValue v) {
 		switch (v.type()) {
 			case Constants.TSTRING:
 				printString(ps, (LuaString) v);
@@ -141,7 +139,7 @@ public class Print {
 		}
 	}
 
-	private static void printConstant(PrintStream ps, Prototype f, int i) {
+	private static void printConstant(PrintWriter ps, Prototype f, int i) {
 		printValue(ps, f.k[i]);
 	}
 
@@ -150,7 +148,7 @@ public class Print {
 	 *
 	 * @param f the {@link Prototype}
 	 */
-	public static void printCode(PrintStream ps, Prototype f) {
+	public static void printCode(PrintWriter ps, Prototype f) {
 		int[] code = f.code;
 		int pc, n = code.length;
 		for (pc = 0; pc < n; pc++) {
@@ -162,11 +160,11 @@ public class Print {
 	/**
 	 * Print an opcode in a prototype
 	 *
-	 * @param ps the {@link PrintStream} to print to
+	 * @param ps the {@link PrintWriter} to print to
 	 * @param f  the {@link Prototype}
 	 * @param pc the program counter to look up and print
 	 */
-	public static void printOpcode(PrintStream ps, Prototype f, int pc) {
+	public static void printOpcode(PrintWriter ps, Prototype f, int pc) {
 		int[] code = f.code;
 		int i = code[pc];
 		int o = GET_OPCODE(i);
@@ -282,10 +280,10 @@ public class Print {
 	}
 
 	private static int getline(Prototype f, int pc) {
-		return pc > 0 && f.lineinfo != null && pc < f.lineinfo.length ? f.lineinfo[pc] : -1;
+		return pc >= 0 && f.lineinfo != null && pc < f.lineinfo.length ? f.lineinfo[pc] : -1;
 	}
 
-	private static void printHeader(PrintStream ps, Prototype f) {
+	private static void printHeader(PrintWriter ps, Prototype f) {
 		String s = String.valueOf(f.source);
 		if (s.startsWith("@") || s.startsWith("=")) {
 			s = s.substring(1);
@@ -304,7 +302,7 @@ public class Print {
 			+ " constant, " + f.p.length + " function\n");
 	}
 
-	private static void printConstants(PrintStream ps, Prototype f) {
+	private static void printConstants(PrintWriter ps, Prototype f) {
 		int i, n = f.k.length;
 		ps.print("constants (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
@@ -314,7 +312,7 @@ public class Print {
 		}
 	}
 
-	private static void printLocals(PrintStream ps, Prototype f) {
+	private static void printLocals(PrintWriter ps, Prototype f) {
 		int i, n = f.locvars.length;
 		ps.print("locals (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
@@ -322,7 +320,7 @@ public class Print {
 		}
 	}
 
-	private static void printUpValues(PrintStream ps, Prototype f) {
+	private static void printUpValues(PrintWriter ps, Prototype f) {
 		int i, n = f.upvalues.length;
 		ps.print("upvalues (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
@@ -334,7 +332,7 @@ public class Print {
 		return showWith(ps -> printFunction(ps, p, true));
 	}
 
-	public static void printFunction(PrintStream ps, Prototype f, boolean full) {
+	public static void printFunction(PrintWriter ps, Prototype f, boolean full) {
 		int i, n = f.p.length;
 		printHeader(ps, f);
 		printCode(ps, f);
@@ -348,7 +346,7 @@ public class Print {
 		}
 	}
 
-	private static void format(PrintStream ps, String s, int maxcols) {
+	private static void format(PrintWriter ps, String s, int maxcols) {
 		int n = s.length();
 		if (n > maxcols) {
 			ps.print(s.substring(0, maxcols));
@@ -373,7 +371,7 @@ public class Print {
 	 * @param top     the top of the stack
 	 * @param varargs any {@link Varargs} value that may apply
 	 */
-	public static void printState(PrintStream ps, LuaClosure cl, int pc, LuaValue[] stack, int top, Varargs varargs) {
+	public static void printState(PrintWriter ps, LuaClosure cl, int pc, LuaValue[] stack, int top, Varargs varargs) {
 		// print opcode into buffer
 		format(ps, showWith(p -> printOpcode(p, cl.getPrototype(), pc)), 50);
 
@@ -418,16 +416,11 @@ public class Print {
 		ps.println();
 	}
 
-	private static String showWith(Consumer<PrintStream> f) {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		PrintStream ps;
-		try {
-			ps = new PrintStream(output, false, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new IllegalStateException("UTF-8 should exist", e);
+	private static String showWith(Consumer<PrintWriter> f) {
+		StringWriter output = new StringWriter();
+		try (PrintWriter ps = new PrintWriter(output)) {
+			f.accept(ps);
 		}
-		f.accept(ps);
-		ps.flush();
-		return new String(output.toByteArray(), StandardCharsets.UTF_8);
+		return output.toString();
 	}
 }

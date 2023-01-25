@@ -29,6 +29,9 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
@@ -154,10 +157,10 @@ public final class LuaInterpreter {
 	 ** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
 	 ** eeeee != 0 and (xxx) otherwise.
 	 */
-	private static int luaO_fb2int (int x) {
+	private static int luaO_fb2int(int x) {
 		int e = (x >> 3) & 31;
 		if (e == 0) return x;
-		else return ((x & 7)+8) << (e - 1);
+		else return ((x & 7) + 8) << (e - 1);
 	}
 
 	static Varargs execute(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
@@ -708,17 +711,28 @@ public final class LuaInterpreter {
 	}
 
 	public static void resume(LuaState state, DebugFrame di, LuaInterpretedFunction function, Varargs varargs) throws LuaError, UnwindThrowable {
+		int pc = di.pc++;
 		Prototype p = function.p;
-		int i = p.code[di.pc++];
+		int i = p.code[pc];
 
 		switch (((i >> POS_OP) & MAX_OP)) {
-			case OP_ADD: case OP_SUB: case OP_MUL: case OP_DIV: case OP_MOD: case OP_POW: case OP_UNM:
-			case OP_GETTABLE: case OP_GETGLOBAL: case OP_SELF: {
+			case OP_ADD:
+			case OP_SUB:
+			case OP_MUL:
+			case OP_DIV:
+			case OP_MOD:
+			case OP_POW:
+			case OP_UNM:
+			case OP_GETTABLE:
+			case OP_GETGLOBAL:
+			case OP_SELF: {
 				di.stack[(i >> POS_A) & MAXARG_A] = varargs.first();
 				break;
 			}
 
-			case OP_LE: case OP_LT: case OP_EQ: {
+			case OP_LE:
+			case OP_LT:
+			case OP_EQ: {
 				boolean res = varargs.first().toBoolean();
 
 				// If we should negate this result (due to using lt rather than le)
@@ -735,7 +749,8 @@ public final class LuaInterpreter {
 				break;
 			}
 
-			case OP_CALL: case OP_TAILCALL: {
+			case OP_CALL:
+			case OP_TAILCALL: {
 				int a = (i >>> POS_A) & MAXARG_A;
 				int c = (i >>> POS_C) & MAXARG_C;
 				if (c > 0) {
@@ -749,7 +764,8 @@ public final class LuaInterpreter {
 				break;
 			}
 
-			case OP_SETTABLE: case OP_SETGLOBAL:
+			case OP_SETTABLE:
+			case OP_SETGLOBAL:
 				// Nothing to be done here
 				break;
 
@@ -790,7 +806,7 @@ public final class LuaInterpreter {
 			}
 
 			default:
-				throw new IllegalStateException("Resuming from unknown instruction");
+				throw reportIllegalResume(state, function.p, pc);
 		}
 	}
 
@@ -834,8 +850,20 @@ public final class LuaInterpreter {
 			}
 
 			default:
-				Print.printCode(System.out, function.p);
-				throw new IllegalStateException("Cannot resume on this opcode (pc=" + di.pc + ")");
+				throw reportIllegalResume(state, function.p, di.pc);
 		}
+	}
+
+	private static LuaError reportIllegalResume(LuaState state, Prototype prototype, int pc) {
+		LuaError err = new LuaError("cannot resume this opcode");
+		state.reportInternalError(err, () -> {
+			StringWriter output = new StringWriter();
+			try (PrintWriter ps = new PrintWriter(output)) {
+				ps.printf("Resuming function at invalid opcode. file=\"%s\", pc=%d\n", prototype.sourceShort(), pc + 1);
+				Print.printCode(ps, prototype);
+			}
+			return output.toString();
+		});
+		return err;
 	}
 }

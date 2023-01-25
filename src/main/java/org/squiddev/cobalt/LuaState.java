@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Global lua state
@@ -140,7 +141,7 @@ public final class LuaState {
 	/**
 	 * Report an internal VM error.
 	 */
-	private final Consumer<Throwable> reportError;
+	private final ErrorReporter reportError;
 
 	public LuaState() {
 		this(new LuaState.Builder());
@@ -247,8 +248,13 @@ public final class LuaState {
 		}
 	}
 
+	@Deprecated
 	public void reportInternalError(Throwable error) {
-		if (reportError != null) reportError.accept(error);
+		if (reportError != null) reportError.report(error, () -> "Uncaught Java exception");
+	}
+
+	public void reportInternalError(Throwable error, Supplier<String> message) {
+		if (reportError != null) reportError.report(error, message);
 	}
 
 	public static LuaState.Builder builder() {
@@ -280,7 +286,7 @@ public final class LuaState {
 		private DebugHandler debug = DebugHandler.INSTANCE;
 		private TimeZone timezone = TimeZone.getDefault();
 		private Executor coroutineExecutor = defaultCoroutineExecutor;
-		private Consumer<Throwable> reportError;
+		private ErrorReporter reportError;
 
 		/**
 		 * Build a Lua state from this builder
@@ -457,10 +463,33 @@ public final class LuaState {
 			return this;
 		}
 
+		@Deprecated
 		public Builder errorReporter(Consumer<Throwable> reporter) {
+			if (reporter == null) throw new NullPointerException("report cannot be null");
+			this.reportError = (e, ctx) -> reporter.accept(e);
+			return this;
+		}
+
+		public Builder errorReporter(ErrorReporter reporter) {
 			if (reporter == null) throw new NullPointerException("report cannot be null");
 			this.reportError = reporter;
 			return this;
 		}
+	}
+
+	/**
+	 * A reporter for internal VM errors. This may be implemented by the host to log errors without displaying the
+	 * full details inside the Lua runtime.
+	 *
+	 * @see #reportInternalError(Throwable, Supplier)
+	 */
+	public interface ErrorReporter {
+		/**
+		 * Report an internal VM error.
+		 *
+		 * @param error   The error that occurred.
+		 * @param message Additional details about this error.
+		 */
+		void report(Throwable error, Supplier<String> message);
 	}
 }

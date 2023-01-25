@@ -204,7 +204,7 @@ public final class LuaError extends Exception {
 	}
 
 	private void fillTracebackImpl(LuaState state) {
-		if (getCause() != null) state.reportInternalError(getCause());
+		if (getCause() != null) state.reportInternalError(getCause(), () -> "Uncaught Java exception");
 
 		LuaThread thread = state.getCurrentThread();
 		if (level > 0 && value.isString()) {

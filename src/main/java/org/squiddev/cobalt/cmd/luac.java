@@ -171,7 +171,7 @@ public class luac {
 
 			// list the chunk
 			if (list) {
-				Print.printCode(System.out, chunk);
+				Print.printCode(new PrintWriter(System.out), chunk);
 			}
 
 			// write out the chunk
