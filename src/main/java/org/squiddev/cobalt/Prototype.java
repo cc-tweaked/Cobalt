@@ -51,7 +51,7 @@ public final class Prototype {
 	public LocalVariable[] locvars;
 	/* upvalue names */
 	public LuaString[] upvalues;
-	public LuaString source;
+	public final LuaString source;
 	private LuaString shortSource;
 	public int nups;
 	public int linedefined;
@@ -60,9 +60,13 @@ public final class Prototype {
 	public int is_vararg;
 	public int maxstacksize;
 
+	public Prototype(LuaString source) {
+		this.source = source;
+	}
+
 	public LuaString sourceShort() {
 		LuaString shortSource = this.shortSource;
-		return shortSource != null ? shortSource : LoadState.getShortName(source);
+		return shortSource != null ? shortSource : (this.shortSource = LoadState.getShortName(source));
 	}
 
 	public String toString() {

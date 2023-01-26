@@ -24,13 +24,13 @@
  */
 package org.squiddev.cobalt.compiler;
 
-public class IntPtr {
-	int i;
+class IntPtr {
+	int value;
 
 	IntPtr() {
 	}
 
 	IntPtr(int value) {
-		this.i = value;
+		this.value = value;
 	}
 }

@@ -76,7 +76,7 @@ public class LuaOperationsTest {
 	};
 	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
-	private final Prototype proto = new Prototype();
+	private final Prototype proto = new Prototype(LuaString.valueOf("=prototype"));
 	private final LuaClosure someclosure = new LuaInterpretedFunction(proto, table);
 	private final LuaUserdata userdataobj = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = ValueFactory.userdataOf(sampledata);

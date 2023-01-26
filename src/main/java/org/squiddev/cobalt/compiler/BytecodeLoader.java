@@ -281,11 +281,8 @@ public final class BytecodeLoader {
 	 * @throws IOException On stream read errors
 	 */
 	public Prototype loadFunction(LuaString p) throws IOException {
-		Prototype f = new Prototype();
-		f.source = loadString();
-		if (f.source == null) {
-			f.source = p;
-		}
+		LuaString source = loadString();
+		Prototype f = new Prototype(source == null ? p : source);
 		f.linedefined = loadInt();
 		f.lastlinedefined = loadInt();
 		f.nups = is.readUnsignedByte();

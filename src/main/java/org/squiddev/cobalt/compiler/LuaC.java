@@ -216,14 +216,11 @@ public class LuaC implements LuaCompiler {
 	 * Parse the input
 	 */
 	private static Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
-		LexState lexstate = new LexState(z);
+		LexState lexstate = new LexState(z, firstByte, name);
 		FuncState funcstate = new FuncState();
-		// lexstate.buff = buff;
-		lexstate.setinput(firstByte, z, name);
 		lexstate.open_func(funcstate);
-		/* main func. is always vararg */
-		funcstate.f.is_vararg = Lua.VARARG_ISVARARG;
-		funcstate.f.source = name;
+		funcstate.f.is_vararg = Lua.VARARG_ISVARARG; /* main func. is always vararg */
+
 		lexstate.nextToken(); /* read first token */
 		lexstate.chunk();
 		lexstate.check(LexState.TK_EOS);

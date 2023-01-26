@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt.compiler;
 
-public class InstructionPtr {
+class InstructionPtr {
 	public final int[] code;
 	public final int idx;
 
