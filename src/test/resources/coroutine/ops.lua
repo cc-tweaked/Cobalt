@@ -22,6 +22,9 @@ ops = {
 		local a, b = coroutine.yield(x, y)
 		return a.x < b.x
 	end,
+	__len = function(x)
+		return coroutine.yield(x).x
+	end,
 	__index = function(tbl, key)
 		local res = coroutine.yield(key)
 		return res:upper()
@@ -67,6 +70,8 @@ run(function()
 	assertEquals(false, varB <= varA)
 	assertEquals(true, varA <= varA)
 	assertEquals(true, varB <= varB)
+
+	assertEquals(2, #varA)
 
 	assertEquals("HELLO", varA.hello)
 	varA.hello = "bar"

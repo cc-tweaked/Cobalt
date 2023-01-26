@@ -723,6 +723,7 @@ public final class LuaInterpreter {
 			case OP_MOD:
 			case OP_POW:
 			case OP_UNM:
+			case OP_LEN:
 			case OP_GETTABLE:
 			case OP_GETGLOBAL:
 			case OP_SELF: {
