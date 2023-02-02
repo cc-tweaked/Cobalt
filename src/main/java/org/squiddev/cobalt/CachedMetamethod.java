@@ -31,6 +31,7 @@ public enum CachedMetamethod {
 	INDEX(Constants.INDEX),
 	NEWINDEX(Constants.NEWINDEX),
 	LEN(Constants.LEN),
+	GC(Constants.GC),
 	EQ(Constants.EQ);
 
 	private final LuaString key;

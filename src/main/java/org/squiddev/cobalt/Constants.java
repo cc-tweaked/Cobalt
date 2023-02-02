@@ -237,6 +237,11 @@ public class Constants {
 	public static final LuaString PAIRS = valueOf("__pairs");
 
 	/**
+	 * LuaString constant with value "__gc" for use as metatag
+	 */
+	public static final LuaString GC = valueOf("__gc");
+
+	/**
 	 * LuaString constant with value ""
 	 */
 	public static final LuaString EMPTYSTRING = valueOf("");

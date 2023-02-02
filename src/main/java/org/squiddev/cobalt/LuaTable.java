@@ -93,6 +93,7 @@ public final class LuaTable extends LuaValue {
 
 	private int metatableFlags;
 	private LuaTable metatable;
+	private Finalizer finalizer = null;
 
 	/**
 	 * Construct empty table
@@ -245,6 +246,9 @@ public final class LuaTable extends LuaValue {
 	@Override
 	public void setMetatable(LuaState state, LuaTable metatable) {
 		setMetatable(metatable);
+		if (metatable != null && finalizer == null && !metatable.rawget(CachedMetamethod.GC).isNil()) {
+			finalizer = this.new Finalizer(state);
+		}
 	}
 
 	/**
@@ -1237,6 +1241,21 @@ public final class LuaTable extends LuaValue {
 			LuaValue strengthened = strengthen(value);
 			if (strengthened.isNil()) this.value = NIL;
 			return strengthened;
+		}
+	}
+
+	private final class Finalizer {
+		private final LuaState state;
+
+		Finalizer(LuaState s) {
+			state = s;
+		}
+
+		@Override
+		protected void finalize() throws Throwable {
+			LuaValue gc = metatable.rawget(CachedMetamethod.GC);
+			if (gc.isFunction()) OperationHelper.call(state, gc, LuaTable.this);
+			super.finalize();
 		}
 	}
 }
