@@ -101,7 +101,7 @@ public final class DebugHelpers {
 				// Strictly speaking we should search the global table for this term - see Lua 5.3's pushglobalfuncname/
 				// pushfuncname. However, I'm somewhat reluctant to do that, so we just check it's a global.
 				sb.append(kind[1] == GLOBAL ? "function" : kind[1]).append(" '").append(kind[0]).append('\'');
-			} else if (di.closure != null && di.closure.getPrototype().linedefined == 0) {
+			} else if (di.closure != null && di.closure.getPrototype().lineDefined == 0) {
 				sb.append("main chunk");
 			} else if (di.closure != null) {
 				sb.append("function <").append(di.func.debugName()).append(">");
@@ -179,7 +179,7 @@ public final class DebugHelpers {
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);
 		int i; // Instruction i;
-		LuaString name = p.getlocalname(stackpos + 1, pc);
+		LuaString name = p.getLocalName(stackpos + 1, pc);
 
 		// is a local?
 		if (name != null) return new LuaString[]{name, LOCAL};
@@ -190,7 +190,7 @@ public final class DebugHelpers {
 			case OP_GETGLOBAL: {
 				int g = Lua.GETARG_Bx(i); /* global index */
 				// lua_assert(p.k[g].isString());
-				LuaValue value = p.k[g];
+				LuaValue value = p.constants[g];
 				LuaString string = OperationHelper.toStringDirect(value);
 				return new LuaString[]{string, GLOBAL};
 			}
@@ -206,7 +206,7 @@ public final class DebugHelpers {
 			}
 			case OP_GETUPVAL: {
 				int u = Lua.GETARG_B(i); /* upvalue index */
-				return new LuaString[]{u < p.upvalues.length ? p.upvalues[u] : DebugLib.QMARK, UPVALUE};
+				return new LuaString[]{u < p.upvalueNames.length ? p.upvalueNames[u] : DebugLib.QMARK, UPVALUE};
 			}
 			case OP_SELF: {
 				int k = Lua.GETARG_C(i); /* key index */
@@ -245,7 +245,7 @@ public final class DebugHelpers {
 				case Lua.iABx: {
 					b = Lua.GETARG_Bx(i);
 					if (Lua.getBMode(op) == Lua.OpArgK) {
-						if (!(b < pt.k.length)) return 0;
+						if (!(b < pt.constants.length)) return 0;
 					}
 					break;
 				}
@@ -285,12 +285,12 @@ public final class DebugHelpers {
 				}
 				case OP_GETUPVAL:
 				case Lua.OP_SETUPVAL: {
-					if (!(b < pt.nups)) return 0;
+					if (!(b < pt.upvalues)) return 0;
 					break;
 				}
 				case OP_GETGLOBAL:
 				case Lua.OP_SETGLOBAL: {
-					if (!(pt.k[b].isString())) return 0;
+					if (!(pt.constants[b].isString())) return 0;
 					break;
 				}
 				case OP_SELF: {
@@ -358,8 +358,8 @@ public final class DebugHelpers {
 				}
 				case Lua.OP_CLOSURE: {
 					int nup, j;
-					if (!(b < pt.p.length)) return 0;
-					nup = pt.p[b].nups;
+					if (!(b < pt.children.length)) return 0;
+					nup = pt.children[b].upvalues;
 					if (!(pc + nup < pt.code.length)) return 0;
 					for (j = 1; j <= nup; j++) {
 						int op1 = Lua.GET_OPCODE(pt.code[pc + j]);
@@ -371,8 +371,8 @@ public final class DebugHelpers {
 					break;
 				}
 				case Lua.OP_VARARG: {
-					if (!((pt.is_vararg & Lua.VARARG_ISVARARG) != 0
-						&& (pt.is_vararg & Lua.VARARG_NEEDSARG) == 0)) {
+					if (!((pt.isVarArg & Lua.VARARG_ISVARARG) != 0
+						&& (pt.isVarArg & Lua.VARARG_NEEDSARG) == 0)) {
 						return 0;
 					}
 					b--;
@@ -390,11 +390,11 @@ public final class DebugHelpers {
 	}
 
 	private static boolean precheck(Prototype pt) {
-		if (!(pt.maxstacksize <= LuaC.MAXSTACK)) return false;
-		lua_assert(pt.numparams + (pt.is_vararg & Lua.VARARG_HASARG) <= pt.maxstacksize);
-		lua_assert((pt.is_vararg & Lua.VARARG_NEEDSARG) == 0
-			|| (pt.is_vararg & Lua.VARARG_HASARG) != 0);
-		return pt.upvalues.length <= pt.nups && (pt.lineinfo.length == pt.code.length || pt.lineinfo.length == 0) && Lua.GET_OPCODE(pt.code[pt.code.length - 1]) == Lua.OP_RETURN;
+		if (!(pt.maxStackSize <= LuaC.MAXSTACK)) return false;
+		lua_assert(pt.parameters + (pt.isVarArg & Lua.VARARG_HASARG) <= pt.maxStackSize);
+		lua_assert((pt.isVarArg & Lua.VARARG_NEEDSARG) == 0
+			|| (pt.isVarArg & Lua.VARARG_HASARG) != 0);
+		return pt.upvalueNames.length <= pt.upvalues && (pt.lineInfo.length == pt.code.length || pt.lineInfo.length == 0) && Lua.GET_OPCODE(pt.code[pt.code.length - 1]) == Lua.OP_RETURN;
 	}
 
 	private static boolean checkArgMode(Prototype pt, int val, int mode) {
@@ -408,14 +408,14 @@ public final class DebugHelpers {
 				checkRegister(pt, val);
 				break;
 			case Lua.OpArgK:
-				if (!(Lua.ISK(val) ? Lua.INDEXK(val) < pt.k.length : val < pt.maxstacksize)) return false;
+				if (!(Lua.ISK(val) ? Lua.INDEXK(val) < pt.constants.length : val < pt.maxStackSize)) return false;
 				break;
 		}
 		return true;
 	}
 
 	private static boolean checkRegister(Prototype proto, int reg) {
-		return (reg < proto.maxstacksize);
+		return (reg < proto.maxStackSize);
 	}
 
 	private static boolean checkOpenUp(Prototype proto, int pc) {
@@ -433,8 +433,8 @@ public final class DebugHelpers {
 	}
 
 	private static LuaString constantName(Prototype proto, int index) {
-		if (Lua.ISK(index) && proto.k[Lua.INDEXK(index)].isString()) {
-			return (LuaString) proto.k[Lua.INDEXK(index)].toLuaString();
+		if (Lua.ISK(index) && proto.constants[Lua.INDEXK(index)].isString()) {
+			return (LuaString) proto.constants[Lua.INDEXK(index)].toLuaString();
 		} else {
 			return DebugLib.QMARK;
 		}

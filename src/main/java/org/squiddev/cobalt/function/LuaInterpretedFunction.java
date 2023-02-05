@@ -99,7 +99,7 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 
 	public LuaInterpretedFunction(Prototype p) {
 		this.p = p;
-		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+		this.upvalues = p.upvalues > 0 ? new Upvalue[p.upvalues] : NO_UPVALUES;
 	}
 
 	/**
@@ -111,11 +111,11 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	public LuaInterpretedFunction(Prototype p, LuaTable env) {
 		super(env);
 		this.p = p;
-		this.upvalues = p.nups > 0 ? new Upvalue[p.nups] : NO_UPVALUES;
+		this.upvalues = p.upvalues > 0 ? new Upvalue[p.upvalues] : NO_UPVALUES;
 	}
 
 	public void nilUpvalues() {
-		int nups = p.nups;
+		int nups = p.upvalues;
 		if (nups > 0) {
 			Upvalue[] upvalues = this.upvalues;
 			for (int i = 0; i < nups; i++) {
@@ -166,7 +166,7 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 
 	@Override
 	public String debugName() {
-		return getPrototype().sourceShort() + ":" + getPrototype().linedefined;
+		return getPrototype().sourceShort() + ":" + getPrototype().lineDefined;
 	}
 
 	@Override

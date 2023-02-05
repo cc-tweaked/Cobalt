@@ -212,10 +212,9 @@ public final class BytecodeLoader {
 	/**
 	 * Load a list of constants from a binary chunk
 	 *
-	 * @param f the function prototype
 	 * @throws IOException if an i/o exception occurs
 	 */
-	private void loadConstants(Prototype f) throws IOException {
+	private LuaValue[] loadConstants() throws IOException {
 		int n = loadInt();
 		LuaValue[] values = n > 0 ? new LuaValue[n] : NOVALUES;
 		for (int i = 0; i < n; i++) {
@@ -239,38 +238,35 @@ public final class BytecodeLoader {
 					throw new IllegalStateException("bad constant");
 			}
 		}
-		f.k = values;
-
-		n = loadInt();
-		Prototype[] protos = n > 0 ? new Prototype[n] : NOPROTOS;
-		for (int i = 0; i < n; i++) {
-			protos[i] = loadFunction(f.source);
-		}
-		f.p = protos;
+		return values;
 	}
 
-	/**
-	 * Load the debug infor for a function prototype
-	 *
-	 * @param f the function Prototype
-	 * @throws IOException if there is an i/o exception
-	 */
-	private void loadDebug(Prototype f) throws IOException {
-		f.lineinfo = loadIntArray();
+	private Prototype[] loadChildren(LuaString source) throws IOException {
 		int n = loadInt();
-		f.locvars = n > 0 ? new LocalVariable[n] : NOLOCVARS;
+		Prototype[] protos = n > 0 ? new Prototype[n] : NOPROTOS;
+		for (int i = 0; i < n; i++) {
+			protos[i] = loadFunction(source);
+		}
+		return protos;
+	}
+
+	private LocalVariable[] loadLocals() throws IOException {
+		int n = loadInt();
+		LocalVariable[] locals = n > 0 ? new LocalVariable[n] : NOLOCVARS;
 		for (int i = 0; i < n; i++) {
 			LuaString varname = loadString();
 			int startpc = loadInt();
 			int endpc = loadInt();
-			f.locvars[i] = new LocalVariable(varname, startpc, endpc);
+			locals[i] = new LocalVariable(varname, startpc, endpc);
 		}
+		return locals;
+	}
 
-		n = loadInt();
-		f.upvalues = n > 0 ? new LuaString[n] : NOSTRVALUES;
-		for (int i = 0; i < n; i++) {
-			f.upvalues[i] = loadString();
-		}
+	private LuaString[] loadUpvalueNames() throws IOException {
+		int n = loadInt();
+		LuaString[] upvalueNames = n > 0 ? new LuaString[n] : NOSTRVALUES;
+		for (int i = 0; i < n; i++) upvalueNames[i] = loadString();
+		return upvalueNames;
 	}
 
 	/**
@@ -282,22 +278,26 @@ public final class BytecodeLoader {
 	 */
 	public Prototype loadFunction(LuaString p) throws IOException {
 		LuaString source = loadString();
-		Prototype f = new Prototype(source == null ? p : source);
-		f.linedefined = loadInt();
-		f.lastlinedefined = loadInt();
-		f.nups = is.readUnsignedByte();
-		f.numparams = is.readUnsignedByte();
-		f.is_vararg = is.readUnsignedByte();
-		f.maxstacksize = is.readUnsignedByte();
-		f.code = loadIntArray();
-		loadConstants(f);
-		loadDebug(f);
+		if (source == null) source = p;
 
-		// TODO: add check here, for debugging purposes, I believe
-		// see ldebug.c
-//		 IF (!luaG_checkcode(f), "bad code");
+		int lineDefined = loadInt();
+		int lastLineDefined = loadInt();
+		int nups = is.readUnsignedByte();
+		int numparams = is.readUnsignedByte();
+		int is_vararg = is.readUnsignedByte();
+		int maxstacksize = is.readUnsignedByte();
+		int[] code = loadIntArray();
+		LuaValue[] constants = loadConstants();
+		Prototype[] children = loadChildren(source);
+		int[] lineInfo = loadIntArray();
+		LocalVariable[] locals = loadLocals();
+		LuaString[] upvalueNames = loadUpvalueNames();
 
-		return f;
+		return new Prototype(
+			source,
+			constants, code, children, numparams, is_vararg, maxstacksize, nups,
+			lineDefined, lastLineDefined, lineInfo, locals, upvalueNames
+		);
 	}
 
 	/**

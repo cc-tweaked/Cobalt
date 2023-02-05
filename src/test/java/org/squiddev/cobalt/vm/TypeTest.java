@@ -68,7 +68,7 @@ public class TypeTest {
 		}
 	};
 	private final LuaThread thread = new LuaThread(new LuaState(), somefunc, table);
-	private final LuaClosure someclosure = new LuaInterpretedFunction(new Prototype(LuaString.valueOf("=prototype")));
+	private final LuaClosure someclosure = new LuaInterpretedFunction(DataFactory.prototype());
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);
 

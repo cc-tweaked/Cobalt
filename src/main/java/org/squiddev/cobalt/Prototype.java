@@ -34,34 +34,66 @@ import org.squiddev.cobalt.function.LuaInterpretedFunction;
  * This is both a straight translation of the corresponding C type,
  * and the main data structure for execution of compiled lua bytecode.
  * <p>
- * See documentatation on {@link LuaInterpretedFunction} for information on how to load
+ * See documentation on {@link LuaInterpretedFunction} for information on how to load
  * and execute a {@link Prototype}.
  *
  * @see LuaInterpretedFunction
  */
 public final class Prototype {
-	/* constants used by the function */
-	public LuaValue[] k;
-	public int[] code;
-	/* functions defined inside the function */
-	public Prototype[] p;
-	/* map from opcodes to source lines */
-	public int[] lineinfo;
-	/* information about local variables */
-	public LocalVariable[] locvars;
-	/* upvalue names */
-	public LuaString[] upvalues;
 	public final LuaString source;
 	private LuaString shortSource;
-	public int nups;
-	public int linedefined;
-	public int lastlinedefined;
-	public int numparams;
-	public int is_vararg;
-	public int maxstacksize;
 
-	public Prototype(LuaString source) {
+	/**
+	 * Constants used by the function
+	 */
+	public final LuaValue[] constants;
+
+	public final int[] code;
+
+	/**
+	 * Functions defined inside the function
+	 */
+	public final Prototype[] children;
+
+	public final int upvalues;
+	public final int lineDefined;
+	public final int lastLineDefined;
+	public final int parameters;
+	public final int isVarArg;
+	public final int maxStackSize;
+
+	/**
+	 * Map from opcodes to source lines
+	 */
+	public final int[] lineInfo;
+
+	/**
+	 * Information about local variables
+	 */
+	public final LocalVariable[] locals;
+
+	public final LuaString[] upvalueNames;
+
+	public Prototype(
+		LuaString source,
+		LuaValue[] constants, int[] code, Prototype[] children, int parameters, int isVarArg, int maxStackSize, int upvalues,
+		int lineDefined, int lastLineDefined, int[] lineInfo, LocalVariable[] localVars, LuaString[] upvalueNames
+	) {
 		this.source = source;
+
+		this.constants = constants;
+		this.code = code;
+		this.children = children;
+		this.parameters = parameters;
+		this.isVarArg = isVarArg;
+		this.maxStackSize = maxStackSize;
+		this.upvalues = upvalues;
+
+		this.lineDefined = lineDefined;
+		this.lastLineDefined = lastLineDefined;
+		this.lineInfo = lineInfo;
+		this.locals = localVars;
+		this.upvalueNames = upvalueNames;
 	}
 
 	public LuaString sourceShort() {
@@ -70,7 +102,7 @@ public final class Prototype {
 	}
 
 	public String toString() {
-		return source + ":" + linedefined + "-" + lastlinedefined;
+		return source + ":" + lineDefined + "-" + lastLineDefined;
 	}
 
 	/**
@@ -80,12 +112,12 @@ public final class Prototype {
 	 * @param pc     the program counter
 	 * @return the name, or null if not found
 	 */
-	public LuaString getlocalname(int number, int pc) {
+	public LuaString getLocalName(int number, int pc) {
 		int i;
-		for (i = 0; i < locvars.length && locvars[i].startpc <= pc; i++) {
-			if (pc < locvars[i].endpc) {  /* is variable active? */
+		for (i = 0; i < locals.length && locals[i].startpc <= pc; i++) {
+			if (pc < locals[i].endpc) {  /* is variable active? */
 				number--;
-				if (number == 0) return locvars[i].name;
+				if (number == 0) return locals[i].name;
 			}
 		}
 		return null;  // not found

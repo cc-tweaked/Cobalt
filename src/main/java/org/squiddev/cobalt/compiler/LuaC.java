@@ -27,7 +27,6 @@ package org.squiddev.cobalt.compiler;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState.LuaCompiler;
-import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
@@ -36,22 +35,23 @@ import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.compiler.LoadState.checkMode;
 
 /**
  * Compiler for Lua.
- *
+ * <p>
  * Compiles lua source files into lua bytecode within a {@link Prototype},
  * loads lua binary files directly into a{@link Prototype},
  * and optionaly instantiates a {@link LuaInterpretedFunction} around the result
  * using a user-supplied environment.
- *
+ * <p>
  * Implements the {@link LuaCompiler} interface for loading
  * initialized chunks, which is an interface common to
  * lua bytecode compiling and java bytecode compiling.
- *
+ * <p>
  * The {@link LuaC} compiler is installed by default by the
  * {@link JsePlatform} class
  * so in the following example, the default {@link LuaC} compiler
@@ -82,29 +82,28 @@ public class LuaC implements LuaCompiler {
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;
 
-
-	public static void SET_OPCODE(InstructionPtr i, int o) {
-		i.set((i.get() & (Lua.MASK_NOT_OP)) | ((o << Lua.POS_OP) & Lua.MASK_OP));
+	public static int SET_OPCODE(int i, int o) {
+		return (i & (Lua.MASK_NOT_OP)) | ((o << Lua.POS_OP) & Lua.MASK_OP);
 	}
 
-	public static void SETARG_A(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_A)) | ((u << Lua.POS_A) & Lua.MASK_A));
+	public static int SETARG_A(int i, int u) {
+		return (i & (Lua.MASK_NOT_A)) | ((u << Lua.POS_A) & Lua.MASK_A);
 	}
 
-	public static void SETARG_B(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_B)) | ((u << Lua.POS_B) & Lua.MASK_B));
+	public static int SETARG_B(int i, int u) {
+		return (i & (Lua.MASK_NOT_B)) | ((u << Lua.POS_B) & Lua.MASK_B);
 	}
 
-	public static void SETARG_C(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_C)) | ((u << Lua.POS_C) & Lua.MASK_C));
+	public static int SETARG_C(int i, int u) {
+		return (i & (Lua.MASK_NOT_C)) | ((u << Lua.POS_C) & Lua.MASK_C);
 	}
 
-	public static void SETARG_Bx(InstructionPtr i, int u) {
-		i.set((i.get() & (Lua.MASK_NOT_Bx)) | ((u << Lua.POS_Bx) & Lua.MASK_Bx));
+	public static int SETARG_Bx(int i, int u) {
+		return (i & (Lua.MASK_NOT_Bx)) | ((u << Lua.POS_Bx) & Lua.MASK_Bx);
 	}
 
-	public static void SETARG_sBx(InstructionPtr i, int u) {
-		SETARG_Bx(i, u + Lua.MAXARG_sBx);
+	public static int SETARG_sBx(int i, int u) {
+		return SETARG_Bx(i, u + Lua.MAXARG_sBx);
 	}
 
 	public static int CREATE_ABC(int o, int a, int b, int c) {
@@ -120,53 +119,15 @@ public class LuaC implements LuaCompiler {
 			((bc << Lua.POS_Bx) & Lua.MASK_Bx);
 	}
 
-	// vector reallocation
-
-	public static LuaValue[] realloc(LuaValue[] v, int n) {
-		LuaValue[] a = new LuaValue[n];
-		if (v != null) {
-			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
-		}
-		return a;
-	}
-
-	public static Prototype[] realloc(Prototype[] v, int n) {
-		Prototype[] a = new Prototype[n];
-		if (v != null) {
-			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
-		}
-		return a;
-	}
-
-	public static LuaString[] realloc(LuaString[] v, int n) {
-		LuaString[] a = new LuaString[n];
-		if (v != null) {
-			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
-		}
-		return a;
-	}
-
-	public static LocalVariable[] realloc(LocalVariable[] v, int n) {
-		LocalVariable[] a = new LocalVariable[n];
-		if (v != null) {
-			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
-		}
-		return a;
-	}
-
 	public static int[] realloc(int[] v, int n) {
 		int[] a = new int[n];
-		if (v != null) {
-			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
-		}
+		if (v != null) System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
 		return a;
 	}
 
 	public static byte[] realloc(byte[] v, int n) {
 		byte[] a = new byte[n];
-		if (v != null) {
-			System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
-		}
+		if (v != null) System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
 		return a;
 	}
 
@@ -208,7 +169,11 @@ public class LuaC implements LuaCompiler {
 			return LoadState.loadBinaryChunk(firstByte, stream, name);
 		} else {
 			checkMode(mode, "text");
-			return luaY_parser(firstByte, stream, name);
+			try {
+				return luaY_parser(firstByte, stream, name);
+			} catch (UncheckedIOException e) {
+				throw e.getCause();
+			}
 		}
 	}
 
@@ -216,19 +181,17 @@ public class LuaC implements LuaCompiler {
 	 * Parse the input
 	 */
 	private static Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
-		LexState lexstate = new LexState(z, firstByte, name);
-		FuncState funcstate = new FuncState();
-		lexstate.open_func(funcstate);
-		funcstate.f.is_vararg = Lua.VARARG_ISVARARG; /* main func. is always vararg */
+		Parser lexstate = new Parser(z, firstByte, name);
+		FuncState funcstate = lexstate.openFunc();
+		funcstate.varargFlags = Lua.VARARG_ISVARARG; /* main func. is always vararg */
 
-		lexstate.nextToken(); /* read first token */
+		lexstate.lexer.nextToken(); // read first token
 		lexstate.chunk();
-		lexstate.check(LexState.TK_EOS);
-		lexstate.close_func();
-		LuaC._assert(funcstate.prev == null);
-		LuaC._assert(funcstate.f.nups == 0);
+		lexstate.check(Lex.TK_EOS);
+		Prototype prototype = lexstate.closeFunc();
+		LuaC._assert(funcstate.upvalues.size() == 0);
 		LuaC._assert(lexstate.fs == null);
-		return funcstate.f;
+		return prototype;
 	}
 
 	public LuaFunction load(Prototype p, LuaTable env) {

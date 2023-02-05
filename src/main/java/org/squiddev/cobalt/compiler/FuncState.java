@@ -25,21 +25,36 @@
 package org.squiddev.cobalt.compiler;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.compiler.LexState.ConsControl;
-import org.squiddev.cobalt.compiler.LexState.expdesc;
+import org.squiddev.cobalt.compiler.Parser.ExpDesc;
 import org.squiddev.cobalt.function.LocalVariable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.compiler.LuaC.*;
+import static org.squiddev.cobalt.compiler.Parser.NO_JUMP;
 
+/**
+ * The state of the function being parsed and emitted.
+ * <p>
+ * This largely mirrors the same structure in {@code lparser.h}, but also handles emitting code (defined in lcode.h
+ * in PUC Lua).
+ */
 class FuncState {
 	static class UpvalueDesc {
-		ExpKind k;
-		short info;
+		final LuaString name;
+		final ExpKind kind;
+		final short info;
+
+		UpvalueDesc(LuaString name, ExpKind kind, short info) {
+			this.name = name;
+			this.kind = kind;
+			this.info = info;
+		}
 	}
 
 	static class BlockCnt {
@@ -50,490 +65,326 @@ class FuncState {
 		boolean isbreakable;  /* true if `block' is a loop */
 	}
 
-	Prototype f;  /* current function header */
-	//	LTable h;  /* table to find (and reuse) elements in `k' */
-	final Map<LuaValue, Integer> htable = new HashMap<>();  /* table to find (and reuse) elements in `k' */
-	FuncState prev;  /* enclosing function */
-	LexState ls;  /* lexical state */
-	BlockCnt bl;  /* chain of current blocks */
+	final FuncState prev;  /* enclosing function */
+	final Lex lexer;  /* lexical state */
+
+	final List<LuaValue> constants = new ArrayList<>(0);
+	private final Map<LuaValue, Integer> constantLookup = new HashMap<>();  /* table to find (and reuse) elements in `k' */
+	final List<LocalVariable> locals = new ArrayList<>(0);
+	final List<Prototype> children = new ArrayList<>(0);
+	final List<UpvalueDesc> upvalues = new ArrayList<>(0);  /* upvalues */
+
 	int pc;  /* next position to code (equivalent to `ncode') */
-	int lasttarget;   /* `pc' of last `jump target' */
-	IntPtr jpc;  /* list of pending jumps to `pc' */
-	int freereg;  /* first free register */
-	int nk;  /* number of elements in `k' */
-	int np;  /* number of elements in `p' */
-	short nlocvars;  /* number of elements in `locvars' */
-	short nactvar;  /* number of active local variables */
-	UpvalueDesc[] upvalues = new UpvalueDesc[LUAI_MAXUPVALUES];  /* upvalues */
-	short[] actvar = new short[LUAI_MAXVARS];  /* declared-variable stack */
+	int[] code;
+	int[] lineInfo;
 
-	FuncState() {
+	int lineDefined;
+	int lastLineDefined;
+	int numParams;
+	int varargFlags;
+	int maxStackSize = 2;
+
+	BlockCnt block;  /* chain of current blocks */
+	int lastTarget = -1;   /* `pc' of last `jump target' */
+	final IntPtr jpc = new IntPtr(NO_JUMP);  /* list of pending jumps to `pc' */
+	int freeReg;  /* first free register */
+
+	short activeVariableCount;  /* number of active local variables */
+	short[] activeVariables = new short[LUAI_MAXVARS];  /* declared-variable stack */
+
+	FuncState(Lex lexer, FuncState prev) {
+		this.lexer = lexer;
+		this.prev = prev;
 	}
 
+	Prototype toPrototype() {
+		int i = 0;
+		LuaString[] upvalueNames = new LuaString[upvalues.size()];
+		for (FuncState.UpvalueDesc upvalue : upvalues) upvalueNames[i++] = upvalue.name;
 
-	// =============================================================
-	// from lcode.h
-	// =============================================================
-
-	InstructionPtr getcodePtr(expdesc e) {
-		return new InstructionPtr(f.code, e.u.s.info);
+		return new Prototype(
+			lexer.source,
+			// Code
+			constants.toArray(new LuaValue[0]), LuaC.realloc(code, pc),
+			children.toArray(new Prototype[0]),
+			numParams, varargFlags, maxStackSize, upvalues.size(),
+			// Debug information
+			lineDefined, lastLineDefined, LuaC.realloc(lineInfo, pc),
+			locals.toArray(new LocalVariable[0]), upvalueNames
+		);
 	}
 
-	int getcode(expdesc e) {
-		return f.code[e.u.s.info];
+	int codeAsBxAt(int o, int A, int sBx, int line) throws CompileException {
+		return codeABxAt(o, A, sBx + MAXARG_sBx, line);
 	}
 
 	int codeAsBx(int o, int A, int sBx) throws CompileException {
 		return codeABx(o, A, sBx + MAXARG_sBx);
 	}
 
-	void setmultret(expdesc e) throws CompileException {
-		setreturns(e, LUA_MULTRET);
+	void setMultiRet(ExpDesc e) throws CompileException {
+		setReturns(e, LUA_MULTRET);
 	}
 
-
-	// =============================================================
-	// from lparser.c
-	// =============================================================
-
-	LocalVariable getlocvar(int i) {
-		return f.locvars[actvar[i]];
+	LocalVariable getLocal(int i) {
+		return locals.get(activeVariables[i]);
 	}
-
-	void checklimit(int v, int l, String msg) throws CompileException {
-		if (v > l) {
-			errorlimit(l, msg);
-		}
-	}
-
-	private void errorlimit(int limit, String what) throws CompileException {
-		String msg = (f.linedefined == 0) ?
-			"main function has more than " + limit + " " + what :
-			"function at line " + f.linedefined + " has more than " + limit + " " + what;
-		throw ls.lexError(msg, 0);
-	}
-
-
-	private int indexupvalue(LuaString name, expdesc v) throws CompileException {
-		int i;
-		for (i = 0; i < f.nups; i++) {
-			if (upvalues[i].k == v.kind && upvalues[i].info == v.u.s.info) {
-				_assert(f.upvalues[i] == name);
-				return i;
-			}
-		}
-		/* new one */
-		checklimit(f.nups + 1, LUAI_MAXUPVALUES, "upvalues");
-		if (f.upvalues == null || f.nups + 1 > f.upvalues.length) {
-			f.upvalues = realloc(f.upvalues, f.nups * 2 + 1);
-		}
-		f.upvalues[f.nups] = name;
-		_assert(v.kind == ExpKind.VLOCAL || v.kind == ExpKind.VUPVAL);
-		upvalues[f.nups] = new UpvalueDesc();
-		upvalues[f.nups].k = v.kind;
-		upvalues[f.nups].info = (short) (v.u.s.info);
-		return f.nups++;
-	}
-
-	private int searchvar(LuaString n) {
-		int i;
-		for (i = nactvar - 1; i >= 0; i--) {
-			if (n == getlocvar(i).name) {
-				return i;
-			}
-		}
-		return -1; /* not found */
-	}
-
-	private void markupval(int level) {
-		BlockCnt bl = this.bl;
-		while (bl != null && bl.nactvar > level) {
-			bl = bl.previous;
-		}
-		if (bl != null) {
-			bl.upval = true;
-		}
-	}
-
-	ExpKind singlevaraux(LuaString n, expdesc var, int base) throws CompileException {
-		int v = searchvar(n); /* look up at current level */
-		if (v >= 0) {
-			var.init(ExpKind.VLOCAL, v);
-			if (base == 0) {
-				markupval(v); /* local will be used as an upval */
-			}
-			return ExpKind.VLOCAL;
-		} else { /* not found at current level; try upper one */
-			if (prev == null) { /* no more levels? */
-				/* default is global variable */
-				var.init(ExpKind.VGLOBAL, NO_REG);
-				return ExpKind.VGLOBAL;
-			}
-			if (prev.singlevaraux(n, var, 0) == ExpKind.VGLOBAL) {
-				return ExpKind.VGLOBAL;
-			}
-			var.u.s.info = indexupvalue(n, var); /* else was LOCAL or UPVAL */
-			var.kind = ExpKind.VUPVAL; /* upvalue in this level */
-			return ExpKind.VUPVAL;
-		}
-	}
-
-	void enterblock(BlockCnt bl, boolean isbreakable) throws CompileException {
-		bl.breaklist.value = LexState.NO_JUMP;
-		bl.isbreakable = isbreakable;
-		bl.nactvar = this.nactvar;
-		bl.upval = false;
-		bl.previous = this.bl;
-		this.bl = bl;
-		_assert(this.freereg == this.nactvar);
-	}
-
-	//
-//	void leaveblock (FuncState *fs) {
-//	  BlockCnt *bl = this.bl;
-//	  this.bl = bl.previous;
-//	  removevars(this.ls, bl.nactvar);
-//	  if (bl.upval)
-//	    this.codeABC(OP_CLOSE, bl.nactvar, 0, 0);
-//	  /* a block either controls scope or breaks (never both) */
-//	  assert(!bl.isbreakable || !bl.upval);
-//	  assert(bl.nactvar == this.nactvar);
-//	  this.freereg = this.nactvar;  /* free registers */
-//	  this.patchtohere(bl.breaklist);
-//	}
-
-	void leaveblock() throws CompileException {
-		BlockCnt bl = this.bl;
-		this.bl = bl.previous;
-		ls.removevars(bl.nactvar);
-		if (bl.upval) {
-			this.codeABC(OP_CLOSE, bl.nactvar, 0, 0);
-		}
-		/* a block either controls scope or breaks (never both) */
-		_assert(!bl.isbreakable || !bl.upval);
-		_assert(bl.nactvar == this.nactvar);
-		this.freereg = this.nactvar; /* free registers */
-		this.patchtohere(bl.breaklist.value);
-	}
-
-	void closelistfield(ConsControl cc) throws CompileException {
-		if (cc.v.kind == ExpKind.VVOID) {
-			return; /* there is no list item */
-		}
-		this.exp2nextreg(cc.v);
-		cc.v.kind = ExpKind.VVOID;
-		if (cc.tostore == LFIELDS_PER_FLUSH) {
-			this.setlist(cc.t.u.s.info, cc.na, cc.tostore); /* flush */
-			cc.tostore = 0; /* no more items pending */
-		}
-	}
-
-	void lastlistfield(ConsControl cc) throws CompileException {
-		if (cc.tostore == 0) return;
-		if (cc.v.kind.hasMultiRet()) {
-			this.setmultret(cc.v);
-			this.setlist(cc.t.u.s.info, cc.na, LUA_MULTRET);
-			cc.na--;  /* do not count last expression (unknown number of elements) */
-		} else {
-			if (cc.v.kind != ExpKind.VVOID) {
-				this.exp2nextreg(cc.v);
-			}
-			this.setlist(cc.t.u.s.info, cc.na, cc.tostore);
-		}
-	}
-
 
 	// =============================================================
 	// from lcode.c
 	// =============================================================
 
 	void nil(int from, int n) throws CompileException {
-		InstructionPtr previous;
-		if (this.pc > this.lasttarget) { /* no jumps to current position? */
-			if (this.pc == 0) { /* function start? */
-				if (from >= this.nactvar) {
+		if (pc > lastTarget) { /* no jumps to current position? */
+			if (pc == 0) { /* function start? */
+				if (from >= activeVariableCount) {
 					return; /* positions are already clean */
 				}
 			} else {
-				previous = new InstructionPtr(this.f.code, this.pc - 1);
-				if (GET_OPCODE(previous.get()) == OP_LOADNIL) {
-					int pfrom = GETARG_A(previous.get());
-					int pto = GETARG_B(previous.get());
+				int previous = code[pc - 1];
+				if (GET_OPCODE(previous) == OP_LOADNIL) {
+					int pfrom = GETARG_A(previous);
+					int pto = GETARG_B(previous);
 					if (pfrom <= from && from <= pto + 1) { /* can connect both? */
-						if (from + n - 1 > pto) {
-							SETARG_B(previous, from + n - 1);
-						}
+						if (from + n - 1 > pto) code[pc - 1] = SETARG_B(previous, from + n - 1);
 						return;
 					}
 				}
 			}
 		}
 		/* else no optimization */
-		this.codeABC(OP_LOADNIL, from, from + n - 1, 0);
+		codeABC(OP_LOADNIL, from, from + n - 1, 0);
 	}
-
 
 	int jump() throws CompileException {
 		int jpc = this.jpc.value; /* save list of jumps to here */
-		this.jpc.value = LexState.NO_JUMP;
-		IntPtr j = new IntPtr(this.codeAsBx(OP_JMP, 0, LexState.NO_JUMP));
-		this.concat(j, jpc); /* keep them on hold */
+		this.jpc.value = NO_JUMP;
+		IntPtr j = new IntPtr(codeAsBx(OP_JMP, 0, NO_JUMP));
+		concat(j, jpc); /* keep them on hold */
 		return j.value;
 	}
 
 	void ret(int first, int nret) throws CompileException {
-		this.codeABC(OP_RETURN, first, nret + 1, 0);
+		codeABC(OP_RETURN, first, nret + 1, 0);
 	}
 
-	private int condjump(int /* OpCode */op, int A, int B, int C) throws CompileException {
-		this.codeABC(op, A, B, C);
-		return this.jump();
+	private int condJump(int op, int A, int B, int C) throws CompileException {
+		codeABC(op, A, B, C);
+		return jump();
 	}
 
-	private void fixjump(int pc, int dest) throws CompileException {
-		InstructionPtr jmp = new InstructionPtr(this.f.code, pc);
+	private void fixJump(int pc, int dest) throws CompileException {
 		int offset = dest - (pc + 1);
-		_assert(dest != LexState.NO_JUMP);
-		if (Math.abs(offset) > MAXARG_sBx) {
-			throw ls.syntaxError("control structure too long");
-		}
-		SETARG_sBx(jmp, offset);
+		assert dest != NO_JUMP;
+		if (Math.abs(offset) > MAXARG_sBx) throw lexer.syntaxError("control structure too long");
+		code[pc] = SETARG_sBx(code[pc], offset);
 	}
-
 
 	/*
-	 * * returns current `pc' and marks it as a jump target (to avoid wrong *
+	 * Returns current `pc' and marks it as a jump target (to avoid wrong
 	 * optimizations with consecutive instructions not in the same basic block).
 	 */
-	int getlabel() {
-		this.lasttarget = this.pc;
-		return this.pc;
+	int getLabel() {
+		lastTarget = pc;
+		return pc;
 	}
 
-
-	private int getjump(int pc) {
-		int offset = GETARG_sBx(this.f.code[pc]);
-		/* point to itself represents end of list */
-		if (offset == LexState.NO_JUMP)
-			/* end of list */ {
-			return LexState.NO_JUMP;
-		} else
-			/* turn offset into absolute position */ {
-			return (pc + 1) + offset;
+	private int getJump(int pc) {
+		int offset = GETARG_sBx(code[pc]);
+		if (offset == NO_JUMP) { // point to itself represents end of list
+			return NO_JUMP; // end of list
+		} else { // turn offset into absolute position
+			return pc + 1 + offset;
 		}
 	}
 
-
-	private InstructionPtr getjumpcontrol(int pc) {
-		InstructionPtr pi = new InstructionPtr(this.f.code, pc);
-		if (pc >= 1 && testTMode(GET_OPCODE(pi.code[pi.idx - 1]))) {
-			return new InstructionPtr(pi.code, pi.idx - 1);
+	private int getJumpControl(int pc) {
+		if (pc >= 1 && testTMode(GET_OPCODE(code[pc - 1]))) {
+			return pc - 1;
 		} else {
-			return pi;
+			return pc;
 		}
 	}
-
 
 	/*
-	 * * check whether list has any jump that do not produce a value * (or
-	 * produce an inverted value)
+	 * Check whether list has any jump that do not produce a value
+	 * (or produce an inverted value).
 	 */
-	private boolean need_value(int list) {
-		for (; list != LexState.NO_JUMP; list = this.getjump(list)) {
-			int i = this.getjumpcontrol(list).get();
-			if (GET_OPCODE(i) != OP_TESTSET) {
-				return true;
-			}
+	private boolean needValue(int list) {
+		for (; list != NO_JUMP; list = getJump(list)) {
+			if (GET_OPCODE(code[getJumpControl(list)]) != OP_TESTSET) return true;
 		}
-		return false; /* not found */
+		return false; // not found
 	}
 
+	private boolean patchTestReg(int node, int reg) {
+		int jumpControlPc = getJumpControl(node);
+		int op = code[jumpControlPc];
 
-	private boolean patchtestreg(int node, int reg) {
-		InstructionPtr i = this.getjumpcontrol(node);
-		if (GET_OPCODE(i.get()) != OP_TESTSET)
-			/* cannot patch other instructions */ {
-			return false;
-		}
-		if (reg != NO_REG && reg != GETARG_B(i.get())) {
-			SETARG_A(i, reg);
-		} else
-			/* no register to put value or register already has the value */ {
-			i.set(CREATE_ABC(OP_TEST, GETARG_B(i.get()), 0, Lua.GETARG_C(i.get())));
+		if (GET_OPCODE(op) != OP_TESTSET) return false; // cannot patch other instructions
+
+		if (reg != NO_REG && reg != GETARG_B(op)) {
+			code[jumpControlPc] = SETARG_A(op, reg);
+		} else {
+			// no register to put value or register already has the value
+			code[jumpControlPc] = CREATE_ABC(OP_TEST, GETARG_B(op), 0, Lua.GETARG_C(op));
 		}
 
 		return true;
 	}
 
-
-	private void removevalues(int list) {
-		for (; list != LexState.NO_JUMP; list = this.getjump(list)) {
-			this.patchtestreg(list, NO_REG);
+	private void removeValues(int list) {
+		for (; list != NO_JUMP; list = getJump(list)) {
+			patchTestReg(list, NO_REG);
 		}
 	}
 
-	private void patchlistaux(int list, int vtarget, int reg, int dtarget) throws CompileException {
-		while (list != LexState.NO_JUMP) {
-			int next = this.getjump(list);
-			if (this.patchtestreg(list, reg)) {
-				this.fixjump(list, vtarget);
+	private void patchListAux(int list, int vtarget, int reg, int dtarget) throws CompileException {
+		while (list != NO_JUMP) {
+			int next = getJump(list);
+			if (patchTestReg(list, reg)) {
+				fixJump(list, vtarget);
 			} else {
-				this.fixjump(list, dtarget); /* jump to default target */
+				fixJump(list, dtarget); // jump to default target
 			}
 			list = next;
 		}
 	}
 
-	private void dischargejpc() throws CompileException {
-		this.patchlistaux(this.jpc.value, this.pc, NO_REG, this.pc);
-		this.jpc.value = LexState.NO_JUMP;
+	private void dischargeJumpPc() throws CompileException {
+		patchListAux(jpc.value, pc, NO_REG, pc);
+		jpc.value = NO_JUMP;
 	}
 
-	void patchlist(int list, int target) throws CompileException {
-		if (target == this.pc) {
-			this.patchtohere(list);
+	void patchList(int list, int target) throws CompileException {
+		if (target == pc) {
+			patchToHere(list);
 		} else {
-			_assert(target < this.pc);
-			this.patchlistaux(list, target, NO_REG, target);
+			_assert(target < pc);
+			patchListAux(list, target, NO_REG, target);
 		}
 	}
 
-	void patchtohere(int list) throws CompileException {
-		this.getlabel();
-		this.concat(this.jpc, list);
+	void patchToHere(int list) throws CompileException {
+		getLabel();
+		concat(jpc, list);
 	}
 
 	void concat(IntPtr l1, int l2) throws CompileException {
-		if (l2 == LexState.NO_JUMP) {
-			return;
-		}
-		if (l1.value == LexState.NO_JUMP) {
+		if (l2 == NO_JUMP) return;
+		if (l1.value == NO_JUMP) {
 			l1.value = l2;
 		} else {
 			int list = l1.value;
+			// find last element
 			int next;
-			while ((next = this.getjump(list)) != LexState.NO_JUMP)
-				/* find last element */ {
-				list = next;
-			}
-			this.fixjump(list, l2);
+			while ((next = getJump(list)) != NO_JUMP) list = next;
+			fixJump(list, l2);
 		}
 	}
 
-	void checkstack(int n) throws CompileException {
-		int newstack = this.freereg + n;
-		if (newstack > this.f.maxstacksize) {
-			if (newstack >= MAXSTACK) {
-				throw ls.syntaxError("function or expression too complex");
-			}
-			this.f.maxstacksize = newstack;
+	void checkStack(int n) throws CompileException {
+		int newStack = freeReg + n;
+		if (newStack > maxStackSize) {
+			if (newStack >= MAXSTACK) throw lexer.syntaxError("function or expression too complex");
+			maxStackSize = newStack;
 		}
 	}
 
-	void reserveregs(int n) throws CompileException {
-		this.checkstack(n);
-		this.freereg += n;
+	void reserveRegs(int n) throws CompileException {
+		checkStack(n);
+		freeReg += n;
 	}
 
-	private void freereg(int reg) throws CompileException {
-		if (!ISK(reg) && reg >= this.nactvar) {
-			this.freereg--;
-			_assert(reg == this.freereg);
+	private void freeReg(int reg) throws CompileException {
+		if (!ISK(reg) && reg >= activeVariableCount) {
+			freeReg--;
+			_assert(reg == freeReg);
 		}
 	}
 
-	private void freeexp(expdesc e) throws CompileException {
-		if (e.kind == ExpKind.VNONRELOC) {
-			this.freereg(e.u.s.info);
-		}
+	private void freeExp(ExpDesc e) throws CompileException {
+		if (e.kind == ExpKind.VNONRELOC) freeReg(e.info);
 	}
 
-	private int addk(LuaValue v) {
-		int idx;
-		if (this.htable.containsKey(v)) {
-			idx = htable.get(v);
-		} else {
-			idx = this.nk;
-			this.htable.put(v, idx);
-			final Prototype f = this.f;
-			if (f.k == null || nk + 1 >= f.k.length) {
-				f.k = realloc(f.k, nk * 2 + 1);
-			}
-			f.k[this.nk++] = v;
-		}
+	private int addConstant(LuaValue v) {
+		Integer existing = constantLookup.get(v);
+		if (existing != null) return existing;
+
+		int idx = constants.size();
+		constantLookup.put(v, idx);
+		constants.add(v);
 		return idx;
 	}
 
 	int stringK(LuaString s) {
-		return this.addk(s);
+		return addConstant(s);
 	}
 
-	int numberK(LuaValue r) {
+	int numberK(LuaNumber r) {
 		if (r instanceof LuaDouble) {
 			double d = r.toDouble();
 			int i = (int) d;
-			if (d == (double) i) {
-				r = LuaInteger.valueOf(i);
-			}
+			if (d == (double) i) r = LuaInteger.valueOf(i);
 		}
-		return this.addk(r);
+
+		return addConstant(r);
 	}
 
 	private int boolK(boolean b) {
-		return this.addk((b ? TRUE : FALSE));
+		return addConstant(b ? TRUE : FALSE);
 	}
 
 	private int nilK() {
-		return this.addk(NIL);
+		return addConstant(NIL);
 	}
 
-	void setreturns(expdesc e, int nresults) throws CompileException {
+	void setReturns(ExpDesc e, int nresults) throws CompileException {
 		if (e.kind == ExpKind.VCALL) { /* expression is an open function call? */
-			SETARG_C(this.getcodePtr(e), nresults + 1);
+			code[e.info] = SETARG_C(code[e.info], nresults + 1);
 		} else if (e.kind == ExpKind.VVARARG) {
-			SETARG_B(this.getcodePtr(e), nresults + 1);
-			SETARG_A(this.getcodePtr(e), this.freereg);
-			this.reserveregs(1);
+			int op = SETARG_B(code[e.info], nresults + 1);
+			code[e.info] = SETARG_A(op, freeReg);
+			reserveRegs(1);
 		}
 	}
 
-	void setoneret(expdesc e) {
+	void setOneRet(ExpDesc e) {
 		if (e.kind == ExpKind.VCALL) { /* expression is an open function call? */
 			e.kind = ExpKind.VNONRELOC;
-			e.u.s.info = GETARG_A(this.getcode(e));
+			e.info = GETARG_A(code[e.info]);
 		} else if (e.kind == ExpKind.VVARARG) {
-			SETARG_B(this.getcodePtr(e), 2);
+			code[e.info] = SETARG_B(code[e.info], 2);
 			e.kind = ExpKind.VRELOCABLE; /* can relocate its simple result */
 		}
 	}
 
-	void dischargevars(expdesc e) throws CompileException {
+	void dischargeVars(ExpDesc e) throws CompileException {
 		switch (e.kind) {
 			case VLOCAL: {
 				e.kind = ExpKind.VNONRELOC;
 				break;
 			}
 			case VUPVAL: {
-				e.u.s.info = this.codeABC(OP_GETUPVAL, 0, e.u.s.info, 0);
+				e.info = codeABC(OP_GETUPVAL, 0, e.info, 0);
 				e.kind = ExpKind.VRELOCABLE;
 				break;
 			}
 			case VGLOBAL: {
-				e.u.s.info = this.codeABx(OP_GETGLOBAL, 0, e.u.s.info);
+				e.info = codeABx(OP_GETGLOBAL, 0, e.info);
 				e.kind = ExpKind.VRELOCABLE;
 				break;
 			}
 			case VINDEXED: {
-				this.freereg(e.u.s.aux);
-				this.freereg(e.u.s.info);
-				e.u.s.info = this
-					.codeABC(OP_GETTABLE, 0, e.u.s.info, e.u.s.aux);
+				freeReg(e.aux);
+				freeReg(e.info);
+				e.info = codeABC(OP_GETTABLE, 0, e.info, e.aux);
 				e.kind = ExpKind.VRELOCABLE;
 				break;
 			}
 			case VVARARG:
 			case VCALL: {
-				this.setoneret(e);
+				setOneRet(e);
 				break;
 			}
 			default:
@@ -541,41 +392,37 @@ class FuncState {
 		}
 	}
 
-	private int code_label(int A, int b, int jump) throws CompileException {
-		this.getlabel(); /* those instructions may be jump targets */
-		return this.codeABC(OP_LOADBOOL, A, b, jump);
+	private int codeLabel(int A, int b, int jump) throws CompileException {
+		getLabel(); // those instructions may be jump targets
+		return codeABC(OP_LOADBOOL, A, b, jump);
 	}
 
-	private void discharge2reg(expdesc e, int reg) throws CompileException {
-		this.dischargevars(e);
+	private void discharge2Reg(ExpDesc e, int reg) throws CompileException {
+		dischargeVars(e);
 		switch (e.kind) {
 			case VNIL: {
-				this.nil(reg, 1);
+				nil(reg, 1);
 				break;
 			}
 			case VFALSE:
 			case VTRUE: {
-				this.codeABC(OP_LOADBOOL, reg, (e.kind == ExpKind.VTRUE ? 1 : 0),
-					0);
+				codeABC(OP_LOADBOOL, reg, e.kind == ExpKind.VTRUE ? 1 : 0, 0);
 				break;
 			}
 			case VK: {
-				this.codeABx(OP_LOADK, reg, e.u.s.info);
+				codeABx(OP_LOADK, reg, e.info);
 				break;
 			}
 			case VKNUM: {
-				this.codeABx(OP_LOADK, reg, this.numberK(e.u.nval()));
+				codeABx(OP_LOADK, reg, numberK(e.nval()));
 				break;
 			}
 			case VRELOCABLE: {
-				InstructionPtr pc = this.getcodePtr(e);
-				SETARG_A(pc, reg);
+				code[e.info] = SETARG_A(code[e.info], reg);
 				break;
 			}
 			case VNONRELOC: {
-				if (reg != e.u.s.info) {
-					this.codeABC(OP_MOVE, reg, e.u.s.info, 0);
-				}
+				if (reg != e.info) codeABC(OP_MOVE, reg, e.info, 0);
 				break;
 			}
 			default: {
@@ -583,92 +430,86 @@ class FuncState {
 				return; /* nothing to do... */
 			}
 		}
-		e.u.s.info = reg;
+		e.info = reg;
 		e.kind = ExpKind.VNONRELOC;
 	}
 
-	private void discharge2anyreg(expdesc e) throws CompileException {
+	private void discharge2AnyReg(ExpDesc e) throws CompileException {
 		if (e.kind != ExpKind.VNONRELOC) {
-			this.reserveregs(1);
-			this.discharge2reg(e, this.freereg - 1);
+			reserveRegs(1);
+			discharge2Reg(e, freeReg - 1);
 		}
 	}
 
-	private void exp2reg(expdesc e, int reg) throws CompileException {
-		this.discharge2reg(e, reg);
-		if (e.kind == ExpKind.VJMP) {
-			this.concat(e.t, e.u.s.info); /* put this jump in `t' list */
-		}
+	private void exp2reg(ExpDesc e, int reg) throws CompileException {
+		discharge2Reg(e, reg);
+		if (e.kind == ExpKind.VJMP) concat(e.t, e.info); /* put this jump in `t' list */
 		if (e.hasjumps()) {
-			int _final; /* position after whole expression */
-			int p_f = LexState.NO_JUMP; /* position of an eventual LOAD false */
-			int p_t = LexState.NO_JUMP; /* position of an eventual LOAD true */
-			if (this.need_value(e.t.value) || this.need_value(e.f.value)) {
-				int fj = (e.kind == ExpKind.VJMP) ? LexState.NO_JUMP : this
-					.jump();
-				p_f = this.code_label(reg, 0, 1);
-				p_t = this.code_label(reg, 1, 0);
-				this.patchtohere(fj);
+			int p_f = NO_JUMP; // position of an eventual LOAD false
+			int p_t = NO_JUMP; // position of an eventual LOAD true
+			if (needValue(e.t.value) || needValue(e.f.value)) {
+				int fj = e.kind == ExpKind.VJMP ? NO_JUMP : jump();
+				p_f = codeLabel(reg, 0, 1);
+				p_t = codeLabel(reg, 1, 0);
+				patchToHere(fj);
 			}
-			_final = this.getlabel();
-			this.patchlistaux(e.f.value, _final, reg, p_f);
-			this.patchlistaux(e.t.value, _final, reg, p_t);
+			int _final = getLabel(); // position after whole expression
+			patchListAux(e.f.value, _final, reg, p_f);
+			patchListAux(e.t.value, _final, reg, p_t);
 		}
-		e.f.value = e.t.value = LexState.NO_JUMP;
-		e.u.s.info = reg;
+		e.f.value = e.t.value = NO_JUMP;
+		e.info = reg;
 		e.kind = ExpKind.VNONRELOC;
 	}
 
-	void exp2nextreg(expdesc e) throws CompileException {
-		this.dischargevars(e);
-		this.freeexp(e);
-		this.reserveregs(1);
-		this.exp2reg(e, this.freereg - 1);
+	void exp2NextReg(ExpDesc e) throws CompileException {
+		dischargeVars(e);
+		freeExp(e);
+		reserveRegs(1);
+		exp2reg(e, freeReg - 1);
 	}
 
-	int exp2anyreg(expdesc e) throws CompileException {
-		this.dischargevars(e);
+	int exp2AnyReg(ExpDesc e) throws CompileException {
+		dischargeVars(e);
 		if (e.kind == ExpKind.VNONRELOC) {
-			if (!e.hasjumps()) {
-				return e.u.s.info; /* exp is already in a register */
-			}
-			if (e.u.s.info >= this.nactvar) { /* reg. is not a local? */
-				this.exp2reg(e, e.u.s.info); /* put value on it */
-				return e.u.s.info;
+			if (!e.hasjumps()) return e.info; /* exp is already in a register */
+			if (e.info >= activeVariableCount) { /* reg. is not a local? */
+				exp2reg(e, e.info); /* put value on it */
+				return e.info;
 			}
 		}
-		this.exp2nextreg(e); /* default */
-		return e.u.s.info;
+		exp2NextReg(e); /* default */
+		return e.info;
 	}
 
-	void exp2val(expdesc e) throws CompileException {
+	void exp2Val(ExpDesc e) throws CompileException {
 		if (e.hasjumps()) {
-			this.exp2anyreg(e);
+			exp2AnyReg(e);
 		} else {
-			this.dischargevars(e);
+			dischargeVars(e);
 		}
 	}
 
-	int exp2RK(expdesc e) throws CompileException {
-		this.exp2val(e);
+	int exp2RK(ExpDesc e) throws CompileException {
+		exp2Val(e);
 		switch (e.kind) {
 			case VKNUM:
 			case VTRUE:
 			case VFALSE:
 			case VNIL: {
-				if (this.nk <= MAXINDEXRK) { /* constant fit in RK operand? */
-					e.u.s.info = (e.kind == ExpKind.VNIL) ? this.nilK()
-						: (e.kind == ExpKind.VKNUM) ? this.numberK(e.u.nval())
-						: this.boolK((e.kind == ExpKind.VTRUE));
+				if (constants.size() <= MAXINDEXRK) { /* constant fit in RK operand? */
+					e.info = e.kind == ExpKind.VNIL ? nilK()
+						: e.kind == ExpKind.VKNUM ? numberK(e.nval())
+						: boolK(e.kind == ExpKind.VTRUE);
 					e.kind = ExpKind.VK;
-					return RKASK(e.u.s.info);
+					return RKASK(e.info);
 				} else {
 					break;
 				}
 			}
 			case VK: {
-				if (e.u.s.info <= MAXINDEXRK) /* constant fit in argC? */ {
-					return RKASK(e.u.s.info);
+				if (e.info <= MAXINDEXRK) /* constant fit in argC? */ {
+					return RKASK(e.info);
 				} else {
 					break;
 				}
@@ -677,29 +518,29 @@ class FuncState {
 				break;
 		}
 		/* not a constant in the right range: put it in a register */
-		return this.exp2anyreg(e);
+		return exp2AnyReg(e);
 	}
 
-	void storevar(expdesc var, expdesc ex) throws CompileException {
+	void storeVar(ExpDesc var, ExpDesc ex) throws CompileException {
 		switch (var.kind) {
 			case VLOCAL: {
-				this.freeexp(ex);
-				this.exp2reg(ex, var.u.s.info);
+				freeExp(ex);
+				exp2reg(ex, var.info);
 				return;
 			}
 			case VUPVAL: {
-				int e = this.exp2anyreg(ex);
-				this.codeABC(OP_SETUPVAL, e, var.u.s.info, 0);
+				int e = exp2AnyReg(ex);
+				codeABC(OP_SETUPVAL, e, var.info, 0);
 				break;
 			}
 			case VGLOBAL: {
-				int e = this.exp2anyreg(ex);
-				this.codeABx(OP_SETGLOBAL, e, var.u.s.info);
+				int e = exp2AnyReg(ex);
+				codeABx(OP_SETGLOBAL, e, var.info);
 				break;
 			}
 			case VINDEXED: {
-				int e = this.exp2RK(ex);
-				this.codeABC(OP_SETTABLE, var.u.s.info, var.u.s.aux, e);
+				int e = exp2RK(ex);
+				codeABC(OP_SETTABLE, var.info, var.aux, e);
 				break;
 			}
 			default: {
@@ -707,104 +548,103 @@ class FuncState {
 				break;
 			}
 		}
-		this.freeexp(ex);
+		freeExp(ex);
 	}
 
-	void self(expdesc e, expdesc key) throws CompileException {
+	void self(ExpDesc e, ExpDesc key) throws CompileException {
 		int func;
-		this.exp2anyreg(e);
-		this.freeexp(e);
-		func = this.freereg;
-		this.reserveregs(2);
-		this.codeABC(OP_SELF, func, e.u.s.info, this.exp2RK(key));
-		this.freeexp(key);
-		e.u.s.info = func;
+		exp2AnyReg(e);
+		freeExp(e);
+		func = freeReg;
+		reserveRegs(2);
+		codeABC(OP_SELF, func, e.info, exp2RK(key));
+		freeExp(key);
+		e.info = func;
 		e.kind = ExpKind.VNONRELOC;
 	}
 
-	private void invertjump(expdesc e) throws CompileException {
-		InstructionPtr pc = this.getjumpcontrol(e.u.s.info);
-		_assert(testTMode(GET_OPCODE(pc.get()))
-			&& GET_OPCODE(pc.get()) != OP_TESTSET && Lua
-			.GET_OPCODE(pc.get()) != OP_TEST);
-		// SETARG_A(pc, !(GETARG_A(pc.get())));
-		int a = GETARG_A(pc.get());
-		int nota = (a != 0 ? 0 : 1);
-		SETARG_A(pc, nota);
+	private void invertJump(ExpDesc e) throws CompileException {
+		int pc = getJumpControl(e.info);
+		int op = code[pc];
+		_assert(testTMode(GET_OPCODE(op)) && GET_OPCODE(op) != OP_TESTSET && Lua.GET_OPCODE(op) != OP_TEST);
+
+		int a = GETARG_A(op);
+		int nota = a != 0 ? 0 : 1;
+		code[pc] = SETARG_A(op, nota);
 	}
 
-	private int jumponcond(expdesc e, int cond) throws CompileException {
+	private int jumpOnCond(ExpDesc e, int cond) throws CompileException {
 		if (e.kind == ExpKind.VRELOCABLE) {
-			int ie = this.getcode(e);
+			int ie = code[e.info];
 			if (GET_OPCODE(ie) == OP_NOT) {
-				this.pc--; /* remove previous OP_NOT */
-				return this.condjump(OP_TEST, GETARG_B(ie), 0, (cond != 0 ? 0 : 1));
+				pc--; /* remove previous OP_NOT */
+				return condJump(OP_TEST, GETARG_B(ie), 0, cond != 0 ? 0 : 1);
 			}
 			/* else go through */
 		}
-		this.discharge2anyreg(e);
-		this.freeexp(e);
-		return this.condjump(OP_TESTSET, NO_REG, e.u.s.info, cond);
+		discharge2AnyReg(e);
+		freeExp(e);
+		return condJump(OP_TESTSET, NO_REG, e.info, cond);
 	}
 
-	void goiftrue(expdesc e) throws CompileException {
+	void goIfTrue(ExpDesc e) throws CompileException {
+		dischargeVars(e);
 		int pc; /* pc of last jump */
-		this.dischargevars(e);
 		switch (e.kind) {
 			case VK:
 			case VKNUM:
 			case VTRUE: {
-				pc = LexState.NO_JUMP; /* always true; do nothing */
+				pc = NO_JUMP; /* always true; do nothing */
 				break;
 			}
 			case VFALSE: {
-				pc = this.jump(); /* always jump */
+				pc = jump(); /* always jump */
 				break;
 			}
 			case VJMP: {
-				this.invertjump(e);
-				pc = e.u.s.info;
+				invertJump(e);
+				pc = e.info;
 				break;
 			}
 			default: {
-				pc = this.jumponcond(e, 0);
+				pc = jumpOnCond(e, 0);
 				break;
 			}
 		}
-		this.concat(e.f, pc); /* insert last jump in `f' list */
-		this.patchtohere(e.t.value);
-		e.t.value = LexState.NO_JUMP;
+		concat(e.f, pc); /* insert last jump in `f' list */
+		patchToHere(e.t.value);
+		e.t.value = NO_JUMP;
 	}
 
-	private void goiffalse(expdesc e) throws CompileException {
+	private void goIfFalse(ExpDesc e) throws CompileException {
+		dischargeVars(e);
 		int pc; /* pc of last jump */
-		this.dischargevars(e);
 		switch (e.kind) {
 			case VNIL:
 			case VFALSE: {
-				pc = LexState.NO_JUMP; /* always false; do nothing */
+				pc = NO_JUMP; /* always false; do nothing */
 				break;
 			}
 			case VTRUE: {
-				pc = this.jump(); /* always jump */
+				pc = jump(); /* always jump */
 				break;
 			}
 			case VJMP: {
-				pc = e.u.s.info;
+				pc = e.info;
 				break;
 			}
 			default: {
-				pc = this.jumponcond(e, 1);
+				pc = jumpOnCond(e, 1);
 				break;
 			}
 		}
-		this.concat(e.t, pc); /* insert last jump in `t' list */
-		this.patchtohere(e.f.value);
-		e.f.value = LexState.NO_JUMP;
+		concat(e.t, pc); /* insert last jump in `t' list */
+		patchToHere(e.f.value);
+		e.f.value = NO_JUMP;
 	}
 
-	private void codenot(expdesc e) throws CompileException {
-		this.dischargevars(e);
+	private void codeNot(ExpDesc e) throws CompileException {
+		dischargeVars(e);
 		switch (e.kind) {
 			case VNIL:
 			case VFALSE: {
@@ -818,14 +658,14 @@ class FuncState {
 				break;
 			}
 			case VJMP: {
-				this.invertjump(e);
+				invertJump(e);
 				break;
 			}
 			case VRELOCABLE:
 			case VNONRELOC: {
-				this.discharge2anyreg(e);
-				this.freeexp(e);
-				e.u.s.info = this.codeABC(OP_NOT, 0, e.u.s.info, 0);
+				discharge2AnyReg(e);
+				freeExp(e);
+				e.info = codeABC(OP_NOT, 0, e.info, 0);
 				e.kind = ExpKind.VRELOCABLE;
 				break;
 			}
@@ -840,88 +680,78 @@ class FuncState {
 			e.f.value = e.t.value;
 			e.t.value = temp;
 		}
-		this.removevalues(e.f.value);
-		this.removevalues(e.t.value);
+		removeValues(e.f.value);
+		removeValues(e.t.value);
 	}
 
-	void indexed(expdesc t, expdesc k) throws CompileException {
-		t.u.s.aux = this.exp2RK(k);
+	void indexed(ExpDesc t, ExpDesc k) throws CompileException {
+		t.aux = exp2RK(k);
 		t.kind = ExpKind.VINDEXED;
 	}
 
-	private boolean constfolding(int op, expdesc e1, expdesc e2) throws CompileException {
-		LuaValue v1, v2, r;
-		if (!e1.isnumeral() || !e2.isnumeral()) {
-			return false;
-		}
-		v1 = e1.u.nval();
-		v2 = e2.u.nval();
-		try {
-			switch (op) {
-				case OP_ADD:
-					r = OperationHelper.add(null, v1, v2);
-					break;
-				case OP_SUB:
-					r = OperationHelper.sub(null, v1, v2);
-					break;
-				case OP_MUL:
-					r = OperationHelper.mul(null, v1, v2);
-					break;
-				case OP_DIV:
-					r = OperationHelper.div(null, v1, v2);
-					break;
-				case OP_MOD:
-					r = OperationHelper.mod(null, v1, v2);
-					break;
-				case OP_POW:
-					r = OperationHelper.pow(null, v1, v2);
-					break;
-				case OP_UNM:
-					r = OperationHelper.neg(null, v1);
-					break;
-				case OP_LEN:
-					// r = v1.len();
-					// break;
-					return false; /* no constant folding for 'len' */
-				default:
-					_assert(false);
-					r = null;
-					break;
-			}
-		} catch (UnwindThrowable | LuaError e) {
-			return false;
+	private boolean constFolding(int op, ExpDesc e1, ExpDesc e2) throws CompileException {
+		if (!e1.isnumeral() || !e2.isnumeral()) return false;
+
+		double v1 = e1.nval().toDouble();
+		double v2 = e2.nval().toDouble();
+		double r;
+		switch (op) {
+			case OP_ADD:
+				r = v1 + v2;
+				break;
+			case OP_SUB:
+				r = v1 - v2;
+				break;
+			case OP_MUL:
+				r = v1 * v2;
+				break;
+			case OP_DIV:
+				if (v2 == 0) return false;
+				r = v1 / v2;
+				break;
+			case OP_MOD:
+				if (v2 == 0) return false;
+				r = OperationHelper.mod(v1, v2);
+				break;
+			case OP_POW:
+				r = Math.pow(v1, v2);
+				break;
+			case OP_UNM:
+				r = -v1;
+				break;
+			case OP_LEN:
+				return false; /* no constant folding for 'len' */
+			default:
+				_assert(false);
+				return false;
 		}
 
-		if (Double.isNaN(r.toDouble())) {
-			return false; /* do not attempt to produce NaN */
-		}
-		e1.u.setNval(r);
+		if (Double.isNaN(r)) return false; /* do not attempt to produce NaN */
+		e1.setNval(ValueFactory.valueOf(r));
 		return true;
 	}
 
-	private void codearith(int op, expdesc e1, expdesc e2) throws CompileException {
-		if (constfolding(op, e1, e2)) {
+	private void codeArith(int op, ExpDesc e1, ExpDesc e2) throws CompileException {
+		if (constFolding(op, e1, e2)) return;
+
+		int o2 = op != OP_UNM && op != OP_LEN ? exp2RK(e2) : 0;
+		int o1 = exp2RK(e1);
+		if (o1 > o2) {
+			freeExp(e1);
+			freeExp(e2);
 		} else {
-			int o2 = (op != OP_UNM && op != OP_LEN) ? this.exp2RK(e2)
-				: 0;
-			int o1 = this.exp2RK(e1);
-			if (o1 > o2) {
-				this.freeexp(e1);
-				this.freeexp(e2);
-			} else {
-				this.freeexp(e2);
-				this.freeexp(e1);
-			}
-			e1.u.s.info = this.codeABC(op, 0, o1, o2);
-			e1.kind = ExpKind.VRELOCABLE;
+			freeExp(e2);
+			freeExp(e1);
 		}
+		e1.info = codeABC(op, 0, o1, o2);
+		e1.kind = ExpKind.VRELOCABLE;
 	}
 
-	private void codecomp(int /* OpCode */op, int cond, expdesc e1, expdesc e2) throws CompileException {
-		int o1 = this.exp2RK(e1);
-		int o2 = this.exp2RK(e2);
-		this.freeexp(e2);
-		this.freeexp(e1);
+	private void codeComparison(int op, int cond, ExpDesc e1, ExpDesc e2) throws CompileException {
+		int o1 = exp2RK(e1);
+		int o2 = exp2RK(e2);
+		freeExp(e2);
+		freeExp(e1);
 		if (cond == 0 && op != OP_EQ) {
 			int temp; /* exchange args to replace by `<' or `<=' */
 			temp = o1;
@@ -929,27 +759,25 @@ class FuncState {
 			o2 = temp; /* o1 <==> o2 */
 			cond = 1;
 		}
-		e1.u.s.info = this.condjump(op, cond, o1, o2);
+		e1.info = condJump(op, cond, o1, o2);
 		e1.kind = ExpKind.VJMP;
 	}
 
-	void prefix(int /* UnOpr */op, expdesc e) throws CompileException {
-		expdesc e2 = new expdesc();
+	void prefix(UnOpr op, ExpDesc e) throws CompileException {
+		ExpDesc e2 = new ExpDesc();
 		e2.init(ExpKind.VKNUM, 0);
 		switch (op) {
-			case LexState.OPR_MINUS: {
-				if (e.kind == ExpKind.VK) {
-					this.exp2anyreg(e); /* cannot operate on non-numeric constants */
-				}
-				this.codearith(OP_UNM, e, e2);
+			case MINUS: {
+				if (e.kind == ExpKind.VK) exp2AnyReg(e); /* cannot operate on non-numeric constants */
+				codeArith(OP_UNM, e, e2);
 				break;
 			}
-			case LexState.OPR_NOT:
-				this.codenot(e);
+			case NOT:
+				codeNot(e);
 				break;
-			case LexState.OPR_LEN: {
-				this.exp2anyreg(e); /* cannot operate on constants */
-				this.codearith(OP_LEN, e, e2);
+			case LEN: {
+				exp2AnyReg(e); /* cannot operate on constants */
+				codeArith(OP_LEN, e, e2);
 				break;
 			}
 			default:
@@ -957,162 +785,161 @@ class FuncState {
 		}
 	}
 
-	void infix(int /* BinOpr */op, expdesc v) throws CompileException {
+	void infix(BinOpr op, ExpDesc v) throws CompileException {
 		switch (op) {
-			case LexState.OPR_AND: {
-				this.goiftrue(v);
+			case AND: {
+				goIfTrue(v);
 				break;
 			}
-			case LexState.OPR_OR: {
-				this.goiffalse(v);
+			case OR: {
+				goIfFalse(v);
 				break;
 			}
-			case LexState.OPR_CONCAT: {
-				this.exp2nextreg(v); /* operand must be on the `stack' */
+			case CONCAT: {
+				exp2NextReg(v); /* operand must be on the `stack' */
 				break;
 			}
-			case LexState.OPR_ADD:
-			case LexState.OPR_SUB:
-			case LexState.OPR_MUL:
-			case LexState.OPR_DIV:
-			case LexState.OPR_MOD:
-			case LexState.OPR_POW: {
-				if (!v.isnumeral()) {
-					this.exp2RK(v);
-				}
+			case ADD:
+			case SUB:
+			case MUL:
+			case DIV:
+			case MOD:
+			case POW: {
+				if (!v.isnumeral()) exp2RK(v);
 				break;
 			}
 			default: {
-				this.exp2RK(v);
+				exp2RK(v);
 				break;
 			}
 		}
 	}
 
 
-	void posfix(int op, expdesc e1, expdesc e2) throws CompileException {
+	void posfix(BinOpr op, ExpDesc e1, ExpDesc e2) throws CompileException {
 		switch (op) {
-			case LexState.OPR_AND: {
-				_assert(e1.t.value == LexState.NO_JUMP); /* list must be closed */
-				this.dischargevars(e2);
-				this.concat(e2.f, e1.f.value);
-				// *e1 = *e2;
-				e1.setvalue(e2);
+			case AND: {
+				_assert(e1.t.value == NO_JUMP); /* list must be closed */
+				dischargeVars(e2);
+				concat(e2.f, e1.f.value);
+				e1.setValue(e2);
 				break;
 			}
-			case LexState.OPR_OR: {
-				_assert(e1.f.value == LexState.NO_JUMP); /* list must be closed */
-				this.dischargevars(e2);
-				this.concat(e2.t, e1.t.value);
-				// *e1 = *e2;
-				e1.setvalue(e2);
+			case OR: {
+				_assert(e1.f.value == NO_JUMP); /* list must be closed */
+				dischargeVars(e2);
+				concat(e2.t, e1.t.value);
+				e1.setValue(e2);
 				break;
 			}
-			case LexState.OPR_CONCAT: {
-				this.exp2val(e2);
-				if (e2.kind == ExpKind.VRELOCABLE
-					&& GET_OPCODE(this.getcode(e2)) == OP_CONCAT) {
-					_assert(e1.u.s.info == GETARG_B(this.getcode(e2)) - 1);
-					this.freeexp(e1);
-					SETARG_B(this.getcodePtr(e2), e1.u.s.info);
+			case CONCAT: {
+				exp2Val(e2);
+				if (e2.kind == ExpKind.VRELOCABLE && GET_OPCODE(code[e2.info]) == OP_CONCAT) {
+					_assert(e1.info == GETARG_B(code[e2.info]) - 1);
+					freeExp(e1);
+					code[e2.info] = SETARG_B(code[e2.info], e1.info);
 					e1.kind = ExpKind.VRELOCABLE;
-					e1.u.s.info = e2.u.s.info;
+					e1.info = e2.info;
 				} else {
-					this.exp2nextreg(e2); /* operand must be on the 'stack' */
-					this.codearith(OP_CONCAT, e1, e2);
+					exp2NextReg(e2); /* operand must be on the 'stack' */
+					codeArith(OP_CONCAT, e1, e2);
 				}
 				break;
 			}
-			case LexState.OPR_ADD:
-				this.codearith(OP_ADD, e1, e2);
+			case ADD:
+				codeArith(OP_ADD, e1, e2);
 				break;
-			case LexState.OPR_SUB:
-				this.codearith(OP_SUB, e1, e2);
+			case SUB:
+				codeArith(OP_SUB, e1, e2);
 				break;
-			case LexState.OPR_MUL:
-				this.codearith(OP_MUL, e1, e2);
+			case MUL:
+				codeArith(OP_MUL, e1, e2);
 				break;
-			case LexState.OPR_DIV:
-				this.codearith(OP_DIV, e1, e2);
+			case DIV:
+				codeArith(OP_DIV, e1, e2);
 				break;
-			case LexState.OPR_MOD:
-				this.codearith(OP_MOD, e1, e2);
+			case MOD:
+				codeArith(OP_MOD, e1, e2);
 				break;
-			case LexState.OPR_POW:
-				this.codearith(OP_POW, e1, e2);
+			case POW:
+				codeArith(OP_POW, e1, e2);
 				break;
-			case LexState.OPR_EQ:
-				this.codecomp(OP_EQ, 1, e1, e2);
+			case EQ:
+				codeComparison(OP_EQ, 1, e1, e2);
 				break;
-			case LexState.OPR_NE:
-				this.codecomp(OP_EQ, 0, e1, e2);
+			case NE:
+				codeComparison(OP_EQ, 0, e1, e2);
 				break;
-			case LexState.OPR_LT:
-				this.codecomp(OP_LT, 1, e1, e2);
+			case LT:
+				codeComparison(OP_LT, 1, e1, e2);
 				break;
-			case LexState.OPR_LE:
-				this.codecomp(OP_LE, 1, e1, e2);
+			case LE:
+				codeComparison(OP_LE, 1, e1, e2);
 				break;
-			case LexState.OPR_GT:
-				this.codecomp(OP_LT, 0, e1, e2);
+			case GT:
+				codeComparison(OP_LT, 0, e1, e2);
 				break;
-			case LexState.OPR_GE:
-				this.codecomp(OP_LE, 0, e1, e2);
+			case GE:
+				codeComparison(OP_LE, 0, e1, e2);
 				break;
 			default:
 				_assert(false);
 		}
 	}
 
-
-	void fixline(int line) {
-		this.f.lineinfo[this.pc - 1] = line;
+	void fixLine(int line) {
+		lineInfo[pc - 1] = line;
 	}
-
 
 	private int code(int instruction, int line) throws CompileException {
-		Prototype f = this.f;
-		this.dischargejpc(); /* `pc' will change */
-		/* put new instruction in code array */
-		if (f.code == null || this.pc + 1 > f.code.length) {
-			f.code = LuaC.realloc(f.code, this.pc * 2 + 1);
-		}
-		f.code[this.pc] = instruction;
-		/* save corresponding line information */
-		if (f.lineinfo == null || this.pc + 1 > f.lineinfo.length) {
-			f.lineinfo = LuaC.realloc(f.lineinfo,
-				this.pc * 2 + 1);
-		}
-		f.lineinfo[this.pc] = line;
-		return this.pc++;
+		dischargeJumpPc(); /* `pc' will change */
+
+		// put new instruction in code array
+		if (code == null || pc + 1 > code.length) code = LuaC.realloc(code, pc * 2 + 1);
+		code[pc] = instruction;
+
+		// save corresponding line information
+		if (lineInfo == null || pc + 1 > lineInfo.length) lineInfo = LuaC.realloc(lineInfo, pc * 2 + 1);
+		lineInfo[pc] = line;
+
+		return pc++;
 	}
 
+	int codeABCAt(int o, int a, int b, int c, int line) throws CompileException {
+		_assert(getOpMode(o) == iABC);
+		_assert(getBMode(o) != OpArgN || b == 0);
+		_assert(getCMode(o) != OpArgN || c == 0);
+		return code(CREATE_ABC(o, a, b, c), line);
+	}
 
 	int codeABC(int o, int a, int b, int c) throws CompileException {
 		_assert(getOpMode(o) == iABC);
 		_assert(getBMode(o) != OpArgN || b == 0);
 		_assert(getCMode(o) != OpArgN || c == 0);
-		return this.code(CREATE_ABC(o, a, b, c), this.ls.lastline);
+		return code(CREATE_ABC(o, a, b, c), lexer.lastLine());
 	}
 
-
-	int codeABx(int o, int a, int bc) throws CompileException {
+	int codeABxAt(int o, int a, int bc, int line) throws CompileException {
 		_assert(getOpMode(o) == iABx || getOpMode(o) == iAsBx);
 		_assert(getCMode(o) == OpArgN);
-		return this.code(CREATE_ABx(o, a, bc), this.ls.lastline);
+		return code(CREATE_ABx(o, a, bc), line);
+	}
+
+	int codeABx(int o, int a, int bc) throws CompileException {
+		return codeABxAt(o, a, bc, lexer.lastLine());
 	}
 
 
-	private void setlist(int base, int nelems, int tostore) throws CompileException {
+	void setList(int base, int nelems, int tostore) throws CompileException {
 		int c = (nelems - 1) / LFIELDS_PER_FLUSH + 1;
-		int b = (tostore == LUA_MULTRET) ? 0 : tostore;
+		int b = tostore == LUA_MULTRET ? 0 : tostore;
 		_assert(tostore != 0);
 		if (c <= MAXARG_C) {
-			this.codeABC(OP_SETLIST, base, b, c);
+			codeABC(OP_SETLIST, base, b, c);
 		} else {
-			this.codeABC(OP_SETLIST, base, b, 0);
-			this.code(c, this.ls.lastline);
+			codeABC(OP_SETLIST, base, b, 0);
+			code(c, lexer.lastLine());
 		}
-		this.freereg = base + 1; /* free registers with list values */
+		freeReg = base + 1; /* free registers with list values */
 	}
 }

@@ -140,7 +140,7 @@ public class Print {
 	}
 
 	private static void printConstant(PrintWriter ps, Prototype f, int i) {
-		printValue(ps, f.k[i]);
+		printValue(ps, f.constants[i]);
 	}
 
 	/**
@@ -214,8 +214,8 @@ public class Print {
 			case OP_GETUPVAL:
 			case OP_SETUPVAL:
 				ps.print("  ; ");
-				if (f.upvalues.length > b) {
-					printValue(ps, f.upvalues[b]);
+				if (f.upvalueNames.length > b) {
+					printValue(ps, f.upvalueNames[b]);
 				} else {
 					ps.print("-");
 				}
@@ -262,7 +262,7 @@ public class Print {
 				ps.print("  ; to " + (sbx + pc + 2));
 				break;
 			case OP_CLOSURE:
-				ps.print("  ; " + f.p[bx].getClass().getName());
+				ps.print("  ; " + f.children[bx].getClass().getName());
 				break;
 			case OP_SETLIST:
 				if (c == 0) {
@@ -272,7 +272,7 @@ public class Print {
 				}
 				break;
 			case OP_VARARG:
-				ps.print("  ; is_vararg=" + f.is_vararg);
+				ps.print("  ; is_vararg=" + f.isVarArg);
 				break;
 			default:
 				break;
@@ -280,7 +280,7 @@ public class Print {
 	}
 
 	private static int getline(Prototype f, int pc) {
-		return pc >= 0 && f.lineinfo != null && pc < f.lineinfo.length ? f.lineinfo[pc] : -1;
+		return pc >= 0 && f.lineInfo != null && pc < f.lineInfo.length ? f.lineInfo[pc] : -1;
 	}
 
 	private static void printHeader(PrintWriter ps, Prototype f) {
@@ -292,39 +292,39 @@ public class Print {
 		} else {
 			s = "(string)";
 		}
-		String a = (f.linedefined == 0) ? "main" : "function";
-		ps.print("\n%" + a + " <" + s + ":" + f.linedefined + ","
-			+ f.lastlinedefined + "> (" + f.code.length + " instructions, "
+		String a = (f.lineDefined == 0) ? "main" : "function";
+		ps.print("\n%" + a + " <" + s + ":" + f.lineDefined + ","
+			+ f.lastLineDefined + "> (" + f.code.length + " instructions, "
 			+ f.code.length * 4 + " bytes at " + id(f) + ")\n");
-		ps.print(f.numparams + " param, " + f.maxstacksize + " slot, "
-			+ f.upvalues.length + " upvalue, ");
-		ps.print(f.locvars.length + " local, " + f.k.length
-			+ " constant, " + f.p.length + " function\n");
+		ps.print(f.parameters + " param, " + f.maxStackSize + " slot, "
+			+ f.upvalueNames.length + " upvalue, ");
+		ps.print(f.locals.length + " local, " + f.constants.length
+			+ " constant, " + f.children.length + " function\n");
 	}
 
 	private static void printConstants(PrintWriter ps, Prototype f) {
-		int i, n = f.k.length;
+		int i, n = f.constants.length;
 		ps.print("constants (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
 			ps.print("  " + (i + 1) + "  ");
-			printValue(ps, f.k[i]);
+			printValue(ps, f.constants[i]);
 			ps.print("\n");
 		}
 	}
 
 	private static void printLocals(PrintWriter ps, Prototype f) {
-		int i, n = f.locvars.length;
+		int i, n = f.locals.length;
 		ps.print("locals (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
-			ps.println("  " + i + "  " + f.locvars[i].name + " " + (f.locvars[i].startpc + 1) + " " + (f.locvars[i].endpc + 1));
+			ps.println("  " + i + "  " + f.locals[i].name + " " + (f.locals[i].startpc + 1) + " " + (f.locals[i].endpc + 1));
 		}
 	}
 
 	private static void printUpValues(PrintWriter ps, Prototype f) {
-		int i, n = f.upvalues.length;
+		int i, n = f.upvalueNames.length;
 		ps.print("upvalues (" + n + ") for " + id(f) + ":\n");
 		for (i = 0; i < n; i++) {
-			ps.print("  " + i + "  " + f.upvalues[i] + "\n");
+			ps.print("  " + i + "  " + f.upvalueNames[i] + "\n");
 		}
 	}
 
@@ -333,7 +333,7 @@ public class Print {
 	}
 
 	public static void printFunction(PrintWriter ps, Prototype f, boolean full) {
-		int i, n = f.p.length;
+		int i, n = f.children.length;
 		printHeader(ps, f);
 		printCode(ps, f);
 		if (full) {
@@ -342,7 +342,7 @@ public class Print {
 			printUpValues(ps, f);
 		}
 		for (i = 0; i < n; i++) {
-			printFunction(ps, f.p[i], full);
+			printFunction(ps, f.children[i], full);
 		}
 	}
 
@@ -359,7 +359,7 @@ public class Print {
 	}
 
 	private static String id(Prototype f) {
-		return f.sourceShort() + ":" + f.linedefined;
+		return f.sourceShort() + ":" + f.lineDefined;
 	}
 
 	/**

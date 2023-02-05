@@ -44,7 +44,8 @@ public class CompileTestHelper {
 	 */
 	public static void compareResults(String dir, String file) throws IOException, CompileException {
 		// Compile in memory
-		String sourceBytecode = Print.show(LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), "@" + file + ".lua"));
+		Prototype sourcePrototype = LuaC.compile(new ByteArrayInputStream(bytesFromJar(dir + file + ".lua")), "@" + file + ".lua");
+		String sourceBytecode = Print.show(sourcePrototype);
 
 		// Load expected value from jar
 		Prototype expectedPrototype = loadFromBytes(bytesFromJar(dir + file + ".lc"), file + ".lua");

@@ -43,18 +43,18 @@ import static org.squiddev.cobalt.debug.DebugFrame.*;
 public final class LuaInterpreter {
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxstacksize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
+		LuaValue[] stack = new LuaValue[p.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
 		return setupCall(state, function, NONE, stack, flags);
 	}
 
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxstacksize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
+		LuaValue[] stack = new LuaValue[p.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
-		switch (p.numparams) {
+		switch (p.parameters) {
 			case 0:
 				return setupCall(state, function, arg, stack, flags);
 
@@ -66,12 +66,12 @@ public final class LuaInterpreter {
 
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxstacksize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
+		LuaValue[] stack = new LuaValue[p.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
-		switch (p.numparams) {
+		switch (p.parameters) {
 			case 0:
-				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
+				return setupCall(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
 
 			case 1:
 				stack[0] = arg1;
@@ -86,16 +86,16 @@ public final class LuaInterpreter {
 
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxstacksize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
+		LuaValue[] stack = new LuaValue[p.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
-		switch (p.numparams) {
+		switch (p.parameters) {
 			case 0:
-				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
+				return setupCall(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
 
 			case 1:
 				stack[0] = arg1;
-				return setupCall(state, function, p.is_vararg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
+				return setupCall(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
 
 			case 2:
 				stack[0] = arg1;
@@ -112,28 +112,28 @@ public final class LuaInterpreter {
 
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxstacksize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
-		for (int i = 0; i < p.numparams; i++) stack[i] = varargs.arg(i + 1);
+		LuaValue[] stack = new LuaValue[p.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
+		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCall(state, function, p.is_vararg != 0 ? varargs.subargs(p.numparams + 1) : NONE, stack, flags);
+		return setupCall(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
 	}
 
 	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize, Varargs varargs, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxstacksize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxstacksize);
+		LuaValue[] stack = new LuaValue[p.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
 		varargs = ValueFactory.varargsOf(args, argStart, argSize, varargs);
-		for (int i = 0; i < p.numparams; i++) stack[i] = varargs.arg(i + 1);
+		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCall(state, function, p.is_vararg != 0 ? varargs.subargs(p.numparams + 1) : NONE, stack, flags);
+		return setupCall(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
 	}
 
 	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		Upvalue[] upvalues = p.p.length > 0 ? new Upvalue[stack.length] : null;
-		if (p.is_vararg >= VARARG_NEEDSARG) stack[p.numparams] = new LuaTable(varargs);
+		Upvalue[] upvalues = p.children.length > 0 ? new Upvalue[stack.length] : null;
+		if (p.isVarArg >= VARARG_NEEDSARG) stack[p.parameters] = new LuaTable(varargs);
 
 		DebugState ds = DebugHandler.getDebugState(state);
 		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
@@ -173,7 +173,7 @@ public final class LuaInterpreter {
 			final Prototype p = function.p;
 			final Upvalue[] upvalues = function.upvalues;
 			final int[] code = p.code;
-			final LuaValue[] k = p.k;
+			final LuaValue[] k = p.constants;
 
 			// And from the debug info
 			final LuaValue[] stack = di.stack;
@@ -626,9 +626,9 @@ public final class LuaInterpreter {
 					}
 
 					case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
-						Prototype newp = p.p[(i >>> POS_Bx) & MAXARG_Bx];
+						Prototype newp = p.children[(i >>> POS_Bx) & MAXARG_Bx];
 						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, function.env);
-						for (int j = 0, nup = newp.nups; j < nup; ++j) {
+						for (int j = 0, nup = newp.upvalues; j < nup; ++j) {
 							i = code[pc++];
 							int b = (i >>> POS_B) & MAXARG_B;
 							newcl.upvalues[j] = (i & 4) != 0

@@ -247,11 +247,11 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 				case 'S': {
 					if (c != null) {
 						Prototype p = c.getPrototype();
-						info.rawset(WHAT, p.linedefined == 0 ? MAIN : LUA);
+						info.rawset(WHAT, p.lineDefined == 0 ? MAIN : LUA);
 						info.rawset(SOURCE, p.source);
 						info.rawset(SHORT_SRC, p.sourceShort());
-						info.rawset(LINEDEFINED, valueOf(p.linedefined));
-						info.rawset(LASTLINEDEFINED, valueOf(p.lastlinedefined));
+						info.rawset(LINEDEFINED, valueOf(p.lineDefined));
+						info.rawset(LASTLINEDEFINED, valueOf(p.lastLineDefined));
 					} else {
 						String shortName = di.func == null ? "nil" : di.func.debugName();
 						LuaString name = valueOf("[C] " + shortName);
@@ -269,9 +269,9 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 					break;
 				}
 				case 'u': {
-					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().nups : 0));
-					info.rawset(NPARAMS, valueOf(c != null ? c.getPrototype().numparams : 0));
-					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().is_vararg > 0));
+					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().upvalues : 0));
+					info.rawset(NPARAMS, valueOf(c != null ? c.getPrototype().parameters : 0));
+					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().isVarArg > 0));
 					break;
 				}
 				case 'n': {
@@ -288,7 +288,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 					if (di.closure != null) {
 						LuaTable lines = new LuaTable();
 						info.rawset(ACTIVELINES, lines);
-						int[] lineinfo = di.closure.getPrototype().lineinfo;
+						int[] lineinfo = di.closure.getPrototype().lineInfo;
 						if (lineinfo != null) {
 							for (int line : lineinfo) lines.rawset(line, TRUE);
 						}
@@ -315,8 +315,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 			if (!function.isClosure()) return NIL;
 
 			Prototype proto = function.checkClosure().getPrototype();
-			LocalVariable[] variables = proto.locvars;
-			return variables != null && local > 0 && local <= variables.length && local <= proto.numparams
+			LocalVariable[] variables = proto.locals;
+			return variables != null && local > 0 && local <= variables.length && local <= proto.parameters
 				? variables[local - 1].name : NIL;
 		} else {
 			int level = args.arg(arg).checkInteger();
@@ -396,8 +396,8 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 
 	private static LuaString findupvalue(LuaClosure c, int up) {
 		Prototype p = c.getPrototype();
-		if (up > 0 && p.upvalues != null && up <= p.upvalues.length) {
-			return p.upvalues[up - 1];
+		if (up > 0 && p.upvalueNames != null && up <= p.upvalueNames.length) {
+			return p.upvalueNames[up - 1];
 		} else {
 			return null;
 		}
@@ -451,7 +451,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 		LuaFunction function = args.arg(offset).checkFunction();
 		if (function instanceof LuaClosure) {
 			LuaClosure closure = (LuaClosure) function;
-			if (upvalue >= 0 && upvalue < closure.getPrototype().nups) return closure;
+			if (upvalue >= 0 && upvalue < closure.getPrototype().upvalues) return closure;
 		}
 
 		throw ErrorFactory.argError(offset, "invalid upvalue index");

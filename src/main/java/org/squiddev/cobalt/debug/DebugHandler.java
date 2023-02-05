@@ -105,7 +105,7 @@ public class DebugHandler {
 			if ((di.flags & FLAG_HOOKYIELD_LINE) == 0) {
 				if (ds.hookline && di.closure != null) {
 					Prototype prototype = di.closure.getPrototype();
-					int[] lineInfo = prototype.lineinfo;
+					int[] lineInfo = prototype.lineInfo;
 					int newLine = lineInfo != null && pc >= 0 && pc < lineInfo.length ? lineInfo[pc] : -1;
 					int oldPc = di.oldPc;
 

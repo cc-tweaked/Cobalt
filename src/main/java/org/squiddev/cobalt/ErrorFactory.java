@@ -105,7 +105,7 @@ public class ErrorFactory {
 		if (stack >= 0) {
 			DebugFrame info = DebugHandler.getDebugState(state).getStack();
 			if (info != null && info.closure != null) {
-				if (stack < info.closure.getPrototype().maxstacksize) {
+				if (stack < info.closure.getPrototype().maxStackSize) {
 					kind = DebugHelpers.getObjectName(info, stack);
 				}
 			}

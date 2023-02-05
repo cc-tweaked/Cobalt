@@ -204,7 +204,7 @@ public final class DebugFrame {
 	 */
 	public int currentLine() {
 		if (closure == null) return -1;
-		int[] li = closure.getPrototype().lineinfo;
+		int[] li = closure.getPrototype().lineInfo;
 		return li == null || pc < 0 || pc >= li.length ? -1 : li[pc];
 	}
 
@@ -230,11 +230,11 @@ public final class DebugFrame {
 
 	public LuaString getLocalName(int index) {
 		if (closure == null) return null;
-		LuaString name = closure.getPrototype().getlocalname(index, pc);
+		LuaString name = closure.getPrototype().getLocalName(index, pc);
 		if (name != null) return name;
 
 		// FIXME: Use top rather than maxstacksize. Sadly it isn't currently updated.
-		return index > 0 && index <= closure.getPrototype().maxstacksize ? TEMPORARY : null;
+		return index > 0 && index <= closure.getPrototype().maxStackSize ? TEMPORARY : null;
 	}
 
 	@SuppressWarnings("unchecked")

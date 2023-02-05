@@ -150,7 +150,7 @@ public class DumpState {
 	}
 
 	void dumpConstants(final Prototype f) throws IOException {
-		final LuaValue[] k = f.k;
+		final LuaValue[] k = f.constants;
 		int i, n = k.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
@@ -197,32 +197,32 @@ public class DumpState {
 					throw new IllegalArgumentException("bad type for " + o);
 			}
 		}
-		n = f.p.length;
+		n = f.children.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
-			dumpFunction(f.p[i], f.source);
+			dumpFunction(f.children[i], f.source);
 		}
 	}
 
 	void dumpDebug(final Prototype f) throws IOException {
 		int i, n;
-		n = (strip) ? 0 : f.lineinfo.length;
+		n = (strip) ? 0 : f.lineInfo.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
-			dumpInt(f.lineinfo[i]);
+			dumpInt(f.lineInfo[i]);
 		}
-		n = (strip) ? 0 : f.locvars.length;
+		n = (strip) ? 0 : f.locals.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
-			LocalVariable lvi = f.locvars[i];
+			LocalVariable lvi = f.locals[i];
 			dumpString(lvi.name);
 			dumpInt(lvi.startpc);
 			dumpInt(lvi.endpc);
 		}
-		n = (strip) ? 0 : f.upvalues.length;
+		n = (strip) ? 0 : f.upvalueNames.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
-			dumpString(f.upvalues[i]);
+			dumpString(f.upvalueNames[i]);
 		}
 	}
 
@@ -232,12 +232,12 @@ public class DumpState {
 		} else {
 			dumpString(f.source);
 		}
-		dumpInt(f.linedefined);
-		dumpInt(f.lastlinedefined);
-		dumpChar(f.nups);
-		dumpChar(f.numparams);
-		dumpChar(f.is_vararg);
-		dumpChar(f.maxstacksize);
+		dumpInt(f.lineDefined);
+		dumpInt(f.lastLineDefined);
+		dumpChar(f.upvalues);
+		dumpChar(f.parameters);
+		dumpChar(f.isVarArg);
+		dumpChar(f.maxStackSize);
 		dumpCode(f);
 		dumpConstants(f);
 		dumpDebug(f);
