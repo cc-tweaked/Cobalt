@@ -76,7 +76,8 @@ class FuncState {
 
 	int pc;  /* next position to code (equivalent to `ncode') */
 	int[] code;
-	int[] lineInfo;
+	private int[] lineInfo;
+	private int[] columnInfo;
 
 	int lineDefined;
 	int lastLineDefined;
@@ -109,13 +110,13 @@ class FuncState {
 			children.toArray(new Prototype[0]),
 			numParams, varargFlags, maxStackSize, upvalues.size(),
 			// Debug information
-			lineDefined, lastLineDefined, LuaC.realloc(lineInfo, pc),
+			lineDefined, lastLineDefined, LuaC.realloc(lineInfo, pc), LuaC.realloc(columnInfo, pc),
 			locals.toArray(new LocalVariable[0]), upvalueNames
 		);
 	}
 
-	int codeAsBxAt(int o, int A, int sBx, int line) throws CompileException {
-		return codeABxAt(o, A, sBx + MAXARG_sBx, line);
+	int codeAsBxAt(int o, int A, int sBx, long position) throws CompileException {
+		return codeABxAt(o, A, sBx + MAXARG_sBx, position);
 	}
 
 	int codeAsBx(int o, int A, int sBx) throws CompileException {
@@ -168,8 +169,8 @@ class FuncState {
 		codeABC(OP_RETURN, first, nret + 1, 0);
 	}
 
-	private int condJump(int op, int A, int B, int C) throws CompileException {
-		codeABC(op, A, B, C);
+	private int condJump(int op, int A, int B, int C, long position) throws CompileException {
+		codeABCAt(op, A, B, C, position);
 		return jump();
 	}
 
@@ -366,19 +367,19 @@ class FuncState {
 				break;
 			}
 			case VUPVAL: {
-				e.info = codeABC(OP_GETUPVAL, 0, e.info, 0);
+				e.info = codeABCAt(OP_GETUPVAL, 0, e.info, 0, e.position);
 				e.kind = ExpKind.VRELOCABLE;
 				break;
 			}
 			case VGLOBAL: {
-				e.info = codeABx(OP_GETGLOBAL, 0, e.info);
+				e.info = codeABxAt(OP_GETGLOBAL, 0, e.info, e.position);
 				e.kind = ExpKind.VRELOCABLE;
 				break;
 			}
 			case VINDEXED: {
 				freeReg(e.aux);
 				freeReg(e.info);
-				e.info = codeABC(OP_GETTABLE, 0, e.info, e.aux);
+				e.info = codeABCAt(OP_GETTABLE, 0, e.info, e.aux, e.position);
 				e.kind = ExpKind.VRELOCABLE;
 				break;
 			}
@@ -530,17 +531,17 @@ class FuncState {
 			}
 			case VUPVAL: {
 				int e = exp2AnyReg(ex);
-				codeABC(OP_SETUPVAL, e, var.info, 0);
+				codeABCAt(OP_SETUPVAL, e, var.info, 0, var.position);
 				break;
 			}
 			case VGLOBAL: {
 				int e = exp2AnyReg(ex);
-				codeABx(OP_SETGLOBAL, e, var.info);
+				codeABxAt(OP_SETGLOBAL, e, var.info, var.position);
 				break;
 			}
 			case VINDEXED: {
 				int e = exp2RK(ex);
-				codeABC(OP_SETTABLE, var.info, var.aux, e);
+				codeABCAt(OP_SETTABLE, var.info, var.aux, e, var.position);
 				break;
 			}
 			default: {
@@ -578,13 +579,13 @@ class FuncState {
 			int ie = code[e.info];
 			if (GET_OPCODE(ie) == OP_NOT) {
 				pc--; /* remove previous OP_NOT */
-				return condJump(OP_TEST, GETARG_B(ie), 0, cond != 0 ? 0 : 1);
+				return condJump(OP_TEST, GETARG_B(ie), 0, cond != 0 ? 0 : 1, lexer.token.position());
 			}
 			/* else go through */
 		}
 		discharge2AnyReg(e);
 		freeExp(e);
-		return condJump(OP_TESTSET, NO_REG, e.info, cond);
+		return condJump(OP_TESTSET, NO_REG, e.info, cond, lexer.token.position());
 	}
 
 	void goIfTrue(ExpDesc e) throws CompileException {
@@ -684,9 +685,10 @@ class FuncState {
 		removeValues(e.t.value);
 	}
 
-	void indexed(ExpDesc t, ExpDesc k) throws CompileException {
+	void indexed(ExpDesc t, ExpDesc k, long pos) throws CompileException {
 		t.aux = exp2RK(k);
 		t.kind = ExpKind.VINDEXED;
+		t.position = pos;
 	}
 
 	private boolean constFolding(int op, ExpDesc e1, ExpDesc e2) throws CompileException {
@@ -731,7 +733,7 @@ class FuncState {
 		return true;
 	}
 
-	private void codeArith(int op, ExpDesc e1, ExpDesc e2) throws CompileException {
+	private void codeArith(int op, ExpDesc e1, ExpDesc e2, int position) throws CompileException {
 		if (constFolding(op, e1, e2)) return;
 
 		int o2 = op != OP_UNM && op != OP_LEN ? exp2RK(e2) : 0;
@@ -743,11 +745,11 @@ class FuncState {
 			freeExp(e2);
 			freeExp(e1);
 		}
-		e1.info = codeABC(op, 0, o1, o2);
+		e1.info = codeABCAt(op, 0, o1, o2, position);
 		e1.kind = ExpKind.VRELOCABLE;
 	}
 
-	private void codeComparison(int op, int cond, ExpDesc e1, ExpDesc e2) throws CompileException {
+	private void codeComparison(int op, int cond, ExpDesc e1, ExpDesc e2, int position) throws CompileException {
 		int o1 = exp2RK(e1);
 		int o2 = exp2RK(e2);
 		freeExp(e2);
@@ -759,17 +761,17 @@ class FuncState {
 			o2 = temp; /* o1 <==> o2 */
 			cond = 1;
 		}
-		e1.info = condJump(op, cond, o1, o2);
+		e1.info = condJump(op, cond, o1, o2, position);
 		e1.kind = ExpKind.VJMP;
 	}
 
-	void prefix(UnOpr op, ExpDesc e) throws CompileException {
+	void prefix(UnOpr op, ExpDesc e, int position) throws CompileException {
 		ExpDesc e2 = new ExpDesc();
 		e2.init(ExpKind.VKNUM, 0);
 		switch (op) {
 			case MINUS: {
 				if (e.kind == ExpKind.VK) exp2AnyReg(e); /* cannot operate on non-numeric constants */
-				codeArith(OP_UNM, e, e2);
+				codeArith(OP_UNM, e, e2, position);
 				break;
 			}
 			case NOT:
@@ -777,7 +779,7 @@ class FuncState {
 				break;
 			case LEN: {
 				exp2AnyReg(e); /* cannot operate on constants */
-				codeArith(OP_LEN, e, e2);
+				codeArith(OP_LEN, e, e2, position);
 				break;
 			}
 			default:
@@ -816,7 +818,7 @@ class FuncState {
 	}
 
 
-	void posfix(BinOpr op, ExpDesc e1, ExpDesc e2) throws CompileException {
+	void posfix(BinOpr op, ExpDesc e1, ExpDesc e2, int position) throws CompileException {
 		switch (op) {
 			case AND: {
 				_assert(e1.t.value == NO_JUMP); /* list must be closed */
@@ -842,56 +844,57 @@ class FuncState {
 					e1.info = e2.info;
 				} else {
 					exp2NextReg(e2); /* operand must be on the 'stack' */
-					codeArith(OP_CONCAT, e1, e2);
+					codeArith(OP_CONCAT, e1, e2, position);
 				}
 				break;
 			}
 			case ADD:
-				codeArith(OP_ADD, e1, e2);
+				codeArith(OP_ADD, e1, e2, position);
 				break;
 			case SUB:
-				codeArith(OP_SUB, e1, e2);
+				codeArith(OP_SUB, e1, e2, position);
 				break;
 			case MUL:
-				codeArith(OP_MUL, e1, e2);
+				codeArith(OP_MUL, e1, e2, position);
 				break;
 			case DIV:
-				codeArith(OP_DIV, e1, e2);
+				codeArith(OP_DIV, e1, e2, position);
 				break;
 			case MOD:
-				codeArith(OP_MOD, e1, e2);
+				codeArith(OP_MOD, e1, e2, position);
 				break;
 			case POW:
-				codeArith(OP_POW, e1, e2);
+				codeArith(OP_POW, e1, e2, position);
 				break;
 			case EQ:
-				codeComparison(OP_EQ, 1, e1, e2);
+				codeComparison(OP_EQ, 1, e1, e2, position);
 				break;
 			case NE:
-				codeComparison(OP_EQ, 0, e1, e2);
+				codeComparison(OP_EQ, 0, e1, e2, position);
 				break;
 			case LT:
-				codeComparison(OP_LT, 1, e1, e2);
+				codeComparison(OP_LT, 1, e1, e2, position);
 				break;
 			case LE:
-				codeComparison(OP_LE, 1, e1, e2);
+				codeComparison(OP_LE, 1, e1, e2, position);
 				break;
 			case GT:
-				codeComparison(OP_LT, 0, e1, e2);
+				codeComparison(OP_LT, 0, e1, e2, position);
 				break;
 			case GE:
-				codeComparison(OP_LE, 0, e1, e2);
+				codeComparison(OP_LE, 0, e1, e2, position);
 				break;
 			default:
 				_assert(false);
 		}
 	}
 
-	void fixLine(int line) {
-		lineInfo[pc - 1] = line;
+	void fixPosition(long position) {
+		lineInfo[pc - 1] = Lex.unpackLine(position);
+		columnInfo[pc - 1] = Lex.unpackColumn(position);
 	}
 
-	private int code(int instruction, int line) throws CompileException {
+	private int code(int instruction, long position) throws CompileException {
 		dischargeJumpPc(); /* `pc' will change */
 
 		// put new instruction in code array
@@ -899,36 +902,41 @@ class FuncState {
 		code[pc] = instruction;
 
 		// save corresponding line information
-		if (lineInfo == null || pc + 1 > lineInfo.length) lineInfo = LuaC.realloc(lineInfo, pc * 2 + 1);
-		lineInfo[pc] = line;
+		if (lineInfo == null || pc + 1 > lineInfo.length) {
+			lineInfo = LuaC.realloc(lineInfo, pc * 2 + 1);
+			columnInfo = LuaC.realloc(columnInfo, pc * 2 + 1);
+		}
+		lineInfo[pc] = Lex.unpackLine(position);
+		columnInfo[pc] = Lex.unpackColumn(position);
 
 		return pc++;
 	}
 
-	int codeABCAt(int o, int a, int b, int c, int line) throws CompileException {
+	int codeABCAt(int o, int a, int b, int c, long position) throws CompileException {
 		_assert(getOpMode(o) == iABC);
 		_assert(getBMode(o) != OpArgN || b == 0);
 		_assert(getCMode(o) != OpArgN || c == 0);
-		return code(CREATE_ABC(o, a, b, c), line);
+		_assert(position > 0);
+		return code(CREATE_ABC(o, a, b, c), position);
 	}
 
 	int codeABC(int o, int a, int b, int c) throws CompileException {
 		_assert(getOpMode(o) == iABC);
 		_assert(getBMode(o) != OpArgN || b == 0);
 		_assert(getCMode(o) != OpArgN || c == 0);
-		return code(CREATE_ABC(o, a, b, c), lexer.lastLine());
+		return code(CREATE_ABC(o, a, b, c), lexer.lastPosition());
 	}
 
-	int codeABxAt(int o, int a, int bc, int line) throws CompileException {
+	int codeABxAt(int o, int a, int bc, long position) throws CompileException {
 		_assert(getOpMode(o) == iABx || getOpMode(o) == iAsBx);
 		_assert(getCMode(o) == OpArgN);
-		return code(CREATE_ABx(o, a, bc), line);
+		_assert(position > 0);
+		return code(CREATE_ABx(o, a, bc), position);
 	}
 
 	int codeABx(int o, int a, int bc) throws CompileException {
-		return codeABxAt(o, a, bc, lexer.lastLine());
+		return codeABxAt(o, a, bc, lexer.lastPosition());
 	}
-
 
 	void setList(int base, int nelems, int tostore) throws CompileException {
 		int c = (nelems - 1) / LFIELDS_PER_FLUSH + 1;
@@ -938,7 +946,7 @@ class FuncState {
 			codeABC(OP_SETLIST, base, b, c);
 		} else {
 			codeABC(OP_SETLIST, base, b, 0);
-			code(c, lexer.lastLine());
+			code(c, lexer.lastPosition());
 		}
 		freeReg = base + 1; /* free registers with list values */
 	}

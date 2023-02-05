@@ -39,7 +39,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code debug}
  * library.
- *
+ * <p>
  * The debug library in luaj tries to emulate the behavior of the corresponding C-based lua library.
  * To do this, it must maintain a stack of calls to {@link LuaClosure} and {@link LibFunction}
  * instances.
@@ -85,6 +85,7 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 	private static final LuaString LINEDEFINED = valueOf("linedefined");
 	private static final LuaString LASTLINEDEFINED = valueOf("lastlinedefined");
 	private static final LuaString CURRENTLINE = valueOf("currentline");
+	private static final LuaString CURRENTCOLUMN = valueOf("currentcolumn");
 	private static final LuaString ACTIVELINES = valueOf("activelines");
 	private static final LuaString NPARAMS = valueOf("nparams");
 	private static final LuaString ISVARARG = valueOf("isvararg");
@@ -264,8 +265,12 @@ public class DebugLib extends VarArgFunction implements LuaLibrary {
 					break;
 				}
 				case 'l': {
-					int line = di.currentLine();
+					if (c == null) continue;
+					Prototype p = c.getPrototype();
+					int line = p.lineInfo == null || di.pc < 0 || di.pc >= p.lineInfo.length ? -1 : p.lineInfo[di.pc];
+					int column = p.columnInfo == null || di.pc < 0 || di.pc >= p.columnInfo.length ? -1 : p.columnInfo[di.pc];
 					info.rawset(CURRENTLINE, valueOf(line));
+					if (column > 0) info.rawset(CURRENTCOLUMN, valueOf(column));
 					break;
 				}
 				case 'u': {

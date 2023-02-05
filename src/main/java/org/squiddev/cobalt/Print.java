@@ -173,9 +173,12 @@ public class Print {
 		int c = GETARG_C(i);
 		int bx = GETARG_Bx(i);
 		int sbx = GETARG_sBx(i);
-		int line = getline(f, pc);
+		int line = f.lineInfo != null && pc < f.lineInfo.length ? f.lineInfo[pc] : -1;
+		int column = f.columnInfo != null && pc < f.columnInfo.length ? f.columnInfo[pc] : -1;
 		ps.print("  " + (pc + 1) + "  ");
-		if (line > 0) {
+		if (line > 0 && column > 0) {
+			ps.print("[" + line + "/" + column + "]  ");
+		} else if (line > 0) {
 			ps.print("[" + line + "]  ");
 		} else {
 			ps.print("[-]  ");
@@ -277,10 +280,6 @@ public class Print {
 			default:
 				break;
 		}
-	}
-
-	private static int getline(Prototype f, int pc) {
-		return pc >= 0 && f.lineInfo != null && pc < f.lineInfo.length ? f.lineInfo[pc] : -1;
 	}
 
 	private static void printHeader(PrintWriter ps, Prototype f) {
