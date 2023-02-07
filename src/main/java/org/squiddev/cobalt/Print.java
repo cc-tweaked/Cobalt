@@ -147,12 +147,13 @@ public class Print {
 	 * Print the code in a prototype
 	 *
 	 * @param f the {@link Prototype}
+	 *          @param extended Included extended/non-standard information.
 	 */
-	public static void printCode(PrintWriter ps, Prototype f) {
+	public static void printCode(PrintWriter ps, Prototype f, boolean extended) {
 		int[] code = f.code;
 		int pc, n = code.length;
 		for (pc = 0; pc < n; pc++) {
-			printOpcode(ps, f, pc);
+			printOpcode(ps, f, pc, extended);
 			ps.println();
 		}
 	}
@@ -163,8 +164,9 @@ public class Print {
 	 * @param ps the {@link PrintWriter} to print to
 	 * @param f  the {@link Prototype}
 	 * @param pc the program counter to look up and print
+	 * @param extended Included extended/non-standard information.
 	 */
-	public static void printOpcode(PrintWriter ps, Prototype f, int pc) {
+	public static void printOpcode(PrintWriter ps, Prototype f, int pc, boolean extended) {
 		int[] code = f.code;
 		int i = code[pc];
 		int o = GET_OPCODE(i);
@@ -176,7 +178,7 @@ public class Print {
 		int line = f.lineInfo != null && pc < f.lineInfo.length ? f.lineInfo[pc] : -1;
 		int column = f.columnInfo != null && pc < f.columnInfo.length ? f.columnInfo[pc] : -1;
 		ps.print("  " + (pc + 1) + "  ");
-		if (line > 0 && column > 0) {
+		if (extended && line > 0 && column > 0) {
 			ps.print("[" + line + "/" + column + "]  ");
 		} else if (line > 0) {
 			ps.print("[" + line + "]  ");
@@ -327,21 +329,17 @@ public class Print {
 		}
 	}
 
-	public static String show(Prototype p) {
-		return showWith(ps -> printFunction(ps, p, true));
-	}
-
-	public static void printFunction(PrintWriter ps, Prototype f, boolean full) {
+	public static void printFunction(PrintWriter ps, Prototype f, boolean full, boolean extended) {
 		int i, n = f.children.length;
 		printHeader(ps, f);
-		printCode(ps, f);
+		printCode(ps, f, extended);
 		if (full) {
 			printConstants(ps, f);
 			printLocals(ps, f);
 			printUpValues(ps, f);
 		}
 		for (i = 0; i < n; i++) {
-			printFunction(ps, f.children[i], full);
+			printFunction(ps, f.children[i], full, extended);
 		}
 	}
 
@@ -372,7 +370,7 @@ public class Print {
 	 */
 	public static void printState(PrintWriter ps, LuaClosure cl, int pc, LuaValue[] stack, int top, Varargs varargs) {
 		// print opcode into buffer
-		format(ps, showWith(p -> printOpcode(p, cl.getPrototype(), pc)), 50);
+		format(ps, showWith(p -> printOpcode(p, cl.getPrototype(), pc, true)), 50);
 
 		// print stack
 		ps.print('[');

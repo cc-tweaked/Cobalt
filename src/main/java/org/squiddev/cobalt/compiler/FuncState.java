@@ -579,13 +579,13 @@ class FuncState {
 			int ie = code[e.info];
 			if (GET_OPCODE(ie) == OP_NOT) {
 				pc--; /* remove previous OP_NOT */
-				return condJump(OP_TEST, GETARG_B(ie), 0, cond != 0 ? 0 : 1, lexer.token.position());
+				return condJump(OP_TEST, GETARG_B(ie), 0, cond != 0 ? 0 : 1, lexer.lastPosition());
 			}
 			/* else go through */
 		}
 		discharge2AnyReg(e);
 		freeExp(e);
-		return condJump(OP_TESTSET, NO_REG, e.info, cond, lexer.token.position());
+		return condJump(OP_TESTSET, NO_REG, e.info, cond, lexer.lastPosition());
 	}
 
 	void goIfTrue(ExpDesc e) throws CompileException {
@@ -733,7 +733,7 @@ class FuncState {
 		return true;
 	}
 
-	private void codeArith(int op, ExpDesc e1, ExpDesc e2, int position) throws CompileException {
+	private void codeArith(int op, ExpDesc e1, ExpDesc e2, long position) throws CompileException {
 		if (constFolding(op, e1, e2)) return;
 
 		int o2 = op != OP_UNM && op != OP_LEN ? exp2RK(e2) : 0;
@@ -749,7 +749,7 @@ class FuncState {
 		e1.kind = ExpKind.VRELOCABLE;
 	}
 
-	private void codeComparison(int op, int cond, ExpDesc e1, ExpDesc e2, int position) throws CompileException {
+	private void codeComparison(int op, int cond, ExpDesc e1, ExpDesc e2, long position) throws CompileException {
 		int o1 = exp2RK(e1);
 		int o2 = exp2RK(e2);
 		freeExp(e2);
@@ -765,7 +765,7 @@ class FuncState {
 		e1.kind = ExpKind.VJMP;
 	}
 
-	void prefix(UnOpr op, ExpDesc e, int position) throws CompileException {
+	void prefix(UnOpr op, ExpDesc e, long position) throws CompileException {
 		ExpDesc e2 = new ExpDesc();
 		e2.init(ExpKind.VKNUM, 0);
 		switch (op) {
@@ -817,8 +817,7 @@ class FuncState {
 		}
 	}
 
-
-	void posfix(BinOpr op, ExpDesc e1, ExpDesc e2, int position) throws CompileException {
+	void posfix(BinOpr op, ExpDesc e1, ExpDesc e2, long position) throws CompileException {
 		switch (op) {
 			case AND: {
 				_assert(e1.t.value == NO_JUMP); /* list must be closed */

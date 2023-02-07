@@ -861,7 +861,7 @@ public final class LuaInterpreter {
 			StringWriter output = new StringWriter();
 			try (PrintWriter ps = new PrintWriter(output)) {
 				ps.printf("Resuming function at invalid opcode. file=\"%s\", pc=%d\n", prototype.sourceShort(), pc + 1);
-				Print.printCode(ps, prototype);
+				Print.printCode(ps, prototype, true);
 			}
 			return output.toString();
 		});

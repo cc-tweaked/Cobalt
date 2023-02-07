@@ -748,7 +748,7 @@ class Parser {
 		enterLevel();
 		UnOpr unop = UnOpr.ofToken(lexer.token.token());
 		if (unop != null) {
-			int opPosition = lexer.token.token();
+			long opPosition = lexer.token.position();
 			lexer.nextToken();
 			subExpression(v, UnOpr.PRIORITY);
 			fs.prefix(unop, v, opPosition);
@@ -758,12 +758,12 @@ class Parser {
 		// expand while operators have priorities higher than `limit'
 		BinOpr binop = BinOpr.ofToken(lexer.token.token());
 		while (binop != null && binop.left > limit) {
-			int position = lexer.token.token();
+			long position = lexer.token.position();
 			lexer.nextToken();
 
-			ExpDesc v2 = new ExpDesc();
 			fs.infix(binop, v);
 			// read sub-expression with higher priority
+			ExpDesc v2 = new ExpDesc();
 			BinOpr nextop = subExpression(v2, binop.right);
 			fs.posfix(binop, v, v2, position);
 			binop = nextop;
