@@ -1147,16 +1147,6 @@ public abstract class LuaValue extends Varargs {
 		throw ErrorFactory.typeError(this, "function or thread");
 	}
 
-	/**
-	 * Implementation of lua 5.0 getn() function.
-	 *
-	 * @return value of getn() as defined in lua 5.0 spec if {@code this} is a {@link LuaTable}
-	 * @throws LuaError if  {@code this} is not a {@link LuaTable}
-	 */
-	public LuaValue getn() throws LuaError {
-		throw ErrorFactory.unimplemented(this, "getn");
-	}
-
 	// object equality, used for key comparison
 	public boolean equals(Object obj) {
 		return this == obj;

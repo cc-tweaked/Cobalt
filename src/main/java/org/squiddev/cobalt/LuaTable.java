@@ -326,12 +326,6 @@ public final class LuaTable extends LuaValue {
 		return sb.toLuaString();
 	}
 
-	@Override
-	public LuaValue getn() {
-		return LuaInteger.valueOf(length());
-	}
-
-
 	public int length() {
 		int a = getArrayLength();
 		/**

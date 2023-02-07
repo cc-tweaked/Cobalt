@@ -62,7 +62,7 @@ public class TableLib implements LuaLibrary {
 
 	private static LuaValue getn(LuaState state, LuaValue arg) throws LuaError {
 		// getn(table) -> number
-		return arg.checkTable().getn();
+		return LuaInteger.valueOf(arg.checkTable().length());
 	}
 
 	private static LuaValue maxn(LuaState state, LuaValue arg) throws LuaError {
