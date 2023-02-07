@@ -25,14 +25,10 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.TwoArgFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
+import org.squiddev.cobalt.function.RegisteredFunction;
 
-import static org.squiddev.cobalt.Constants.NIL;
-import static org.squiddev.cobalt.Constants.ZERO;
 import static org.squiddev.cobalt.ErrorFactory.argError;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
-import static org.squiddev.cobalt.function.LibFunction.bind;
 
 /**
  * Subclass of LibFunction that implements the Lua standard {@code bit32} library.
@@ -41,121 +37,127 @@ public class Bit32Lib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		bind(t, Bit32LibV::new, new String[]{"band", "bnot", "bor", "btest", "bxor", "extract", "replace"});
-		bind(t, Bit32Lib2::new, new String[]{"arshift", "lrotate", "lshift", "rrotate", "rshift"});
+		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
+			RegisteredFunction.ofV("band", Bit32Lib::band),
+			RegisteredFunction.of("bnot", Bit32Lib::bnot),
+			RegisteredFunction.ofV("bor", Bit32Lib::bor),
+			RegisteredFunction.ofV("btest", Bit32Lib::btest),
+			RegisteredFunction.ofV("bxor", Bit32Lib::bxor),
+			RegisteredFunction.of("extract", Bit32Lib::extract),
+			RegisteredFunction.ofV("replace", Bit32Lib::replace),
+			RegisteredFunction.of("arshift", Bit32Lib::arshift),
+			RegisteredFunction.of("lrotate", Bit32Lib::lrotate),
+			RegisteredFunction.of("lshift", Bit32Lib::lshift),
+			RegisteredFunction.of("rrotate", Bit32Lib::rrotate),
+			RegisteredFunction.of("rshift", Bit32Lib::rshift),
+		});
+
 		env.rawset("bit32", t);
 		state.loadedPackages.rawset("bit32", t);
 		return t;
 	}
 
-	public static final class Bit32LibV extends VarArgFunction {
-		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-			switch (opcode) {
-				case 0: // band
-				{
-					int result = -1;
-					for (int i = 1; i <= args.count(); i++) {
-						result &= args.arg(i).checkInteger();
-					}
-					return bitsToValue(result);
-				}
-				case 1: // bnot
-					return bitsToValue(~args.arg(1).checkInteger());
-				case 2: // bot
-				{
-					int result = 0;
-					for (int i = 1; i <= args.count(); i++) {
-						result |= args.arg(i).checkInteger();
-					}
-					return bitsToValue(result);
-				}
-				case 3: // btest
-				{
-					int bits = -1;
-					for (int i = 1; i <= args.count(); i++) {
-						bits &= args.arg(i).checkInteger();
-					}
-					return valueOf(bits != 0);
-				}
-				case 4: // bxor
-				{
-					int result = 0;
-					for (int i = 1; i <= args.count(); i++) {
-						result ^= args.arg(i).checkInteger();
-					}
-					return bitsToValue(result);
-				}
-				case 5: // extract
-				{
-					int field = args.arg(2).checkInteger();
-					int width = args.arg(3).optInteger(1);
-
-					if (field < 0) throw argError(2, "field cannot be negative");
-					if (width <= 0) throw argError(3, "width must be postive");
-					if (field + width > 32) throw new LuaError("trying to access non-existent bits");
-
-					return bitsToValue((args.arg(1).checkInteger() >>> field) & (-1 >>> (32 - width)));
-				}
-				case 6: // replace
-				{
-					int n = args.arg(1).checkInteger();
-					int v = args.arg(2).checkInteger();
-					int field = args.arg(3).checkInteger();
-					int width = args.arg(4).optInteger(1);
-
-					if (field < 0) throw argError(3, "field cannot be negative");
-					if (width <= 0) throw argError(4, "width must be postive");
-					if (field + width > 32) throw new LuaError("trying to access non-existent bits");
-
-					int mask = (-1 >>> (32 - width)) << field;
-					n = (n & ~mask) | ((v << field) & mask);
-					return bitsToValue(n);
-				}
-			}
-			return NIL;
+	private static Varargs band(LuaState state, Varargs args) throws LuaError {
+		int result = -1;
+		for (int i = 1; i <= args.count(); i++) {
+			result &= args.arg(i).checkInteger();
 		}
+		return bitsToValue(result);
 	}
 
-	public static final class Bit32Lib2 extends TwoArgFunction {
-		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
-			switch (opcode) {
-				case 0: // arshift
-				{
-					int x = arg1.checkInteger();
-					int disp = arg2.checkInteger();
-					return disp >= 0 ? bitsToValue(x >> disp) : bitsToValue(x << -disp);
-				}
-				case 1: // lrotate
-					return rotate(arg1.checkInteger(), arg2.checkInteger());
-				case 2: // lshift
-					return shift(arg1.checkInteger(), arg2.checkInteger());
-				case 3: // rrotate
-					return rotate(arg1.checkInteger(), -arg2.checkInteger());
-				case 4: // rshift
-					return shift(arg1.checkInteger(), -arg2.checkInteger());
-			}
-			return NIL;
-		}
+	private static LuaValue bnot(LuaState state, LuaValue arg) throws LuaError {
+		return bitsToValue(~arg.checkInteger());
 	}
 
-	static LuaValue rotate(int x, int disp) {
+	private static Varargs bor(LuaState state, Varargs args) throws LuaError {
+		int result = 0;
+		for (int i = 1; i <= args.count(); i++) {
+			result |= args.arg(i).checkInteger();
+		}
+		return bitsToValue(result);
+	}
+
+	private static Varargs btest(LuaState state, Varargs args) throws LuaError {
+		int bits = -1;
+		for (int i = 1; i <= args.count(); i++) {
+			bits &= args.arg(i).checkInteger();
+		}
+		return valueOf(bits != 0);
+	}
+
+	private static Varargs bxor(LuaState state, Varargs args) throws LuaError {
+		int result = 0;
+		for (int i = 1; i <= args.count(); i++) {
+			result ^= args.arg(i).checkInteger();
+		}
+		return bitsToValue(result);
+	}
+
+	private static LuaValue extract(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+		int field = arg2.checkInteger();
+		int width = arg3.optInteger(1);
+
+		if (field < 0) throw argError(2, "field cannot be negative");
+		if (width <= 0) throw argError(3, "width must be postive");
+		if (field + width > 32) throw new LuaError("trying to access non-existent bits");
+
+		return bitsToValue((arg1.checkInteger() >>> field) & (-1 >>> (32 - width)));
+	}
+
+	private static Varargs replace(LuaState state, Varargs args) throws LuaError {
+		int n = args.arg(1).checkInteger();
+		int v = args.arg(2).checkInteger();
+		int field = args.arg(3).checkInteger();
+		int width = args.arg(4).optInteger(1);
+
+		if (field < 0) throw argError(3, "field cannot be negative");
+		if (width <= 0) throw argError(4, "width must be postive");
+		if (field + width > 32) throw new LuaError("trying to access non-existent bits");
+
+		int mask = (-1 >>> (32 - width)) << field;
+		n = (n & ~mask) | ((v << field) & mask);
+		return bitsToValue(n);
+	}
+
+	private static LuaValue arshift(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		int x = arg1.checkInteger();
+		int disp = arg2.checkInteger();
+		return bitsToValue(disp >= 0 ? x >> disp : x << -disp);
+	}
+
+	private static LuaValue lrotate(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return bitsToValue(rotate(arg1.checkInteger(), arg2.checkInteger()));
+	}
+
+	private static LuaValue rrotate(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return bitsToValue(rotate(arg1.checkInteger(), -arg2.checkInteger()));
+	}
+
+	private static LuaValue lshift(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return bitsToValue(shift(arg1.checkInteger(), arg2.checkInteger()));
+	}
+
+	private static LuaValue rshift(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return bitsToValue(shift(arg1.checkInteger(), -arg2.checkInteger()));
+	}
+
+	private static int rotate(int x, int disp) {
 		if (disp < 0) {
 			disp = -disp & 31;
-			return bitsToValue((x >>> disp) | (x << (32 - disp)));
+			return (x >>> disp) | (x << (32 - disp));
 		} else {
 			disp = disp & 31;
-			return bitsToValue((x << disp) | (x >>> (32 - disp)));
+			return (x << disp) | (x >>> (32 - disp));
 		}
 	}
 
-	static LuaValue shift(int x, int disp) {
+	private static int shift(int x, int disp) {
 		if (disp >= 32 || disp <= -32) {
-			return ZERO;
+			return 0;
 		} else if (disp >= 0) {
-			return bitsToValue(x << disp);
+			return x << disp;
 		} else {
-			return bitsToValue(x >>> -disp);
+			return x >>> -disp;
 		}
 	}
 

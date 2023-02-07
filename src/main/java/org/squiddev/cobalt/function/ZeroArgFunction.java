@@ -68,4 +68,8 @@ public abstract class ZeroArgFunction extends LibFunction {
 	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
 		return call(state);
 	}
+
+	public interface Signature {
+		LuaValue call(LuaState state) throws LuaError, UnwindThrowable;
+	}
 }

@@ -36,7 +36,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code table}
  * library.
- *
+ * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction
@@ -49,7 +49,10 @@ public class TableLib implements LuaLibrary {
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		LibFunction.bind(t, TableLib1::new, new String[]{"getn", "maxn",});
+		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
+			RegisteredFunction.of("getn", TableLib::getn),
+			RegisteredFunction.of("maxn", TableLib::maxn)
+		});
 		LibFunction.bind(t, TableLibV::new, new String[]{"remove", "concat", "insert", "pack"});
 		LibFunction.bind(t, TableLibR::new, new String[]{"sort", "foreach", "foreachi", "unpack"});
 		env.rawset("table", t);
@@ -57,18 +60,14 @@ public class TableLib implements LuaLibrary {
 		return t;
 	}
 
-	private static final class TableLib1 extends OneArgFunction {
+	private static LuaValue getn(LuaState state, LuaValue arg) throws LuaError {
+		// getn(table) -> number
+		return arg.checkTable().getn();
+	}
 
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			switch (opcode) {
-				case 0:  // "getn" (table) -> number
-					return arg.checkTable().getn();
-				case 1: // "maxn"  (table) -> number
-					return valueOf(arg.checkTable().maxn());
-			}
-			return NIL;
-		}
+	private static LuaValue maxn(LuaState state, LuaValue arg) throws LuaError {
+		// maxn(table) -> number
+		return valueOf(arg.checkTable().maxn());
 	}
 
 	private static final class TableLibV extends VarArgFunction {
@@ -366,7 +365,7 @@ public class TableLib implements LuaLibrary {
 
 				siftState = 1;
 
-				if (table.compare(state, root + 1, child +  1, compare)) {
+				if (table.compare(state, root + 1, child + 1, compare)) {
 					table.swap(root + 1, child + 1);
 					root = child;
 				} else {

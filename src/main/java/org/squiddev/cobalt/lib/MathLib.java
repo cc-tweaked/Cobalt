@@ -27,7 +27,7 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.OneArgFunction;
+import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.function.TwoArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.jse.JsePlatform;
@@ -50,15 +50,26 @@ public class MathLib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable(0, 30);
-		t.rawset("pi", ValueFactory.valueOf(Math.PI));
+		t.rawset("pi", valueOf(Math.PI));
 		t.rawset("huge", LuaDouble.POSINF);
-		LibFunction.bind(t, MathLib1::new, new String[]{
-			"abs", "ceil", "cos", "deg",
-			"exp", "floor", "rad", "sin",
-			"sqrt", "tan",
-			"acos", "asin", "atan", "cosh",
-			"exp", "log10", "sinh",
-			"tanh"
+		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
+			RegisteredFunction.of("abs", (s, arg) -> valueOf(Math.abs(arg.checkDouble()))),
+			RegisteredFunction.of("ceil", (s, arg) -> valueOf(Math.ceil(arg.checkDouble()))),
+			RegisteredFunction.of("cos", (s, arg) -> valueOf(Math.cos(arg.checkDouble()))),
+			RegisteredFunction.of("deg", (s, arg) -> valueOf(Math.toDegrees(arg.checkDouble()))),
+			RegisteredFunction.of("exp", (s, arg) -> valueOf(Math.exp(arg.checkDouble()))),
+			RegisteredFunction.of("floor", (s, arg) -> valueOf(Math.floor(arg.checkDouble()))),
+			RegisteredFunction.of("rad", (s, arg) -> valueOf(Math.toRadians(arg.checkDouble()))),
+			RegisteredFunction.of("sin", (s, arg) -> valueOf(Math.sin(arg.checkDouble()))),
+			RegisteredFunction.of("sqrt", (s, arg) -> valueOf(Math.sqrt(arg.checkDouble()))),
+			RegisteredFunction.of("tan", (s, arg) -> valueOf(Math.tan(arg.checkDouble()))),
+			RegisteredFunction.of("acos", (s, arg) -> valueOf(Math.acos(arg.checkDouble()))),
+			RegisteredFunction.of("asin", (s, arg) -> valueOf(Math.asin(arg.checkDouble()))),
+			RegisteredFunction.of("atan", (s, arg) -> valueOf(Math.atan(arg.checkDouble()))),
+			RegisteredFunction.of("cosh", (s, arg) -> valueOf(Math.cosh(arg.checkDouble()))),
+			RegisteredFunction.of("log10", (s, arg) -> valueOf(Math.log10(arg.checkDouble()))),
+			RegisteredFunction.of("sinh", (s, arg) -> valueOf(Math.sinh(arg.checkDouble()))),
+			RegisteredFunction.of("tanh", (s, arg) -> valueOf(Math.tanh(arg.checkDouble()))),
 		});
 		LibFunction.bind(t, MathLib2::new, new String[]{
 			"fmod", "ldexp", "pow", "atan2", "log"
@@ -73,51 +84,6 @@ public class MathLib implements LuaLibrary {
 		return t;
 	}
 
-	private static final class MathLib1 extends OneArgFunction {
-		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			switch (opcode) {
-				case 0:
-					return valueOf(Math.abs(arg.checkDouble()));
-				case 1:
-					return ValueFactory.valueOf(Math.ceil(arg.checkDouble()));
-				case 2:
-					return ValueFactory.valueOf(Math.cos(arg.checkDouble()));
-				case 3:
-					return ValueFactory.valueOf(Math.toDegrees(arg.checkDouble()));
-				case 4:
-					return ValueFactory.valueOf(Math.exp(arg.checkDouble()));
-				case 5:
-					return ValueFactory.valueOf(Math.floor(arg.checkDouble()));
-				case 6:
-					return ValueFactory.valueOf(Math.toRadians(arg.checkDouble()));
-				case 7:
-					return ValueFactory.valueOf(Math.sin(arg.checkDouble()));
-				case 8:
-					return ValueFactory.valueOf(Math.sqrt(arg.checkDouble()));
-				case 9:
-					return ValueFactory.valueOf(Math.tan(arg.checkDouble()));
-				case 10:
-					return ValueFactory.valueOf(Math.acos(arg.checkDouble()));
-				case 11:
-					return ValueFactory.valueOf(Math.asin(arg.checkDouble()));
-				case 12:
-					return ValueFactory.valueOf(Math.atan(arg.checkDouble()));
-				case 13:
-					return ValueFactory.valueOf(Math.cosh(arg.checkDouble()));
-				case 14:
-					return ValueFactory.valueOf(Math.exp(arg.checkDouble()));
-				case 15:
-					return ValueFactory.valueOf(Math.log10(arg.checkDouble()));
-				case 16:
-					return ValueFactory.valueOf(Math.sinh(arg.checkDouble()));
-				case 17:
-					return ValueFactory.valueOf(Math.tanh(arg.checkDouble()));
-			}
-			return Constants.NIL;
-		}
-	}
-
 	private static final class MathLib2 extends TwoArgFunction {
 		@Override
 		public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
@@ -127,23 +93,23 @@ public class MathLib implements LuaLibrary {
 					double y = arg2.checkDouble();
 					double q = x / y;
 					double f = x - y * (q >= 0 ? Math.floor(q) : Math.ceil(q));
-					return ValueFactory.valueOf(f);
+					return valueOf(f);
 				}
 				case 1: { // ldexp
 					double x = arg1.checkDouble();
 					double y = arg2.checkDouble() + 1023.5;
 					long e = (long) ((0 != (1 & ((int) y))) ? Math.floor(y) : Math.ceil(y - 1));
-					return ValueFactory.valueOf(x * Double.longBitsToDouble(e << 52));
+					return valueOf(x * Double.longBitsToDouble(e << 52));
 				}
 				case 2:
-					return ValueFactory.valueOf(Math.pow(arg1.checkDouble(), arg2.checkDouble()));
+					return valueOf(Math.pow(arg1.checkDouble(), arg2.checkDouble()));
 				case 3:
-					return ValueFactory.valueOf(Math.atan2(arg1.checkDouble(), arg2.checkDouble()));
+					return valueOf(Math.atan2(arg1.checkDouble(), arg2.checkDouble()));
 				case 4: { // lua 5.>=2 log takes two arguments,
 					if (arg2.isNil()) {
-						return ValueFactory.valueOf(Math.log(arg1.checkDouble()));
+						return valueOf(Math.log(arg1.checkDouble()));
 					} else {
-						return ValueFactory.valueOf(Math.log(arg1.checkDouble()) / Math.log(arg2.checkDouble()));
+						return valueOf(Math.log(arg1.checkDouble()) / Math.log(arg2.checkDouble()));
 					}
 				}
 			}
@@ -161,27 +127,27 @@ public class MathLib implements LuaLibrary {
 					long bits = Double.doubleToLongBits(x);
 					double m = ((bits & (~(-1L << 52))) + (1L << 52)) * ((bits >= 0) ? (.5 / (1L << 52)) : (-.5 / (1L << 52)));
 					double e = (((int) (bits >> 52)) & 0x7ff) - 1022;
-					return varargsOf(ValueFactory.valueOf(m), ValueFactory.valueOf(e));
+					return varargsOf(valueOf(m), valueOf(e));
 				}
 				case 1: { // max
 					double m = args.arg(1).checkDouble();
 					for (int i = 2, n = args.count(); i <= n; ++i) {
 						m = Math.max(m, args.arg(i).checkDouble());
 					}
-					return ValueFactory.valueOf(m);
+					return valueOf(m);
 				}
 				case 2: { // min
 					double m = args.arg(1).checkDouble();
 					for (int i = 2, n = args.count(); i <= n; ++i) {
 						m = Math.min(m, args.arg(i).checkDouble());
 					}
-					return ValueFactory.valueOf(m);
+					return valueOf(m);
 				}
 				case 3: { // modf
 					double x = args.arg(1).checkDouble();
 					double intPart = (x > 0) ? Math.floor(x) : Math.ceil(x);
 					double fracPart = x - intPart;
-					return varargsOf(ValueFactory.valueOf(intPart), ValueFactory.valueOf(fracPart));
+					return varargsOf(valueOf(intPart), valueOf(fracPart));
 				}
 				case 4: { // randomseed
 					long seed = args.arg(1).checkLong();
@@ -195,13 +161,13 @@ public class MathLib implements LuaLibrary {
 
 					switch (args.count()) {
 						case 0:
-							return ValueFactory.valueOf(state.random.nextDouble());
+							return valueOf(state.random.nextDouble());
 						case 1: {
 							int m = args.arg(1).checkInteger();
 							if (m < 1) {
 								throw ErrorFactory.argError(1, "interval is empty");
 							}
-							return ValueFactory.valueOf(1 + state.random.nextInt(m));
+							return valueOf(1 + state.random.nextInt(m));
 						}
 						default: {
 							int m = args.arg(1).checkInteger();
@@ -209,7 +175,7 @@ public class MathLib implements LuaLibrary {
 							if (n < m) {
 								throw ErrorFactory.argError(2, "interval is empty");
 							}
-							return ValueFactory.valueOf(m + state.random.nextInt(n + 1 - m));
+							return valueOf(m + state.random.nextInt(n + 1 - m));
 						}
 					}
 				}

@@ -29,18 +29,18 @@ import org.squiddev.cobalt.*;
 /**
  * Abstract base class for Java function implementations that take one argument and
  * return one value.
- *
+ * <p>
  * Subclasses need only implement {@link LuaFunction#call(LuaState, LuaValue)} to complete this class,
  * simplifying development.
  * All other uses of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * dropping or extending arguments with {@code nil} values as required.
- *
+ * <p>
  * If more than one argument are required, or no arguments are required,
  * or variable argument or variable return values,
  * then use one of the related function
  * {@link ZeroArgFunction}, {@link TwoArgFunction}, {@link ThreeArgFunction}, or {@link VarArgFunction}.
- *
+ * <p>
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
  * @see LuaFunction#call(LuaState, LuaValue)
@@ -69,5 +69,9 @@ public abstract class OneArgFunction extends LibFunction {
 	@Override
 	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
 		return call(state, varargs.first());
+	}
+
+	public interface Signature {
+		LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable;
 	}
 }

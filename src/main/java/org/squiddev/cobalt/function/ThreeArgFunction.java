@@ -31,18 +31,18 @@ import static org.squiddev.cobalt.Constants.NIL;
 /**
  * Abstract base class for Java function implementations that take two arguments and
  * return one value.
- *
+ * <p>
  * Subclasses need only implement {@link LuaFunction#call(LuaState, LuaValue, LuaValue, LuaValue)} to complete this class,
  * simplifying development.
  * All other uses of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * dropping or extending arguments with {@code nil} values as required.
- *
+ * <p>
  * If more or less than three arguments are required,
  * or variable argument or variable return values,
  * then use one of the related function
  * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link VarArgFunction}.
- *
+ * <p>
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
  * @see LuaFunction#call(LuaState, LuaValue, LuaValue, LuaValue)
@@ -73,4 +73,7 @@ public abstract class ThreeArgFunction extends LibFunction {
 		return call(state, varargs.first(), varargs.arg(2), varargs.arg(3));
 	}
 
+	public interface Signature {
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable;
+	}
 }

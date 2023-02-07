@@ -42,7 +42,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard {@code string}
  * library.
- *
+ * <p>
  * This is a direct port of the corresponding library in C.
  *
  * @see LibFunction
@@ -58,8 +58,17 @@ public class StringLib implements LuaLibrary {
 		LibFunction.bind(t, StringLib1::new, new String[]{
 			"len", "lower", "reverse", "upper", "packsize"
 		});
-		LibFunction.bind(t, StringLibV::new, new String[]{
-			"dump", "byte", "char", "find", "gmatch", "match", "rep", "sub", "pack", "unpack"
+		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
+			RegisteredFunction.ofV("dump", (s, args) -> dump(args.arg(1).checkFunction(), args.arg(2).optBoolean(false))),
+			RegisteredFunction.ofV("byte", StringLib::byte_),
+			RegisteredFunction.ofV("char", StringLib::char_),
+			RegisteredFunction.ofV("find", StringMatch::find),
+			RegisteredFunction.ofV("gmatch", StringMatch::gmatch),
+			RegisteredFunction.ofV("match", StringMatch::match),
+			RegisteredFunction.ofV("rep", StringLib::rep),
+			RegisteredFunction.ofV("sub", StringLib::sub),
+			RegisteredFunction.ofV("pack", (s, args) -> StringPacker.pack(args)),
+			RegisteredFunction.ofV("unpack", (s, args) -> StringPacker.unpack(args)),
 		});
 		LibFunction.bind(t, StringLibR::new, new String[]{"gsub", "format"});
 
@@ -120,35 +129,6 @@ public class StringLib implements LuaLibrary {
 		}
 	}
 
-	static final class StringLibV extends VarArgFunction {
-		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-			switch (opcode) {
-				case 0:
-					return dump(args.arg(1).checkFunction(), args.arg(2).optBoolean(false));
-				case 1:
-					return byte_(args);
-				case 2:
-					return StringLib.char_(args);
-				case 3:
-					return StringMatch.find(state, args);
-				case 4:
-					return StringMatch.gmatch(state, args);
-				case 5:
-					return StringMatch.match(state, args);
-				case 6:
-					return StringLib.rep(args);
-				case 7:
-					return StringLib.sub(args);
-				case 8:
-					return StringPacker.pack(args);
-				case 9:
-					return StringPacker.unpack(args);
-			}
-			return NONE;
-		}
-	}
-
 	static final class StringLibR extends ResumableVarArgFunction<Object> {
 		@Override
 		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
@@ -193,16 +173,16 @@ public class StringLib implements LuaLibrary {
 
 	/**
 	 * string.byte (s [, i [, j]])
-	 *
+	 * <p>
 	 * Returns the internal numerical codes of the
 	 * characters s[i], s[i+1], ..., s[j]. The default value for i is 1; the
 	 * default value for j is i.
-	 *
+	 * <p>
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
 	 * @param args the calling args
 	 */
-	static Varargs byte_(Varargs args) throws LuaError {
+	private static Varargs byte_(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int l = s.length;
 		int posi = posRelative(args.arg(2).optInteger(1), l);
@@ -225,18 +205,18 @@ public class StringLib implements LuaLibrary {
 
 	/**
 	 * string.char (...)
-	 *
+	 * <p>
 	 * Receives zero or more integers. Returns a string with length equal
 	 * to the number of arguments, in which each character has the internal
 	 * numerical code equal to its corresponding argument.
-	 *
+	 * <p>
 	 * Note that numerical codes are not necessarily portable across platforms.
 	 *
 	 * @param args the calling VM
 	 * @return The characters for this string
 	 * @throws LuaError If the argument is not a number or is out of bounds.
 	 */
-	public static Varargs char_(Varargs args) throws LuaError {
+	private static Varargs char_(LuaState state, Varargs args) throws LuaError {
 		int n = args.count();
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
@@ -251,7 +231,7 @@ public class StringLib implements LuaLibrary {
 
 	/**
 	 * string.dump (function)
-	 *
+	 * <p>
 	 * Returns a string containing a binary representation of the given function,
 	 * so that a later loadstring on this string returns a copy of the function.
 	 * function must be a Lua function without upvalues.
@@ -275,10 +255,10 @@ public class StringLib implements LuaLibrary {
 
 	/**
 	 * string.rep (s, n)
-	 *
+	 * <p>
 	 * Returns a string that is the concatenation of n copies of the string s.
 	 */
-	static Varargs rep(Varargs args) throws LuaError {
+	private static Varargs rep(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int n = args.arg(2).checkInteger();
 		int len = s.length();
@@ -298,7 +278,7 @@ public class StringLib implements LuaLibrary {
 
 	/**
 	 * string.sub (s, i [, j])
-	 *
+	 * <p>
 	 * Returns the substring of s that starts at i and continues until j;
 	 * i and j may be negative. If j is absent, then it is assumed to be equal to -1
 	 * (which is the same as the string length). In particular, the call
@@ -307,7 +287,7 @@ public class StringLib implements LuaLibrary {
 	 * string.sub(s, -i)
 	 * returns a suffix of s with length i.
 	 */
-	static Varargs sub(Varargs args) throws LuaError {
+	private static Varargs sub(LuaState state, Varargs args) throws LuaError {
 		final LuaString s = args.arg(1).checkLuaString();
 		final int l = s.length();
 

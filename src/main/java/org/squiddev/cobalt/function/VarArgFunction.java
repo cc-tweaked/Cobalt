@@ -29,17 +29,17 @@ import org.squiddev.cobalt.*;
 /**
  * Abstract base class for Java function implementations that takes varaiable arguments and
  * returns multiple return values.
- *
+ * <p>
  * Subclasses need only implement {@link LuaFunction#invoke(LuaState, Varargs)} to complete this class,
  * simplifying development.
  * All other uses of {@link LuaFunction#call(LuaState, LuaValue)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
  * are routed through this method by this class,
  * converting arguments to {@link Varargs} and
  * dropping or extending return values with {@code nil} values as required.
- *
+ * <p>
  * If between one and three arguments are required, and only one return value is returned,
  * {@link ZeroArgFunction}, {@link OneArgFunction}, {@link TwoArgFunction}, or {@link ThreeArgFunction}.
- *
+ * <p>
  * See {@link LibFunction} for more information on implementation libraries and library functions.
  *
  * @see LuaFunction#invoke(LuaState, Varargs)
@@ -68,5 +68,9 @@ public abstract class VarArgFunction extends LibFunction {
 	@Override
 	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
+	}
+
+	public interface Signature {
+		Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
 	}
 }
