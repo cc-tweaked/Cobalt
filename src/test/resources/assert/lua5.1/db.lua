@@ -40,8 +40,8 @@ end
 a = "function f () end"
 local function dostring(s, x) return loadstring(s, x)() end
 
-dostring(a)
-assert(debug.getinfo(f).short_src == string.format('[string "%s"]', a))
+f = load("local a")
+assert(debug.getinfo(f).short_src == '[string "local a"]', debug.getinfo(f).short_src)
 dostring(a .. string.format("; %s\n=1", string.rep('p', 400)))
 assert(string.find(debug.getinfo(f).short_src, '^%[string [^\n]*%.%.%."%]$'))
 dostring("\n" .. a)

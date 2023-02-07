@@ -51,8 +51,8 @@ end
 -- test file and string names truncation
 a = "function f () end"
 local function dostring (s, x) return load(s, x)() end
-dostring(a)
-assert(debug.getinfo(f).short_src == string.format('[string "%s"]', a), debug.getinfo(f).short_src)
+f = load("local a")
+assert(debug.getinfo(f).short_src == '[string "local a"]', debug.getinfo(f).short_src)
 dostring(a..string.format("; %s\n=1", string.rep('p', 400)))
 assert(string.find(debug.getinfo(f).short_src, '^%[string [^\n]*%.%.%."%]$'))
 dostring(a..string.format("; %s=1", string.rep('p', 400)))
