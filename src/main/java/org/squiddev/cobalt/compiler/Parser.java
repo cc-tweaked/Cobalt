@@ -70,6 +70,7 @@ class Parser {
 
 	static class ExpDesc {
 		ExpKind kind; // expkind, from enumerated list, above
+		long position;
 
 		private LuaNumber nval;
 		int info;
@@ -78,11 +79,11 @@ class Parser {
 		final IntPtr t = new IntPtr(); /* patch list of `exit when true' */
 		final IntPtr f = new IntPtr(); /* patch list of `exit when false' */
 
-		void init(ExpKind k, int i) {
+		void init(ExpKind kind, int info) {
+			this.kind = kind;
+			this.info = info;
 			f.value = NO_JUMP;
 			t.value = NO_JUMP;
-			kind = k;
-			info = i;
 		}
 
 		public void setNval(LuaNumber r) {
@@ -268,6 +269,8 @@ class Parser {
 	}
 
 	private void singleVar(ExpDesc var) throws CompileException {
+		var.position = lexer.token.position();
+
 		LuaString varname = strCheckName();
 		FuncState fs = this.fs;
 		if (singleVarAux(fs, varname, var, true) == ExpKind.VGLOBAL) {
@@ -362,9 +365,10 @@ class Parser {
 		/* field -> ['.' | ':'] NAME */
 		ExpDesc key = new ExpDesc();
 		fs.exp2AnyReg(v);
+		long indexPos = lexer.token.position();
 		lexer.nextToken(); // skip the dot or colon
 		checkName(key);
-		fs.indexed(v, key);
+		fs.indexed(v, key, indexPos);
 	}
 
 	private void yindex(ExpDesc v) throws CompileException {
@@ -571,6 +575,7 @@ class Parser {
 	private void funcArgs(ExpDesc f) throws CompileException {
 		FuncState fs = this.fs;
 		ExpDesc args = new ExpDesc();
+		long position = lexer.token.position();
 		int line = lexer.token.line();
 		switch (lexer.token.token()) {
 			case '(': { /* funcargs -> `(' [ explist1 ] `)' */
@@ -610,7 +615,7 @@ class Parser {
 			if (args.kind != ExpKind.VVOID) fs.exp2NextReg(args); // close last argument
 			nArgs = fs.freeReg - (base + 1);
 		}
-		f.init(ExpKind.VCALL, fs.codeABCAt(Lua.OP_CALL, base, nArgs + 1, 2, line));
+		f.init(ExpKind.VCALL, fs.codeABCAt(Lua.OP_CALL, base, nArgs + 1, 2, position));
 		// call remove function and arguments and leaves (unless changed) one result
 		fs.freeReg = base + 1;
 	}
@@ -657,8 +662,9 @@ class Parser {
 				case '[': { // `[' exp1 `]'
 					ExpDesc key = new ExpDesc();
 					fs.exp2AnyReg(v);
+					long indexPos = lexer.token.position();
 					yindex(key);
-					fs.indexed(v, key);
+					fs.indexed(v, key, indexPos);
 					break;
 				}
 				case ':': { // `:' NAME funcargs
@@ -742,21 +748,24 @@ class Parser {
 		enterLevel();
 		UnOpr unop = UnOpr.ofToken(lexer.token.token());
 		if (unop != null) {
+			long opPosition = lexer.token.position();
 			lexer.nextToken();
 			subExpression(v, UnOpr.PRIORITY);
-			fs.prefix(unop, v);
+			fs.prefix(unop, v, opPosition);
 		} else {
 			simpleExpression(v);
 		}
 		// expand while operators have priorities higher than `limit'
 		BinOpr binop = BinOpr.ofToken(lexer.token.token());
 		while (binop != null && binop.left > limit) {
-			ExpDesc v2 = new ExpDesc();
+			long position = lexer.token.position();
 			lexer.nextToken();
+
 			fs.infix(binop, v);
 			// read sub-expression with higher priority
+			ExpDesc v2 = new ExpDesc();
 			BinOpr nextop = subExpression(v2, binop.right);
-			fs.posfix(binop, v, v2);
+			fs.posfix(binop, v, v2, position);
 			binop = nextop;
 		}
 		leaveLevel();
@@ -886,11 +895,13 @@ class Parser {
 		fs.concat(bl.breaklist, fs.jump());
 	}
 
-	private void whileStmt(int line) throws CompileException {
+	private void whileStmt() throws CompileException {
 		/* whilestat -> WHILE cond DO block END */
+		int line = lexer.token.line();
+		lexer.nextToken(); // Skip WHILE
+
 		FuncState fs = this.fs;
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
-		lexer.nextToken(); // skip WHILE
 		int whileInit = fs.getLabel();
 		int contExit = cond();
 		enterBlock(fs, bl, true);
@@ -902,15 +913,17 @@ class Parser {
 		fs.patchToHere(contExit); // false conditions finish the loop
 	}
 
-	private void repeatStmt(int line) throws CompileException {
+	private void repeatStmt() throws CompileException {
 		/* repeatstat -> REPEAT block UNTIL cond */
+		int line = lexer.token.line();
+		lexer.nextToken(); // Skip REPEAT
+
 		FuncState fs = this.fs;
 		int repeatInit = fs.getLabel();
 		FuncState.BlockCnt bl1 = new FuncState.BlockCnt();
 		FuncState.BlockCnt bl2 = new FuncState.BlockCnt();
 		enterBlock(fs, bl1, true); /* loop block */
 		enterBlock(fs, bl2, false); /* scope block */
-		lexer.nextToken(); // Skip REPEAT
 		chunk();
 		checkMatch(TK_UNTIL, TK_REPEAT, line);
 		int condexit = cond(); // read condition (inside scope block)
@@ -932,7 +945,7 @@ class Parser {
 		fs.exp2NextReg(e);
 	}
 
-	private void forBody(int base, int line, int nvars, boolean isNum) throws CompileException {
+	private void forBody(int base, long position, int nvars, boolean isNum) throws CompileException {
 		/* forbody -> DO block */
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
 		FuncState fs = this.fs;
@@ -946,12 +959,12 @@ class Parser {
 		leaveBlock(fs); /* end of scope for declared variables */
 		fs.patchToHere(prep);
 		int endFor = isNum
-			? fs.codeAsBxAt(Lua.OP_FORLOOP, base, NO_JUMP, line)
-			: fs.codeABCAt(Lua.OP_TFORLOOP, base, 0, nvars, line);
+			? fs.codeAsBxAt(Lua.OP_FORLOOP, base, NO_JUMP, position)
+			: fs.codeABCAt(Lua.OP_TFORLOOP, base, 0, nvars, position);
 		fs.patchList(isNum ? endFor : fs.jump(), prep + 1);
 	}
 
-	private void forNum(LuaString varName, int line) throws CompileException {
+	private void forNum(LuaString varName, long position) throws CompileException {
 		/* fornum -> NAME = exp1,exp1[,exp1] forbody */
 		FuncState fs = this.fs;
 		int base = fs.freeReg;
@@ -969,7 +982,7 @@ class Parser {
 			fs.codeABx(Lua.OP_LOADK, fs.freeReg, fs.numberK(LuaInteger.valueOf(1)));
 			fs.reserveRegs(1);
 		}
-		forBody(base, line, 1, true);
+		forBody(base, position, 1, true);
 	}
 
 	private void forList(LuaString indexName) throws CompileException {
@@ -986,22 +999,24 @@ class Parser {
 		newLocal(indexName, nvars++);
 		while (testNext(',')) newLocal(strCheckName(), nvars++);
 		checkNext(TK_IN);
-		int line = lexer.token.line();
+		long position = lexer.token.position();
 		adjustAssign(3, expList1(e), e);
 		fs.checkStack(3); // extra space to call generator
-		forBody(base, line, nvars - 3, false);
+		forBody(base, position, nvars - 3, false);
 	}
 
-	private void forStmt(int line) throws CompileException {
+	private void forStmt() throws CompileException {
 		/* forstat -> FOR (fornum | forlist) END */
+		long position = lexer.token.position();
+		lexer.nextToken(); /* skip `for' */
+
 		FuncState fs = this.fs;
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
 		enterBlock(fs, bl, true); // scope for loop and control variables
-		lexer.nextToken(); /* skip `for' */
 		LuaString varName = strCheckName(); // first variable name
 		switch (lexer.token.token()) {
 			case '=':
-				forNum(varName, line);
+				forNum(varName, position);
 				break;
 			case ',':
 			case TK_IN:
@@ -1010,7 +1025,7 @@ class Parser {
 			default:
 				throw syntaxError(LUA_QL("=") + " or " + LUA_QL("in") + " expected");
 		}
-		checkMatch(TK_END, TK_FOR, line);
+		checkMatch(TK_END, TK_FOR, Lex.unpackLine(position));
 		leaveBlock(fs); // loop scope (`break' jumps to this point)
 	}
 
@@ -1023,8 +1038,10 @@ class Parser {
 		return condExit;
 	}
 
-	private void ifStat(int line) throws CompileException {
+	private void ifStat() throws CompileException {
 		// ifstat -> IF cond THEN block {ELSEIF cond THEN block} [ELSE block] END
+		int line = lexer.token.line();
+
 		FuncState fs = this.fs;
 		IntPtr escapeList = new IntPtr(NO_JUMP);
 		int flist = testThenBlock(); /* IF cond THEN block */
@@ -1092,15 +1109,16 @@ class Parser {
 		return needSelf;
 	}
 
-	private void funcStmt(int line) throws CompileException {
+	private void funcStmt() throws CompileException {
 		// funcstat -> FUNCTION funcname body
+		long position = lexer.token.position();
 		lexer.nextToken(); // skip FUNCTION
 		ExpDesc v = new ExpDesc();
 		ExpDesc b = new ExpDesc();
 		boolean needSelf = funcName(v);
-		body(b, needSelf, line);
+		body(b, needSelf, Lex.unpackLine(position));
 		fs.storeVar(v, b);
-		fs.fixLine(line); // definition `happens' in the first line
+		fs.fixPosition(position); // definition `happens' in the first line
 	}
 
 	private void exprStmt() throws CompileException {
@@ -1147,33 +1165,32 @@ class Parser {
 	}
 
 	private boolean statement() throws CompileException {
-		int line = lexer.token.line(); // may be needed for error messages
 		switch (lexer.token.token()) {
 			case TK_IF: { // stat -> ifstat
-				ifStat(line);
+				ifStat();
 				return false;
 			}
 			case TK_WHILE: { /* stat -> whiles-tat */
-				whileStmt(line);
+				whileStmt();
 				return false;
 			}
 			case TK_DO: { /* stat -> DO block END */
-				/* skip DO */
-				lexer.nextToken();
+				int line = lexer.token.line(); // may be needed for error messages
+				lexer.nextToken(); // skip DO
 				block();
 				checkMatch(TK_END, TK_DO, line);
 				return false;
 			}
 			case TK_FOR: { /* stat -> forstat */
-				forStmt(line);
+				forStmt();
 				return false;
 			}
 			case TK_REPEAT: { /* stat -> repeatstat */
-				repeatStmt(line);
+				repeatStmt();
 				return false;
 			}
 			case TK_FUNCTION: {
-				funcStmt(line); /* stat -> funcstat */
+				funcStmt(); /* stat -> funcstat */
 				return false;
 			}
 			case TK_LOCAL: { /* stat -> localstat */

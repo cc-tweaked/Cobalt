@@ -67,6 +67,8 @@ public final class Prototype {
 	 */
 	public final int[] lineInfo;
 
+	public final int[] columnInfo;
+
 	/**
 	 * Information about local variables
 	 */
@@ -77,7 +79,7 @@ public final class Prototype {
 	public Prototype(
 		LuaString source,
 		LuaValue[] constants, int[] code, Prototype[] children, int parameters, int isVarArg, int maxStackSize, int upvalues,
-		int lineDefined, int lastLineDefined, int[] lineInfo, LocalVariable[] localVars, LuaString[] upvalueNames
+		int lineDefined, int lastLineDefined, int[] lineInfo, int[] columnInfo, LocalVariable[] locals, LuaString[] upvalueNames
 	) {
 		this.source = source;
 
@@ -92,7 +94,8 @@ public final class Prototype {
 		this.lineDefined = lineDefined;
 		this.lastLineDefined = lastLineDefined;
 		this.lineInfo = lineInfo;
-		this.locals = localVars;
+		this.columnInfo = columnInfo;
+		this.locals = locals;
 		this.upvalueNames = upvalueNames;
 	}
 

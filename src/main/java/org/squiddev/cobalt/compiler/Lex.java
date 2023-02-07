@@ -21,7 +21,10 @@ import java.util.function.Function;
  */
 class Lex {
 	private static final int EOZ = -1;
-	public static final int MAX_INT = Integer.MAX_VALUE - 2;
+	static final int MAX_INT = Integer.MAX_VALUE - 2;
+
+	private static final int POSITION_SHIFT = 32;
+	private static final long POSITION_MASK = 0xFFFFFFFFL;
 
 	// Terminal symbols denoted by reserved words
 	static final int
@@ -62,12 +65,12 @@ class Lex {
 	static class Token {
 		private int token;
 		private LuaValue value;
-		private int line;
+		private long position;
 
 		private void set(Token other) {
 			token = other.token;
 			value = other.value;
-			line = other.line;
+			position = other.position;
 		}
 
 		int token() {
@@ -75,7 +78,11 @@ class Lex {
 		}
 
 		int line() {
-			return line;
+			return (int) (position & POSITION_MASK);
+		}
+
+		long position() {
+			return position;
 		}
 
 		LuaString stringContents() {
@@ -107,7 +114,12 @@ class Lex {
 	 */
 	private int lineNumber = 1;
 
-	private int lastLine = 1;
+	/**
+	 * Input column counter.
+	 */
+	private int columnNumber = 1;
+
+	private long lastPosition = 1 | 1L << POSITION_SHIFT;
 
 	private final HashMap<LuaString, LuaString> strings = new HashMap<>();
 
@@ -129,6 +141,7 @@ class Lex {
 	private void next() {
 		try {
 			current = z.read();
+			columnNumber++;
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -222,6 +235,7 @@ class Lex {
 		next(); /* skip '\n' or '\r' */
 		if (currIsNewline() && current != old) next(); // skip '\n\r' or '\r\n'
 		if (++lineNumber >= MAX_INT) throw lexError("chunk has too many lines", 0);
+		columnNumber = 1;
 	}
 
 	private boolean checkNext(char character) {
@@ -493,7 +507,7 @@ class Lex {
 	private int lexToken(Token token) throws CompileException {
 		bufferSize = 0;
 		while (true) {
-			token.line = lineNumber;
+			token.position = packPosition(lineNumber, columnNumber);
 
 			switch (current) {
 				case '\n':
@@ -607,7 +621,11 @@ class Lex {
 	}
 
 	int lastLine() {
-		return lastLine;
+		return unpackLine(lastPosition);
+	}
+
+	long lastPosition() {
+		return lastPosition;
 	}
 
 	void skipShebang() {
@@ -617,7 +635,7 @@ class Lex {
 	}
 
 	void nextToken() throws CompileException {
-		lastLine = lineNumber;
+		lastPosition = packPosition(lineNumber, columnNumber);
 		if (lookahead.token != TK_EOS) { // is there a look-ahead token?
 			token.set(lookahead);
 			lookahead.token = TK_EOS; // and discharge it
@@ -659,5 +677,17 @@ class Lex {
 		// 'A'..'F' corresponds to 0x41..0x46, and 'a'..'f' to 0x61..0x66. So bitwise and with 0xf
 		// gives us the last digit, +9 to map from 1..6 to 10..15.
 		return c <= '9' ? c - '0' : (c & 0xf) + 9;
+	}
+
+	static long packPosition(int line, int column) {
+		return line | (long) column << POSITION_SHIFT;
+	}
+
+	static int unpackLine(long position) {
+		return (int) (position & POSITION_MASK);
+	}
+
+	static int unpackColumn(long position) {
+		return (int) ((position >> POSITION_SHIFT) & POSITION_MASK);
 	}
 }

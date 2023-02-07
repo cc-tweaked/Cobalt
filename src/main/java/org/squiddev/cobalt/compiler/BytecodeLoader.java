@@ -296,7 +296,7 @@ public final class BytecodeLoader {
 		return new Prototype(
 			source,
 			constants, code, children, numparams, is_vararg, maxstacksize, nups,
-			lineDefined, lastLineDefined, lineInfo, locals, upvalueNames
+			lineDefined, lastLineDefined, lineInfo, null, locals, upvalueNames
 		);
 	}
 
