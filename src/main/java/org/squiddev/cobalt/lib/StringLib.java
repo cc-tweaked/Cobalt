@@ -51,6 +51,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
  */
 public class StringLib implements LuaLibrary {
 	static final int L_ESC = '%';
+	private static final int MAX_LEN = Integer.MAX_VALUE;
 
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
@@ -254,26 +255,37 @@ public class StringLib implements LuaLibrary {
 
 
 	/**
-	 * string.rep (s, n)
+	 * string.rep (s, n[, sep])
 	 * <p>
 	 * Returns a string that is the concatenation of n copies of the string s.
 	 */
 	private static Varargs rep(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
-		int n = args.arg(2).checkInteger();
 		int len = s.length();
+		int n = args.arg(2).checkInteger();
+		LuaString sep = args.arg(3).optLuaString(EMPTYSTRING);
 
-		if (n <= 0 || len == 0) {
-			return Constants.EMPTYSTRING;
-		} else if (n == 1) {
-			return s;
-		} else {
-			final byte[] bytes = new byte[len * n];
-			for (int offset = 0; offset < bytes.length; offset += len) {
-				s.copyTo(0, bytes, offset, len);
-			}
-			return LuaString.valueOf(bytes);
+		if (n <= 0) return Constants.EMPTYSTRING;
+		if (n == 1) return s;
+
+		long newLen = (long) len * n + (long) sep.length() * (n - 1);
+		if (newLen > MAX_LEN) throw new LuaError("resulting string too large");
+
+		final byte[] bytes = new byte[(int) newLen];
+		// n >= 2, so copy in the initial string and separator.
+		s.copyTo(bytes, 0);
+		sep.copyTo(bytes, len);
+
+		// Now, copy the first 0..i characters to i+1..i*2, where i doubles each time.
+		int sliceLength = len + sep.length;
+		long endIndex = newLen - len;
+		for (long i = sliceLength; i != 0 && i < endIndex; i <<= 1) {
+			System.arraycopy(bytes, 0, bytes, (int) i, (int) (Math.min(i << 1, endIndex) - i));
 		}
+		// The above code writes a repeated sequence of "s .. sep". Finish off with one final "s".
+		s.copyTo(bytes, (int) endIndex);
+
+		return LuaString.valueOf(bytes);
 	}
 
 	/**
