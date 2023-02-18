@@ -119,7 +119,21 @@ public final class LuaInterpreter {
 		return setupCall(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
 	}
 
-	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize, Varargs varargs, int flags) throws LuaError, UnwindThrowable {
+	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize) throws LuaError, UnwindThrowable {
+		Prototype p = function.p;
+		LuaValue[] stack = new LuaValue[p.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
+
+		System.arraycopy(args, argStart, stack, 0, Math.min(argSize, p.parameters));
+
+		return setupCall(
+			state, function,
+			p.isVarArg != 0 && argSize > p.parameters ? ValueFactory.varargsOf(args, argStart + p.parameters, argSize - p.parameters) : NONE,
+			stack, 0
+		);
+	}
+
+	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize, Varargs varargs) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxStackSize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
@@ -127,7 +141,7 @@ public final class LuaInterpreter {
 		varargs = ValueFactory.varargsOf(args, argStart, argSize, varargs);
 		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCall(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
+		return setupCall(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, 0);
 	}
 
 	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
@@ -386,78 +400,15 @@ public final class LuaInterpreter {
 						LuaValue val = stack[a];
 						if (val instanceof LuaInterpretedFunction) {
 							function = (LuaInterpretedFunction) val;
-							switch (b) {
-								case 1:
-									di = setupCall(state, function, 0);
-									break;
-								case 2:
-									di = setupCall(state, function, stack[a + 1], 0);
-									break;
-								case 3:
-									di = setupCall(state, function, stack[a + 1], stack[a + 2], 0);
-									break;
-								case 4:
-									di = setupCall(state, function, stack[a + 1], stack[a + 2], stack[a + 3], 0);
-									break;
-								default:
-									di = b > 0
-										? setupCall(state, function, stack, a + 1, b - 1, NONE, 0) // exact arg count
-										: setupCall(state, function, stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras, 0); // from prev top
-							}
+							di = b > 0
+								? setupCall(state, function, stack, a + 1, b - 1) // exact arg count
+								: setupCall(state, function, stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
 
 							continue newFrame;
+						} else {
+							nativeCall(state, di, stack, val, i, a, b, c);
 						}
 
-						switch (i & (MASK_B | MASK_C)) {
-							case (1 << POS_B) | (0 << POS_C): {
-								Varargs v = di.extras = OperationHelper.invoke(state, val, NONE, a);
-								di.top = a + v.count();
-								break;
-							}
-							case (2 << POS_B) | (0 << POS_C): {
-								Varargs v = di.extras = OperationHelper.invoke(state, val, stack[a + 1], a);
-								di.top = a + v.count();
-								break;
-							}
-							case (1 << POS_B) | (1 << POS_C):
-								OperationHelper.call(state, val, a);
-								break;
-							case (2 << POS_B) | (1 << POS_C):
-								OperationHelper.call(state, val, stack[a + 1], a);
-								break;
-							case (3 << POS_B) | (1 << POS_C):
-								OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
-								break;
-							case (4 << POS_B) | (1 << POS_C):
-								OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
-								break;
-							case (1 << POS_B) | (2 << POS_C):
-								stack[a] = OperationHelper.call(state, val, a);
-								break;
-							case (2 << POS_B) | (2 << POS_C):
-								stack[a] = OperationHelper.call(state, val, stack[a + 1], a);
-								break;
-							case (3 << POS_B) | (2 << POS_C):
-								stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
-								break;
-							case (4 << POS_B) | (2 << POS_C):
-								stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
-								break;
-							default: {
-								Varargs args = b > 0 ?
-									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-									ValueFactory.varargsOf(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
-								Varargs v = OperationHelper.invoke(state, val, args.asImmutable(), a);
-								if (c > 0) {
-									while (--c > 0) stack[a + c - 1] = v.arg(c);
-									v = NONE;
-								} else {
-									di.top = a + v.count();
-									di.extras = v;
-								}
-								break;
-							}
-						}
 						break;
 					}
 
@@ -569,11 +520,11 @@ public final class LuaInterpreter {
 					break;
 
 					case OP_TFORLOOP: {
-							/*
-								A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
-								R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
-								else pc++
-							*/
+						/*
+							A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
+							R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
+							else pc++
+						*/
 						Varargs v = di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
 						LuaValue val = v.first();
 						if (val.isNil()) {
@@ -599,17 +550,11 @@ public final class LuaInterpreter {
 							b = di.top - a - 1;
 							int m = b - di.extras.count();
 							int j = 1;
-							for (; j <= m; j++) {
-								tbl.rawset(offset + j, stack[a + j]);
-							}
-							for (; j <= b; j++) {
-								tbl.rawset(offset + j, di.extras.arg(j - m));
-							}
+							for (; j <= m; j++) tbl.rawset(offset + j, stack[a + j]);
+							for (; j <= b; j++) tbl.rawset(offset + j, di.extras.arg(j - m));
 						} else {
 							tbl.presize(offset + b);
-							for (int j = 1; j <= b; j++) {
-								tbl.rawset(offset + j, stack[a + j]);
-							}
+							for (int j = 1; j <= b; j++) tbl.rawset(offset + j, stack[a + j]);
 						}
 						break;
 					}
@@ -651,6 +596,58 @@ public final class LuaInterpreter {
 						}
 					}
 				}
+			}
+		}
+	}
+
+	private static void nativeCall(LuaState state, DebugFrame di, LuaValue[] stack, LuaValue val, int i, int a, int b, int c) throws UnwindThrowable, LuaError {
+		switch (i & (MASK_B | MASK_C)) {
+			case (1 << POS_B) | (0 << POS_C): {
+				Varargs v = di.extras = OperationHelper.invoke(state, val, NONE, a);
+				di.top = a + v.count();
+				break;
+			}
+			case (2 << POS_B) | (0 << POS_C): {
+				Varargs v = di.extras = OperationHelper.invoke(state, val, stack[a + 1], a);
+				di.top = a + v.count();
+				break;
+			}
+			case (1 << POS_B) | (1 << POS_C):
+				OperationHelper.call(state, val, a);
+				break;
+			case (2 << POS_B) | (1 << POS_C):
+				OperationHelper.call(state, val, stack[a + 1], a);
+				break;
+			case (3 << POS_B) | (1 << POS_C):
+				OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
+				break;
+			case (4 << POS_B) | (1 << POS_C):
+				OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
+				break;
+			case (1 << POS_B) | (2 << POS_C):
+				stack[a] = OperationHelper.call(state, val, a);
+				break;
+			case (2 << POS_B) | (2 << POS_C):
+				stack[a] = OperationHelper.call(state, val, stack[a + 1], a);
+				break;
+			case (3 << POS_B) | (2 << POS_C):
+				stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
+				break;
+			case (4 << POS_B) | (2 << POS_C):
+				stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
+				break;
+			default: {
+				Varargs args = b > 0 ?
+					ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
+					ValueFactory.varargsOf(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
+				Varargs v = OperationHelper.invoke(state, val, args.asImmutable(), a);
+				if (c > 0) {
+					while (--c > 0) stack[a + c - 1] = v.arg(c);
+				} else {
+					di.top = a + v.count();
+					di.extras = v;
+				}
+				break;
 			}
 		}
 	}
