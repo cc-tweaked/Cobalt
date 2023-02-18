@@ -33,18 +33,18 @@ import static org.squiddev.cobalt.Constants.*;
 
 /**
  * Base class for all concrete lua type values.
- *
+ * <p>
  * Establishes base implementations for all the operations on lua types.
  * This allows Java clients to deal essentially with one type for all Java values, namely {@link LuaValue}.
- *
+ * <p>
  * Constructors are provided as static methods for common Java types, such as
  * {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(String)}
  * to allow for instance pooling.
- *
+ * <p>
  * Constants are defined for the lua values
  * {@link Constants#NIL}, {@link Constants#TRUE}, and {@link Constants#FALSE}.
  * A constant {@link Constants#NONE} is defined which is a {@link Varargs} list having no values.
- *
+ * <p>
  * Operations are performed on values directly via their Java methods.
  * For example, the following code divides two numbers:
  * <pre> {@code
@@ -56,7 +56,7 @@ import static org.squiddev.cobalt.Constants.*;
  * if the value of a were changed to 8, say.
  * In general the value of c in practice will vary depending on both the types and values of a and b
  * as well as any metatable/metatag processing that occurs.
- *
+ * <p>
  * Field access and function calls are similar, with common overloads to simplify Java usage:
  * <pre> {@code
  * LuaValue globals = JsePlatform.standardGlobals();
@@ -65,7 +65,7 @@ import static org.squiddev.cobalt.Constants.*;
  * LuaValue d = sqrt.call( a );
  * print.call( LuaValue.valueOf("sqrt(5):"), a );
  * } </pre>
- *
+ * <p>
  * To supply variable arguments or get multiple return values, use
  * {@link LuaFunction#invoke(LuaState, Varargs)}
  * <pre> {@code
@@ -73,12 +73,12 @@ import static org.squiddev.cobalt.Constants.*;
  * Varargs r = modf.invoke( d );
  * print.call( r.arg(1), r.arg(2) );
  * } </pre>
- *
+ * <p>
  * To load and run a script, {@link LoadState} is used:
  * <pre> {@code
  * LoadState.load(new FileInputStream("main.lua"), "main.lua", globals ).call();
  * } </pre>
- *
+ * <p>
  * although {@code require} could also be used:
  * <pre> {@code
  * globals.get("require").call(LuaValue.valueOf("main"));
@@ -86,7 +86,7 @@ import static org.squiddev.cobalt.Constants.*;
  * For this to work the file must be in the current directory, or in the class path,
  * depending on the platform.
  * See {@link JsePlatform} for details.
- *
+ * <p>
  * In general a {@link LuaError} may be thrown on any operation when the
  * types supplied to any operation are illegal from a lua perspective.
  * Examples could be attempting to concatenate a NIL value, or attempting arithmetic
@@ -203,7 +203,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check if {@code this} is a {@link LuaInteger}
-	 *
+	 * <p>
 	 * No attempt to convert from string will be made by this call.
 	 *
 	 * @return true if this is a {@code LuaInteger},
@@ -346,8 +346,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isBoolean()
 	 * @see Constants#TBOOLEAN
 	 */
-	public boolean toBoolean() {
-		return true;
+	public final boolean toBoolean() {
+		return this != NIL && this != FALSE;
 	}
 
 	/**
@@ -443,13 +443,13 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Conditionally convert to lua number without throwing errors.
-	 *
+	 * <p>
 	 * In lua all numbers are strings, but not all strings are numbers.
 	 * This function will return
 	 * the {@link LuaValue} {@code this} if it is a number
 	 * or a string convertible to a number,
 	 * and {@link Constants#NIL} for all other cases.
-	 *
+	 * <p>
 	 * This allows values to be tested for their "numeric-ness" without
 	 * the penalty of throwing exceptions,
 	 * nor the cost of converting the type and creating storage for it.
@@ -469,11 +469,11 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Conditionally convert to lua string without throwing errors.
-	 *
+	 * <p>
 	 * In lua all numbers are strings, so this function will return
 	 * the {@link LuaValue} {@code this} if it is a string or number,
 	 * and {@link Constants#NIL} for all other cases.
-	 *
+	 * <p>
 	 * This allows values to be tested for their "string-ness" without
 	 * the penalty of throwing exceptions.
 	 *
@@ -507,7 +507,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that optional argument is a closure and return as {@link LuaClosure}
-	 *
+	 * <p>
 	 * A {@link LuaClosure} is a {@link LuaFunction} that executes lua byteccode.
 	 *
 	 * @param defval {@link LuaClosure} to return if {@code this} is nil or none
@@ -545,7 +545,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that optional argument is a function and return as {@link LuaFunction}
-	 *
+	 * <p>
 	 * A {@link LuaFunction} may either be a Java function that implements
 	 * functionality directly in Java,
 	 * or a {@link LuaClosure}
@@ -784,7 +784,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Check that the value is a {@link LuaClosure} ,
 	 * or throw {@link LuaError} if not
-	 *
+	 * <p>
 	 * {@link LuaClosure} is a subclass of {@link LuaFunction} that interprets lua bytecode.
 	 *
 	 * @return {@code this} cast as {@link LuaClosure}
@@ -812,7 +812,7 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Check that the value is numeric and return the value as a double,
 	 * or throw {@link LuaError} if not numeric
-	 *
+	 * <p>
 	 * Values that are {@link LuaNumber} and values that are {@link LuaString}
 	 * that can be converted to a number will be converted to double.
 	 *
@@ -830,7 +830,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is a function , or throw {@link LuaError} if not
-	 *
+	 * <p>
 	 * A function is considered anything whose {@link #type()} returns {@link Constants#TFUNCTION}.
 	 * In practice it will be either a built-in Java function, typically deriving from
 	 * {@link LuaFunction} or a {@link LuaClosure} which represents lua source compiled
@@ -846,7 +846,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and convert and cast value to int, or throw {@link LuaError} if not numeric
-	 *
+	 * <p>
 	 * Values that are {@link LuaNumber} will be cast to int and may lose precision.
 	 * Values that are {@link LuaString} that can be converted to a number will be converted,
 	 * then cast to int, so may also lose precision.
@@ -865,7 +865,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and convert and cast value to int, or throw {@link LuaError} if not numeric
-	 *
+	 * <p>
 	 * Values that are {@link LuaNumber} will be cast to int and may lose precision.
 	 * Values that are {@link LuaString} that can be converted to a number will be converted,
 	 * then cast to int, so may also lose precision.
@@ -884,7 +884,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and convert and cast value to long, or throw {@link LuaError} if not numeric
-	 *
+	 * <p>
 	 * Values that are {@link LuaNumber} will be cast to long and may lose precision.
 	 * Values that are {@link LuaString} that can be converted to a number will be converted,
 	 * then cast to long, so may also lose precision.
@@ -903,7 +903,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and return as a LuaNumber if so, or throw {@link LuaError}
-	 *
+	 * <p>
 	 * Values that are {@link LuaString} that can be converted to a number will be converted and returned.
 	 *
 	 * @return value as a {@link LuaNumber} if numeric
@@ -921,7 +921,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that the value is numeric, and return as a LuaNumber if so, or throw {@link LuaError}
-	 *
+	 * <p>
 	 * Values that are {@link LuaString} that can be converted to a number will be converted and returned.
 	 *
 	 * @param msg String message to supply if conversion fails
@@ -940,7 +940,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Convert this value to a Java String.
-	 *
+	 * <p>
 	 * The string representations here will roughly match what is produced by the
 	 * C lua distribution, however hash codes have no relationship,
 	 * and there may be differences in number formatting.
@@ -959,7 +959,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Check that this is a lua string, or throw {@link LuaError} if it is not.
-	 *
+	 * <p>
 	 * In lua all numbers are strings, so this will succeed for
 	 * anything that derives from {@link LuaString} or {@link LuaNumber}.
 	 * Numbers will be converted to {@link LuaString}.
@@ -1094,7 +1094,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Get the metatable for this {@link LuaValue}
-	 *
+	 * <p>
 	 * For {@link LuaTable} and {@link LuaUserdata} instances,
 	 * the metatable returned is this instance metatable.
 	 * For all other types, the class metatable value will be returned.
@@ -1108,7 +1108,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Set the metatable for this {@link LuaValue}
-	 *
+	 * <p>
 	 * For {@link LuaTable} and {@link LuaUserdata} instances, the metatable is per instance.
 	 * For all other types, there is one metatable per type that can be set directly from java
 	 *
@@ -1132,7 +1132,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Set the environment on an object.
-	 *
+	 * <p>
 	 * Typically the environment is created once per application via a platform
 	 * helper method such as {@link JsePlatform#standardGlobals(LuaState)}
 	 * However, any object can serve as an environment if it contains suitable metatag
@@ -1261,7 +1261,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Varargs implementation backed by an array of LuaValues
-	 *
+	 * <p>
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static methods on LuaValue.
 	 *
@@ -1274,7 +1274,7 @@ public abstract class LuaValue extends Varargs {
 
 		/**
 		 * Construct a Varargs from an array of LuaValue.
-		 *
+		 * <p>
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
@@ -1319,7 +1319,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Varargs implementation backed by an array of LuaValues
-	 *
+	 * <p>
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static methods on LuaValue.
 	 *
@@ -1335,7 +1335,7 @@ public abstract class LuaValue extends Varargs {
 
 		/**
 		 * Construct a Varargs from an array of LuaValue.
-		 *
+		 * <p>
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static methods on LuaValue.
 		 *
@@ -1354,7 +1354,7 @@ public abstract class LuaValue extends Varargs {
 
 		/**
 		 * Construct a Varargs from an array of LuaValue and additional arguments.
-		 *
+		 * <p>
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static method on LuaValue.
 		 *
@@ -1404,7 +1404,7 @@ public abstract class LuaValue extends Varargs {
 
 	/**
 	 * Varargs implementation backed by two values.
-	 *
+	 * <p>
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the corresponding static method on LuaValue.
 	 *
@@ -1416,7 +1416,7 @@ public abstract class LuaValue extends Varargs {
 
 		/**
 		 * Construct a Varargs from an two LuaValues.
-		 *
+		 * <p>
 		 * This is an internal class not intended to be used directly.
 		 * Instead use the corresponding static method on LuaValue.
 		 *

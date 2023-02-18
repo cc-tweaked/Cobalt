@@ -273,7 +273,7 @@ public final class LuaTable extends LuaValue {
 	 * @param pos the position to remove
 	 * @return The removed item, or {@link Constants#NONE} if not removed
 	 */
-	public LuaValue remove(int pos) {
+	public Varargs remove(int pos) {
 		int n = length();
 		if (pos == 0) {
 			pos = n;

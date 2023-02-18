@@ -77,7 +77,7 @@ public class BaseLib implements LuaLibrary {
 		RegisteredFunction.bind(env, env, new RegisteredFunction[]{
 			RegisteredFunction.of("collectgarbage", BaseLib::collectgarbage),
 			RegisteredFunction.of("error", BaseLib::error),
-			RegisteredFunction.of("setfenv", BaseLib::setfenv),
+			RegisteredFunction.ofV("setfenv", BaseLib::setfenv),
 			RegisteredFunction.ofV("assert", BaseLib::assert_),
 			RegisteredFunction.ofV("dofile", BaseLib::dofile),
 			RegisteredFunction.ofV("getfenv", BaseLib::getfenv),
@@ -134,10 +134,10 @@ public class BaseLib implements LuaLibrary {
 		throw new LuaError(arg1.isNil() ? Constants.NIL : arg1, arg2.optInteger(1));
 	}
 
-	private static LuaValue setfenv(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+	private static Varargs setfenv(LuaState state, Varargs args) throws LuaError {
 		// setfenv(f, table) -> void
-		LuaTable t = arg2.checkTable();
-		LuaValue f = getfenvobj(state, arg1);
+		LuaTable t = args.arg(2).checkTable();
+		LuaValue f = getfenvobj(state, args.arg(1));
 		if (!f.isThread() && !f.isClosure()) {
 			throw new LuaError("'setfenv' cannot change environment of given object");
 		}

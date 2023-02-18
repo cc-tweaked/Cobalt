@@ -242,7 +242,7 @@ public class OrphanedThreadTest {
 				System.out.println("in normal.2, arg is " + arg);
 				arg = LuaThread.yieldBlocking(state, ZERO).first();
 				System.out.println("in normal.3, arg is " + arg);
-				return NONE;
+				return NIL;
 			} catch (InterruptedException e) {
 				throw new InterruptedError(e);
 			}

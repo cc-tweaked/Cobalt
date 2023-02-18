@@ -121,7 +121,7 @@ public class AssertTests {
 		((LuaTable) helpers.globals.rawget("debug")).rawset("debug", new ZeroArgFunction() {
 			@Override
 			public LuaValue call(LuaState state) {
-				return Constants.NONE;
+				return Constants.NIL;
 			}
 		});
 

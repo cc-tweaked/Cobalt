@@ -71,7 +71,7 @@ public class LuaOperationsTest {
 
 		@Override
 		public LuaValue call(LuaState state) {
-			return Constants.NONE;
+			return Constants.NIL;
 		}
 	};
 	private final LuaState state = new LuaState();

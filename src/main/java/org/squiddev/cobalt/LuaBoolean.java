@@ -28,14 +28,14 @@ import static org.squiddev.cobalt.Constants.TBOOLEAN;
 
 /**
  * Extension of {@link LuaValue} which can hold a Java boolean as its value.
- *
+ * <p>
  * These instance are not instantiated directly by clients.
  * Instead, there are exactly two instances of this class,
  * {@link Constants#TRUE} and {@link Constants#FALSE}
  * representing the lua values {@code true} and {@code false}.
  * The function {@link ValueFactory#valueOf(boolean)} will always
  * return one of these two values.
- *
+ * <p>
  * Any {@link LuaValue} can be converted to its equivalent
  * boolean representation using {@link LuaValue#toBoolean()}
  *
@@ -59,31 +59,26 @@ public final class LuaBoolean extends LuaValue {
 	/**
 	 * The value of the boolean
 	 */
-	public final boolean v;
+	public final boolean value;
 
-	LuaBoolean(boolean b) {
+	private LuaBoolean(boolean b) {
 		super(TBOOLEAN);
-		this.v = b;
-	}
-
-	@Override
-	public boolean toBoolean() {
-		return v;
+		value = b;
 	}
 
 	@Override
 	public String toString() {
-		return v ? "true" : "false";
+		return value ? "true" : "false";
 	}
 
 	@Override
 	public boolean optBoolean(boolean defval) {
-		return this.v;
+		return value;
 	}
 
 	@Override
 	public boolean checkBoolean() {
-		return v;
+		return value;
 	}
 
 	@Override

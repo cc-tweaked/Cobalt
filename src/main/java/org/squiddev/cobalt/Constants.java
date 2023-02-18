@@ -119,7 +119,7 @@ public class Constants {
 	/**
 	 * LuaValue constant corresponding to a {@link Varargs} list of no values
 	 */
-	public static final LuaValue NONE = None._NONE;
+	public static final Varargs NONE = None._NONE;
 
 	/**
 	 * LuaValue number constant equal to 0
@@ -264,7 +264,7 @@ public class Constants {
 	 *
 	 * @see Constants#NONE
 	 */
-	private static final class None extends LuaNil {
+	private static final class None extends Varargs {
 		static None _NONE = new None();
 
 		@Override
@@ -280,6 +280,11 @@ public class Constants {
 		@Override
 		public LuaValue first() {
 			return NIL;
+		}
+
+		@Override
+		public Varargs asImmutable() {
+			return this;
 		}
 
 		@Override

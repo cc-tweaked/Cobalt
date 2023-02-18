@@ -45,7 +45,7 @@ public class MetatableTest {
 	private final LuaFunction function = new ZeroArgFunction() {
 		@Override
 		public LuaValue call(LuaState state) {
-			return Constants.NONE;
+			return Constants.NIL;
 		}
 	};
 	private final LuaState state = new LuaState();
@@ -245,7 +245,7 @@ public class MetatableTest {
 			@Override
 			public LuaValue call(LuaState state1, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
 				fallback.rawset(arg2, valueOf("via-func-" + arg3));
-				return Constants.NONE;
+				return Constants.NIL;
 			}
 
 		});

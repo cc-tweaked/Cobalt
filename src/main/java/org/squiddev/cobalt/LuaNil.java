@@ -29,13 +29,13 @@ import org.squiddev.cobalt.function.LuaFunction;
 
 /**
  * Class to encapsulate behavior of the singleton instance {@code nil}
- *
+ * <p>
  * There will be one instance of this class, {@link Constants#NIL},
  * per Java virtual machine.
  * However, the {@link Varargs} instance {@link Constants#NONE}
  * which is the empty list,
  * is also considered treated as a nil value by default.
- *
+ * <p>
  * Although it is possible to test for nil using Java == operator,
  * the recommended approach is to use the method {@link LuaValue#isNil()}
  * instead.  By using that any ambiguities between
@@ -45,20 +45,15 @@ import org.squiddev.cobalt.function.LuaFunction;
  * @see Constants#NIL
  */
 public class LuaNil extends LuaValue {
-	protected static final LuaNil _NIL = new LuaNil();
+	static final LuaNil _NIL = new LuaNil();
 
-	protected LuaNil() {
+	private LuaNil() {
 		super(Constants.TNIL);
 	}
 
 	@Override
 	public String toString() {
 		return "nil";
-	}
-
-	@Override
-	public boolean toBoolean() {
-		return false;
 	}
 
 	@Override

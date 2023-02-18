@@ -37,7 +37,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
 /**
  * Subclass of {@link LibFunction} which implements the lua standard package and module
  * library functions.
- *
+ * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  * However, the default filesystem search semantics are different and delegated to the bas library
  * as outlined in the {@link BaseLib}.
@@ -80,7 +80,7 @@ public class PackageLib implements LuaLibrary {
 			_PRELOAD, tableOf(),
 			_PATH, _PATH_DEFAULT,
 			_LOADLIB, new PkgLibV(env, "loadlib", OP_LOADLIB, this),
-			_SEEALL, new PkgLib1(env, "seeall", OP_SEEALL, this),
+			_SEEALL, new PkgLibV(env, "seeall", OP_SEEALL, this),
 			_CPATH, _CPATH_DEFAULT,
 			_LOADERS, listOf(
 				new PkgLibV(env, "preload_loader", OP_PRELOAD_LOADER, this),
@@ -107,16 +107,6 @@ public class PackageLib implements LuaLibrary {
 			switch (opcode) {
 				case OP_REQUIRE:
 					return OperationHelper.noUnwind(state, () -> lib.require(state, arg));
-				case OP_SEEALL: {
-					LuaTable t = arg.checkTable();
-					LuaTable m = t.getMetatable(state);
-					if (m == null) {
-						t.setMetatable(state, m = ValueFactory.tableOf());
-					}
-					LuaTable mt = m;
-					noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
-					return Constants.NONE;
-				}
 			}
 			return Constants.NIL;
 		}
@@ -139,6 +129,16 @@ public class PackageLib implements LuaLibrary {
 					return OperationHelper.noUnwind(state, () -> lib.module(state, args));
 				case OP_LOADLIB:
 					return loadlib(args);
+				case OP_SEEALL: {
+					LuaTable t = args.first().checkTable();
+					LuaTable m = t.getMetatable(state);
+					if (m == null) {
+						t.setMetatable(state, m = ValueFactory.tableOf());
+					}
+					LuaTable mt = m;
+					noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
+					return Constants.NONE;
+				}
 				case OP_PRELOAD_LOADER: {
 					return OperationHelper.noUnwind(state, () -> lib.loader_preload(state, args));
 				}
@@ -178,7 +178,7 @@ public class PackageLib implements LuaLibrary {
 
 	/**
 	 * module (name [, ...])
-	 *
+	 * <p>
 	 * Creates a module. If there is a table in package.loaded[name], this table
 	 * is the module. Otherwise, if there is a global table t with the given
 	 * name, this table is the module. Otherwise creates a new table t and sets
@@ -188,12 +188,12 @@ public class PackageLib implements LuaLibrary {
 	 * name minus last component; see below). Finally, module sets t as the new
 	 * environment of the current function and the new value of
 	 * package.loaded[name], so that require returns t.
-	 *
+	 * <p>
 	 * If name is a compound name (that is, one with components separated by
 	 * dots), module creates (or reuses, if they already exist) tables for each
 	 * component. For instance, if name is a.b.c, then module stores the module
 	 * table in field c of field b of global a.
-	 *
+	 * <p>
 	 * This function may receive optional options after the module name, where
 	 * each option is a function to be applied over the module.
 	 *
@@ -284,27 +284,27 @@ public class PackageLib implements LuaLibrary {
 
 	/**
 	 * require (modname)
-	 *
+	 * <p>
 	 * Loads the given module. The function starts by looking into the package.loaded table to
 	 * determine whether modname is already loaded. If it is, then require returns the value
 	 * stored at package.loaded[modname]. Otherwise, it tries to find a loader for the module.
-	 *
+	 * <p>
 	 * To find a loader, require is guided by the package.loaders array. By changing this array,
 	 * we can change how require looks for a module. The following explanation is based on the
 	 * default configuration for package.loaders.
-	 *
+	 * <p>
 	 * First require queries package.preload[modname]. If it has a value, this value
 	 * (which should be a function) is the loader. Otherwise require searches for a Lua loader
 	 * using the path stored in package.path. If that also fails, it searches for a C loader
 	 * using the path stored in package.cpath. If that also fails, it tries an all-in-one loader
 	 * (see package.loaders).
-	 *
+	 * <p>
 	 * Once a loader is found, require calls the loader with a single argument, modname.
 	 * If the loader returns any value, require assigns the returned value to package.loaded[modname].
 	 * If the loader returns no value and has not assigned any value to package.loaded[modname],
 	 * then require assigns true to this entry. In any case, require returns the final value of
 	 * package.loaded[modname].
-	 *
+	 * <p>
 	 * If there is any error loading or running the module, or if it cannot find any loader for
 	 * the module, then require signals an error.
 	 *

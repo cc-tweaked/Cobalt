@@ -64,7 +64,7 @@ public class TypeTest {
 	private final LuaFunction somefunc = new ZeroArgFunction() {
 		@Override
 		public LuaValue call(LuaState state) {
-			return NONE;
+			return NIL;
 		}
 	};
 	private final LuaThread thread = new LuaThread(new LuaState(), somefunc, table);
