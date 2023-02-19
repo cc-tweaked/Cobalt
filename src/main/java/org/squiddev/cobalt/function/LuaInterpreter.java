@@ -46,7 +46,7 @@ public final class LuaInterpreter {
 		LuaValue[] stack = new LuaValue[p.maxStackSize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
-		return setupCall(state, function, NONE, stack, flags);
+		return setupCallFinish(state, function, NONE, stack, flags);
 	}
 
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg, int flags) throws LuaError, UnwindThrowable {
@@ -56,11 +56,11 @@ public final class LuaInterpreter {
 
 		switch (p.parameters) {
 			case 0:
-				return setupCall(state, function, arg, stack, flags);
+				return setupCallFinish(state, function, arg, stack, flags);
 
 			default:
 				stack[0] = arg;
-				return setupCall(state, function, NONE, stack, flags);
+				return setupCallFinish(state, function, NONE, stack, flags);
 		}
 	}
 
@@ -71,16 +71,16 @@ public final class LuaInterpreter {
 
 		switch (p.parameters) {
 			case 0:
-				return setupCall(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
+				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
 
 			case 1:
 				stack[0] = arg1;
-				return setupCall(state, function, arg2, stack, flags);
+				return setupCallFinish(state, function, arg2, stack, flags);
 
 			default:
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return setupCall(state, function, NONE, stack, flags);
+				return setupCallFinish(state, function, NONE, stack, flags);
 		}
 	}
 
@@ -91,22 +91,22 @@ public final class LuaInterpreter {
 
 		switch (p.parameters) {
 			case 0:
-				return setupCall(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
+				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
 
 			case 1:
 				stack[0] = arg1;
-				return setupCall(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
+				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
 
 			case 2:
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return setupCall(state, function, arg3, stack, flags);
+				return setupCallFinish(state, function, arg3, stack, flags);
 
 			default:
 				stack[0] = arg1;
 				stack[1] = arg2;
 				stack[2] = arg3;
-				return setupCall(state, function, NONE, stack, flags);
+				return setupCallFinish(state, function, NONE, stack, flags);
 		}
 	}
 
@@ -116,7 +116,7 @@ public final class LuaInterpreter {
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCall(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
+		return setupCallFinish(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
 	}
 
 	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize) throws LuaError, UnwindThrowable {
@@ -126,7 +126,7 @@ public final class LuaInterpreter {
 
 		System.arraycopy(args, argStart, stack, 0, Math.min(argSize, p.parameters));
 
-		return setupCall(
+		return setupCallFinish(
 			state, function,
 			p.isVarArg != 0 && argSize > p.parameters ? ValueFactory.varargsOf(args, argStart + p.parameters, argSize - p.parameters) : NONE,
 			stack, 0
@@ -141,10 +141,10 @@ public final class LuaInterpreter {
 		varargs = ValueFactory.varargsOf(args, argStart, argSize, varargs);
 		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCall(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, 0);
+		return setupCallFinish(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, 0);
 	}
 
-	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
+	private static DebugFrame setupCallFinish(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		Upvalue[] upvalues = p.children.length > 0 ? new Upvalue[stack.length] : null;
 		if (p.isVarArg >= VARARG_NEEDSARG) stack[p.parameters] = new LuaTable(varargs);
