@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt.lib;
 
-
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.DumpState;
 import org.squiddev.cobalt.debug.DebugFrame;
@@ -56,13 +55,15 @@ public class StringLib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		LibFunction.bind(t, StringLib1::new, new String[]{
-			"len", "lower", "reverse", "upper", "packsize"
-		});
-		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
-			RegisteredFunction.ofV("dump", (s, args) -> dump(args.arg(1).checkFunction(), args.arg(2).optBoolean(false))),
-			RegisteredFunction.ofV("byte", StringLib::byte_),
-			RegisteredFunction.ofV("char", StringLib::char_),
+		RegisteredFunction.bind(t, new RegisteredFunction[]{
+			RegisteredFunction.of("len", StringLib::len),
+			RegisteredFunction.of("lower", StringLib::lower),
+			RegisteredFunction.of("reverse", StringLib::reverse),
+			RegisteredFunction.of("upper", StringLib::upper),
+			RegisteredFunction.of("packsize", StringLib::packsize),
+			RegisteredFunction.ofV("dump", StringLib::dump),
+			RegisteredFunction.ofV("byte", StringLib::byte$),
+			RegisteredFunction.ofV("char", StringLib::char$),
 			RegisteredFunction.ofV("find", StringMatch::find),
 			RegisteredFunction.ofV("gmatch", StringMatch::gmatch),
 			RegisteredFunction.ofV("match", StringMatch::match),
@@ -70,8 +71,9 @@ public class StringLib implements LuaLibrary {
 			RegisteredFunction.ofV("sub", StringLib::sub),
 			RegisteredFunction.ofV("pack", (s, args) -> StringPacker.pack(args)),
 			RegisteredFunction.ofV("unpack", (s, args) -> StringPacker.unpack(args)),
+			RegisteredFunction.ofFactory("gsub", GSub::new),
+			RegisteredFunction.ofFactory("format", Format::new),
 		});
-		LibFunction.bind(t, StringLibR::new, new String[]{"gsub", "format"});
 
 		t.rawset("gfind", t.rawget("gmatch"));
 		env.rawset("string", t);
@@ -81,96 +83,84 @@ public class StringLib implements LuaLibrary {
 		return t;
 	}
 
-	static final class StringLib1 extends OneArgFunction {
+	private static LuaValue len(LuaState state, LuaValue arg) throws LuaError {
+		return valueOf(arg.checkLuaString().length());
+	}
+
+	private static LuaValue lower(LuaState state, LuaValue arg) throws LuaError {
+		LuaString string = arg.checkLuaString();
+		if (string.length == 0) return EMPTYSTRING;
+
+		byte[] value = new byte[string.length];
+		System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+		for (int i = 0; i < value.length; i++) {
+			byte c = value[i];
+			if (c >= 'A' && c <= 'Z') value[i] = (byte) (c | 0x20);
+		}
+		return valueOf(value);
+	}
+
+	private static LuaValue reverse(LuaState state, LuaValue arg) throws LuaError {
+		LuaString s = arg.checkLuaString();
+		int n = s.length();
+		byte[] b = new byte[n];
+		for (int i = 0, j = n - 1; i < n; i++, j--) {
+			b[j] = (byte) s.luaByte(i);
+		}
+		return LuaString.valueOf(b);
+	}
+
+	private static LuaValue upper(LuaState state, LuaValue arg) throws LuaError {
+		LuaString string = arg.checkLuaString();
+		if (string.length == 0) return EMPTYSTRING;
+
+		byte[] value = new byte[string.length];
+		System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+		for (int i = 0; i < value.length; i++) {
+			byte c = value[i];
+			if (c >= 'a' && c <= 'z') value[i] = (byte) (c & ~0x20);
+		}
+		return valueOf(value);
+	}
+
+	private static LuaValue packsize(LuaState state, LuaValue arg) throws LuaError {
+		return LuaInteger.valueOf(StringPacker.packsize(arg.checkLuaString()));
+	}
+
+	private static final class GSub extends ResumableVarArgFunction<GSubState> {
 		@Override
-		public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-			switch (opcode) {
-				case 0: // len (function)
-					return valueOf(arg.checkLuaString().length());
+		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+			LuaString src = args.arg(1).checkLuaString();
+			LuaString p = args.arg(2).checkLuaString();
+			LuaValue replace = args.arg(3);
+			int maxS = args.arg(4).optInteger(src.length() + 1);
 
-				case 1: { // lower (function)
-					LuaString string = arg.checkLuaString();
-					if (string.length == 0) return EMPTYSTRING;
+			GSubState gsub = new GSubState(state, src, p, replace, maxS);
+			di.state = gsub;
+			return StringMatch.gsubRun(state, gsub, null);
+		}
 
-					byte[] value = new byte[string.length];
-					System.arraycopy(string.bytes, string.offset, value, 0, value.length);
-					for (int i = 0; i < value.length; i++) {
-						byte c = value[i];
-						if (c >= 'A' && c <= 'Z') value[i] = (byte) (c | 0x20);
-					}
-					return valueOf(value);
-				}
-
-				case 2: { // reverse (function)
-					LuaString s = arg.checkLuaString();
-					int n = s.length();
-					byte[] b = new byte[n];
-					for (int i = 0, j = n - 1; i < n; i++, j--) {
-						b[j] = (byte) s.luaByte(i);
-					}
-					return LuaString.valueOf(b);
-				}
-				case 3: { // upper (function)
-					LuaString string = arg.checkLuaString();
-					if (string.length == 0) return EMPTYSTRING;
-
-					byte[] value = new byte[string.length];
-					System.arraycopy(string.bytes, string.offset, value, 0, value.length);
-					for (int i = 0; i < value.length; i++) {
-						byte c = value[i];
-						if (c >= 'a' && c <= 'z') value[i] = (byte) (c & ~0x20);
-					}
-					return valueOf(value);
-				}
-				case 4: { // packsize
-					return LuaInteger.valueOf(StringPacker.packsize(arg.checkLuaString()));
-				}
-			}
-			return NIL;
+		@Override
+		protected Varargs resumeThis(LuaState state, GSubState subState, Varargs value) throws LuaError, UnwindThrowable {
+			return StringMatch.gsubRun(state, subState, value.first());
 		}
 	}
 
-	static final class StringLibR extends ResumableVarArgFunction<Object> {
+	private static final class Format extends ResumableVarArgFunction<FormatState> {
 		@Override
 		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: { // gsub
-					LuaString src = args.arg(1).checkLuaString();
-					LuaString p = args.arg(2).checkLuaString();
-					LuaValue replace = args.arg(3);
-					int maxS = args.arg(4).optInteger(src.length() + 1);
-
-					GSubState gsub = new GSubState(state, src, p, replace, maxS);
-					di.state = gsub;
-					return StringMatch.gsubRun(state, gsub, null);
-				}
-				case 1: { // format
-					LuaString src = args.arg(1).checkLuaString();
-					FormatState format = new FormatState(src, new Buffer(src.length), args);
-					di.state = format;
-					return StringFormat.format(state, format);
-				}
-				default:
-					return NONE;
-			}
+			LuaString src = args.arg(1).checkLuaString();
+			FormatState format = new FormatState(src, new Buffer(src.length), args);
+			di.state = format;
+			return StringFormat.format(state, format);
 		}
 
 		@Override
-		public Varargs resumeThis(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
-			switch (opcode) {
-				case 0: // gsub
-					return StringMatch.gsubRun(state, (GSubState) object, value.first());
-				case 1: { // format
-					FormatState format = (FormatState) object;
-					StringFormat.addString(format.buffer, format.current, OperationHelper.checkToString(value.first()));
-					return StringFormat.format(state, format);
-				}
-				default:
-					throw new NonResumableException("Cannot resume " + debugName());
-			}
+		public Varargs resumeThis(LuaState state, FormatState formatState, Varargs value) throws LuaError, UnwindThrowable {
+			StringFormat.addString(formatState.buffer, formatState.current, OperationHelper.checkToString(value.first()));
+			return StringFormat.format(state, formatState);
 		}
 	}
-
 
 	/**
 	 * string.byte (s [, i [, j]])
@@ -183,7 +173,7 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * @param args the calling args
 	 */
-	private static Varargs byte_(LuaState state, Varargs args) throws LuaError {
+	private static Varargs byte$(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
 		int l = s.length;
 		int posi = posRelative(args.arg(2).optInteger(1), l);
@@ -217,7 +207,7 @@ public class StringLib implements LuaLibrary {
 	 * @return The characters for this string
 	 * @throws LuaError If the argument is not a number or is out of bounds.
 	 */
-	private static Varargs char_(LuaState state, Varargs args) throws LuaError {
+	private static Varargs char$(LuaState state, Varargs args) throws LuaError {
 		int n = args.count();
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
@@ -239,20 +229,20 @@ public class StringLib implements LuaLibrary {
 	 *
 	 * @throws LuaError If the function cannot be dumped.
 	 */
-	static LuaValue dump(LuaFunction f, boolean strip) throws LuaError {
+	static LuaValue dump(LuaState state, Varargs args) throws LuaError {
+		LuaFunction f = args.arg(1).checkFunction();
+		boolean strip = args.arg(2).optBoolean(false);
+		if (!(f instanceof LuaClosure)) throw new LuaError("unable to dump given function");
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			if (f instanceof LuaClosure) {
-				DumpState.dump(((LuaClosure) f).getPrototype(), baos, strip);
-				return LuaString.valueOf(baos.toByteArray());
-			}
-
-			throw new LuaError("Unable to dump given function");
+			DumpState.dump(((LuaClosure) f).getPrototype(), baos, strip);
 		} catch (IOException e) {
 			throw new LuaError(e.getMessage());
 		}
-	}
 
+		return LuaString.valueOf(baos.toByteArray());
+	}
 
 	/**
 	 * string.rep (s, n[, sep])

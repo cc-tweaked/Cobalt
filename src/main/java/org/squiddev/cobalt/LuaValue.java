@@ -1123,11 +1123,10 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Get the environment for an instance.
 	 *
-	 * @return {@link LuaValue} currently set as the instances environent.
-	 * @throws LuaError If this has no environment.
+	 * @return {@link LuaValue} currently set as the instance's environent.
 	 */
-	public LuaTable getfenv() throws LuaError {
-		throw ErrorFactory.typeError(this, "function or thread");
+	public LuaValue getfenv() {
+		return NIL;
 	}
 
 	/**
@@ -1140,11 +1139,11 @@ public abstract class LuaValue extends Varargs {
 	 * values.
 	 *
 	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
-	 * @throws LuaError If this has no environment.
+	 * @return If the environment could be changed.
 	 * @see JsePlatform
 	 */
-	public void setfenv(LuaTable env) throws LuaError {
-		throw ErrorFactory.typeError(this, "function or thread");
+	public boolean setfenv(LuaTable env) {
+		return false;
 	}
 
 	// object equality, used for key comparison

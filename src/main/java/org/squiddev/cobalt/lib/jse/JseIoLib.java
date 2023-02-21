@@ -116,11 +116,11 @@ public class JseIoLib extends IoLib {
 
 		@Override
 		public String toString() {
-			return "file (" + (isclosed() ? "closed" : hashCode()) + ")";
+			return "file (" + (isClosed() ? "closed" : hashCode()) + ")";
 		}
 
 		@Override
-		public boolean isstdfile() {
+		public boolean isStandardFile() {
 			return isStandard;
 		}
 
@@ -154,7 +154,7 @@ public class JseIoLib extends IoLib {
 		}
 
 		@Override
-		public boolean isclosed() {
+		public boolean isClosed() {
 			return closed;
 		}
 

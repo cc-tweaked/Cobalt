@@ -41,15 +41,15 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
 
 /**
  * Subclass of {@link LuaValue} that implements a lua coroutine thread.
- *
+ * <p>
  * A LuaThread is typically created in response to a scripted call to
  * {@code coroutine.create()}
- *
+ * <p>
  * The utility class {@link JsePlatform}
  * sees to it that this initialization is done properly.
  * For this reason it is highly recommended to use one of these classes
  * when initializing globals.
- *
+ * <p>
  * The behavior of coroutine threads matches closely the behavior
  * of C coroutine library.  However, because of the use of Java threads
  * to manage call state, it is possible to yield from anywhere in luaj.
@@ -133,6 +133,9 @@ public class LuaThread extends LuaValue {
 	 */
 	public LuaThread(LuaState state, LuaTable env) {
 		super(Constants.TTHREAD);
+		Objects.requireNonNull(state, "state cannot be null");
+		Objects.requireNonNull(env, "env cannot be null");
+
 		this.state = new State(this, STATUS_RUNNING);
 		this.luaState = state;
 		this.debugState = new DebugState(state);
@@ -149,7 +152,10 @@ public class LuaThread extends LuaValue {
 	 */
 	public LuaThread(LuaState state, LuaFunction func, LuaTable env) {
 		super(Constants.TTHREAD);
-		if (func == null) throw new IllegalArgumentException("function cannot be null");
+		Objects.requireNonNull(state, "state cannot be null");
+		Objects.requireNonNull(func, "func cannot be null");
+		Objects.requireNonNull(env, "env cannot be null");
+
 		this.state = new State(this, STATUS_INITIAL);
 		this.luaState = state;
 		this.debugState = new DebugState(state);
@@ -178,8 +184,9 @@ public class LuaThread extends LuaValue {
 	}
 
 	@Override
-	public void setfenv(LuaTable env) {
+	public boolean setfenv(LuaTable env) {
 		this.env = env;
+		return true;
 	}
 
 	public String getStatus() {
@@ -624,14 +631,14 @@ public class LuaThread extends LuaValue {
 
 	/**
 	 * Holds the active state of a {@link LuaThread}.
-	 *
+	 * <p>
 	 * While {@link LuaThread} can be thought of as the Lua value representation of a coroutine, the {@link State} holds
 	 * the underlying behaviour and important values.
-	 *
+	 * <p>
 	 * This distinction is important, as it allows us to detect when specific coroutines are no longer referenced, and
 	 * so clean up after them. Therefore, any long-lasting memory structures of functions should aim to hold on to
 	 * a {@link State} rather than its owning {@link LuaThread}.
-	 *
+	 * <p>
 	 * Note, this distinction is only important in the case where a yield is blocking, and so a new thread is spawned.
 	 * Non-blocking yields do not need to be collected up, as they do not use any resources beyond the standard Lua
 	 * frame, etc...

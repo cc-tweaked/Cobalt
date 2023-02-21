@@ -37,7 +37,7 @@ public class Bit32Lib implements LuaLibrary {
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
+		RegisteredFunction.bind(t, new RegisteredFunction[]{
 			RegisteredFunction.ofV("band", Bit32Lib::band),
 			RegisteredFunction.of("bnot", Bit32Lib::bnot),
 			RegisteredFunction.ofV("bor", Bit32Lib::bor),

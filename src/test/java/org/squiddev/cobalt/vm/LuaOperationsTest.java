@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class LuaOperationsTest {
@@ -52,7 +53,7 @@ public class LuaOperationsTest {
 	private final Object sampleobject = new Object();
 	private final TypeTest.MyData sampledata = new TypeTest.MyData();
 
-	private final LuaValue somenil = Constants.NIL;
+	private final LuaValue somenil = NIL;
 	private final LuaValue sometrue = Constants.TRUE;
 	private final LuaValue somefalse = Constants.FALSE;
 	private final LuaValue zero = Constants.ZERO;
@@ -66,12 +67,12 @@ public class LuaOperationsTest {
 	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
 	private final LuaFunction somefunc = new ZeroArgFunction() {
 		{
-			env = table;
+			setfenv(table);
 		}
 
 		@Override
 		public LuaValue call(LuaState state) {
-			return Constants.NIL;
+			return NIL;
 		}
 	};
 	private final LuaState state = new LuaState();
@@ -155,40 +156,39 @@ public class LuaOperationsTest {
 
 	@Test
 	public void testGetfenv() {
-		throwsLuaError("getfenv", somenil);
-		throwsLuaError("getfenv", sometrue);
-		throwsLuaError("getfenv", somefalse);
-		throwsLuaError("getfenv", zero);
-		throwsLuaError("getfenv", intint);
-		throwsLuaError("getfenv", longdouble);
-		throwsLuaError("getfenv", doubledouble);
-		throwsLuaError("getfenv", stringstring);
-		throwsLuaError("getfenv", stringint);
-		throwsLuaError("getfenv", stringlong);
-		throwsLuaError("getfenv", stringdouble);
-		throwsLuaError("getfenv", table);
+		assertSame(NIL, sometrue.getfenv());
+		assertSame(NIL, somefalse.getfenv());
+		assertSame(NIL, zero.getfenv());
+		assertSame(NIL, intint.getfenv());
+		assertSame(NIL, longdouble.getfenv());
+		assertSame(NIL, doubledouble.getfenv());
+		assertSame(NIL, stringstring.getfenv());
+		assertSame(NIL, stringint.getfenv());
+		assertSame(NIL, stringlong.getfenv());
+		assertSame(NIL, stringdouble.getfenv());
+		assertSame(NIL, table.getfenv());
 		assertSame(table, thread.getfenv());
 		assertSame(table, someclosure.getfenv());
 		assertSame(table, somefunc.getfenv());
-		throwsLuaError("getfenv", userdataobj);
-		throwsLuaError("getfenv", userdatacls);
+		assertSame(NIL, userdataobj.getfenv());
+		assertSame(NIL, userdatacls.getfenv());
 	}
 
 	@Test
 	public void testSetfenv() {
 		LuaTable table2 = ValueFactory.listOf(valueOf("ccc"), valueOf("ddd"));
-		setfenvThrowsLuaError("setfenv", somenil, table2);
-		setfenvThrowsLuaError("setfenv", sometrue, table2);
-		setfenvThrowsLuaError("setfenv", somefalse, table2);
-		setfenvThrowsLuaError("setfenv", zero, table2);
-		setfenvThrowsLuaError("setfenv", intint, table2);
-		setfenvThrowsLuaError("setfenv", longdouble, table2);
-		setfenvThrowsLuaError("setfenv", doubledouble, table2);
-		setfenvThrowsLuaError("setfenv", stringstring, table2);
-		setfenvThrowsLuaError("setfenv", stringint, table2);
-		setfenvThrowsLuaError("setfenv", stringlong, table2);
-		setfenvThrowsLuaError("setfenv", stringdouble, table2);
-		setfenvThrowsLuaError("setfenv", table, table2);
+		assertFalse(somenil.setfenv(table2));
+		assertFalse(sometrue.setfenv(table2));
+		assertFalse(somefalse.setfenv(table2));
+		assertFalse(zero.setfenv(table2));
+		assertFalse(intint.setfenv(table2));
+		assertFalse(longdouble.setfenv(table2));
+		assertFalse(doubledouble.setfenv(table2));
+		assertFalse(stringstring.setfenv(table2));
+		assertFalse(stringint.setfenv(table2));
+		assertFalse(stringlong.setfenv(table2));
+		assertFalse(stringdouble.setfenv(table2));
+		assertFalse(table.setfenv(table2));
 		thread.setfenv(table2);
 		assertSame(table2, thread.getfenv());
 		assertSame(table, someclosure.getfenv());
@@ -198,8 +198,8 @@ public class LuaOperationsTest {
 		assertSame(table, somefunc.getfenv());
 		somefunc.setfenv(table2);
 		assertSame(table2, somefunc.getfenv());
-		setfenvThrowsLuaError("setfenv", userdataobj, table2);
-		setfenvThrowsLuaError("setfenv", userdatacls, table2);
+		assertFalse(userdataobj.setfenv(table2));
+		assertFalse(userdatacls.setfenv(table2));
 	}
 
 	public Prototype createPrototype(String script, String name) {
@@ -231,12 +231,12 @@ public class LuaOperationsTest {
 		{
 			LuaFunction f = new ZeroArgFunction() {
 				{
-					env = _G;
+					setfenv(_G);
 				}
 
 				@Override
 				public LuaValue call(LuaState state) throws LuaError {
-					return OperationHelper.noUnwind(state, () -> OperationHelper.getTable(state, env, valueOf("a")));
+					return OperationHelper.noUnwind(state, () -> OperationHelper.getTable(state, getfenv(), valueOf("a")));
 				}
 			};
 			assertEquals(aaa, f.call(state));

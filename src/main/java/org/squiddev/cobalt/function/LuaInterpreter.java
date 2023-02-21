@@ -232,7 +232,7 @@ public final class LuaInterpreter {
 						break;
 
 					case OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
-						stack[a] = OperationHelper.getTable(state, function.env, k[(i >>> POS_Bx) & MAXARG_Bx]);
+						stack[a] = OperationHelper.getTable(state, function.getfenv(), k[(i >>> POS_Bx) & MAXARG_Bx]);
 						break;
 
 					case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
@@ -243,7 +243,7 @@ public final class LuaInterpreter {
 					}
 
 					case OP_SETGLOBAL: // A Bx: Gbl[Kst(Bx)]:= R(A)
-						OperationHelper.setTable(state, function.env, k[(i >>> POS_Bx) & MAXARG_Bx], stack[a]);
+						OperationHelper.setTable(state, function.getfenv(), k[(i >>> POS_Bx) & MAXARG_Bx], stack[a]);
 						break;
 
 					case OP_SETUPVAL: // A B: UpValue[B]:= R(A)
@@ -572,7 +572,7 @@ public final class LuaInterpreter {
 
 					case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
 						Prototype newp = p.children[(i >>> POS_Bx) & MAXARG_Bx];
-						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, function.env);
+						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, function.getfenv());
 						for (int j = 0, nup = newp.upvalues; j < nup; ++j) {
 							i = code[pc++];
 							int b = (i >>> POS_B) & MAXARG_B;

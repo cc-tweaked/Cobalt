@@ -36,17 +36,17 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
 
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
- *
+ * <p>
  * A {@link LuaInterpretedFunction} is a combination of a {@link Prototype}
  * and a {@link LuaValue} to use as an environment for execution.
- *
+ * <p>
  * There are three main ways {@link LuaInterpretedFunction} instances are created:
  * <ul>
  * <li>Construct an instance using {@link #LuaInterpretedFunction(Prototype, LuaTable)}</li>
  * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, LuaString, LuaString, LuaTable)}
  * <li>Execute the lua bytecode {@link Lua#OP_CLOSURE} as part of bytecode processing
  * </ul>
- *
+ * <p>
  * To construct it directly, the {@link Prototype} is typically created via a compiler such as {@link LuaC}:
  * <pre> {@code
  * InputStream is = new ByteArrayInputStream("print('hello,world').getBytes());
@@ -54,25 +54,25 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  * LuaValue _G = JsePlatform.standardGlobals()
  * LuaClosure f = new LuaClosure(p, _G);
  * }</pre>
- *
+ * <p>
  * To construct it indirectly, the {@link LuaC} compiler may be used,
  * which implements the {@link LoadState.LuaCompiler} interface:
  * <pre> {@code
  * LuaFunction f = LuaC.INSTANCE.load(is, "script", _G);
  * }</pre>
- *
+ * <p>
  * Typically, a closure that has just been loaded needs to be initialized by executing it,
  * and its return value can be saved if needed:
  * <pre> {@code
  * LuaValue r = f.call();
  * _G.set( "mypkg", r )
  * }</pre>
- *
+ * <p>
  * In the preceding, the loaded value is typed as {@link LuaFunction}
  * to allow for the possibility of other compilers such as LuaJC
  * producing {@link LuaFunction} directly without
  * creating a {@link Prototype} or {@link LuaInterpretedFunction}.
- *
+ * <p>
  * Since a {@link LuaInterpretedFunction} is a {@link LuaFunction} which is a {@link LuaValue},
  * all the value operations can be used directly such as:
  * <ul>
@@ -96,11 +96,6 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 
 	public final Prototype p;
 	public final Upvalue[] upvalues;
-
-	public LuaInterpretedFunction(Prototype p) {
-		this.p = p;
-		this.upvalues = p.upvalues > 0 ? new Upvalue[p.upvalues] : NO_UPVALUES;
-	}
 
 	/**
 	 * Supply the initial environment

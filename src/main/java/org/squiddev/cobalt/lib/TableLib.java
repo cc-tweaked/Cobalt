@@ -49,7 +49,7 @@ public class TableLib implements LuaLibrary {
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
+		RegisteredFunction.bind(t, new RegisteredFunction[]{
 			RegisteredFunction.of("getn", TableLib::getn),
 			RegisteredFunction.of("maxn", TableLib::maxn)
 		});

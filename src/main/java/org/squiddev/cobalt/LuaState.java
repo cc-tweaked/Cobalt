@@ -33,13 +33,11 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -112,11 +110,6 @@ public final class LuaState {
 	public final TimeZone timezone;
 
 	/**
-	 * The random instance for this state.
-	 */
-	public Random random;
-
-	/**
 	 * The currently executing thread
 	 */
 	LuaThread currentThread;
@@ -124,7 +117,7 @@ public final class LuaState {
 	/**
 	 * The currently executing main thread
 	 */
-	private LuaThread mainThread;
+	private final LuaThread mainThread;
 
 	/**
 	 * The currently active {@link YieldThreader}.
@@ -148,21 +141,22 @@ public final class LuaState {
 	}
 
 	private LuaState(Builder builder) {
-		this.stdin = builder.stdin;
-		this.stdout = builder.stdout;
-		this.stringMetatable = builder.stringMetatable;
-		this.booleanMetatable = builder.booleanMetatable;
-		this.numberMetatable = builder.numberMetatable;
-		this.nilMetatable = builder.nilMetatable;
-		this.functionMetatable = builder.functionMetatable;
-		this.threadMetatable = builder.threadMetatable;
-		this.resourceManipulator = builder.resourceManipulator;
-		this.compiler = builder.compiler;
-		this.random = builder.random;
-		this.debug = builder.debug;
-		this.timezone = builder.timezone;
-		this.threader = new YieldThreader(builder.coroutineExecutor);
-		this.reportError = builder.reportError;
+		stdin = builder.stdin;
+		stdout = builder.stdout;
+		stringMetatable = builder.stringMetatable;
+		booleanMetatable = builder.booleanMetatable;
+		numberMetatable = builder.numberMetatable;
+		nilMetatable = builder.nilMetatable;
+		functionMetatable = builder.functionMetatable;
+		threadMetatable = builder.threadMetatable;
+		resourceManipulator = builder.resourceManipulator;
+		compiler = builder.compiler;
+		debug = builder.debug;
+		timezone = builder.timezone;
+		threader = new YieldThreader(builder.coroutineExecutor);
+		reportError = builder.reportError;
+
+		mainThread = currentThread = new LuaThread(this, new LuaTable());
 	}
 
 	/**
@@ -177,7 +171,6 @@ public final class LuaState {
 	 *
 	 * @return The main thread
 	 * @see #getCurrentThread()
-	 * @see #setupThread(LuaTable)
 	 */
 	public LuaThread getMainThread() {
 		return mainThread;
@@ -188,27 +181,9 @@ public final class LuaState {
 	 *
 	 * @return The active thread
 	 * @see #getMainThread()
-	 * @see #setupThread(LuaTable)
 	 */
 	public LuaThread getCurrentThread() {
 		return currentThread;
-	}
-
-	/**
-	 * Setup the main thread
-	 *
-	 * @param environment The main thread to use
-	 * @see #getMainThread()
-	 * @see #getCurrentThread()
-	 */
-	public void setupThread(LuaTable environment) {
-		if (mainThread != null && mainThread.isAlive()) {
-			throw new IllegalStateException("State already has main thread");
-		}
-
-		LuaThread thread = new LuaThread(this, environment);
-		mainThread = thread;
-		currentThread = thread;
 	}
 
 	/**
@@ -282,7 +257,6 @@ public final class LuaState {
 		private LuaTable threadMetatable;
 		private ResourceManipulator resourceManipulator = new FileResourceManipulator();
 		private LoadState.LuaCompiler compiler = LuaC.INSTANCE;
-		private Random random = new Random();
 		private DebugHandler debug = DebugHandler.INSTANCE;
 		private TimeZone timezone = TimeZone.getDefault();
 		private Executor coroutineExecutor = defaultCoroutineExecutor;
@@ -330,7 +304,7 @@ public final class LuaState {
 		 * @return This builder
 		 */
 		public Builder stringMetatable(LuaTable metatable) {
-			this.stringMetatable = metatable;
+			stringMetatable = metatable;
 			return this;
 		}
 
@@ -341,7 +315,7 @@ public final class LuaState {
 		 * @return This builder
 		 */
 		public Builder booleanMetatable(LuaTable metatable) {
-			this.booleanMetatable = metatable;
+			booleanMetatable = metatable;
 			return this;
 		}
 
@@ -352,7 +326,7 @@ public final class LuaState {
 		 * @return This builder
 		 */
 		public Builder numberMetatable(LuaTable metatable) {
-			this.numberMetatable = metatable;
+			numberMetatable = metatable;
 			return this;
 		}
 
@@ -363,7 +337,7 @@ public final class LuaState {
 		 * @return This builder
 		 */
 		public Builder nilMetatable(LuaTable metatable) {
-			this.nilMetatable = metatable;
+			nilMetatable = metatable;
 			return this;
 		}
 
@@ -374,7 +348,7 @@ public final class LuaState {
 		 * @return This builder
 		 */
 		public Builder functionMetatable(LuaTable metatable) {
-			this.functionMetatable = metatable;
+			functionMetatable = metatable;
 			return this;
 		}
 
@@ -385,7 +359,7 @@ public final class LuaState {
 		 * @return This builder
 		 */
 		public Builder threadMetatable(LuaTable metatable) {
-			this.threadMetatable = metatable;
+			threadMetatable = metatable;
 			return this;
 		}
 
@@ -415,19 +389,6 @@ public final class LuaState {
 		}
 
 		/**
-		 * Set the initial random state for the Lua state. This will be used by {@code math.random}, but may
-		 * be changed by {@code math.radomseed}
-		 *
-		 * @param random The new random state.
-		 * @return This builder
-		 */
-		public Builder random(Random random) {
-			if (random == null) throw new NullPointerException("random cannot be null");
-			this.random = random;
-			return this;
-		}
-
-		/**
 		 * Set the debug handler for this Lua state.
 		 *
 		 * @param debug The new debug handler
@@ -447,7 +408,7 @@ public final class LuaState {
 		 */
 		public Builder timezone(TimeZone zone) {
 			if (zone == null) throw new NullPointerException("zone cannot be null");
-			this.timezone = zone;
+			timezone = zone;
 			return this;
 		}
 
@@ -463,16 +424,9 @@ public final class LuaState {
 			return this;
 		}
 
-		@Deprecated
-		public Builder errorReporter(Consumer<Throwable> reporter) {
-			if (reporter == null) throw new NullPointerException("report cannot be null");
-			this.reportError = (e, ctx) -> reporter.accept(e);
-			return this;
-		}
-
 		public Builder errorReporter(ErrorReporter reporter) {
 			if (reporter == null) throw new NullPointerException("report cannot be null");
-			this.reportError = reporter;
+			reportError = reporter;
 			return this;
 		}
 	}

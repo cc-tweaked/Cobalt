@@ -33,28 +33,28 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 /**
  * The {@link JsePlatform} class is a convenience class to standardize
  * how globals tables are initialized for the JSE platform.
- *
+ * <p>
  * It is used to allocate either a set of standard globals using
  * {@link #standardGlobals(LuaState)} or debug globals using {@link #debugGlobals(LuaState)}
- *
+ * <p>
  * A simple example of initializing globals and using them from Java is:
  * <pre> {@code
  * LuaValue _G = JsePlatform.standardGlobals();
  * _G.get("print").call(LuaValue.valueOf("hello, world"));
  * } </pre>
- *
+ * <p>
  * Once globals are created, a simple way to load and run a script is:
  * <pre> {@code
  * LoadState.load(new FileInputStream("main.lua"), "main.lua", _G ).call();
  * } </pre>
- *
+ * <p>
  * although {@code require} could also be used:
  * <pre> {@code
  * _G.get("require").call(LuaValue.valueOf("main"));
  * } </pre>
  * For this to succeed, the file "main.lua" must be in the current directory or a resource.
  * See {@link BaseLib} for details on finding scripts using {@link ResourceManipulator}.
- *
+ * <p>
  * The standard globals will contain all standard libraries plus {@code luajava}:
  * <ul>
  * <li>{@link BaseLib}</li>
@@ -67,7 +67,7 @@ import org.squiddev.cobalt.lib.platform.ResourceManipulator;
  * <li>{@link OsLib}</li>
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
- *
+ * <p>
  * The debug globals are simply the standard globals plus the {@code debug} library {@link DebugLib}.
  */
 public class JsePlatform {
@@ -81,8 +81,7 @@ public class JsePlatform {
 	 * @see JsePlatform
 	 */
 	public static LuaTable standardGlobals(LuaState state) {
-		LuaTable _G = new LuaTable();
-		state.setupThread(_G);
+		LuaTable _G = state.getMainThread().getfenv();
 		_G.load(state, new BaseLib());
 		_G.load(state, new PackageLib());
 		_G.load(state, new TableLib());

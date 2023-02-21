@@ -31,7 +31,7 @@ import org.squiddev.cobalt.debug.DebugState;
 
 /**
  * Base class for functions implemented in Java.
- *
+ * <p>
  * Direct subclass include {@link LibFunction} which is the base class for
  * all built-in library functions coded in Java,
  * and {@link LuaInterpretedFunction}, which represents a lua closure
@@ -42,11 +42,10 @@ import org.squiddev.cobalt.debug.DebugState;
  * @see LuaInterpretedFunction
  */
 public abstract class LuaFunction extends LuaValue implements DebugHook {
-	protected LuaTable env;
+	private LuaTable env;
 
 	public LuaFunction() {
 		super(Constants.TFUNCTION);
-		this.env = null;
 	}
 
 	public LuaFunction(LuaTable env) {
@@ -55,42 +54,41 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	}
 
 	@Override
-	public LuaFunction checkFunction() {
+	public final LuaFunction checkFunction() {
 		return this;
 	}
 
 	@Override
-	public LuaFunction optFunction(LuaFunction defval) {
+	public final LuaFunction optFunction(LuaFunction defval) {
 		return this;
 	}
 
 	@Override
-	public LuaTable getMetatable(LuaState state) {
+	public final LuaTable getMetatable(LuaState state) {
 		return state.functionMetatable;
 	}
 
 	@Override
-	public LuaTable getfenv() {
+	public final LuaTable getfenv() {
 		return env;
 	}
 
 	@Override
-	public void setfenv(LuaTable env) {
-		this.env = env != null ? env : null;
+	public final boolean setfenv(LuaTable env) {
+		this.env = env;
+		return true;
 	}
 
-	public String debugName() {
-		return toString();
-	}
+	public abstract String debugName();
 
 	/**
 	 * Call {@code this} with 0 arguments, including metatag processing,
 	 * and return only the first return value.
-	 *
+	 * <p>
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
+	 * <p>
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
 	 *
@@ -108,11 +106,11 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	/**
 	 * Call {@code this} with 1 argument, including metatag processing,
 	 * and return only the first return value.
-	 *
+	 * <p>
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
+	 * <p>
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
 	 *
@@ -131,11 +129,11 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	/**
 	 * Call {@code this} with 2 arguments, including metatag processing,
 	 * and return only the first return value.
-	 *
+	 * <p>
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
+	 * <p>
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
 	 *
@@ -154,11 +152,11 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	/**
 	 * Call {@code this} with 3 arguments, including metatag processing,
 	 * and return only the first return value.
-	 *
+	 * <p>
 	 * If {@code this} is a {@link LuaFunction}, call it,
 	 * and return only its first return value, dropping any others.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
+	 * <p>
 	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
 	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
 	 *
@@ -178,10 +176,10 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	/**
 	 * Call {@code this} with variable arguments, including metatag processing,
 	 * and retain all return values in a {@link Varargs}.
-	 *
+	 * <p>
 	 * If {@code this} is a {@link LuaFunction}, call it, and return all values.
 	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 *
+	 * <p>
 	 * To get a particular return value, us {@link Varargs#arg(int)}
 	 *
 	 * @param state The current lua state

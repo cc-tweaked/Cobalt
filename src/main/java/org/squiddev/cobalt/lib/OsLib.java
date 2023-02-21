@@ -81,7 +81,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 		"tmpname",
 	};
 
-	private static final long t0 = System.currentTimeMillis();
+	private final long t0 = System.currentTimeMillis();
 
 	@Override
 	public LuaValue add(LuaState state, LuaTable env) {

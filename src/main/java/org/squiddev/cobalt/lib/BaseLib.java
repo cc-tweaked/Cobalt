@@ -74,7 +74,7 @@ public class BaseLib implements LuaLibrary {
 	public LuaValue add(LuaState state, LuaTable env) {
 		env.rawset("_G", env);
 		env.rawset("_VERSION", valueOf(Lua._VERSION));
-		RegisteredFunction.bind(env, env, new RegisteredFunction[]{
+		RegisteredFunction.bind(env, new RegisteredFunction[]{
 			RegisteredFunction.of("collectgarbage", BaseLib::collectgarbage),
 			RegisteredFunction.of("error", BaseLib::error),
 			RegisteredFunction.ofV("setfenv", BaseLib::setfenv),
@@ -103,7 +103,7 @@ public class BaseLib implements LuaLibrary {
 
 		// remember next, and inext for use in pairs and ipairs
 		next = env.rawget("next");
-		inext = RegisteredFunction.ofV("inext", BaseLib::inext).create(env);
+		inext = RegisteredFunction.ofV("inext", BaseLib::inext).create();
 
 		env.rawset("_VERSION", valueOf("Lua 5.1"));
 
@@ -137,17 +137,23 @@ public class BaseLib implements LuaLibrary {
 	private static Varargs setfenv(LuaState state, Varargs args) throws LuaError {
 		// setfenv(f, table) -> void
 		LuaTable t = args.arg(2).checkTable();
-		LuaValue f = getfenvobj(state, args.arg(1));
-		if (!f.isThread() && !f.isClosure()) {
+		LuaValue f = getfenvobj(state, args.arg(1), false);
+		if (f.isThread()) {
+			f.setfenv(t);
+			return Constants.NONE;
+		}
+
+		if (f instanceof LibFunction || !f.setfenv(t)) {
 			throw new LuaError("'setfenv' cannot change environment of given object");
 		}
-		f.setfenv(t);
-		return f.isThread() ? Constants.NONE : f;
+
+		return f;
 	}
 
-	private static LuaValue getfenvobj(LuaState state, LuaValue arg) throws LuaError {
+	private static LuaValue getfenvobj(LuaState state, LuaValue arg, boolean optional) throws LuaError {
 		if (arg.isFunction()) return arg;
-		int level = arg.optInteger(1);
+
+		int level = optional ? arg.optInteger(1) : arg.checkInteger();
 		Varargs.argCheck(level >= 0, 1, "level must be non-negative");
 		if (level == 0) return state.getCurrentThread();
 		LuaValue f = LuaThread.getCallstackFunction(state, level - 1);
@@ -177,9 +183,12 @@ public class BaseLib implements LuaLibrary {
 
 	private static Varargs getfenv(LuaState state, Varargs args) throws LuaError {
 		// getfenv( [f] ) -> env
-		LuaValue f = getfenvobj(state, args.first());
-		LuaValue e = f.getfenv();
-		return e != null ? e : Constants.NIL;
+		LuaValue f = getfenvobj(state, args.first(), true);
+		if (f instanceof LibFunction) {
+			return state.getCurrentThread().getfenv();
+		} else {
+			return f.getfenv();
+		}
 	}
 
 	private static Varargs getmetatable(LuaState state, Varargs args) throws LuaError {

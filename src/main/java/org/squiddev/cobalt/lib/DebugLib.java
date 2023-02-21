@@ -77,11 +77,11 @@ public class DebugLib implements LuaLibrary {
 	@Override
 	public LuaTable add(LuaState state, LuaTable env) {
 		LuaTable t = new LuaTable();
-		RegisteredFunction.bind(env, t, new RegisteredFunction[]{
+		RegisteredFunction.bind(t, new RegisteredFunction[]{
 			RegisteredFunction.ofV("debug", DebugLib::debug),
 			RegisteredFunction.ofV("getfenv", DebugLib::getfenv),
 			RegisteredFunction.ofV("gethook", DebugLib::gethook),
-			RegisteredFunction.of("getinfo", new VarArgFunction() {
+			RegisteredFunction.ofFactory("getinfo", () -> new VarArgFunction() {
 				@Override
 				public Varargs invoke(LuaState state, Varargs args) throws LuaError {
 					return DebugLib.getinfo(state, args, this);
@@ -91,7 +91,7 @@ public class DebugLib implements LuaLibrary {
 			RegisteredFunction.ofV("getmetatable", DebugLib::getmetatable),
 			RegisteredFunction.ofV("getregistry", this::getregistry),
 			RegisteredFunction.ofV("getupvalue", DebugLib::getupvalue),
-			RegisteredFunction.ofV("setfenv", DebugLib::setfenvImpl),
+			RegisteredFunction.ofV("setfenv", DebugLib::setfenv),
 			RegisteredFunction.ofV("sethook", DebugLib::sethook),
 			RegisteredFunction.ofV("setlocal", DebugLib::setlocal),
 			RegisteredFunction.ofV("setmetatable", DebugLib::setmetatable),
@@ -169,10 +169,10 @@ public class DebugLib implements LuaLibrary {
 		return env != null ? env : NIL;
 	}
 
-	private static Varargs setfenvImpl(LuaState state, Varargs args) throws LuaError {
+	private static Varargs setfenv(LuaState state, Varargs args) throws LuaError {
 		LuaValue object = args.first();
-		LuaTable table = args.arg(2).checkTable();
-		object.setfenv(table);
+		LuaTable env = args.arg(2).checkTable();
+		if (!object.setfenv(env)) throw new LuaError("'setfenv' cannot change environment of given object");
 		return object;
 	}
 
