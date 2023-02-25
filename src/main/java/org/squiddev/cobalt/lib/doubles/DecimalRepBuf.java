@@ -45,7 +45,7 @@ import static org.squiddev.cobalt.lib.doubles.UnsignedValues.digitToChar;
  * of the decimal point, and the sign of the number.
  * Also includes point position {@code pointPosition}
  */
-public class DecimalRepBuf {
+final class DecimalRepBuf {
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 	@SuppressWarnings("ImplicitNumericConversion")

@@ -22,37 +22,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.squiddev.cobalt.lib.platform;
+package org.squiddev.cobalt.lib.system;
 
+import org.squiddev.cobalt.lib.BaseLib;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 /**
- * A resource manipulator which errors on any action.
+ * Interface for manipulating files and resources
  */
-public class VoidResourceManipulator implements ResourceManipulator {
-	@Override
-	public InputStream findResource(String filename) {
-		return null;
-	}
+public interface ResourceLoader {
+	/**
+	 * Try to open a file, or return null if not found.
+	 *
+	 * @param filename Filename to open
+	 * @return InputStream, or null if not found.
+	 * @see BaseLib
+	 */
+	InputStream load(String filename);
 
-	@Override
-	public int execute(String command) {
-		return 1;
-	}
+	/**
+	 * A resource loader that reads from the filesystem.
+	 */
+	ResourceLoader FILES = filename -> {
+		File f = new File(filename);
 
-	@Override
-	public void rename(String from, String to) throws IOException {
-		throw new IOException("file could not be renamed");
-	}
-
-	@Override
-	public void remove(String file) throws IOException {
-		throw new IOException("file could not be removed");
-	}
-
-	@Override
-	public String tmpName() throws IOException {
-		throw new IOException("cannot create temporary file");
-	}
+		try {
+			return Files.newInputStream(f.toPath());
+		} catch (IOException ioe) {
+			return null;
+		}
+	};
 }

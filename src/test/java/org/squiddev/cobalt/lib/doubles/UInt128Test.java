@@ -30,19 +30,12 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.lib.doubles.FixedDtoa.UInt128;
 
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK_EQ;
 
 class UInt128Test {
-
-	@BeforeAll
-	static void initAll() {
-		Assert.setEnabled(true);
-	}
-
 	@Test
 	public void shiftOps() {
 		UInt128 val = new UInt128(0L, 0xffffL);

@@ -32,9 +32,6 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.assertEnabled;
-import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
-
 public class PowersOfTenCache {
 	/**
 	 * Not all powers of ten are cached. The decimal exponent of two neighboring
@@ -68,11 +65,11 @@ public class PowersOfTenCache {
 		int foo = CACHED_POWERS_OFFSET;
 		int index =
 			(foo + ((int) k) - 1) / DECIMAL_EXPONENT_DISTANCE + 1;
-		if (assertEnabled()) assertThat(0 <= index && index < CACHED_POWERS.length);
+		assert 0 <= index && index < CACHED_POWERS.length;
 		CachedPower cachedPower = CACHED_POWERS[index];
-		if (assertEnabled()) assertThat(minExponent <= cachedPower.binaryExponent);
+		assert minExponent <= cachedPower.binaryExponent;
 		//maxExponent;  // Mark variable as used.
-		if (assertEnabled()) assertThat(cachedPower.binaryExponent <= maxExponent);
+		assert cachedPower.binaryExponent <= maxExponent;
 		decimalExponent[0] = cachedPower.decimalExponent;
 		power[0] = new DiyFp(cachedPower.significand, cachedPower.binaryExponent);
 	}
@@ -87,19 +84,15 @@ public class PowersOfTenCache {
 	void getCachedPowerForDecimalExponent(int requestedExponent,
 										  DiyFp[] power,
 										  int[] foundExponent) {
-		if (assertEnabled()) {
-			assertThat(MIN_DECIMAL_EXPONENT <= requestedExponent);
-			assertThat(requestedExponent < MAX_DECIMAL_EXPONENT + DECIMAL_EXPONENT_DISTANCE);
-		}
+		assert MIN_DECIMAL_EXPONENT <= requestedExponent;
+		assert requestedExponent < MAX_DECIMAL_EXPONENT + DECIMAL_EXPONENT_DISTANCE;
 		int index =
 			(requestedExponent + CACHED_POWERS_OFFSET) / DECIMAL_EXPONENT_DISTANCE;
 		CachedPower cachedPower = CACHED_POWERS[index];
 		power[0] = new DiyFp(cachedPower.significand, cachedPower.binaryExponent);
 		foundExponent[0] = cachedPower.decimalExponent;
-		if (assertEnabled()) {
-			assertThat(foundExponent[0] <= requestedExponent);
-			assertThat(requestedExponent < foundExponent[0] + DECIMAL_EXPONENT_DISTANCE);
-		}
+		assert foundExponent[0] <= requestedExponent;
+		assert requestedExponent < foundExponent[0] + DECIMAL_EXPONENT_DISTANCE;
 	}
 
 	static class CachedPower {

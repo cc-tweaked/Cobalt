@@ -25,11 +25,9 @@
 package org.squiddev.cobalt.vm;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.*;
-import org.squiddev.cobalt.lib.StringLib;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -54,17 +52,8 @@ public class MetatableTest {
 	private final LuaUserdata userdata = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatamt = ValueFactory.userdataOf(sampledata, table);
 
-	public MetatableTest() throws LuaError {
-	}
-
-	@BeforeEach
-	public void setup() throws Exception {
-		// needed for metatable ops to work on strings
-		new StringLib();
-	}
-
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		state.booleanMetatable = null;
 		state.functionMetatable = null;
 		state.nilMetatable = null;

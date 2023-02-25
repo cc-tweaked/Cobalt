@@ -37,6 +37,7 @@ notatable = { nil, astring, anumber, aboolean, afunction, athread }
 notafunction = { nil, astring, anumber, aboolean, atable, athread }
 notathread = { nil, astring, anumber, aboolean, atable, afunction }
 notanil = { astring, anumber, aboolean, atable, afunction, athread }
+notlen = { nil, anumber, aboolean, afunction, athread }
 
 nonstring = { aboolean, atable, afunction, athread }
 nonnumber = { astring, aboolean, atable, afunction, athread }

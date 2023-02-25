@@ -30,23 +30,15 @@
  */
 package org.squiddev.cobalt.lib.doubles;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.DtoaMode;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 @SuppressWarnings("type.argument.type.incompatible")
 public class DtoaTest {
-
-	@BeforeAll
-	static void initAll() {
-		Assert.setEnabled(true);
-	}
-
 	static void doubleToAscii(double v, DtoaMode test_mode, int requested_digits,
 							  DecimalRepBuf buffer) {
 		DoubleToStringConverter.DtoaMode mode = DtoaMode.FIXED;
@@ -273,37 +265,29 @@ public class DtoaTest {
 	@Test
 	public void dtoaGayFixed() throws Exception {
 		DataTestState state = new DataTestState();
-		try {
-			DoubleTestHelper.eachFixed(state, (st, v, numberDigits, representation, decimalPoint) -> {
-				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
-				doubleToAscii(v, DtoaMode.FIXED, numberDigits, st.buffer);
-				assertThat(st.underTest, st.buffer.getSign(), is(false)); // All precomputed numbers are positive.
-				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-				assertThat(st.underTest, (st.buffer.length() - st.buffer.getPointPosition()), is(lessThanOrEqualTo(numberDigits)));
-				st.buffer.truncateAllZeros();
-				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
-			});
-		} catch (Assert.DoubleConversionAssertionException e) {
-			fail("Assertion failed for test " + state.underTest, e);
-		}
+		DoubleTestHelper.eachFixed(state, (st, v, numberDigits, representation, decimalPoint) -> {
+			st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
+			doubleToAscii(v, DtoaMode.FIXED, numberDigits, st.buffer);
+			assertThat(st.underTest, st.buffer.getSign(), is(false)); // All precomputed numbers are positive.
+			assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
+			assertThat(st.underTest, (st.buffer.length() - st.buffer.getPointPosition()), is(lessThanOrEqualTo(numberDigits)));
+			st.buffer.truncateAllZeros();
+			assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
+		});
 	}
 
 	@Test
 	public void dtoaGayPrecision() throws Exception {
 		DataTestState state = new DataTestState();
-		try {
-			DoubleTestHelper.eachPrecision(state, (st, v, numberDigits, representation, decimalPoint) -> {
-				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
-				doubleToAscii(v, DtoaMode.PRECISION, numberDigits,
-					st.buffer);
-				assertThat(st.underTest, st.buffer.getSign(), is(false)); // All precomputed numbers are positive.
-				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-				assertThat(st.underTest, st.buffer.length(), is(greaterThanOrEqualTo(numberDigits)));
-				st.buffer.truncateAllZeros();
-				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
-			});
-		} catch (Assert.DoubleConversionAssertionException e) {
-			fail("Assertion failed for test " + state.underTest, e);
-		}
+		DoubleTestHelper.eachPrecision(state, (st, v, numberDigits, representation, decimalPoint) -> {
+			st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
+			doubleToAscii(v, DtoaMode.PRECISION, numberDigits,
+				st.buffer);
+			assertThat(st.underTest, st.buffer.getSign(), is(false)); // All precomputed numbers are positive.
+			assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
+			assertThat(st.underTest, st.buffer.length(), is(greaterThanOrEqualTo(numberDigits)));
+			st.buffer.truncateAllZeros();
+			assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
+		});
 	}
 }

@@ -1,0 +1,115 @@
+package org.squiddev.cobalt.lib.system;
+
+import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.RegisteredFunction;
+import org.squiddev.cobalt.lib.BaseLib;
+
+import java.io.InputStream;
+import java.io.PrintStream;
+
+import static org.squiddev.cobalt.OperationHelper.noUnwind;
+import static org.squiddev.cobalt.ValueFactory.valueOf;
+import static org.squiddev.cobalt.ValueFactory.varargsOf;
+
+/**
+ * Adds additional globals to the base library that interact with the running system, and so may not be safe to use in
+ * a sandboxed environment.
+ */
+public class SystemBaseLib {
+	private static final LuaString STDIN_STR = valueOf("=stdin");
+
+	private final ResourceLoader resources;
+	private final InputStream in;
+	private final PrintStream out;
+
+	public SystemBaseLib(ResourceLoader resources, InputStream in, PrintStream out) {
+		this.resources = resources;
+		this.in = in;
+		this.out = out;
+	}
+
+	public void add(LuaTable env) {
+		RegisteredFunction.bind(env, new RegisteredFunction[]{
+			RegisteredFunction.of("collectgarbage", SystemBaseLib::collectgarbage),
+			RegisteredFunction.ofV("loadfile", this::loadfile),
+			RegisteredFunction.ofV("dofile", this::dofile),
+			RegisteredFunction.ofV("print", this::print),
+		});
+	}
+
+	private static LuaValue collectgarbage(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		// collectgarbage( opt [,arg] ) -> value
+		String s = arg1.optString("collect");
+		switch (s) {
+			case "collect":
+				System.gc();
+				return Constants.ZERO;
+			case "count":
+				Runtime rt = Runtime.getRuntime();
+				long used = rt.totalMemory() - rt.freeMemory();
+				return valueOf(used / 1024.);
+			case "step":
+				System.gc();
+				return Constants.TRUE;
+			default:
+				throw ErrorFactory.argError(1, "invalid option");
+		}
+	}
+
+	private Varargs loadfile(LuaState state, Varargs args) throws LuaError {
+		// loadfile( [filename] ) -> chunk | nil, msg
+		return args.isNil(1) ?
+			BaseLib.loadStream(state, in, STDIN_STR) :
+			SystemBaseLib.loadFile(state, resources, args.arg(1).checkString());
+	}
+
+	private Varargs dofile(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+		// dofile( filename ) -> result1, ...
+		Varargs v = args.isNil(1) ?
+			BaseLib.loadStream(state, in, STDIN_STR) :
+			SystemBaseLib.loadFile(state, resources, args.arg(1).checkString());
+		if (v.isNil(1)) {
+			throw new LuaError(v.arg(2).toString());
+		} else {
+			return OperationHelper.invoke(state, v.first(), Constants.NONE);
+		}
+	}
+
+	private Varargs print(LuaState state, Varargs args) throws LuaError {
+		// print(...) -> void
+		return noUnwind(state, () -> {
+			LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
+			for (int i = 1, n = args.count(); i <= n; i++) {
+				if (i > 1) out.write('\t');
+				LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
+				int z = s.indexOf((byte) 0, 0);
+				out.write(s.bytes, s.offset, z >= 0 ? z : s.length);
+			}
+			out.println();
+			return Constants.NONE;
+		});
+	}
+
+	/**
+	 * Load from a named file, returning the chunk or nil,error of can't load
+	 *
+	 * @param state    The current lua state
+	 * @param filename Name of the file
+	 * @return Varargs containing chunk, or NIL,error-text on error
+	 */
+	public static Varargs loadFile(LuaState state, ResourceLoader resources, String filename) {
+		InputStream is = resources.load(filename);
+		if (is == null) {
+			return varargsOf(Constants.NIL, valueOf("cannot open " + filename + ": No such file or directory"));
+		}
+		try {
+			return BaseLib.loadStream(state, is, valueOf("@" + filename));
+		} finally {
+			try {
+				is.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}

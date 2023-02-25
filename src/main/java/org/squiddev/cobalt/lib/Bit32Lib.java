@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 
 import static org.squiddev.cobalt.ErrorFactory.argError;
@@ -33,11 +34,9 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 /**
  * Subclass of LibFunction that implements the Lua standard {@code bit32} library.
  */
-public class Bit32Lib implements LuaLibrary {
-	@Override
-	public LuaValue add(LuaState state, LuaTable env) {
-		LuaTable t = new LuaTable();
-		RegisteredFunction.bind(t, new RegisteredFunction[]{
+public class Bit32Lib {
+	public static void add(LuaState state, LuaTable env) {
+		LibFunction.setGlobalLibrary(state, env, "bit32", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("band", Bit32Lib::band),
 			RegisteredFunction.of("bnot", Bit32Lib::bnot),
 			RegisteredFunction.ofV("bor", Bit32Lib::bor),
@@ -50,11 +49,7 @@ public class Bit32Lib implements LuaLibrary {
 			RegisteredFunction.of("lshift", Bit32Lib::lshift),
 			RegisteredFunction.of("rrotate", Bit32Lib::rrotate),
 			RegisteredFunction.of("rshift", Bit32Lib::rshift),
-		});
-
-		env.rawset("bit32", t);
-		state.loadedPackages.rawset("bit32", t);
-		return t;
+		}));
 	}
 
 	private static Varargs band(LuaState state, Varargs args) throws LuaError {

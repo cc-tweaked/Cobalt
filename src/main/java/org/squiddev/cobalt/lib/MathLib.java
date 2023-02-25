@@ -28,7 +28,6 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.util.Random;
 
@@ -41,14 +40,13 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  *
  * @see LibFunction
- * @see JsePlatform
+ * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
-public class MathLib implements LuaLibrary {
+public class MathLib {
 	private Random random;
 
-	@Override
-	public LuaValue add(LuaState state, LuaTable env) {
+	public void add(LuaState state, LuaTable env) {
 		final RegisteredFunction[] functions = new RegisteredFunction[]{
 			RegisteredFunction.of("abs", (s, arg) -> valueOf(Math.abs(arg.checkDouble()))),
 			RegisteredFunction.of("ceil", (s, arg) -> valueOf(Math.ceil(arg.checkDouble()))),
@@ -87,9 +85,7 @@ public class MathLib implements LuaLibrary {
 		t.rawset("huge", LuaDouble.POSINF);
 		t.rawset("mod", t.rawget("fmod"));
 
-		env.rawset("math", t);
-		state.loadedPackages.rawset("math", t);
-		return t;
+		LibFunction.setGlobalLibrary(state, env, "math", t);
 	}
 
 	private static LuaValue fmod(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {

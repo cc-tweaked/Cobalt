@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -44,13 +44,13 @@ public class SimpleTests {
 	@BeforeEach
 	public void setup() {
 		state = new LuaState();
-		_G = JsePlatform.standardGlobals(state);
+		_G = SystemLibraries.standardGlobals(state);
 	}
 
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
-			LuaFunction c = LuaC.INSTANCE.load(is, valueOf("script"), null, _G);
+			LuaFunction c = LoadState.interpretedFunction(LuaC.compile(is, valueOf("script"), null), _G);
 			LuaThread.runMain(state, c);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);
@@ -117,7 +117,7 @@ public class SimpleTests {
 		String s = "print('\\z";
 		assertThrows(CompileException.class, () -> {
 			InputStream is = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
-			LuaC.INSTANCE.load(is, valueOf("script"), null, _G);
+			LoadState.interpretedFunction(LuaC.compile(is, valueOf("script"), null), _G);
 		});
 	}
 

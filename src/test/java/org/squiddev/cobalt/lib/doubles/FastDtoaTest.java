@@ -31,22 +31,14 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 public class FastDtoaTest {
-
 	private static final int BUFFER_SIZE = 100;
-
-	@BeforeAll
-	static void initAll() {
-		Assert.setEnabled(true);
-	}
 
 	@Test
 	public void precisionVariousDoubles() {
@@ -169,30 +161,25 @@ public class FastDtoaTest {
 	@Test
 	public void gayPrecision() throws Exception {
 		PrecisionState state = new PrecisionState();
-		try {
-			DoubleTestHelper.eachPrecision(state, (st, v, numberDigits, representation, decimalPoint) -> {
-				int[] length = new int[1];
-				int[] point = new int[1];
-				boolean status;
 
-				st.total++;
-				st.underTest = String.format("Using {%g, %d, \"%s\", %d}", v, numberDigits, representation, decimalPoint);
-				if (numberDigits <= 15) st.total15++;
+		DoubleTestHelper.eachPrecision(state, (st, v, numberDigits, representation, decimalPoint) -> {
+			boolean status;
 
-				status = FastDtoa.fastDtoa(v, numberDigits,
-					st.buffer);
-				CHECK_GE(numberDigits, st.buffer.length());
-				if (status) {
-					st.succeeded++;
-					if (numberDigits <= 15) st.succeeded15++;
-					st.buffer.truncateAllZeros();
-					assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-					assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
-				}
-			});
-		} catch (Assert.DoubleConversionAssertionException e) {
-			fail("Assertion failed for test " + state.underTest, e);
-		}
+			st.total++;
+			st.underTest = String.format("Using {%g, %d, \"%s\", %d}", v, numberDigits, representation, decimalPoint);
+			if (numberDigits <= 15) st.total15++;
+
+			status = FastDtoa.fastDtoa(v, numberDigits, st.buffer);
+			CHECK_GE(numberDigits, st.buffer.length());
+			if (status) {
+				st.succeeded++;
+				if (numberDigits <= 15) st.succeeded15++;
+				st.buffer.truncateAllZeros();
+				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
+				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
+			}
+		});
+
 		// The precomputed numbers contain many entries with many requested
 		// digits. These have a high failure rate and we therefore expect a lower
 		// success rate than for the shortest representation.

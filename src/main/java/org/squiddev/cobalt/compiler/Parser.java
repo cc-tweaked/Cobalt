@@ -38,7 +38,7 @@ import static org.squiddev.cobalt.compiler.LuaC.LUAI_MAXUPVALUES;
  * <p>
  * This largely follows the structure and implementation of lparser.c.
  */
-class Parser {
+final class Parser {
 	private static final int LUAI_MAXCCALLS = 200;
 	private static final boolean LUA_COMPAT_VARARG = true;
 

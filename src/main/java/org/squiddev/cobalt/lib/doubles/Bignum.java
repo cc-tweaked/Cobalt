@@ -43,7 +43,7 @@ import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUint;
  * A mutable proxy object to java BigDecimal.  Probably can be
  * optimized away at some point, but for now it will get the things into a functional state.
  */
-public class Bignum {
+final class Bignum {
 	private static final long LONG_SIGN_BIT = 0x8000_0000_0000_0000L;
 	private static final long LONG_UNSIGNED_BITS = 0x7fff_ffff_ffff_ffffL;
 	private static final BigInteger INT_MASK = BigInteger.valueOf(0xffff_ffffL);

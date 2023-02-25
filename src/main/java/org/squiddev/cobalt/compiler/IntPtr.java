@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt.compiler;
 
-class IntPtr {
+final class IntPtr {
 	int value;
 
 	IntPtr() {

@@ -27,7 +27,7 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.CoreLibraries;
 
 import static org.squiddev.cobalt.Constants.*;
 
@@ -85,14 +85,14 @@ import static org.squiddev.cobalt.Constants.*;
  * } </pre>
  * For this to work the file must be in the current directory, or in the class path,
  * depending on the platform.
- * See {@link JsePlatform} for details.
+ * See {@link CoreLibraries} for details.
  * <p>
  * In general a {@link LuaError} may be thrown on any operation when the
  * types supplied to any operation are illegal from a lua perspective.
  * Examples could be attempting to concatenate a NIL value, or attempting arithmetic
  * on values that are not number.
  *
- * @see JsePlatform
+ * @see CoreLibraries
  * @see LoadState
  * @see Varargs
  */
@@ -1132,15 +1132,13 @@ public abstract class LuaValue extends Varargs {
 	/**
 	 * Set the environment on an object.
 	 * <p>
-	 * Typically the environment is created once per application via a platform
-	 * helper method such as {@link JsePlatform#standardGlobals(LuaState)}
 	 * However, any object can serve as an environment if it contains suitable metatag
 	 * values to implement {@link OperationHelper#getTable(LuaState, LuaValue, LuaValue)} to provide the environment
 	 * values.
 	 *
 	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
 	 * @return If the environment could be changed.
-	 * @see JsePlatform
+	 * @see CoreLibraries
 	 */
 	public boolean setfenv(LuaTable env) {
 		return false;

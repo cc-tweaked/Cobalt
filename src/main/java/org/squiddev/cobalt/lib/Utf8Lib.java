@@ -9,8 +9,7 @@ import static org.squiddev.cobalt.Constants.NONE;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
-public class Utf8Lib implements LuaLibrary {
-
+public class Utf8Lib {
 	private static final int[] LIMITS = {0xFF, 0x7F, 0x7FF, 0xFFFF};
 	public static final long MAX_UNICODE = 0x10FFFFL;
 
@@ -27,8 +26,7 @@ public class Utf8Lib implements LuaLibrary {
 	 */
 	private LibFunction codesIter;
 
-	@Override
-	public LuaValue add(LuaState state, LuaTable env) {
+	public void add(LuaState state, LuaTable env) {
 		codesIter = RegisteredFunction.ofV("utf8.codesIter", Utf8Lib::codesIter).create();
 
 		LuaTable t = new LuaTable(0, 6);
@@ -41,10 +39,7 @@ public class Utf8Lib implements LuaLibrary {
 		});
 		t.rawset("charpattern", PATTERN);
 
-		env.rawset("utf8", t);
-		state.loadedPackages.rawset("utf8", t);
-
-		return t;
+		LibFunction.setGlobalLibrary(state, env, "utf8", t);
 	}
 
 	public static int buildCharacter(byte[] buffer, long codepoint) {

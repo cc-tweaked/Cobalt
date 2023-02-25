@@ -25,7 +25,7 @@ class StringFormat {
 
 	/**
 	 * string.format (formatstring, ...)
-	 *
+	 * <p>
 	 * Returns a formatted version of its variable number of arguments following
 	 * the description given in its first argument (which must be a string).
 	 * The format string follows the same rules as the printf family of standard C functions.
@@ -35,14 +35,14 @@ class StringFormat {
 	 * and all double quotes, newlines, embedded zeros, and backslashes in the string are correctly
 	 * escaped when written. For instance, the call
 	 * string.format('%q', 'a string with "quotes" and \n new line')
-	 *
+	 * <p>
 	 * will produce the string:
 	 * "a string with \"quotes\" and \
 	 * new line"
-	 *
+	 * <p>
 	 * The options c, d, E, e, f, g, G, i, o, u, X, and x all expect a number as argument,
 	 * whereas q and s expect a string.
-	 *
+	 * <p>
 	 * This function does not accept string values containing embedded zeros,
 	 * except as arguments to the q option.
 	 *
@@ -134,7 +134,8 @@ class StringFormat {
 				}
 				break;
 			}
-			case TBOOLEAN: case TNIL:
+			case TBOOLEAN:
+			case TNIL:
 				buf.append(s.toString());
 				break;
 			default:

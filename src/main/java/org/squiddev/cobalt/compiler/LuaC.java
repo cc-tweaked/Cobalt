@@ -25,13 +25,14 @@
 package org.squiddev.cobalt.compiler;
 
 
-import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.compiler.LoadState.LuaCompiler;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.Lua;
+import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.compiler.LoadState.FunctionFactory;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.BaseLib;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,12 +49,12 @@ import static org.squiddev.cobalt.compiler.LoadState.checkMode;
  * and optionaly instantiates a {@link LuaInterpretedFunction} around the result
  * using a user-supplied environment.
  * <p>
- * Implements the {@link LuaCompiler} interface for loading
+ * Implements the {@link FunctionFactory} interface for loading
  * initialized chunks, which is an interface common to
  * lua bytecode compiling and java bytecode compiling.
  * <p>
  * The {@link LuaC} compiler is installed by default by the
- * {@link JsePlatform} class
+ * {@link CoreLibraries} class
  * so in the following example, the default {@link LuaC} compiler
  * will be used:
  * <pre> {@code
@@ -61,16 +62,14 @@ import static org.squiddev.cobalt.compiler.LoadState.checkMode;
  * LoadState.load( new ByteArrayInputStream("print 'hello'".getBytes()), "main.lua", _G ).call();
  * } </pre>
  *
- * @see LuaCompiler
- * @see JsePlatform
+ * @see FunctionFactory
+ * @see CoreLibraries
  * @see BaseLib
  * @see LuaValue
- * @see LuaCompiler
+ * @see FunctionFactory
  * @see Prototype
  */
-public class LuaC implements LuaCompiler {
-	public static final LuaC INSTANCE = new LuaC();
-
+public class LuaC {
 	protected static void _assert(boolean b) throws CompileException {
 		if (!b) {
 			// So technically this should fire a runtime exception but...
@@ -135,14 +134,30 @@ public class LuaC implements LuaCompiler {
 	}
 
 	/**
-	 * Load into a Closure or LuaFunction, with the supplied initial environment
+	 * Load lua thought to be a binary chunk from its first byte from an input stream.
+	 *
+	 * @param firstByte the first byte of the input stream
+	 * @param stream    InputStream to read, after having read the first byte already
+	 * @param name      Name to apply to the loaded chunk
+	 * @return {@link Prototype} that was loaded
+	 * @throws IllegalArgumentException If the signature is bac
+	 * @throws IOException              If an IOException occurs
+	 * @throws CompileException         If the stream cannot be loaded.
 	 */
-	@Override
-	public LuaClosure load(InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
-		Prototype p = compile(stream, name, mode);
-		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
-		closure.nilUpvalues();
-		return closure;
+	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, LuaString name) throws IOException, CompileException {
+		name = LoadState.getSourceName(name);
+		// check rest of signature
+		if (firstByte != LoadState.LUA_SIGNATURE[0]
+			|| stream.read() != LoadState.LUA_SIGNATURE[1]
+			|| stream.read() != LoadState.LUA_SIGNATURE[2]
+			|| stream.read() != LoadState.LUA_SIGNATURE[3]) {
+			throw new IllegalArgumentException("bad signature");
+		}
+
+		// load file as a compiled chunk
+		BytecodeLoader s = new BytecodeLoader(stream);
+		s.loadHeader();
+		return s.loadFunction(name);
 	}
 
 	public static Prototype compile(InputStream stream, String name) throws IOException, CompileException {
@@ -166,11 +181,11 @@ public class LuaC implements LuaCompiler {
 		int firstByte = stream.read();
 		if (firstByte == '\033') {
 			checkMode(mode, "binary");
-			return LoadState.loadBinaryChunk(firstByte, stream, name);
+			return loadBinaryChunk(firstByte, stream, name);
 		} else {
 			checkMode(mode, "text");
 			try {
-				return luaY_parser(firstByte, stream, name);
+				return loadTextChunk(firstByte, stream, name);
 			} catch (UncheckedIOException e) {
 				throw e.getCause();
 			}
@@ -180,8 +195,8 @@ public class LuaC implements LuaCompiler {
 	/**
 	 * Parse the input
 	 */
-	private static Prototype luaY_parser(int firstByte, InputStream z, LuaString name) throws CompileException {
-		Parser lexstate = new Parser(z, firstByte, name);
+	private static Prototype loadTextChunk(int firstByte, InputStream stream, LuaString name) throws CompileException {
+		Parser lexstate = new Parser(stream, firstByte, name);
 		FuncState funcstate = lexstate.openFunc();
 		funcstate.varargFlags = Lua.VARARG_ISVARARG; /* main func. is always vararg */
 
@@ -192,9 +207,5 @@ public class LuaC implements LuaCompiler {
 		LuaC._assert(funcstate.upvalues.size() == 0);
 		LuaC._assert(lexstate.fs == null);
 		return prototype;
-	}
-
-	public LuaFunction load(Prototype p, LuaTable env) {
-		return new LuaInterpretedFunction(p, env);
 	}
 }

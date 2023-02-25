@@ -221,11 +221,11 @@ tostring(function() end)	string
 tostring({"one","two",a="aa",b="bb"})	string
 pcall(unpack)	false	string
 pcall(unpack,nil)	false	string
-pcall(unpack,"abc")	false	string
 pcall(unpack,1)	false	string
 unpack({"aa"})	aa
 unpack({"aa","bb"})	aa	bb
 unpack({"aa","bb","cc"})	aa	bb	cc
+unpack("abc")	nil	nil	nil
 pcall(unpack,t)	aa
 pcall(unpack,t,2)	bb
 pcall(unpack,t,2,5)	bb

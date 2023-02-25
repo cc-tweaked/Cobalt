@@ -31,19 +31,12 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK_EQ;
 
 public class DiyFpTest {
-
-	@BeforeAll
-	static void initAll() {
-		Assert.setEnabled(true);
-	}
-
 	@Test
 	public void subtract() {
 		DiyFp diy_fp1 = new DiyFp(3L, 0);

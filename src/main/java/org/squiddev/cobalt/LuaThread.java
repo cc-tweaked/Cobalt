@@ -29,7 +29,7 @@ import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.lang.ref.WeakReference;
 import java.util.Objects;
@@ -45,7 +45,7 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
  * A LuaThread is typically created in response to a scripted call to
  * {@code coroutine.create()}
  * <p>
- * The utility class {@link JsePlatform}
+ * The utility class {@link CoreLibraries}
  * sees to it that this initialization is done properly.
  * For this reason it is highly recommended to use one of these classes
  * when initializing globals.
@@ -55,7 +55,7 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
  * to manage call state, it is possible to yield from anywhere in luaj.
  *
  * @see LuaValue
- * @see JsePlatform
+ * @see CoreLibraries
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {

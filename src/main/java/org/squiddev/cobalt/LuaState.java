@@ -28,12 +28,7 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHelpers;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
-import org.squiddev.cobalt.lib.platform.ResourceManipulator;
 
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.TimeZone;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,16 +39,6 @@ import java.util.function.Supplier;
  * Global lua state
  */
 public final class LuaState {
-	/**
-	 * The active input stream
-	 */
-	public InputStream stdin;
-
-	/**
-	 * The active output stream
-	 */
-	public PrintStream stdout;
-
 	/**
 	 * The metatable for all strings
 	 */
@@ -85,29 +70,14 @@ public final class LuaState {
 	public LuaTable threadMetatable;
 
 	/**
-	 * Lookup of loaded packages
-	 */
-	public final LuaTable loadedPackages = new LuaTable();
-
-	/**
-	 * The active resource manipulator
-	 */
-	public final ResourceManipulator resourceManipulator;
-
-	/**
 	 * The compiler for this threstate
 	 */
-	public final LoadState.LuaCompiler compiler;
+	public final LoadState.FunctionFactory compiler;
 
 	/**
 	 * The handler for the debugger. Override this for custom debug actions.
 	 */
 	public final DebugHandler debug;
-
-	/**
-	 * The timezone for this state, as used by {@code os}.
-	 */
-	public final TimeZone timezone;
 
 	/**
 	 * The currently executing thread
@@ -136,28 +106,30 @@ public final class LuaState {
 	 */
 	private final ErrorReporter reportError;
 
+	private final GlobalRegistry registry = new GlobalRegistry();
+
 	public LuaState() {
 		this(new LuaState.Builder());
 	}
 
 	private LuaState(Builder builder) {
-		stdin = builder.stdin;
-		stdout = builder.stdout;
-		stringMetatable = builder.stringMetatable;
-		booleanMetatable = builder.booleanMetatable;
-		numberMetatable = builder.numberMetatable;
-		nilMetatable = builder.nilMetatable;
-		functionMetatable = builder.functionMetatable;
-		threadMetatable = builder.threadMetatable;
-		resourceManipulator = builder.resourceManipulator;
 		compiler = builder.compiler;
 		debug = builder.debug;
-		timezone = builder.timezone;
 		threader = new YieldThreader(builder.coroutineExecutor);
 		reportError = builder.reportError;
 
 		mainThread = currentThread = new LuaThread(this, new LuaTable());
 	}
+
+	/**
+	 * Get the global registry, a Lua table used to store Lua values.
+	 *
+	 * @return The global debug registry.
+	 */
+	public GlobalRegistry registry() {
+		return registry;
+	}
+
 
 	/**
 	 * Abandon this state, instructing any pending thread to terminate.
@@ -247,18 +219,8 @@ public final class LuaState {
 			return thread;
 		});
 
-		private InputStream stdin = System.in;
-		private PrintStream stdout = System.out;
-		private LuaTable stringMetatable;
-		private LuaTable booleanMetatable;
-		private LuaTable numberMetatable;
-		private LuaTable nilMetatable;
-		private LuaTable functionMetatable;
-		private LuaTable threadMetatable;
-		private ResourceManipulator resourceManipulator = new FileResourceManipulator();
-		private LoadState.LuaCompiler compiler = LuaC.INSTANCE;
+		private LoadState.FunctionFactory compiler = LoadState::interpretedFunction;
 		private DebugHandler debug = DebugHandler.INSTANCE;
-		private TimeZone timezone = TimeZone.getDefault();
 		private Executor coroutineExecutor = defaultCoroutineExecutor;
 		private ErrorReporter reportError;
 
@@ -272,117 +234,12 @@ public final class LuaState {
 		}
 
 		/**
-		 * Set the initial standard input for this Lua state. This defaults to {@link System#in}.
-		 *
-		 * @param stdin The new standard input
-		 * @return This builder
-		 * @see LuaState#stdin
-		 */
-		public Builder stdin(InputStream stdin) {
-			if (stdin == null) throw new NullPointerException("stdin cannot be null");
-			this.stdin = stdin;
-			return this;
-		}
-
-		/**
-		 * Set the initial standard output for this Lua state. This defaults to {@link System#out}.
-		 *
-		 * @param stdout The new standard output
-		 * @return This builder
-		 * @see LuaState#stdout
-		 */
-		public Builder stdout(PrintStream stdout) {
-			if (stdout == null) throw new NullPointerException("stdout cannot be null");
-			this.stdout = stdout;
-			return this;
-		}
-
-		/**
-		 * Set the initial metatable for string values within this Lua State. This defaults to {@code null}.
-		 *
-		 * @param metatable The initial metatable
-		 * @return This builder
-		 */
-		public Builder stringMetatable(LuaTable metatable) {
-			stringMetatable = metatable;
-			return this;
-		}
-
-		/**
-		 * Set the initial metatable for boolean values within this Lua State. This defaults to {@code null}.
-		 *
-		 * @param metatable The initial metatable
-		 * @return This builder
-		 */
-		public Builder booleanMetatable(LuaTable metatable) {
-			booleanMetatable = metatable;
-			return this;
-		}
-
-		/**
-		 * Set the initial metatable for numeric values within this Lua State. This defaults to {@code null}.
-		 *
-		 * @param metatable The initial metatable
-		 * @return This builder
-		 */
-		public Builder numberMetatable(LuaTable metatable) {
-			numberMetatable = metatable;
-			return this;
-		}
-
-		/**
-		 * Set the initial metatable for nil values within this Lua State. This defaults to {@code null}.
-		 *
-		 * @param metatable The initial metatable
-		 * @return This builder
-		 */
-		public Builder nilMetatable(LuaTable metatable) {
-			nilMetatable = metatable;
-			return this;
-		}
-
-		/**
-		 * Set the initial metatable for functions within this Lua State. This defaults to {@code null}.
-		 *
-		 * @param metatable The initial metatable
-		 * @return This builder
-		 */
-		public Builder functionMetatable(LuaTable metatable) {
-			functionMetatable = metatable;
-			return this;
-		}
-
-		/**
-		 * Set the initial metatable for threads within this Lua State. This defaults to {@code null}.
-		 *
-		 * @param metatable The initial metatable
-		 * @return This builder
-		 */
-		public Builder threadMetatable(LuaTable metatable) {
-			threadMetatable = metatable;
-			return this;
-		}
-
-		/**
-		 * Set the resource manipulator that the {@code os} and {@code io} libraries will use. This defaults to a
-		 * {@link FileResourceManipulator}, which uses the default file system.
-		 *
-		 * @param resourceManipulator The new resource manipulator
-		 * @return This builder
-		 */
-		public Builder resourceManipulator(ResourceManipulator resourceManipulator) {
-			if (this.resourceManipulator == null) throw new NullPointerException("resourceManipulator cannot be null");
-			this.resourceManipulator = resourceManipulator;
-			return this;
-		}
-
-		/**
 		 * Set the compiler for this Lua state. This defaults to using the {@link LuaC} compiler.
 		 *
 		 * @param compiler The new compiler to use
 		 * @return This builder
 		 */
-		public Builder compiler(LoadState.LuaCompiler compiler) {
+		public Builder compiler(LoadState.FunctionFactory compiler) {
 			if (compiler == null) throw new NullPointerException("compiler cannot be null");
 			this.compiler = compiler;
 			return this;
@@ -397,18 +254,6 @@ public final class LuaState {
 		public Builder debug(DebugHandler debug) {
 			if (debug == null) throw new NullPointerException("debug cannot be null");
 			this.debug = debug;
-			return this;
-		}
-
-		/**
-		 * Set the timezone for this Lua state.
-		 *
-		 * @param zone The new timezone
-		 * @return This builder
-		 */
-		public Builder timezone(TimeZone zone) {
-			if (zone == null) throw new NullPointerException("zone cannot be null");
-			timezone = zone;
 			return this;
 		}
 

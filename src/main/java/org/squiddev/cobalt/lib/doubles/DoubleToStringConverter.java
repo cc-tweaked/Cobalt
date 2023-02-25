@@ -35,9 +35,9 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 import org.squiddev.cobalt.Buffer;
 
 import static java.util.Objects.requireNonNull;
-import static org.squiddev.cobalt.lib.doubles.Assert.*;
+import static org.squiddev.cobalt.lib.doubles.Assert.requireArg;
 
-public class DoubleToStringConverter {
+public final class DoubleToStringConverter {
 	public static final Symbols ECMA_SCRIPT_SYMBOLS = new Symbols("Infinity", "NaN", 'e');
 	/**
 	 * When calling toFixed with a double > 10^MAX_FIXED_DIGITS_BEFORE_POINT
@@ -289,7 +289,7 @@ public class DoubleToStringConverter {
 		requireArg(decimalDigits.length() != 0, "decimalDigits must not be empty");
 		requireArg(length <= decimalDigits.length(), "length must be smaller than decimalDigits");
 
-		if (assertEnabled()) assertThat((double) exponent < 1e4);
+		assert (double) exponent < 1e4;
 		ExponentPart exponentPart = createExponentPart(exponent);
 
 		boolean emitTrailingPoint = fo.isAlternateForm() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
@@ -412,7 +412,7 @@ public class DoubleToStringConverter {
 				resultBuilder.append('.');
 
 				addPadding(resultBuilder, '0', -decimalPoint);
-				if (assertEnabled()) assertThat(digitsLength <= digitsAfterPoint - (-decimalPoint));
+				assert digitsLength <= digitsAfterPoint - (-decimalPoint);
 				resultBuilder.append(decimalDigits.getBuffer(), 0, decimalDigits.length());
 				int remainingDigits = digitsAfterPoint - (-decimalPoint) - digitsLength;
 				addPadding(resultBuilder, '0', remainingDigits);
@@ -427,10 +427,10 @@ public class DoubleToStringConverter {
 			}
 		} else {
 			// "decima.l_rep000".
-			if (assertEnabled()) assertThat(digitsAfterPoint > 0);
+			assert digitsAfterPoint > 0;
 			resultBuilder.append(decimalDigits.getBuffer(), 0, decimalPoint);
 			resultBuilder.append('.');
-			if (assertEnabled()) assertThat(digitsLength - decimalPoint <= digitsAfterPoint);
+			assert digitsLength - decimalPoint <= digitsAfterPoint;
 			resultBuilder.append(decimalDigits.getBuffer(), decimalPoint, digitsLength - decimalPoint);
 			int remainingDigits = digitsAfterPoint - (digitsLength - decimalPoint);
 			addPadding(resultBuilder, '0', remainingDigits);
@@ -619,7 +619,7 @@ public class DoubleToStringConverter {
 
 		doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
 			decimalRep);
-		if (assertEnabled()) assertThat(decimalRep.length() <= requestedDigits + 1);
+		assert decimalRep.length() <= requestedDigits + 1;
 
 		decimalRep.zeroExtend(requestedDigits + 1);
 
@@ -690,7 +690,7 @@ public class DoubleToStringConverter {
 		// Add one for the terminating null character.
 		DecimalRepBuf decimalRep = new DecimalRepBuf(PRECISION_REP_CAPACITY);
 		doubleToAscii(value, DtoaMode.PRECISION, precision, decimalRep);
-		if (assertEnabled()) assertThat(decimalRep.length() <= precision);
+		assert decimalRep.length() <= precision;
 
 		// The exponent if we print the number as x.xxeyyy. That is with the
 		// decimal point after the first digit.
@@ -758,8 +758,10 @@ public class DoubleToStringConverter {
 
 	private static BigNumDtoa.BignumDtoaMode dtoaToBignumDtoaMode(DoubleToStringConverter.DtoaMode dtoaMode) {
 		switch (dtoaMode) {
-			case FIXED: return BigNumDtoa.BignumDtoaMode.FIXED;
-			case PRECISION: return BigNumDtoa.BignumDtoaMode.PRECISION;
+			case FIXED:
+				return BigNumDtoa.BignumDtoaMode.FIXED;
+			case PRECISION:
+				return BigNumDtoa.BignumDtoaMode.PRECISION;
 			default:
 				throw new IllegalStateException("Unreachable");
 		}
@@ -782,22 +784,22 @@ public class DoubleToStringConverter {
 	 *    'requestedDigits' digits after the decimal outPoint. The produced digits
 	 *    might be too short in which case the caller has to fill the remainder
 	 *    with '0's.
-	 *    <p/>
+	 * <p/>
 	 *    <b>Example:</b> toFixed(0.001, 5) is allowed to return  <code>buffer="1", outPoint=-2</code>.
-	 *    <p/>
+	 * <p/>
 	 *    Halfway cases are rounded towards +/-Infinity (away from 0). The call
 	 *    toFixed(0.15, 2) thus returns  buffer="2", outPoint=0.
-	 *    <p/>
+	 * <p/>
 	 *    The returned buffer may contain digits that would be truncated from the
 	 *    shortest representation of the input.
-	 *    <p/>
+	 * <p/>
 	 *  </li>
 	 *  <li>
 	 *    {@link DtoaMode#PRECISION PRECISION}: produces 'requestedDigits' where the first digit is not '0'.
 	 *    Even though the outLength of produced digits usually equals
 	 *    'requestedDigits', the function is allowed to return fewer digits, in
 	 *    which case the caller has to fill the missing digits with '0's.
-	 *    <p/>
+	 * <p/>
 	 *    Halfway cases are again rounded away from 0.
 	 *  </li>
 	 * </ul>
@@ -820,7 +822,7 @@ public class DoubleToStringConverter {
 	 *                        and the {@link DecimalRepBuf#getSign() sign} of the number.
 	 */
 	public static void doubleToAscii(double v, DtoaMode mode, int requestedDigits, DecimalRepBuf buffer) {
-		if (assertEnabled()) requireArg(!new Ieee.Double(v).isSpecial(), "value can't be a special value");
+		assert !new Ieee.Double(v).isSpecial() : "value can't be a special value";
 		requireArg(requestedDigits >= 0, "requestedDigits must be >= 0");
 
 		// begin with an empty buffer

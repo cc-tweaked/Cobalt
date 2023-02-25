@@ -30,48 +30,13 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-final public class Assert {
-	private static boolean enabled = false;
-
-	public static boolean assertEnabled() {
-		return enabled;
-	}
-
-	public static void assertThat(boolean expected) {
-		if (enabled && !expected) {
-			throw new DoubleConversionAssertionException("Assertion failed");
-		}
-	}
-
-	public static void setEnabled(boolean enabled) {
-		Assert.enabled = enabled;
-	}
-
+final class Assert {
 	public static void requireState(boolean condition, String msg) {
 		if (!condition) throw new IllegalStateException(msg);
 	}
 
 	public static void requireArg(boolean condition, String msg) {
 		if (!condition) throw new IllegalArgumentException(msg);
-	}
-
-	/**
-	 * Error thrown on Double conversion assertion failures.
-	 * Used in tests to help isolate which test data item failed.
-	 */
-	public static class DoubleConversionAssertionException extends IllegalStateException {
-		private static final long serialVersionUID = 1L;
-
-		public DoubleConversionAssertionException() {
-		}
-
-		public DoubleConversionAssertionException(String message) {
-			super(message, null);
-		}
-
-		public DoubleConversionAssertionException(String message, Throwable cause) {
-			super(message, cause);
-		}
 	}
 
 	private Assert() {

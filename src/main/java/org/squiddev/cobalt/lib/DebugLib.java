@@ -30,7 +30,6 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.*;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -45,10 +44,10 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * instances.
  *
  * @see LibFunction
- * @see JsePlatform
+ * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.9">http://www.lua.org/manual/5.1/manual.html#5.9</a>
  */
-public class DebugLib implements LuaLibrary {
+public final class DebugLib {
 	private static final LuaString MAIN = valueOf("main");
 	private static final LuaString LUA = valueOf("Lua");
 	private static final LuaString C = valueOf("C");
@@ -72,24 +71,23 @@ public class DebugLib implements LuaLibrary {
 	private static final LuaString ISVARARG = valueOf("isvararg");
 	private static final LuaString ISTAILCALL = valueOf("istailcall");
 
-	private final LuaTable registry = new LuaTable();
+	private DebugLib() {
+	}
 
-	@Override
-	public LuaTable add(LuaState state, LuaTable env) {
-		LuaTable t = new LuaTable();
-		RegisteredFunction.bind(t, new RegisteredFunction[]{
+	public static void add(LuaState state, LuaTable env) {
+		LibFunction.setGlobalLibrary(state, env, "debug", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("debug", DebugLib::debug),
 			RegisteredFunction.ofV("getfenv", DebugLib::getfenv),
 			RegisteredFunction.ofV("gethook", DebugLib::gethook),
 			RegisteredFunction.ofFactory("getinfo", () -> new VarArgFunction() {
 				@Override
-				public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-					return DebugLib.getinfo(state, args, this);
+				public Varargs invoke(LuaState state1, Varargs args) throws LuaError {
+					return DebugLib.getinfo(state1, args, this);
 				}
 			}),
 			RegisteredFunction.ofV("getlocal", DebugLib::getlocal),
 			RegisteredFunction.ofV("getmetatable", DebugLib::getmetatable),
-			RegisteredFunction.ofV("getregistry", this::getregistry),
+			RegisteredFunction.ofV("getregistry", DebugLib::getregistry),
 			RegisteredFunction.ofV("getupvalue", DebugLib::getupvalue),
 			RegisteredFunction.ofV("setfenv", DebugLib::setfenv),
 			RegisteredFunction.ofV("sethook", DebugLib::sethook),
@@ -99,16 +97,11 @@ public class DebugLib implements LuaLibrary {
 			RegisteredFunction.ofV("traceback", DebugLib::traceback),
 			RegisteredFunction.ofV("upvalueid", DebugLib::upvalueId),
 			RegisteredFunction.ofV("upvaluejoin", DebugLib::upvalueJoin),
-		});
-		env.rawset("debug", t);
-		state.loadedPackages.rawset("debug", t);
-		return t;
+		}));
 	}
 
 	// ------------------- library function implementations -----------------
 
-	// j2se subclass may wish to override and provide actual console here.
-	// j2me platform has not System.in to provide console.
 	private static Varargs debug(LuaState state, Varargs args) {
 		return NONE;
 	}
@@ -358,8 +351,8 @@ public class DebugLib implements LuaLibrary {
 		}
 	}
 
-	private Varargs getregistry(LuaState state, Varargs args) {
-		return registry;
+	private static Varargs getregistry(LuaState state, Varargs args) {
+		return state.registry().get();
 	}
 
 	private static LuaString findupvalue(LuaClosure c, int up) {

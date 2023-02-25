@@ -24,9 +24,6 @@
  */
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.LuaLibrary;
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -714,19 +711,6 @@ public final class LuaTable extends LuaValue {
 		}
 
 		return l.toArray(new LuaValue[l.size()]);
-	}
-
-	/**
-	 * Load a library instance by setting its environment to {@code this}
-	 * and calling it, which should initialize the library instance and
-	 * install itself into this instance.
-	 *
-	 * @param state   The current lua state
-	 * @param library The callable {@link LuaFunction} to load into {@code this}
-	 * @return {@link LuaValue} containing the result of the initialization call.
-	 */
-	public LuaValue load(LuaState state, LuaLibrary library) {
-		return library.add(state, this);
 	}
 
 	//region Resizing

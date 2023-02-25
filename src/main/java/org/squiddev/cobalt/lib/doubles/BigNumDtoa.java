@@ -33,10 +33,7 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.assertEnabled;
-import static org.squiddev.cobalt.lib.doubles.Assert.assertThat;
-
-public class BigNumDtoa {
+final class BigNumDtoa {
 
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
@@ -57,7 +54,7 @@ public class BigNumDtoa {
 	}
 
 	private static int normalizedExponent(@Unsigned long significand, int exponent) {
-		if (assertEnabled()) assertThat(significand != 0L);
+		assert significand != 0L;
 		while ((significand & Ieee.Double.HIDDEN_BIT) == 0L) {
 			significand = significand << 1;
 			exponent = exponent - 1;
@@ -68,9 +65,9 @@ public class BigNumDtoa {
 	/**
 	 * Converts the given double 'v' to ascii.
 	 * The result should be interpreted as buffer * 10^(point-length).
-	 *
+	 * <p>
 	 * The input v must be > 0 and different from NaN, and Infinity.
-	 *
+	 * <p>
 	 * The output depends on the given mode:
 	 * - FIXED: produces digits necessary to print a given number with
 	 * 'requestedDigits' digits after the decimal point. The produced digits
@@ -89,10 +86,8 @@ public class BigNumDtoa {
 	 * 'bignumDtoa' expects the given buffer to be big enough to hold all digits.
 	 */
 	public static void bignumDtoa(double v, BignumDtoaMode mode, int requestedDigits, DecimalRepBuf buf) {
-		if (assertEnabled()) {
-			assertThat(v > 0.0);
-			assertThat(!new Ieee.Double(v).isSpecial());
-		}
+		assert v > 0.0;
+		assert !new Ieee.Double(v).isSpecial();
 		@Unsigned long significand;
 		int exponent;
 		significand = new Ieee.Double(v).significand();
@@ -154,7 +149,7 @@ public class BigNumDtoa {
 	 * Once 'count' digits have been produced rounds the result depending on the
 	 * remainder (remainders of exactly .5 round upwards). Might update the
 	 * decimalPoint when rounding up (for example for 0.9999).
-	 *
+	 * <p>
 	 * Let v = numerator / denominator < 10.
 	 * Then we generate 'count' digits of d = x.xxxxx... (without the decimal point)
 	 * from left to right. Once 'count' digits have been produced we decide wether
@@ -163,7 +158,7 @@ public class BigNumDtoa {
 	 * exponent (decimalPoint), when rounding upwards.
 	 */
 	private static void generateCountedDigits(int count, Bignum numerator, Bignum denominator, DecimalRepBuf buf) {
-		if (assertEnabled()) assertThat(count >= 0);
+		assert count >= 0;
 		for (int i = 0; i < count - 1; ++i) {
 			@Unsigned int digit = numerator.divideModuloIntBignum(denominator);
 			// digit = numerator / denominator (integer division).
@@ -187,7 +182,7 @@ public class BigNumDtoa {
 	 * Generates 'requestedDigits' after the decimal point. It might omit
 	 * trailing '0's. If the input number is too small then no digits at all are
 	 * generated (ex.: 2 fixed digits for 0.00001).
-	 *
+	 * <p>
 	 * Input verifies:  1 <= (numerator + delta) / denominator < 10.
 	 */
 	private static void bignumToFixed(int requestedDigits, Bignum numerator, Bignum denominator, DecimalRepBuf buf) {
@@ -207,7 +202,7 @@ public class BigNumDtoa {
 		} else if (-decimalPoint == requestedDigits) {
 			// We only need to verify if the number rounds down or up.
 			// Ex: 0.04 and 0.06 with requestedDigits == 1.
-			if (assertEnabled()) assertThat(decimalPoint == -requestedDigits);
+			assert decimalPoint == -requestedDigits;
 			// Initially the fraction lies in range (1, 10]. Multiply the denominator
 			// by 10 so that we can compare more easily.
 			denominator.times10();
@@ -238,16 +233,16 @@ public class BigNumDtoa {
 	 * v = f * 2^exponent and 2^52 <= f < 2^53.
 	 * v is hence a normalized double with the given exponent. The output is an
 	 * approximation for the exponent of the decimal approximation .digits * 10^k.
-	 *
+	 * <p>
 	 * The result might undershoot by 1 in which case 10^k <= v < 10^k+1.
 	 * Note: this property holds for v's upper boundary m+ too.
 	 * 10^k <= m+ < 10^k+1.
 	 * (see explanation below).
-	 *
+	 * <p>
 	 * Examples:
 	 * estimatePower(0)   => 16
 	 * estimatePower(-52) => 0
-	 *
+	 * <p>
 	 * Note: e >= 0 => EstimatedPower(e) > 0. No similar claim can be made for e<0.
 	 */
 	private static int estimatePower(int exponent) {
@@ -289,7 +284,7 @@ public class BigNumDtoa {
 	 * Then d * 10^estimatedPower is the representation of v.
 	 * (Note: the fraction and the estimatedPower might get adjusted before
 	 * generating the decimal representation.)
-	 *
+	 * <p>
 	 * The initial start values consist of:
 	 * - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 * - a scaled (common) denominator.
@@ -297,9 +292,9 @@ public class BigNumDtoa {
 	 * decimal converting back to v):
 	 * - v - m-: the distance to the lower boundary.
 	 * - m+ - v: the distance to the upper boundary.
-	 *
+	 * <p>
 	 * v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
-	 *
+	 * <p>
 	 * Let ep == estimatedPower, then the returned values will satisfy:
 	 * v / 10^ep = numerator / denominator.
 	 * v's boundaries m- and m+:
@@ -308,14 +303,14 @@ public class BigNumDtoa {
 	 * Or in other words:
 	 * m- == v - deltaMinus * 10^ep / denominator;
 	 * m+ == v + deltaPlus * 10^ep / denominator;
-	 *
+	 * <p>
 	 * Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 * or       10^k <= v < 10^(k+1)
 	 * we then have 0.1 <= numerator/denominator < 1
 	 * or    1 <= numerator/denominator < 10
-	 *
+	 * <p>
 	 * It is then easy to kickstart the digit-generation routine.
-	 *
+	 * <p>
 	 * The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValuesPositiveExponent(
@@ -323,7 +318,7 @@ public class BigNumDtoa {
 		int estimatedPower,
 		Bignum numerator, Bignum denominator) {
 		// A positive exponent implies a positive power.
-		assertThat(estimatedPower >= 0);
+		assert estimatedPower >= 0;
 		// Since the estimatedPower is positive we simply multiply the denominator
 		// by 10^estimatedPower.
 
@@ -344,7 +339,7 @@ public class BigNumDtoa {
 	 * Then d * 10^estimatedPower is the representation of v.
 	 * (Note: the fraction and the estimatedPower might get adjusted before
 	 * generating the decimal representation.)
-	 *
+	 * <p>
 	 * The initial start values consist of:
 	 * - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 * - a scaled (common) denominator.
@@ -352,9 +347,9 @@ public class BigNumDtoa {
 	 * decimal converting back to v):
 	 * - v - m-: the distance to the lower boundary.
 	 * - m+ - v: the distance to the upper boundary.
-	 *
+	 * <p>
 	 * v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
-	 *
+	 * <p>
 	 * Let ep == estimatedPower, then the returned values will satisfy:
 	 * v / 10^ep = numerator / denominator.
 	 * v's boundaries m- and m+:
@@ -363,14 +358,14 @@ public class BigNumDtoa {
 	 * Or in other words:
 	 * m- == v - deltaMinus * 10^ep / denominator;
 	 * m+ == v + deltaPlus * 10^ep / denominator;
-	 *
+	 * <p>
 	 * Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 * or       10^k <= v < 10^(k+1)
 	 * we then have 0.1 <= numerator/denominator < 1
 	 * or    1 <= numerator/denominator < 10
-	 *
+	 * <p>
 	 * It is then easy to kickstart the digit-generation routine.
-	 *
+	 * <p>
 	 * The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValuesNegativeExponentPositivePower(
@@ -401,7 +396,7 @@ public class BigNumDtoa {
 	 * Then d * 10^estimatedPower is the representation of v.
 	 * (Note: the fraction and the estimatedPower might get adjusted before
 	 * generating the decimal representation.)
-	 *
+	 * <p>
 	 * The initial start values consist of:
 	 * - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 * - a scaled (common) denominator.
@@ -409,9 +404,9 @@ public class BigNumDtoa {
 	 * decimal converting back to v):
 	 * - v - m-: the distance to the lower boundary.
 	 * - m+ - v: the distance to the upper boundary.
-	 *
+	 * <p>
 	 * v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
-	 *
+	 * <p>
 	 * Let ep == estimatedPower, then the returned values will satisfy:
 	 * v / 10^ep = numerator / denominator.
 	 * v's boundaries m- and m+:
@@ -420,14 +415,14 @@ public class BigNumDtoa {
 	 * Or in other words:
 	 * m- == v - deltaMinus * 10^ep / denominator;
 	 * m+ == v + deltaPlus * 10^ep / denominator;
-	 *
+	 * <p>
 	 * Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 * or       10^k <= v < 10^(k+1)
 	 * we then have 0.1 <= numerator/denominator < 1
 	 * or    1 <= numerator/denominator < 10
-	 *
+	 * <p>
 	 * It is then easy to kickstart the digit-generation routine.
-	 *
+	 * <p>
 	 * The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValuesNegativeExponentNegativePower(
@@ -446,7 +441,6 @@ public class BigNumDtoa {
 		// numerator = v * 10^-estimatedPower * 2 * 2^-exponent.
 		// Remember: numerator has been abused as powerTen. So no need to assign it
 		//  to itself.
-		if (assertEnabled()) assertThat(numerator.equals(powerTen));
 		numerator.multiplyByUInt64(ulSignificand);
 
 		// denominator = 2 * 2^-exponent with exponent < 0.
@@ -463,7 +457,7 @@ public class BigNumDtoa {
 	 * Then d * 10^estimatedPower is the representation of v.
 	 * (Note: the fraction and the estimatedPower might get adjusted before
 	 * generating the decimal representation.)
-	 *
+	 * <p>
 	 * The initial start values consist of:
 	 * - a scaled numerator: s.t. numerator/denominator == v / 10^estimatedPower.
 	 * - a scaled (common) denominator.
@@ -471,9 +465,9 @@ public class BigNumDtoa {
 	 * decimal converting back to v):
 	 * - v - m-: the distance to the lower boundary.
 	 * - m+ - v: the distance to the upper boundary.
-	 *
+	 * <p>
 	 * v, m+, m-, and therefore v - m- and m+ - v all share the same denominator.
-	 *
+	 * <p>
 	 * Let ep == estimatedPower, then the returned values will satisfy:
 	 * v / 10^ep = numerator / denominator.
 	 * v's boundaries m- and m+:
@@ -482,14 +476,14 @@ public class BigNumDtoa {
 	 * Or in other words:
 	 * m- == v - deltaMinus * 10^ep / denominator;
 	 * m+ == v + deltaPlus * 10^ep / denominator;
-	 *
+	 * <p>
 	 * Since 10^(k-1) <= v < 10^k    (with k == estimatedPower)
 	 * or       10^k <= v < 10^(k+1)
 	 * we then have 0.1 <= numerator/denominator < 1
 	 * or    1 <= numerator/denominator < 10
-	 *
+	 * <p>
 	 * It is then easy to kickstart the digit-generation routine.
-	 *
+	 * <p>
 	 * The boundary-deltas are only filled if the mode equals BIGNUM_DTOA_SHORTEST.
 	 */
 	private static void initialScaledStartValues(
@@ -518,7 +512,7 @@ public class BigNumDtoa {
 	 * v = numerator'/denominator' * 10^(decimalPoint-1)
 	 * where numerator' and denominator' are the values of numerator and
 	 * denominator after the call to this function.
-	 *
+	 * <p>
 	 * This routine multiplies numerator/denominator so that its values lies in the
 	 * range 1-10. That is after a call to this function we have:
 	 * 1 <= (numerator + deltaPlus) /denominator < 10.

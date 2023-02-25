@@ -31,7 +31,7 @@ import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.function.ZeroArgFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -219,7 +219,7 @@ public class LuaOperationsTest {
 		// set up suitable environments for execution
 		LuaValue aaa = valueOf("aaa");
 		LuaValue eee = valueOf("eee");
-		LuaTable _G = JsePlatform.standardGlobals(state);
+		LuaTable _G = CoreLibraries.standardGlobals(state);
 		LuaTable newenv = ValueFactory.tableOf(valueOf("a"), valueOf("aaa"),
 			valueOf("b"), valueOf("bbb"));
 		LuaTable mt = ValueFactory.tableOf(Constants.INDEX, _G);

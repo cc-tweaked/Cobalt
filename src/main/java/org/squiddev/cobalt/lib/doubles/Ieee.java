@@ -38,8 +38,7 @@ import static org.squiddev.cobalt.lib.doubles.Assert.requireState;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUlong;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
 
-public final class Ieee {
-
+final class Ieee {
 	public static class Double {
 		public static final @Unsigned long SIGN_MASK = 0x8000000000000000L;
 		public static final @Unsigned long EXPONENT_MASK = 0x7FF0000000000000L;
@@ -83,7 +82,7 @@ public final class Ieee {
 			requireState(sign() > 0, "instance must be positive");
 			requireState(!isSpecial(), "must not be special");
 			return new DiyFp(significand(),
-					exponent());
+				exponent());
 		}
 
 		// The value encoded by this Double must be strictly greater than 0.
@@ -176,7 +175,7 @@ public final class Ieee {
 		public boolean isNan() {
 			long d64 = asUint64();
 			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
-					((d64 & SIGNIFICAND_MASK) != 0L);
+				((d64 & SIGNIFICAND_MASK) != 0L);
 		}
 
 		public boolean isQuietNan() {
@@ -191,7 +190,7 @@ public final class Ieee {
 		public boolean isInfinite() {
 			long d64 = asUint64();
 			return ((d64 & EXPONENT_MASK) == EXPONENT_MASK) &&
-					((d64 & SIGNIFICAND_MASK) == 0L);
+				((d64 & SIGNIFICAND_MASK) == 0L);
 		}
 
 		public int sign() {
@@ -206,7 +205,7 @@ public final class Ieee {
 		public DiyFp upperBoundary() {
 			requireState(sign() > 0, "instance must be positive");
 			return new DiyFp((significand() * 2L) + 1L,
-					exponent() - 1);
+				exponent() - 1);
 		}
 
 		/**
@@ -297,7 +296,7 @@ public final class Ieee {
 				biasedExponent = toUlong(exponent + EXPONENT_BIAS);
 			}
 			return (significand & SIGNIFICAND_MASK) |
-					(biasedExponent << PHYSICAL_SIGNIFICAND_SIZE);
+				(biasedExponent << PHYSICAL_SIGNIFICAND_SIZE);
 		}
 
 	}

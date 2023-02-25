@@ -32,7 +32,7 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.OneArgFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 import java.io.ByteArrayInputStream;
 import java.lang.ref.WeakReference;
@@ -76,7 +76,7 @@ public class OrphanedThreadTest {
 			.build();
 
 		// And force coroutine.yield to actually be a blocking one.
-		env = JsePlatform.standardGlobals(state);
+		env = SystemLibraries.standardGlobals(state);
 		((LuaTable) env.rawget("coroutine")).rawset("yield", new VarArgFunction() {
 			@Override
 			public Varargs invoke(LuaState state, Varargs args) throws LuaError {

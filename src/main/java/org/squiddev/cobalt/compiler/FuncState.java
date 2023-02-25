@@ -44,7 +44,7 @@ import static org.squiddev.cobalt.compiler.Parser.NO_JUMP;
  * This largely mirrors the same structure in {@code lparser.h}, but also handles emitting code (defined in lcode.h
  * in PUC Lua).
  */
-class FuncState {
+final class FuncState {
 	static class UpvalueDesc {
 		final LuaString name;
 		final ExpKind kind;

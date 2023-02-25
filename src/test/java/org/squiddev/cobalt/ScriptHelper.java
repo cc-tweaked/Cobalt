@@ -30,9 +30,8 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.VarArgFunction;
-import org.squiddev.cobalt.lib.jse.JseIoLib;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
-import org.squiddev.cobalt.lib.platform.FileResourceManipulator;
+import org.squiddev.cobalt.lib.system.ResourceLoader;
+import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 import java.io.*;
 import java.time.ZoneOffset;
@@ -42,10 +41,13 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class ScriptHelper extends FileResourceManipulator {
+public class ScriptHelper {
 	private final String subdir;
 	public LuaState state;
 	public LuaTable globals;
+
+	private final DelegatingOutputStream stdout = new DelegatingOutputStream(System.out);
+	private final PrintStream stdoutStream = new PrintStream(stdout);
 
 	public ScriptHelper(String subdir) {
 		this.subdir = subdir;
@@ -57,36 +59,19 @@ public class ScriptHelper extends FileResourceManipulator {
 	}
 
 	public void setup(Consumer<LuaState.Builder> extend) {
-		LuaState.Builder builder = LuaState.builder()
-			.resourceManipulator(this)
-			.stdin(new InputStream() {
-				@Override
-				public int read() {
-					return -1;
-				}
-			});
+		LuaState.Builder builder = LuaState.builder();
 		extend.accept(builder);
 		setupCommon(builder.build());
 	}
 
 	public void setupQuiet() {
-		setupCommon(LuaState.builder()
-			.resourceManipulator(this)
-			.stdout(new PrintStream(new OutputStream() {
-				@Override
-				public void write(int b) {
-				}
-
-				@Override
-				public void write(byte[] b, int off, int len) {
-				}
-			}))
-			.build());
+		setupCommon(new LuaState());
+		stdout.setOut(new VoidOutputStream());
 	}
 
 	private void setupCommon(LuaState state) {
 		this.state = state;
-		globals = JsePlatform.debugGlobals(state);
+		globals = SystemLibraries.debugGlobals(state, this::load, new VoidInputStream(), stdoutStream);
 		globals.rawset("id_", new VarArgFunction() {
 			@Override
 			public Varargs invoke(LuaState state, Varargs args) {
@@ -96,10 +81,17 @@ public class ScriptHelper extends FileResourceManipulator {
 		TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
 	}
 
-	@Override
-	public InputStream findResource(String filename) {
-		InputStream stream = getClass().getResourceAsStream(subdir + filename);
-		return stream == null ? super.findResource(filename) : stream;
+	private InputStream load(String filename) {
+		{
+			InputStream stream = getClass().getResourceAsStream(subdir + filename);
+			if (stream != null) return stream;
+		}
+		{
+			InputStream stream = getClass().getResourceAsStream("/" + filename);
+			if (stream != null) return stream;
+		}
+
+		return ResourceLoader.FILES.load(filename);
 	}
 
 	/**
@@ -108,30 +100,27 @@ public class ScriptHelper extends FileResourceManipulator {
 	 * @param testName The name of the test file to run
 	 */
 	public void runComparisonTest(String testName) throws Exception {
-		// Override print()
+		// Redirect our stdout!
 		final ByteArrayOutputStream output = new ByteArrayOutputStream();
-		final PrintStream oldps = state.stdout;
-		final PrintStream ps = new PrintStream(output);
-		state.stdout = ps;
-		globals.load(state, new JseIoLib());
+		final OutputStream oldOutput = stdout.getOut();
+		stdout.setOut(output);
 
 		// Run the script
 		try {
 			LuaThread.runMain(state, loadScript(testName));
 
-			ps.flush();
-			String actualOutput = new String(output.toByteArray());
+			stdoutStream.flush();
+			String actualOutput = output.toString();
 			String expectedOutput = getExpectedOutput(testName);
 			actualOutput = actualOutput.replaceAll("\r\n", "\n");
 			expectedOutput = expectedOutput.replaceAll("\r\n", "\n");
 
 			assertEquals(expectedOutput, actualOutput);
 		} catch (LuaError e) {
-			System.out.println(new String(output.toByteArray()));
+			System.out.println(output);
 			throw e;
 		} finally {
-			state.stdout = oldps;
-			ps.close();
+			stdout.setOut(oldOutput);
 		}
 	}
 
@@ -143,7 +132,7 @@ public class ScriptHelper extends FileResourceManipulator {
 	 * @throws IOException
 	 */
 	public LuaFunction loadScript(String name) throws IOException, CompileException {
-		InputStream script = findResource(name + ".lua");
+		InputStream script = load(name + ".lua");
 		if (script == null) fail("Could not load script for test case: " + name);
 		try {
 			return LoadState.load(state, script, "@" + name + ".lua", globals);
@@ -152,13 +141,13 @@ public class ScriptHelper extends FileResourceManipulator {
 		}
 	}
 
-	public Varargs runWithDump(String script) throws InterruptedException, LuaError, IOException, CompileException {
-		return runWithDump(loadScript(script));
+	public void runWithDump(String script) throws InterruptedException, LuaError, IOException, CompileException {
+		runWithDump(loadScript(script));
 	}
 
-	public Varargs runWithDump(LuaFunction function) throws InterruptedException, LuaError {
+	public void runWithDump(LuaFunction function) throws InterruptedException, LuaError {
 		try {
-			return LuaThread.runMain(state, function);
+			LuaThread.runMain(state, function);
 		} catch (LuaError e) {
 			DebugState debug = state.getCurrentThread().getDebugState();
 			int level = 0;
@@ -180,7 +169,7 @@ public class ScriptHelper extends FileResourceManipulator {
 	}
 
 	private String getExpectedOutput(final String name) throws IOException {
-		InputStream output = this.findResource(name + ".out");
+		InputStream output = load(name + ".out");
 		if (output == null) fail("Failed to get comparison output for " + name);
 		try {
 			return readString(output);
@@ -196,7 +185,37 @@ public class ScriptHelper extends FileResourceManipulator {
 		while ((r = is.read(buf)) >= 0) {
 			outputStream.write(buf, 0, r);
 		}
-		return new String(outputStream.toByteArray());
+		return outputStream.toString();
 	}
 
+	private static class VoidOutputStream extends OutputStream {
+		@Override
+		public void write(int b) {
+		}
+
+		@Override
+		public void write(byte[] bytes, int off, int len) {
+		}
+	}
+
+	private static class VoidInputStream extends InputStream {
+		@Override
+		public int read() {
+			return -1;
+		}
+	}
+
+	private static class DelegatingOutputStream extends FilterOutputStream {
+		public DelegatingOutputStream(OutputStream output) {
+			super(output);
+		}
+
+		public OutputStream getOut() {
+			return out;
+		}
+
+		public void setOut(OutputStream out) {
+			this.out = out;
+		}
+	}
 }

@@ -27,7 +27,7 @@ package org.squiddev.cobalt.vm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +40,7 @@ public class StringTest {
 
 	@BeforeEach
 	public void setup() {
-		JsePlatform.standardGlobals(state);
+		CoreLibraries.standardGlobals(state);
 	}
 
 	@Test

@@ -31,7 +31,7 @@ import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,24 +40,24 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 /**
  * Class to manage loading of {@link Prototype} instances.
- *
+ * <p>
  * The {@link LoadState} class exposes one main function,
  * namely {@link #load(LuaState, InputStream, LuaString, LuaTable)},
  * to be used to load code from a particular input stream.
- *
+ * <p>
  * A simple pattern for loading and executing code is
  * <pre> {@code
  * LuaValue _G = JsePlatform.standardGlobals();
  * LoadState.load( new FileInputStream("main.lua"), "main.lua", _G ).call();
  * } </pre>
- * This should work regardless of which {@link LuaCompiler}
+ * This should work regardless of which {@link FunctionFactory}
  * has been installed.
- *
+ * <p>
  * Prior to loading code, a compiler should be installed.
+ * <p>
+ * By default, when using {@link CoreLibraries} to construct globals, the {@link LuaC} compiler is installed.
  *
- * By default, when using {@link JsePlatform} to construct globals, the {@link LuaC} compiler is installed.
- *
- * @see LuaCompiler
+ * @see FunctionFactory
  * @see LuaClosure
  * @see LuaFunction
  * @see LoadState#load(LuaState, InputStream, LuaString, LuaTable)
@@ -65,39 +65,40 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  */
 public final class LoadState {
 	/**
-	 * Interface for the compiler, if it is installed.
-	 *
-	 * See the {@link LuaClosure} documentation for examples of how to use the compiler.
-	 *
-	 * @see LuaClosure
-	 * @see #load(InputStream, LuaString, LuaString, LuaTable)
-	 */
-	public interface LuaCompiler {
-
-		/**
-		 * Load into a Closure or LuaFunction from a Stream and initializes the environment
-		 *
-		 * @param stream   Stream to read
-		 * @param filename Name of chunk
-		 * @param mode
-		 * @param env      Environment to load
-		 * @return The loaded function
-		 * @throws IOException      On stream read error
-		 * @throws CompileException If the stream cannot be loaded.
-		 */
-		LuaClosure load(InputStream stream, LuaString filename, LuaString mode, LuaTable env) throws IOException, CompileException;
-	}
-
-	/**
 	 * Signature byte indicating the file is a compiled binary chunk
 	 */
-	private static final byte[] LUA_SIGNATURE = {27, 'L', 'u', 'a'};
+	static final byte[] LUA_SIGNATURE = {27, 'L', 'u', 'a'};
 
 	/**
 	 * Name for compiled chunks
 	 */
-	public static final LuaString SOURCE_BINARY_STRING = valueOf("=?");
+	private static final LuaString SOURCE_BINARY_STRING = valueOf("=?");
 
+	/**
+	 * Construct our standard Lua function.
+	 */
+	public interface FunctionFactory {
+		/**
+		 * Create a {@link LuaClosure} from a {@link Prototype} and environment table.
+		 *
+		 * @param prototype The function prototype
+		 * @param env       The function's environment.
+		 * @return The loaded function
+		 */
+		LuaClosure load(Prototype prototype, LuaTable env);
+	}
+
+	private LoadState() {
+	}
+
+	/**
+	 * A basic {@link FunctionFactory} which loads into
+	 */
+	public static LuaClosure interpretedFunction(Prototype prototype, LuaTable env) {
+		LuaInterpretedFunction closure = new LuaInterpretedFunction(prototype, env);
+		closure.nilUpvalues();
+		return closure;
+	}
 
 	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException, CompileException {
 		return load(state, stream, valueOf(name), env);
@@ -120,43 +121,7 @@ public final class LoadState {
 	}
 
 	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
-		if (state.compiler != null) return state.compiler.load(stream, name, mode, env);
-
-		int firstByte = stream.read();
-		if (firstByte != LUA_SIGNATURE[0]) throw new CompileException("no compiler");
-		checkMode(mode, "binary");
-
-		Prototype p = loadBinaryChunk(firstByte, stream, name);
-		LuaInterpretedFunction closure = new LuaInterpretedFunction(p, env);
-		closure.nilUpvalues();
-		return closure;
-	}
-
-	/**
-	 * Load lua thought to be a binary chunk from its first byte from an input stream.
-	 *
-	 * @param firstByte the first byte of the input stream
-	 * @param stream    InputStream to read, after having read the first byte already
-	 * @param name      Name to apply to the loaded chunk
-	 * @return {@link Prototype} that was loaded
-	 * @throws IllegalArgumentException If the signature is bac
-	 * @throws IOException              If an IOException occurs
-	 * @throws CompileException         If the stream cannot be loaded.
-	 */
-	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, LuaString name) throws IOException, CompileException {
-		name = getSourceName(name);
-		// check rest of signature
-		if (firstByte != LUA_SIGNATURE[0]
-			|| stream.read() != LUA_SIGNATURE[1]
-			|| stream.read() != LUA_SIGNATURE[2]
-			|| stream.read() != LUA_SIGNATURE[3]) {
-			throw new IllegalArgumentException("bad signature");
-		}
-
-		// load file as a compiled chunk
-		BytecodeLoader s = new BytecodeLoader(stream);
-		s.loadHeader();
-		return s.loadFunction(name);
+		return state.compiler.load(LuaC.compile(stream, name, mode), env);
 	}
 
 	/**

@@ -25,12 +25,11 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.compiler.DumpState;
+import org.squiddev.cobalt.compiler.BytecodeDumper;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.StringFormat.FormatState;
 import org.squiddev.cobalt.lib.StringMatch.GSubState;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,17 +44,18 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * This is a direct port of the corresponding library in C.
  *
  * @see LibFunction
- * @see JsePlatform
+ * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.4">http://www.lua.org/manual/5.1/manual.html#5.4</a>
  */
-public class StringLib implements LuaLibrary {
+public final class StringLib {
 	static final int L_ESC = '%';
 	private static final int MAX_LEN = Integer.MAX_VALUE;
 
-	@Override
-	public LuaValue add(LuaState state, LuaTable env) {
-		LuaTable t = new LuaTable();
-		RegisteredFunction.bind(t, new RegisteredFunction[]{
+	private StringLib() {
+	}
+
+	public static void add(LuaState state, LuaTable env) {
+		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("len", StringLib::len),
 			RegisteredFunction.of("lower", StringLib::lower),
 			RegisteredFunction.of("reverse", StringLib::reverse),
@@ -76,11 +76,9 @@ public class StringLib implements LuaLibrary {
 		});
 
 		t.rawset("gfind", t.rawget("gmatch"));
-		env.rawset("string", t);
 
+		LibFunction.setGlobalLibrary(state, env, "string", t);
 		state.stringMetatable = tableOf(INDEX, t);
-		state.loadedPackages.rawset("string", t);
-		return t;
 	}
 
 	private static LuaValue len(LuaState state, LuaValue arg) throws LuaError {
@@ -236,7 +234,7 @@ public class StringLib implements LuaLibrary {
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			DumpState.dump(((LuaClosure) f).getPrototype(), baos, strip);
+			BytecodeDumper.dump(((LuaClosure) f).getPrototype(), baos, strip);
 		} catch (IOException e) {
 			throw new LuaError(e.getMessage());
 		}

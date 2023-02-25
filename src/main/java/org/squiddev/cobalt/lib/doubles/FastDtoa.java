@@ -32,10 +32,10 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.*;
+import static org.squiddev.cobalt.lib.doubles.Assert.requireArg;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
 
-public class FastDtoa {
+final class FastDtoa {
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 
@@ -49,7 +49,7 @@ public class FastDtoa {
 	 * The minimal and maximal target exponent define the range of w's binary
 	 * exponent, where 'w' is the result of multiplying the input by a cached power
 	 * of ten.
-	 *
+	 * <p>
 	 * A different range might be chosen on a different platform, to optimize digit
 	 * generation, but a smaller range requires more powers of ten to be cached.
 	 */
@@ -58,7 +58,7 @@ public class FastDtoa {
 	 * The minimal and maximal target exponent define the range of w's binary
 	 * exponent, where 'w' is the result of multiplying the input by a cached power
 	 * of ten.
-	 *
+	 * <p>
 	 * A different range might be chosen on a different platform, to optimize digit
 	 * generation, but a smaller range requires more powers of ten to be cached.
 	 */
@@ -70,12 +70,12 @@ public class FastDtoa {
 	 * round correctly, return false.
 	 * The rounding might shift the whole buffer in which case the kappa is
 	 * adjusted. For example "99", kappa = 3 might become "10", kappa = 4.
-	 *
+	 * <p>
 	 * If 2*rest > tenKappa then the buffer needs to be round up.
 	 * rest can have an error of +/- 1 unit. This function accounts for the
 	 * imprecision and returns false, if the rounding direction cannot be
 	 * unambiguously determined.
-	 *
+	 * <p>
 	 * Precondition: rest < tenKappa.
 	 */
 	private static boolean roundWeedCounted(
@@ -85,7 +85,7 @@ public class FastDtoa {
 		@Unsigned long unit,
 		int[] kappa
 	) {
-		if (assertEnabled()) assertThat(ulongLT(rest, tenKappa));
+		assert ulongLT(rest, tenKappa);
 		// The following tests are done in a specific order to avoid overflows. They
 		// will work correctly with any uint64 values of rest < tenKappa and unit.
 		//
@@ -120,7 +120,7 @@ public class FastDtoa {
 	/**
 	 * Returns the biggest power of ten that is less than or equal to the given
 	 * number. We furthermore receive the maximum number of bits 'number' has.
-	 *
+	 * <p>
 	 * Returns power == 10^(exponentPlusOne-1) such that
 	 * power <= number < power * 10.
 	 * If numberBits == 0 then 0^(0-1) is returned.
@@ -150,14 +150,14 @@ public class FastDtoa {
 	 * exponent. Its exponent is bounded by MAXIMAL_TARGET_EXPONENT and
 	 * MAXIMAL_TARGET_EXPONENT.
 	 * Hence -60 <= w.e() <= -32.
-	 *
+	 * <p>
 	 * Returns false if it fails, in which case the generated digits in the buffer
 	 * should not be used.
 	 * Preconditions:
 	 * * w is correct up to 1 ulp (unit in the last place). That
 	 * is, its error must be strictly less than a unit of its last digit.
 	 * * MINIMAL_TARGET_EXPONENT <= w.e() <= MAXIMAL_TARGET_EXPONENT
-	 *
+	 * <p>
 	 * Postconditions: returns false if procedure fails.
 	 * otherwise:
 	 * * length contains the number of digits.
@@ -167,16 +167,14 @@ public class FastDtoa {
 	 * than requestedDigits digits then some trailing '0's have been removed.
 	 * * kappa is such that
 	 * w = buffer * 10^kappa + eps with |eps| < 10^kappa / 2.
-	 *
+	 * <p>
 	 * Remark: This procedure takes into account the imprecision of its input
 	 * numbers. If the precision is not enough to guarantee all the postconditions
 	 * then false is returned. This usually happens rarely, but the failure-rate
 	 * increases with higher requestedDigits.
 	 */
 	private static boolean digitGenCounted(DiyFp w, int requestedDigits, DecimalRepBuf buf, int[] kappa) {
-		if (assertEnabled()) assertThat(MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT);
-		if (assertEnabled()) assertThat(MINIMAL_TARGET_EXPONENT >= -60);
-		if (assertEnabled()) assertThat(MAXIMAL_TARGET_EXPONENT <= -32);
+		assert MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT;
 		// w is assumed to have an error less than 1 unit. Whenever w is scaled we
 		// also scale its error.
 		@Unsigned long wError = 1L;
@@ -231,11 +229,9 @@ public class FastDtoa {
 		// data (the 'unit'), too.
 		// Note that the multiplication by 10 does not overflow, because w.e >= -60
 		// and thus one.e >= -60.
-		if (assertEnabled()) {
-			assertThat(one.e() >= -60);
-			assertThat(ulongLT(fractionals, one.f()));
-			assertThat(ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f()));
-		}
+		assert one.e() >= -60;
+		assert ulongLT(fractionals, one.f());
+		assert ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f());
 		while (requestedDigits > 0 && ulongGT(fractionals, wError)) {
 			fractionals *= 10L;
 			wError *= 10L;
@@ -276,12 +272,8 @@ public class FastDtoa {
 			ten_mk = inTenMk[0];
 			mk = inMk[0];
 		}
-		if (assertEnabled()) {
-			assertThat((MINIMAL_TARGET_EXPONENT <= w.e() + ten_mk.e() +
-				DiyFp.SIGNIFICAND_SIZE) &&
-				(MAXIMAL_TARGET_EXPONENT >= w.e() + ten_mk.e() +
-					DiyFp.SIGNIFICAND_SIZE));
-		}
+		assert MINIMAL_TARGET_EXPONENT <= w.e() + ten_mk.e() + DiyFp.SIGNIFICAND_SIZE;
+		assert MAXIMAL_TARGET_EXPONENT >= w.e() + ten_mk.e() + DiyFp.SIGNIFICAND_SIZE;
 		// Note that ten_mk is only an approximation of 10^-k. A DiyFp only contains a
 		// 64 bit significand and ten_mk is thus only precise up to 64 bits.
 
@@ -308,10 +300,10 @@ public class FastDtoa {
 	/**
 	 * Provides a decimal representation of v.
 	 * The result should be interpreted as buffer * 10^(point - outLength).
-	 *
+	 * <p>
 	 * Precondition:
 	 * * v must be a strictly positive finite double.
-	 *
+	 * <p>
 	 * Returns true if it succeeds, otherwise the result can not be trusted.
 	 * If the function returns true and mode equals
 	 * - FAST_DTOA_PRECISION, then
@@ -323,10 +315,8 @@ public class FastDtoa {
 	 * For both modes the buffer must be large enough to hold the result.
 	 */
 	public static boolean fastDtoa(double v, int requestedDigits, DecimalRepBuf buf) {
-		if (assertEnabled()) {
-			assertThat(v > 0.0);
-			assertThat(!new Ieee.Double(v).isSpecial());
-		}
+		assert v > 0.0;
+		assert !new Ieee.Double(v).isSpecial();
 
 		boolean result;
 		int[] decimalExponent = new int[1]; // initialized to 0

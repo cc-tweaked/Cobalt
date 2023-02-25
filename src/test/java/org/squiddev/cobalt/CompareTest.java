@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -32,7 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class CompareTest {
 	/**
 	 * Test argument type check errors
-	 *
+	 * <p>
 	 * Results are compared for exact match with
 	 * the installed C-based lua environment.
 	 */
@@ -48,7 +47,7 @@ public class CompareTest {
 
 	/**
 	 * Compatibility tests for the LuaJ VM
-	 *
+	 * <p>
 	 * Results are compared for exact match with
 	 * the installed C-based lua environment.
 	 */

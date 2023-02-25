@@ -26,18 +26,47 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 /**
- * A library for the environment
+ * The {@link CoreLibraries} class is a convenience class to standardize install "core" (i.e.
+ * non-{@linkplain SystemLibraries system}) into the global state.
  */
-public interface LuaLibrary {
+public final class CoreLibraries {
+	private CoreLibraries() {
+	}
+
 	/**
-	 * Add this library into an environment
+	 * Create a standard set of globals and setup a thread
 	 *
-	 * @param state       The current Lua state
-	 * @param environment The environment to add to
-	 * @return The sub-table that was added
+	 * @param state The current lua state
+	 * @return Table of globals initialized with the standard JSE libraries
+	 * @see #debugGlobals(LuaState)
+	 * @see CoreLibraries
 	 */
-	LuaValue add(LuaState state, LuaTable environment);
+	public static LuaTable standardGlobals(LuaState state) {
+		LuaTable globals = state.getMainThread().getfenv();
+		new BaseLib().add(globals);
+		TableLib.add(state, globals);
+		StringLib.add(state, globals);
+		CoroutineLib.add(state, globals);
+		new MathLib().add(state, globals);
+		new Utf8Lib().add(state, globals);
+		return globals;
+	}
+
+	/**
+	 * Create standard globals including the {@link DebugLib} library.
+	 *
+	 * @param state The current lua state
+	 * @return Table of globals initialized with the standard JSE and debug libraries
+	 * @see #standardGlobals(LuaState)
+	 * @see CoreLibraries
+	 * @see DebugLib
+	 */
+	public static LuaTable debugGlobals(LuaState state) {
+		LuaTable _G = standardGlobals(state);
+		DebugLib.add(state, _G);
+		return _G;
+	}
 }

@@ -13,16 +13,16 @@ enum UnOpr {
 	 */
 	static final int PRIORITY = 8;
 
-    static UnOpr ofToken(int op) {
-        switch (op) {
-            case TK_NOT:
-                return NOT;
-            case '-':
-                return MINUS;
-            case '#':
-                return LEN;
-            default:
-                return null;
-        }
-    }
+	static UnOpr ofToken(int op) {
+		switch (op) {
+			case TK_NOT:
+				return NOT;
+			case '-':
+				return MINUS;
+			case '#':
+				return LEN;
+			default:
+				return null;
+		}
+	}
 }

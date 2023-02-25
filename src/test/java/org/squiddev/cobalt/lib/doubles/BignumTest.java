@@ -31,7 +31,6 @@
 package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK;
@@ -47,11 +46,6 @@ public class BignumTest {
 
 	static void assignDecimalString(Bignum bignum, String str) {
 		bignum.assignDecimalString(str);
-	}
-
-	@BeforeAll
-	static void initAll() {
-		Assert.setEnabled(true);
 	}
 
 	@Test

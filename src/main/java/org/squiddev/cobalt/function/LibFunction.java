@@ -24,13 +24,12 @@
  */
 package org.squiddev.cobalt.function;
 
+import org.squiddev.cobalt.Constants;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.TableLib;
-
-import java.util.function.Supplier;
 
 /**
  * Subclass of {@link LuaFunction} common to Java functions exposed to lua.
@@ -100,7 +99,7 @@ import java.util.function.Supplier;
  * data it needs to and place it into the environment if needed.
  * In this case, it creates two function, 'sinh', and 'cosh', and puts
  * them into a global table called 'hyperbolic.'
- * It placed the library table into the globals via the {@link #env}
+ * It placed the library table into the globals via the {@link #getfenv()}
  * local variable which corresponds to the globals that apply when the
  * library is loaded.
  * <p>
@@ -130,20 +129,12 @@ import java.util.function.Supplier;
  * such as {@link BaseLib} or {@link TableLib} for other examples.
  */
 public abstract class LibFunction extends LuaFunction {
-
-	/**
-	 * User-defined opcode to differentiate between instances of the library function class.
-	 * <p>
-	 * Subclass will typicall switch on this value to provide the specific behavior for each function.
-	 */
-	protected int opcode;
-
 	/**
 	 * The common name for this function, useful for debugging.
 	 * <p>
 	 * Binding functions initialize this to the name to which it is bound.
 	 */
-	protected String name;
+	String name;
 
 	/**
 	 * Default constructor for use by subclasses
@@ -156,22 +147,8 @@ public abstract class LibFunction extends LuaFunction {
 		return name != null ? name : super.toString();
 	}
 
-	/**
-	 * Bind a set of library functions.
-	 * <p>
-	 * An array of names is provided, and the first name is bound
-	 * with opcode = 0, second with 1, etc.
-	 *
-	 * @param env     The environment to apply to each bound function
-	 * @param factory The factory to provide a new instance each time
-	 * @param names   Array of function names
-	 */
-	public static void bind(LuaTable env, Supplier<LibFunction> factory, String[] names) {
-		for (int i = 0; i < names.length; i++) {
-			LibFunction f = factory.get();
-			f.opcode = i;
-			f.name = names[i];
-			env.rawset(f.name, f);
-		}
+	public static void setGlobalLibrary(LuaState state, LuaTable env, String name, LuaValue library) {
+		env.rawset(name, library);
+		state.registry().getSubTable(Constants.LOADED).rawset(name, library);
 	}
 }

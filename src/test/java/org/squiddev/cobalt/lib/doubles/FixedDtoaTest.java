@@ -31,21 +31,14 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 public class FixedDtoaTest {
 	private static final int kBufferSize = 500;
-
-	@BeforeAll
-	static void initAll() {
-		Assert.setEnabled(true);
-	}
 
 	@Test
 	public void variousDoubles() {
@@ -507,29 +500,19 @@ public class FixedDtoaTest {
 	@Test
 	public void gayFixed() throws Exception {
 		DtoaTest.DataTestState state = new DtoaTest.DataTestState();
-		try {
-			DoubleTestHelper.eachFixed(state, (st, v, numberDigits, representation, decimalPoint) -> {
-				int[] length = new int[1];
-				int[] point = new int[1];
-				boolean[] sign = new boolean[1];
-				boolean status;
+		DoubleTestHelper.eachFixed(state, (st, v, numberDigits, representation, decimalPoint) -> {
+			st.total++;
 
-				st.total++;
+			st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
+			boolean status = FixedDtoa.fastFixedDtoa(v, numberDigits, st.buffer);
 
-				st.underTest = String.format("Using {%g, \"%s\", %d}", v, representation, decimalPoint);
-				status = FixedDtoa.fastFixedDtoa(v, numberDigits,
-					st.buffer);
+			assertThat(st.underTest, status, is(true));
+			assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
 
-				assertThat(st.underTest, status, is(true));
-				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-
-				assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
-				assertThat(st.underTest, (st.buffer.length() - st.buffer.getPointPosition()), is(lessThanOrEqualTo(numberDigits)));
-				assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
-			});
-		} catch (Assert.DoubleConversionAssertionException e) {
-			fail("Assertion failed for test " + state.underTest, e);
-		}
+			assertThat(st.underTest, st.buffer.getPointPosition(), is(equalTo(decimalPoint)));
+			assertThat(st.underTest, (st.buffer.length() - st.buffer.getPointPosition()), is(lessThanOrEqualTo(numberDigits)));
+			assertThat(st.underTest, stringOf(st.buffer), is(equalTo(representation)));
+		});
 
 		System.out.println("day-precision tests run :" + Integer.toString(state.total));
 	}

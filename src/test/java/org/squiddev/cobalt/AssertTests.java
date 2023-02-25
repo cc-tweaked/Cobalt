@@ -136,7 +136,7 @@ public class AssertTests {
 	public void lua52(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.2/");
 		helpers.setup();
-		helpers.globals.load(helpers.state, new Bit32Lib());
+		Bit32Lib.add(helpers.state, helpers.globals);
 
 		helpers.runWithDump(name);
 	}
@@ -151,8 +151,8 @@ public class AssertTests {
 	public void lua53(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.3/");
 		helpers.setup();
-		helpers.globals.load(helpers.state, new Bit32Lib());
-		helpers.globals.load(helpers.state, new Utf8Lib());
+		Bit32Lib.add(helpers.state, helpers.globals);
+		new Utf8Lib().add(helpers.state, helpers.globals);
 
 		helpers.runWithDump(name);
 	}

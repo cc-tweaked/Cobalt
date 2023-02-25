@@ -31,6 +31,8 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
+import java.io.InputStream;
+
 import static org.squiddev.cobalt.debug.DebugFrame.*;
 import static org.squiddev.cobalt.function.LuaInterpreter.*;
 
@@ -43,11 +45,11 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  * There are three main ways {@link LuaInterpretedFunction} instances are created:
  * <ul>
  * <li>Construct an instance using {@link #LuaInterpretedFunction(Prototype, LuaTable)}</li>
- * <li>Construct it indirectly by loading a chunk via {@link LoadState.LuaCompiler#load(java.io.InputStream, LuaString, LuaString, LuaTable)}
+ * <li>Construct it indirectly by loading a chunk via {@link LoadState#load(LuaState, InputStream, String, LuaTable)}
  * <li>Execute the lua bytecode {@link Lua#OP_CLOSURE} as part of bytecode processing
  * </ul>
  * <p>
- * To construct it directly, the {@link Prototype} is typically created via a compiler such as {@link LuaC}:
+ * To construct it directly, the {@link Prototype} is typically created via {@linkplain LoadState the compiler}:
  * <pre> {@code
  * InputStream is = new ByteArrayInputStream("print('hello,world').getBytes());
  * Prototype p = LuaC.INSTANCE.compile(is, "script");
@@ -56,7 +58,7 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  * }</pre>
  * <p>
  * To construct it indirectly, the {@link LuaC} compiler may be used,
- * which implements the {@link LoadState.LuaCompiler} interface:
+ * which implements the {@link LoadState.FunctionFactory} interface:
  * <pre> {@code
  * LuaFunction f = LuaC.INSTANCE.load(is, "script", _G);
  * }</pre>

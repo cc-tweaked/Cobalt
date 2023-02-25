@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.*;
 
@@ -53,56 +53,56 @@ public class DumpLoadEndianIntTest {
 	@BeforeEach
 	public void setup() {
 		state = new LuaState();
-		_G = JsePlatform.standardGlobals(state);
-		DumpState.ALLOW_INTEGER_CASTING = false;
+		_G = CoreLibraries.standardGlobals(state);
+		BytecodeDumper.ALLOW_INTEGER_CASTING = false;
 	}
 
 	@Test
 	public void testBigDoubleCompile() throws LuaError, CompileException, UnwindThrowable {
-		doTest(false, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
-		doTest(false, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	@Test
 	public void testLittleDoubleCompile() throws LuaError, CompileException, UnwindThrowable {
-		doTest(true, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
-		doTest(true, DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_FLOATS_OR_DOUBLES, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_FLOATS_OR_DOUBLES, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	@Test
 	public void testBigIntCompile() throws LuaError, CompileException, UnwindThrowable {
-		DumpState.ALLOW_INTEGER_CASTING = true;
-		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
-		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDPASS);
-		DumpState.ALLOW_INTEGER_CASTING = false;
-		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDFAIL);
-		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDFAIL);
-		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, false, intscript, withints, withints, SHOULDPASS);
-		doTest(false, DumpState.NUMBER_FORMAT_INTS_ONLY, true, intscript, withints, withints, SHOULDPASS);
+		BytecodeDumper.ALLOW_INTEGER_CASTING = true;
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDPASS);
+		BytecodeDumper.ALLOW_INTEGER_CASTING = false;
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDFAIL);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDFAIL);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, false, intscript, withints, withints, SHOULDPASS);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, true, intscript, withints, withints, SHOULDPASS);
 	}
 
 	@Test
 	public void testLittleIntCompile() throws LuaError, CompileException, UnwindThrowable {
-		DumpState.ALLOW_INTEGER_CASTING = true;
-		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
-		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDPASS);
-		DumpState.ALLOW_INTEGER_CASTING = false;
-		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDFAIL);
-		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDFAIL);
-		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, false, intscript, withints, withints, SHOULDPASS);
-		doTest(true, DumpState.NUMBER_FORMAT_INTS_ONLY, true, intscript, withints, withints, SHOULDPASS);
+		BytecodeDumper.ALLOW_INTEGER_CASTING = true;
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDPASS);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDPASS);
+		BytecodeDumper.ALLOW_INTEGER_CASTING = false;
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, false, mixedscript, withdoubles, withints, SHOULDFAIL);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, true, mixedscript, withdoubles, withints, SHOULDFAIL);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, false, intscript, withints, withints, SHOULDPASS);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_INTS_ONLY, true, intscript, withints, withints, SHOULDPASS);
 	}
 
 	@Test
 	public void testBigNumpatchCompile() throws LuaError, CompileException, UnwindThrowable {
-		doTest(false, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
-		doTest(false, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(false, BytecodeDumper.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	@Test
 	public void testLittleNumpatchCompile() throws LuaError, CompileException, UnwindThrowable {
-		doTest(true, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
-		doTest(true, DumpState.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_NUM_PATCH_INT32, false, mixedscript, withdoubles, withdoubles, SHOULDPASS);
+		doTest(true, BytecodeDumper.NUMBER_FORMAT_NUM_PATCH_INT32, true, mixedscript, withdoubles, withdoubles, SHOULDPASS);
 	}
 
 	public void doTest(boolean littleEndian, int numberFormat, boolean stripDebug,
@@ -122,7 +122,7 @@ public class DumpLoadEndianIntTest {
 			// dump into bytes
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try {
-				DumpState.dump(p, baos, stripDebug, numberFormat, littleEndian);
+				BytecodeDumper.dump(p, baos, stripDebug, numberFormat, littleEndian);
 				if (!shouldPass) {
 					fail("dump should not have succeeded");
 				}
@@ -147,9 +147,9 @@ public class DumpLoadEndianIntTest {
 				new File("build").mkdirs();
 				String filename = "build/test-"
 					+ (littleEndian ? "little-" : "big-")
-					+ (numberFormat == DumpState.NUMBER_FORMAT_FLOATS_OR_DOUBLES ? "double-" :
-					numberFormat == DumpState.NUMBER_FORMAT_INTS_ONLY ? "int-" :
-						numberFormat == DumpState.NUMBER_FORMAT_NUM_PATCH_INT32 ? "numpatch4-" : "???-")
+					+ (numberFormat == BytecodeDumper.NUMBER_FORMAT_FLOATS_OR_DOUBLES ? "double-" :
+					numberFormat == BytecodeDumper.NUMBER_FORMAT_INTS_ONLY ? "int-" :
+						numberFormat == BytecodeDumper.NUMBER_FORMAT_NUM_PATCH_INT32 ? "numpatch4-" : "???-")
 					+ (stripDebug ? "nodebug-" : "debug-")
 					+ "bin.lua";
 				FileOutputStream fos = new FileOutputStream(filename);

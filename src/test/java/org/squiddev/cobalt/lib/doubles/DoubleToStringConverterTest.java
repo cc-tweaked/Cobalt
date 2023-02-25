@@ -30,7 +30,6 @@
 
 package org.squiddev.cobalt.lib.doubles;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.Buffer;
 import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.Flags;
@@ -45,11 +44,6 @@ class DoubleToStringConverterTest {
 	private static final FormatOptions FORMAT_OPTIONS =
 		new FormatOptions(SYMBOLS, false, false, false, -1, false, false);
 	private DoubleToStringConverter conv;
-
-	@BeforeAll
-	static void initAll() {
-		Assert.setEnabled(true);
-	}
 
 	@Test
 	void toFixed() {

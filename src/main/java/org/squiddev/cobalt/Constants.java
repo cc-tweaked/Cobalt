@@ -242,6 +242,11 @@ public class Constants {
 	public static final LuaString EMPTYSTRING = valueOf("");
 
 	/**
+	 * The global loaded package table.
+	 */
+	public static final LuaString LOADED = valueOf("_LOADED");
+
+	/**
 	 * Constant limiting metatag loop processing
 	 */
 	public static final int MAXTAGLOOP = 100;

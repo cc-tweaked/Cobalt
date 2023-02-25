@@ -34,13 +34,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class DumpState {
-
-	/**
-	 * mark for precompiled code (\033Lua)
-	 */
-	public static final String LUA_SIGNATURE = "\033Lua";
-
+public class BytecodeDumper {
 	/**
 	 * for header of binary files -- this is Lua 5.1
 	 */
@@ -55,11 +49,6 @@ public class DumpState {
 	 * size of header of binary files
 	 */
 	public static final int LUAC_HEADERSIZE = 12;
-
-	/**
-	 * expected lua header bytes
-	 */
-	private static final byte[] LUAC_HEADER_SIGNATURE = {'\033', 'L', 'u', 'a'};
 
 	/**
 	 * set true to allow integer compilation
@@ -94,14 +83,12 @@ public class DumpState {
 	private static final int SIZEOF_SIZET = 4;
 	private static final int SIZEOF_INSTRUCTION = 4;
 
-	DataOutputStream writer;
-	boolean strip;
-	int status;
+	final DataOutputStream writer;
+	final boolean strip;
 
-	public DumpState(OutputStream w, boolean strip) {
+	public BytecodeDumper(OutputStream w, boolean strip) {
 		this.writer = new DataOutputStream(w);
 		this.strip = strip;
-		this.status = 0;
 	}
 
 	void dumpBlock(final byte[] b, int size) throws IOException {
@@ -244,7 +231,7 @@ public class DumpState {
 	}
 
 	void dumpHeader() throws IOException {
-		writer.write(LUAC_HEADER_SIGNATURE);
+		writer.write(LoadState.LUA_SIGNATURE);
 		writer.write(LUAC_VERSION);
 		writer.write(LUAC_FORMAT);
 		writer.write(IS_LITTLE_ENDIAN ? 1 : 0);
@@ -258,11 +245,10 @@ public class DumpState {
 	/*
 	 * Dump Lua function as precompiled chunk
 	 */
-	public static int dump(Prototype f, OutputStream w, boolean strip) throws IOException {
-		DumpState D = new DumpState(w, strip);
+	public static void dump(Prototype f, OutputStream w, boolean strip) throws IOException {
+		BytecodeDumper D = new BytecodeDumper(w, strip);
 		D.dumpHeader();
 		D.dumpFunction(f, null);
-		return D.status;
 	}
 
 	/**
@@ -271,11 +257,10 @@ public class DumpState {
 	 * @param stripDebug   true to strip debugging info, false otherwise
 	 * @param numberFormat one of NUMBER_FORMAT_FLOATS_OR_DOUBLES, NUMBER_FORMAT_INTS_ONLY, NUMBER_FORMAT_NUM_PATCH_INT32
 	 * @param littleendian true to use little endian for numbers, false for big endian
-	 * @return 0 if dump succeeds
 	 * @throws IOException              On stream write errors
 	 * @throws IllegalArgumentException if the number format it not supported
 	 */
-	public static int dump(Prototype f, OutputStream w, boolean stripDebug, int numberFormat, boolean littleendian) throws IOException {
+	public static void dump(Prototype f, OutputStream w, boolean stripDebug, int numberFormat, boolean littleendian) throws IOException {
 		switch (numberFormat) {
 			case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
 			case NUMBER_FORMAT_INTS_ONLY:
@@ -284,12 +269,11 @@ public class DumpState {
 			default:
 				throw new IllegalArgumentException("number format not supported: " + numberFormat);
 		}
-		DumpState D = new DumpState(w, stripDebug);
+		BytecodeDumper D = new BytecodeDumper(w, stripDebug);
 		D.IS_LITTLE_ENDIAN = littleendian;
 		D.NUMBER_FORMAT = numberFormat;
 		D.SIZEOF_LUA_NUMBER = (numberFormat == NUMBER_FORMAT_INTS_ONLY ? 4 : 8);
 		D.dumpHeader();
 		D.dumpFunction(f, null);
-		return D.status;
 	}
 }

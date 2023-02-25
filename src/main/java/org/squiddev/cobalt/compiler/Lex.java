@@ -19,7 +19,7 @@ import java.util.function.Function;
  * <p>
  * This largely follows the structure and implementation of llex.c.
  */
-class Lex {
+final class Lex {
 	private static final int EOZ = -1;
 	static final int MAX_INT = Integer.MAX_VALUE - 2;
 

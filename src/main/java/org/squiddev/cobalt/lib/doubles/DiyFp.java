@@ -33,7 +33,7 @@ package org.squiddev.cobalt.lib.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.*;
+import static org.squiddev.cobalt.lib.doubles.Assert.requireArg;
 import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
 
 /**
@@ -44,7 +44,7 @@ import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
  * DiyFp store only non-negative numbers and are not designed to contain special
  * doubles (NaN and Infinity).
  */
-public class DiyFp {
+final class DiyFp {
 	public static final int SIGNIFICAND_SIZE = 64;
 
 	private static final long UINT_64_MSB = 0x80000000_00000000L;
@@ -126,7 +126,7 @@ public class DiyFp {
 	}
 
 	public void normalize() {
-		if (assertEnabled()) assertThat(f != 0L);
+		assert f != 0L;
 		@Unsigned long significand = f;
 		int exponent = e;
 

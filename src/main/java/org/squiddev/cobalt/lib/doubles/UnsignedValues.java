@@ -36,7 +36,7 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import java.math.BigInteger;
 
-public final class UnsignedValues {
+final class UnsignedValues {
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 

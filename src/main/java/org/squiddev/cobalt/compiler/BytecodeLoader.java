@@ -36,7 +36,7 @@ import static org.squiddev.cobalt.Constants.*;
 /**
  * Parser for bytecode
  */
-public final class BytecodeLoader {
+final class BytecodeLoader {
 	/**
 	 * format corresponding to non-number-patched lua, all numbers are floats or doubles
 	 */
@@ -83,8 +83,7 @@ public final class BytecodeLoader {
 	 * @param stream The stream to read from
 	 */
 	public BytecodeLoader(InputStream stream) {
-
-		this.is = new DataInputStream(stream);
+		is = new DataInputStream(stream);
 	}
 
 	private static final LuaValue[] NOVALUES = {};

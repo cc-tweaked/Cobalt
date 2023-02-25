@@ -27,7 +27,7 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.lib.system.SystemLibraries;
 import org.squiddev.cobalt.require.RequireSampleClassCastExcep;
 import org.squiddev.cobalt.require.RequireSampleLoadLuaError;
 import org.squiddev.cobalt.require.RequireSampleLoadRuntimeExcep;
@@ -43,7 +43,7 @@ public class RequireClassTest {
 	@BeforeEach
 	public void setup() throws LuaError, UnwindThrowable {
 		state = new LuaState();
-		LuaTable globals = JsePlatform.standardGlobals(state);
+		LuaTable globals = SystemLibraries.standardGlobals(state);
 		require = (LuaFunction) OperationHelper.getTable(state, globals, ValueFactory.valueOf("require"));
 	}
 

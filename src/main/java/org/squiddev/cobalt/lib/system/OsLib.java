@@ -22,143 +22,187 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.squiddev.cobalt.lib;
+package org.squiddev.cobalt.lib.system;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
-import org.squiddev.cobalt.lib.jse.JsePlatform;
+import org.squiddev.cobalt.function.RegisteredFunction;
+import org.squiddev.cobalt.lib.CoreLibraries;
+import org.squiddev.cobalt.lib.FormatDesc;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import static org.squiddev.cobalt.Constants.NIL;
+import static org.squiddev.cobalt.Constants.ZERO;
 import static org.squiddev.cobalt.ErrorFactory.argError;
 import static org.squiddev.cobalt.ValueFactory.*;
 
 /**
- * Subclass of {@link LibFunction} which implements the standard lua {@code os} library.
- *
- * This can be installed as-is on either platform, or extended
- * and refined to be used in a complete Jse implementation.
- *
- * Because the nature of the {@code os} library is to encapsulate
- * os-specific features, the behavior of these functions varies considerably
- * from their counterparts in the C platform.
+ * A Lua library which implements the standard lua {@code os} library.
+ * <p>
+ * Because the nature of the {@code os} library is to encapsulate os-specific features, the behavior of these functions
+ * may vary from their counterparts in the C platform.
  *
  * @see LibFunction
- * @see JsePlatform
+ * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.8">http://www.lua.org/manual/5.1/manual.html#5.8</a>
  */
-public class OsLib extends VarArgFunction implements LuaLibrary {
-	private static final int CLOCK = 0;
-	private static final int DATE = 1;
-	private static final int DIFFTIME = 2;
-	private static final int EXECUTE = 3;
-	private static final int EXIT = 4;
-	private static final int GETENV = 5;
-	private static final int REMOVE = 6;
-	private static final int RENAME = 7;
-	private static final int SETLOCALE = 8;
-	private static final int TIME = 9;
-	private static final int TMPNAME = 10;
-
+public class OsLib {
 	private static final LuaString DATE_FORMAT = valueOf("%c");
 	private static final LuaString DATE_TABLE = valueOf("*t");
 
-	private static final String[] NAMES = {
-		"clock",
-		"date",
-		"difftime",
-		"execute",
-		"exit",
-		"getenv",
-		"remove",
-		"rename",
-		"setlocale",
-		"time",
-		"tmpname",
-	};
+	private final long startTime = System.nanoTime();
 
-	private final long t0 = System.currentTimeMillis();
+	public void add(LuaState state, LuaTable env) {
+		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
+			RegisteredFunction.of("clock", this::clock),
+			RegisteredFunction.of("date", OsLib::date),
+			RegisteredFunction.of("difftime", OsLib::difftime),
+			RegisteredFunction.ofV("execute", OsLib::execute),
+			RegisteredFunction.of("exit", OsLib::exit),
+			RegisteredFunction.of("getenv", OsLib::getenv),
+			RegisteredFunction.ofV("remove", OsLib::remove),
+			RegisteredFunction.ofV("rename", OsLib::rename),
+			RegisteredFunction.of("setlocale", OsLib::setlocale),
+			RegisteredFunction.ofV("time", OsLib::time),
+			RegisteredFunction.ofV("tmpname", OsLib::tmpname),
+		});
 
-	@Override
-	public LuaValue add(LuaState state, LuaTable env) {
-		LuaTable t = new LuaTable();
-		LibFunction.bind(t, OsLib::new, NAMES);
-		env.rawset("os", t);
-		state.loadedPackages.rawset("os", t);
-		return t;
+		LibFunction.setGlobalLibrary(state, env, "os", t);
 	}
 
-	@Override
-	public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-		try {
-			switch (opcode) {
-				case CLOCK:
-					return valueOf((System.currentTimeMillis() - t0) / 1000);
-				case DATE: {
-					LuaString format = args.arg(1).optLuaString(DATE_FORMAT);
-					long time = args.arg(2).optLong(time(state, null));
+	private LuaValue clock(LuaState state) {
+		return valueOf((long) ((System.nanoTime() - startTime) * 1e-9));
+	}
 
-					Calendar d = Calendar.getInstance(state.timezone, Locale.ROOT);
-					d.setTime(new Date(time * 1000));
-					if (format.startsWith('!')) {
-						time -= timeZoneOffset(d);
-						d.setTime(new Date(time * 1000));
-						format = format.substring(1);
-					}
+	private static LuaValue date(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		LuaString format = arg1.optLuaString(DATE_FORMAT);
+		long time = arg2.optLong(formatTime(null));
 
-					if (format.equals(DATE_TABLE)) {
-						LuaTable tbl = tableOf();
-						tbl.rawset("year", valueOf(d.get(Calendar.YEAR)));
-						tbl.rawset("month", valueOf(d.get(Calendar.MONTH) + 1));
-						tbl.rawset("day", valueOf(d.get(Calendar.DAY_OF_MONTH)));
-						tbl.rawset("hour", valueOf(d.get(Calendar.HOUR_OF_DAY)));
-						tbl.rawset("min", valueOf(d.get(Calendar.MINUTE)));
-						tbl.rawset("sec", valueOf(d.get(Calendar.SECOND)));
-						tbl.rawset("wday", valueOf(d.get(Calendar.DAY_OF_WEEK)));
-						tbl.rawset("yday", valueOf(d.get(Calendar.DAY_OF_YEAR)));
-						tbl.rawset("isdst", valueOf(isDaylightSavingsTime(d)));
-						return tbl;
-					}
-
-					Buffer buffer = new Buffer(format.length);
-					date(state, buffer, d, format);
-					return buffer.toLuaString();
-				}
-				case DIFFTIME:
-					return valueOf(args.arg(1).checkLong() - args.arg(2).checkLong());
-				case EXECUTE:
-					return valueOf(state.resourceManipulator.execute(args.arg(1).optString(null)));
-				case EXIT:
-					System.exit(args.arg(1).optInteger(0));
-					return Constants.NONE;
-				case GETENV: {
-					final String val = System.getenv(args.arg(1).checkString());
-					return val != null ? valueOf(val) : Constants.NIL;
-				}
-				case REMOVE:
-					state.resourceManipulator.remove(args.arg(1).checkString());
-					return Constants.TRUE;
-				case RENAME:
-					state.resourceManipulator.rename(args.arg(1).checkString(), args.arg(2).checkString());
-					return Constants.TRUE;
-				case SETLOCALE: {
-					String locale = args.arg(1).optString(null);
-					args.arg(2).optString("all");
-					return locale == null || locale.equals("C") ? valueOf("C") : Constants.NIL;
-				}
-				case TIME:
-					return valueOf(time(state, args.first().isNil() ? null : args.arg(1).checkTable()));
-				case TMPNAME:
-					return valueOf(state.resourceManipulator.tmpName());
-			}
-			return Constants.NONE;
-		} catch (IOException e) {
-			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
+		Calendar d = Calendar.getInstance(Locale.ROOT);
+		d.setTime(new Date(time * 1000));
+		if (format.startsWith('!')) {
+			time -= timeZoneOffset(d);
+			d.setTime(new Date(time * 1000));
+			format = format.substring(1);
 		}
+
+		if (format.equals(DATE_TABLE)) {
+			LuaTable tbl = tableOf();
+			tbl.rawset("year", valueOf(d.get(Calendar.YEAR)));
+			tbl.rawset("month", valueOf(d.get(Calendar.MONTH) + 1));
+			tbl.rawset("day", valueOf(d.get(Calendar.DAY_OF_MONTH)));
+			tbl.rawset("hour", valueOf(d.get(Calendar.HOUR_OF_DAY)));
+			tbl.rawset("min", valueOf(d.get(Calendar.MINUTE)));
+			tbl.rawset("sec", valueOf(d.get(Calendar.SECOND)));
+			tbl.rawset("wday", valueOf(d.get(Calendar.DAY_OF_WEEK)));
+			tbl.rawset("yday", valueOf(d.get(Calendar.DAY_OF_YEAR)));
+			tbl.rawset("isdst", valueOf(isDaylightSavingsTime(d)));
+			return tbl;
+		}
+
+		Buffer buffer = new Buffer(format.length);
+		formatDate(buffer, d, format);
+		return buffer.toLuaString();
+	}
+
+	private static LuaValue difftime(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		return valueOf(arg1.checkLong() - arg2.checkLong());
+	}
+
+	private static Varargs execute(LuaState state, Varargs args) throws LuaError {
+		return valueOf(execute(args.arg(1).optString(null)));
+	}
+
+	private static int execute(String command) {
+		Runtime r = Runtime.getRuntime();
+		try {
+			final Process p = r.exec(command);
+			try {
+				p.waitFor();
+				return p.exitValue();
+			} finally {
+				p.destroy();
+			}
+		} catch (IOException ioe) {
+			return -1;
+		} catch (InterruptedException e) {
+			return -2;
+		} catch (Throwable t) {
+			return -3;
+		}
+	}
+
+	private static LuaValue exit(LuaState state, LuaValue arg) throws LuaError {
+		System.exit(arg.optInteger(0));
+		return Constants.NIL;
+	}
+
+	private static LuaValue getenv(LuaState state, LuaValue arg) throws LuaError {
+		final String val = System.getenv(arg.checkString());
+		return val != null ? valueOf(val) : Constants.NIL;
+	}
+
+	private static Varargs remove(LuaState state, Varargs args) throws LuaError {
+		Path file = Paths.get(args.first().checkString());
+
+		try {
+			Files.delete(file);
+			return Constants.TRUE;
+		} catch (FileNotFoundException e) {
+			return errorResult("file not found");
+		} catch (IOException e) {
+			return errorResult(e);
+		}
+	}
+
+	private static Varargs rename(LuaState state, Varargs args) throws LuaError {
+		String from = args.arg(1).checkString();
+		String to = args.arg(2).checkString();
+
+		try {
+			Files.move(Paths.get(from), Paths.get(to), StandardCopyOption.REPLACE_EXISTING);
+			return Constants.TRUE;
+		} catch (IOException e) {
+			return errorResult(e);
+		}
+	}
+
+	private static LuaValue setlocale(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		String locale = arg1.optString(null);
+		arg2.optString("all");
+		return locale == null || locale.equals("C") ? valueOf("C") : Constants.NIL;
+	}
+
+	private static Varargs time(LuaState state, Varargs args) throws LuaError {
+		return valueOf(formatTime(args.first().isNil() ? null : args.arg(1).checkTable()));
+	}
+
+	private static Varargs tmpname(LuaState state, Varargs args) {
+		try {
+			Path path = Files.createTempFile(null, "cobalt");
+			path.toFile().deleteOnExit();
+			return valueOf(path.toString());
+		} catch (IOException e) {
+			return errorResult(e);
+		}
+	}
+
+	private static Varargs errorResult(Exception ioe) {
+		String s = ioe.getMessage();
+		return errorResult("io error: " + (s != null ? s : ioe.toString()));
+	}
+
+	private static Varargs errorResult(String message) {
+		return varargsOf(NIL, valueOf(message), ZERO);
 	}
 
 	private static final String[] WEEKDAY_NAME_ABBREV = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
@@ -166,8 +210,8 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 	private static final String[] MONTH_NAME_ABBREV = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 	private static final String[] MONTH_NAME = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
-	private Calendar beginningOfYear(LuaState state, Calendar d) {
-		Calendar y0 = Calendar.getInstance(state.timezone, Locale.ROOT);
+	private static Calendar beginningOfYear(Calendar d) {
+		Calendar y0 = Calendar.getInstance(Locale.ROOT);
 		y0.setTime(d.getTime());
 		y0.set(Calendar.MONTH, 0);
 		y0.set(Calendar.DAY_OF_MONTH, 1);
@@ -178,8 +222,8 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 		return y0;
 	}
 
-	private int weekNumber(LuaState state, Calendar d, int startDay) {
-		Calendar y0 = beginningOfYear(state, d);
+	private static int weekNumber(Calendar d, int startDay) {
+		Calendar y0 = beginningOfYear(d);
 		y0.set(Calendar.DAY_OF_MONTH, 1 + (startDay + 8 - y0.get(Calendar.DAY_OF_WEEK)) % 7);
 		if (y0.after(d)) {
 			y0.set(Calendar.YEAR, y0.get(Calendar.YEAR) - 1);
@@ -189,7 +233,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 		return 1 + (int) (dt / (7L * 24L * 3600L * 1000L));
 	}
 
-	private int timeZoneOffset(Calendar d) {
+	private static int timeZoneOffset(Calendar d) {
 		int localStandardTimeMillis = 1000 *
 			(d.get(Calendar.HOUR_OF_DAY) * 3600 + d.get(Calendar.MINUTE) * 60 + d.get(Calendar.SECOND));
 
@@ -203,7 +247,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 		) / 1000;
 	}
 
-	private boolean isDaylightSavingsTime(Calendar d) {
+	private static boolean isDaylightSavingsTime(Calendar d) {
 		return timeZoneOffset(d) != d.getTimeZone().getRawOffset() / 1000;
 	}
 
@@ -218,7 +262,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 	private static final FormatDesc ZERO_THREE = FormatDesc.ofUnsafe("03d");
 	private static final FormatDesc SPACE_TWO = FormatDesc.ofUnsafe("2d");
 
-	private void date(LuaState state, Buffer result, Calendar date, LuaString format) throws LuaError {
+	private static void formatDate(Buffer result, Calendar date, LuaString format) throws LuaError {
 		byte[] fmt = format.bytes;
 		int n = format.length + format.offset;
 		for (int i = format.offset; i < n; ) {
@@ -253,7 +297,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 							result.append(MONTH_NAME[date.get(Calendar.MONTH)]);
 							break;
 						case 'c':
-							date(state, result, date, FORMAT_C);
+							formatDate(result, date, FORMAT_C);
 							break;
 						case 'C':
 							ZERO_TWO.format(result, (date.get(Calendar.YEAR) / 100) % 100);
@@ -263,13 +307,13 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 							break;
 						case 'D':
 						case 'x':
-							date(state, result, date, FORMAT_DATE_D);
+							formatDate(result, date, FORMAT_DATE_D);
 							break;
 						case 'e':
 							SPACE_TWO.format(result, date.get(Calendar.DAY_OF_MONTH));
 							break;
 						case 'F':
-							date(state, result, date, FORMAT_DATE_F);
+							formatDate(result, date, FORMAT_DATE_F);
 							break;
 						case 'g':
 							ZERO_TWO.format(result, date.isWeekDateSupported() ? date.getWeekYear() % 100 : 0);
@@ -299,10 +343,10 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 							result.append(date.get(Calendar.HOUR_OF_DAY) < 12 ? "AM" : "PM");
 							break;
 						case 'r':
-							date(state, result, date, FORMAT_TIME_UPPER_R);
+							formatDate(result, date, FORMAT_TIME_UPPER_R);
 							break;
 						case 'R':
-							date(state, result, date, FORMAT_TIME_LOWER_R);
+							formatDate(result, date, FORMAT_TIME_LOWER_R);
 							break;
 						case 'S':
 							ZERO_TWO.format(result, date.get(Calendar.SECOND));
@@ -312,7 +356,7 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 							break;
 						case 'T':
 						case 'X':
-							date(state, result, date, FORMAT_TIME_T);
+							formatDate(result, date, FORMAT_TIME_T);
 							break;
 						case 'u': {
 							int day = date.get(Calendar.DAY_OF_WEEK);
@@ -320,16 +364,16 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 							break;
 						}
 						case 'U':
-							ZERO_TWO.format(result, weekNumber(state, date, 0));
+							ZERO_TWO.format(result, weekNumber(date, 0));
 							break;
 						case 'V':
-							ZERO_TWO.format(result, weekNumber(state, date, 1));
+							ZERO_TWO.format(result, weekNumber(date, 1));
 							break;
 						case 'w':
 							result.append(Integer.toString((date.get(Calendar.DAY_OF_WEEK) + 6) % 7));
 							break;
 						case 'W':
-							ZERO_TWO.format(result, weekNumber(state, date, 1));
+							ZERO_TWO.format(result, weekNumber(date, 1));
 							break;
 						case 'y':
 							ZERO_TWO.format(result, date.get(Calendar.YEAR) % 100);
@@ -363,10 +407,10 @@ public class OsLib extends VarArgFunction implements LuaLibrary {
 	 * @param table Table to use
 	 * @return long value for the time
 	 */
-	private long time(LuaState state, LuaTable table) throws LuaError {
+	private static long formatTime(LuaTable table) throws LuaError {
 		if (table == null) return System.currentTimeMillis() / 1000;
 
-		Calendar c = Calendar.getInstance(state.timezone, Locale.ROOT);
+		Calendar c = Calendar.getInstance(Locale.ROOT);
 		c.set(Calendar.YEAR, getField(table, "year", -1));
 		c.set(Calendar.MONTH, getField(table, "month", -1) - 1);
 		c.set(Calendar.DAY_OF_MONTH, getField(table, "day", -1));

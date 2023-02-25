@@ -250,11 +250,11 @@ print('tostring({"one","two",a="aa",b="bb"})', type(tostring({ "one", "two", a =
 -- unpack
 print('pcall(unpack)', pcall(unpack));
 print('pcall(unpack,nil)', pcall(unpack, nil));
-print('pcall(unpack,"abc")', pcall(unpack, "abc"));
 print('pcall(unpack,1)', pcall(unpack, 1));
 print('unpack({"aa"})', unpack({ "aa" }));
 print('unpack({"aa","bb"})', unpack({ "aa", "bb" }));
 print('unpack({"aa","bb","cc"})', unpack({ "aa", "bb", "cc" }));
+print('unpack("abc")', unpack("abc"));
 local t = { "aa", "bb", "cc", "dd", "ee", "ff" }
 print('pcall(unpack,t)', pcall(unpack, t));
 print('pcall(unpack,t,2)', pcall(unpack, t, 2));
