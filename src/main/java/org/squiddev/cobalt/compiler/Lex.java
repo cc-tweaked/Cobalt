@@ -1,14 +1,9 @@
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.LuaNumber;
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.ValueFactory;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.Utf8Lib;
+import org.squiddev.cobalt.unwind.AutoUnwind;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +14,7 @@ import java.util.function.Function;
  * <p>
  * This largely follows the structure and implementation of llex.c.
  */
+@AutoUnwind
 final class Lex {
 	private static final int EOZ = -1;
 	static final int MAX_INT = Integer.MAX_VALUE - 2;
@@ -107,7 +103,7 @@ final class Lex {
 	/**
 	 * The buffer we're reading from
 	 */
-	private final InputStream z;
+	private final InputReader z;
 
 	/**
 	 * Input line counter
@@ -129,7 +125,7 @@ final class Lex {
 	private byte[] buff = new byte[32];  /* buffer for tokens */
 	private int bufferSize; /* length of buffer */
 
-	Lex(LuaString source, InputStream z, int current) {
+	Lex(LuaString source, InputReader z, int current) {
 		this.source = source;
 		this.z = z;
 		this.current = current;
@@ -138,13 +134,9 @@ final class Lex {
 		lookahead.token = TK_EOS;
 	}
 
-	private void next() {
-		try {
-			current = z.read();
-			columnNumber++;
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
+	private void next() throws CompileException, UnwindThrowable {
+		current = z.read();
+		columnNumber++;
 	}
 
 	private void save(int toSave) {
@@ -156,7 +148,7 @@ final class Lex {
 		return current == '\n' || current == '\r';
 	}
 
-	private void saveAndNext() {
+	private void saveAndNext() throws CompileException, UnwindThrowable {
 		save(current);
 		next();
 	}
@@ -229,7 +221,7 @@ final class Lex {
 	/**
 	 * Increment line number and skips newline sequence (any of \n, \r, \n\r, or \r\n)
 	 */
-	private void inclineNumber() throws CompileException {
+	private void inclineNumber() throws CompileException, UnwindThrowable {
 		int old = current;
 		assert currIsNewline();
 		next(); /* skip '\n' or '\r' */
@@ -238,7 +230,7 @@ final class Lex {
 		columnNumber = 1;
 	}
 
-	private boolean checkNext(char character) {
+	private boolean checkNext(char character) throws CompileException, UnwindThrowable {
 		if (current == character) {
 			next();
 			return true;
@@ -247,7 +239,7 @@ final class Lex {
 		return false;
 	}
 
-	private boolean checkNext(char c1, char c2) {
+	private boolean checkNext(char c1, char c2) throws CompileException, UnwindThrowable {
 		if (current == c1 || current == c2) {
 			saveAndNext();
 			return true;
@@ -274,7 +266,7 @@ final class Lex {
 		throw lexError("malformed number", TK_NUMBER);
 	}
 
-	private LuaNumber readNumeral() throws CompileException {
+	private LuaNumber readNumeral() throws CompileException, UnwindThrowable {
 		assert isDigit(current);
 
 		int first = current;
@@ -305,7 +297,7 @@ final class Lex {
 	 * @return If the sequence is well formed, the number of '='s + 2. If not, then 1 if it is a single bracket (no '='s
 	 * and no 2nd bracket); otherwise (an unfinished '[==...') 0.
 	 */
-	private int skipSep() {
+	private int skipSep() throws CompileException, UnwindThrowable {
 		int count = 0;
 		int s = current;
 		assert s == '[' || s == ']';
@@ -319,7 +311,7 @@ final class Lex {
 		return count == 0 ? 1 : 0;
 	}
 
-	private void readLongString(Token token, int sep) throws CompileException {
+	private void readLongString(Token token, int sep) throws CompileException, UnwindThrowable {
 		int line = lineNumber;
 		saveAndNext(); // skip 2nd `['
 		if (currIsNewline()) inclineNumber(); // Skip leading string if needed
@@ -361,24 +353,25 @@ final class Lex {
 		}
 	}
 
-	private CompileException escapeError(String message) {
+	private CompileException escapeError(String message) throws CompileException, UnwindThrowable {
 		if (current != EOZ) saveAndNext();
 		return lexError(message, TK_STRING);
 	}
 
-	private int readHex() throws CompileException {
+	private int readHex() throws CompileException, UnwindThrowable {
 		saveAndNext();
 		if (!isHex(current)) throw escapeError("hexadecimal digit expected");
 		return hexValue(current);
 	}
 
-	private int readHexEsc() throws CompileException {
-		int r = (readHex() << 4) | readHex();
+	private int readHexEsc() throws CompileException, UnwindThrowable {
+		int left = readHex();
+		int right = readHex();
 		bufferSize -= 2;
-		return r;
+		return (left << 4) | right;
 	}
 
-	private void readUtf8Esc() throws CompileException {
+	private void readUtf8Esc() throws CompileException, UnwindThrowable {
 		saveAndNext();
 		if (current != '{') throw escapeError("mising '{'");
 
@@ -405,7 +398,7 @@ final class Lex {
 		}
 	}
 
-	private int readDecEsc() throws CompileException {
+	private int readDecEsc() throws CompileException, UnwindThrowable {
 		int i = 0;
 		int result = 0;
 		for (; i < 3 && isDigit(current); i++) {
@@ -419,7 +412,7 @@ final class Lex {
 		return result;
 	}
 
-	private LuaString readString(int del) throws CompileException {
+	private LuaString readString(int del) throws CompileException, UnwindThrowable {
 		saveAndNext();
 		while (current != del) {
 			switch (current) {
@@ -498,13 +491,13 @@ final class Lex {
 		return newString(buff, 1, bufferSize - 2);
 	}
 
-	private void saveEscape(int character) {
+	private void saveEscape(int character) throws CompileException, UnwindThrowable {
 		next();
 		bufferSize--;
 		save(character);
 	}
 
-	private int lexToken(Token token) throws CompileException {
+	private int lexToken(Token token) throws CompileException, UnwindThrowable {
 		bufferSize = 0;
 		while (true) {
 			token.position = packPosition(lineNumber, columnNumber);
@@ -628,13 +621,13 @@ final class Lex {
 		return lastPosition;
 	}
 
-	void skipShebang() {
+	void skipShebang() throws CompileException, UnwindThrowable {
 		if (current == '#') {
 			while (!currIsNewline() && current != EOZ) next();
 		}
 	}
 
-	void nextToken() throws CompileException {
+	void nextToken() throws CompileException, UnwindThrowable {
 		lastPosition = packPosition(lineNumber, columnNumber);
 		if (lookahead.token != TK_EOS) { // is there a look-ahead token?
 			token.set(lookahead);
@@ -644,7 +637,7 @@ final class Lex {
 		}
 	}
 
-	void lookahead() throws CompileException {
+	void lookahead() throws CompileException, UnwindThrowable {
 		LuaC._assert(lookahead.token == TK_EOS);
 		lookahead.token = lexToken(lookahead);
 	}

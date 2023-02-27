@@ -27,9 +27,6 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.lib.UncheckedLuaError;
 
-import static org.squiddev.cobalt.Constants.NIL;
-import static org.squiddev.cobalt.LuaString.valueOf;
-
 /**
  * RuntimeException that is thrown and caught in response to a lua error.
  * <p>
@@ -44,15 +41,12 @@ import static org.squiddev.cobalt.LuaString.valueOf;
 public final class LuaError extends Exception {
 	private static final long serialVersionUID = 3065540200206862088L;
 
-	/**
-	 * The value for this error
-	 */
-	public LuaValue value;
+	private LuaValue value;
 
 	/**
 	 * The traceback for this error message
 	 */
-	public String traceback;
+	private String traceback;
 
 	/**
 	 * The error to raise at
@@ -87,7 +81,7 @@ public final class LuaError extends Exception {
 		super(message);
 		level = 1;
 		calculateLevel = true;
-		value = ValueFactory.valueOf(message);
+		value = message == null ? Constants.NIL : ValueFactory.valueOf(message);
 	}
 
 	/**
@@ -100,19 +94,7 @@ public final class LuaError extends Exception {
 		super(message);
 		this.level = level;
 		calculateLevel = false;
-		value = ValueFactory.valueOf(message);
-	}
-
-	/**
-	 * Construct a LuaError with a specific message.
-	 *
-	 * @param message message to supply
-	 */
-	public LuaError(LuaValue message) {
-		super(rawToString(message));
-		level = 1;
-		calculateLevel = true;
-		value = message;
+		value = message == null ? Constants.NIL : ValueFactory.valueOf(message);
 	}
 
 	/**
@@ -141,69 +123,22 @@ public final class LuaError extends Exception {
 		return new LuaError(error);
 	}
 
-	/**
-	 * Convert an {@link Throwable} in a {@link LuaError}. This will return the original error if it is some Lua error,
-	 * or an error with the same message as the orginal.
-	 *
-	 * @param error The error to convert
-	 * @return The converted error
-	 * @see #getMessage()
-	 */
-	public static LuaError wrapMessage(Throwable error) {
-		if (error instanceof LuaError) return ((LuaError) error);
-		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause();
-
-		String message = error.getMessage();
-		return new LuaError(message == null ? NIL : valueOf(message));
-	}
-
-	/**
-	 * Extract the message from an {@link Throwable} or {@link LuaError}.
-	 * <p>
-	 * This is equivalent to using {@link #wrapMessage(Throwable)}} and then {@link #value}.
-	 *
-	 * @param error The error to convert
-	 * @return The extracted message.
-	 * @see #wrapMessage(Throwable)
-	 */
-	public static LuaValue getMessage(Exception error) {
-		if (error instanceof LuaError) return ((LuaError) error).value;
-		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause().value;
-
-		String message = error.getMessage();
-		return message == null ? NIL : valueOf(message);
-	}
-
 	@Override
 	public String getMessage() {
 		return traceback != null ? traceback : rawToString(value);
 	}
 
-	public void fillTracebackNoHandler(LuaState state) {
-		if (traceback != null) return;
-		fillTracebackImpl(state);
-
-		if (state.getCurrentThread().getErrorFunc() != null) {
-			throw new IllegalStateException("Thread has no error function");
-		}
+	/**
+	 * The value for this error
+	 */
+	public LuaValue getValue() {
+		return value;
 	}
 
-	public void fillTraceback(LuaState state) throws UnwindThrowable {
+	public void fillTraceback(LuaState state) {
+		// TODO: Split this into two methods: one which adds the context, and one which computes the traceback.
+
 		if (traceback != null) return;
-		fillTracebackImpl(state);
-
-		if (state.getCurrentThread().getErrorFunc() != null) {
-			LuaValue errFunc = state.getCurrentThread().setErrorFunc(null);
-			try {
-				value = OperationHelper.call(state, errFunc, value);
-			} catch (Exception | VirtualMachineError t) {
-				value = ValueFactory.valueOf("error in error handling");
-				state.getCurrentThread().setErrorFunc(errFunc);
-			}
-		}
-	}
-
-	private void fillTracebackImpl(LuaState state) {
 		if (getCause() != null) state.reportInternalError(getCause(), () -> "Uncaught Java exception");
 
 		LuaThread thread = state.getCurrentThread();

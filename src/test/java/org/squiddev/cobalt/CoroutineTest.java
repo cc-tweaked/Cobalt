@@ -36,13 +36,11 @@ import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.function.ResumableVarArgFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
 
@@ -55,7 +53,7 @@ public class CoroutineTest {
 
 	public static String[] getTests() {
 		return new String[]{
-			"basic", "debug", "gsub", "ops", "pcall", "resume-boundary", "table", "tail", "yield-boundary", "xpcall",
+			"basic", "debug", "gsub", "load", "ops", "pcall", "table", "tail", "xpcall",
 		};
 	}
 
@@ -69,20 +67,6 @@ public class CoroutineTest {
 			RegisteredFunction.ofV("assertEquals", CoroutineTest::assertEquals$),
 			RegisteredFunction.ofV("fail", CoroutineTest::fail$),
 			RegisteredFunction.ofV("id", CoroutineTest::id),
-			RegisteredFunction.ofV("noUnwind", CoroutineTest::noUnwind$),
-		});
-	}
-
-	private void setBlockingYield() {
-		((LuaTable) helpers.globals.rawget("coroutine")).rawset("yield", new VarArgFunction() {
-			@Override
-			public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-				try {
-					return LuaThread.yieldBlocking(state, args);
-				} catch (InterruptedException e) {
-					throw new InterruptedError(e);
-				}
-			}
 		});
 	}
 
@@ -99,31 +83,6 @@ public class CoroutineTest {
 	public void runSuspend(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		helpers.setup(x -> x.debug(new SuspendingDebug()));
 		setup();
-
-		LuaFunction function = helpers.loadScript(name);
-		Varargs result = LuaThread.runMain(helpers.state, function);
-		while (result == null && !helpers.state.getMainThread().getStatus().equals("dead")) {
-			result = LuaThread.run(helpers.state.getCurrentThread(), Constants.NONE);
-		}
-
-		assertEquals("dead", helpers.state.getMainThread().getStatus());
-	}
-
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
-	@MethodSource("getTests")
-	public void runBlocking(String name) throws IOException, CompileException, LuaError, InterruptedException {
-		helpers.setup();
-		setup();
-		setBlockingYield();
-		LuaThread.runMain(helpers.state, helpers.loadScript(name));
-	}
-
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
-	@MethodSource("getTests")
-	public void runSuspendBlocking(String name) throws IOException, CompileException, LuaError, InterruptedException {
-		helpers.setup(x -> x.debug(new SuspendingDebug()));
-		setup();
-		setBlockingYield();
 
 		LuaFunction function = helpers.loadScript(name);
 		Varargs result = LuaThread.runMain(helpers.state, function);
@@ -178,10 +137,6 @@ public class CoroutineTest {
 
 	private static Varargs id(LuaState state, Varargs args) {
 		return args;
-	}
-
-	private static Varargs noUnwind$(LuaState state, Varargs args) throws LuaError {
-		return noUnwind(state, () -> args.first().checkFunction().call(state));
 	}
 
 	private static class SuspendingDebug extends DebugHandler {

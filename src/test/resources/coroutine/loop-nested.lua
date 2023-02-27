@@ -1,10 +1,10 @@
 local co1 = coroutine.create(function()
-	assert(yieldBlocking("Co 1 [Yield]") == "Co 1 [Resume]")
+	assert(coroutine.yield("Co 1 [Yield]") == "Co 1 [Resume]")
 	return "Co 1 [Done]"
 end)
 
 local co2 = coroutine.create(function()
-	assert(yieldBlocking("Co 2 [Yield]") == "Co 2 [Resume]")
+	assert(coroutine.yield("Co 2 [Yield]") == "Co 2 [Resume]")
 	return "Co 2 [Done]"
 end)
 

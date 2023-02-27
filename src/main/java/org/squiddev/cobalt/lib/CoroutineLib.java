@@ -91,13 +91,14 @@ public final class CoroutineLib {
 	private static class Resume extends ResumableVarArgFunction<Void> {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+			// TODO: Is this really the right way to do this?
 			di.flags |= FLAG_YPCALL;
 			LuaThread thread = args.arg(1).checkThread();
 			try {
 				Varargs result = LuaThread.resume(state, thread, args.subargs(2));
 				return varargsOf(Constants.TRUE, result);
 			} catch (LuaError le) {
-				return varargsOf(Constants.FALSE, le.value);
+				return varargsOf(Constants.FALSE, le.getValue());
 			}
 		}
 
@@ -108,7 +109,7 @@ public final class CoroutineLib {
 
 		@Override
 		protected Varargs resumeErrorThis(LuaState state, Void object, LuaError error) {
-			return varargsOf(Constants.FALSE, error.value);
+			return varargsOf(Constants.FALSE, error.getValue());
 		}
 	}
 

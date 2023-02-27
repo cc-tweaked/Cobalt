@@ -113,14 +113,13 @@ public final class LoadState {
 	 * @param env    Environment to load into
 	 * @return {@link Prototype} that was loaded
 	 * @throws IllegalArgumentException If the signature is bac
-	 * @throws IOException              If an IOException occurs
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws IOException, CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws CompileException {
 		return load(state, stream, name, null, env);
 	}
 
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws IOException, CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws CompileException {
 		return state.compiler.load(LuaC.compile(stream, name, mode), env);
 	}
 

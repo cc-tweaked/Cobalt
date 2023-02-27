@@ -7,7 +7,6 @@ import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 
 public final class DataFactory {
 	private DataFactory() {
@@ -16,7 +15,7 @@ public final class DataFactory {
 	public static Prototype prototype() {
 		try {
 			return LuaC.compile(new ByteArrayInputStream(new byte[]{}), "=prototype");
-		} catch (CompileException | IOException e) {
+		} catch (CompileException e) {
 			throw new RuntimeException(e);
 		}
 	}

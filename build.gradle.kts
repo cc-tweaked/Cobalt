@@ -2,7 +2,7 @@ plugins {
 	java
 	`maven-publish`
 	id("com.github.hierynomus.license") version "0.16.1"
-	id("org.checkerframework") version "0.6.17"
+	alias(libs.plugins.checkerFramework)
 }
 
 group = "org.squiddev"
@@ -20,14 +20,47 @@ repositories {
 	mavenCentral()
 }
 
-dependencies {
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
-	testImplementation("org.junit.jupiter:junit-jupiter-params:5.6.0")
-	testImplementation("org.hamcrest:hamcrest-library:2.2")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
+val buildTools by configurations.creating {
+	isCanBeConsumed = false
+	isCanBeResolved = true
+}
 
-	testImplementation("org.openjdk.jmh:jmh-core:1.23")
-	testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.23")
+dependencies {
+	testImplementation(libs.bundles.test)
+	testRuntimeOnly(libs.bundles.testRuntime)
+
+	testAnnotationProcessor(libs.bundles.testAnnotationProcessor)
+
+	"buildTools"(project(":build-tools"))
+}
+
+// Point compileJava to emit to classes/uninstrumentedJava/main, and then add a task to instrument these classes,
+// saving them back to the the original class directory. This is held together with so much string :(.
+val mainSource = sourceSets.main.get()
+val javaClassesDir = mainSource.java.classesDirectory.get()
+val untransformedClasses = project.layout.buildDirectory.dir("classes/uninstrumentedJava/main")
+
+val instrumentJava = tasks.register(mainSource.getTaskName("Instrument", "Java"), JavaExec::class) {
+	dependsOn(tasks.compileJava)
+	inputs.dir(untransformedClasses).withPropertyName("inputDir")
+	outputs.dir(javaClassesDir).withPropertyName("outputDir")
+
+	javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+	mainClass.set("cc.squiddev.cobalt.build.MainKt")
+	classpath = buildTools
+
+	args = listOf(
+		untransformedClasses.get().asFile.absolutePath,
+		javaClassesDir.asFile.absolutePath,
+	)
+
+	doFirst { project.delete(javaClassesDir) }
+}
+
+mainSource.compiledBy(instrumentJava)
+tasks.compileJava {
+	destinationDirectory.set(untransformedClasses)
+	finalizedBy(instrumentJava)
 }
 
 license {
@@ -36,12 +69,8 @@ license {
 
 checkerFramework {
 	// add '-PskipCheckerFramework' to the gradle command line to speed up the build
-	checkers = listOf(
-		"org.checkerframework.checker.signedness.SignednessChecker"
-	)
-	extraJavacArgs = listOf(
-		"-AonlyDefs=^org\\.squiddev\\.cobalt\\.lib\\.doubles\\."
-	)
+	checkers = listOf("org.checkerframework.checker.signedness.SignednessChecker")
+	extraJavacArgs = listOf("-AonlyDefs=^org\\.squiddev\\.cobalt\\.lib\\.doubles\\.")
 }
 
 publishing {

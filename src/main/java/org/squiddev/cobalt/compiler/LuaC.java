@@ -25,18 +25,16 @@
 package org.squiddev.cobalt.compiler;
 
 
-import org.squiddev.cobalt.Lua;
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState.FunctionFactory;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.CoreLibraries;
+import org.squiddev.cobalt.unwind.AutoUnwind;
+import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.compiler.LoadState.checkMode;
@@ -137,31 +135,28 @@ public class LuaC {
 	 * Load lua thought to be a binary chunk from its first byte from an input stream.
 	 *
 	 * @param firstByte the first byte of the input stream
-	 * @param stream    InputStream to read, after having read the first byte already
+	 * @param reader    InputStream to read, after having read the first byte already
 	 * @param name      Name to apply to the loaded chunk
 	 * @return {@link Prototype} that was loaded
 	 * @throws IllegalArgumentException If the signature is bac
-	 * @throws IOException              If an IOException occurs
+	 * @throws UnwindThrowable          If the reader unwinds.
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
-	public static Prototype loadBinaryChunk(int firstByte, InputStream stream, LuaString name) throws IOException, CompileException {
+	@AutoUnwind
+	private static Prototype loadBinaryChunk(int firstByte, InputReader reader, LuaString name) throws CompileException, UnwindThrowable {
 		name = LoadState.getSourceName(name);
 		// check rest of signature
 		if (firstByte != LoadState.LUA_SIGNATURE[0]
-			|| stream.read() != LoadState.LUA_SIGNATURE[1]
-			|| stream.read() != LoadState.LUA_SIGNATURE[2]
-			|| stream.read() != LoadState.LUA_SIGNATURE[3]) {
+			|| reader.read() != LoadState.LUA_SIGNATURE[1]
+			|| reader.read() != LoadState.LUA_SIGNATURE[2]
+			|| reader.read() != LoadState.LUA_SIGNATURE[3]) {
 			throw new IllegalArgumentException("bad signature");
 		}
 
 		// load file as a compiled chunk
-		BytecodeLoader s = new BytecodeLoader(stream);
+		BytecodeLoader s = new BytecodeLoader(reader);
 		s.loadHeader();
 		return s.loadFunction(name);
-	}
-
-	public static Prototype compile(InputStream stream, String name) throws IOException, CompileException {
-		return compile(stream, valueOf(name));
 	}
 
 	/**
@@ -170,42 +165,77 @@ public class LuaC {
 	 * @param stream The stream to read
 	 * @param name   Name of the chunk
 	 * @return The compiled code
-	 * @throws IOException      On stream read errors
 	 * @throws CompileException If there is a syntax error.
 	 */
-	public static Prototype compile(InputStream stream, LuaString name) throws IOException, CompileException {
-		return compile(stream, name, null);
+	public static Prototype compile(InputStream stream, String name) throws CompileException {
+		return compile(stream, valueOf(name), null);
 	}
 
-	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws IOException, CompileException {
+	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws CompileException {
+		Object result;
+		try {
+			result = SuspendedTask.noYield(() -> {
+				try {
+					return compile(new InputStreamReader(stream), name, mode);
+				} catch (CompileException e) {
+					return e;
+				}
+			});
+		} catch (LuaError e) {
+			// Wish Java had an effect system :(.
+			throw new AssertionError("Lua compiler should never throw a Lua error", e);
+		}
+
+		if (result instanceof CompileException) throw (CompileException) result;
+		return (Prototype) result;
+	}
+
+	@AutoUnwind
+	public static Prototype compile(InputReader stream, LuaString name, LuaString mode) throws CompileException, UnwindThrowable {
 		int firstByte = stream.read();
 		if (firstByte == '\033') {
 			checkMode(mode, "binary");
 			return loadBinaryChunk(firstByte, stream, name);
 		} else {
 			checkMode(mode, "text");
-			try {
-				return loadTextChunk(firstByte, stream, name);
-			} catch (UncheckedIOException e) {
-				throw e.getCause();
-			}
+			return loadTextChunk(firstByte, stream, name);
 		}
 	}
 
 	/**
 	 * Parse the input
 	 */
-	private static Prototype loadTextChunk(int firstByte, InputStream stream, LuaString name) throws CompileException {
-		Parser lexstate = new Parser(stream, firstByte, name);
-		FuncState funcstate = lexstate.openFunc();
+	@AutoUnwind
+	private static Prototype loadTextChunk(int firstByte, InputReader stream, LuaString name) throws CompileException, UnwindThrowable {
+		Parser parser = new Parser(stream, firstByte, name);
+		parser.lexer.skipShebang();
+		FuncState funcstate = parser.openFunc();
 		funcstate.varargFlags = Lua.VARARG_ISVARARG; /* main func. is always vararg */
 
-		lexstate.lexer.nextToken(); // read first token
-		lexstate.chunk();
-		lexstate.check(Lex.TK_EOS);
-		Prototype prototype = lexstate.closeFunc();
+		parser.lexer.nextToken(); // read first token
+		parser.chunk();
+		parser.check(Lex.TK_EOS);
+		Prototype prototype = parser.closeFunc();
 		LuaC._assert(funcstate.upvalues.size() == 0);
-		LuaC._assert(lexstate.fs == null);
+		LuaC._assert(parser.fs == null);
 		return prototype;
+	}
+
+	private static class InputStreamReader implements InputReader {
+		private final InputStream stream;
+
+		public InputStreamReader(InputStream stream) {
+			this.stream = stream;
+		}
+
+		@Override
+		public int read() throws CompileException, UnwindThrowable {
+			try {
+				return stream.read();
+			} catch (IOException e) {
+				String message = e.getMessage() == null ? e.toString() : e.getMessage();
+				throw new CompileException("io error: " + message);
+			}
+		}
 	}
 }

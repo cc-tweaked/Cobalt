@@ -161,7 +161,7 @@ public final class OperationHelper {
 
 	/**
 	 * Perform metatag processing for arithmetic operations.
-	 *
+	 * <p>
 	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
 	 * or throws {@link LuaError} if neither is defined.
 	 *
@@ -181,7 +181,7 @@ public final class OperationHelper {
 
 	/**
 	 * Perform metatag processing for arithmetic operations.
-	 *
+	 * <p>
 	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
 	 * or throws {@link LuaError} if neither is defined.
 	 *
@@ -211,7 +211,7 @@ public final class OperationHelper {
 
 	/**
 	 * Perform metatag processing for concatenation operations.
-	 *
+	 * <p>
 	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
 	 * or throws {@link LuaError} if it doesn't exist.
 	 *
@@ -581,26 +581,26 @@ public final class OperationHelper {
 	}
 
 	public static <T> T noUnwind(LuaState state, LuaRunnable<T> task) throws LuaError {
-		LuaThread.State threadState = state.getCurrentThread().state;
-		threadState.javaCount++;
+		LuaThread thread = state.getCurrentThread();
+		thread.javaCount++;
 		try {
 			return task.run();
 		} catch (UnwindThrowable e) {
 			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
 		} finally {
-			threadState.javaCount--;
+			thread.javaCount--;
 		}
 	}
 
 	public static void noUnwind(LuaState state, LuaTask task) throws LuaError {
-		LuaThread.State threadState = state.getCurrentThread().state;
-		threadState.javaCount++;
+		LuaThread thread = state.getCurrentThread();
+		thread.javaCount++;
 		try {
 			task.run();
 		} catch (UnwindThrowable e) {
 			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
 		} finally {
-			threadState.javaCount--;
+			thread.javaCount--;
 		}
 	}
 
@@ -617,7 +617,7 @@ public final class OperationHelper {
 
 	/**
 	 * A version of {@link #toString(LuaState, LuaValue)} which doesn't obey metamethods.
-	 *
+	 * <p>
 	 * Technically this is wrong, as <code>luaL_tolstring</code> should use metamethods, but sometimes it's easier
 	 * to not worry about them yielding.
 	 *

@@ -25,19 +25,22 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.CompileException;
+import org.squiddev.cobalt.compiler.InputReader;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugState;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.RegisteredFunction;
+import org.squiddev.cobalt.function.ResumableVarArgFunction;
 import org.squiddev.cobalt.lib.system.ResourceLoader;
+import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_ERROR;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
 
 /**
  * The basic global libraries in the Lua runtime.
@@ -255,47 +258,52 @@ public class BaseLib {
 	}
 
 	// pcall(f, arg1, ...) -> status, result1, ...
-	private static class PCall extends ResumableVarArgFunction<PCallState> {
+	private static class PCall extends ResumableVarArgFunction<ProtectedCall> {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			return pcallInit(state, di, args.checkValue(1), args.subargs(2), null);
+			LuaValue func = args.checkValue(1);
+
+			ProtectedCall call = new ProtectedCall(di, null);
+			di.state = call;
+			return call.apply(state, func, args.subargs(2)).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, PCallState info, Varargs value) {
-			pcallFinishSuccess(state, info);
-			return info.errored ? varargsOf(Constants.FALSE, value.first()) : varargsOf(Constants.TRUE, value);
+		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+			return call.resume(state, value).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, PCallState object, LuaError error) throws UnwindThrowable {
-			LuaValue result = pcallFinishError(state, object, error);
-			return varargsOf(Constants.FALSE, result);
+		protected Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+			return call.resumeError(state, error).asBoolAndResult();
 		}
 	}
 
 	// xpcall(f, err) -> result1, ...
-	private static class XpCall extends ResumableVarArgFunction<PCallState> {
+	private static class XpCall extends ResumableVarArgFunction<ProtectedCall> {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			return pcallInit(state, di, args.checkValue(1), Constants.NONE, args.checkValue(2));
+			LuaValue func = args.checkValue(1);
+			LuaValue errFunc = args.checkValue(2);
+
+			ProtectedCall call = new ProtectedCall(di, errFunc);
+			di.state = call;
+			return call.apply(state, func, Constants.NONE).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, PCallState info, Varargs value) {
-			pcallFinishSuccess(state, info);
-			return info.errored ? varargsOf(Constants.FALSE, value.first()) : varargsOf(Constants.TRUE, value);
+		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+			return call.resume(state, value).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, PCallState object, LuaError error) throws UnwindThrowable {
-			LuaValue result = pcallFinishError(state, object, error);
-			return varargsOf(Constants.FALSE, result);
+		protected Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+			return call.resumeError(state, error).asBoolAndResult();
 		}
 	}
 
 	// load( func|str [,chunkname[, mode[, env]]] ) -> chunk | nil, msg
-	private static class Load extends ResumableVarArgFunction<PCallState> {
+	static class Load extends ResumableVarArgFunction<ProtectedCall> {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			LuaValue scriptGen = args.arg(1);
@@ -304,172 +312,94 @@ public class BaseLib {
 			LuaTable funcEnv = args.arg(4).optTable(state.getCurrentThread().getfenv());
 
 			// If we're a string, load as normal
-			LuaValue script = scriptGen.toLuaString();
-			if (!script.isNil()) {
-				try {
-					return LoadState.load(state, ((LuaString) script).toInputStream(), chunkName == null ? (LuaString) script : chunkName, mode, funcEnv);
-				} catch (Exception e) {
-					return varargsOf(Constants.NIL, LuaError.getMessage(e));
-				}
+			if (scriptGen.isString()) {
+				LuaString contents = scriptGen.checkLuaString();
+				return BaseLib.loadStream(state, contents.toInputStream(), chunkName == null ? contents : chunkName, mode, funcEnv);
 			}
 
 			LuaFunction function = scriptGen.checkFunction();
-			Varargs result = pcallInit(state, di, new ZeroArgFunction() {
-				@Override
-				public LuaValue call(LuaState state) throws LuaError {
-					try {
-						InputStream stream = new StringInputStream(state, function);
-						return LoadState.load(state, stream, chunkName == null ? FUNCTION_STR : chunkName, mode, funcEnv);
-					} catch (Exception e) {
-						throw LuaError.wrapMessage(e);
-					}
+			ProtectedCall call = new ProtectedCall(di, state.getCurrentThread().getErrorFunc());
+			di.state = call;
+			return call.apply(state, SuspendedTask.toFunction(() -> {
+				try {
+					InputReader stream = new FunctionInputReader(state, function);
+					return state.compiler.load(LuaC.compile(stream, chunkName == null ? FUNCTION_STR : chunkName, mode), funcEnv);
+				} catch (CompileException e) {
+					return varargsOf(Constants.NIL, valueOf(e.getMessage()));
+				} catch (UncheckedLuaError e) {
+					throw e.getCause();
 				}
-			}, Constants.NONE, state.getCurrentThread().getErrorFunc());
-
-			if (result.first().toBoolean()) {
-				return result.arg(2);
-			} else {
-				return varargsOf(Constants.NIL, result.arg(2));
-			}
+			})).asResultOrFailure();
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, PCallState pState, Varargs value) {
-			pcallFinishSuccess(state, pState);
-			return pState.errored ? varargsOf(Constants.NIL, value) : value;
+		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+			return call.resume(state, value).asResultOrFailure();
 		}
 
 		@Override
-		public Varargs resumeErrorThis(LuaState state, PCallState pState, LuaError error) throws UnwindThrowable {
-			LuaValue result = pcallFinishError(state, pState, error);
-			return varargsOf(Constants.NIL, result);
+		public Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+			return call.resumeError(state, error).asResultOrFailure();
 		}
 	}
 
-	private static final class PCallState {
-		DebugFrame frame;
-		LuaValue oldErrorFunc;
-		boolean errored = false;
-	}
-
-	private static Varargs pcallInit(LuaState state, DebugFrame di, LuaValue func, Varargs args, LuaValue errFunc) throws UnwindThrowable {
-		// FIXME: Move this into a core part of the runtime, so it's not part of library code!
-		//  We really should clean up LuaError at the same time.
-
-		// Mark this frame as being an error handler
-		PCallState pState = new PCallState();
-		di.state = pState;
-		di.flags |= FLAG_YPCALL;
-
-		// Store this frame in the current state.
-		pState.frame = di;
-
-		LuaValue oldErr = pState.oldErrorFunc = state.getCurrentThread().setErrorFunc(errFunc);
+	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName, LuaString mode, LuaTable env) {
 		try {
-			Varargs result = varargsOf(Constants.TRUE, OperationHelper.invoke(state, func, args));
-
-			state.getCurrentThread().setErrorFunc(oldErr);
-			return result;
-		} catch (Exception | VirtualMachineError e) {
-			// Mark this frame as errored, meaning it will not be resumed.
-			DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
-			// And mark us as being in the error handler.
-			pState.errored = true;
-
-			LuaError le = LuaError.wrap(e);
-			le.fillTraceback(state);
-
-			state.getCurrentThread().setErrorFunc(oldErr);
-			closeUntil(state, di);
-			return varargsOf(Constants.FALSE, le.value);
+			return LoadState.load(state, is, chunkName, mode, env);
+		} catch (CompileException e) {
+			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
 		}
 	}
 
-	private static void pcallFinishSuccess(LuaState state, PCallState pState) {
-		state.getCurrentThread().setErrorFunc(pState.oldErrorFunc);
-		if (pState.errored) closeUntil(state, pState.frame);
+	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName) {
+		return loadStream(state, is, chunkName, null, state.getCurrentThread().getfenv());
 	}
 
-	private static LuaValue pcallFinishError(LuaState state, PCallState pState, LuaError error) throws UnwindThrowable {
-		LuaValue value;
-		if (pState.errored) {
-			value = valueOf("error in error handling");
-		} else {
-			// Mark this frame as errored, meaning it will not be resumed.
-			DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
-			// And mark us as being in the error handler.
-			pState.errored = true;
-			error.fillTraceback(state);
-			value = error.value;
-		}
-
-		state.getCurrentThread().setErrorFunc(pState.oldErrorFunc);
-		closeUntil(state, pState.frame);
-
-		return value;
-	}
-
-	private static void closeUntil(LuaState state, DebugFrame top) {
-		DebugState ds = DebugHandler.getDebugState(state);
-		DebugHandler handler = state.debug;
-
-		DebugFrame current;
-		while ((current = ds.getStackUnsafe()) != top) {
-			current.cleanup();
-			handler.onReturnError(ds);
-		}
-	}
-
-	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkname) {
-		try {
-			if (is == null) {
-				return varargsOf(Constants.NIL, valueOf("not found: " + chunkname));
-			}
-			return LoadState.load(state, is, chunkname, state.getCurrentThread().getfenv());
-		} catch (Exception e) {
-			return varargsOf(Constants.NIL, LuaError.getMessage(e));
-		}
-	}
-
-	private static class StringInputStream extends InputStream {
+	private static class FunctionInputReader implements InputReader {
 		private final LuaState state;
 		final LuaValue func;
 		byte[] bytes;
 		int offset, remaining = 0;
 
-		StringInputStream(LuaState state, LuaValue func) {
+		FunctionInputReader(LuaState state, LuaValue func) {
 			this.state = state;
 			this.func = func;
 		}
 
 		@Override
-		public int read() {
+		public int read() throws UnwindThrowable {
 			if (remaining <= 0) {
-				LuaValue s;
+				LuaValue value;
 				try {
-					s = OperationHelper.noUnwind(state, () -> OperationHelper.call(state, func));
+					System.out.println("Calling " + func);
+					value = OperationHelper.call(state, func);
 				} catch (LuaError e) {
 					throw new UncheckedLuaError(e);
 				}
 
-				if (s.isNil()) {
-					return -1;
-				}
-				LuaString ls;
-				try {
-					ls = s.strvalue();
-				} catch (LuaError e) {
-					throw new UncheckedLuaError(e);
-				}
-				bytes = ls.bytes;
-				offset = ls.offset;
-				remaining = ls.length;
-				if (remaining <= 0) {
-					return -1;
-				}
+				if (!fillBuffer(value)) return -1;
 			}
+
 			--remaining;
-			return bytes[offset++];
+			return (bytes[offset++] & 0xFF);
+		}
+
+		@Override
+		public int resume(Varargs varargs) throws CompileException, UnwindThrowable {
+			System.out.println("Resuming " + varargs);
+			if (!fillBuffer(varargs.first())) return -1;
+			return read();
+		}
+
+		private boolean fillBuffer(LuaValue value) {
+			if (value.isNil()) return false;
+			if (!value.isString()) throw new UncheckedLuaError(new LuaError("reader function must return a string"));
+
+			LuaString ls = OperationHelper.toStringDirect(value);
+			bytes = ls.bytes;
+			offset = ls.offset;
+			remaining = ls.length;
+			return remaining > 0;
 		}
 	}
 }

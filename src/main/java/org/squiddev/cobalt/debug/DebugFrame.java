@@ -59,6 +59,7 @@ public final class DebugFrame {
 	 * @see org.squiddev.cobalt.lib.BaseLib {@code pcall}/{@code xpcall} set this for obvious reasons.
 	 */
 	public static final int FLAG_YPCALL = 1 << 4;
+	// TODO: Remove this and just have a child interface to Resumable?
 
 	/**
 	 * Whether this function is currently within a line/instruction debug hook.

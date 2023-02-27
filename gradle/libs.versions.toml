@@ -1,0 +1,45 @@
+[versions]
+asm = "9.3"
+slf4j = "2.0.6"
+
+checkerFramework-plugin = "0.6.17"
+
+kotlin = "1.8.10"
+kotlin-coroutines = "1.6.4"
+
+jmh = "1.23"
+junit = "5.9.2"
+hamcrest = "2.2"
+
+[libraries]
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+asm-analysis = { module = "org.ow2.asm:asm-analysis", version.ref = "asm" }
+asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+
+kotlin-platform = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+kotlin-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+jmh = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-processor = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+
+[bundles]
+asm = ["asm", "asm-analysis", "asm-commons", "asm-tree", "asm-util"]
+kotlin = ["kotlin-stdlib", "kotlin-coroutines"]
+
+test = ["junit-jupiter-api", "junit-jupiter-params", "hamcrest", "jmh"]
+testRuntime = ["junit-jupiter-engine"]
+testAnnotationProcessor = ["jmh-processor"]
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+checkerFramework = { id = "org.checkerframework", version.ref = "checkerFramework-plugin" }
