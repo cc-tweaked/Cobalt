@@ -510,6 +510,17 @@ public final class OperationHelper {
 		return getTable(state, t, key, -1);
 	}
 
+	public static LuaValue getTable(LuaState state, LuaValue t, int key) throws LuaError, UnwindThrowable {
+		// Optimised case for an integer key.
+		if (t.isTable()) {
+			LuaValue value = ((LuaTable) t).rawget(key);
+			if (!value.isNil()) return value;
+		}
+
+		// Fall back to the slow lookup.
+		return getTable(state, t, valueOf(key));
+	}
+
 	public static LuaValue getTable(LuaState state, LuaValue t, LuaValue key, int stack) throws LuaError, UnwindThrowable {
 		LuaValue tm;
 		int loop = 0;
@@ -544,6 +555,19 @@ public final class OperationHelper {
 	 */
 	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value) throws LuaError, UnwindThrowable {
 		setTable(state, t, key, value, -1);
+	}
+
+	public static void setTable(LuaState state, LuaValue t, int key, LuaValue value) throws LuaError, UnwindThrowable {
+		// Optimised case for an integer key.
+		if (t.isTable()) {
+			if (!((LuaTable) t).rawget(key).isNil()) {
+				((LuaTable) t).rawset(key, value);
+				return;
+			}
+		}
+
+		// Fall back to the slow lookup.
+		setTable(state, t, valueOf(key), value);
 	}
 
 	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value, int stack) throws LuaError, UnwindThrowable {

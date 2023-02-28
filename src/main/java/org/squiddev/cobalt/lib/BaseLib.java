@@ -371,7 +371,6 @@ public class BaseLib {
 			if (remaining <= 0) {
 				LuaValue value;
 				try {
-					System.out.println("Calling " + func);
 					value = OperationHelper.call(state, func);
 				} catch (LuaError e) {
 					throw new UncheckedLuaError(e);
@@ -386,7 +385,6 @@ public class BaseLib {
 
 		@Override
 		public int resume(Varargs varargs) throws CompileException, UnwindThrowable {
-			System.out.println("Resuming " + varargs);
 			if (!fillBuffer(varargs.first())) return -1;
 			return read();
 		}

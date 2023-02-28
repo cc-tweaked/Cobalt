@@ -648,33 +648,6 @@ public final class LuaTable extends LuaValue {
 		return lg;
 	}
 
-	// ----------------- sort support -----------------------------
-	//
-	// implemented heap sort from wikipedia
-	public boolean compare(LuaState state, int i, int j, LuaValue cmpfunc) throws LuaError, UnwindThrowable {
-		LuaValue a, b;
-
-		a = strengthen(rawget(i));
-		b = strengthen(rawget(j));
-
-		if (!cmpfunc.isNil()) {
-			return OperationHelper.call(state, cmpfunc, a, b).toBoolean();
-		}
-		// To avoid breaking sort on tables that do contain nil values, but are not specifying a comparison function
-		// we should ensure that the behaviour is the same has before
-		// this means not swapping A B if either A or B is nil
-		if (a.isNil() || b.isNil()) {
-			return false;
-		}
-		return OperationHelper.lt(state, a, b);
-	}
-
-	public void swap(int i, int j) {
-		LuaValue a = rawget(i);
-		rawset(i, rawget(j));
-		rawset(j, a);
-	}
-
 	/**
 	 * This may be deprecated in a future release.
 	 * It is recommended to count via iteration over next() instead

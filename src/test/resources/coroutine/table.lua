@@ -63,3 +63,17 @@ run(function()
 	assertEquals(13, x[3].x)
 	assertEquals(32, x[4].x)
 end)
+
+run(function()
+	local original = { "e", "d", "c", "b", "a" }
+	local slice = setmetatable({}, {
+		__len = function(self) return coroutine.yield(3) end,
+		__index = function(self, n) return original[coroutine.yield(n) + 1] end,
+		__newindex = function(self, n, x) original[coroutine.yield(n) + 1] = x end,
+	})
+
+	table.sort(slice)
+
+	assert(table.concat(original) == "ebcda")
+	assert(next(slice) == nil)
+end)

@@ -11,6 +11,9 @@ val VARARGS = Type.getObjectType("org/squiddev/cobalt/Varargs")
 /** The [org.squiddev.cobalt.LuaState] class. */
 val LUA_STATE = Type.getObjectType("org/squiddev/cobalt/LuaState")
 
+/** The [org.squiddev.cobalt.LuaValue] class. */
+val LUA_VALUE = Type.getObjectType("org/squiddev/cobalt/LuaValue")
+
 /** The [org.squiddev.cobalt.LuaError] class. */
 val LUA_ERROR = Type.getObjectType("org/squiddev/cobalt/LuaError")
 
@@ -34,15 +37,6 @@ val SUSPENDED_TASK_ACTION = Type.getObjectType("org/squiddev/cobalt/unwind/Suspe
 
 /** The [org.squiddev.cobalt.unwind.SuspendedFunction] class. */
 val SUSPENDED_FUNCTION = Type.getObjectType("org/squiddev/cobalt/unwind/SuspendedFunction")
-
-/** The [org.squiddev.cobalt.compiler.InputReader] class. */
-val INPUT_READER = Type.getObjectType("org/squiddev/cobalt/compiler/InputReader")
-
-/** The [org.squiddev.cobalt.compiler.InputReader.read] method. */
-val INPUT_READER_READ = Desc(INPUT_READER.internalName, "read", "()I")
-
-/** The [org.squiddev.cobalt.compiler.InputReader.resume] method. */
-val INPUT_READER_RESUME = Desc(INPUT_READER.internalName, "resume", "(${VARARGS.descriptor})I")
 
 /** The lambda metafactory methodhandle */
 val LAMBDA_METAFACTORY = Handle(

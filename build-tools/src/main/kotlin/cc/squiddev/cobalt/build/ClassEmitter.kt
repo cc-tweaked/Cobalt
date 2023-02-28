@@ -48,13 +48,31 @@ class FileClassEmitter(private val outputDir: Path) : ClassEmitter {
 	}
 }
 
+/** A unordered pair, such that (x, y) = (y, x) */
+private class UnorderedPair<T>(private val x: T, private val y: T) {
+	override fun equals(other: Any?): Boolean {
+		if (this === other) return true
+		if (other !is UnorderedPair<*>) return false
+		return (x == other.x && y == other.y) || (x == other.y && y == other.x)
+	}
+
+	override fun hashCode(): Int = x.hashCode() xor y.hashCode()
+	override fun toString(): String = "UnorderedPair($x, $y)"
+}
+
+private val subclassRelations = mapOf(
+	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/function/LuaFunction") to "org/squiddev/cobalt/LuaValue",
+)
+
 /** A [ClassWriter] extension which avoids loading classes when computing frames. */
 private class NonLoadingClassWriter(reader: ClassReader?, flags: Int) : ClassWriter(reader, flags) {
 	override fun getCommonSuperClass(type1: String, type2: String): String {
 		if (type1 == "java/lang/Object" || type2 == "java/lang/Object") return "java/lang/Object"
 
+		val subclass = subclassRelations[UnorderedPair(type1, type2)]
+		if (subclass != null) return subclass
+
 		logger.warn("Guessing the super-class of {} and {}.", type1, type2)
 		return "java/lang/Object"
 	}
 }
-

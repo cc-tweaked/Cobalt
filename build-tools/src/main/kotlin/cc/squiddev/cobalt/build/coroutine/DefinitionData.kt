@@ -3,30 +3,36 @@ package cc.squiddev.cobalt.build.coroutine
 import cc.squiddev.cobalt.build.UnsupportedConstruct
 import cc.squiddev.cobalt.build.logger
 import org.objectweb.asm.*
-import org.objectweb.asm.Opcodes.INVOKESTATIC
+import org.objectweb.asm.Opcodes.*
 import org.slf4j.Logger
 
 private val logger: Logger = logger {}
 
-enum class YieldType {
+sealed interface YieldType {
+
 	/**
 	 * This method is annotated with the [cc.squiddev.cobalt.build.coroutine.AUTO_UNWIND] annotation.
 	 *
 	 * Calls to this method (and the definition itself) will be instrumented to include an extra state parameter.
 	 */
-	AUTO_UNWIND,
+	object AutoUnwind : YieldType
 
 	/**
 	 * This method follows the resumable contract: when resuming we will invoke a separate "resume" method with the
 	 * packed Varargs.
 	 */
-	RESUME,
+	object Resume : YieldType
+
+	/**
+	 * This value does not run again, instead applying a projection function to the varargs.
+	 */
+	class Direct(val extract: (MethodVisitor) -> Unit) : YieldType
 
 	/**
 	 * This method unwinds, but in a way not understood by our tooling.
 	 */
 	// TODO: Remove this and handle this specially elsewhere?
-	UNSUPPORTED,
+	object Unsupported : YieldType
 }
 
 enum class InstrumentType {
@@ -54,17 +60,34 @@ interface DefinitionData {
 	fun isFieldFinal(owner: String, name: String, desc: String): Boolean
 }
 
+private val builtinMethods = run {
+	val opHelper = "org/squiddev/cobalt/OperationHelper"
+	val first = YieldType.Direct { mw ->
+		mw.visitMethodInsn(INVOKEVIRTUAL, VARARGS.internalName, "first", "()${LUA_VALUE.descriptor}", false)
+	}
+	val firstBool = YieldType.Direct { mw ->
+		mw.visitMethodInsn(INVOKEVIRTUAL, VARARGS.internalName, "first", "()${LUA_VALUE.descriptor}", false)
+		mw.visitMethodInsn(INVOKEVIRTUAL, LUA_VALUE.internalName, "toBoolean", "()Z", false)
+	}
+	val drop = YieldType.Direct { mw -> mw.visitInsn(POP) }
+
+	mapOf(
+		Desc("org/squiddev/cobalt/compiler/InputReader", "read", "()I") to YieldType.Resume,
+		Desc(opHelper, "lt", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
+		Desc(opHelper, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE, LUA_VALUE)) to first,
+		Desc(opHelper, "length", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE)) to first,
+		Desc(opHelper, "getTable", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, Type.INT_TYPE)) to first,
+		Desc(opHelper, "setTable", Type.getMethodDescriptor(Type.VOID_TYPE, LUA_STATE, LUA_VALUE, Type.INT_TYPE, LUA_VALUE)) to drop,
+	)
+}
+
 /**
  * Extracts useful information about the input classes, exposing it to other functions via the [DefinitionData] interface.
  */
 class DefinitionScanner : DefinitionData {
-	private val yieldingMethods = HashMap<Desc, YieldType>()
+	private val yieldingMethods = HashMap<Desc, YieldType>(builtinMethods)
 	private val instrumentMethods = HashMap<Desc, InstrumentType>()
 	private val finalFields = HashSet<Desc>()
-
-	init {
-		yieldingMethods[INPUT_READER_READ] = YieldType.RESUME
-	}
 
 	override fun getYieldType(owner: String, name: String, desc: String): YieldType? = yieldingMethods[Desc(owner, name, desc)]
 	override fun getInstrumentType(owner: String, name: String, desc: String): InstrumentType? = instrumentMethods[Desc(owner, name, desc)]
@@ -140,7 +163,7 @@ class DefinitionScanner : DefinitionData {
 							throw UnsupportedConstruct("$className.$name calls $owner.$callName with a non-lambda argument.")
 						}
 
-						yieldingMethods[Desc(lastLambda.owner, lastLambda.name, lastLambda.desc)] = YieldType.AUTO_UNWIND
+						yieldingMethods[Desc(lastLambda.owner, lastLambda.name, lastLambda.desc)] = YieldType.AutoUnwind
 						instrumentMethods[Desc(lastLambda.owner, lastLambda.name, lastLambda.desc)] = InstrumentType.AUTO_UNWIND
 						instrumentMethods[Desc(className, name, descriptor)] = InstrumentType.DISPATCH_UNWIND
 						instrument = true
@@ -153,7 +176,7 @@ class DefinitionScanner : DefinitionData {
 					when {
 						// If we're annotated with @AutoUnwind and we will unwind, mark us as such.
 						(autoUnwind || autoUnwindMethod) && willUnwind -> {
-							yieldingMethods[Desc(className, name, descriptor)] = YieldType.AUTO_UNWIND
+							yieldingMethods[Desc(className, name, descriptor)] = YieldType.AutoUnwind
 							instrumentMethods[Desc(className, name, descriptor)] = InstrumentType.AUTO_UNWIND
 							instrument = true
 						}
@@ -165,7 +188,7 @@ class DefinitionScanner : DefinitionData {
 						// one which is ignored by our transform. We use putIfAbsent here, as there are some hard-coded
 						// methods which we want to handle specially.
 						willUnwind -> {
-							yieldingMethods.putIfAbsent(Desc(className, name, descriptor), YieldType.UNSUPPORTED)
+							yieldingMethods.putIfAbsent(Desc(className, name, descriptor), YieldType.Unsupported)
 						}
 					}
 				}

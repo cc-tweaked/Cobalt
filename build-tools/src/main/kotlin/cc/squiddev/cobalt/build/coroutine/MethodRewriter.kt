@@ -71,9 +71,9 @@ private fun makeStateClass(generator: ClassEmitter, yieldPoints: List<YieldPoint
 
 /** Get the exception thrown at a specific yield point. */
 private fun getExceptionType(yieldType: YieldType): Type = when (yieldType) {
-	YieldType.AUTO_UNWIND -> PAUSE
-	YieldType.RESUME -> UNWIND_THROWABLE
-	YieldType.UNSUPPORTED -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
+	is YieldType.AutoUnwind -> PAUSE
+	is YieldType.Resume, is YieldType.Direct -> UNWIND_THROWABLE
+	is YieldType.Unsupported -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
 }
 
 /** Add labels after each yield point, so we can insert our try/catch handler. */
@@ -82,7 +82,7 @@ private fun instrumentMethodCalls(method: MethodNode, yieldPoints: List<YieldPoi
 	//  method node, but it's not the end of the world.
 
 	// @AutoUnwind calls require an implicit state argument. Note this must appear BEFORE the label.
-	if (yieldPoint.yieldType == YieldType.AUTO_UNWIND) method.instructions.insertBefore(yieldPoint.label, InsnNode(ACONST_NULL))
+	if (yieldPoint.yieldType == YieldType.AutoUnwind) method.instructions.insertBefore(yieldPoint.label, InsnNode(ACONST_NULL))
 
 	// We also require a label after each resume point, so we can wrap it in a try block.
 	when (val after = yieldPoint.yieldAt.next) {
@@ -140,9 +140,9 @@ private class AutoUnwindRewriter(
 
 	override fun visitMethodInsn(opcode: Int, owner: String, name: String, descriptor: String, isInterface: Boolean) {
 		when (definitions.getYieldType(owner, name, descriptor)) {
-			null, YieldType.RESUME -> super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
-			YieldType.AUTO_UNWIND -> super.visitMethodInsn(opcode, owner, name, rewriteDesc(descriptor), isInterface)
-			YieldType.UNSUPPORTED -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
+			null, is YieldType.Resume, is YieldType.Direct -> super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+			is YieldType.AutoUnwind -> super.visitMethodInsn(opcode, owner, name, rewriteDesc(descriptor), isInterface)
+			is YieldType.Unsupported -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
 		}
 	}
 
@@ -211,27 +211,19 @@ private class AutoUnwindRewriter(
 		for (stackVal in yieldPoint.stack) recoverValue(stackVal)
 
 		// And then actually recover the function call.
-		when (yieldPoint.yieldType) {
+		when (val yieldType = yieldPoint.yieldType) {
 			// Push a dummy value for each argument and then jump to the original call.
-			YieldType.AUTO_UNWIND -> {
+			is YieldType.AutoUnwind -> {
 				for (stackTy in Type.getArgumentTypes(yieldPoint.yieldAt.desc)) sink.visitInsn(stackTy.getDefaultOpcode())
 				sink.visitVarInsn(ALOAD, stateLocal)
 				sink.visitFieldInsn(GETFIELD, UNWIND_STATE.internalName, "child", OBJECT.descriptor)
 				sink.visitJumpInsn(GOTO, yieldPoint.label.label)
 			}
 
-			// Pull the varargs out the original state, and then call the resume() function.
-			YieldType.RESUME -> {
-				// Pull the varargs from the current state
-				sink.visitVarInsn(ALOAD, stateLocal)
-				sink.visitFieldInsn(GETFIELD, UNWIND_STATE.internalName, "resumeArgs", VARARGS.descriptor)
+			// Take the varargs out of the state, and then call the resume(Varargs) method, wrapping it in a try/catch.
+			is YieldType.Resume -> {
+				takeResumeArgs()
 
-				// And then clear it.
-				sink.visitVarInsn(ALOAD, stateLocal)
-				sink.visitInsn(ACONST_NULL)
-				sink.visitFieldInsn(PUTFIELD, UNWIND_STATE.internalName, "resumeArgs", VARARGS.descriptor)
-
-				// And then call the resume(Varargs) method, wrapping it in a try/catch.
 				val before = Label()
 				val after = Label()
 				sink.visitTryCatchBlock(before, after, tryCatches[stateIdx], UNWIND_THROWABLE.internalName)
@@ -247,7 +239,14 @@ private class AutoUnwindRewriter(
 				sink.visitJumpInsn(GOTO, afterLabels[stateIdx])
 			}
 
-			YieldType.UNSUPPORTED -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
+			// Take the varargs out of the state and then apply our projection function.
+			is YieldType.Direct -> {
+				takeResumeArgs()
+				yieldType.extract(sink)
+				sink.visitJumpInsn(GOTO, afterLabels[stateIdx])
+			}
+
+			is YieldType.Unsupported -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
 		}
 	}
 
@@ -281,7 +280,7 @@ private class AutoUnwindRewriter(
 		sink.visitVarInsn(ASTORE, stateLocal) // Actually the store is done later, but same difference.
 
 		when (yieldPoint.yieldType) {
-			YieldType.AUTO_UNWIND -> {
+			is YieldType.AutoUnwind -> {
 				// state.child = e.child
 				sink.visitInsn(DUP)
 				sink.visitVarInsn(ALOAD, stateLocal)
@@ -290,7 +289,7 @@ private class AutoUnwindRewriter(
 				sink.visitFieldInsn(PUTFIELD, UNWIND_STATE.internalName, "child", OBJECT.descriptor)
 			}
 
-			YieldType.RESUME -> {
+			is YieldType.Resume, is YieldType.Direct -> {
 				sink.visitTypeInsn(NEW, PAUSE.internalName)
 				sink.visitInsn(DUP_X1) // Stack is [new Pause(), (e : UnwindThrowable), new Pause()]
 				sink.visitInsn(SWAP) // Stack is [new Pause(), new Pause(), (e : UnwindThrowable)]
@@ -298,7 +297,7 @@ private class AutoUnwindRewriter(
 				sink.visitMethodInsn(INVOKESPECIAL, PAUSE.internalName, "<init>", "(${UNWIND_THROWABLE.descriptor}${UNWIND_STATE.descriptor})V", false)
 			}
 
-			YieldType.UNSUPPORTED -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
+			is YieldType.Unsupported -> throw IllegalStateException("YieldType.UNSUPPORTED should not be emitted here.")
 		}
 
 		// state.state = stateIdx
@@ -334,6 +333,17 @@ private class AutoUnwindRewriter(
 
 		// throw exception
 		sink.visitInsn(ATHROW)
+	}
+
+	private fun takeResumeArgs() {
+		// Pull the varargs from the current state
+		sink.visitVarInsn(ALOAD, stateLocal)
+		sink.visitFieldInsn(GETFIELD, UNWIND_STATE.internalName, "resumeArgs", VARARGS.descriptor)
+
+		// And then clear it.
+		sink.visitVarInsn(ALOAD, stateLocal)
+		sink.visitInsn(ACONST_NULL)
+		sink.visitFieldInsn(PUTFIELD, UNWIND_STATE.internalName, "resumeArgs", VARARGS.descriptor)
 	}
 
 	/** Pack a primitive value into a long. */
@@ -468,7 +478,6 @@ fun instrumentDispatch(
 				method.instructions.add(InsnNode(ATHROW))
 			}
 
-			"run" -> TODO("SuspendedTask.run")
 			"toFunction" -> {
 				val argTypes = Type.getArgumentTypes(methodReference.desc)
 				val factoryDesc = Type.getMethodType(childName, *argTypes).descriptor
@@ -565,6 +574,7 @@ fun instrumentDispatch(
 				method.instructions.remove(insn)
 			}
 
+			else -> throw IllegalStateException("Unhandled call to SuspendedTask.${insn.name}")
 		}
 	}
 

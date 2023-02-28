@@ -26,10 +26,10 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
+import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.unwind.AutoUnwind;
+import org.squiddev.cobalt.unwind.SuspendedFunction;
+import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -103,7 +103,7 @@ public final class TableLib {
 		return NONE;
 	}
 
-	private static Varargs pack(LuaState state, Varargs args) throws LuaError {
+	private static Varargs pack(LuaState state, Varargs args) {
 		int count = args.count();
 		LuaTable table = new LuaTable(count, 1);
 		for (int i = 1; i <= count; i++) table.rawset(i, args.arg(i));
@@ -112,39 +112,72 @@ public final class TableLib {
 	}
 
 	// "sort" (table [, comp]) -> void
-	private static class Sort extends ResumableVarArgFunction<SortState> {
+	private static class Sort extends SuspendedVarArgFunction {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			LuaTable table = args.arg(1).checkTable();
 			LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
-			int n = table.length();
-			if (n > 1) {
-				SortState res = new SortState(table, n, compare);
-				di.state = res;
-				heapSort(state, table, n, compare, res, 0, n / 2 - 1);
-			}
-			return NONE;
+
+			SuspendedFunction<Varargs> fn = SuspendedTask.toFunction(() -> {
+				// TODO: Error with "object length is not a number"
+				int n = OperationHelper.length(state, table).checkInteger();
+				if (n > 1) heapSort(state, table, n, compare);
+				return NONE;
+			});
+			di.state = fn;
+			return fn.call(state);
 		}
 
-		@Override
-		protected Varargs resumeThis(LuaState state, SortState res, Varargs value) throws LuaError, UnwindThrowable {
-			LuaTable table = res.table;
-			LuaValue compare = res.compare;
-			int count = res.count;
-
-			// We attempt to recover from sifting the state
-			if (res.siftState != -1) {
-				int root = stateSiftDown(state, table, compare, res, value.first().toBoolean());
-				res.siftState = -1;
-
-				// Continue sifting here
-				if (root != -1) normalSiftDown(state, table, root, res.end, compare, res);
+		@AutoUnwind
+		private static void heapSort(LuaState state, LuaTable table, int count, LuaValue compare) throws LuaError, UnwindThrowable {
+			for (int start = count / 2 - 1; start >= 0; start--) {
+				siftDown(state, table, start, count - 1, compare);
 			}
 
-			// And continue sorting
-			heapSort(state, table, count, compare, res, res.sortState, res.counter);
-			return NONE;
+			for (int end = count - 1; end > 0; ) {
+				LuaValue endValue = OperationHelper.getTable(state, table, end + 1);
+				LuaValue startValue = OperationHelper.getTable(state, table, 1);
+				OperationHelper.setTable(state, table, end + 1, startValue);
+				OperationHelper.setTable(state, table, 1, endValue);
+
+				siftDown(state, table, 0, --end, compare);
+			}
 		}
+
+		@AutoUnwind
+		private static void siftDown(LuaState state, LuaTable table, int start, int end, LuaValue compare) throws LuaError, UnwindThrowable {
+			LuaValue rootValue = OperationHelper.getTable(state, table, start + 1);
+
+			for (int root = start; root * 2 + 1 <= end; ) {
+				int child = root * 2 + 1;
+				LuaValue childValue = OperationHelper.getTable(state, table, child + 1);
+
+				if (child < end) {
+					LuaValue other = OperationHelper.getTable(state, table, child + 2);
+					if (compare(state, compare, childValue, other)) {
+						child++;
+						childValue = other;
+					}
+				}
+
+				if (compare(state, compare, rootValue, childValue)) {
+					OperationHelper.setTable(state, table, root + 1, childValue);
+					OperationHelper.setTable(state, table, child + 1, rootValue);
+
+					root = child; // Don't need to update rootValue, as we've now swapped!
+				} else {
+					return;
+				}
+			}
+		}
+
+		@AutoUnwind
+		private static boolean compare(LuaState state, LuaValue compare, LuaValue a, LuaValue b) throws LuaError, UnwindThrowable {
+			return compare.isNil()
+				? OperationHelper.lt(state, a, b)
+				: OperationHelper.call(state, compare, a, b).toBoolean();
+		}
+
 	}
 
 	/**
@@ -291,123 +324,6 @@ public final class TableLib {
 			}
 
 			return varargsOf(values);
-		}
-	}
-
-
-	private static final class SortState {
-		final LuaTable table;
-		final int count;
-		final LuaValue compare;
-
-		// Top level state
-		int sortState = 0;
-		int counter = -1;
-
-		int siftState = -1;
-		int root;
-		int child;
-		int end;
-
-		private SortState(LuaTable table, int count, LuaValue compare) {
-			this.table = table;
-			this.count = count;
-			this.compare = compare;
-		}
-	}
-
-	private static void heapSort(LuaState state, LuaTable table, int count, LuaValue compare, SortState res, int sortState, int counter) throws LuaError, UnwindThrowable {
-		switch (sortState) {
-			case 0: {
-				int start = counter;
-				try {
-					for (; start >= 0; --start) {
-						normalSiftDown(state, table, start, count - 1, compare, res);
-					}
-				} catch (UnwindThrowable e) {
-					res.sortState = 0;
-					res.counter = start - 1;
-					throw e;
-				}
-
-				// Allow explicit fall-through into the next state
-				// Therefore we want to reset all the various counters.
-				counter = count - 1;
-			}
-
-			case 1: {
-				int end = counter;
-				try {
-					for (; end > 0; ) {
-						table.swap(end + 1, 1);
-						normalSiftDown(state, table, 0, --end, compare, res);
-					}
-				} catch (UnwindThrowable e) {
-					res.sortState = 1;
-					res.counter = end;
-					throw e;
-				}
-			}
-		}
-	}
-
-	private static void normalSiftDown(LuaState state, LuaTable table, int root, int end, LuaValue compare, SortState res) throws LuaError, UnwindThrowable {
-		int siftState = -1, child = -1;
-		try {
-			for (; root * 2 + 1 <= end; ) {
-				siftState = 0;
-
-				child = root * 2 + 1;
-				if (child < end && table.compare(state, child + 1, child + 2, compare)) {
-					++child;
-				}
-
-				siftState = 1;
-
-				if (table.compare(state, root + 1, child + 1, compare)) {
-					table.swap(root + 1, child + 1);
-					root = child;
-				} else {
-					return;
-				}
-			}
-		} catch (UnwindThrowable e) {
-			res.root = root;
-			res.child = child;
-			res.siftState = siftState;
-			res.end = end;
-			throw e;
-		}
-	}
-
-	private static int stateSiftDown(LuaState state, LuaTable table, LuaValue compare, SortState res, boolean value) throws LuaError, UnwindThrowable {
-		int siftState = res.siftState;
-		int child = res.child;
-		int root = res.root;
-
-		switch (siftState) {
-			case 0:
-				if (value) child++;
-
-				// This is technically state 1 now, but we care about the exit
-				// point rather than the entry point
-				try {
-					value = table.compare(state, root + 1, child + 1, compare);
-				} catch (UnwindThrowable e) {
-					res.child = child;
-					res.siftState = 1;
-					throw e;
-				}
-				// Allow fall through
-			case 1:
-				if (value) {
-					table.swap(root + 1, child + 1);
-					return child;
-				} else {
-					return -1;
-				}
-			default:
-				throw new IllegalStateException("No such state " + siftState);
 		}
 	}
 }

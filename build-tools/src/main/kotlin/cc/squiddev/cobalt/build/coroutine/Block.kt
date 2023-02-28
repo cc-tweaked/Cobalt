@@ -1,5 +1,6 @@
 package cc.squiddev.cobalt.build.coroutine
 
+import cc.squiddev.cobalt.build.UnsupportedConstruct
 import cc.squiddev.cobalt.build.quoteForGraphViz
 import cc.squiddev.cobalt.build.withMethodTraceVisitor
 import org.objectweb.asm.Label
@@ -146,9 +147,10 @@ fun extractBlocks(instructions: InsnList, definitions: DefinitionData): List<Blo
 		when (instr) {
 			// If this method may yield, then place it at the start of a block. We either reuse the preceding label or
 			// create a new one.
-			is MethodInsnNode -> {
-				val yieldType = definitions.getYieldType(instr.owner, instr.name, instr.desc)
-				if (yieldType != null) {
+			is MethodInsnNode -> when (val yieldType = definitions.getYieldType(instr.owner, instr.name, instr.desc)) {
+				null -> {}
+				is YieldType.Unsupported -> throw UnsupportedConstruct("${instr.owner}.${instr.name}${instr.desc} unwinds but cannot be resumed.")
+				else -> {
 					var prev = instr.previous
 					while (prev is FrameNode || prev is LineNumberNode) prev = prev.previous
 					val block = createBlock(if (prev is LabelNode) prev else instructions.getOrCreateLabel(instr))
