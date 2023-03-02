@@ -138,15 +138,9 @@ public final class DebugLib {
 		if (func != null) {
 			for (int i = 0; i < str.length(); i++) {
 				switch (str.charAt(i)) {
-					case 'c':
-						call = true;
-						break;
-					case 'l':
-						line = true;
-						break;
-					case 'r':
-						rtrn = true;
-						break;
+					case 'c' -> call = true;
+					case 'l' -> line = true;
+					case 'r' -> rtrn = true;
 				}
 			}
 		} else {
@@ -201,7 +195,7 @@ public final class DebugLib {
 		LuaClosure c = di.closure;
 		for (int i = 0, j = what.length(); i < j; i++) {
 			switch (what.charAt(i)) {
-				case 'S': {
+				case 'S' -> {
 					if (c != null) {
 						Prototype p = c.getPrototype();
 						info.rawset(WHAT, p.lineDefined == 0 ? MAIN : LUA);
@@ -218,34 +212,29 @@ public final class DebugLib {
 						info.rawset(LINEDEFINED, MINUSONE);
 						info.rawset(LASTLINEDEFINED, MINUSONE);
 					}
-					break;
 				}
-				case 'l': {
+				case 'l' -> {
 					if (c == null) continue;
 					Prototype p = c.getPrototype();
 					int line = p.lineInfo == null || di.pc < 0 || di.pc >= p.lineInfo.length ? -1 : p.lineInfo[di.pc];
 					int column = p.columnInfo == null || di.pc < 0 || di.pc >= p.columnInfo.length ? -1 : p.columnInfo[di.pc];
 					info.rawset(CURRENTLINE, valueOf(line));
 					if (column > 0) info.rawset(CURRENTCOLUMN, valueOf(column));
-					break;
 				}
-				case 'u': {
+				case 'u' -> {
 					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().upvalues : 0));
 					info.rawset(NPARAMS, valueOf(c != null ? c.getPrototype().parameters : 0));
 					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().isVarArg > 0));
-					break;
 				}
-				case 'n': {
+				case 'n' -> {
 					LuaString[] kind = di.getFuncKind();
 					info.rawset(NAME, kind != null ? kind[0] : NIL);
 					info.rawset(NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
-					break;
 				}
-				case 'f': {
+				case 'f' -> {
 					info.rawset(FUNC, di.func == null ? NIL : di.func);
-					break;
 				}
-				case 'L': {
+				case 'L' -> {
 					if (di.closure != null) {
 						LuaTable lines = new LuaTable();
 						info.rawset(ACTIVELINES, lines);
@@ -254,13 +243,9 @@ public final class DebugLib {
 							for (int line : lineinfo) lines.rawset(line, TRUE);
 						}
 					}
-					break;
 				}
-				case 't':
-					info.rawset(ISTAILCALL, valueOf((di.flags & DebugFrame.FLAG_TAIL) != 0));
-					break;
-				default:
-					throw ErrorFactory.argError(arg + 1, "invalid option");
+				case 't' -> info.rawset(ISTAILCALL, valueOf((di.flags & DebugFrame.FLAG_TAIL) != 0));
+				default -> throw ErrorFactory.argError(arg + 1, "invalid option");
 			}
 		}
 		return info;
@@ -324,26 +309,13 @@ public final class DebugLib {
 		try {
 			LuaTable mt = args.arg(2).optTable(null);
 			switch (object.type()) {
-				case TNIL:
-					state.nilMetatable = mt;
-					break;
-				case TNUMBER:
-					state.numberMetatable = mt;
-					break;
-				case TBOOLEAN:
-					state.booleanMetatable = mt;
-					break;
-				case TSTRING:
-					state.stringMetatable = mt;
-					break;
-				case TFUNCTION:
-					state.functionMetatable = mt;
-					break;
-				case TTHREAD:
-					state.threadMetatable = mt;
-					break;
-				default:
-					object.setMetatable(state, mt);
+				case TNIL -> state.nilMetatable = mt;
+				case TNUMBER -> state.numberMetatable = mt;
+				case TBOOLEAN -> state.booleanMetatable = mt;
+				case TSTRING -> state.stringMetatable = mt;
+				case TFUNCTION -> state.functionMetatable = mt;
+				case TTHREAD -> state.threadMetatable = mt;
+				default -> object.setMetatable(state, mt);
 			}
 			return TRUE;
 		} catch (LuaError e) {
@@ -367,8 +339,7 @@ public final class DebugLib {
 	private static Varargs getupvalue(LuaState state, Varargs args) throws LuaError {
 		LuaValue func = args.arg(1).checkFunction();
 		int up = args.arg(2).checkInteger();
-		if (func instanceof LuaClosure) {
-			LuaClosure c = (LuaClosure) func;
+		if (func instanceof LuaClosure c) {
 			LuaString name = findupvalue(c, up);
 			if (name != null) {
 				return varargsOf(name, c.getUpvalue(up - 1).getValue());
@@ -381,8 +352,7 @@ public final class DebugLib {
 		LuaValue func = args.arg(1).checkFunction();
 		int up = args.arg(2).checkInteger();
 		LuaValue value = args.arg(3);
-		if (func instanceof LuaClosure) {
-			LuaClosure c = (LuaClosure) func;
+		if (func instanceof LuaClosure c) {
 			LuaString name = findupvalue(c, up);
 			if (name != null) {
 				c.getUpvalue(up - 1).setValue(value);
@@ -410,8 +380,7 @@ public final class DebugLib {
 
 	private static LuaClosure getClosureForUpvalue(Varargs args, int offset, int upvalue) throws LuaError {
 		LuaFunction function = args.arg(offset).checkFunction();
-		if (function instanceof LuaClosure) {
-			LuaClosure closure = (LuaClosure) function;
+		if (function instanceof LuaClosure closure) {
 			if (upvalue >= 0 && upvalue < closure.getPrototype().upvalues) return closure;
 		}
 

@@ -248,10 +248,10 @@ public final class OperationHelper {
 	}
 
 	public static LuaString concat(LuaString left, LuaString right) {
-		byte[] out = new byte[left.length() + right.length()];
-		left.copyTo(out, 0);
-		right.copyTo(out, left.length());
-		return LuaString.valueOf(out);
+		byte[] b = new byte[left.length() + right.length()];
+		left.copyTo(b, 0);
+		right.copyTo(b, left.length());
+		return LuaString.valueOf(b);
 	}
 	//endregion
 

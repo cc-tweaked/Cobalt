@@ -128,13 +128,13 @@ public class TokenStream {
 
 	private String ttToSring(int tt) {
 		if (tt > 0) return String.format("'%c'", tt);
-		switch (tt) {
-			case StreamTokenizer.TT_EOF: return "'TT_EOF'";
-			case StreamTokenizer.TT_NUMBER: return "'TT_NUMBER'" + Double.toString(st.nval);
-			case StreamTokenizer.TT_WORD: return "'TT_WORD':" + st.sval;
-			case StreamTokenizer.TT_EOL: return "'TT_EOL'";
-			default: return "unknown(" + Integer.valueOf(tt) + ")";
-		}
+		return switch (tt) {
+			case StreamTokenizer.TT_EOF -> "'TT_EOF'";
+			case StreamTokenizer.TT_NUMBER -> "'TT_NUMBER'" + Double.toString(st.nval);
+			case StreamTokenizer.TT_WORD -> "'TT_WORD':" + st.sval;
+			case StreamTokenizer.TT_EOL -> "'TT_EOL'";
+			default -> "unknown(" + Integer.valueOf(tt) + ")";
+		};
 	}
 
 	public static class TokenException extends Exception {

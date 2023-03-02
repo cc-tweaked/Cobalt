@@ -26,15 +26,15 @@ package org.squiddev.cobalt;
 
 /**
  * Class to encapsulate varargs values, either as part of a variable argument list, or multiple return values.
- *
+ * <p>
  * To construct varargs, use one of the static methods such as
  * {@code LuaValue.varargsOf(LuaValue, LuaValue)}
- *
+ * <p>
  * Any LuaValue can be used as a stand-in for Varargs, for both calls and return values.
  * When doing so, nargs() will return 1 and arg1() or arg(1) will return this.
  * This simplifies the case when calling or implementing varargs functions with only
  * 1 argument or 1 return value.
- *
+ * <p>
  * Varargs can also be derived from other varargs by appending to the front with a call
  * such as  {@code LuaValue.varargsOf(LuaValue, Varargs)}
  * or by taking a portion of the args using {@code Varargs.subargs(int start)}
@@ -77,7 +77,7 @@ public abstract class Varargs {
 
 	/**
 	 * Convert this varargs to an immutable variant.
-	 *
+	 * <p>
 	 * This ensures that we don't mutate the varargs when copying to/from the Lua stack.
 	 *
 	 * @return The immutable variant
@@ -196,13 +196,11 @@ public abstract class Varargs {
 	 */
 	public Varargs subargs(final int start) {
 		int end = count();
-		switch (end - start) {
-			case 0:
-				return arg(start);
-			case 1:
-				return new LuaValue.PairVarargs(arg(start), arg(end));
-		}
-		return end < start ? Constants.NONE : new SubVarargs(this, start, end);
+		return switch (end - start) {
+			case 0 -> arg(start);
+			case 1 -> new LuaValue.PairVarargs(arg(start), arg(end));
+			default -> end < start ? Constants.NONE : new SubVarargs(this, start, end);
+		};
 	}
 
 	protected abstract static class DepthVarargs extends Varargs {

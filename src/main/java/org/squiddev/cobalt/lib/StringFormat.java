@@ -73,28 +73,11 @@ class StringFormat {
 			i += fdsc.length;
 
 			switch (fdsc.conversion) {
-				case 'c':
-					fdsc.format(result, (byte) value.checkLong());
-					break;
-				case 'i':
-				case 'd':
-				case 'o':
-				case 'u':
-				case 'x':
-				case 'X':
-					fdsc.format(result, value.checkLong());
-					break;
-				case 'e':
-				case 'E':
-				case 'f':
-				case 'g':
-				case 'G':
-					fdsc.format(result, value.checkDouble());
-					break;
-				case 'q':
-					addQuoted(result, format.arg, value);
-					break;
-				case 's': {
+				case 'c' -> fdsc.format(result, (byte) value.checkLong());
+				case 'i', 'd', 'o', 'u', 'x', 'X' -> fdsc.format(result, value.checkLong());
+				case 'e', 'E', 'f', 'g', 'G' -> fdsc.format(result, value.checkDouble());
+				case 'q' -> addQuoted(result, format.arg, value);
+				case 's' -> {
 					try {
 						addString(result, fdsc, OperationHelper.checkToString(OperationHelper.toString(state, value)));
 					} catch (UnwindThrowable e) {
@@ -103,9 +86,7 @@ class StringFormat {
 						throw e;
 					}
 				}
-				break;
-				default:
-					throw new LuaError("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
+				default -> throw new LuaError("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
 			}
 		}
 
@@ -122,24 +103,17 @@ class StringFormat {
 
 	private static void addQuoted(Buffer buf, int arg, LuaValue s) throws LuaError {
 		switch (s.type()) {
-			case TSTRING:
-				addQuoted(buf, s.checkLuaString());
-				break;
-			case TNUMBER: {
+			case TSTRING -> addQuoted(buf, s.checkLuaString());
+			case TNUMBER -> {
 				if (s instanceof LuaInteger) {
 					buf.append(Integer.toString(s.checkInteger()));
 				} else {
 					double value = s.checkDouble();
 					buf.append((long) value == value ? Long.toString((long) value) : Double.toHexString(value));
 				}
-				break;
 			}
-			case TBOOLEAN:
-			case TNIL:
-				buf.append(s.toString());
-				break;
-			default:
-				throw ErrorFactory.argError(arg, "value has no literal representation");
+			case TBOOLEAN, TNIL -> buf.append(s.toString());
+			default -> throw ErrorFactory.argError(arg, "value has no literal representation");
 		}
 	}
 
@@ -148,21 +122,13 @@ class StringFormat {
 		buf.append((byte) '"');
 		for (int i = 0, n = s.length(); i < n; i++) {
 			switch (c = s.charAt(i)) {
-				case '"':
-				case '\\':
-				case '\n':
+				case '"', '\\', '\n' -> {
 					buf.append((byte) '\\');
 					buf.append((byte) c);
-					break;
-				case '\r':
-					buf.append("\\r");
-					break;
-				case '\0':
-					buf.append("\\000");
-					break;
-				default:
-					buf.append((byte) c);
-					break;
+				}
+				case '\r' -> buf.append("\\r");
+				case '\0' -> buf.append("\\000");
+				default -> buf.append((byte) c);
 			}
 		}
 		buf.append((byte) '"');

@@ -394,13 +394,9 @@ public class PackageLib {
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
 			return true;
 		}
-		switch (c) {
-			case '.':
-			case '$':
-			case '_':
-				return true;
-			default:
-				return false;
-		}
+		return switch (c) {
+			case '.', '$', '_' -> true;
+			default -> false;
+		};
 	}
 }

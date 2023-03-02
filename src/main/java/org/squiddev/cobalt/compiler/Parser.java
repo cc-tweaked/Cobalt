@@ -460,22 +460,19 @@ final class Parser {
 
 			closeListField(fs, cc);
 			switch (lexer.token.token()) {
-				case TK_NAME: { // may be listfields or recfields
+				case TK_NAME -> { // may be listfields or recfields
 					lexer.lookahead();
 					if (lexer.lookahead.token() != '=') { // expression?
 						listField(cc);
 					} else {
 						recordField(cc);
 					}
-					break;
 				}
-				case '[': { // constructor_item -> recfield
+				case '[' -> { // constructor_item -> recfield
 					recordField(cc);
-					break;
 				}
-				default: { // constructor_part -> listfield
+				default -> { // constructor_part -> listfield
 					listField(cc);
-					break;
 				}
 			}
 		} while (testNext(',') || testNext(';'));
@@ -516,21 +513,18 @@ final class Parser {
 		if (lexer.token.token() != ')') {  // is `parlist' not empty?
 			do {
 				switch (lexer.token.token()) {
-					case TK_NAME: { // param . NAME
+					case TK_NAME -> { // param . NAME
 						newLocal(strCheckName(), numParams++);
-						break;
 					}
-					case TK_DOTS: { // param . `...'
+					case TK_DOTS -> { // param . `...'
 						lexer.nextToken();
 						if (LUA_COMPAT_VARARG) { // use `arg' as default name
 							newLocal("arg", numParams++);
 							fs.varargFlags = Lua.VARARG_HASARG | Lua.VARARG_NEEDSARG;
 						}
 						fs.varargFlags |= Lua.VARARG_ISVARARG;
-						break;
 					}
-					default:
-						throw syntaxError("<name> or " + LUA_QL("...") + " expected");
+					default -> throw syntaxError("<name> or " + LUA_QL("...") + " expected");
 				}
 			} while (fs.varargFlags == 0 && testNext(','));
 		}
@@ -575,7 +569,7 @@ final class Parser {
 		long position = lexer.token.position();
 		int line = lexer.token.line();
 		switch (lexer.token.token()) {
-			case '(': { /* funcargs -> `(' [ explist1 ] `)' */
+			case '(' -> { /* funcargs -> `(' [ explist1 ] `)' */
 				if (line != lexer.lastLine()) {
 					throw syntaxError("ambiguous syntax (function call x new statement)");
 				}
@@ -588,19 +582,15 @@ final class Parser {
 					fs.setMultiRet(args);
 				}
 				checkMatch(')', '(', line);
-				break;
 			}
-			case '{':  /* funcargs -> constructor */
+			case '{' ->  /* funcargs -> constructor */
 				constructor(args);
-				break;
-			case TK_STRING: { /* funcargs -> STRING */
+			case TK_STRING -> { /* funcargs -> STRING */
 				codeString(args, lexer.token.stringContents());
 				/* must use `seminfo' before `next' */
 				lexer.nextToken();
-				break;
 			}
-			default:
-				throw syntaxError("function arguments expected");
+			default -> throw syntaxError("function arguments expected");
 		}
 		assert f.kind == ExpKind.VNONRELOC;
 
@@ -626,7 +616,7 @@ final class Parser {
 	private void prefixExpression(ExpDesc v) throws CompileException, UnwindThrowable {
 		/* prefixexp -> NAME | '(' expr ')' */
 		switch (lexer.token.token()) {
-			case '(': {
+			case '(' -> {
 				int line = lexer.token.line();
 				lexer.nextToken();
 				expression(v);
@@ -634,12 +624,11 @@ final class Parser {
 				fs.dischargeVars(v);
 				return;
 			}
-			case TK_NAME: {
+			case TK_NAME -> {
 				singleVar(v);
 				return;
 			}
-			default:
-				throw syntaxError("unexpected symbol");
+			default -> throw syntaxError("unexpected symbol");
 		}
 	}
 
@@ -652,35 +641,30 @@ final class Parser {
 		prefixExpression(v);
 		while (true) {
 			switch (lexer.token.token()) {
-				case '.': { // field
+				case '.' -> { // field
 					field(v);
-					break;
 				}
-				case '[': { // `[' exp1 `]'
+				case '[' -> { // `[' exp1 `]'
 					ExpDesc key = new ExpDesc();
 					fs.exp2AnyReg(v);
 					long indexPos = lexer.token.position();
 					yindex(key);
 					fs.indexed(v, key, indexPos);
-					break;
 				}
-				case ':': { // `:' NAME funcargs
+				case ':' -> { // `:' NAME funcargs
 					ExpDesc key = new ExpDesc();
 					lexer.nextToken();
 					checkName(key);
 					fs.self(v, key);
 					funcArgs(v);
-					break;
 				}
-				case '(':
-				case TK_STRING:
-				case '{': { // funcargs
+				case '(', TK_STRING, '{' -> { // funcargs
 					fs.exp2NextReg(v);
 					funcArgs(v);
-					break;
 				}
-				default:
+				default -> {
 					return;
+				}
 			}
 		}
 	}
@@ -691,44 +675,38 @@ final class Parser {
 		 * FUNCTION body | primaryexp
 		 */
 		switch (lexer.token.token()) {
-			case TK_NUMBER: {
+			case TK_NUMBER -> {
 				v.init(ExpKind.VKNUM, 0);
 				v.setNval(lexer.token.numberContents());
-				break;
 			}
-			case TK_STRING: {
+			case TK_STRING -> {
 				codeString(v, lexer.token.stringContents());
-				break;
 			}
-			case TK_NIL: {
+			case TK_NIL -> {
 				v.init(ExpKind.VNIL, 0);
-				break;
 			}
-			case TK_TRUE: {
+			case TK_TRUE -> {
 				v.init(ExpKind.VTRUE, 0);
-				break;
 			}
-			case TK_FALSE: {
+			case TK_FALSE -> {
 				v.init(ExpKind.VFALSE, 0);
-				break;
 			}
-			case TK_DOTS: { /* vararg */
+			case TK_DOTS -> { /* vararg */
 				FuncState fs = this.fs;
 				checkCondition(fs.varargFlags != 0, "cannot use " + LUA_QL("...") + " outside a vararg function");
 				fs.varargFlags &= ~Lua.VARARG_NEEDSARG; // don't need 'arg'
 				v.init(ExpKind.VVARARG, fs.codeABC(Lua.OP_VARARG, 0, 1, 0));
-				break;
 			}
-			case '{': { /* constructor */
+			case '{' -> { /* constructor */
 				constructor(v);
 				return;
 			}
-			case TK_FUNCTION: {
+			case TK_FUNCTION -> {
 				lexer.nextToken();
 				body(v, false, lexer.token.line());
 				return;
 			}
-			default: {
+			default -> {
 				primaryExpression(v);
 				return;
 			}
@@ -782,16 +760,10 @@ final class Parser {
 	 */
 
 	private static boolean blockFollow(int token) {
-		switch (token) {
-			case TK_ELSE:
-			case TK_ELSEIF:
-			case TK_END:
-			case TK_UNTIL:
-			case TK_EOS:
-				return true;
-			default:
-				return false;
-		}
+		return switch (token) {
+			case TK_ELSE, TK_ELSEIF, TK_END, TK_UNTIL, TK_EOS -> true;
+			default -> false;
+		};
 	}
 
 	private void block() throws CompileException, UnwindThrowable {
@@ -1012,15 +984,9 @@ final class Parser {
 		enterBlock(fs, bl, true); // scope for loop and control variables
 		LuaString varName = strCheckName(); // first variable name
 		switch (lexer.token.token()) {
-			case '=':
-				forNum(varName, position);
-				break;
-			case ',':
-			case TK_IN:
-				forList(varName);
-				break;
-			default:
-				throw syntaxError(LUA_QL("=") + " or " + LUA_QL("in") + " expected");
+			case '=' -> forNum(varName, position);
+			case ',', TK_IN -> forList(varName);
+			default -> throw syntaxError(LUA_QL("=") + " or " + LUA_QL("in") + " expected");
 		}
 		checkMatch(TK_END, TK_FOR, Lex.unpackLine(position));
 		leaveBlock(fs); // loop scope (`break' jumps to this point)
@@ -1163,34 +1129,34 @@ final class Parser {
 
 	private boolean statement() throws CompileException, UnwindThrowable {
 		switch (lexer.token.token()) {
-			case TK_IF: { // stat -> ifstat
+			case TK_IF -> { // stat -> ifstat
 				ifStat();
 				return false;
 			}
-			case TK_WHILE: { /* stat -> whiles-tat */
+			case TK_WHILE -> { /* stat -> whiles-tat */
 				whileStmt();
 				return false;
 			}
-			case TK_DO: { /* stat -> DO block END */
+			case TK_DO -> { /* stat -> DO block END */
 				int line = lexer.token.line(); // may be needed for error messages
 				lexer.nextToken(); // skip DO
 				block();
 				checkMatch(TK_END, TK_DO, line);
 				return false;
 			}
-			case TK_FOR: { /* stat -> forstat */
+			case TK_FOR -> { /* stat -> forstat */
 				forStmt();
 				return false;
 			}
-			case TK_REPEAT: { /* stat -> repeatstat */
+			case TK_REPEAT -> { /* stat -> repeatstat */
 				repeatStmt();
 				return false;
 			}
-			case TK_FUNCTION: {
+			case TK_FUNCTION -> {
 				funcStmt(); /* stat -> funcstat */
 				return false;
 			}
-			case TK_LOCAL: { /* stat -> localstat */
+			case TK_LOCAL -> { /* stat -> localstat */
 				lexer.nextToken(); // skip LOCAL
 				if (testNext(TK_FUNCTION)) { // local function?
 					localFunc();
@@ -1199,16 +1165,16 @@ final class Parser {
 				}
 				return false;
 			}
-			case TK_RETURN: { /* stat -> retstat */
+			case TK_RETURN -> { /* stat -> retstat */
 				returnStmt();
 				return true; // must be last statement
 			}
-			case TK_BREAK: { /* stat -> breakstat */
+			case TK_BREAK -> { /* stat -> breakstat */
 				lexer.nextToken(); // skip BREAK
 				breakStmt();
 				return true; // must be last statement
 			}
-			default: {
+			default -> {
 				exprStmt();
 				return false;
 			}

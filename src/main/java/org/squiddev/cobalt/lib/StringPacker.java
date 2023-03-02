@@ -101,64 +101,45 @@ class StringPacker {
 
 	public static Mode getOption(Info info) throws LuaError {
 		byte c = info.string.byteAt(info.position++);
-		switch (c) {
-			case 'b':
-				return info.setup(1, Mode.INT);
-			case 'B':
-				return info.setup(1, Mode.UINT);
-			case 'h':
-				return info.setup(2, Mode.INT);
-			case 'H':
-				return info.setup(2, Mode.UINT);
-			case 'l':
-				return info.setup(8, Mode.INT);
-			case 'L':
-				return info.setup(8, Mode.UINT);
-			case 'j':
-				return info.setup(8, Mode.INT);
-			case 'J':
-				return info.setup(8, Mode.UINT);
-			case 'T':
-				return info.setup(SIZEOF_SIZE_T, Mode.UINT);
-			case 'f':
-				return info.setup(4, Mode.FLOAT);
-			case 'd':
-				return info.setup(8, Mode.DOUBLE);
-			case 'n':
-				return info.setup(8, Mode.DOUBLE);
-
-			case 'i':
-				return info.setup(getNumLimit(info, 4), Mode.INT);
-			case 'I':
-				return info.setup(getNumLimit(info, 4), Mode.UINT);
-			case 's':
-				return info.setup(getNumLimit(info, SIZEOF_SIZE_T), Mode.STRING);
-			case 'c': {
+		return switch (c) {
+			case 'b' -> info.setup(1, Mode.INT);
+			case 'B' -> info.setup(1, Mode.UINT);
+			case 'h' -> info.setup(2, Mode.INT);
+			case 'H' -> info.setup(2, Mode.UINT);
+			case 'l' -> info.setup(8, Mode.INT);
+			case 'L' -> info.setup(8, Mode.UINT);
+			case 'j' -> info.setup(8, Mode.INT);
+			case 'J' -> info.setup(8, Mode.UINT);
+			case 'T' -> info.setup(SIZEOF_SIZE_T, Mode.UINT);
+			case 'f' -> info.setup(4, Mode.FLOAT);
+			case 'd' -> info.setup(8, Mode.DOUBLE);
+			case 'n' -> info.setup(8, Mode.DOUBLE);
+			case 'i' -> info.setup(getNumLimit(info, 4), Mode.INT);
+			case 'I' -> info.setup(getNumLimit(info, 4), Mode.UINT);
+			case 's' -> info.setup(getNumLimit(info, SIZEOF_SIZE_T), Mode.STRING);
+			case 'c' -> {
 				int size = getNum(info, -1);
 				if (size < 0) throw new LuaError("missing size for format option 'c'");
-				return info.setup(size, Mode.CHAR);
+				yield info.setup(size, Mode.CHAR);
 			}
-			case 'z':
-				return info.setup(0, Mode.ZSTR);
-			case 'x':
-				return info.setup(1, Mode.PADDING);
-			case 'X':
-				return info.setup(0, Mode.PADD_ALIGN);
-			case ' ':
-				return info.setup(0, Mode.NONE);
-			case '<':
-			case '=':
+			case 'z' -> info.setup(0, Mode.ZSTR);
+			case 'x' -> info.setup(1, Mode.PADDING);
+			case 'X' -> info.setup(0, Mode.PADD_ALIGN);
+			case ' ' -> info.setup(0, Mode.NONE);
+			case '<', '=' -> {
 				info.isLittle = true;
-				return info.setup(0, Mode.NONE);
-			case '>':
+				yield info.setup(0, Mode.NONE);
+			}
+			case '>' -> {
 				info.isLittle = false;
-				return info.setup(0, Mode.NONE);
-			case '!':
+				yield info.setup(0, Mode.NONE);
+			}
+			case '!' -> {
 				info.maxAlign = getNumLimit(info, 8);
-				return info.setup(0, Mode.NONE);
-			default:
-				throw new LuaError("invalid format option '" + (char) c + "'");
-		}
+				yield info.setup(0, Mode.NONE);
+			}
+			default -> throw new LuaError("invalid format option '" + (char) c + "'");
+		};
 	}
 
 	public static Mode getDetails(Info info, int outPosition) throws LuaError {
@@ -259,7 +240,8 @@ class StringPacker {
 
 				case CHAR: {
 					LuaString string = args.arg(i++).checkLuaString();
-					if (string.length() > info.size) throw ErrorFactory.argError(i - 1, "string longer than given size");
+					if (string.length() > info.size)
+						throw ErrorFactory.argError(i - 1, "string longer than given size");
 
 					buffer.ensure(info.size);
 					string.copyTo(buffer.output, buffer.offset);

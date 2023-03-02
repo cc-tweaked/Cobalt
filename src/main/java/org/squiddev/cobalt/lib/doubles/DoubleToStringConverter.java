@@ -757,14 +757,10 @@ public final class DoubleToStringConverter {
 	}
 
 	private static BigNumDtoa.BignumDtoaMode dtoaToBignumDtoaMode(DoubleToStringConverter.DtoaMode dtoaMode) {
-		switch (dtoaMode) {
-			case FIXED:
-				return BigNumDtoa.BignumDtoaMode.FIXED;
-			case PRECISION:
-				return BigNumDtoa.BignumDtoaMode.PRECISION;
-			default:
-				throw new IllegalStateException("Unreachable");
-		}
+		return switch (dtoaMode) {
+			case FIXED -> BigNumDtoa.BignumDtoaMode.FIXED;
+			case PRECISION -> BigNumDtoa.BignumDtoaMode.PRECISION;
+		};
 	}
 
 	/**
@@ -845,17 +841,10 @@ public final class DoubleToStringConverter {
 			return;
 		}
 
-		boolean fastWorked;
-		switch (mode) {
-			case FIXED:
-				fastWorked = FixedDtoa.fastFixedDtoa(v, requestedDigits, buffer);
-				break;
-			case PRECISION:
-				fastWorked = FastDtoa.fastDtoa(v, requestedDigits, buffer);
-				break;
-			default:
-				throw new IllegalStateException("Unreachable");
-		}
+		boolean fastWorked = switch (mode) {
+			case FIXED -> FixedDtoa.fastFixedDtoa(v, requestedDigits, buffer);
+			case PRECISION -> FastDtoa.fastDtoa(v, requestedDigits, buffer);
+		};
 		if (fastWorked) return;
 
 		buffer.reset();

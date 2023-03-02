@@ -238,14 +238,11 @@ public class BaseLib {
 	private static Varargs rawlen(LuaState state, Varargs args) throws LuaError {
 		// rawlen( table | string ) -> int
 		LuaValue v = args.arg(1);
-		switch (v.type()) {
-			case Constants.TTABLE:
-				return ValueFactory.valueOf(v.checkTable().length());
-			case Constants.TSTRING:
-				return ValueFactory.valueOf(v.checkLuaString().length());
-			default:
-				throw ErrorFactory.argError(1, "table or string expected");
-		}
+		return switch (v.type()) {
+			case Constants.TTABLE -> ValueFactory.valueOf(v.checkTable().length());
+			case Constants.TSTRING -> ValueFactory.valueOf(v.checkLuaString().length());
+			default -> throw ErrorFactory.argError(1, "table or string expected");
+		};
 	}
 
 	private static Varargs next(LuaState state, Varargs args) throws LuaError {

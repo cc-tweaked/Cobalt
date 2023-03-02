@@ -55,12 +55,13 @@ public final class LuaInterpreter {
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
 		switch (p.parameters) {
-			case 0:
+			case 0 -> {
 				return setupCallFinish(state, function, arg, stack, flags);
-
-			default:
+			}
+			default -> {
 				stack[0] = arg;
 				return setupCallFinish(state, function, NONE, stack, flags);
+			}
 		}
 	}
 
@@ -70,17 +71,18 @@ public final class LuaInterpreter {
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
 		switch (p.parameters) {
-			case 0:
+			case 0 -> {
 				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
-
-			case 1:
+			}
+			case 1 -> {
 				stack[0] = arg1;
 				return setupCallFinish(state, function, arg2, stack, flags);
-
-			default:
+			}
+			default -> {
 				stack[0] = arg1;
 				stack[1] = arg2;
 				return setupCallFinish(state, function, NONE, stack, flags);
+			}
 		}
 	}
 
@@ -90,23 +92,24 @@ public final class LuaInterpreter {
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
 		switch (p.parameters) {
-			case 0:
+			case 0 -> {
 				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
-
-			case 1:
+			}
+			case 1 -> {
 				stack[0] = arg1;
 				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
-
-			case 2:
+			}
+			case 2 -> {
 				stack[0] = arg1;
 				stack[1] = arg2;
 				return setupCallFinish(state, function, arg3, stack, flags);
-
-			default:
+			}
+			default -> {
 				stack[0] = arg1;
 				stack[1] = arg2;
 				stack[2] = arg3;
 				return setupCallFinish(state, function, NONE, stack, flags);
+			}
 		}
 	}
 
@@ -469,21 +472,12 @@ public final class LuaInterpreter {
 						closeAll(openups);
 						handler.onReturn(ds, di);
 
-						Varargs ret;
-						switch (b) {
-							case 0:
-								ret = ValueFactory.varargsOf(stack, a, top - v.count() - a, v).asImmutable();
-								break;
-							case 1:
-								ret = NONE;
-								break;
-							case 2:
-								ret = stack[a];
-								break;
-							default:
-								ret = ValueFactory.varargsOf(stack, a, b - 1).asImmutable();
-								break;
-						}
+						Varargs ret = switch (b) {
+							case 0 -> ValueFactory.varargsOf(stack, a, top - v.count() - a, v).asImmutable();
+							case 1 -> NONE;
+							case 2 -> stack[a];
+							default -> ValueFactory.varargsOf(stack, a, b - 1).asImmutable();
+						};
 
 						if ((flags & FLAG_FRESH) != 0) {
 							// If we're a fresh invocation then return to the parent.
@@ -602,41 +596,26 @@ public final class LuaInterpreter {
 
 	private static void nativeCall(LuaState state, DebugFrame di, LuaValue[] stack, LuaValue val, int i, int a, int b, int c) throws UnwindThrowable, LuaError {
 		switch (i & (MASK_B | MASK_C)) {
-			case (1 << POS_B) | (0 << POS_C): {
+			case (1 << POS_B) | (0 << POS_C) -> {
 				Varargs v = di.extras = OperationHelper.invoke(state, val, NONE, a);
 				di.top = a + v.count();
-				break;
 			}
-			case (2 << POS_B) | (0 << POS_C): {
+			case (2 << POS_B) | (0 << POS_C) -> {
 				Varargs v = di.extras = OperationHelper.invoke(state, val, stack[a + 1], a);
 				di.top = a + v.count();
-				break;
 			}
-			case (1 << POS_B) | (1 << POS_C):
-				OperationHelper.call(state, val, a);
-				break;
-			case (2 << POS_B) | (1 << POS_C):
-				OperationHelper.call(state, val, stack[a + 1], a);
-				break;
-			case (3 << POS_B) | (1 << POS_C):
-				OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
-				break;
-			case (4 << POS_B) | (1 << POS_C):
+			case (1 << POS_B) | (1 << POS_C) -> OperationHelper.call(state, val, a);
+			case (2 << POS_B) | (1 << POS_C) -> OperationHelper.call(state, val, stack[a + 1], a);
+			case (3 << POS_B) | (1 << POS_C) -> OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
+			case (4 << POS_B) | (1 << POS_C) ->
 				OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
-				break;
-			case (1 << POS_B) | (2 << POS_C):
-				stack[a] = OperationHelper.call(state, val, a);
-				break;
-			case (2 << POS_B) | (2 << POS_C):
-				stack[a] = OperationHelper.call(state, val, stack[a + 1], a);
-				break;
-			case (3 << POS_B) | (2 << POS_C):
+			case (1 << POS_B) | (2 << POS_C) -> stack[a] = OperationHelper.call(state, val, a);
+			case (2 << POS_B) | (2 << POS_C) -> stack[a] = OperationHelper.call(state, val, stack[a + 1], a);
+			case (3 << POS_B) | (2 << POS_C) ->
 				stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
-				break;
-			case (4 << POS_B) | (2 << POS_C):
+			case (4 << POS_B) | (2 << POS_C) ->
 				stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
-				break;
-			default: {
+			default -> {
 				Varargs args = b > 0 ?
 					ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
 					ValueFactory.varargsOf(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
@@ -647,7 +626,6 @@ public final class LuaInterpreter {
 					di.top = a + v.count();
 					di.extras = v;
 				}
-				break;
 			}
 		}
 	}
@@ -817,21 +795,13 @@ public final class LuaInterpreter {
 				int a = (i >>> POS_A) & MAXARG_A;
 				int b = (i >>> POS_B) & MAXARG_B;
 
-				Varargs ret;
-				switch (b) {
-					case 0:
-						ret = ValueFactory.varargsOf(di.stack, a, di.top - di.extras.count() - a, di.extras).asImmutable();
-						break;
-					case 1:
-						ret = NONE;
-						break;
-					case 2:
-						ret = di.stack[a];
-						break;
-					default:
-						ret = ValueFactory.varargsOf(di.stack, a, b - 1).asImmutable();
-						break;
-				}
+				Varargs ret = switch (b) {
+					case 0 ->
+						ValueFactory.varargsOf(di.stack, a, di.top - di.extras.count() - a, di.extras).asImmutable();
+					case 1 -> NONE;
+					case 2 -> di.stack[a];
+					default -> ValueFactory.varargsOf(di.stack, a, b - 1).asImmutable();
+				};
 
 				int flags = di.flags;
 				handler.onReturnError(ds);

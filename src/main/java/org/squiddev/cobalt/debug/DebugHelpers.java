@@ -151,24 +151,24 @@ public final class DebugHelpers {
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);
 		int i = p.code[pc];
-		switch (Lua.GET_OPCODE(i)) {
-			case OP_CALL: case OP_TAILCALL: return getObjectName(di, Lua.GETARG_A(i));
-			case OP_SELF: case OP_GETTABLE: return fromMetamethod("index");
-			case OP_SETTABLE: return fromMetamethod("newindex");
-			case OP_ADD: return fromMetamethod("add");
-			case OP_SUB: return fromMetamethod("sub");
-			case OP_MUL: return fromMetamethod("mul");
-			case OP_DIV: return fromMetamethod("div");
-			case OP_POW: return fromMetamethod("pow");
-			case OP_MOD: return fromMetamethod("mod");
-			case OP_UNM: return fromMetamethod("unm");
-			case OP_EQ: return fromMetamethod("eq");
-			case OP_LE: return fromMetamethod("le");
-			case OP_LT: return fromMetamethod("lt");
-			case OP_LEN: return fromMetamethod("len");
-			case OP_CONCAT: return fromMetamethod("concat");
-			default: return null;
-		}
+		return switch (Lua.GET_OPCODE(i)) {
+			case OP_CALL, OP_TAILCALL -> getObjectName(di, Lua.GETARG_A(i));
+			case OP_SELF, OP_GETTABLE -> fromMetamethod("index");
+			case OP_SETTABLE -> fromMetamethod("newindex");
+			case OP_ADD -> fromMetamethod("add");
+			case OP_SUB -> fromMetamethod("sub");
+			case OP_MUL -> fromMetamethod("mul");
+			case OP_DIV -> fromMetamethod("div");
+			case OP_POW -> fromMetamethod("pow");
+			case OP_MOD -> fromMetamethod("mod");
+			case OP_UNM -> fromMetamethod("unm");
+			case OP_EQ -> fromMetamethod("eq");
+			case OP_LE -> fromMetamethod("le");
+			case OP_LT -> fromMetamethod("lt");
+			case OP_LEN -> fromMetamethod("len");
+			case OP_CONCAT -> fromMetamethod("concat");
+			default -> null;
+		};
 	}
 
 	// return StrValue[] { name, namewhat } if found, null if not
@@ -187,28 +187,27 @@ public final class DebugHelpers {
 		i = symbexec(p, pc, stackpos); /* try symbolic execution */
 		lua_assert(pc != -1);
 		switch (Lua.GET_OPCODE(i)) {
-			case OP_GETGLOBAL: {
+			case OP_GETGLOBAL -> {
 				int g = Lua.GETARG_Bx(i); /* global index */
 				// lua_assert(p.k[g].isString());
 				LuaValue value = p.constants[g];
 				LuaString string = OperationHelper.toStringDirect(value);
 				return new LuaString[]{string, GLOBAL};
 			}
-			case OP_MOVE: {
+			case OP_MOVE -> {
 				int a = Lua.GETARG_A(i);
 				int b = Lua.GETARG_B(i); /* move from `b' to `a' */
 				if (b < a) return getObjectName(di, b); /* get name for `b' */
-				break;
 			}
-			case OP_GETTABLE: {
+			case OP_GETTABLE -> {
 				int k = Lua.GETARG_C(i); /* key index */
 				return new LuaString[]{constantName(p, k), FIELD};
 			}
-			case OP_GETUPVAL: {
+			case OP_GETUPVAL -> {
 				int u = Lua.GETARG_B(i); /* upvalue index */
 				return new LuaString[]{u < p.upvalueNames.length ? p.upvalueNames[u] : DebugLib.QMARK, UPVALUE};
 			}
-			case OP_SELF: {
+			case OP_SELF -> {
 				int k = Lua.GETARG_C(i); /* key index */
 				return new LuaString[]{constantName(p, k), METHOD};
 			}
@@ -235,21 +234,19 @@ public final class DebugHelpers {
 			if (!(op < Lua.NUM_OPCODES)) return 0;
 			if (!checkRegister(pt, a)) return 0;
 			switch (Lua.getOpMode(op)) {
-				case Lua.iABC: {
+				case Lua.iABC -> {
 					b = Lua.GETARG_B(i);
 					c = Lua.GETARG_C(i);
 					if (!(checkArgMode(pt, b, Lua.getBMode(op)))) return 0;
 					if (!(checkArgMode(pt, c, Lua.getCMode(op)))) return 0;
-					break;
 				}
-				case Lua.iABx: {
+				case Lua.iABx -> {
 					b = Lua.GETARG_Bx(i);
 					if (Lua.getBMode(op) == Lua.OpArgK) {
 						if (!(b < pt.constants.length)) return 0;
 					}
-					break;
 				}
-				case Lua.iAsBx: {
+				case Lua.iAsBx -> {
 					b = Lua.GETARG_sBx(i);
 					if (Lua.getBMode(op) == Lua.OpArgR) {
 						int dest = pc + 1 + b;
@@ -260,7 +257,6 @@ public final class DebugHelpers {
 							if ((Lua.GET_OPCODE(d) == Lua.OP_SETLIST && Lua.GETARG_C(d) == 0)) return 0;
 						}
 					}
-					break;
 				}
 			}
 			if (Lua.testAMode(op)) {
@@ -420,16 +416,10 @@ public final class DebugHelpers {
 
 	private static boolean checkOpenUp(Prototype proto, int pc) {
 		int i = proto.code[(pc) + 1];
-		switch (Lua.GET_OPCODE(i)) {
-			case OP_CALL:
-			case OP_TAILCALL:
-			case Lua.OP_RETURN:
-			case Lua.OP_SETLIST: {
-				return Lua.GETARG_B(i) == 0;
-			}
-			default:
-				return false; /* invalid instruction after an open call */
-		}
+		return switch (Lua.GET_OPCODE(i)) {
+			case OP_CALL, OP_TAILCALL, Lua.OP_RETURN, Lua.OP_SETLIST -> Lua.GETARG_B(i) == 0;
+			default -> false; /* invalid instruction after an open call */
+		};
 	}
 
 	private static LuaString constantName(Prototype proto, int index) {

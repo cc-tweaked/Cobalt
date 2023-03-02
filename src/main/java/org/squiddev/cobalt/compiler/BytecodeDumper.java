@@ -143,27 +143,25 @@ public class BytecodeDumper {
 		for (i = 0; i < n; i++) {
 			final LuaValue o = k[i];
 			switch (o.type()) {
-				case Constants.TNIL:
-					writer.write(Constants.TNIL);
-					break;
-				case Constants.TBOOLEAN:
+				case Constants.TNIL -> writer.write(Constants.TNIL);
+				case Constants.TBOOLEAN -> {
 					writer.write(Constants.TBOOLEAN);
 					dumpChar(o.toBoolean() ? 1 : 0);
-					break;
-				case Constants.TNUMBER:
+				}
+				case Constants.TNUMBER -> {
 					switch (NUMBER_FORMAT) {
-						case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
+						case NUMBER_FORMAT_FLOATS_OR_DOUBLES -> {
 							writer.write(Constants.TNUMBER);
 							dumpDouble(o.toDouble());
-							break;
-						case NUMBER_FORMAT_INTS_ONLY:
+						}
+						case NUMBER_FORMAT_INTS_ONLY -> {
 							if (!ALLOW_INTEGER_CASTING && !o.isInteger()) {
-								throw new java.lang.IllegalArgumentException("not an integer: " + o);
+								throw new IllegalArgumentException("not an integer: " + o);
 							}
 							writer.write(Constants.TNUMBER);
 							dumpInt(o.toInteger());
-							break;
-						case NUMBER_FORMAT_NUM_PATCH_INT32:
+						}
+						case NUMBER_FORMAT_NUM_PATCH_INT32 -> {
 							if (o.isInteger()) {
 								writer.write(Constants.TINT);
 								dumpInt(o.toInteger());
@@ -171,17 +169,15 @@ public class BytecodeDumper {
 								writer.write(Constants.TNUMBER);
 								dumpDouble(o.toDouble());
 							}
-							break;
-						default:
-							throw new IllegalArgumentException("number format not supported: " + NUMBER_FORMAT);
+						}
+						default -> throw new IllegalArgumentException("number format not supported: " + NUMBER_FORMAT);
 					}
-					break;
-				case Constants.TSTRING:
+				}
+				case Constants.TSTRING -> {
 					writer.write(Constants.TSTRING);
 					dumpString((LuaString) o);
-					break;
-				default:
-					throw new IllegalArgumentException("bad type for " + o);
+				}
+				default -> throw new IllegalArgumentException("bad type for " + o);
 			}
 		}
 		n = f.children.length;

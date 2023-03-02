@@ -89,7 +89,7 @@ public class OsLib {
 
 		Calendar d = Calendar.getInstance(Locale.ROOT);
 		d.setTime(new Date(time * 1000));
-		if (format.startsWith((byte)'!')) {
+		if (format.startsWith((byte) '!')) {
 			time -= timeZoneOffset(d);
 			d.setTime(new Date(time * 1000));
 			format = format.substring(1);
@@ -267,131 +267,58 @@ public class OsLib {
 		for (int i = 0; i < format.length(); ) {
 			byte c;
 			switch (c = format.byteAt(i++)) {
-				case '\n':
-					result.append('\n');
-					break;
-				default:
-					result.append(c);
-					break;
-				case '%':
+				case '\n' -> result.append('\n');
+				default -> result.append(c);
+				case '%' -> {
 					if (i >= n) break;
 					switch (c = format.byteAt(i++)) {
-						default:
-							throw argError(1, "invalid conversion specifier '%" + (char) c + "'");
-
-						case '%':
-							result.append('%');
-							break;
-						case 'a':
-							result.append(WEEKDAY_NAME_ABBREV[date.get(Calendar.DAY_OF_WEEK) - 1]);
-							break;
-						case 'A':
-							result.append(WEEKDAY_NAME[date.get(Calendar.DAY_OF_WEEK) - 1]);
-							break;
-						case 'b':
-						case 'h':
-							result.append(MONTH_NAME_ABBREV[date.get(Calendar.MONTH)]);
-							break;
-						case 'B':
-							result.append(MONTH_NAME[date.get(Calendar.MONTH)]);
-							break;
-						case 'c':
-							formatDate(result, date, FORMAT_C);
-							break;
-						case 'C':
-							ZERO_TWO.format(result, (date.get(Calendar.YEAR) / 100) % 100);
-							break;
-						case 'd':
-							ZERO_TWO.format(result, date.get(Calendar.DAY_OF_MONTH));
-							break;
-						case 'D':
-						case 'x':
-							formatDate(result, date, FORMAT_DATE_D);
-							break;
-						case 'e':
-							SPACE_TWO.format(result, date.get(Calendar.DAY_OF_MONTH));
-							break;
-						case 'F':
-							formatDate(result, date, FORMAT_DATE_F);
-							break;
-						case 'g':
-							ZERO_TWO.format(result, date.isWeekDateSupported() ? date.getWeekYear() % 100 : 0);
-							break;
-						case 'G':
+						default -> throw argError(1, "invalid conversion specifier '%" + (char) c + "'");
+						case '%' -> result.append('%');
+						case 'a' -> result.append(WEEKDAY_NAME_ABBREV[date.get(Calendar.DAY_OF_WEEK) - 1]);
+						case 'A' -> result.append(WEEKDAY_NAME[date.get(Calendar.DAY_OF_WEEK) - 1]);
+						case 'b', 'h' -> result.append(MONTH_NAME_ABBREV[date.get(Calendar.MONTH)]);
+						case 'B' -> result.append(MONTH_NAME[date.get(Calendar.MONTH)]);
+						case 'c' -> formatDate(result, date, FORMAT_C);
+						case 'C' -> ZERO_TWO.format(result, (date.get(Calendar.YEAR) / 100) % 100);
+						case 'd' -> ZERO_TWO.format(result, date.get(Calendar.DAY_OF_MONTH));
+						case 'D', 'x' -> formatDate(result, date, FORMAT_DATE_D);
+						case 'e' -> SPACE_TWO.format(result, date.get(Calendar.DAY_OF_MONTH));
+						case 'F' -> formatDate(result, date, FORMAT_DATE_F);
+						case 'g' -> ZERO_TWO.format(result, date.isWeekDateSupported() ? date.getWeekYear() % 100 : 0);
+						case 'G' ->
 							result.append(Integer.toString(date.isWeekDateSupported() ? date.getWeekYear() : 0));
-							break;
-						case 'H':
-							ZERO_TWO.format(result, date.get(Calendar.HOUR_OF_DAY));
-							break;
-						case 'I':
-							ZERO_TWO.format(result, date.get(Calendar.HOUR_OF_DAY) % 12);
-							break;
-						case 'j':
-							ZERO_THREE.format(result, date.get(Calendar.DAY_OF_YEAR));
-							break;
-						case 'm':
-							ZERO_TWO.format(result, date.get(Calendar.MONTH) + 1);
-							break;
-						case 'M':
-							ZERO_TWO.format(result, date.get(Calendar.MINUTE));
-							break;
-						case 'n':
-							result.append('\n');
-							break;
-						case 'p':
-							result.append(date.get(Calendar.HOUR_OF_DAY) < 12 ? "AM" : "PM");
-							break;
-						case 'r':
-							formatDate(result, date, FORMAT_TIME_UPPER_R);
-							break;
-						case 'R':
-							formatDate(result, date, FORMAT_TIME_LOWER_R);
-							break;
-						case 'S':
-							ZERO_TWO.format(result, date.get(Calendar.SECOND));
-							break;
-						case 't':
-							result.append('\t');
-							break;
-						case 'T':
-						case 'X':
-							formatDate(result, date, FORMAT_TIME_T);
-							break;
-						case 'u': {
+						case 'H' -> ZERO_TWO.format(result, date.get(Calendar.HOUR_OF_DAY));
+						case 'I' -> ZERO_TWO.format(result, date.get(Calendar.HOUR_OF_DAY) % 12);
+						case 'j' -> ZERO_THREE.format(result, date.get(Calendar.DAY_OF_YEAR));
+						case 'm' -> ZERO_TWO.format(result, date.get(Calendar.MONTH) + 1);
+						case 'M' -> ZERO_TWO.format(result, date.get(Calendar.MINUTE));
+						case 'n' -> result.append('\n');
+						case 'p' -> result.append(date.get(Calendar.HOUR_OF_DAY) < 12 ? "AM" : "PM");
+						case 'r' -> formatDate(result, date, FORMAT_TIME_UPPER_R);
+						case 'R' -> formatDate(result, date, FORMAT_TIME_LOWER_R);
+						case 'S' -> ZERO_TWO.format(result, date.get(Calendar.SECOND));
+						case 't' -> result.append('\t');
+						case 'T', 'X' -> formatDate(result, date, FORMAT_TIME_T);
+						case 'u' -> {
 							int day = date.get(Calendar.DAY_OF_WEEK);
 							result.append(day == Calendar.SUNDAY ? "7" : Integer.toString(day - 1));
-							break;
 						}
-						case 'U':
-							ZERO_TWO.format(result, weekNumber(date, 0));
-							break;
-						case 'V':
-							ZERO_TWO.format(result, weekNumber(date, 1));
-							break;
-						case 'w':
-							result.append(Integer.toString((date.get(Calendar.DAY_OF_WEEK) + 6) % 7));
-							break;
-						case 'W':
-							ZERO_TWO.format(result, weekNumber(date, 1));
-							break;
-						case 'y':
-							ZERO_TWO.format(result, date.get(Calendar.YEAR) % 100);
-							break;
-						case 'Y':
-							result.append(Integer.toString(date.get(Calendar.YEAR)));
-							break;
-						case 'z': {
+						case 'U' -> ZERO_TWO.format(result, weekNumber(date, 0));
+						case 'V' -> ZERO_TWO.format(result, weekNumber(date, 1));
+						case 'w' -> result.append(Integer.toString((date.get(Calendar.DAY_OF_WEEK) + 6) % 7));
+						case 'W' -> ZERO_TWO.format(result, weekNumber(date, 1));
+						case 'y' -> ZERO_TWO.format(result, date.get(Calendar.YEAR) % 100);
+						case 'Y' -> result.append(Integer.toString(date.get(Calendar.YEAR)));
+						case 'z' -> {
 							final int tzo = timeZoneOffset(date) / 60;
 							final int a = Math.abs(tzo);
 							result.append(tzo >= 0 ? '+' : '-');
 							ZERO_TWO.format(result, a / 60);
 							ZERO_TWO.format(result, a % 60);
-							break;
 						}
-						case 'Z':
-							result.append(date.getTimeZone().getID());
-							break;
+						case 'Z' -> result.append(date.getTimeZone().getID());
 					}
+				}
 			}
 		}
 	}

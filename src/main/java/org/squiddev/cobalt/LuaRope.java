@@ -62,8 +62,7 @@ public final class LuaRope extends LuaBaseString {
 			for (; index < contents.length; index++) {
 				LuaBaseString str = contents[index];
 				LuaString string;
-				if (str instanceof LuaRope) {
-					LuaRope rope = (LuaRope) str;
+				if (str instanceof LuaRope rope) {
 					if (rope.contents != null) {
 						current.index = index + 1;
 						rope.parent = current;

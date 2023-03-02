@@ -156,13 +156,10 @@ public final class LuaError extends Exception {
 	}
 
 	private static String rawToString(LuaValue value) {
-		switch (value.type()) {
-			case Constants.TTABLE:
-			case Constants.TUSERDATA:
-			case Constants.TLIGHTUSERDATA:
-				return value.typeName() + ": " + Integer.toHexString(value.hashCode());
-			default:
-				return value.toString();
-		}
+		return switch (value.type()) {
+			case Constants.TTABLE, Constants.TUSERDATA, Constants.TLIGHTUSERDATA ->
+				value.typeName() + ": " + Integer.toHexString(value.hashCode());
+			default -> value.toString();
+		};
 	}
 }

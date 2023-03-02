@@ -362,34 +362,24 @@ final class FuncState {
 
 	void dischargeVars(ExpDesc e) throws CompileException {
 		switch (e.kind) {
-			case VLOCAL: {
-				e.kind = ExpKind.VNONRELOC;
-				break;
-			}
-			case VUPVAL: {
+			case VLOCAL -> e.kind = ExpKind.VNONRELOC;
+			case VUPVAL -> {
 				e.info = codeABCAt(OP_GETUPVAL, 0, e.info, 0, e.position);
 				e.kind = ExpKind.VRELOCABLE;
-				break;
 			}
-			case VGLOBAL: {
+			case VGLOBAL -> {
 				e.info = codeABxAt(OP_GETGLOBAL, 0, e.info, e.position);
 				e.kind = ExpKind.VRELOCABLE;
-				break;
 			}
-			case VINDEXED: {
+			case VINDEXED -> {
 				freeReg(e.aux);
 				freeReg(e.info);
 				e.info = codeABCAt(OP_GETTABLE, 0, e.info, e.aux, e.position);
 				e.kind = ExpKind.VRELOCABLE;
-				break;
 			}
-			case VVARARG:
-			case VCALL: {
-				setOneRet(e);
-				break;
-			}
-			default:
-				break; /* there is one value available (somewhere) */
+			case VVARARG, VCALL -> setOneRet(e);
+			default -> {
+			} /* there is one value available (somewhere) */
 		}
 	}
 
@@ -401,32 +391,15 @@ final class FuncState {
 	private void discharge2Reg(ExpDesc e, int reg) throws CompileException {
 		dischargeVars(e);
 		switch (e.kind) {
-			case VNIL: {
-				nil(reg, 1);
-				break;
-			}
-			case VFALSE:
-			case VTRUE: {
-				codeABC(OP_LOADBOOL, reg, e.kind == ExpKind.VTRUE ? 1 : 0, 0);
-				break;
-			}
-			case VK: {
-				codeABx(OP_LOADK, reg, e.info);
-				break;
-			}
-			case VKNUM: {
-				codeABx(OP_LOADK, reg, numberK(e.nval()));
-				break;
-			}
-			case VRELOCABLE: {
-				code[e.info] = SETARG_A(code[e.info], reg);
-				break;
-			}
-			case VNONRELOC: {
+			case VNIL -> nil(reg, 1);
+			case VFALSE, VTRUE -> codeABC(OP_LOADBOOL, reg, e.kind == ExpKind.VTRUE ? 1 : 0, 0);
+			case VK -> codeABx(OP_LOADK, reg, e.info);
+			case VKNUM -> codeABx(OP_LOADK, reg, numberK(e.nval()));
+			case VRELOCABLE -> code[e.info] = SETARG_A(code[e.info], reg);
+			case VNONRELOC -> {
 				if (reg != e.info) codeABC(OP_MOVE, reg, e.info, 0);
-				break;
 			}
-			default: {
+			default -> {
 				_assert(e.kind == ExpKind.VVOID || e.kind == ExpKind.VJMP);
 				return; /* nothing to do... */
 			}
@@ -494,29 +467,22 @@ final class FuncState {
 	int exp2RK(ExpDesc e) throws CompileException {
 		exp2Val(e);
 		switch (e.kind) {
-			case VKNUM:
-			case VTRUE:
-			case VFALSE:
-			case VNIL: {
+			case VKNUM, VTRUE, VFALSE, VNIL -> {
 				if (constants.size() <= MAXINDEXRK) { /* constant fit in RK operand? */
 					e.info = e.kind == ExpKind.VNIL ? nilK()
 						: e.kind == ExpKind.VKNUM ? numberK(e.nval())
 						: boolK(e.kind == ExpKind.VTRUE);
 					e.kind = ExpKind.VK;
 					return RKASK(e.info);
-				} else {
-					break;
 				}
 			}
-			case VK: {
+			case VK -> {
 				if (e.info <= MAXINDEXRK) /* constant fit in argC? */ {
 					return RKASK(e.info);
-				} else {
-					break;
 				}
 			}
-			default:
-				break;
+			default -> {
+			}
 		}
 		/* not a constant in the right range: put it in a register */
 		return exp2AnyReg(e);
@@ -524,30 +490,24 @@ final class FuncState {
 
 	void storeVar(ExpDesc var, ExpDesc ex) throws CompileException {
 		switch (var.kind) {
-			case VLOCAL: {
+			case VLOCAL -> {
 				freeExp(ex);
 				exp2reg(ex, var.info);
 				return;
 			}
-			case VUPVAL: {
+			case VUPVAL -> {
 				int e = exp2AnyReg(ex);
 				codeABCAt(OP_SETUPVAL, e, var.info, 0, var.position);
-				break;
 			}
-			case VGLOBAL: {
+			case VGLOBAL -> {
 				int e = exp2AnyReg(ex);
 				codeABxAt(OP_SETGLOBAL, e, var.info, var.position);
-				break;
 			}
-			case VINDEXED: {
+			case VINDEXED -> {
 				int e = exp2RK(ex);
 				codeABCAt(OP_SETTABLE, var.info, var.aux, e, var.position);
-				break;
 			}
-			default: {
-				_assert(false); /* invalid var kind to store */
-				break;
-			}
+			default -> _assert(false); /* invalid var kind to store */
 		}
 		freeExp(ex);
 	}
@@ -592,25 +552,13 @@ final class FuncState {
 		dischargeVars(e);
 		int pc; /* pc of last jump */
 		switch (e.kind) {
-			case VK:
-			case VKNUM:
-			case VTRUE: {
-				pc = NO_JUMP; /* always true; do nothing */
-				break;
-			}
-			case VFALSE: {
-				pc = jump(); /* always jump */
-				break;
-			}
-			case VJMP: {
+			case VK, VKNUM, VTRUE -> pc = NO_JUMP; /* always true; do nothing */
+			case VFALSE -> pc = jump(); /* always jump */
+			case VJMP -> {
 				invertJump(e);
 				pc = e.info;
-				break;
 			}
-			default: {
-				pc = jumpOnCond(e, 0);
-				break;
-			}
+			default -> pc = jumpOnCond(e, 0);
 		}
 		concat(e.f, pc); /* insert last jump in `f' list */
 		patchToHere(e.t.value);
@@ -621,23 +569,10 @@ final class FuncState {
 		dischargeVars(e);
 		int pc; /* pc of last jump */
 		switch (e.kind) {
-			case VNIL:
-			case VFALSE: {
-				pc = NO_JUMP; /* always false; do nothing */
-				break;
-			}
-			case VTRUE: {
-				pc = jump(); /* always jump */
-				break;
-			}
-			case VJMP: {
-				pc = e.info;
-				break;
-			}
-			default: {
-				pc = jumpOnCond(e, 1);
-				break;
-			}
+			case VNIL, VFALSE -> pc = NO_JUMP; /* always false; do nothing */
+			case VTRUE -> pc = jump(); /* always jump */
+			case VJMP -> pc = e.info;
+			default -> pc = jumpOnCond(e, 1);
 		}
 		concat(e.t, pc); /* insert last jump in `t' list */
 		patchToHere(e.f.value);
@@ -647,33 +582,16 @@ final class FuncState {
 	private void codeNot(ExpDesc e) throws CompileException {
 		dischargeVars(e);
 		switch (e.kind) {
-			case VNIL:
-			case VFALSE: {
-				e.kind = ExpKind.VTRUE;
-				break;
-			}
-			case VK:
-			case VKNUM:
-			case VTRUE: {
-				e.kind = ExpKind.VFALSE;
-				break;
-			}
-			case VJMP: {
-				invertJump(e);
-				break;
-			}
-			case VRELOCABLE:
-			case VNONRELOC: {
+			case VNIL, VFALSE -> e.kind = ExpKind.VTRUE;
+			case VK, VKNUM, VTRUE -> e.kind = ExpKind.VFALSE;
+			case VJMP -> invertJump(e);
+			case VRELOCABLE, VNONRELOC -> {
 				discharge2AnyReg(e);
 				freeExp(e);
 				e.info = codeABC(OP_NOT, 0, e.info, 0);
 				e.kind = ExpKind.VRELOCABLE;
-				break;
 			}
-			default: {
-				_assert(false); /* cannot happen */
-				break;
-			}
+			default -> _assert(false); /* cannot happen */
 		}
 		/* interchange true and false lists */
 		{
@@ -698,34 +616,26 @@ final class FuncState {
 		double v2 = e2.nval().toDouble();
 		double r;
 		switch (op) {
-			case OP_ADD:
-				r = v1 + v2;
-				break;
-			case OP_SUB:
-				r = v1 - v2;
-				break;
-			case OP_MUL:
-				r = v1 * v2;
-				break;
-			case OP_DIV:
+			case OP_ADD -> r = v1 + v2;
+			case OP_SUB -> r = v1 - v2;
+			case OP_MUL -> r = v1 * v2;
+			case OP_DIV -> {
 				if (v2 == 0) return false;
 				r = v1 / v2;
-				break;
-			case OP_MOD:
+			}
+			case OP_MOD -> {
 				if (v2 == 0) return false;
 				r = OperationHelper.mod(v1, v2);
-				break;
-			case OP_POW:
-				r = Math.pow(v1, v2);
-				break;
-			case OP_UNM:
-				r = -v1;
-				break;
-			case OP_LEN:
+			}
+			case OP_POW -> r = Math.pow(v1, v2);
+			case OP_UNM -> r = -v1;
+			case OP_LEN -> {
 				return false; /* no constant folding for 'len' */
-			default:
+			}
+			default -> {
 				_assert(false);
 				return false;
+			}
 		}
 
 		if (Double.isNaN(r)) return false; /* do not attempt to produce NaN */
@@ -769,71 +679,46 @@ final class FuncState {
 		ExpDesc e2 = new ExpDesc();
 		e2.init(ExpKind.VKNUM, 0);
 		switch (op) {
-			case MINUS: {
+			case MINUS -> {
 				if (e.kind == ExpKind.VK) exp2AnyReg(e); /* cannot operate on non-numeric constants */
 				codeArith(OP_UNM, e, e2, position);
-				break;
 			}
-			case NOT:
-				codeNot(e);
-				break;
-			case LEN: {
+			case NOT -> codeNot(e);
+			case LEN -> {
 				exp2AnyReg(e); /* cannot operate on constants */
 				codeArith(OP_LEN, e, e2, position);
-				break;
 			}
-			default:
-				_assert(false);
+			default -> _assert(false);
 		}
 	}
 
 	void infix(BinOpr op, ExpDesc v) throws CompileException {
 		switch (op) {
-			case AND: {
-				goIfTrue(v);
-				break;
-			}
-			case OR: {
-				goIfFalse(v);
-				break;
-			}
-			case CONCAT: {
-				exp2NextReg(v); /* operand must be on the `stack' */
-				break;
-			}
-			case ADD:
-			case SUB:
-			case MUL:
-			case DIV:
-			case MOD:
-			case POW: {
+			case AND -> goIfTrue(v);
+			case OR -> goIfFalse(v);
+			case CONCAT -> exp2NextReg(v); /* operand must be on the `stack' */
+			case ADD, SUB, MUL, DIV, MOD, POW -> {
 				if (!v.isnumeral()) exp2RK(v);
-				break;
 			}
-			default: {
-				exp2RK(v);
-				break;
-			}
+			default -> exp2RK(v);
 		}
 	}
 
 	void posfix(BinOpr op, ExpDesc e1, ExpDesc e2, long position) throws CompileException {
 		switch (op) {
-			case AND: {
+			case AND -> {
 				_assert(e1.t.value == NO_JUMP); /* list must be closed */
 				dischargeVars(e2);
 				concat(e2.f, e1.f.value);
 				e1.setValue(e2);
-				break;
 			}
-			case OR: {
+			case OR -> {
 				_assert(e1.f.value == NO_JUMP); /* list must be closed */
 				dischargeVars(e2);
 				concat(e2.t, e1.t.value);
 				e1.setValue(e2);
-				break;
 			}
-			case CONCAT: {
+			case CONCAT -> {
 				exp2Val(e2);
 				if (e2.kind == ExpKind.VRELOCABLE && GET_OPCODE(code[e2.info]) == OP_CONCAT) {
 					_assert(e1.info == GETARG_B(code[e2.info]) - 1);
@@ -845,46 +730,20 @@ final class FuncState {
 					exp2NextReg(e2); /* operand must be on the 'stack' */
 					codeArith(OP_CONCAT, e1, e2, position);
 				}
-				break;
 			}
-			case ADD:
-				codeArith(OP_ADD, e1, e2, position);
-				break;
-			case SUB:
-				codeArith(OP_SUB, e1, e2, position);
-				break;
-			case MUL:
-				codeArith(OP_MUL, e1, e2, position);
-				break;
-			case DIV:
-				codeArith(OP_DIV, e1, e2, position);
-				break;
-			case MOD:
-				codeArith(OP_MOD, e1, e2, position);
-				break;
-			case POW:
-				codeArith(OP_POW, e1, e2, position);
-				break;
-			case EQ:
-				codeComparison(OP_EQ, 1, e1, e2, position);
-				break;
-			case NE:
-				codeComparison(OP_EQ, 0, e1, e2, position);
-				break;
-			case LT:
-				codeComparison(OP_LT, 1, e1, e2, position);
-				break;
-			case LE:
-				codeComparison(OP_LE, 1, e1, e2, position);
-				break;
-			case GT:
-				codeComparison(OP_LT, 0, e1, e2, position);
-				break;
-			case GE:
-				codeComparison(OP_LE, 0, e1, e2, position);
-				break;
-			default:
-				_assert(false);
+			case ADD -> codeArith(OP_ADD, e1, e2, position);
+			case SUB -> codeArith(OP_SUB, e1, e2, position);
+			case MUL -> codeArith(OP_MUL, e1, e2, position);
+			case DIV -> codeArith(OP_DIV, e1, e2, position);
+			case MOD -> codeArith(OP_MOD, e1, e2, position);
+			case POW -> codeArith(OP_POW, e1, e2, position);
+			case EQ -> codeComparison(OP_EQ, 1, e1, e2, position);
+			case NE -> codeComparison(OP_EQ, 0, e1, e2, position);
+			case LT -> codeComparison(OP_LT, 1, e1, e2, position);
+			case LE -> codeComparison(OP_LE, 1, e1, e2, position);
+			case GT -> codeComparison(OP_LT, 0, e1, e2, position);
+			case GE -> codeComparison(OP_LE, 0, e1, e2, position);
+			default -> _assert(false);
 		}
 	}
 

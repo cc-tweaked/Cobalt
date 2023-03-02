@@ -91,37 +91,19 @@ public class Print {
 				ps.print((char) c);
 			} else {
 				switch (c) {
-					case '"':
-						ps.print("\\\"");
-						break;
-					case '\\':
-						ps.print("\\\\");
-						break;
-					case 0x0007: /* bell */
-						ps.print("\\a");
-						break;
-					case '\b': /* backspace */
-						ps.print("\\b");
-						break;
-					case '\f':  /* form feed */
-						ps.print("\\f");
-						break;
-					case '\t':  /* tab */
-						ps.print("\\t");
-						break;
-					case '\r': /* carriage return */
-						ps.print("\\r");
-						break;
-					case '\n': /* newline */
-						ps.print("\\n");
-						break;
-					case 0x000B: /* vertical tab */
-						ps.print("\\v");
-						break;
-					default:
+					case '"' -> ps.print("\\\"");
+					case '\\' -> ps.print("\\\\");
+					case 0x0007 -> ps.print("\\a");
+					case '\b' -> ps.print("\\b");
+					case '\f' -> ps.print("\\f");
+					case '\t' -> ps.print("\\t");
+					case '\r' -> ps.print("\\r");
+					case '\n' -> ps.print("\\n");
+					case 0x000B -> ps.print("\\v");
+					default -> {
 						ps.print('\\');
 						ps.print(Integer.toString(1000 + c).substring(1));
-						break;
+					}
 				}
 			}
 		}
@@ -130,12 +112,8 @@ public class Print {
 
 	private static void printValue(PrintWriter ps, LuaValue v) {
 		switch (v.type()) {
-			case Constants.TSTRING:
-				printString(ps, (LuaString) v);
-				break;
-			default:
-				ps.print(v.toString());
-
+			case Constants.TSTRING -> printString(ps, (LuaString) v);
+			default -> ps.print(v);
 		}
 	}
 
@@ -187,7 +165,7 @@ public class Print {
 		}
 		ps.print(OPNAMES[o] + "  ");
 		switch (getOpMode(o)) {
-			case iABC:
+			case iABC -> {
 				ps.print(a);
 				if (getBMode(o) != OpArgN) {
 					ps.print(" " + (ISK(b) ? (-1 - INDEXK(b)) : b));
@@ -195,57 +173,46 @@ public class Print {
 				if (getCMode(o) != OpArgN) {
 					ps.print(" " + (ISK(c) ? (-1 - INDEXK(c)) : c));
 				}
-				break;
-			case iABx:
+			}
+			case iABx -> {
 				if (getBMode(o) == OpArgK) {
 					ps.print(a + " " + (-1 - bx));
 				} else {
 					ps.print(a + " " + (bx));
 				}
-				break;
-			case iAsBx:
+			}
+			case iAsBx -> {
 				if (o == OP_JMP) {
 					ps.print(sbx);
 				} else {
 					ps.print(a + " " + sbx);
 				}
-				break;
+			}
 		}
 		switch (o) {
-			case OP_LOADK:
+			case OP_LOADK -> {
 				ps.print("  ; ");
 				printConstant(ps, f, bx);
-				break;
-			case OP_GETUPVAL:
-			case OP_SETUPVAL:
+			}
+			case OP_GETUPVAL, OP_SETUPVAL -> {
 				ps.print("  ; ");
 				if (f.upvalueNames.length > b) {
 					printValue(ps, f.upvalueNames[b]);
 				} else {
 					ps.print("-");
 				}
-				break;
-			case OP_GETGLOBAL:
-			case OP_SETGLOBAL:
+			}
+			case OP_GETGLOBAL, OP_SETGLOBAL -> {
 				ps.print("  ; ");
 				printConstant(ps, f, bx);
-				break;
-			case OP_GETTABLE:
-			case OP_SELF:
+			}
+			case OP_GETTABLE, OP_SELF -> {
 				if (ISK(c)) {
 					ps.print("  ; ");
 					printConstant(ps, f, INDEXK(c));
 				}
-				break;
-			case OP_SETTABLE:
-			case OP_ADD:
-			case OP_SUB:
-			case OP_MUL:
-			case OP_DIV:
-			case OP_POW:
-			case OP_EQ:
-			case OP_LT:
-			case OP_LE:
+			}
+			case OP_SETTABLE, OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_POW, OP_EQ, OP_LT, OP_LE -> {
 				if (ISK(b) || ISK(c)) {
 					ps.print("  ; ");
 					if (ISK(b)) {
@@ -260,27 +227,19 @@ public class Print {
 						ps.print("-");
 					}
 				}
-				break;
-			case OP_JMP:
-			case OP_FORLOOP:
-			case OP_FORPREP:
-				ps.print("  ; to " + (sbx + pc + 2));
-				break;
-			case OP_CLOSURE:
-				ps.print("  ; " + f.children[bx].getClass().getName());
-				break;
-			case OP_SETLIST:
+			}
+			case OP_JMP, OP_FORLOOP, OP_FORPREP -> ps.print("  ; to " + (sbx + pc + 2));
+			case OP_CLOSURE -> ps.print("  ; " + f.children[bx].getClass().getName());
+			case OP_SETLIST -> {
 				if (c == 0) {
 					ps.print("  ; " + code[++pc]);
 				} else {
 					ps.print("  ; " + c);
 				}
-				break;
-			case OP_VARARG:
-				ps.print("  ; is_vararg=" + f.isVarArg);
-				break;
-			default:
-				break;
+			}
+			case OP_VARARG -> ps.print("  ; is_vararg=" + f.isVarArg);
+			default -> {
+			}
 		}
 	}
 
@@ -380,17 +339,15 @@ public class Print {
 				ps.print("null");
 			} else {
 				switch (v.type()) {
-					case Constants.TSTRING:
+					case Constants.TSTRING -> {
 						LuaString s = (LuaString) v;
 						ps.print(s.length() < 48 ?
 							s.toString() :
 							s.substringOfEnd(0, 32).toString() + "...+" + (s.length() - 32) + "b");
-						break;
-					case Constants.TFUNCTION:
-						ps.print((v instanceof LuaClosure) ?
-							((LuaClosure) v).getPrototype().toString() : v.toString());
-						break;
-					case Constants.TUSERDATA:
+					}
+					case Constants.TFUNCTION -> ps.print((v instanceof LuaClosure) ?
+						((LuaClosure) v).getPrototype().toString() : v.toString());
+					case Constants.TUSERDATA -> {
 						Object o = v.toUserdata();
 						if (o != null) {
 							String n = o.getClass().getName();
@@ -399,9 +356,8 @@ public class Print {
 						} else {
 							ps.print(v.toString());
 						}
-						break;
-					default:
-						ps.print(v.toString());
+					}
+					default -> ps.print(v.toString());
 				}
 			}
 			if (i + 1 == top) {

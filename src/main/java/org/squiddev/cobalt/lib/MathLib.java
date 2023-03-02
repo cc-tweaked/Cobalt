@@ -153,16 +153,17 @@ public class MathLib {
 		if (random == null) random = new Random();
 
 		switch (args.count()) {
-			case 0:
+			case 0 -> {
 				return valueOf(random.nextDouble());
-			case 1: {
+			}
+			case 1 -> {
 				int m = args.arg(1).checkInteger();
 				if (m < 1) {
 					throw ErrorFactory.argError(1, "interval is empty");
 				}
 				return valueOf(1 + random.nextInt(m));
 			}
-			default: {
+			default -> {
 				int m = args.arg(1).checkInteger();
 				int n = args.arg(2).checkInteger();
 				if (n < m) {

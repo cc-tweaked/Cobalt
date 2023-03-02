@@ -41,15 +41,10 @@ import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 public class DtoaTest {
 	static void doubleToAscii(double v, DtoaMode test_mode, int requested_digits,
 							  DecimalRepBuf buffer) {
-		DoubleToStringConverter.DtoaMode mode = DtoaMode.FIXED;
-		switch (test_mode) {
-			case FIXED:
-				mode = DtoaMode.FIXED;
-				break;
-			case PRECISION:
-				mode = DtoaMode.PRECISION;
-				break;
-		}
+		DoubleToStringConverter.DtoaMode mode = switch (test_mode) {
+			case FIXED -> DtoaMode.FIXED;
+			case PRECISION -> DtoaMode.PRECISION;
+		};
 		DoubleToStringConverter.doubleToAscii(v, mode, requested_digits, buffer);
 	}
 

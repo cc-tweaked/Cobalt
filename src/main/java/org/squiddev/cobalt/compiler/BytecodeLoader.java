@@ -240,26 +240,14 @@ final class BytecodeLoader {
 		int n = loadInt();
 		LuaValue[] values = n > 0 ? new LuaValue[n] : NOVALUES;
 		for (int i = 0; i < n; i++) {
-			switch (readByte()) {
-				case TNIL:
-					values[i] = Constants.NIL;
-					break;
-				case TBOOLEAN: {
-					values[i] = (0 != readUnsignedByte() ? Constants.TRUE : Constants.FALSE);
-					break;
-				}
-				case TINT:
-					values[i] = LuaInteger.valueOf(loadInt());
-					break;
-				case TNUMBER:
-					values[i] = loadNumber();
-					break;
-				case TSTRING:
-					values[i] = loadString();
-					break;
-				default:
-					throw new IllegalStateException("bad constant");
-			}
+			values[i] = switch (readByte()) {
+				case TNIL -> Constants.NIL;
+				case TBOOLEAN -> (0 != readUnsignedByte() ? Constants.TRUE : Constants.FALSE);
+				case TINT -> LuaInteger.valueOf(loadInt());
+				case TNUMBER -> loadNumber();
+				case TSTRING -> loadString();
+				default -> throw new IllegalStateException("bad constant");
+			};
 		}
 		return values;
 	}

@@ -62,24 +62,12 @@ public class FormatDesc {
 		boolean moreFlags = true;
 		while (moreFlags) {
 			switch (c = ((p < n) ? strfrmt.charAt(p++) : 0)) {
-				case '-':
-					leftAdjust = true;
-					break;
-				case '+':
-					explicitPlus = true;
-					break;
-				case ' ':
-					space = true;
-					break;
-				case '#':
-					alternateForm = true;
-					break;
-				case '0':
-					zeroPad = true;
-					break;
-				default:
-					moreFlags = false;
-					break;
+				case '-' -> leftAdjust = true;
+				case '+' -> explicitPlus = true;
+				case ' ' -> space = true;
+				case '#' -> alternateForm = true;
+				case '0' -> zeroPad = true;
+				default -> moreFlags = false;
 			}
 		}
 
@@ -139,16 +127,10 @@ public class FormatDesc {
 		boolean hasSign = false;
 
 		switch (conversion) {
-			case 'x':
-				digits = Long.toHexString(number);
-				break;
-			case 'X':
-				digits = Long.toHexString(number).toUpperCase();
-				break;
-			case 'o':
-				digits = Long.toOctalString(number);
-				break;
-			case 'u': {
+			case 'x' -> digits = Long.toHexString(number);
+			case 'X' -> digits = Long.toHexString(number).toUpperCase();
+			case 'o' -> digits = Long.toOctalString(number);
+			case 'u' -> {
 				// In order to remain safe with Java 8 we inline Long.toUnsignedString
 				if (number >= 0) {
 					digits = Long.toString(number);
@@ -157,12 +139,11 @@ public class FormatDesc {
 					long rem = number - quot * 10;
 					digits = Long.toString(quot) + rem;
 				}
-				break;
 			}
-			default:
+			default -> {
 				digits = Long.toString(number);
 				hasSign = true;
-				break;
+			}
 		}
 
 		if (number == 0) {
@@ -189,16 +170,12 @@ public class FormatDesc {
 			// If we're not 0 and we've some alternative form, then prefix with that.
 			// Note that octal's "0" counts as a digit but hex's "0x" does not.
 			switch (conversion) {
-				case 'x':
-					prefix = "0x";
-					break;
-				case 'X':
-					prefix = "0X";
-					break;
-				case 'o':
+				case 'x' -> prefix = "0x";
+				case 'X' -> prefix = "0X";
+				case 'o' -> {
 					prefix = "0";
 					nDigits++;
-					break;
+				}
 			}
 			minWidth += prefix.length();
 		}

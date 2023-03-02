@@ -131,15 +131,11 @@ public final class LoadState {
 	 */
 	public static LuaString getSourceName(LuaString name) {
 		if (name.length() > 0) {
-			switch (name.charAt(0)) {
-				case '@':
-				case '=':
-					return name.substring(1);
-				case 27:
-					return SOURCE_BINARY_STRING;
-				default:
-					return name;
-			}
+			return switch (name.charAt(0)) {
+				case '@', '=' -> name.substring(1);
+				case 27 -> SOURCE_BINARY_STRING;
+				default -> name;
+			};
 		}
 
 		return name;
@@ -157,9 +153,10 @@ public final class LoadState {
 	public static LuaString getShortName(LuaString name) {
 		if (name.length() == 0) return EMPTY_STRING;
 		switch (name.charAt(0)) {
-			case '=':
+			case '=' -> {
 				return name.substringOfEnd(1, Math.min(NAME_LENGTH, name.length()));
-			case '@': { // out = "source", or "...source"
+			}
+			case '@' -> { // out = "source", or "...source"
 				if (name.length() - 1 > FILE_LENGTH) {
 					byte[] bytes = new byte[FILE_LENGTH + 3];
 					REMAINING.copyTo(bytes, 0);

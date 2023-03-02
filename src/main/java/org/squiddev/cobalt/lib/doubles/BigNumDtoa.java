@@ -133,14 +133,9 @@ final class BigNumDtoa {
 		// We now have v = (numerator / denominator) * 10^(decimalPoint-1), and
 		//  1 <= (numerator + deltaPlus) / denominator < 10
 		switch (mode) {
-			case FIXED:
-				bignumToFixed(requestedDigits, numerator, denominator, buf);
-				break;
-			case PRECISION:
-				generateCountedDigits(requestedDigits, numerator, denominator, buf);
-				break;
-			default:
-				throw new IllegalStateException("Unreachable");
+			case FIXED -> bignumToFixed(requestedDigits, numerator, denominator, buf);
+			case PRECISION -> generateCountedDigits(requestedDigits, numerator, denominator, buf);
+			default -> throw new IllegalStateException("Unreachable");
 		}
 	}
 

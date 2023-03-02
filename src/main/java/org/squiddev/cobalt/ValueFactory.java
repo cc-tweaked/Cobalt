@@ -232,16 +232,12 @@ public class ValueFactory {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOf(final LuaValue... v) {
-		switch (v.length) {
-			case 0:
-				return Constants.NONE;
-			case 1:
-				return v[0];
-			case 2:
-				return new LuaValue.PairVarargs(v[0], v[1]);
-			default:
-				return new LuaValue.ArrayVarargs(v, Constants.NONE);
-		}
+		return switch (v.length) {
+			case 0 -> Constants.NONE;
+			case 1 -> v[0];
+			case 2 -> new LuaValue.PairVarargs(v[0], v[1]);
+			default -> new LuaValue.ArrayVarargs(v, Constants.NONE);
+		};
 	}
 
 	/**
@@ -253,16 +249,12 @@ public class ValueFactory {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOf(final List<LuaValue> v) {
-		switch (v.size()) {
-			case 0:
-				return Constants.NONE;
-			case 1:
-				return v.get(0);
-			case 2:
-				return new LuaValue.PairVarargs(v.get(0), v.get(1));
-			default:
-				return new LuaValue.ArrayVarargs(v.toArray(new LuaValue[0]), Constants.NONE);
-		}
+		return switch (v.size()) {
+			case 0 -> Constants.NONE;
+			case 1 -> v.get(0);
+			case 2 -> new LuaValue.PairVarargs(v.get(0), v.get(1));
+			default -> new LuaValue.ArrayVarargs(v.toArray(new LuaValue[0]), Constants.NONE);
+		};
 	}
 
 	/**
@@ -297,16 +289,12 @@ public class ValueFactory {
 	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
 	 */
 	public static Varargs varargsOf(final LuaValue[] v, final int offset, final int length) {
-		switch (length) {
-			case 0:
-				return Constants.NONE;
-			case 1:
-				return v[offset];
-			case 2:
-				return new LuaValue.PairVarargs(v[offset + 0], v[offset + 1]);
-			default:
-				return new LuaValue.ArrayPartVarargs(v, offset, length);
-		}
+		return switch (length) {
+			case 0 -> Constants.NONE;
+			case 1 -> v[offset];
+			case 2 -> new LuaValue.PairVarargs(v[offset + 0], v[offset + 1]);
+			default -> new LuaValue.ArrayPartVarargs(v, offset, length);
+		};
 	}
 
 	/**
@@ -335,7 +323,7 @@ public class ValueFactory {
 
 	/**
 	 * Construct a {@link Varargs} around a set of 2 or more {@link LuaValue}s.
-	 *
+	 * <p>
 	 * This can be used to wrap exactly 2 values, or a list consisting of 1 initial value
 	 * followed by another variable list of remaining values.
 	 *
@@ -357,7 +345,7 @@ public class ValueFactory {
 
 	/**
 	 * Construct a {@link Varargs} around a set of 3 or more {@link LuaValue}s.
-	 *
+	 * <p>
 	 * This can be used to wrap exactly 3 values, or a list consisting of 2 initial values
 	 * followed by another variable list of remaining values.
 	 *

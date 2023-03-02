@@ -32,39 +32,23 @@ enum BinOpr {
 	}
 
 	static BinOpr ofToken(int op) {
-		switch (op) {
-			case '+':
-				return ADD;
-			case '-':
-				return SUB;
-			case '*':
-				return MUL;
-			case '/':
-				return DIV;
-			case '%':
-				return MOD;
-			case '^':
-				return POW;
-			case TK_CONCAT:
-				return CONCAT;
-			case TK_NE:
-				return NE;
-			case TK_EQ:
-				return EQ;
-			case '<':
-				return LT;
-			case TK_LE:
-				return LE;
-			case '>':
-				return GT;
-			case TK_GE:
-				return GE;
-			case TK_AND:
-				return AND;
-			case TK_OR:
-				return OR;
-			default:
-				return null;
-		}
+		return switch (op) {
+			case '+' -> ADD;
+			case '-' -> SUB;
+			case '*' -> MUL;
+			case '/' -> DIV;
+			case '%' -> MOD;
+			case '^' -> POW;
+			case TK_CONCAT -> CONCAT;
+			case TK_NE -> NE;
+			case TK_EQ -> EQ;
+			case '<' -> LT;
+			case TK_LE -> LE;
+			case '>' -> GT;
+			case TK_GE -> GE;
+			case TK_AND -> AND;
+			case TK_OR -> OR;
+			default -> null;
+		};
 	}
 }

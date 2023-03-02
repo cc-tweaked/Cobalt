@@ -167,14 +167,10 @@ final class Lex {
 	}
 
 	private String txtToken(int token) {
-		switch (token) {
-			case TK_NAME:
-			case TK_STRING:
-			case TK_NUMBER:
-				return "'" + LuaString.valueOf(buff, 0, bufferSize) + "'";
-			default:
-				return token2str(token);
-		}
+		return switch (token) {
+			case TK_NAME, TK_STRING, TK_NUMBER -> "'" + LuaString.valueOf(buff, 0, bufferSize) + "'";
+			default -> token2str(token);
+		};
 	}
 
 	CompileException lexError(String msg, int token) {
@@ -318,31 +314,27 @@ final class Lex {
 
 		while (true) {
 			switch (current) {
-				case EOZ:
+				case EOZ ->
 					throw lexError("unfinished long " + (token != null ? "string" : "comment") + " (started at line " + line + ")", TK_EOS);
-				case '[': {
+				case '[' -> {
 					if (skipSep() == sep) {
 						saveAndNext(); // skip 2nd `['
 						if (sep == 2) throw lexError("nesting of [[...]] is deprecated", '[');
 					}
-					break;
 				}
-				case ']': {
+				case ']' -> {
 					if (skipSep() == sep) {
 						saveAndNext(); // skip 2nd `]'
 						if (token != null) token.value = newString(buff, sep, bufferSize - 2 * sep);
 						return;
 					}
-					break;
 				}
-				case '\n':
-				case '\r': {
+				case '\n', '\r' -> {
 					save('\n');
 					inclineNumber();
 					if (token == null) bufferSize = 0; // avoid wasting space
-					break;
 				}
-				default: {
+				default -> {
 					if (token != null) {
 						saveAndNext();
 					} else {
@@ -416,12 +408,9 @@ final class Lex {
 		saveAndNext();
 		while (current != del) {
 			switch (current) {
-				case EOZ:
-					throw lexError("unfinished string", TK_EOS);
-				case '\n':
-				case '\r':
-					throw lexError("unfinished string", TK_STRING);
-				case '\\': {
+				case EOZ -> throw lexError("unfinished string", TK_EOS);
+				case '\n', '\r' -> throw lexError("unfinished string", TK_STRING);
+				case '\\' -> {
 					saveAndNext();
 					switch (current) {
 						case 'a': /* bell */
@@ -480,10 +469,8 @@ final class Lex {
 							break;
 						}
 					}
-					break;
 				}
-				default:
-					saveAndNext();
+				default -> saveAndNext();
 			}
 		}
 
@@ -503,12 +490,10 @@ final class Lex {
 			token.position = packPosition(lineNumber, columnNumber);
 
 			switch (current) {
-				case '\n':
-				case '\r': {
+				case '\n', '\r' -> {
 					inclineNumber();
-					continue;
 				}
-				case '-': {
+				case '-' -> {
 					next();
 					if (current != '-') return '-';
 
@@ -530,7 +515,7 @@ final class Lex {
 					while (!currIsNewline() && current != EOZ) next();
 					continue;
 				}
-				case '[': {
+				case '[' -> {
 					int sep = skipSep();
 					if (sep >= 2) {
 						readLongString(token, sep);
@@ -541,28 +526,27 @@ final class Lex {
 						return '[';
 					}
 				}
-				case '=': {
+				case '=' -> {
 					next();
 					return checkNext('=') ? TK_EQ : '=';
 				}
-				case '<': {
+				case '<' -> {
 					next();
 					return checkNext('=') ? TK_LE : '<';
 				}
-				case '>': {
+				case '>' -> {
 					next();
 					return checkNext('=') ? TK_GE : '>';
 				}
-				case '~': {
+				case '~' -> {
 					next();
 					return checkNext('=') ? TK_NE : '~';
 				}
-				case '"':
-				case '\'': {
+				case '"', '\'' -> {
 					token.value = readString(current);
 					return TK_STRING;
 				}
-				case '.': {
+				case '.' -> {
 					saveAndNext();
 					if (checkNext('.')) {
 						if (checkNext('.')) {
@@ -577,10 +561,10 @@ final class Lex {
 						return TK_NUMBER;
 					}
 				}
-				case EOZ: {
+				case EOZ -> {
 					return TK_EOS;
 				}
-				default: {
+				default -> {
 					if (isSpace(current)) {
 						next();
 						continue;

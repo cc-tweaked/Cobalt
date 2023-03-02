@@ -33,14 +33,14 @@ import static org.squiddev.cobalt.ValueFactory.*;
 
 /**
  * Subclass of {@link LuaValue} for representing lua tables.
- *
+ * <p>
  * Almost all API's implemented in {@link LuaTable} are defined and documented in {@link LuaValue}.
- *
+ * <p>
  * If a table is needed, the one of the type-checking functions can be used such as
  * {@link #isTable()},
  * {@link #checkTable()}, or
  * {@link #optTable(LuaTable)}
- *
+ * <p>
  * The main table operations are defined on {@link OperationHelper} and {@link LuaTable}
  * for getting and setting values with and without metatag processing:
  * <ul>
@@ -49,7 +49,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * <li>{@link LuaTable#rawget(LuaValue)}</li>
  * <li>{@link LuaTable#rawset(LuaValue, LuaValue)}</li>
  * </ul>
- *
+ * <p>
  * To iterate over key-value pairs from Java, use
  * <pre> {@code
  * LuaValue k = LuaValue.NIL;
@@ -60,7 +60,7 @@ import static org.squiddev.cobalt.ValueFactory.*;
  *    LuaValue v = n.arg(2)
  *    process( k, v )
  * }}</pre>
- *
+ * <p>
  * As with other types, {@link LuaTable} instances should be constructed via one of the table constructor
  * methods on {@link LuaValue}:
  * <ul>
@@ -176,7 +176,7 @@ public final class LuaTable extends LuaValue {
 
 	/**
 	 * Preallocate the array part of a table to be a certain size,
-	 *
+	 * <p>
 	 * Primarily used internally in response to a SETLIST bytecode.
 	 *
 	 * @param nArray the number of array slots to preallocate in the table.
@@ -331,7 +331,7 @@ public final class LuaTable extends LuaValue {
 		 * the first element non nil followed with a nil value
 		 */
 		if (a > 0 && rawget(a).isNil()) {
-			int n = a+1, m = 0;
+			int n = a + 1, m = 0;
 			while (n - m > 1) {
 				int k = (m + n) / 2;
 
@@ -349,34 +349,34 @@ public final class LuaTable extends LuaValue {
 			return a;
 		} else {
 			long i = a;
-			long j = i+1;
+			long j = i + 1;
 			while (!rawget((int) j).isNil()) {
 				i = j;
 				j *= 2;
 				// Fallback to linear search, something is wrong
-				if (j > ((long)Integer.MAX_VALUE*2)-2) {
+				if (j > ((long) Integer.MAX_VALUE * 2) - 2) {
 					i = 1;
-					while (!rawget((int)i).isNil()) i++;
-					return (int)i - 1;
+					while (!rawget((int) i).isNil()) i++;
+					return (int) i - 1;
 				}
 			}
 
 			// Binary search
 			while (j - i > 1) {
-				int k = ((int)i + (int)j) / 2;
+				int k = ((int) i + (int) j) / 2;
 				if (!rawget(k).isNil()) {
 					i = k;
 				} else {
 					j = k;
 				}
 			}
-			return (int)i;
+			return (int) i;
 		}
 	}
 
 	/**
 	 * Return table.maxn() as defined by lua 5.0.
-	 *
+	 * <p>
 	 * Provided for compatibility, not a scalable operation.
 	 *
 	 * @return value for maxn
@@ -401,7 +401,7 @@ public final class LuaTable extends LuaValue {
 	/**
 	 * Find the next key,value pair if {@code this} is a table,
 	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
-	 *
+	 * <p>
 	 * To iterate over all key-value pairs in a table you can use
 	 * <pre> {@code
 	 * LuaValue k = LuaValue.NIL;
@@ -479,7 +479,7 @@ public final class LuaTable extends LuaValue {
 	/**
 	 * Find the next integer-key,value pair if {@code this} is a table,
 	 * return {@link Constants#NIL} if there are no more, or throw a {@link LuaError} if not a table.
-	 *
+	 * <p>
 	 * To iterate over integer keys in a table you can use
 	 * <pre> {@code
 	 *   LuaValue k = LuaValue.NIL;
@@ -527,16 +527,10 @@ public final class LuaTable extends LuaValue {
 	 * @return the slot index
 	 */
 	private static int hashSlot(LuaValue key, int hashMask) {
-		switch (key.type()) {
-			case TNUMBER:
-			case TTABLE:
-			case TTHREAD:
-			case TLIGHTUSERDATA:
-			case TUSERDATA:
-				return hashmod(key.hashCode(), hashMask);
-			default:
-				return hashpow2(key.hashCode(), hashMask);
-		}
+		return switch (key.type()) {
+			case TNUMBER, TTABLE, TTHREAD, TLIGHTUSERDATA, TUSERDATA -> hashmod(key.hashCode(), hashMask);
+			default -> hashpow2(key.hashCode(), hashMask);
+		};
 	}
 
 	/**
@@ -574,78 +568,7 @@ public final class LuaTable extends LuaValue {
 
 	// Compute ceil(log2(x))
 	private static int log2(int x) {
-		// TODO: Use 31 - Integer.numberOfLeadingZeros(bits);
-		// See: http://stackoverflow.com/a/3305710/1447657
-
-		int lg = 0;
-		x -= 1;
-		if (x < 0)
-		// 2^(-(2^31)) is approximately 0
-		{
-			return Integer.MIN_VALUE;
-		}
-		if ((x & 0xFFFF0000) != 0) {
-			lg = 16;
-			x >>>= 16;
-		}
-		if ((x & 0xFF00) != 0) {
-			lg += 8;
-			x >>>= 8;
-		}
-		if ((x & 0xF0) != 0) {
-			lg += 4;
-			x >>>= 4;
-		}
-		switch (x) {
-			case 0x0:
-				return 0;
-			case 0x1:
-				lg += 1;
-				break;
-			case 0x2:
-				lg += 2;
-				break;
-			case 0x3:
-				lg += 2;
-				break;
-			case 0x4:
-				lg += 3;
-				break;
-			case 0x5:
-				lg += 3;
-				break;
-			case 0x6:
-				lg += 3;
-				break;
-			case 0x7:
-				lg += 3;
-				break;
-			case 0x8:
-				lg += 4;
-				break;
-			case 0x9:
-				lg += 4;
-				break;
-			case 0xA:
-				lg += 4;
-				break;
-			case 0xB:
-				lg += 4;
-				break;
-			case 0xC:
-				lg += 4;
-				break;
-			case 0xD:
-				lg += 4;
-				break;
-			case 0xE:
-				lg += 4;
-				break;
-			case 0xF:
-				lg += 4;
-				break;
-		}
-		return lg;
+		return 32 - Integer.numberOfLeadingZeros(x - 1);
 	}
 
 	/**
@@ -883,7 +806,7 @@ public final class LuaTable extends LuaValue {
 
 	/**
 	 * Insert a new key into a hash table.
-	 *
+	 * <p>
 	 * First check whether key's main position is free. If not, check whether the colliding node is in its main position
 	 * or not. If it is not, move colliding node to an empty place and put new key in its main position, otherwise the
 	 * colliding node is in its main position and the new key goes to an empty position.
@@ -1076,16 +999,11 @@ public final class LuaTable extends LuaValue {
 	 * @return {@link LuaValue} that is a strong or weak reference, depending on type of {@code value}
 	 */
 	private static Object weaken(LuaValue value) {
-		switch (value.type()) {
-			case TFUNCTION:
-			case TTHREAD:
-			case TTABLE:
-				return new WeakReference<>(value);
-			case TUSERDATA:
-				return new WeakUserdata((LuaUserdata) value);
-			default:
-				return value;
-		}
+		return switch (value.type()) {
+			case TFUNCTION, TTHREAD, TTABLE -> new WeakReference<>(value);
+			case TUSERDATA -> new WeakUserdata((LuaUserdata) value);
+			default -> value;
+		};
 	}
 
 	/**

@@ -41,18 +41,20 @@ public class SystemBaseLib {
 		// collectgarbage( opt [,arg] ) -> value
 		String s = arg1.optString("collect");
 		switch (s) {
-			case "collect":
+			case "collect" -> {
 				System.gc();
 				return Constants.ZERO;
-			case "count":
+			}
+			case "count" -> {
 				Runtime rt = Runtime.getRuntime();
 				long used = rt.totalMemory() - rt.freeMemory();
 				return valueOf(used / 1024.);
-			case "step":
+			}
+			case "step" -> {
 				System.gc();
 				return Constants.TRUE;
-			default:
-				throw ErrorFactory.argError(1, "invalid option");
+			}
+			default -> throw ErrorFactory.argError(1, "invalid option");
 		}
 	}
 
