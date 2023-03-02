@@ -26,12 +26,12 @@ package org.squiddev.cobalt;
 
 /**
  * Extension of {@link LuaNumber} which can hold a Java int as its value.
- *
+ * <p>
  * These instance are not instantiated directly by clients, but indirectly
  * via the static functions {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(double)}
  * functions.  This ensures that policies regarding pooling of instances are
  * encapsulated.
- *
+ * <p>
  * There are no API's specific to LuaInteger that are useful beyond what is already
  * exposed in {@link LuaValue}.
  *
@@ -127,11 +127,6 @@ public final class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public LuaInteger optLuaInteger(LuaInteger defval) {
-		return this;
-	}
-
-	@Override
 	public long optLong(long defval) {
 		return v;
 	}
@@ -142,7 +137,7 @@ public final class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public LuaString strvalue() {
+	public LuaString checkLuaString() {
 		return LuaString.valueOf(Integer.toString(v));
 	}
 
@@ -159,11 +154,6 @@ public final class LuaInteger extends LuaNumber {
 	@Override
 	public String optString(String defval) {
 		return Integer.toString(v);
-	}
-
-	@Override
-	public LuaInteger checkLuaInteger() {
-		return this;
 	}
 
 	public int hashCode() {
@@ -208,11 +198,6 @@ public final class LuaInteger extends LuaNumber {
 	@Override
 	public String checkString() {
 		return String.valueOf(v);
-	}
-
-	@Override
-	public LuaString checkLuaString() {
-		return ValueFactory.valueOf(String.valueOf(v));
 	}
 
 	@Override

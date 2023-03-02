@@ -263,7 +263,7 @@ public class Constants {
 
 	/**
 	 * Varargs implemenation with no values.
-	 *
+	 * <p>
 	 * This is an internal class not intended to be used directly.
 	 * Instead use the predefined constant {@link Constants#NONE}
 	 *

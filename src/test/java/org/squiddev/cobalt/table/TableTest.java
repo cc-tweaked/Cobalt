@@ -141,8 +141,8 @@ public class TableTest {
 				assertEquals(0, intKeys & mask);
 				intKeys |= mask;
 			} else if (k instanceof LuaString) {
-				final int ik = Integer.parseInt(k.strvalue().toString());
-				assertEquals(String.valueOf(ik), k.strvalue().toString());
+				final int ik = Integer.parseInt(k.checkLuaString().toString());
+				assertEquals(String.valueOf(ik), k.checkLuaString().toString());
 				assertTrue(ik >= 0 && ik < 10);
 				final int mask = 1 << ik;
 				assertEquals(0, stringKeys & mask, "Key \"" + ik + "\" found more than once");

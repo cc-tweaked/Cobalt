@@ -347,7 +347,8 @@ class StringMatch {
 					} else if (b == '0') {
 						lbuf.append(s.substringOfEnd(soff, e));
 					} else {
-						lbuf.append(push_onecapture(b - '1', soff, e).strvalue());
+						LuaValue value = push_onecapture(b - '1', soff, e);
+						lbuf.append(value.checkLuaString());
 					}
 				}
 			}
@@ -357,7 +358,7 @@ class StringMatch {
 			LuaValue replace;
 			switch (repl.type()) {
 				case TSTRING, TNUMBER -> {
-					add_s(lbuf, repl.strvalue(), soffset, end);
+					add_s(lbuf, repl.checkLuaString(), soffset, end);
 					return;
 				}
 				case TFUNCTION ->
@@ -379,7 +380,7 @@ class StringMatch {
 			} else if (!repl.isString()) {
 				throw new LuaError("invalid replacement value (a " + repl.typeName() + ")");
 			}
-			lbuf.append(repl.strvalue());
+			lbuf.append(repl.checkLuaString());
 		}
 
 		Varargs push_captures(boolean wholeMatch, int soff, int end) throws LuaError {

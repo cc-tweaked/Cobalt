@@ -28,14 +28,14 @@ import org.squiddev.cobalt.lib.FormatDesc;
 
 /**
  * Extension of {@link LuaNumber} which can hold a Java double as its value.
- *
+ * <p>
  * These instance are not instantiated directly by clients, but indirectly
  * via the static functions {@link ValueFactory#valueOf(int)} or {@link ValueFactory#valueOf(double)}
  * functions.  This ensures that values which can be represented as int
  * are wrapped in {@link LuaInteger} instead of {@link LuaDouble}.
- *
+ * <p>
  * Almost all API's implemented in LuaDouble are defined and documented in {@link LuaValue}.
- *
+ * <p>
  * However the constants {@link #NAN}, {@link #POSINF}, {@link #NEGINF},
  * {@link #JSTR_NAN}, {@link #JSTR_POSINF}, and {@link #JSTR_NEGINF} may be useful
  * when dealing with Nan or Infinite values.
@@ -136,18 +136,8 @@ public final class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public LuaInteger optLuaInteger(LuaInteger defval) {
-		return LuaInteger.valueOf((int) (long) v);
-	}
-
-	@Override
 	public long optLong(long defval) {
 		return (long) v;
-	}
-
-	@Override
-	public LuaInteger checkLuaInteger() {
-		return LuaInteger.valueOf((int) (long) v);
 	}
 
 	// object equality, used for key comparison
@@ -183,7 +173,7 @@ public final class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public LuaString strvalue() {
+	public LuaString checkLuaString() {
 		long l = (long) v;
 		if (l == v) return ValueFactory.valueOf(Long.toString(l));
 		if (Double.isNaN(v)) return STR_NAN;
@@ -196,12 +186,12 @@ public final class LuaDouble extends LuaNumber {
 
 	@Override
 	public LuaString optLuaString(LuaString defval) {
-		return strvalue();
+		return checkLuaString();
 	}
 
 	@Override
 	public LuaValue toLuaString() {
-		return strvalue();
+		return checkLuaString();
 	}
 
 	@Override
@@ -227,11 +217,6 @@ public final class LuaDouble extends LuaNumber {
 	@Override
 	public String checkString() {
 		return toString();
-	}
-
-	@Override
-	public LuaString checkLuaString() {
-		return strvalue();
 	}
 
 	@Override

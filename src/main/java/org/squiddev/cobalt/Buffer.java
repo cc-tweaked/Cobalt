@@ -152,10 +152,8 @@ public final class Buffer {
 	 * @param str The string to append
 	 */
 	public void append(LuaString str) {
-		final int n = str.length();
-		ensure(n);
-		str.copyTo(0, bytes, length, n);
-		length += n;
+		ensure(str.length());
+		length = str.copyTo(bytes, length);
 	}
 
 	/**

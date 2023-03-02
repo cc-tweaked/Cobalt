@@ -265,7 +265,7 @@ public final class OperationHelper {
 			case TNUMBER:
 				return left.toDouble() < right.toDouble();
 			case TSTRING:
-				return left.strvalue().compare(right.strvalue()) < 0;
+				return left.checkLuaString().compareTo(right.checkLuaString()) < 0;
 			default:
 				LuaValue h = left.metatag(state, Constants.LT);
 				if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
@@ -285,7 +285,7 @@ public final class OperationHelper {
 			case TNUMBER:
 				return left.toDouble() <= right.toDouble();
 			case TSTRING:
-				return left.strvalue().compare(right.strvalue()) <= 0;
+				return left.checkLuaString().compareTo(right.checkLuaString()) <= 0;
 			default:
 				LuaValue h = left.metatag(state, Constants.LE);
 				if (h.isNil()) {
@@ -365,7 +365,7 @@ public final class OperationHelper {
 				}
 			}
 			case TSTRING:
-				return valueOf(((LuaBaseString) value).length());
+				return valueOf(((LuaString) value).length());
 			default: {
 				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
 				if (h.isNil()) {

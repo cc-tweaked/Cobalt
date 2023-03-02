@@ -108,11 +108,6 @@ public class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public LuaInteger optLuaInteger(LuaInteger defval) {
-		return defval;
-	}
-
-	@Override
 	public long optLong(long defval) {
 		return defval;
 	}

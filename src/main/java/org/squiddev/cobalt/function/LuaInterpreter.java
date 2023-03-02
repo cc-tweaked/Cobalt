@@ -636,16 +636,16 @@ public final class LuaInterpreter {
 				LuaValue left = stack[top - 2];
 				LuaValue right = stack[top - 1];
 
-				LuaBaseString lString, rString;
+				LuaString lString, rString;
 
 				int n = 2;
 
 				if (!left.isString() || !right.isString()) {
 					// If one of these isn't convertible to a string then use the metamethod
 					stack[top - 2] = OperationHelper.concatNonStrings(state, left, right, top - 2, top - 1);
-				} else if ((rString = right.checkLuaBaseString()).length() == 0) {
+				} else if ((rString = right.checkLuaString()).length() == 0) {
 					stack[top - 2] = left.checkLuaString();
-				} else if ((lString = left.checkLuaBaseString()).length() == 0) {
+				} else if ((lString = left.checkLuaString()).length() == 0) {
 					stack[top - 2] = rString;
 				} else {
 					int length = rString.length() + lString.length();
@@ -656,7 +656,7 @@ public final class LuaInterpreter {
 						LuaValue value = stack[top - n - 1];
 						if (!value.isString()) break;
 
-						LuaBaseString string = value.checkLuaBaseString();
+						LuaString string = value.checkLuaString();
 
 						// Ensure we don't get a string which is too long
 						int strLen = string.length();
@@ -667,7 +667,7 @@ public final class LuaInterpreter {
 						length += strLen;
 					}
 
-					stack[top - n] = LuaRope.valueOf(stack, top - n, n, length);
+					stack[top - n] = LuaString.valueOfStrings(stack, top - n, n, length);
 				}
 
 				// Got "n" strings and created one new one

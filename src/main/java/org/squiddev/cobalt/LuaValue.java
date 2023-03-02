@@ -532,7 +532,6 @@ public abstract class LuaValue extends Varargs {
 	 * throws {@link LuaError} otherwise
 	 * @throws LuaError if was not numeric or nil or none.
 	 * @see #optInteger(int)
-	 * @see #optLuaInteger(LuaInteger)
 	 * @see #checkDouble()
 	 * @see #toDouble()
 	 * @see #toNumber()
@@ -574,7 +573,6 @@ public abstract class LuaValue extends Varargs {
 	 * @throws LuaError if was not numeric or nil or none.
 	 * @see #optDouble(double)
 	 * @see #optLong(long)
-	 * @see #optLuaInteger(LuaInteger)
 	 * @see #checkInteger()
 	 * @see #toInteger()
 	 * @see #toNumber()
@@ -582,26 +580,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public int optInteger(int defval) throws LuaError {
-		throw ErrorFactory.argError(this, "number");
-	}
-
-	/**
-	 * Check that optional argument is a number or string convertible to number and return as {@link LuaInteger}
-	 *
-	 * @param defval {@link LuaInteger} to return if {@code this} is nil or none
-	 * @return {@code this} converted and wrapped in {@link LuaInteger} if numeric,
-	 * {@code defval} if nil or none,
-	 * throws {@link LuaError} otherwise
-	 * @throws LuaError if was not numeric or nil or none.
-	 * @see #optDouble(double)
-	 * @see #optInteger(int)
-	 * @see #checkInteger()
-	 * @see #toInteger()
-	 * @see #toNumber()
-	 * @see #isNumber()
-	 * @see Constants#TNUMBER
-	 */
-	public LuaInteger optLuaInteger(LuaInteger defval) throws LuaError {
 		throw ErrorFactory.argError(this, "number");
 	}
 
@@ -819,7 +797,6 @@ public abstract class LuaValue extends Varargs {
 	 * @return value cast to a double if numeric
 	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
 	 * @see #checkInteger()
-	 * @see #checkLuaInteger()
 	 * @see #checkLong()
 	 * @see #optDouble(double)
 	 * @see Constants#TNUMBER
@@ -853,32 +830,12 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return value cast to a int if numeric
 	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
-	 * @see #checkLuaInteger()
 	 * @see #checkLong()
 	 * @see #checkDouble()
 	 * @see #optInteger(int)
 	 * @see Constants#TNUMBER
 	 */
 	public int checkInteger() throws LuaError {
-		throw ErrorFactory.argError(this, "number");
-	}
-
-	/**
-	 * Check that the value is numeric, and convert and cast value to int, or throw {@link LuaError} if not numeric
-	 * <p>
-	 * Values that are {@link LuaNumber} will be cast to int and may lose precision.
-	 * Values that are {@link LuaString} that can be converted to a number will be converted,
-	 * then cast to int, so may also lose precision.
-	 *
-	 * @return value cast to a int and wrapped in {@link LuaInteger} if numeric
-	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
-	 * @see #checkInteger()
-	 * @see #checkLong()
-	 * @see #checkDouble()
-	 * @see #optLuaInteger(LuaInteger)
-	 * @see Constants#TNUMBER
-	 */
-	public LuaInteger checkLuaInteger() throws LuaError {
 		throw ErrorFactory.argError(this, "number");
 	}
 
@@ -892,7 +849,6 @@ public abstract class LuaValue extends Varargs {
 	 * @return value cast to a long if numeric
 	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
 	 * @see #checkInteger()
-	 * @see #checkLuaInteger()
 	 * @see #checkDouble()
 	 * @see #optLong(long)
 	 * @see Constants#TNUMBER
@@ -909,7 +865,6 @@ public abstract class LuaValue extends Varargs {
 	 * @return value as a {@link LuaNumber} if numeric
 	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
 	 * @see #checkInteger()
-	 * @see #checkLuaInteger()
 	 * @see #checkDouble()
 	 * @see #checkLong()
 	 * @see #optNumber(LuaNumber)
@@ -928,7 +883,6 @@ public abstract class LuaValue extends Varargs {
 	 * @return value as a {@link LuaNumber} if numeric
 	 * @throws LuaError if not a {@link LuaNumber} or is a {@link LuaString} that can't be converted to number
 	 * @see #checkInteger()
-	 * @see #checkLuaInteger()
 	 * @see #checkDouble()
 	 * @see #checkLong()
 	 * @see #optNumber(LuaNumber)
@@ -974,16 +928,6 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public LuaString checkLuaString() throws LuaError {
 		throw ErrorFactory.argError(this, "string");
-	}
-
-	/**
-	 * Check that this is a lua string, or throw {@link LuaError} if it is not
-	 *
-	 * @return {@link LuaBaseString} representation of the value if it is a {@link LuaBaseString} or {@link LuaNumber}
-	 * @throws LuaError if {@code this} is not a {@link LuaBaseString}
-	 */
-	public LuaBaseString checkLuaBaseString() throws LuaError {
-		return checkLuaString();
 	}
 
 	/**
@@ -1156,7 +1100,6 @@ public abstract class LuaValue extends Varargs {
 	 * @param val The value to compare with.
 	 * @return true if {@code (this == rhs)}, false otherwise
 	 * @see #raweq(LuaUserdata)
-	 * @see #raweq(LuaString)
 	 * @see #raweq(double)
 	 * @see #raweq(int)
 	 * @see Constants#EQ
@@ -1177,19 +1120,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see #raweq(LuaValue)
 	 */
 	public boolean raweq(LuaUserdata val) {
-		return false;
-	}
-
-	/**
-	 * Equals: Perform direct equality comparison with a {@link LuaString} value
-	 * without metatag processing.
-	 *
-	 * @param val The {@link LuaString} to compare with.
-	 * @return true if {@code this} is a {@link LuaString}
-	 * and their byte sequences match,
-	 * otherwise false
-	 */
-	public boolean raweq(LuaString val) {
 		return false;
 	}
 
@@ -1217,17 +1147,6 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public boolean raweq(int val) {
 		return false;
-	}
-
-	/**
-	 * Convert this value to a string if it is a {@link LuaString} or {@link LuaNumber},
-	 * or throw a {@link LuaError} if it is not
-	 *
-	 * @return {@link LuaString} corresponding to the value if a string or number
-	 * @throws LuaError if not a string or number
-	 */
-	public LuaString strvalue() throws LuaError {
-		throw ErrorFactory.typeError(this, "strValue");
 	}
 
 	/**

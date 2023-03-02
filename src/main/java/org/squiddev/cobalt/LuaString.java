@@ -24,11 +24,17 @@
  */
 package org.squiddev.cobalt;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.framework.qual.DefaultQualifier;
 import org.squiddev.cobalt.lib.StringLib;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
+
+import static org.squiddev.cobalt.Constants.NIL;
 
 /**
  * Subclass of {@link LuaValue} for representing lua strings.
@@ -49,7 +55,8 @@ import java.util.Arrays;
  * @see ValueFactory#valueOf(String)
  * @see ValueFactory#valueOf(byte[])
  */
-public final class LuaString extends LuaBaseString {
+@DefaultQualifier(NonNull.class)
+public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	/**
 	 * Size of cache of recent short strings. This is the maximum number of LuaStrings that
 	 * will be retained in the cache of recent short strings. Must be a power of 2.
@@ -64,9 +71,12 @@ public final class LuaString extends LuaBaseString {
 	public static final int RECENT_STRINGS_MAX_LENGTH = 32;
 
 	/**
-	 * The bytes for the string
+	 * The contents of this string. Either a {@code byte[]} or a {@code LuaString[]}.
+	 *
+	 * @see #bytes()
+	 * @see #flatten()
 	 */
-	private final byte[] bytes;
+	private Object contents;
 
 	/**
 	 * The offset into the byte array, 0 means start at the first byte
@@ -93,7 +103,7 @@ public final class LuaString extends LuaBaseString {
 		public LuaString get(LuaString s) {
 			final int index = s.hashCode() & (RECENT_STRINGS_CACHE_SIZE - 1);
 			final LuaString cached = recentShortStrings[index];
-			if (cached != null && s.raweq(cached)) {
+			if (cached != null && s.equals(cached)) {
 				return cached;
 			}
 			recentShortStrings[index] = s;
@@ -155,57 +165,182 @@ public final class LuaString extends LuaBaseString {
 	}
 
 	/**
+	 * Create a string from a concatenation of other strings. This may be more efficient than building a string
+	 * with {@link Buffer} or {@link OperationHelper#concat(LuaString, LuaString)}, as it defers allocating the
+	 * underlying byte array.
+	 *
+	 * @param contents  The array of strings to build this from. All values in the range {@code [offset, offset+length)}
+	 *                  must be {@link LuaString}s.
+	 * @param offset    The offset into this array.
+	 * @param length    The number of values in this array.
+	 * @param strLength The length of the resulting string. This must be equal
+	 * @return The resulting Lua string.
+	 */
+	public static LuaString valueOfStrings(LuaValue[] contents, int offset, int length, int strLength) {
+		if (length == 0 || strLength == 0) return Constants.EMPTYSTRING;
+		if (length == 1) return (LuaString) contents[0];
+
+		if (strLength > RECENT_STRINGS_MAX_LENGTH) {
+			LuaString[] slice = new LuaString[length];
+			System.arraycopy(contents, offset, slice, 0, length);
+			return new LuaString(slice, strLength);
+		}
+
+		byte[] out = new byte[strLength];
+		int position = 0;
+		for (int i = 0; i < length; i++) position = ((LuaString) contents[offset + i]).copyTo(out, position);
+		return valueOf(out);
+	}
+
+	/**
 	 * Construct a {@link LuaString} around a byte array without copying the contents.
 	 * <p>
 	 * The array is used directly after this is called, so clients must not change contents.
 	 *
-	 * @param bytes  byte buffer
-	 * @param offset offset into the byte buffer
-	 * @param length length of the byte buffer
+	 * @param contents byte buffer
+	 * @param offset   offset into the byte buffer
+	 * @param length   length of the byte buffer
 	 */
-	private LuaString(byte[] bytes, int offset, int length) {
-		super();
-		this.bytes = bytes;
+	private LuaString(byte[] contents, int offset, int length) {
+		super(Constants.TSTRING);
+		this.contents = contents;
 		this.offset = offset;
+		this.length = length;
+	}
+
+	private LuaString(LuaValue[] contents, int length) {
+		super(Constants.TSTRING);
+		this.contents = contents;
+		offset = 0;
 		this.length = length;
 	}
 
 	@Override
 	public String toString() {
-		return decode(bytes, offset, length);
+		return decode(bytes(), offset, length);
 	}
 
-	public int compare(LuaString rhs) {
+	@Override
+	public LuaTable getMetatable(LuaState state) {
+		return state.stringMetatable;
+	}
+
+	public int length() {
+		return length;
+	}
+
+	private byte[] bytes() {
+		Object contents = this.contents;
+		if (contents instanceof byte[] bytes) return bytes;
+		return flatten();
+	}
+
+	/**
+	 * Flatten a nested list of {@link LuaString}s into a single {@link byte[]}.
+	 *
+	 * @return The flattened array.
+	 */
+	private byte[] flatten() {
+		byte[] out = new byte[length];
+		int position = 0;
+
+		// We maintain a stack of values to avoid blowing the actual stack. Previous versions used to maintain this
+		// stack by maintaining a linked list on the rope (avoiding allocations), but it's not clear if that's worth it
+		// in practice.
+		Deque<LuaString> queue;
+		LuaString string;
+
+		// Try to handle the easy case of having a list of byte[]s. In this case, we don't have to recurse, so can avoid
+		// allocating the stack.
+		rope:
+		{
+			LuaString[] strings = (LuaString[]) contents;
+			for (int i = 0; i < strings.length; i++) {
+				string = strings[i];
+				Object contents = string.contents;
+				if (contents instanceof byte[] bytes) {
+					System.arraycopy(bytes, string.offset, out, position, string.length);
+					position += string.length;
+				} else {
+					// We've got a more complex value, so add the remaining values to the queue and then begin to work.
+					queue = new ArrayDeque<>(Math.max(4, strings.length - i));
+					i++;
+					for (; i < strings.length; i++) queue.addLast(strings[i]);
+					break rope;
+				}
+			}
+
+			contents = out;
+			return out;
+		}
+
+		// If we were unable to unpack the string in the initial pass, loop through expanding the rope.
+		while (true) {
+			Object contents = string.contents;
+			if (contents instanceof byte[] bytes) {
+				System.arraycopy(bytes, string.offset, out, position, string.length);
+				position += string.length;
+
+				string = queue.pollFirst();
+				if (string == null) break;
+			} else {
+				LuaString[] newStrings = (LuaString[]) contents;
+				for (int i = newStrings.length - 1; i > 0; i--) queue.addFirst(newStrings[i]);
+				string = newStrings[0];
+			}
+		}
+
+		contents = out;
+		return out;
+	}
+
+	//region Equality and comparison
+	@Override
+	public int compareTo(LuaString rhs) {
+		byte[] bytes = bytes(), rhsBytes = rhs.bytes();
 		// Find the first mismatched character in 0..n
 		int len = Math.min(length, rhs.length);
-		int mismatch = Arrays.mismatch(bytes, offset, offset + len, rhs.bytes, rhs.offset, rhs.offset + len);
-		if (mismatch >= 0) return Byte.compareUnsigned(bytes[offset + mismatch], rhs.bytes[rhs.offset + mismatch]);
+		int mismatch = Arrays.mismatch(bytes, offset, offset + len, rhsBytes, rhs.offset, rhs.offset + len);
+		if (mismatch >= 0) return Byte.compareUnsigned(bytes[offset + mismatch], rhsBytes[rhs.offset + mismatch]);
 
 		// If one is a prefix of the other, sort by length.
 		return length - rhs.length;
 	}
 
 	@Override
-	public LuaString strvalue() {
-		return this;
+	public boolean equals(Object o) {
+		return this == o || (o instanceof LuaString str && equals(str));
 	}
 
-	public LuaString substringOfLen(int beginIndex, int length) {
-		return valueOf(bytes, offset + beginIndex, length);
+	// equality w/o metatable processing
+	@Override
+	public boolean raweq(LuaValue val) {
+		return val instanceof LuaString str && equals(str);
 	}
 
-	public LuaString substringOfEnd(int beginIndex, int endIndex) {
-		return valueOf(bytes, offset + beginIndex, endIndex - beginIndex);
+	private boolean equals(LuaString s) {
+		if (this == s) return true;
+		if (s.length != length) return false;
+		if (contents == s.contents && s.offset == offset) return true;
+		if (s.hashCode() != hashCode()) return false;
+
+		return equals(bytes(), offset, s.bytes(), s.offset, length);
 	}
 
-	public LuaString substring(int beginIndex) {
-		return valueOf(bytes, offset + beginIndex, length - 1);
+	public static boolean equals(LuaString a, int aOffset, LuaString b, int bOffset, int length) {
+		return equals(a.bytes(), a.offset + aOffset, b.bytes(), b.offset + bOffset, length);
+	}
+
+	private static boolean equals(byte[] a, int aOffset, byte[] b, int bOffset, int length) {
+		return Arrays.equals(a, aOffset, aOffset + length, b, bOffset, bOffset + length);
 	}
 
 	@Override
 	public int hashCode() {
 		int h = hashCode;
 		if (h != 0) return h;
+
+		byte[] bytes = bytes();
 
 		h = length;  /* seed */
 		int step = (length >> 5) + 1;  /* if string is too long, don't hash all its chars */
@@ -214,100 +349,33 @@ public final class LuaString extends LuaBaseString {
 		}
 		return hashCode = h;
 	}
+	// endregion
 
-	// object comparison, used in key comparison
-	@Override
-	public boolean equals(Object o) {
-		return this == o || (o instanceof LuaValue && ((LuaValue) o).raweq(this));
+	// region String operations
+	public LuaString substringOfLen(int beginIndex, int length) {
+		return valueOf(bytes(), offset + beginIndex, length);
 	}
 
-	// equality w/o metatable processing
-	@Override
-	public boolean raweq(LuaValue val) {
-		return val.raweq(this);
+	public LuaString substringOfEnd(int beginIndex, int endIndex) {
+		return valueOf(bytes(), offset + beginIndex, endIndex - beginIndex);
 	}
 
-	@Override
-	public boolean raweq(LuaString s) {
-		if (this == s) return true;
-		if (s.length != length) return false;
-		if (s.bytes == bytes && s.offset == offset) return true;
-		if (s.hashCode() != hashCode()) return false;
-
-		return equals(bytes, offset, s.bytes, s.offset, length);
-	}
-
-	public static boolean equals(LuaString a, int aOffset, LuaString b, int bOffset, int length) {
-		return equals(a.bytes, a.offset + aOffset, b.bytes, b.offset + bOffset, length);
-	}
-
-	private static boolean equals(byte[] a, int aOffset, byte[] b, int bOffset, int length) {
-		return Arrays.equals(a, aOffset, aOffset + length, b, bOffset, bOffset + length);
-	}
-
-	public void write(DataOutput writer) throws IOException {
-		writer.write(bytes, offset, length);
-	}
-
-	public void write(OutputStream writer) throws IOException {
-		writer.write(bytes, offset, length);
-	}
-
-	@Override
-	public int length() {
-		return length;
+	public LuaString substring(int beginIndex) {
+		return valueOf(bytes(), offset + beginIndex, length - 1);
 	}
 
 	public byte byteAt(int index) {
 		if (index < 0 || index >= length) throw new IndexOutOfBoundsException();
-		return bytes[offset + index];
+		return bytes()[offset + index];
 	}
 
 	public int charAt(int index) {
 		if (index < 0 || index >= length) throw new IndexOutOfBoundsException();
-		return Byte.toUnsignedInt(bytes[offset + index]);
+		return Byte.toUnsignedInt(bytes()[offset + index]);
 	}
 
 	public boolean startsWith(byte character) {
 		return length != 0 && byteAt(0) == character;
-	}
-
-	/**
-	 * Convert value to an input stream.
-	 *
-	 * @return {@link InputStream} whose data matches the bytes in this {@link LuaString}
-	 */
-	public InputStream toInputStream() {
-		return new ByteArrayInputStream(bytes, offset, length);
-	}
-
-	/**
-	 * Convert this string to a {@link ByteBuffer}.
-	 *
-	 * @return A view over the underlying string.
-	 */
-	public ByteBuffer toBuffer() {
-		return ByteBuffer.wrap(bytes, offset, length).asReadOnlyBuffer();
-	}
-
-	/**
-	 * Copy the bytes of the string into the given byte array.
-	 *
-	 * @param strOffset   offset from which to copy
-	 * @param bytes       destination byte array
-	 * @param arrayOffset offset in destination
-	 * @param len         number of bytes to copy
-	 * @return The next byte free
-	 */
-	public int copyTo(int strOffset, byte[] bytes, int arrayOffset, int len) {
-		if (strOffset < 0 || len > length - strOffset) throw new IndexOutOfBoundsException();
-		System.arraycopy(this.bytes, offset + strOffset, bytes, arrayOffset, len);
-		return arrayOffset + len;
-	}
-
-	public int copyTo(byte[] dest, int destOffset) {
-		System.arraycopy(bytes, offset, dest, destOffset, length);
-		return destOffset + length;
 	}
 
 	/**
@@ -317,13 +385,12 @@ public final class LuaString extends LuaBaseString {
 	 * @return index of first match in the {@code accept} string, or -1 if not found.
 	 */
 	public int indexOfAny(LuaString accept) {
+		byte[] bytes = bytes(), acceptBytes = accept.bytes();
 		final int limit = offset + length;
 		final int searchLimit = accept.offset + accept.length;
 		for (int i = offset; i < limit; ++i) {
 			for (int j = accept.offset; j < searchLimit; ++j) {
-				if (bytes[i] == accept.bytes[j]) {
-					return i - offset;
-				}
+				if (bytes[i] == acceptBytes[j]) return i - offset;
 			}
 		}
 		return -1;
@@ -337,6 +404,7 @@ public final class LuaString extends LuaBaseString {
 	 * @return index of first match found, or -1 if not found.
 	 */
 	public int indexOf(byte b, int start) {
+		byte[] bytes = bytes();
 		for (int i = 0, j = offset + start; i < length; ++i) {
 			if (bytes[j++] == b) {
 				return i;
@@ -348,15 +416,16 @@ public final class LuaString extends LuaBaseString {
 	/**
 	 * Find the index of a string starting at a point in this string
 	 *
-	 * @param s     the string to search for
-	 * @param start the first index in the string
+	 * @param search the string to search for
+	 * @param start  the first index in the string
 	 * @return index of first match found, or -1 if not found.
 	 */
-	public int indexOf(LuaString s, int start) {
-		final int slen = s.length();
-		final int limit = offset + length - slen;
+	public int indexOf(LuaString search, int start) {
+		byte[] bytes = bytes(), searchBytes = search.bytes();
+		final int searchLen = search.length();
+		final int limit = offset + length - searchLen;
 		for (int i = offset + start; i <= limit; ++i) {
-			if (equals(bytes, i, s.bytes, s.offset, slen)) {
+			if (equals(bytes, i, searchBytes, search.offset, searchLen)) {
 				return i - offset;
 			}
 		}
@@ -370,12 +439,82 @@ public final class LuaString extends LuaBaseString {
 	 * @return index of last match found, or -1 if not found.
 	 */
 	public int lastIndexOf(byte c) {
+		byte[] bytes = bytes();
 		for (int i = offset + length - 1; i >= offset; i--) {
 			if (bytes[i] == c) return i;
 		}
 		return -1;
 	}
+	// endregion
 
+	// region Byte export
+
+	/**
+	 * Write this string to a {@link DataOutput}.
+	 *
+	 * @param output The output to write this to.
+	 * @throws IOException If the underlying writer fails.
+	 */
+	public void write(DataOutput output) throws IOException {
+		output.write(bytes(), offset, length);
+	}
+
+	/**
+	 * Write this string to a {@link OutputStream}.
+	 *
+	 * @param output The output to write this to.
+	 * @throws IOException If the underlying writer fails.
+	 */
+	public void write(OutputStream output) throws IOException {
+		output.write(bytes(), offset, length);
+	}
+
+	/**
+	 * Convert value to an input stream.
+	 *
+	 * @return {@link InputStream} whose data matches the bytes in this {@link LuaString}
+	 */
+	public InputStream toInputStream() {
+		return new ByteArrayInputStream(bytes(), offset, length);
+	}
+
+	/**
+	 * Convert this string to a {@link ByteBuffer}.
+	 *
+	 * @return A view over the underlying string.
+	 */
+	public ByteBuffer toBuffer() {
+		return ByteBuffer.wrap(bytes(), offset, length).asReadOnlyBuffer();
+	}
+
+	/**
+	 * Copy the bytes of the string into the given byte array.
+	 *
+	 * @param strOffset   offset from which to copy
+	 * @param bytes       destination byte array
+	 * @param arrayOffset offset in destination
+	 * @param len         number of bytes to copy
+	 * @return The next byte free
+	 */
+	public int copyTo(int strOffset, byte[] bytes, int arrayOffset, int len) {
+		if (strOffset < 0 || len > length - strOffset) throw new IndexOutOfBoundsException();
+		System.arraycopy(bytes(), offset + strOffset, bytes, arrayOffset, len);
+		return arrayOffset + len;
+	}
+
+	/**
+	 * Copy the bytes of the string into the given byte array.
+	 *
+	 * @param dest       destination byte array
+	 * @param destOffset offset in destination
+	 * @return The next byte free
+	 */
+	public int copyTo(byte[] dest, int destOffset) {
+		// We could avoid unpacking the bytes here, but it's not clear it's worth it.
+		System.arraycopy(bytes(), offset, dest, destOffset, length);
+		return destOffset + length;
+	}
+	// endregion
 
 	/**
 	 * Convert to Java String
@@ -414,11 +553,139 @@ public final class LuaString extends LuaBaseString {
 		}
 	}
 
-	// --------------------- number conversion -----------------------
+	// region Number conversion
+	@Override
+	public int checkInteger() throws LuaError {
+		return (int) (long) checkDouble();
+	}
 
 	@Override
-	public double scanNumber(int base) {
+	public long checkLong() throws LuaError {
+		return (long) checkDouble();
+	}
+
+	@Override
+	public double checkDouble() throws LuaError {
+		double d = scanNumber(10);
+		if (Double.isNaN(d)) {
+			throw ErrorFactory.argError(this, "number");
+		}
+		return d;
+	}
+
+	@Override
+	public LuaNumber checkNumber() throws LuaError {
+		return ValueFactory.valueOf(checkDouble());
+	}
+
+	@Override
+	public LuaNumber checkNumber(String msg) throws LuaError {
+		double d = scanNumber(10);
+		if (Double.isNaN(d)) {
+			throw new LuaError(msg);
+		}
+		return ValueFactory.valueOf(d);
+	}
+
+	@Override
+	public LuaValue toNumber() {
+		return toNumber(10);
+	}
+
+	@Override
+	public boolean isNumber() {
+		double d = scanNumber(10);
+		return !Double.isNaN(d);
+	}
+
+	@Override
+	public boolean isInteger() {
+		double d = scanNumber(10);
+		return !Double.isNaN(d) && (int) d == d;
+	}
+
+	@Override
+	public boolean isLong() {
+		double d = scanNumber(10);
+		return !Double.isNaN(d) && (long) d == d;
+	}
+
+	@Override
+	public double toDouble() {
+		return scanNumber(10);
+	}
+
+	@Override
+	public int toInteger() {
+		return (int) toLong();
+	}
+
+	@Override
+	public long toLong() {
+		return (long) toDouble();
+	}
+
+	@Override
+	public double optDouble(double defValue) throws LuaError {
+		return checkNumber().checkDouble();
+	}
+
+	@Override
+	public int optInteger(int defValue) throws LuaError {
+		return checkNumber().checkInteger();
+	}
+
+	@Override
+	public long optLong(long defdefValueval) throws LuaError {
+		return checkNumber().checkLong();
+	}
+
+	@Override
+	public LuaNumber optNumber(LuaNumber defValue) throws LuaError {
+		return checkNumber().checkNumber();
+	}
+
+	@Override
+	public LuaString optLuaString(LuaString defValue) {
+		return this;
+	}
+
+	@Override
+	public LuaValue toLuaString() {
+		return this;
+	}
+
+	@Override
+	public String optString(String defValue) {
+		return toString();
+	}
+
+	@Override
+	public String checkString() {
+		return toString();
+	}
+
+	@Override
+	public LuaString checkLuaString() {
+		return this;
+	}
+
+	/**
+	 * convert to a number using a supplied base, or NIL if it can't be converted
+	 *
+	 * @param base the base to use, such as 10
+	 * @return {@link LuaNumber} or {@link Constants#NIL} depending on the content of the string.
+	 * @see LuaValue#toNumber()
+	 */
+	public LuaValue toNumber(int base) {
+		double d = scanNumber(base);
+		return Double.isNaN(d) ? NIL : ValueFactory.valueOf(d);
+	}
+
+	private double scanNumber(int base) {
 		if (base < 2 || base > 36) return Double.NaN;
+
+		byte[] bytes = bytes();
 
 		int i = offset, j = offset + length;
 		while (i < j && StringLib.isWhitespace(bytes[i])) i++;
@@ -505,5 +772,5 @@ public final class LuaString extends LuaBaseString {
 			return Double.NaN;
 		}
 	}
-
+	// endregion
 }

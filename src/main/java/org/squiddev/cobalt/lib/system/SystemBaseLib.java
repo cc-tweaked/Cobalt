@@ -83,7 +83,8 @@ public class SystemBaseLib {
 			LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
 			for (int i = 1, n = args.count(); i <= n; i++) {
 				if (i > 1) out.write('\t');
-				LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
+				LuaValue value = OperationHelper.call(state, tostring, args.arg(i));
+				LuaString s = value.checkLuaString();
 				int z = s.indexOf((byte) 0, 0);
 
 				int len = z >= 0 ? z : s.length();

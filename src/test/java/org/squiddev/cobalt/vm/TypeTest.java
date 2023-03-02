@@ -614,27 +614,6 @@ public class TypeTest {
 	}
 
 	@Test
-	public void testOptInteger() throws LuaError {
-		assertEquals(valueOf(33), somenil.optLuaInteger(valueOf(33)));
-		throwsError(sometrue, "optLuaInteger", LuaInteger.class, valueOf(33));
-		throwsError(somefalse, "optLuaInteger", LuaInteger.class, valueOf(33));
-		assertEquals(zero, zero.optLuaInteger(valueOf(33)));
-		assertEquals(valueOf(sampleint), intint.optLuaInteger(valueOf(33)));
-		assertEquals(valueOf((int) samplelong), longdouble.optLuaInteger(valueOf(33)));
-		assertEquals(valueOf((int) sampledouble), doubledouble.optLuaInteger(valueOf(33)));
-		throwsError(somefunc, "optLuaInteger", LuaInteger.class, valueOf(33));
-		throwsError(someclosure, "optLuaInteger", LuaInteger.class, valueOf(33));
-		throwsError(stringstring, "optLuaInteger", LuaInteger.class, valueOf(33));
-		assertEquals(valueOf(sampleint), stringint.optLuaInteger(valueOf(33)));
-		assertEquals(valueOf((int) samplelong), stringlong.optLuaInteger(valueOf(33)));
-		assertEquals(valueOf((int) sampledouble), stringdouble.optLuaInteger(valueOf(33)));
-		throwsError(thread, "optLuaInteger", LuaInteger.class, valueOf(33));
-		throwsError(table, "optLuaInteger", LuaInteger.class, valueOf(33));
-		throwsError(userdataobj, "optLuaInteger", LuaInteger.class, valueOf(33));
-		throwsError(userdatacls, "optLuaInteger", LuaInteger.class, valueOf(33));
-	}
-
-	@Test
 	public void testOptLong() throws LuaError {
 		assertEquals(33L, somenil.optLong(33));
 		throwsError(sometrue, "optLong", long.class, (long) 33);
@@ -982,27 +961,6 @@ public class TypeTest {
 		throwsErrorReq(table, "checkInteger");
 		throwsErrorReq(userdataobj, "checkInteger");
 		throwsErrorReq(userdatacls, "checkInteger");
-	}
-
-	@Test
-	public void testCheckInteger() throws LuaError {
-		throwsErrorReq(somenil, "checkLuaInteger");
-		throwsErrorReq(sometrue, "checkLuaInteger");
-		throwsErrorReq(somefalse, "checkLuaInteger");
-		assertEquals(zero, zero.checkLuaInteger());
-		assertEquals(valueOf(sampleint), intint.checkLuaInteger());
-		assertEquals(valueOf((int) samplelong), longdouble.checkLuaInteger());
-		assertEquals(valueOf((int) sampledouble), doubledouble.checkLuaInteger());
-		throwsErrorReq(somefunc, "checkLuaInteger");
-		throwsErrorReq(someclosure, "checkLuaInteger");
-		throwsErrorReq(stringstring, "checkLuaInteger");
-		assertEquals(valueOf(sampleint), stringint.checkLuaInteger());
-		assertEquals(valueOf((int) samplelong), stringlong.checkLuaInteger());
-		assertEquals(valueOf((int) sampledouble), stringdouble.checkLuaInteger());
-		throwsErrorReq(thread, "checkLuaInteger");
-		throwsErrorReq(table, "checkLuaInteger");
-		throwsErrorReq(userdataobj, "checkLuaInteger");
-		throwsErrorReq(userdatacls, "checkLuaInteger");
 	}
 
 	@Test
