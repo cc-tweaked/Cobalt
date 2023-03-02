@@ -30,7 +30,6 @@ import org.squiddev.cobalt.compiler.CompileException;
 
 import java.io.IOException;
 
-import static org.squiddev.cobalt.LuaString.valueOf;
 
 public class CoroutineLoopTest {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
@@ -43,7 +42,7 @@ public class CoroutineLoopTest {
 
 		int i = 0;
 		while (!thread.getStatus().equals("dead")) {
-			LuaThread.run(thread, valueOf("Resume " + i++));
+			LuaThread.run(thread, ValueFactory.valueOf("Resume " + i++));
 		}
 	}
 }

@@ -72,7 +72,7 @@ public class Utf8Lib {
 			}
 		}
 
-		return sb.value();
+		return sb.toLuaString();
 	}
 
 	private Varargs codes(LuaState state, Varargs args) throws LuaError {
@@ -81,7 +81,7 @@ public class Utf8Lib {
 
 	private static Varargs codepoint(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
-		int length = s.length;
+		int length = s.length();
 		int i = posRelative(args.arg(2).optInteger(1), length);
 		int j = posRelative(args.arg(3).optInteger(i), length);
 
@@ -104,7 +104,7 @@ public class Utf8Lib {
 
 	private static Varargs len(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
-		int len = s.length;
+		int len = s.length();
 		int i = posRelative(args.arg(2).optInteger(1), len) - 1;
 		int j = posRelative(args.arg(3).optInteger(-1), len) - 1;
 
@@ -128,7 +128,7 @@ public class Utf8Lib {
 		LuaString s = args.arg(1).checkLuaString();
 		int n = args.arg(2).checkInteger();
 
-		int length = s.length;
+		int length = s.length();
 		int position = (n >= 0) ? 1 : length + 1;
 		position = posRelative(args.arg(3).optInteger(position), length) - 1;
 		if (position < 0 || position > length) throw ErrorFactory.argError(3, "position out of range");
@@ -160,7 +160,7 @@ public class Utf8Lib {
 	}
 
 	private static long decodeUtf8(LuaString str, int index, IntBuffer offset) {
-		int first = str.luaByte(index);
+		int first = str.charAt(index);
 		if (first < 0x80) {
 			offset.value = 1;
 			return first;
@@ -168,14 +168,14 @@ public class Utf8Lib {
 
 		int count = 0;
 		long result = 0;
-		int length = str.length;
+		int length = str.length();
 		while ((first & 0x40) != 0) {
 			// If we're expecting more bytes, abort.
 			index++;
 			if (index >= length) return -1;
 
 			// Ensure we're a continuation byte
-			int cc = str.luaByte(index);
+			int cc = str.charAt(index);
 			if ((cc & 0xC0) != 0x80) return -1;
 
 			// Add lower 6 bites from continuation
@@ -195,7 +195,7 @@ public class Utf8Lib {
 	}
 
 	private static boolean isCont(LuaString s, int idx) {
-		return idx < s.length && (s.luaByte(idx) & 0xC0) == 0x80;
+		return idx < s.length() && (s.charAt(idx) & 0xC0) == 0x80;
 	}
 
 	/*
@@ -210,11 +210,11 @@ public class Utf8Lib {
 		IntBuffer off = new IntBuffer();
 		if (idx < 0) {
 			idx = 0;
-		} else if (idx < s.length) {
+		} else if (idx < s.length()) {
 			idx++;
 			while (isCont(s, idx)) idx++;
 		}
-		if (idx >= s.length) {
+		if (idx >= s.length()) {
 			return varargsOf();
 		} else {
 			long codepoint = decodeUtf8(s, idx, off);

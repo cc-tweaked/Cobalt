@@ -192,9 +192,9 @@ public class PackageLib {
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
 			if (e < 0) {
-				e = fname.length;
+				e = fname.length();
 			}
-			LuaString key = fname.substring(b, e);
+			LuaString key = fname.substringOfEnd(b, e);
 			LuaValue val = table.rawget(key);
 			if (val.isNil()) { /* no such field? */
 				LuaTable field = new LuaTable(); /* new table for field */
@@ -205,16 +205,16 @@ public class PackageLib {
 			} else {
 				table = (LuaTable) val;
 			}
-		} while (e < fname.length);
+		} while (e < fname.length());
 		return table;
 	}
 
 	private static void modinit(LuaState state, LuaValue module, LuaString modname) throws LuaError, UnwindThrowable {
 		/* module._M = module */
 		OperationHelper.setTable(state, module, _M, module);
-		int e = modname.lastIndexOf('.');
+		int e = modname.lastIndexOf((byte) '.');
 		OperationHelper.setTable(state, module, _NAME, modname);
-		LuaValue value = (e < 0 ? Constants.EMPTYSTRING : modname.substring(0, e + 1));
+		LuaValue value = (e < 0 ? Constants.EMPTYSTRING : modname.substringOfEnd(0, e + 1));
 		OperationHelper.setTable(state, module, _PACKAGE, value);
 	}
 

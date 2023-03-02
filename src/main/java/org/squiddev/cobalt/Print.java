@@ -85,8 +85,8 @@ public class Print {
 	static void printString(PrintWriter ps, final LuaString s) {
 
 		ps.print('"');
-		for (int i = 0, n = s.length; i < n; i++) {
-			int c = s.bytes[s.offset + i];
+		for (int i = 0, n = s.length(); i < n; i++) {
+			int c = s.charAt(i);
 			if (c >= ' ' && c <= '~' && c != '\"' && c != '\\') {
 				ps.print((char) c);
 			} else {
@@ -120,7 +120,7 @@ public class Print {
 						break;
 					default:
 						ps.print('\\');
-						ps.print(Integer.toString(1000 + 0xff & c).substring(1));
+						ps.print(Integer.toString(1000 + c).substring(1));
 						break;
 				}
 			}
@@ -146,8 +146,8 @@ public class Print {
 	/**
 	 * Print the code in a prototype
 	 *
-	 * @param f the {@link Prototype}
-	 *          @param extended Included extended/non-standard information.
+	 * @param f        the {@link Prototype}
+	 * @param extended Included extended/non-standard information.
 	 */
 	public static void printCode(PrintWriter ps, Prototype f, boolean extended) {
 		int[] code = f.code;
@@ -161,9 +161,9 @@ public class Print {
 	/**
 	 * Print an opcode in a prototype
 	 *
-	 * @param ps the {@link PrintWriter} to print to
-	 * @param f  the {@link Prototype}
-	 * @param pc the program counter to look up and print
+	 * @param ps       the {@link PrintWriter} to print to
+	 * @param f        the {@link Prototype}
+	 * @param pc       the program counter to look up and print
 	 * @param extended Included extended/non-standard information.
 	 */
 	public static void printOpcode(PrintWriter ps, Prototype f, int pc, boolean extended) {
@@ -384,7 +384,7 @@ public class Print {
 						LuaString s = (LuaString) v;
 						ps.print(s.length() < 48 ?
 							s.toString() :
-							s.substring(0, 32).toString() + "...+" + (s.length() - 32) + "b");
+							s.substringOfEnd(0, 32).toString() + "...+" + (s.length() - 32) + "b");
 						break;
 					case Constants.TFUNCTION:
 						ps.print((v instanceof LuaClosure) ?

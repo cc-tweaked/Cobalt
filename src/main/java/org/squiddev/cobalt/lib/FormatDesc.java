@@ -61,7 +61,7 @@ public class FormatDesc {
 
 		boolean moreFlags = true;
 		while (moreFlags) {
-			switch (c = ((p < n) ? strfrmt.luaByte(p++) : 0)) {
+			switch (c = ((p < n) ? strfrmt.charAt(p++) : 0)) {
 				case '-':
 					leftAdjust = true;
 					break;
@@ -90,22 +90,22 @@ public class FormatDesc {
 		width = -1;
 		if (Character.isDigit((char) c)) {
 			width = c - '0';
-			c = ((p < n) ? strfrmt.luaByte(p++) : 0);
+			c = ((p < n) ? strfrmt.charAt(p++) : 0);
 			if (Character.isDigit((char) c)) {
 				width = width * 10 + (c - '0');
-				c = ((p < n) ? strfrmt.luaByte(p++) : 0);
+				c = ((p < n) ? strfrmt.charAt(p++) : 0);
 			}
 		}
 
 		precision = -1;
 		if (c == '.') {
-			c = ((p < n) ? strfrmt.luaByte(p++) : 0);
+			c = ((p < n) ? strfrmt.charAt(p++) : 0);
 			if (Character.isDigit((char) c)) {
 				precision = c - '0';
-				c = ((p < n) ? strfrmt.luaByte(p++) : 0);
+				c = ((p < n) ? strfrmt.charAt(p++) : 0);
 				if (Character.isDigit((char) c)) {
 					precision = precision * 10 + (c - '0');
-					c = ((p < n) ? strfrmt.luaByte(p++) : 0);
+					c = ((p < n) ? strfrmt.charAt(p++) : 0);
 				}
 			} else {
 				precision = 0;
@@ -263,10 +263,10 @@ public class FormatDesc {
 	public void format(Buffer buf, LuaString s) {
 		int nullindex = s.indexOf((byte) '\0', 0);
 		if (nullindex != -1) {
-			s = s.substring(0, nullindex);
+			s = s.substringOfEnd(0, nullindex);
 		}
 		if (precision >= 0 && s.length() > precision) {
-			s = s.substring(0, precision);
+			s = s.substringOfEnd(0, precision);
 		}
 
 		int minwidth = s.length();

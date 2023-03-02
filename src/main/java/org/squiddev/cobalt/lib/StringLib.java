@@ -87,10 +87,10 @@ public final class StringLib {
 
 	private static LuaValue lower(LuaState state, LuaValue arg) throws LuaError {
 		LuaString string = arg.checkLuaString();
-		if (string.length == 0) return EMPTYSTRING;
+		if (string.length() == 0) return EMPTYSTRING;
 
-		byte[] value = new byte[string.length];
-		System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+		byte[] value = new byte[string.length()];
+		string.copyTo(value, 0);
 		for (int i = 0; i < value.length; i++) {
 			byte c = value[i];
 			if (c >= 'A' && c <= 'Z') value[i] = (byte) (c | 0x20);
@@ -103,17 +103,17 @@ public final class StringLib {
 		int n = s.length();
 		byte[] b = new byte[n];
 		for (int i = 0, j = n - 1; i < n; i++, j--) {
-			b[j] = (byte) s.luaByte(i);
+			b[j] = (byte) s.charAt(i);
 		}
 		return LuaString.valueOf(b);
 	}
 
 	private static LuaValue upper(LuaState state, LuaValue arg) throws LuaError {
 		LuaString string = arg.checkLuaString();
-		if (string.length == 0) return EMPTYSTRING;
+		if (string.length() == 0) return EMPTYSTRING;
 
-		byte[] value = new byte[string.length];
-		System.arraycopy(string.bytes, string.offset, value, 0, value.length);
+		byte[] value = new byte[string.length()];
+		string.copyTo(value, 0);
 		for (int i = 0; i < value.length; i++) {
 			byte c = value[i];
 			if (c >= 'a' && c <= 'z') value[i] = (byte) (c & ~0x20);
@@ -148,7 +148,7 @@ public final class StringLib {
 		@Override
 		public Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			LuaString src = args.arg(1).checkLuaString();
-			FormatState format = new FormatState(src, new Buffer(src.length), args);
+			FormatState format = new FormatState(src, new Buffer(src.length()), args);
 			di.state = format;
 			return StringFormat.format(state, format);
 		}
@@ -173,12 +173,12 @@ public final class StringLib {
 	 */
 	private static Varargs byte$(LuaState state, Varargs args) throws LuaError {
 		LuaString s = args.arg(1).checkLuaString();
-		int l = s.length;
+		int l = s.length();
 		int posi = posRelative(args.arg(2).optInteger(1), l);
 		int pose = posRelative(args.arg(3).optInteger(posi), l);
 		if (posi <= 0) posi = 1;
 		if (pose > l) pose = l;
-		if (posi == pose) return valueOf(s.luaByte(posi - 1)); // Do the common case first.
+		if (posi == pose) return valueOf(s.charAt(posi - 1)); // Do the common case first.
 
 		if (posi > pose) return NONE; // empty interval; return no values
 		int n = pose - posi + 1;
@@ -187,7 +187,7 @@ public final class StringLib {
 		}
 		LuaValue[] v = new LuaValue[n];
 		for (int i = 0; i < n; i++) {
-			v[i] = valueOf(s.luaByte(posi + i - 1));
+			v[i] = valueOf(s.charAt(posi + i - 1));
 		}
 		return varargsOf(v);
 	}
@@ -265,7 +265,7 @@ public final class StringLib {
 		sep.copyTo(bytes, len);
 
 		// Now, copy the first 0..i characters to i+1..i*2, where i doubles each time.
-		int sliceLength = len + sep.length;
+		int sliceLength = len + sep.length();
 		long endIndex = newLen - len;
 		for (long i = sliceLength; i != 0 && i < endIndex; i <<= 1) {
 			System.arraycopy(bytes, 0, bytes, (int) i, (int) (Math.min(i << 1, endIndex) - i));
@@ -298,7 +298,7 @@ public final class StringLib {
 		if (start < 1) start = 1;
 		if (end > l) end = l;
 		if (start <= end) {
-			return s.substring(start - 1, end);
+			return s.substringOfEnd(start - 1, end);
 		} else {
 			return EMPTYSTRING;
 		}

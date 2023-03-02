@@ -89,7 +89,7 @@ public class OsLib {
 
 		Calendar d = Calendar.getInstance(Locale.ROOT);
 		d.setTime(new Date(time * 1000));
-		if (format.startsWith('!')) {
+		if (format.startsWith((byte)'!')) {
 			time -= timeZoneOffset(d);
 			d.setTime(new Date(time * 1000));
 			format = format.substring(1);
@@ -109,7 +109,7 @@ public class OsLib {
 			return tbl;
 		}
 
-		Buffer buffer = new Buffer(format.length);
+		Buffer buffer = new Buffer(format.length());
 		formatDate(buffer, d, format);
 		return buffer.toLuaString();
 	}
@@ -263,25 +263,24 @@ public class OsLib {
 	private static final FormatDesc SPACE_TWO = FormatDesc.ofUnsafe("2d");
 
 	private static void formatDate(Buffer result, Calendar date, LuaString format) throws LuaError {
-		byte[] fmt = format.bytes;
-		int n = format.length + format.offset;
-		for (int i = format.offset; i < n; ) {
+		int n = format.length();
+		for (int i = 0; i < format.length(); ) {
 			byte c;
-			switch (c = fmt[i++]) {
+			switch (c = format.byteAt(i++)) {
 				case '\n':
-					result.append("\n");
+					result.append('\n');
 					break;
 				default:
 					result.append(c);
 					break;
 				case '%':
 					if (i >= n) break;
-					switch (c = fmt[i++]) {
+					switch (c = format.byteAt(i++)) {
 						default:
 							throw argError(1, "invalid conversion specifier '%" + (char) c + "'");
 
 						case '%':
-							result.append((byte) '%');
+							result.append('%');
 							break;
 						case 'a':
 							result.append(WEEKDAY_NAME_ABBREV[date.get(Calendar.DAY_OF_WEEK) - 1]);

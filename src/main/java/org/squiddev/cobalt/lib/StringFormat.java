@@ -54,7 +54,7 @@ class StringFormat {
 		Buffer result = format.buffer;
 
 		for (int i = format.i; i < n; ) {
-			int c = fmt.luaByte(i++);
+			int c = fmt.charAt(i++);
 			if (c != L_ESC) {
 				result.append((byte) c);
 				continue;
@@ -62,7 +62,7 @@ class StringFormat {
 
 			if (i >= n) throw new LuaError("invalid option '%' to 'format'");
 
-			if (fmt.luaByte(i) == L_ESC) {
+			if (fmt.charAt(i) == L_ESC) {
 				i++;
 				result.append((byte) L_ESC);
 				continue;
@@ -147,7 +147,7 @@ class StringFormat {
 		int c;
 		buf.append((byte) '"');
 		for (int i = 0, n = s.length(); i < n; i++) {
-			switch (c = s.luaByte(i)) {
+			switch (c = s.charAt(i)) {
 				case '"':
 				case '\\':
 				case '\n':

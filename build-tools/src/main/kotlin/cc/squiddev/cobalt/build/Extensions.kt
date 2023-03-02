@@ -108,6 +108,7 @@ fun AbstractInsnNode.getResultType(): Type? = when (this.opcode) {
 	GETSTATIC, GETFIELD -> Type.getType((this as FieldInsnNode).desc)
 	NEW, CHECKCAST -> Type.getObjectType((this as TypeInsnNode).desc)
 	INVOKEVIRTUAL, INVOKEINTERFACE, INVOKESTATIC, INVOKESPECIAL -> Type.getReturnType((this as MethodInsnNode).desc)
+	INVOKEDYNAMIC -> Type.getReturnType((this as InvokeDynamicInsnNode).desc)
 	INSTANCEOF -> Type.INT_TYPE
 
 	IFEQ, IFNE, IFLT, IFGT, IFLE, IFGE, IFNULL, IFNONNULL, // Unary comparison

@@ -38,6 +38,7 @@ import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
@@ -214,7 +215,7 @@ public class BaseLib {
 			if (base < 2 || base > 36) {
 				throw ErrorFactory.argError(2, "base out of range");
 			}
-			return arg1.checkLuaString().tonumber(base);
+			return arg1.checkLuaString().toNumber(base);
 		}
 	}
 
@@ -241,7 +242,7 @@ public class BaseLib {
 			case Constants.TTABLE:
 				return ValueFactory.valueOf(v.checkTable().length());
 			case Constants.TSTRING:
-				return ValueFactory.valueOf(v.checkLuaString().length);
+				return ValueFactory.valueOf(v.checkLuaString().length());
 			default:
 				throw ErrorFactory.argError(1, "table or string expected");
 		}
@@ -356,10 +357,11 @@ public class BaseLib {
 	}
 
 	private static class FunctionInputReader implements InputReader {
+		private static final ByteBuffer EMPTY = ByteBuffer.allocate(0);
+
 		private final LuaState state;
-		final LuaValue func;
-		byte[] bytes;
-		int offset, remaining = 0;
+		private final LuaValue func;
+		private ByteBuffer bytes = EMPTY;
 
 		FunctionInputReader(LuaState state, LuaValue func) {
 			this.state = state;
@@ -368,7 +370,7 @@ public class BaseLib {
 
 		@Override
 		public int read() throws UnwindThrowable {
-			if (remaining <= 0) {
+			if (!bytes.hasRemaining()) {
 				LuaValue value;
 				try {
 					value = OperationHelper.call(state, func);
@@ -379,8 +381,7 @@ public class BaseLib {
 				if (!fillBuffer(value)) return -1;
 			}
 
-			--remaining;
-			return (bytes[offset++] & 0xFF);
+			return Byte.toUnsignedInt(bytes.get());
 		}
 
 		@Override
@@ -394,10 +395,8 @@ public class BaseLib {
 			if (!value.isString()) throw new UncheckedLuaError(new LuaError("reader function must return a string"));
 
 			LuaString ls = OperationHelper.toStringDirect(value);
-			bytes = ls.bytes;
-			offset = ls.offset;
-			remaining = ls.length;
-			return remaining > 0;
+			bytes = ls.toBuffer();
+			return bytes.hasRemaining();
 		}
 	}
 }

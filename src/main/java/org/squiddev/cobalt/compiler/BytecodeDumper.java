@@ -113,7 +113,7 @@ public class BytecodeDumper {
 	void dumpString(LuaString s) throws IOException {
 		final int len = s.length();
 		dumpInt(len + 1);
-		s.write(writer, 0, len);
+		s.write((OutputStream) writer);
 		writer.write(0);
 	}
 

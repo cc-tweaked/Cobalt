@@ -66,7 +66,7 @@ public class StringTest {
 		is.reset();
 		assertEquals('e', is.read());
 
-		LuaString substr = str.substring(1, 4);
+		LuaString substr = str.substringOfEnd(1, 4);
 		assertEquals(3, OperationHelper.length(state, substr).toInteger());
 
 		is.close();
@@ -105,48 +105,6 @@ public class StringTest {
 		LuaString ls = LuaString.valueOf(before);
 		String after = ls.toString();
 		assertEquals(userFriendly(before), userFriendly(after));
-
-	}
-
-	@Test
-	public void testUtf820482051() {
-		int i = 2048;
-		char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
-		String before = new String(c) + " " + i + "-" + (i + 4);
-		LuaString ls = LuaString.valueOfUtf8(before);
-		String after = ls.toUtf8();
-		assertEquals(userFriendly(before), userFriendly(after));
-
-	}
-
-	@Test
-	public void testUtf8() {
-		for (int i = 4; i < 0xffff; i += 4) {
-			char[] c = {(char) (i), (char) (i + 1), (char) (i + 2), (char) (i + 3)};
-			String before = new String(c) + " " + i + "-" + (i + 4);
-			LuaString ls = LuaString.valueOfUtf8(before);
-			String after = ls.toUtf8();
-			assertEquals(userFriendly(before), userFriendly(after));
-		}
-		char[] c = {(char) (1), (char) (2), (char) (3)};
-		String before = new String(c) + " 1-3";
-		LuaString ls = LuaString.valueOfUtf8(before);
-		String after = ls.toUtf8();
-		assertEquals(userFriendly(before), userFriendly(after));
-
-	}
-
-	@Test
-	public void testSpotCheckUtf8() {
-		byte[] bytes = {(byte) 194, (byte) 160, (byte) 194, (byte) 161, (byte) 194, (byte) 162, (byte) 194, (byte) 163, (byte) 194, (byte) 164};
-		String actual = LuaString.valueOf(bytes).toUtf8();
-		char[] d = actual.toCharArray();
-		assertEquals(160, d[0]);
-		assertEquals(161, d[1]);
-		assertEquals(162, d[2]);
-		assertEquals(163, d[3]);
-		assertEquals(164, d[4]);
-
 	}
 
 	@Test

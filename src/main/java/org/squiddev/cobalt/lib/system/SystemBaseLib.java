@@ -83,7 +83,11 @@ public class SystemBaseLib {
 				if (i > 1) out.write('\t');
 				LuaString s = OperationHelper.call(state, tostring, args.arg(i)).strvalue();
 				int z = s.indexOf((byte) 0, 0);
-				out.write(s.bytes, s.offset, z >= 0 ? z : s.length);
+
+				int len = z >= 0 ? z : s.length();
+				byte[] bytes = new byte[len];
+				s.copyTo(0, bytes, 0, len);
+				out.write(bytes, 0, len);
 			}
 			out.println();
 			return Constants.NONE;

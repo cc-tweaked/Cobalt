@@ -61,7 +61,7 @@ public abstract class LuaBaseString extends LuaValue {
 
 	@Override
 	public final LuaValue toNumber() {
-		return tonumber(10);
+		return toNumber(10);
 	}
 
 	@Override
@@ -159,10 +159,10 @@ public abstract class LuaBaseString extends LuaValue {
 	 * convert to a number using a supplied base, or NIL if it can't be converted
 	 *
 	 * @param base the base to use, such as 10
-	 * @return IntValue, DoubleValue, or NIL depending on the content of the string.
+	 * @return {@link LuaNumber} or {@link Constants#NIL} depending on the content of the string.
 	 * @see LuaValue#toNumber()
 	 */
-	public final LuaValue tonumber(int base) {
+	public final LuaValue toNumber(int base) {
 		double d = scanNumber(base);
 		return Double.isNaN(d) ? NIL : ValueFactory.valueOf(d);
 	}

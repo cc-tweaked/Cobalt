@@ -225,8 +225,8 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue fal = Constants.FALSE;
 		LuaValue zer = Constants.ZERO;
 		LuaValue one = Constants.ONE;
-		LuaValue abc = valueOf("abcdef").substring(0, 3);
-		LuaValue def = valueOf("abcdef").substring(3, 6);
+		LuaValue abc = valueOf("abcdef").substringOfEnd(0, 3);
+		LuaValue def = valueOf("abcdef").substringOfEnd(3, 6);
 		LuaValue pi = valueOf(Math.PI);
 		LuaValue ee = valueOf(Math.E);
 		LuaValue tbl = new LuaTable();
@@ -1201,75 +1201,29 @@ public class UnaryBinaryOperatorsTest {
 
 	@Test
 	public void testBuffer() {
-		LuaString abc = valueOf("abcdefghi").substring(0, 3);
-		LuaString def = valueOf("abcdefghi").substring(3, 6);
-		LuaString ghi = valueOf("abcdefghi").substring(6, 9);
+		LuaString abc = valueOf("abcdefghi").substringOfEnd(0, 3);
+		LuaString def = valueOf("abcdefghi").substringOfEnd(3, 6);
+		LuaString ghi = valueOf("abcdefghi").substringOfEnd(6, 9);
 		LuaString n123 = valueOf(123).checkLuaString();
 
 		// basic append
 		Buffer b = new Buffer();
-		assertEquals("", b.value().toString());
+		assertEquals("", ((LuaValue) b.toLuaString()).toString());
 		b.append(def);
-		assertEquals("def", b.value().toString());
+		assertEquals("def", ((LuaValue) b.toLuaString()).toString());
 		b.append(abc);
-		assertEquals("defabc", b.value().toString());
+		assertEquals("defabc", ((LuaValue) b.toLuaString()).toString());
 		b.append(ghi);
-		assertEquals("defabcghi", b.value().toString());
+		assertEquals("defabcghi", ((LuaValue) b.toLuaString()).toString());
 		b.append(n123);
-		assertEquals("defabcghi123", b.value().toString());
-
-		// basic prepend
-		b = new Buffer();
-		assertEquals("", b.value().toString());
-		b.prepend(def.strvalue());
-		assertEquals("def", b.value().toString());
-		b.prepend(ghi.strvalue());
-		assertEquals("ghidef", b.value().toString());
-		b.prepend(abc.strvalue());
-		assertEquals("abcghidef", b.value().toString());
-		b.prepend(n123.strvalue());
-		assertEquals("123abcghidef", b.value().toString());
-
-		// mixed append, prepend
-		b = new Buffer();
-		assertEquals("", b.value().toString());
-		b.append(def);
-		assertEquals("def", b.value().toString());
-		b.append(abc);
-		assertEquals("defabc", b.value().toString());
-		b.prepend(ghi.strvalue());
-		assertEquals("ghidefabc", b.value().toString());
-		b.prepend(n123.strvalue());
-		assertEquals("123ghidefabc", b.value().toString());
-		b.append(def);
-		assertEquals("123ghidefabcdef", b.value().toString());
-		b.append(abc);
-		assertEquals("123ghidefabcdefabc", b.value().toString());
-		b.prepend(ghi.strvalue());
-		assertEquals("ghi123ghidefabcdefabc", b.value().toString());
-		b.prepend(n123.strvalue());
-		assertEquals("123ghi123ghidefabcdefabc", b.value().toString());
-
-		// value
-		b = new Buffer(def);
-		assertEquals("def", b.value().toString());
-		b.append(abc);
-		assertEquals("defabc", b.value().toString());
-		b.prepend(ghi.strvalue());
-		assertEquals("ghidefabc", b.value().toString());
-		b.setvalue(def);
-		assertEquals("def", b.value().toString());
-		b.prepend(ghi.strvalue());
-		assertEquals("ghidef", b.value().toString());
-		b.append(abc);
-		assertEquals("ghidefabc", b.value().toString());
+		assertEquals("defabcghi123", ((LuaValue) b.toLuaString()).toString());
 	}
 
 	@Test
 	public void testConcat() throws LuaError, UnwindThrowable {
-		LuaValue abc = valueOf("abcdefghi").substring(0, 3);
-		LuaValue def = valueOf("abcdefghi").substring(3, 6);
-		LuaValue ghi = valueOf("abcdefghi").substring(6, 9);
+		LuaValue abc = valueOf("abcdefghi").substringOfEnd(0, 3);
+		LuaValue def = valueOf("abcdefghi").substringOfEnd(3, 6);
+		LuaValue ghi = valueOf("abcdefghi").substringOfEnd(6, 9);
 		LuaValue n123 = valueOf(123);
 
 		assertEquals("abc", abc.toString());
@@ -1286,8 +1240,8 @@ public class UnaryBinaryOperatorsTest {
 
 	@Test
 	public void testConcatMetatag() throws LuaError, UnwindThrowable {
-		LuaValue def = valueOf("abcdefghi").substring(3, 6);
-		LuaValue ghi = valueOf("abcdefghi").substring(6, 9);
+		LuaValue def = valueOf("abcdefghi").substringOfEnd(3, 6);
+		LuaValue ghi = valueOf("abcdefghi").substringOfEnd(6, 9);
 		LuaValue tru = Constants.TRUE;
 		LuaValue fal = Constants.FALSE;
 		LuaValue tbl = new LuaTable();

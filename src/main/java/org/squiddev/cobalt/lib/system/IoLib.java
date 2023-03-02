@@ -86,9 +86,9 @@ public class IoLib {
 
 		public void write(LuaString s) throws IOException {
 			if (os != null) {
-				os.write(s.bytes, s.offset, s.length);
+				s.write(os);
 			} else if (file != null) {
-				file.write(s.bytes, s.offset, s.length);
+				s.write(file);
 			} else {
 				throw new IOException("not implemented");
 			}
@@ -515,8 +515,8 @@ public class IoLib {
 					break;
 				case TSTRING:
 					fmt = ai.checkLuaString();
-					if (fmt.length >= 2 && fmt.bytes[fmt.offset] == '*') {
-						switch (fmt.bytes[fmt.offset + 1]) {
+					if (fmt.length() >= 2 && fmt.charAt(0) == '*') {
+						switch (fmt.charAt(1)) {
 							case 'n':
 								vi = readNumber(f);
 								break item;

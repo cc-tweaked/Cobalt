@@ -158,7 +158,7 @@ class StringMatch {
 		LuaString p = gsub.pattern;
 		LuaValue repl = gsub.replace;
 		int max_s = gsub.maxS;
-		final boolean anchor = p.length() > 0 && p.charAt(0) == '^';
+		final boolean anchor = p.startsWith((byte)'^');
 
 		Buffer lbuf = gsub.buffer;
 		MatchState ms = gsub.ms;
@@ -188,7 +188,7 @@ class StringMatch {
 			if (res != -1 && res > soffset) {
 				soffset = res;
 			} else if (soffset < srclen) {
-				lbuf.append((byte) src.luaByte(soffset++));
+				lbuf.append((byte) src.charAt(soffset++));
 			} else {
 				break;
 			}
@@ -196,7 +196,7 @@ class StringMatch {
 				break;
 			}
 		}
-		lbuf.append(src.substring(soffset, srclen));
+		lbuf.append(src.substringOfEnd(soffset, srclen));
 		return varargsOf(lbuf.toLuaString(), valueOf(gsub.n));
 	}
 
@@ -239,7 +239,7 @@ class StringMatch {
 
 			boolean anchor = false;
 			int poff = 0;
-			if (pat.length() > 0 && pat.luaByte(0) == '^') {
+			if (pat.startsWith((byte) '^')) {
 				anchor = true;
 				poff = 1;
 			}
@@ -301,7 +301,7 @@ class StringMatch {
 		int count;
 
 		GSubState(LuaState state, LuaString src, LuaString pattern, LuaValue replace, int maxS) {
-			this.buffer = new Buffer(src.length);
+			this.buffer = new Buffer(src.length());
 			this.string = src;
 			this.pattern = pattern;
 			this.replace = replace;
@@ -336,16 +336,16 @@ class StringMatch {
 		private void add_s(Buffer lbuf, LuaString news, int soff, int e) throws LuaError {
 			int l = news.length();
 			for (int i = 0; i < l; ++i) {
-				byte b = (byte) news.luaByte(i);
+				byte b = (byte) news.charAt(i);
 				if (b != L_ESC) {
 					lbuf.append(b);
 				} else {
 					++i; // skip ESC
-					b = i < l ? (byte) news.luaByte(i) : 0;
+					b = i < l ? (byte) news.charAt(i) : 0;
 					if (!Character.isDigit((char) b)) {
 						lbuf.append(b);
 					} else if (b == '0') {
-						lbuf.append(s.substring(soff, e));
+						lbuf.append(s.substringOfEnd(soff, e));
 					} else {
 						lbuf.append(push_onecapture(b - '1', soff, e).strvalue());
 					}
@@ -381,7 +381,7 @@ class StringMatch {
 
 		public void finishAddValue(Buffer lbuf, int soffset, int end, LuaValue repl) throws LuaError {
 			if (!repl.toBoolean()) {
-				repl = s.substring(soffset, end);
+				repl = s.substringOfEnd(soffset, end);
 			} else if (!repl.isString()) {
 				throw new LuaError("invalid replacement value (a " + repl.typeName() + ")");
 			}
@@ -406,7 +406,7 @@ class StringMatch {
 		private LuaValue push_onecapture(int i, int soff, int end) throws LuaError {
 			if (i >= this.level) {
 				if (i == 0) {
-					return s.substring(soff, end);
+					return s.substringOfEnd(soff, end);
 				} else {
 					throw new LuaError("invalid capture index");
 				}
@@ -419,7 +419,7 @@ class StringMatch {
 					return valueOf(cinit[i] + 1);
 				} else {
 					int begin = cinit[i];
-					return s.substring(begin, begin + l);
+					return s.substringOfEnd(begin, begin + l);
 				}
 			}
 		}
@@ -443,7 +443,7 @@ class StringMatch {
 		}
 
 		int classend(int poffset) throws LuaError {
-			switch (p.luaByte(poffset++)) {
+			switch (p.charAt(poffset++)) {
 				case L_ESC:
 					if (poffset == p.length()) {
 						throw new LuaError("malformed pattern (ends with %)");
@@ -453,15 +453,15 @@ class StringMatch {
 				case '[':
 					if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
 
-					if (p.luaByte(poffset) == '^') {
+					if (p.charAt(poffset) == '^') {
 						poffset++;
 						if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
 					}
 
 					do {
-						if (p.luaByte(poffset++) == L_ESC && poffset < p.length()) poffset++;
+						if (p.charAt(poffset++) == L_ESC && poffset < p.length()) poffset++;
 						if (poffset == p.length()) throw new LuaError("malformed pattern (missing ']')");
-					} while (p.luaByte(poffset) != ']');
+					} while (p.charAt(poffset) != ']');
 					return poffset + 1;
 				default:
 					return poffset;
@@ -512,36 +512,36 @@ class StringMatch {
 
 		boolean matchbracketclass(int c, int poff, int ec) {
 			boolean sig = true;
-			if (p.luaByte(poff + 1) == '^') {
+			if (p.charAt(poff + 1) == '^') {
 				sig = false;
 				poff++;
 			}
 			while (++poff < ec) {
-				if (p.luaByte(poff) == L_ESC) {
+				if (p.charAt(poff) == L_ESC) {
 					poff++;
-					if (match_class(c, p.luaByte(poff))) {
+					if (match_class(c, p.charAt(poff))) {
 						return sig;
 					}
-				} else if ((p.luaByte(poff + 1) == '-') && (poff + 2 < ec)) {
+				} else if ((p.charAt(poff + 1) == '-') && (poff + 2 < ec)) {
 					poff += 2;
-					if (p.luaByte(poff - 2) <= c && c <= p.luaByte(poff)) {
+					if (p.charAt(poff - 2) <= c && c <= p.charAt(poff)) {
 						return sig;
 					}
-				} else if (p.luaByte(poff) == c) return sig;
+				} else if (p.charAt(poff) == c) return sig;
 			}
 			return !sig;
 		}
 
 		boolean singlematch(int c, int poff, int ep) {
-			switch (p.luaByte(poff)) {
+			switch (p.charAt(poff)) {
 				case '.':
 					return true;
 				case L_ESC:
-					return match_class(c, p.luaByte(poff + 1));
+					return match_class(c, p.charAt(poff + 1));
 				case '[':
 					return matchbracketclass(c, poff, ep - 1);
 				default:
-					return p.luaByte(poff) == c;
+					return p.charAt(poff) == c;
 			}
 		}
 
@@ -559,9 +559,9 @@ class StringMatch {
 				if (poffset == p.length()) {
 					return soffset;
 				}
-				switch (p.luaByte(poffset)) {
+				switch (p.charAt(poffset)) {
 					case '(':
-						if (++poffset < p.length() && p.luaByte(poffset) == ')') {
+						if (++poffset < p.length() && p.charAt(poffset) == ')') {
 							return start_capture(soffset, poffset + 1, CAP_POSITION);
 						} else {
 							return start_capture(soffset, poffset, CAP_UNFINISHED);
@@ -572,7 +572,7 @@ class StringMatch {
 						if (poffset + 1 == p.length()) {
 							throw new LuaError("malformed pattern (ends with '%')");
 						}
-						switch (p.luaByte(poffset + 1)) {
+						switch (p.charAt(poffset + 1)) {
 							case 'b':
 								soffset = matchbalance(soffset, poffset + 2);
 								if (soffset == -1) return -1;
@@ -580,19 +580,19 @@ class StringMatch {
 								continue;
 							case 'f': {
 								poffset += 2;
-								if (poffset == p.length() || p.luaByte(poffset) != '[') {
+								if (poffset == p.length() || p.charAt(poffset) != '[') {
 									throw new LuaError("missing '[' after '%f' in pattern");
 								}
 								int ep = classend(poffset);
-								int previous = (soffset == 0) ? 0 : s.luaByte(soffset - 1);
-								if (matchbracketclass(previous, poffset, ep - 1) || (soffset < s.length && !matchbracketclass(s.luaByte(soffset), poffset, ep - 1))) {
+								int previous = (soffset == 0) ? 0 : s.charAt(soffset - 1);
+								if (matchbracketclass(previous, poffset, ep - 1) || (soffset < s.length() && !matchbracketclass(s.charAt(soffset), poffset, ep - 1))) {
 									return -1;
 								}
 								poffset = ep;
 								continue;
 							}
 							default: {
-								int c = p.luaByte(poffset + 1);
+								int c = p.charAt(poffset + 1);
 								if (Character.isDigit((char) c)) {
 									soffset = match_capture(soffset, c);
 									if (soffset == -1) {
@@ -609,8 +609,8 @@ class StringMatch {
 						}
 				}
 				int ep = classend(poffset);
-				boolean m = soffset < s.length() && singlematch(s.luaByte(soffset), poffset, ep);
-				int pc = (ep < p.length()) ? p.luaByte(ep) : '\0';
+				boolean m = soffset < s.length() && singlematch(s.charAt(soffset), poffset, ep);
+				int pc = (ep < p.length()) ? p.charAt(ep) : '\0';
 
 				switch (pc) {
 					case '?':
@@ -639,7 +639,7 @@ class StringMatch {
 		int max_expand(int soff, int poff, int ep) throws LuaError {
 			int i = 0;
 			while (soff + i < s.length() &&
-				singlematch(s.luaByte(soff + i), poff, ep)) {
+				singlematch(s.charAt(soff + i), poff, ep)) {
 				i++;
 			}
 			while (i >= 0) {
@@ -657,7 +657,7 @@ class StringMatch {
 				int res = match(soff, ep + 1);
 				if (res != -1) {
 					return res;
-				} else if (soff < s.length() && singlematch(s.luaByte(soff), poff, ep)) {
+				} else if (soff < s.length() && singlematch(s.charAt(soff), poff, ep)) {
 					soff++;
 				} else {
 					return -1;
@@ -706,16 +706,16 @@ class StringMatch {
 			if (poff == plen || poff + 1 == plen) {
 				throw new LuaError("unbalanced pattern");
 			}
-			if (soff >= s.length() || s.luaByte(soff) != p.luaByte(poff)) {
+			if (soff >= s.length() || s.charAt(soff) != p.charAt(poff)) {
 				return -1;
 			} else {
-				int b = p.luaByte(poff);
-				int e = p.luaByte(poff + 1);
+				int b = p.charAt(poff);
+				int e = p.charAt(poff + 1);
 				int cont = 1;
 				while (++soff < s.length()) {
-					if (s.luaByte(soff) == e) {
+					if (s.charAt(soff) == e) {
 						if (--cont == 0) return soff + 1;
-					} else if (s.luaByte(soff) == b) cont++;
+					} else if (s.charAt(soff) == b) cont++;
 				}
 			}
 			return -1;

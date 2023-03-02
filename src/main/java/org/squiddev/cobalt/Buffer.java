@@ -24,31 +24,17 @@
  */
 package org.squiddev.cobalt;
 
-
 /**
- * String buffer for use in string library methods, optimized for production
- * of StrValue instances.
- *
- * The buffer can begin initially as a wrapped {@link LuaValue}
- * and only when concatenation actually occurs are the bytes first copied.
- *
- * To convert back to a {@link LuaValue} again,
- * the function {@link Buffer#value()} is used.
+ * String buffer for use in string library methods, optimized for producing {@link LuaString} instances.
  *
  * @see LuaValue
  * @see LuaString
  */
 public final class Buffer {
-
 	/**
 	 * Default capacity for a buffer: 64
 	 */
 	private static final int DEFAULT_CAPACITY = 64;
-
-	/**
-	 * Shared static array with no bytes
-	 */
-	private static final byte[] NOBYTES = {};
 
 	/**
 	 * Bytes in this buffer
@@ -59,16 +45,6 @@ public final class Buffer {
 	 * Length of this buffer
 	 */
 	private int length;
-
-	/**
-	 * Offset into the byte array
-	 */
-	private int offset;
-
-	/**
-	 * Value of this buffer, when not represented in bytes
-	 */
-	private LuaString value;
 
 	/**
 	 * Create buffer with default capacity
@@ -87,41 +63,6 @@ public final class Buffer {
 	public Buffer(int initialCapacity) {
 		bytes = new byte[initialCapacity];
 		length = 0;
-		offset = 0;
-		value = null;
-	}
-
-	/**
-	 * Create buffer with specified initial value
-	 *
-	 * @param value the initial value
-	 */
-	public Buffer(LuaString value) {
-		bytes = NOBYTES;
-		length = offset = 0;
-		this.value = value;
-	}
-
-	/**
-	 * Get buffer contents as a {@link LuaValue}
-	 *
-	 * @return value as a {@link LuaValue}, converting as necessary
-	 */
-	public LuaValue value() {
-		return value != null ? value : this.toLuaString();
-	}
-
-	/**
-	 * Set buffer contents as a {@link LuaValue}
-	 *
-	 * @param value value to set
-	 * @return {@code this}
-	 */
-	public Buffer setvalue(LuaString value) {
-		bytes = NOBYTES;
-		offset = length = 0;
-		this.value = value;
-		return this;
 	}
 
 	/**
@@ -129,9 +70,9 @@ public final class Buffer {
 	 *
 	 * @return the value as a {@link LuaString}
 	 */
-	public final LuaString toLuaString() {
-		realloc(length, 0);
-		return LuaString.valueOf(bytes, offset, length);
+	public LuaString toLuaString() {
+		realloc(length);
+		return LuaString.valueOf(bytes, 0, length);
 	}
 
 	/**
@@ -141,32 +82,28 @@ public final class Buffer {
 	 */
 	@Override
 	public String toString() {
-		return value().toString();
+		return toLuaString().toString();
 	}
 
 	/**
 	 * Append a single byte to the buffer.
 	 *
 	 * @param b The byte to append
-	 * @return {@code this} to allow call chaining
 	 */
-	public final Buffer append(byte b) {
-		makeRoom(0, 1);
-		bytes[offset + length++] = b;
-		return this;
+	public void append(byte b) {
+		ensure(1);
+		bytes[length++] = b;
 	}
 
 	/**
 	 * Append an array of bytes to the buffer.
 	 *
 	 * @param b The bytes to append
-	 * @return {@code this} to allow call chaining
 	 */
-	public final Buffer append(byte[] b) {
-		makeRoom(0, b.length);
-		System.arraycopy(b, 0, bytes, offset + length, b.length);
+	public void append(byte[] b) {
+		ensure(b.length);
+		System.arraycopy(b, 0, bytes, length, b.length);
 		length += b.length;
-		return this;
 	}
 
 	/**
@@ -175,39 +112,21 @@ public final class Buffer {
 	 * @param b      The bytes to append
 	 * @param start  The start index
 	 * @param length The number of values to append
-	 * @return {@code this} to allow call chaining
 	 */
-	public final Buffer append(byte[] b, int start, int length) {
-		makeRoom(0, length);
-		System.arraycopy(b, start, bytes, offset + this.length, length);
+	public void append(byte[] b, int start, int length) {
+		ensure(length);
+		System.arraycopy(b, start, bytes, this.length, length);
 		this.length += length;
-		return this;
 	}
 
 	/**
 	 * Append a single character to the buffer.
 	 *
 	 * @param c The byte to append
-	 * @return {@code this} to allow call chaining
 	 */
-	public final Buffer append(char c) {
-		makeRoom(0, 1);
-		bytes[offset + length++] = c < 256 ? (byte) c : 63;
-		return this;
-	}
-
-	/**
-	 * Append a character array to the buffer.
-	 *
-	 * @param chars The byte to append
-	 * @return {@code this} to allow call chaining
-	 */
-	public final Buffer append(char[] chars) {
-		final int n = chars.length;
-		makeRoom(0, n);
-		LuaString.encode(chars, bytes, offset + length);
-		length += n;
-		return this;
+	public void append(char c) {
+		ensure(1);
+		bytes[length++] = c < 256 ? (byte) c : 63;
 	}
 
 	/**
@@ -216,31 +135,27 @@ public final class Buffer {
 	 * @param chars  The characters to append
 	 * @param start  The start index
 	 * @param length The number of values to append
-	 * @return {@code this} to allow call chaining
 	 */
-	public Buffer append(char[] chars, int start, int length) {
-		makeRoom(0, length);
-		int j = this.offset + this.length;
+	public void append(char[] chars, int start, int length) {
+		ensure(length);
+		int j = this.length;
 		for (int i = start; i < start + length; i++, j++) {
 			char c = chars[i];
 			bytes[j] = c < 256 ? (byte) c : 63;
 		}
 		this.length += length;
-		return this;
 	}
 
 	/**
 	 * Append a {@link LuaString} to the buffer.
 	 *
 	 * @param str The string to append
-	 * @return {@code this} to allow call chaining
 	 */
-	public final Buffer append(LuaString str) {
-		final int n = str.length;
-		makeRoom(0, n);
-		str.copyTo(0, bytes, offset + length, n);
+	public void append(LuaString str) {
+		final int n = str.length();
+		ensure(n);
+		str.copyTo(0, bytes, length, n);
 		length += n;
-		return this;
 	}
 
 	/**
@@ -248,67 +163,38 @@ public final class Buffer {
 	 * The Java string will be converted to bytes by limiting between 0 and 255
 	 *
 	 * @param str The string to append
-	 * @return {@code this} to allow call chaining
 	 * @see LuaString#encode(String, byte[], int)
 	 */
-	public final Buffer append(String str) {
+	public void append(String str) {
 		final int n = str.length();
-		makeRoom(0, n);
-		LuaString.encode(str, bytes, offset + length);
+		ensure(n);
+		LuaString.encode(str, bytes, length);
 		length += n;
-		return this;
-	}
-
-	/**
-	 * Concatenate bytes from a {@link LuaString} onto the front of this buffer
-	 *
-	 * @param s the left-hand-side value which we will concatenate onto the front of {@code this}
-	 * @return {@link Buffer} for use in call chaining.
-	 */
-	public Buffer prepend(LuaString s) {
-		int n = s.length;
-		makeRoom(n, 0);
-		System.arraycopy(s.bytes, s.offset, bytes, offset - n, n);
-		offset -= n;
-		length += n;
-		value = null;
-		return this;
 	}
 
 	/**
 	 * Ensure there is enough room before and after the bytes.
 	 *
-	 * @param nbefore number of unused bytes which must precede the data after this completes
-	 * @param nafter  number of unused bytes which must follow the data after this completes
+	 * @param space number of unused bytes which must follow the data after this completes
 	 */
-	public final void makeRoom(int nbefore, int nafter) {
-		if (value != null) {
-			LuaString s = value;
-			value = null;
-			length = s.length;
-			offset = nbefore;
-			bytes = new byte[nbefore + length + nafter];
-			System.arraycopy(s.bytes, s.offset, bytes, offset, length);
-		} else if (offset + length + nafter > bytes.length || offset < nbefore) {
-			int n = nbefore + length + nafter;
-			int m = n < 32 ? 32 : Math.max(n, length * 2);
-			realloc(m, nbefore == 0 ? 0 : m - length - nafter);
-		}
+	public void ensure(int space) {
+		int newLength = length + space;
+		if (bytes.length >= newLength) return;
+
+		int m = newLength < 32 ? 32 : Math.max(newLength, length * 2);
+		realloc(m);
 	}
 
 	/**
 	 * Reallocate the internal storage for the buffer
 	 *
-	 * @param newSize   the size of the buffer to use
-	 * @param newOffset the offset to use
+	 * @param newSize the size of the buffer to use
 	 */
-	private void realloc(int newSize, int newOffset) {
-		if (newSize != bytes.length) {
-			byte[] newBytes = new byte[newSize];
-			System.arraycopy(bytes, offset, newBytes, newOffset, length);
-			bytes = newBytes;
-			offset = newOffset;
-		}
-	}
+	private void realloc(int newSize) {
+		if (newSize == bytes.length) return;
 
+		byte[] newBytes = new byte[newSize];
+		System.arraycopy(bytes, 0, newBytes, 0, length);
+		bytes = newBytes;
+	}
 }

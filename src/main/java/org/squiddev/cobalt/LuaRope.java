@@ -29,8 +29,7 @@ public final class LuaRope extends LuaBaseString {
 		int position = 0;
 		for (int i = 0; i < length; i++) {
 			LuaString string = (LuaString) contents[start + i];
-			System.arraycopy(string.bytes, string.offset, out, position, string.length);
-			position += string.length;
+			position = string.copyTo(out, position);
 		}
 
 		return LuaString.valueOf(out);
@@ -43,7 +42,7 @@ public final class LuaRope extends LuaBaseString {
 
 	/**
 	 * Convert a rope into a string, updating it in place.
-	 *
+	 * <p>
 	 * This is effectively a recursive algorithm, but implemented as a basic loop. The ropes themselves act as the
 	 * stack, holding onto the current iteration state of their parent. Unlike strings, ropes are not shared across Lua
 	 * instances, and so we don't need to worry about race conditions.
@@ -77,8 +76,7 @@ public final class LuaRope extends LuaBaseString {
 					string = (LuaString) str;
 				}
 
-				System.arraycopy(string.bytes, string.offset, out, position, string.length);
-				position += string.length;
+				position = string.copyTo(out, position);
 			}
 
 			current.index = 0;

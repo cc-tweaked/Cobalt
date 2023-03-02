@@ -62,8 +62,8 @@ class StringPacker {
 
 		public Info(LuaString string) {
 			this.string = string;
-			this.position = string.offset;
-			this.end = string.offset + string.length;
+			position = 0;
+			end = string.length();
 		}
 
 		Mode setup(int size, Mode mode) {
@@ -79,14 +79,14 @@ class StringPacker {
 	public static int getNum(Info info, int def) {
 		if (info.position >= info.end) return def;
 
-		byte c = info.string.bytes[info.position];
+		byte c = info.string.byteAt(info.position);
 		if (!digit(c)) return def;
 
 		int result = 0;
 		do {
 			result = result * 10 + (c - '0');
 			info.position++;
-		} while (info.position < info.end && digit(c = info.string.bytes[info.position]) && result <= (Integer.MAX_VALUE - 9) / 10);
+		} while (info.position < info.end && digit(c = info.string.byteAt(info.position)) && result <= (Integer.MAX_VALUE - 9) / 10);
 		return result;
 	}
 
@@ -100,33 +100,52 @@ class StringPacker {
 	}
 
 	public static Mode getOption(Info info) throws LuaError {
-		byte c = info.string.bytes[info.position++];
+		byte c = info.string.byteAt(info.position++);
 		switch (c) {
-			case 'b': return info.setup(1, Mode.INT);
-			case 'B': return info.setup(1, Mode.UINT);
-			case 'h': return info.setup(2, Mode.INT);
-			case 'H': return info.setup(2, Mode.UINT);
-			case 'l': return info.setup(8, Mode.INT);
-			case 'L': return info.setup(8, Mode.UINT);
-			case 'j': return info.setup(8, Mode.INT);
-			case 'J': return info.setup(8, Mode.UINT);
-			case 'T': return info.setup(SIZEOF_SIZE_T, Mode.UINT);
-			case 'f': return info.setup(4, Mode.FLOAT);
-			case 'd': return info.setup(8, Mode.DOUBLE);
-			case 'n': return info.setup(8, Mode.DOUBLE);
+			case 'b':
+				return info.setup(1, Mode.INT);
+			case 'B':
+				return info.setup(1, Mode.UINT);
+			case 'h':
+				return info.setup(2, Mode.INT);
+			case 'H':
+				return info.setup(2, Mode.UINT);
+			case 'l':
+				return info.setup(8, Mode.INT);
+			case 'L':
+				return info.setup(8, Mode.UINT);
+			case 'j':
+				return info.setup(8, Mode.INT);
+			case 'J':
+				return info.setup(8, Mode.UINT);
+			case 'T':
+				return info.setup(SIZEOF_SIZE_T, Mode.UINT);
+			case 'f':
+				return info.setup(4, Mode.FLOAT);
+			case 'd':
+				return info.setup(8, Mode.DOUBLE);
+			case 'n':
+				return info.setup(8, Mode.DOUBLE);
 
-			case 'i': return info.setup(getNumLimit(info, 4), Mode.INT);
-			case 'I': return info.setup(getNumLimit(info, 4), Mode.UINT);
-			case 's': return info.setup(getNumLimit(info, SIZEOF_SIZE_T), Mode.STRING);
+			case 'i':
+				return info.setup(getNumLimit(info, 4), Mode.INT);
+			case 'I':
+				return info.setup(getNumLimit(info, 4), Mode.UINT);
+			case 's':
+				return info.setup(getNumLimit(info, SIZEOF_SIZE_T), Mode.STRING);
 			case 'c': {
 				int size = getNum(info, -1);
 				if (size < 0) throw new LuaError("missing size for format option 'c'");
 				return info.setup(size, Mode.CHAR);
 			}
-			case 'z': return info.setup(0, Mode.ZSTR);
-			case 'x': return info.setup(1, Mode.PADDING);
-			case 'X': return info.setup(0, Mode.PADD_ALIGN);
-			case ' ': return info.setup(0, Mode.NONE);
+			case 'z':
+				return info.setup(0, Mode.ZSTR);
+			case 'x':
+				return info.setup(1, Mode.PADDING);
+			case 'X':
+				return info.setup(0, Mode.PADD_ALIGN);
+			case ' ':
+				return info.setup(0, Mode.NONE);
 			case '<':
 			case '=':
 				info.isLittle = true;
@@ -137,7 +156,8 @@ class StringPacker {
 			case '!':
 				info.maxAlign = getNumLimit(info, 8);
 				return info.setup(0, Mode.NONE);
-			default: throw new LuaError("invalid format option '" + (char) c + "'");
+			default:
+				throw new LuaError("invalid format option '" + (char) c + "'");
 		}
 	}
 
@@ -186,7 +206,7 @@ class StringPacker {
 
 	/**
 	 * string.pack (fmt, v1, v2, ...)
-	 *
+	 * <p>
 	 * Returns a binary string containing the values v1, v2, etc.
 	 * serialized in binary form (packed) according to the format string fmt.
 	 */
@@ -239,10 +259,10 @@ class StringPacker {
 
 				case CHAR: {
 					LuaString string = args.arg(i++).checkLuaString();
-					if (string.length > info.size) throw ErrorFactory.argError(i - 1, "string longer than given size");
+					if (string.length() > info.size) throw ErrorFactory.argError(i - 1, "string longer than given size");
 
 					buffer.ensure(info.size);
-					System.arraycopy(string.bytes, string.offset, buffer.output, buffer.offset, string.length);
+					string.copyTo(buffer.output, buffer.offset);
 					buffer.offset += info.size;
 					break;
 				}
@@ -250,27 +270,27 @@ class StringPacker {
 				case ZSTR: {
 					LuaString string = args.arg(i++).checkLuaString();
 
-					int end = string.offset + string.length;
-					for (int j = string.offset; j < end; j++) {
-						if (string.bytes[j] == 0) throw ErrorFactory.argError(i - 1, "string contains zeros");
+					int end = string.length();
+					for (int j = 0; j < end; j++) {
+						if (string.byteAt(j) == 0) throw ErrorFactory.argError(i - 1, "string contains zeros");
 					}
 
-					buffer.ensure(string.length);
-					System.arraycopy(string.bytes, string.offset, buffer.output, buffer.offset, string.length);
-					buffer.offset += string.length + 1;
+					buffer.ensure(string.length());
+					string.copyTo(buffer.output, buffer.offset);
+					buffer.offset += string.length() + 1;
 					break;
 				}
 
 				case STRING: {
 					LuaString string = args.arg(i++).checkLuaString();
-					if (info.size < SIZEOF_SIZE_T && string.length > (1 << (info.size * 8))) {
+					if (info.size < SIZEOF_SIZE_T && string.length() > (1 << (info.size * 8))) {
 						throw ErrorFactory.argError(i - 1, "string length does not fit in given size");
 					}
 
-					packInt(buffer, string.length, info.isLittle, info.size, false);
-					buffer.ensure(string.length);
-					System.arraycopy(string.bytes, string.offset, buffer.output, buffer.offset, string.length);
-					buffer.offset += string.length;
+					packInt(buffer, string.length(), info.isLittle, info.size, false);
+					buffer.ensure(string.length());
+					string.copyTo(buffer.output, buffer.offset);
+					buffer.offset += string.length();
 					break;
 				}
 				case PADDING:
@@ -285,7 +305,7 @@ class StringPacker {
 
 	/**
 	 * string.packsize (fmt)
-	 *
+	 * <p>
 	 * Returns the size of a string resulting from string.pack with the given format.
 	 * The format string cannot have the variable-length options 's' or 'z'.
 	 */
@@ -307,12 +327,12 @@ class StringPacker {
 		return size;
 	}
 
-	private static long unpackInt(byte[] str, int offset, boolean isLittle, int size, boolean signed) throws LuaError {
+	private static long unpackInt(LuaString str, int offset, boolean isLittle, int size, boolean signed) throws LuaError {
 		long res = 0;
 		int limit = Math.min(size, SIZE_LONG);
 		for (int i = limit - 1; i >= 0; i--) {
 			res <<= 8;
-			res |= str[offset + (isLittle ? i : size - 1 - i)] & 0xFF;
+			res |= str.charAt(offset + (isLittle ? i : size - 1 - i));
 		}
 
 		if (size < SIZE_LONG) {
@@ -323,7 +343,7 @@ class StringPacker {
 		} else if (size > SIZE_LONG) {
 			int mask = (!signed || res >= 0) ? 0 : 0xFF;
 			for (int i = limit; i < size; i++) {
-				if ((str[offset + (isLittle ? i : size - 1 - i)] & 0xFF) != mask) {
+				if (str.charAt(offset + (isLittle ? i : size - 1 - i)) != mask) {
 					throw new LuaError(size + "-byte integer does not fit into Lua Integer");
 				}
 			}
@@ -334,7 +354,7 @@ class StringPacker {
 
 	/**
 	 * string.unpack (fmt, s [, pos])
-	 *
+	 * <p>
 	 * Returns the values packed in string s (see string.pack) according to the format string fmt.
 	 * An optional pos marks where to start reading in s (default is 1).
 	 * After the read values, this function also returns the index of the first unread byte in s.
@@ -342,15 +362,15 @@ class StringPacker {
 	static Varargs unpack(Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
 		LuaString str = args.arg(2).checkLuaString();
-		int pos = StringLib.posRelative(args.arg(3).optInteger(1), str.length) - 1;
-		if (pos > str.length || pos < 0) throw ErrorFactory.argError(3, "initial position out of string");
+		int pos = StringLib.posRelative(args.arg(3).optInteger(1), str.length()) - 1;
+		if (pos > str.length() || pos < 0) throw ErrorFactory.argError(3, "initial position out of string");
 
 		List<LuaValue> out = new ArrayList<>();
 		Info info = new Info(fmt);
 		while (info.position < info.end) {
 			Mode mode = getDetails(info, pos);
 
-			if (info.alignTo + info.size + pos > str.length) {
+			if (info.alignTo + info.size + pos > str.length()) {
 				throw ErrorFactory.argError(2, "data string too short");
 			}
 			pos += info.alignTo;
@@ -363,39 +383,39 @@ class StringPacker {
 
 				case INT:
 				case UINT: {
-					long value = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, mode == Mode.INT);
+					long value = unpackInt(str, pos, info.isLittle, info.size, mode == Mode.INT);
 					out.add(valueOf(value));
 					break;
 				}
 				case FLOAT: {
-					long bits = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, false);
+					long bits = unpackInt(str, pos, info.isLittle, info.size, false);
 					float value = Float.intBitsToFloat((int) bits);
 					out.add(valueOf(value));
 					break;
 				}
 				case DOUBLE: {
-					long bits = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, false);
+					long bits = unpackInt(str, pos, info.isLittle, info.size, false);
 					double value = Double.longBitsToDouble(bits);
 					out.add(valueOf(value));
 					break;
 				}
 				case CHAR:
-					out.add(valueOf(str.bytes, str.offset + pos, info.size));
+					out.add(str.substringOfLen(pos, info.size));
 					break;
 				case STRING: {
-					long len = unpackInt(str.bytes, str.offset + pos, info.isLittle, info.size, false);
-					if (info.size + len + pos > str.length) throw ErrorFactory.argError(2, "data string too short");
-					out.add(valueOf(str.bytes, str.offset + pos + info.size, (int) len));
+					long len = unpackInt(str, pos, info.isLittle, info.size, false);
+					if (info.size + len + pos > str.length()) throw ErrorFactory.argError(2, "data string too short");
+					out.add(str.substringOfLen(pos + info.size, (int) len));
 					pos += len;
 					break;
 				}
 				case ZSTR: {
 					int len = 0;
-					for (int i = str.offset + pos, end = str.offset + str.length; i < end; i++, len++) {
-						if (str.bytes[i] == 0) break;
+					for (int i = pos, end = str.length(); i < end; i++, len++) {
+						if (str.charAt(i) == 0) break;
 					}
 
-					out.add(valueOf(str.bytes, str.offset + pos + info.size, len));
+					out.add(str.substringOfLen(pos + info.size, len));
 					pos += len + 1;
 					break;
 				}

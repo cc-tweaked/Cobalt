@@ -130,9 +130,8 @@ public final class LoadState {
 	 * @return source file name
 	 */
 	public static LuaString getSourceName(LuaString name) {
-		if (name.length > 0) {
-			byte first = name.bytes[name.offset];
-			switch (first) {
+		if (name.length() > 0) {
+			switch (name.charAt(0)) {
 				case '@':
 				case '=':
 					return name.substring(1);
@@ -156,15 +155,15 @@ public final class LoadState {
 	private static final LuaString NEW_LINES = valueOf("\r\n");
 
 	public static LuaString getShortName(LuaString name) {
-		if (name.length == 0) return EMPTY_STRING;
-		switch (name.luaByte(0)) {
+		if (name.length() == 0) return EMPTY_STRING;
+		switch (name.charAt(0)) {
 			case '=':
-				return name.substring(1, Math.min(NAME_LENGTH, name.length));
+				return name.substringOfEnd(1, Math.min(NAME_LENGTH, name.length()));
 			case '@': { // out = "source", or "...source"
-				if (name.length - 1 > FILE_LENGTH) {
+				if (name.length() - 1 > FILE_LENGTH) {
 					byte[] bytes = new byte[FILE_LENGTH + 3];
 					REMAINING.copyTo(bytes, 0);
-					name.copyTo(name.length - FILE_LENGTH, bytes, REMAINING.length, FILE_LENGTH);
+					name.copyTo(name.length() - FILE_LENGTH, bytes, REMAINING.length(), FILE_LENGTH);
 					return valueOf(bytes);
 				} else {
 					return name.substring(1);
@@ -176,7 +175,7 @@ public final class LoadState {
 		boolean truncate = false;
 
 		if (len < 0) {
-			len = name.length;
+			len = name.length();
 		} else {
 			// We're not at the end of the string so we add a ...
 			truncate = true;
@@ -189,7 +188,7 @@ public final class LoadState {
 
 		byte[] out = new byte[NAME_LENGTH];
 		STRING.copyTo(out, 0);
-		int offset = STRING.length;
+		int offset = STRING.length();
 		offset = name.copyTo(0, out, offset, len);
 		if (truncate) offset = REMAINING.copyTo(out, offset);
 
