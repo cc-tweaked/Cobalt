@@ -85,7 +85,7 @@ public class SystemBaseLib {
 				if (i > 1) out.write('\t');
 				LuaValue value = OperationHelper.call(state, tostring, args.arg(i));
 				LuaString s = value.checkLuaString();
-				int z = s.indexOf((byte) 0, 0);
+				int z = s.indexOf((byte) 0);
 
 				int len = z >= 0 ? z : s.length();
 				byte[] bytes = new byte[len];

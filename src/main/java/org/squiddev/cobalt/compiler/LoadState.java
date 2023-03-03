@@ -196,7 +196,7 @@ public final class LoadState {
 	}
 
 	public static void checkMode(LuaString mode, String current) throws CompileException {
-		if (mode != null && mode.indexOf((byte) current.charAt(0), 0) == -1) {
+		if (mode != null && mode.indexOf((byte) current.charAt(0)) == -1) {
 			throw new CompileException("attempt to load a " + current + " chunk (mode is " + mode + ")");
 		}
 	}

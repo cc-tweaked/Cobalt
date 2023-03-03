@@ -397,15 +397,14 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	}
 
 	/**
-	 * Find the index of a byte starting at a point in this string
+	 * Find the index of a byte in this string.
 	 *
-	 * @param b     the byte to look for
-	 * @param start the first index in the string
+	 * @param b the byte to look for
 	 * @return index of first match found, or -1 if not found.
 	 */
-	public int indexOf(byte b, int start) {
+	public int indexOf(byte b) {
 		byte[] bytes = bytes();
-		for (int i = 0, j = offset + start; i < length; ++i) {
+		for (int i = 0, j = offset; i < length; ++i) {
 			if (bytes[j++] == b) {
 				return i;
 			}

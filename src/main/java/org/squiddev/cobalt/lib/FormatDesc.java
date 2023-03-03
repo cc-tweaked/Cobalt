@@ -238,7 +238,7 @@ public class FormatDesc {
 	}
 
 	public void format(Buffer buf, LuaString s) {
-		int nullindex = s.indexOf((byte) '\0', 0);
+		int nullindex = s.indexOf((byte) '\0');
 		if (nullindex != -1) {
 			s = s.substringOfEnd(0, nullindex);
 		}

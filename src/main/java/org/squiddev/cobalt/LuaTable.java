@@ -218,9 +218,9 @@ public final class LuaTable extends LuaValue {
 		if (mt != null) {
 			LuaValue mode = mt.rawget(Constants.MODE);
 			if (mode.isString()) {
-				String m = mode.toString();
-				if (m.indexOf('k') >= 0) newWeakKeys = true;
-				if (m.indexOf('v') >= 0) newWeakValues = true;
+				LuaString m = (LuaString) mode.toLuaString();
+				if (m.indexOf((byte) 'k') >= 0) newWeakKeys = true;
+				if (m.indexOf((byte) 'v') >= 0) newWeakValues = true;
 			}
 		}
 
