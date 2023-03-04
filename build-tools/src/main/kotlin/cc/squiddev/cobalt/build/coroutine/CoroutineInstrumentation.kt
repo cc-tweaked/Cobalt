@@ -70,7 +70,7 @@ class CoroutineInstrumentation(
 
 	private fun emitDispatchUnwind(method: MethodNode) {
 		instrumentDispatch(
-			className, method, emitter, super.visitMethod(method.access, method.name, method.desc, method.signature, method.exceptions?.toTypedArray()),
+			method, emitter, super.visitMethod(method.access, method.name, method.desc, method.signature, method.exceptions?.toTypedArray()),
 		)
 	}
 }

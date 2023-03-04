@@ -3,6 +3,7 @@ package org.squiddev.cobalt.unwind;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.UnwindThrowable;
 import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.debug.DebugFrame;
 
 /**
  * Represents the state of a function call which yielded part way through. This function may be {@linkplain
@@ -21,6 +22,22 @@ public interface SuspendedTask<T> {
 	 *                         again to continue execution when this coroutine resumes.
 	 */
 	T resume(Varargs args) throws LuaError, UnwindThrowable;
+
+	/**
+	 * Run the provided action. If it yields, store the resulting suspended task into {@link DebugFrame#state}.
+	 * <p>
+	 * This method should only be used with {@link AutoUnwind} instrumented functions. It will be replaced at compile
+	 * time with a direct dispatch.
+	 *
+	 * @param frame  The current call frame, into which to store our continuation.
+	 * @param action The suspendable action. This should be a constant lambda.
+	 * @return The result of evaluating this function.
+	 * @throws LuaError        If the function threw a runtime error.
+	 * @throws UnwindThrowable If the function yielded.
+	 */
+	static Varargs run(DebugFrame frame, Action<Varargs> action) throws LuaError, UnwindThrowable {
+		throw new AssertionError("Calls to this method should not appear in transformed code.");
+	}
 
 	/**
 	 * Run the provided {@link Action}, asserting that it will never yield.

@@ -433,14 +433,110 @@ private fun protect(childName: Type, method: MethodVisitor, body: () -> Unit) {
 }
 
 /**
+ * Generate a [SUSPENDED_FUNCTION] for a given method reference.
+ *
+ * This generates a constructor (and static factory function) which consumes the function's arguments and stores them
+ * as fields. This is then passed to the original function when the [SUSPENDED_FUNCTION] is called.
+ */
+private fun makeSuspendedFunction(emitter: ClassEmitter, methodReference: Handle): Pair<Type, String> {
+	val childName = Type.getObjectType("${methodReference.owner}\$${methodReference.name}")
+	val argTypes = Type.getArgumentTypes(methodReference.desc)
+	val factoryDesc = Type.getMethodType(childName, *argTypes).descriptor
+
+	emitter.generate(childName.internalName) { cw ->
+		cw.visit(V1_8, ACC_FINAL, childName.internalName, null, OBJECT.internalName, arrayOf(SUSPENDED_FUNCTION.internalName))
+
+		cw.visitField(ACC_PRIVATE, "state", OBJECT.descriptor, null, null).visitEnd()
+		cw.visitField(ACC_PRIVATE, "resumeAt", UNWIND_STATE.descriptor, null, null).visitEnd()
+		for ((i, arg) in argTypes.withIndex()) {
+			cw.visitField(ACC_PRIVATE.or(ACC_FINAL), "arg$i", arg.descriptor, null, null).visitEnd()
+		}
+
+		// Create a constructor which saves each argument (for calling with run())
+		val ctorDesc = Type.getMethodType(Type.VOID_TYPE, *argTypes).descriptor
+		cw.visitMethod(ACC_PRIVATE, "<init>", ctorDesc, null, null).let { ctor ->
+			ctor.visitCode()
+			ctor.visitVarInsn(ALOAD, 0)
+			ctor.visitMethodInsn(INVOKESPECIAL, OBJECT.internalName, "<init>", "()V", false)
+			for ((i, arg) in argTypes.withIndex()) {
+				ctor.visitVarInsn(ALOAD, 0)
+				ctor.visitVarInsn(arg.getOpcode(ILOAD), i + 1)
+				ctor.visitFieldInsn(PUTFIELD, childName.internalName, "arg$i", arg.descriptor)
+			}
+			ctor.visitInsn(RETURN)
+			ctor.visitMaxs(2, argTypes.size + 1)
+			ctor.visitEnd()
+		}
+
+		// Create a constructor which saves each argument (for calling with run())
+		cw.visitMethod(ACC_STATIC, "make", factoryDesc, null, null).let { factory ->
+			factory.visitCode()
+			factory.visitTypeInsn(NEW, childName.internalName)
+			factory.visitInsn(DUP)
+			for ((i, arg) in argTypes.withIndex()) factory.visitVarInsn(arg.getOpcode(ILOAD), i)
+			factory.visitMethodInsn(INVOKESPECIAL, childName.internalName, "<init>", ctorDesc, false)
+			factory.visitInsn(ARETURN)
+			factory.visitMaxs(argTypes.size + 2, argTypes.size)
+			factory.visitEnd()
+		}
+
+		// Call method loads each value and then executes it.
+		cw.visitMethod(
+			ACC_PUBLIC, "call", Type.getMethodDescriptor(OBJECT, LUA_STATE), null,
+			arrayOf(UNWIND_THROWABLE.internalName, LUA_ERROR.internalName),
+		).let { call ->
+			call.visitCode()
+
+			// try { return f(..., null) } catch { ... }
+			for ((i, arg) in argTypes.withIndex()) {
+				call.visitVarInsn(ALOAD, 0)
+				call.visitFieldInsn(GETFIELD, childName.internalName, "arg$i", arg.descriptor)
+			}
+			call.visitInsn(ACONST_NULL)
+			protect(childName, call) {
+				call.visitMethodInsn(INVOKESTATIC, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
+			}
+
+			call.visitMaxs((argTypes.size + 1).coerceAtLeast(3), 2)
+			call.visitEnd()
+		}
+
+		// Call method loads each value and then executes it.
+		cw.visitMethod(
+			ACC_PUBLIC, "resume", Type.getMethodDescriptor(OBJECT, VARARGS), null,
+			arrayOf(UNWIND_THROWABLE.internalName, LUA_ERROR.internalName),
+		).let { resume ->
+			resume.visitCode()
+
+			// this.resumeAt.resumeArgs = args
+			resume.visitVarInsn(ALOAD, 0)
+			resume.visitFieldInsn(GETFIELD, childName.internalName, "resumeAt", UNWIND_STATE.descriptor)
+			resume.visitVarInsn(ALOAD, 1)
+			resume.visitFieldInsn(PUTFIELD, UNWIND_STATE.internalName, "resumeArgs", VARARGS.descriptor)
+
+			// try { return f(..., this.state) } catch { ... }
+			for ((i, arg) in argTypes.withIndex()) {
+				resume.visitVarInsn(ALOAD, 0)
+				resume.visitFieldInsn(GETFIELD, childName.internalName, "arg$i", arg.descriptor)
+			}
+			resume.visitVarInsn(ALOAD, 0)
+			resume.visitFieldInsn(GETFIELD, childName.internalName, "state", OBJECT.descriptor)
+			protect(childName, resume) {
+				resume.visitMethodInsn(INVOKESTATIC, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
+			}
+
+			resume.visitMaxs((argTypes.size + 1).coerceAtLeast(3), 2)
+			resume.visitEnd()
+		}
+	}
+
+	return Pair(childName, factoryDesc)
+}
+
+/**
  * Rewrite methods which call static functions on [SUSPENDED_TASK].
  */
-fun instrumentDispatch(
-	className: String,
-	method: MethodNode,
-	emitter: ClassEmitter,
-	mw: MethodVisitor,
-) {
+fun instrumentDispatch(method: MethodNode, emitter: ClassEmitter, mw: MethodVisitor) {
 	// We do our modifications directly on the MethodNode - it's a bit sad, but much easier as we're dealing with
 	// two adjacent nodes.
 	for (insn in method.instructions) {
@@ -448,7 +544,6 @@ fun instrumentDispatch(
 
 		val invokeInsn = insn.previous as InvokeDynamicInsnNode
 		val methodReference = invokeInsn.bsmArgs[1] as Handle
-		val childName = Type.getObjectType("${methodReference.owner}\$${methodReference.name}")
 		when (insn.name) {
 			"noYield" -> {
 				// We replace the invokeDynamic and noYield call with a try { f() } catch(Pause e) { throw AssertionError() } clase
@@ -479,97 +574,30 @@ fun instrumentDispatch(
 			}
 
 			"toFunction" -> {
-				val argTypes = Type.getArgumentTypes(methodReference.desc)
-				val factoryDesc = Type.getMethodType(childName, *argTypes).descriptor
-
-				emitter.generate(childName.internalName) { cw ->
-					cw.visit(V1_8, ACC_FINAL, childName.internalName, null, OBJECT.internalName, arrayOf(SUSPENDED_FUNCTION.internalName))
-
-					cw.visitField(ACC_PRIVATE, "state", OBJECT.descriptor, null, null).visitEnd()
-					cw.visitField(ACC_PRIVATE, "resumeAt", UNWIND_STATE.descriptor, null, null).visitEnd()
-					for ((i, arg) in argTypes.withIndex()) {
-						cw.visitField(ACC_PRIVATE.or(ACC_FINAL), "arg$i", arg.descriptor, null, null).visitEnd()
-					}
-
-					// Create a constructor which saves each argument (for calling with run())
-					val ctorDesc = Type.getMethodType(Type.VOID_TYPE, *argTypes).descriptor
-					cw.visitMethod(ACC_PRIVATE, "<init>", ctorDesc, null, null).let { ctor ->
-						ctor.visitCode()
-						ctor.visitVarInsn(ALOAD, 0)
-						ctor.visitMethodInsn(INVOKESPECIAL, OBJECT.internalName, "<init>", "()V", false)
-						for ((i, arg) in argTypes.withIndex()) {
-							ctor.visitVarInsn(ALOAD, 0)
-							ctor.visitVarInsn(arg.getOpcode(ILOAD), i + 1)
-							ctor.visitFieldInsn(PUTFIELD, childName.internalName, "arg$i", arg.descriptor)
-						}
-						ctor.visitInsn(RETURN)
-						ctor.visitMaxs(2, argTypes.size + 1)
-						ctor.visitEnd()
-					}
-
-					// Create a constructor which saves each argument (for calling with run())
-					cw.visitMethod(ACC_STATIC, "make", factoryDesc, null, null).let { factory ->
-						factory.visitCode()
-						factory.visitTypeInsn(NEW, childName.internalName)
-						factory.visitInsn(DUP)
-						for ((i, arg) in argTypes.withIndex()) factory.visitVarInsn(arg.getOpcode(ILOAD), i)
-						factory.visitMethodInsn(INVOKESPECIAL, childName.internalName, "<init>", ctorDesc, false)
-						factory.visitInsn(ARETURN)
-						factory.visitMaxs(argTypes.size + 2, argTypes.size)
-						factory.visitEnd()
-					}
-
-					// Call method loads each value and then executes it.
-					cw.visitMethod(
-						ACC_PUBLIC, "call", Type.getMethodDescriptor(OBJECT, LUA_STATE), null,
-						arrayOf(UNWIND_THROWABLE.internalName, LUA_ERROR.internalName),
-					).let { call ->
-						call.visitCode()
-
-						// try { return f(..., null) } catch { ... }
-						for ((i, arg) in argTypes.withIndex()) {
-							call.visitVarInsn(ALOAD, 0)
-							call.visitFieldInsn(GETFIELD, childName.internalName, "arg$i", arg.descriptor)
-						}
-						call.visitInsn(ACONST_NULL)
-						protect(childName, call) {
-							call.visitMethodInsn(INVOKESTATIC, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
-						}
-
-						call.visitMaxs((argTypes.size + 1).coerceAtLeast(3), 2)
-						call.visitEnd()
-					}
-
-					// Call method loads each value and then executes it.
-					cw.visitMethod(
-						ACC_PUBLIC, "resume", Type.getMethodDescriptor(OBJECT, VARARGS), null,
-						arrayOf(UNWIND_THROWABLE.internalName, LUA_ERROR.internalName),
-					).let { resume ->
-						resume.visitCode()
-
-						// this.resumeAt.resumeArgs = args
-						resume.visitVarInsn(ALOAD, 0)
-						resume.visitFieldInsn(GETFIELD, childName.internalName, "resumeAt", UNWIND_STATE.descriptor)
-						resume.visitVarInsn(ALOAD, 1)
-						resume.visitFieldInsn(PUTFIELD, UNWIND_STATE.internalName, "resumeArgs", VARARGS.descriptor)
-
-						// try { return f(..., this.state) } catch { ... }
-						for ((i, arg) in argTypes.withIndex()) {
-							resume.visitVarInsn(ALOAD, 0)
-							resume.visitFieldInsn(GETFIELD, childName.internalName, "arg$i", arg.descriptor)
-						}
-						resume.visitVarInsn(ALOAD, 0)
-						resume.visitFieldInsn(GETFIELD, childName.internalName, "state", OBJECT.descriptor)
-						protect(childName, resume) {
-							resume.visitMethodInsn(INVOKESTATIC, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
-						}
-
-						resume.visitMaxs((argTypes.size + 1).coerceAtLeast(3), 2)
-						resume.visitEnd()
-					}
-				}
+				val (childName, factoryDesc) = makeSuspendedFunction(emitter, methodReference)
 
 				method.instructions.insert(insn, MethodInsnNode(INVOKESTATIC, childName.internalName, "make", factoryDesc, false))
+				method.instructions.remove(invokeInsn)
+				method.instructions.remove(insn)
+			}
+
+			"run" -> {
+				// We create a SuspendedFunction like above and then call run on it. We could probably make this more
+				// efficient by only constructing the object if we yield, but I don't think it's worth it.
+				val (childName, factoryDesc) = makeSuspendedFunction(emitter, methodReference)
+
+				val toInsert = InsnList()
+				toInsert.add(MethodInsnNode(INVOKESTATIC, childName.internalName, "make", factoryDesc, false))
+				// At this point we've got the DebugFrame and SuspendedFunction on the stack. DUP_X1 to turn that into
+				// [SuspendedFunction, DebugFrame, SuspendedFunction], then write our field.
+				toInsert.add(InsnNode(DUP_X1))
+				toInsert.add(FieldInsnNode(PUTFIELD, DEBUG_FRAME.internalName, "state", OBJECT.descriptor))
+				// Then invoke the original method. We pass null as the LuaState, as it's never actually used.
+				toInsert.add(InsnNode(ACONST_NULL))
+				toInsert.add(MethodInsnNode(INVOKEVIRTUAL, childName.internalName, "call", Type.getMethodDescriptor(OBJECT, LUA_STATE)))
+				toInsert.add(TypeInsnNode(CHECKCAST, VARARGS.internalName))
+
+				method.instructions.insert(insn, toInsert)
 				method.instructions.remove(invokeInsn)
 				method.instructions.remove(insn)
 			}

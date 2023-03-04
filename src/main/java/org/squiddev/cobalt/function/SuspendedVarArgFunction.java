@@ -4,6 +4,7 @@ import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.UnwindThrowable;
 import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.unwind.SuspendedFunction;
 import org.squiddev.cobalt.unwind.SuspendedTask;
 
@@ -14,5 +15,9 @@ public abstract class SuspendedVarArgFunction extends ResumableVarArgFunction<Su
 	@Override
 	protected final Varargs resumeThis(LuaState state, SuspendedTask<Varargs> object, Varargs value) throws LuaError, UnwindThrowable {
 		return object.resume(value);
+	}
+
+	public interface Signature {
+		Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable;
 	}
 }

@@ -46,3 +46,6 @@ val LAMBDA_METAFACTORY = Handle(
 	"(Ljava/lang/invoke/MethodHandles\$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
 	false,
 )
+
+/** The [org.squiddev.cobalt.debug.DebugFrame] class */
+val DEBUG_FRAME = Type.getObjectType("org/squiddev/cobalt/debug/DebugFrame")

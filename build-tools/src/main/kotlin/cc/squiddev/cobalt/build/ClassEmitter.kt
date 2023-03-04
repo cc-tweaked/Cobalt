@@ -61,7 +61,12 @@ private class UnorderedPair<T>(private val x: T, private val y: T) {
 }
 
 private val subclassRelations = mapOf(
+	// TODO: Maybe we should infer this when visiting the original classes?
 	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/function/LuaFunction") to "org/squiddev/cobalt/LuaValue",
+	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/LuaInteger") to "org/squiddev/cobalt/LuaValue",
+	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/LuaBoolean") to "org/squiddev/cobalt/LuaValue",
+	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/LuaString") to "org/squiddev/cobalt/LuaValue",
+	UnorderedPair("org/squiddev/cobalt/Varargs", "org/squiddev/cobalt/LuaValue") to "org/squiddev/cobalt/Varargs",
 )
 
 /** A [ClassWriter] extension which avoids loading classes when computing frames. */
