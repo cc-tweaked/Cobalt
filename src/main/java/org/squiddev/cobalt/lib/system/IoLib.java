@@ -536,7 +536,7 @@ public class IoLib {
 				break;
 			}
 		}
-		return i == 0 ? NIL : varargsOf(v, 0, i);
+		return i == 0 ? NIL : ValueFactory.varargsOfCopy(v, 0, i);
 	}
 
 	private static LuaFile checkFile(LuaValue val) throws LuaError {

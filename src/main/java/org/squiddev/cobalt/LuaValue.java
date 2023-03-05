@@ -1017,11 +1017,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	@Override
-	public Varargs asImmutable() {
-		return this;
-	}
-
-	@Override
 	public int count() {
 		return 1;
 	}
@@ -1221,100 +1216,9 @@ public abstract class LuaValue extends Varargs {
 		}
 
 		@Override
-		public Varargs asImmutable() {
-			Varargs rClone = r.asImmutable();
-			return rClone == r ? this : r;
-		}
-
-		@Override
 		public void fill(LuaValue[] array, int offset) {
 			System.arraycopy(v, 0, array, offset, v.length);
 			r.fill(array, offset + v.length);
-		}
-	}
-
-	/**
-	 * Varargs implementation backed by an array of LuaValues
-	 * <p>
-	 * This is an internal class not intended to be used directly.
-	 * Instead use the corresponding static methods on LuaValue.
-	 *
-	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
-	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
-	 */
-	protected static final class ArrayPartVarargs extends DepthVarargs {
-		private Varargs immutable;
-		private final int offset;
-		private final LuaValue[] v;
-		private final int length;
-		private final Varargs more;
-
-		/**
-		 * Construct a Varargs from an array of LuaValue.
-		 * <p>
-		 * This is an internal class not intended to be used directly.
-		 * Instead use the corresponding static methods on LuaValue.
-		 *
-		 * @param v      The values to use
-		 * @param offset Offset in the array
-		 * @param length Length of the varargs
-		 * @see ValueFactory#varargsOf(LuaValue[], int, int)
-		 */
-		public ArrayPartVarargs(LuaValue[] v, int offset, int length) {
-			super(1);
-			this.v = v;
-			this.offset = offset;
-			this.length = length;
-			this.more = Constants.NONE;
-		}
-
-		/**
-		 * Construct a Varargs from an array of LuaValue and additional arguments.
-		 * <p>
-		 * This is an internal class not intended to be used directly.
-		 * Instead use the corresponding static method on LuaValue.
-		 *
-		 * @param v      The values to use
-		 * @param offset Offset in the array
-		 * @param length Length of the varargs
-		 * @param more   Remaining arguments
-		 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
-		 */
-		public ArrayPartVarargs(LuaValue[] v, int offset, int length, Varargs more) {
-			super(depth(more) + 1);
-			this.v = v;
-			this.offset = offset;
-			this.length = length;
-			this.more = more;
-		}
-
-		@Override
-		public LuaValue arg(int i) {
-			return i >= 1 && i <= length ? v[i + offset - 1] : more.arg(i - length);
-		}
-
-		@Override
-		public int count() {
-			return length + more.count();
-		}
-
-		@Override
-		public LuaValue first() {
-			return length > 0 ? v[offset] : more.first();
-		}
-
-		@Override
-		public Varargs asImmutable() {
-			if (this.immutable != null) return this.immutable;
-			LuaValue[] values = new LuaValue[length];
-			System.arraycopy(v, offset, values, 0, length);
-			return this.immutable = new ArrayVarargs(values, more.asImmutable());
-		}
-
-		@Override
-		public void fill(LuaValue[] array, int offset) {
-			System.arraycopy(v, offset, array, offset, length);
-			more.fill(array, offset + length);
 		}
 	}
 
@@ -1359,12 +1263,6 @@ public abstract class LuaValue extends Varargs {
 		@Override
 		public LuaValue first() {
 			return v1;
-		}
-
-		@Override
-		public Varargs asImmutable() {
-			Varargs vClone = v2.asImmutable();
-			return vClone == v2 ? this : new PairVarargs(v1, vClone);
 		}
 
 		@Override

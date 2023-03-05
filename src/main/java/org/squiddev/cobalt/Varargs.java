@@ -43,8 +43,8 @@ package org.squiddev.cobalt;
  * @see ValueFactory#varargsOf(LuaValue, Varargs)
  * @see ValueFactory#varargsOf(LuaValue[], Varargs)
  * @see ValueFactory#varargsOf(LuaValue, LuaValue, Varargs)
- * @see ValueFactory#varargsOf(LuaValue[], int, int)
- * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
+ * @see ValueFactory#varargsOfCopy(LuaValue[], int, int)
+ * @see ValueFactory#varargsOfCopy(LuaValue[], int, int, Varargs)
  * @see LuaValue#subargs(int)
  */
 public abstract class Varargs {
@@ -74,15 +74,6 @@ public abstract class Varargs {
 	 * @see Constants#NIL
 	 */
 	public abstract LuaValue first();
-
-	/**
-	 * Convert this varargs to an immutable variant.
-	 * <p>
-	 * This ensures that we don't mutate the varargs when copying to/from the Lua stack.
-	 *
-	 * @return The immutable variant
-	 */
-	public abstract Varargs asImmutable();
 
 	public abstract void fill(LuaValue[] array, int offset);
 
@@ -241,12 +232,6 @@ public abstract class Varargs {
 		@Override
 		public LuaValue first() {
 			return v.arg(start);
-		}
-
-		@Override
-		public Varargs asImmutable() {
-			Varargs vClone = v.asImmutable();
-			return vClone == v ? this : new SubVarargs(vClone, start, end);
 		}
 
 		@Override

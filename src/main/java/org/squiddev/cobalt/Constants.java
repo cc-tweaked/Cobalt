@@ -288,11 +288,6 @@ public class Constants {
 		}
 
 		@Override
-		public Varargs asImmutable() {
-			return this;
-		}
-
-		@Override
 		public String toString() {
 			return "none";
 		}

@@ -356,7 +356,7 @@ public class PackageLib {
 			return Class.forName(classname).asSubclass(LuaValue.class).getConstructor().newInstance();
 		} catch (ClassNotFoundException cnfe) {
 			return valueOf("\n\tno class '" + classname + "'");
-		} catch (ReflectiveOperationException e) {
+		} catch (Exception e) {
 			return valueOf("\n\tjava load failed on '" + classname + "', " + e);
 		}
 	}

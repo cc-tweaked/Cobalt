@@ -131,7 +131,7 @@ public final class LuaInterpreter {
 
 		return setupCallFinish(
 			state, function,
-			p.isVarArg != 0 && argSize > p.parameters ? ValueFactory.varargsOf(args, argStart + p.parameters, argSize - p.parameters) : NONE,
+			p.isVarArg != 0 && argSize > p.parameters ? ValueFactory.varargsOfCopy(args, argStart + p.parameters, argSize - p.parameters) : NONE,
 			stack, 0
 		);
 	}
@@ -141,7 +141,7 @@ public final class LuaInterpreter {
 		LuaValue[] stack = new LuaValue[p.maxStackSize];
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 
-		varargs = ValueFactory.varargsOf(args, argStart, argSize, varargs);
+		varargs = ValueFactory.varargsOfCopy(args, argStart, argSize, varargs);
 		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
 		return setupCallFinish(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, 0);
@@ -154,7 +154,7 @@ public final class LuaInterpreter {
 
 		DebugState ds = DebugHandler.getDebugState(state);
 		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
-		di.setFunction(function, varargs.asImmutable(), stack, upvalues);
+		di.setFunction(function, varargs, stack, upvalues);
 		di.flags |= flags;
 		di.extras = NONE;
 		di.pc = 0;
@@ -430,8 +430,8 @@ public final class LuaInterpreter {
 							default: {
 								Varargs v = di.extras;
 								args = b > 0 ?
-									ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-									ValueFactory.varargsOf(stack, a + 1, di.top - v.count() - (a + 1), v); // from prev top
+									ValueFactory.varargsOfCopy(stack, a + 1, b - 1) : // exact arg count
+									ValueFactory.varargsOfCopy(stack, a + 1, di.top - v.count() - (a + 1), v); // from prev top
 							}
 						}
 
@@ -457,7 +457,7 @@ public final class LuaInterpreter {
 
 							continue newFrame;
 						} else {
-							Varargs v = functionVal.invoke(state, args.asImmutable());
+							Varargs v = functionVal.invoke(state, args);
 							di.top = a + v.count();
 							di.extras = v;
 							break;
@@ -473,10 +473,10 @@ public final class LuaInterpreter {
 						handler.onReturn(ds, di);
 
 						Varargs ret = switch (b) {
-							case 0 -> ValueFactory.varargsOf(stack, a, top - v.count() - a, v).asImmutable();
+							case 0 -> ValueFactory.varargsOfCopy(stack, a, top - v.count() - a, v);
 							case 1 -> NONE;
 							case 2 -> stack[a];
-							default -> ValueFactory.varargsOf(stack, a, b - 1).asImmutable();
+							default -> ValueFactory.varargsOfCopy(stack, a, b - 1);
 						};
 
 						if ((flags & FLAG_FRESH) != 0) {
@@ -617,9 +617,9 @@ public final class LuaInterpreter {
 				stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
 			default -> {
 				Varargs args = b > 0 ?
-					ValueFactory.varargsOf(stack, a + 1, b - 1) : // exact arg count
-					ValueFactory.varargsOf(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
-				Varargs v = OperationHelper.invoke(state, val, args.asImmutable(), a);
+					ValueFactory.varargsOfCopy(stack, a + 1, b - 1) : // exact arg count
+					ValueFactory.varargsOfCopy(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
+				Varargs v = OperationHelper.invoke(state, val, args, a);
 				if (c > 0) {
 					while (--c > 0) stack[a + c - 1] = v.arg(c);
 				} else {
@@ -797,10 +797,10 @@ public final class LuaInterpreter {
 
 				Varargs ret = switch (b) {
 					case 0 ->
-						ValueFactory.varargsOf(di.stack, a, di.top - di.extras.count() - a, di.extras).asImmutable();
+						ValueFactory.varargsOfCopy(di.stack, a, di.top - di.extras.count() - a, di.extras);
 					case 1 -> NONE;
 					case 2 -> di.stack[a];
-					default -> ValueFactory.varargsOf(di.stack, a, b - 1).asImmutable();
+					default -> ValueFactory.varargsOfCopy(di.stack, a, b - 1);
 				};
 
 				int flags = di.flags;

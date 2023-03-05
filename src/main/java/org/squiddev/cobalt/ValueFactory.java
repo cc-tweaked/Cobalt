@@ -229,7 +229,7 @@ public class ValueFactory {
 	 * @param v The array of {@link LuaValue}s
 	 * @return {@link Varargs} wrapping the supplied values.
 	 * @see ValueFactory#varargsOf(LuaValue, Varargs)
-	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
+	 * @see ValueFactory#varargsOfCopy(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOf(final LuaValue... v) {
 		return switch (v.length) {
@@ -246,7 +246,7 @@ public class ValueFactory {
 	 * @param v The array of {@link LuaValue}s
 	 * @return {@link Varargs} wrapping the supplied values.
 	 * @see ValueFactory#varargsOf(LuaValue, Varargs)
-	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
+	 * @see ValueFactory#varargsOfCopy(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOf(final List<LuaValue> v) {
 		return switch (v.size()) {
@@ -264,7 +264,7 @@ public class ValueFactory {
 	 * @param r {@link Varargs} contain values to include at the end
 	 * @return {@link Varargs} wrapping the supplied values.
 	 * @see ValueFactory#varargsOf(LuaValue[])
-	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
+	 * @see ValueFactory#varargsOfCopy(LuaValue[], int, int, Varargs)
 	 */
 	public static Varargs varargsOf(final LuaValue[] v, Varargs r) {
 		if (v.length == 0) return r;
@@ -286,14 +286,14 @@ public class ValueFactory {
 	 * @param length number of values to include from the array
 	 * @return {@link Varargs} wrapping the supplied values.
 	 * @see ValueFactory#varargsOf(LuaValue[])
-	 * @see ValueFactory#varargsOf(LuaValue[], int, int, Varargs)
+	 * @see ValueFactory#varargsOfCopy(LuaValue[], int, int, Varargs)
 	 */
-	public static Varargs varargsOf(final LuaValue[] v, final int offset, final int length) {
+	public static Varargs varargsOfCopy(final LuaValue[] v, final int offset, final int length) {
 		return switch (length) {
 			case 0 -> Constants.NONE;
 			case 1 -> v[offset];
 			case 2 -> new LuaValue.PairVarargs(v[offset + 0], v[offset + 1]);
-			default -> new LuaValue.ArrayPartVarargs(v, offset, length);
+			default -> new LuaValue.ArrayVarargs(Arrays.copyOfRange(v, offset, offset + length), Constants.NONE);
 		};
 	}
 
@@ -306,9 +306,9 @@ public class ValueFactory {
 	 * @param more   {@link Varargs} contain values to include at the end
 	 * @return {@link Varargs} wrapping the supplied values.
 	 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
-	 * @see ValueFactory#varargsOf(LuaValue[], int, int)
+	 * @see ValueFactory#varargsOfCopy(LuaValue[], int, int)
 	 */
-	public static Varargs varargsOf(final LuaValue[] v, final int offset, final int length, Varargs more) {
+	public static Varargs varargsOfCopy(final LuaValue[] v, final int offset, final int length, Varargs more) {
 		if (length == 0) return more;
 
 		if (Varargs.DepthVarargs.depth(more) > MAX_DEPTH) {
@@ -318,7 +318,7 @@ public class ValueFactory {
 			return new LuaValue.ArrayVarargs(values, Constants.NONE);
 		}
 
-		return length == 1 ? new LuaValue.PairVarargs(v[offset], more) : new LuaValue.ArrayPartVarargs(v, offset, length, more);
+		return length == 1 ? new LuaValue.PairVarargs(v[offset], more) : new LuaValue.ArrayVarargs(Arrays.copyOfRange(v, offset, offset + length), more);
 	}
 
 	/**

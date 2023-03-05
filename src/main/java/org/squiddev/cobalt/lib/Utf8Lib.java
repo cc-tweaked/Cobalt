@@ -99,7 +99,7 @@ public class Utf8Lib {
 			codepoints[n++] = LuaInteger.valueOf(codepoint);
 		} while ((i += off.value) <= j);
 
-		return varargsOf(codepoints, 0, n);
+		return ValueFactory.varargsOfCopy(codepoints, 0, n);
 	}
 
 	private static Varargs len(LuaState state, Varargs args) throws LuaError {
