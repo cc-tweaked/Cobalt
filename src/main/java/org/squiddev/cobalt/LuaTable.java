@@ -975,6 +975,8 @@ public final class LuaTable extends LuaValue {
 			return;
 		}
 
+		// TODO: Check valid key here instead of at the call site!
+
 		do {
 			Node node = rawgetNode(key);
 			if (node == null) node = newKey(key);

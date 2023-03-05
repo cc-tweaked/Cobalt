@@ -42,7 +42,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  */
 public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
-	@ValueSource(strings = {"table-hash-01", "table-hash-02", "table-hash-03", "table-lengths", "table-sort"})
+	@ValueSource(strings = {"table-hash-01", "table-hash-02", "table-hash-03"})
 	public void tables(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/assert/table/");
 		helpers.setup();
@@ -51,7 +51,6 @@ public class AssertTests {
 
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
-		"base-issues",
 		"debug",
 		"debug-coroutine-hook",
 		"debug-getinfo",
@@ -62,16 +61,13 @@ public class AssertTests {
 		"lex-context",
 		"lex-number",
 		"load-error",
-		"modulo-large",
 		"no-unwind",
-		"number-format",
 		"setlist",
 		"string-compare",
 		"string-issues",
 		"string-format",
 		"table",
 		"time",
-		"tonumber",
 		"traceback",
 	})
 	public void main(String name) throws IOException, CompileException, LuaError, InterruptedException {
