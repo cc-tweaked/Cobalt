@@ -73,7 +73,7 @@ public class PackageLib {
 
 	public void add(LuaState state, LuaTable env) {
 		env.rawset("require", RegisteredFunction.of("require", (s, a) -> OperationHelper.noUnwind(s, () -> require(s, a))).create());
-		env.rawset("module", RegisteredFunction.ofV("require", (s, a) -> OperationHelper.noUnwind(s, () -> module(s, a))).create());
+		env.rawset("module", RegisteredFunction.ofV("module", (s, a) -> OperationHelper.noUnwind(s, () -> module(s, a))).create());
 
 		LibFunction.setGlobalLibrary(state, env, "package", packageTbl = tableOf(
 			_LOADED, loaded(state),
@@ -83,9 +83,9 @@ public class PackageLib {
 			_SEEALL, RegisteredFunction.ofV("seeall", PackageLib::seeall).create(),
 			_CPATH, _CPATH_DEFAULT,
 			_LOADERS, listOf(
-				RegisteredFunction.ofV("preload_loader", (s, a) -> OperationHelper.noUnwind(s, () -> loader_preload(s, a))).create(),
-				RegisteredFunction.ofV("lua_loader", (s, a) -> OperationHelper.noUnwind(s, () -> loader_Lua(s, a))).create(),
-				RegisteredFunction.ofV("java_loader", (s, a) -> OperationHelper.noUnwind(s, () -> loader_Java(a))).create()
+				RegisteredFunction.ofV("preload_loader", PackageLib::loader_preload).create(),
+				RegisteredFunction.ofV("lua_loader", this::loader_Lua).create(),
+				RegisteredFunction.ofV("java_loader", PackageLib::loader_Java).create()
 			)
 		));
 	}
@@ -297,20 +297,20 @@ public class PackageLib {
 		return varargsOf(Constants.NIL, valueOf("dynamic libraries not enabled"), valueOf("absent"));
 	}
 
-	private LuaValue loader_preload(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private static LuaValue loader_preload(LuaState state, Varargs args) throws LuaError {
 		LuaString name = args.arg(1).checkLuaString();
-		LuaValue preload = state.registry().getSubTable(REGISTRY_PRELOAD);
-		LuaValue val = OperationHelper.getTable(state, preload, name);
+		LuaTable preload = state.registry().getSubTable(REGISTRY_PRELOAD);
+		LuaValue val = preload.rawget(name);
 		return val.isNil() ?
 			valueOf("\n\tno field package.preload['" + name + "']") :
 			val;
 	}
 
-	private LuaValue loader_Lua(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private LuaValue loader_Lua(LuaState state, Varargs args) throws LuaError {
 		String name = args.arg(1).checkString();
 
 		// get package path
-		LuaValue pp = OperationHelper.getTable(state, packageTbl, _PATH);
+		LuaValue pp = packageTbl.rawget(_PATH);
 		if (!pp.isString()) {
 			return valueOf("package.path is not a string");
 		}
@@ -349,15 +349,14 @@ public class PackageLib {
 		return valueOf(sb.toString());
 	}
 
-	private LuaValue loader_Java(Varargs args) throws LuaError {
+	private static Varargs loader_Java(LuaState state, Varargs args) throws LuaError {
 		String name = args.arg(1).checkString();
 		String classname = toClassname(name);
 		try {
-			Class<?> c = Class.forName(classname);
-			return (LuaValue) c.newInstance();
+			return Class.forName(classname).asSubclass(LuaValue.class).getConstructor().newInstance();
 		} catch (ClassNotFoundException cnfe) {
 			return valueOf("\n\tno class '" + classname + "'");
-		} catch (Exception e) {
+		} catch (ReflectiveOperationException e) {
 			return valueOf("\n\tjava load failed on '" + classname + "', " + e);
 		}
 	}
