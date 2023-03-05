@@ -25,7 +25,10 @@
 package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
+import org.squiddev.cobalt.function.LuaInterpreter;
 
 /**
  * Each thread will get a DebugState attached to it by the debug library
@@ -128,9 +131,9 @@ public final class DebugFrame {
 	public LuaValue[] stack;
 
 	/**
-	 * The {@link Upvalue} equivalent of {@link #stack}
+	 * The last item in the upvalue linked list.
 	 */
-	public Upvalue[] stackUpvalues;
+	public Upvalue lastUpvalue;
 
 	public Object state;
 
@@ -156,17 +159,15 @@ public final class DebugFrame {
 	/**
 	 * Set this debug frame to hold some Lua closure
 	 *
-	 * @param closure       the function called
-	 * @param varargs       The arguments to this function
-	 * @param stack         The current lua stack
-	 * @param stackUpvalues The upvalues on this stack
+	 * @param closure the function called
+	 * @param varargs The arguments to this function
+	 * @param stack   The current lua stack
 	 */
-	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack, Upvalue[] stackUpvalues) {
+	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack) {
 		this.func = closure;
 		this.closure = closure;
 		this.varargs = varargs;
 		this.stack = stack;
-		this.stackUpvalues = stackUpvalues;
 	}
 
 	/**
@@ -184,18 +185,55 @@ public final class DebugFrame {
 	}
 
 	public void cleanup() {
-		LuaInterpreter.closeAll(stackUpvalues);
+		Upvalue upvalue = lastUpvalue;
+		while (upvalue != null) upvalue = upvalue.close();
 	}
 
 	void clear() {
 		func = null;
 		closure = null;
 		stack = null;
-		stackUpvalues = null;
+		lastUpvalue = null;
 		state = null;
 		varargs = extras = null;
 		flags = 0;
 		oldPc = pc = top = -1;
+	}
+
+	public void closeUpvalues(int until) {
+		Upvalue upvalue = lastUpvalue;
+		while (upvalue != null && upvalue.getIndex() >= until) upvalue = upvalue.close();
+		lastUpvalue = upvalue;
+	}
+
+	public Upvalue getUpvalue(int slot) {
+		Upvalue upvalue = lastUpvalue, next = null;
+		// We've got a linked list of the form U(1) <- ... <- U(slot) <- ... <- U(top). Keep
+		// walking down the linked list until either:
+		while (upvalue != null) {
+			if (upvalue.getIndex() == slot) {
+				// index == slot => We've found the correct upvalue.
+				return upvalue;
+			} else if (upvalue.getIndex() < slot) {
+				// index < slot => We've not got an upvalue for this slot, create it.
+				break;
+			} else {
+				// index > slot => Continue down the linked list.
+				next = upvalue;
+				upvalue = next.previous;
+			}
+		}
+
+		// We're now at a point in the linked list where upvalue.slot < slot < next.slot. We need to insert a new node
+		// in the linked list between these two points.
+		Upvalue newUpvalue = new Upvalue(stack, slot, upvalue); // Create our new node so that U(prev) <- U(slot)
+		// Now update U(next) so that it points to U(slot).
+		if (next == null) {
+			lastUpvalue = newUpvalue;
+		} else {
+			next.previous = newUpvalue;
+		}
+		return newUpvalue;
 	}
 
 	/**

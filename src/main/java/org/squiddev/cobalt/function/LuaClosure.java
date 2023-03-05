@@ -26,6 +26,7 @@ package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.debug.Upvalue;
 
 /**
  * A lua function that provides a coroutine.

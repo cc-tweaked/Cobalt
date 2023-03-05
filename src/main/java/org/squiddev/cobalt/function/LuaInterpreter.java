@@ -28,6 +28,7 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.debug.Upvalue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -149,12 +150,11 @@ public final class LuaInterpreter {
 
 	private static DebugFrame setupCallFinish(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		Upvalue[] upvalues = p.children.length > 0 ? new Upvalue[stack.length] : null;
 		if (p.isVarArg >= VARARG_NEEDSARG) stack[p.parameters] = new LuaTable(varargs);
 
 		DebugState ds = DebugHandler.getDebugState(state);
 		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
-		di.setFunction(function, varargs, stack, upvalues);
+		di.setFunction(function, varargs, stack);
 		di.flags |= flags;
 		di.extras = NONE;
 		di.pc = 0;
@@ -194,7 +194,6 @@ public final class LuaInterpreter {
 
 			// And from the debug info
 			final LuaValue[] stack = di.stack;
-			final Upvalue[] openups = di.stackUpvalues;
 			final Varargs varargs = di.varargs;
 
 			int pc = di.pc;
@@ -448,7 +447,7 @@ public final class LuaInterpreter {
 
 						if (functionVal instanceof LuaInterpretedFunction) {
 							int flags = di.flags;
-							closeAll(openups);
+							di.cleanup();
 							ds.popInfo();
 
 							// Replace the current frame with a new one.
@@ -469,7 +468,7 @@ public final class LuaInterpreter {
 
 						int flags = di.flags, top = di.top;
 						Varargs v = di.extras;
-						closeAll(openups);
+						di.cleanup();
 						handler.onReturn(ds, di);
 
 						Varargs ret = switch (b) {
@@ -554,13 +553,7 @@ public final class LuaInterpreter {
 					}
 
 					case OP_CLOSE: { // A : close all variables in the stack up to (>=) R(A)
-						for (int x = openups.length; --x >= a; ) {
-							Upvalue upvalue = openups[x];
-							if (upvalue != null) {
-								upvalue.close();
-								openups[x] = null;
-							}
-						}
+						di.closeUpvalues(a);
 						break;
 					}
 
@@ -572,7 +565,7 @@ public final class LuaInterpreter {
 							int b = (i >>> POS_B) & MAXARG_B;
 							newcl.upvalues[j] = (i & 4) != 0
 								? upvalues[b] // OP_GETUPVAL
-								: openups[b] != null ? openups[b] : (openups[b] = new Upvalue(stack, b)); // OP_MOVE
+								: di.getUpvalue(b); // OP_MOVE
 						}
 						stack[a] = newcl;
 						break;
@@ -678,11 +671,6 @@ public final class LuaInterpreter {
 			frame.top = top;
 			throw e;
 		}
-	}
-
-	public static void closeAll(Upvalue[] upvalues) {
-		if (upvalues == null) return;
-		for (Upvalue upvalue : upvalues) if (upvalue != null) upvalue.close();
 	}
 
 	public static void resume(LuaState state, DebugFrame di, LuaInterpretedFunction function, Varargs varargs) throws LuaError, UnwindThrowable {

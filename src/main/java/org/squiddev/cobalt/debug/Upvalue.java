@@ -22,10 +22,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.squiddev.cobalt.function;
+package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.function.LuaClosure;
 
 /**
  * Upvalue used with Closure formulation
@@ -37,19 +38,22 @@ public final class Upvalue {
 	private LuaValue[] array; // initially the stack, becomes a holder
 	private int index;
 
+	Upvalue previous;
+
 	/**
 	 * Create an upvalue relative to a stack
 	 *
 	 * @param stack the stack
 	 * @param index the index on the stack for the upvalue
 	 */
-	public Upvalue(LuaValue[] stack, int index) {
+	Upvalue(LuaValue[] stack, int index, Upvalue previous) {
 		this.array = stack;
 		this.index = index;
+		this.previous = previous;
 	}
 
 	public Upvalue(LuaValue value) {
-		this(new LuaValue[]{value}, 0);
+		this(new LuaValue[]{value}, 0, null);
 	}
 
 	/**
@@ -81,11 +85,18 @@ public final class Upvalue {
 		array[index] = value;
 	}
 
+	int getIndex() {
+		return index;
+	}
+
 	/**
 	 * Close this upvalue so it is no longer on the stack
 	 */
-	public void close() {
+	Upvalue close() {
+		Upvalue previous = this.previous;
 		array = new LuaValue[]{array[index]};
 		index = 0;
+		this.previous = null;
+		return previous;
 	}
 }
