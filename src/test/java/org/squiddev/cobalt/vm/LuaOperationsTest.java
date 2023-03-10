@@ -235,8 +235,8 @@ public class LuaOperationsTest {
 				}
 
 				@Override
-				public LuaValue call(LuaState state) throws LuaError {
-					return OperationHelper.noUnwind(state, () -> OperationHelper.getTable(state, getfenv(), valueOf("a")));
+				public LuaValue call(LuaState state) {
+					return getfenv().rawget(valueOf("a"));
 				}
 			};
 			assertEquals(aaa, f.call(state));

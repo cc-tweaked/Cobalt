@@ -28,7 +28,6 @@ import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.lib.CoreLibraries;
 import org.squiddev.cobalt.lib.CoroutineLib;
 
 import java.util.Objects;
@@ -37,22 +36,11 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_ERROR;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
 
 /**
- * Subclass of {@link LuaValue} that implements a lua coroutine thread.
+ * Subclass of {@link LuaValue} that implements a Lua coroutine thread.
  * <p>
- * A LuaThread is typically created in response to a scripted call to
- * {@code coroutine.create()}
- * <p>
- * The utility class {@link CoreLibraries}
- * sees to it that this initialization is done properly.
- * For this reason it is highly recommended to use one of these classes
- * when initializing globals.
- * <p>
- * The behavior of coroutine threads matches closely the behavior
- * of C coroutine library.  However, because of the use of Java threads
- * to manage call state, it is possible to yield from anywhere in luaj.
+ * A LuaThread is typically created in response to a scripted call to {@code coroutine.create()}.
  *
  * @see LuaValue
- * @see CoreLibraries
  * @see CoroutineLib
  */
 public class LuaThread extends LuaValue {
@@ -123,11 +111,6 @@ public class LuaThread extends LuaValue {
 	 * The thread which resumed this one, and so should be resumed back into.
 	 */
 	private LuaThread previousThread;
-
-	/**
-	 * The depth of the Java blocks. Yielding/resuming is only allowed when this is 0.
-	 */
-	int javaCount = 0;
 
 	/**
 	 * Constructor for main thread only
@@ -273,7 +256,6 @@ public class LuaThread extends LuaValue {
 			throw new LuaError("cannot yield a " + STATUS_NAMES[thread.status] + " thread");
 		}
 		if (thread.isMainThread()) throw new LuaError("cannot yield main thread");
-		if (thread.javaCount != 0) throw new LuaError("attempt to yield across a native call boundary");
 
 		throw UnwindThrowable.yield(args);
 	}
@@ -298,9 +280,6 @@ public class LuaThread extends LuaValue {
 			throw new LuaError("cannot resume " + STATUS_NAMES[thread.status] + " coroutine");
 		}
 
-		// TODO: Resuming while having Java functions on the stack should be fine. Though also not a priority.
-		if (current.javaCount != 0) throw new LuaError("attempt to resume across a native call boundary");
-
 		throw UnwindThrowable.resume(thread, args);
 	}
 
@@ -317,7 +296,6 @@ public class LuaThread extends LuaValue {
 			throw new LuaError("cannot suspend a " + STATUS_NAMES[current.status] + " thread");
 		}
 
-		if (current.javaCount != 0) throw new IllegalStateException("Suspending is currently blocked");
 		throw UnwindThrowable.suspend();
 	}
 

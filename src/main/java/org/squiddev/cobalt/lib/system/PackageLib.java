@@ -30,8 +30,9 @@ import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
+import org.squiddev.cobalt.unwind.AutoUnwind;
+import org.squiddev.cobalt.unwind.SuspendedTask;
 
-import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.ValueFactory.*;
 
 /**
@@ -72,8 +73,8 @@ public class PackageLib {
 	}
 
 	public void add(LuaState state, LuaTable env) {
-		env.rawset("require", RegisteredFunction.of("require", (s, a) -> OperationHelper.noUnwind(s, () -> require(s, a))).create());
-		env.rawset("module", RegisteredFunction.ofV("module", (s, a) -> OperationHelper.noUnwind(s, () -> module(s, a))).create());
+		env.rawset("require", RegisteredFunction.ofS("require", (s, f, a) -> SuspendedTask.run(f, () -> require(s, a))).create());
+		env.rawset("module", RegisteredFunction.ofS("module", (s, f, a) -> SuspendedTask.run(f, () -> module(s, a))).create());
 
 		LibFunction.setGlobalLibrary(state, env, "package", packageTbl = tableOf(
 			_LOADED, loaded(state),
@@ -97,11 +98,8 @@ public class PackageLib {
 	private static Varargs seeall(LuaState state, Varargs args) throws LuaError {
 		LuaTable t = args.first().checkTable();
 		LuaTable m = t.getMetatable(state);
-		if (m == null) {
-			t.setMetatable(state, m = ValueFactory.tableOf());
-		}
-		LuaTable mt = m;
-		noUnwind(state, () -> OperationHelper.setTable(state, mt, Constants.INDEX, state.getCurrentThread().getfenv()));
+		if (m == null) t.setMetatable(state, m = ValueFactory.tableOf());
+		m.rawset(Constants.INDEX, state.getCurrentThread().getfenv());
 		return Constants.NONE;
 	}
 
@@ -139,6 +137,7 @@ public class PackageLib {
 	 * @return {@link Constants#NONE}
 	 * @throws LuaError If there is a name conflict.
 	 */
+	@AutoUnwind
 	private Varargs module(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		LuaTable loaded = loaded(state);
 		LuaString modname = args.arg(1).checkLuaString();
@@ -158,13 +157,17 @@ public class PackageLib {
 		}
 
 		/* check whether table already has a _NAME field */
-		LuaValue name = OperationHelper.getTable(state, module, _NAME);
+		LuaValue name = module.rawget(_NAME);
 		if (name.isNil()) {
-			modinit(state, module, modname);
+			module.rawset(_M, module);
+			module.rawset(_NAME, modname);
+
+			int e = modname.lastIndexOf((byte) '.');
+			module.rawset(_PACKAGE, e < 0 ? Constants.EMPTYSTRING : modname.substringOfEnd(0, e + 1));
 		}
 
 		// set the environment of the current function
-		LuaFunction f = LuaThread.getCallstackFunction(state, 0);
+		LuaFunction f = LuaThread.getCallstackFunction(state, 1);
 		if (f == null) {
 			throw new LuaError("no calling function");
 		}
@@ -174,9 +177,7 @@ public class PackageLib {
 		f.setfenv(module);
 
 		// apply the functions
-		for (int i = 2; i <= n; i++) {
-			OperationHelper.call(state, args.arg(i), module);
-		}
+		for (int i = 2; i <= n; i++) OperationHelper.call(state, args.arg(i), module);
 
 		// returns no results
 		return Constants.NONE;
@@ -209,15 +210,6 @@ public class PackageLib {
 		return table;
 	}
 
-	private static void modinit(LuaState state, LuaValue module, LuaString modname) throws LuaError, UnwindThrowable {
-		/* module._M = module */
-		OperationHelper.setTable(state, module, _M, module);
-		int e = modname.lastIndexOf((byte) '.');
-		OperationHelper.setTable(state, module, _NAME, modname);
-		LuaValue value = (e < 0 ? Constants.EMPTYSTRING : modname.substringOfEnd(0, e + 1));
-		OperationHelper.setTable(state, module, _PACKAGE, value);
-	}
-
 	/**
 	 * require (modname)
 	 * <p>
@@ -245,12 +237,13 @@ public class PackageLib {
 	 * the module, then require signals an error.
 	 *
 	 * @param state The current lua state
-	 * @param arg   Module name
+	 * @param args  Module name
 	 * @return The loaded value
 	 * @throws LuaError If the module cannot be loaded.
 	 */
-	LuaValue require(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
-		LuaString name = arg.checkLuaString();
+	@AutoUnwind
+	private LuaValue require(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+		LuaString name = args.first().checkLuaString();
 		LuaTable loaded = loaded(state);
 		LuaValue existing = OperationHelper.getTable(state, loaded, name);
 		if (existing.toBoolean()) {

@@ -1,13 +1,14 @@
 package org.squiddev.cobalt.lib.system;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
+import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
 import java.io.PrintStream;
 
-import static org.squiddev.cobalt.OperationHelper.noUnwind;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
@@ -33,7 +34,7 @@ public class SystemBaseLib {
 			RegisteredFunction.of("collectgarbage", SystemBaseLib::collectgarbage),
 			RegisteredFunction.ofV("loadfile", this::loadfile),
 			RegisteredFunction.ofV("dofile", this::dofile),
-			RegisteredFunction.ofV("print", this::print),
+			RegisteredFunction.ofS("print", this::print),
 		});
 	}
 
@@ -77,9 +78,9 @@ public class SystemBaseLib {
 		}
 	}
 
-	private Varargs print(LuaState state, Varargs args) throws LuaError {
+	private Varargs print(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
 		// print(...) -> void
-		return noUnwind(state, () -> {
+		return SuspendedTask.run(frame, () -> {
 			LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
 			for (int i = 1, n = args.count(); i <= n; i++) {
 				if (i > 1) out.write('\t');

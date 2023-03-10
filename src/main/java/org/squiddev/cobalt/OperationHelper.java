@@ -596,38 +596,6 @@ public final class OperationHelper {
 	}
 	//endregion
 
-	public interface LuaRunnable<T> {
-		T run() throws LuaError, UnwindThrowable;
-	}
-
-	public interface LuaTask {
-		void run() throws LuaError, UnwindThrowable;
-	}
-
-	public static <T> T noUnwind(LuaState state, LuaRunnable<T> task) throws LuaError {
-		LuaThread thread = state.getCurrentThread();
-		thread.javaCount++;
-		try {
-			return task.run();
-		} catch (UnwindThrowable e) {
-			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
-		} finally {
-			thread.javaCount--;
-		}
-	}
-
-	public static void noUnwind(LuaState state, LuaTask task) throws LuaError {
-		LuaThread thread = state.getCurrentThread();
-		thread.javaCount++;
-		try {
-			task.run();
-		} catch (UnwindThrowable e) {
-			throw new NonResumableException("Cannot raise UnwindThrowable while disabled");
-		} finally {
-			thread.javaCount--;
-		}
-	}
-
 	public static LuaValue toString(LuaState state, LuaValue value) throws LuaError, UnwindThrowable {
 		LuaValue h = value.metatag(state, Constants.TOSTRING);
 		return h.isNil() ? toStringDirect(value) : OperationHelper.call(state, h, value);

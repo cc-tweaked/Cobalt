@@ -28,7 +28,6 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.unwind.AutoUnwind;
-import org.squiddev.cobalt.unwind.SuspendedFunction;
 import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -118,14 +117,12 @@ public final class TableLib {
 			LuaTable table = args.arg(1).checkTable();
 			LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
 
-			SuspendedFunction<Varargs> fn = SuspendedTask.toFunction(() -> {
+			return SuspendedTask.run(di, () -> {
 				// TODO: Error with "object length is not a number"
 				int n = OperationHelper.length(state, table).checkInteger();
 				if (n > 1) heapSort(state, table, n, compare);
 				return NONE;
 			});
-			di.state = fn;
-			return fn.call(state);
 		}
 
 		@AutoUnwind

@@ -33,7 +33,7 @@ public class LuaSpecTest {
 
 		try (InputStream is = new BufferedInputStream(Files.newInputStream(ROOT.resolve("_prelude.lua")))) {
 			var expect = LoadState.load(state, is, "@_prelude.lua", env);
-			OperationHelper.noUnwind(state, () -> OperationHelper.call(state, expect));
+			LuaThread.runMain(state, expect);
 		}
 
 		env.rawset("describe", RegisteredFunction.of("describe", (state, arg1, function) -> {
@@ -43,7 +43,7 @@ public class LuaSpecTest {
 			List<DynamicNode> oldNodes = nodes;
 			List<DynamicNode> newNodes = nodes = new ArrayList<>();
 			try {
-				OperationHelper.noUnwind(state, () -> OperationHelper.call(state, function));
+				LuaThread.runMain(state, function.checkFunction());
 			} finally {
 				nodes = oldNodes;
 			}
@@ -87,7 +87,7 @@ public class LuaSpecTest {
 
 				List<DynamicNode> nodes = this.nodes = new ArrayList<>();
 				try {
-					OperationHelper.noUnwind(state, () -> OperationHelper.call(state, function));
+					LuaThread.runMain(state, function);
 				} catch (LuaError e) {
 					throw new RuntimeException(e);
 				} finally {
