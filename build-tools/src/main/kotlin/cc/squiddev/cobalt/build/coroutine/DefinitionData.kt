@@ -74,10 +74,13 @@ private val builtinMethods = run {
 	mapOf(
 		Desc("org/squiddev/cobalt/compiler/InputReader", "read", "()I") to YieldType.Resume,
 		Desc(opHelper, "lt", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
+		Desc(opHelper, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,
 		Desc(opHelper, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE, LUA_VALUE)) to first,
 		Desc(opHelper, "length", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE)) to first,
 		Desc(opHelper, "getTable", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, Type.INT_TYPE)) to first,
+		Desc(opHelper, "getTable", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,
 		Desc(opHelper, "setTable", Type.getMethodDescriptor(Type.VOID_TYPE, LUA_STATE, LUA_VALUE, Type.INT_TYPE, LUA_VALUE)) to drop,
+		Desc(opHelper, "setTable", Type.getMethodDescriptor(Type.VOID_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE, LUA_VALUE)) to drop,
 	)
 }
 

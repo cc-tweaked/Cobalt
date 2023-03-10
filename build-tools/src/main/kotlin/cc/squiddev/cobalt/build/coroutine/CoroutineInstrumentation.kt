@@ -1,6 +1,7 @@
 package cc.squiddev.cobalt.build.coroutine
 
 import cc.squiddev.cobalt.build.ClassEmitter
+import cc.squiddev.cobalt.build.UnsupportedConstruct
 import cc.squiddev.cobalt.build.logger
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
@@ -35,12 +36,20 @@ class CoroutineInstrumentation(
 					override fun visitEnd() {
 						super.visitEnd()
 						when (def) {
-							InstrumentType.AUTO_UNWIND -> emitAutoUnwind(node)
-							InstrumentType.DISPATCH_UNWIND -> emitDispatchUnwind(node)
+							InstrumentType.AUTO_UNWIND -> emitMethod(node, ::emitAutoUnwind)
+							InstrumentType.DISPATCH_UNWIND -> emitMethod(node, ::emitDispatchUnwind)
 						}
 					}
 				}
 			}
+		}
+	}
+
+	private inline fun emitMethod(method: MethodNode, fn: (node: MethodNode) -> Unit) {
+		try {
+			fn(method)
+		} catch (e: UnsupportedConstruct) {
+			throw UnsupportedConstruct("Failed inside $className.${method.name}", e)
 		}
 	}
 

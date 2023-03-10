@@ -1,9 +1,6 @@
 package cc.squiddev.cobalt.build.coroutine
 
-import cc.squiddev.cobalt.build.ClassEmitter
-import cc.squiddev.cobalt.build.getDefaultOpcode
-import cc.squiddev.cobalt.build.isReference
-import cc.squiddev.cobalt.build.visitLoadInt
+import cc.squiddev.cobalt.build.*
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Label
 import org.objectweb.asm.MethodVisitor
@@ -440,7 +437,12 @@ private fun protect(childName: Type, method: MethodVisitor, body: () -> Unit) {
  */
 private fun makeSuspendedFunction(emitter: ClassEmitter, methodReference: Handle): Pair<Type, String> {
 	val childName = Type.getObjectType("${methodReference.owner}\$${methodReference.name}")
-	val argTypes = Type.getArgumentTypes(methodReference.desc)
+	val originalArgTypes = Type.getArgumentTypes(methodReference.desc)
+	val (invokeOpcode, argTypes) = when (methodReference.tag) {
+		H_INVOKESTATIC -> Pair(INVOKESTATIC, originalArgTypes)
+		H_INVOKEVIRTUAL -> Pair(INVOKEVIRTUAL, arrayOf(Type.getObjectType(methodReference.owner), *originalArgTypes))
+		else -> throw UnsupportedConstruct("Cannot handle method refernece $methodReference")
+	}
 	val factoryDesc = Type.getMethodType(childName, *argTypes).descriptor
 
 	emitter.generate(childName.internalName) { cw ->
@@ -494,7 +496,7 @@ private fun makeSuspendedFunction(emitter: ClassEmitter, methodReference: Handle
 			}
 			call.visitInsn(ACONST_NULL)
 			protect(childName, call) {
-				call.visitMethodInsn(INVOKESTATIC, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
+				call.visitMethodInsn(invokeOpcode, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
 			}
 
 			call.visitMaxs((argTypes.size + 1).coerceAtLeast(3), 2)
@@ -522,7 +524,7 @@ private fun makeSuspendedFunction(emitter: ClassEmitter, methodReference: Handle
 			resume.visitVarInsn(ALOAD, 0)
 			resume.visitFieldInsn(GETFIELD, childName.internalName, "state", OBJECT.descriptor)
 			protect(childName, resume) {
-				resume.visitMethodInsn(INVOKESTATIC, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
+				resume.visitMethodInsn(invokeOpcode, methodReference.owner, methodReference.name, rewriteDesc(methodReference.desc), false)
 			}
 
 			resume.visitMaxs((argTypes.size + 1).coerceAtLeast(3), 2)

@@ -10,7 +10,7 @@ import java.nio.file.Paths
 import kotlin.io.path.extension
 import kotlin.system.exitProcess
 
-class UnsupportedConstruct(message: String) : RuntimeException(message)
+class UnsupportedConstruct(message: String, cause: Exception? = null) : RuntimeException(message, cause)
 
 fun main(args: Array<String>) {
 	if (args.size != 2) {
