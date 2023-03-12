@@ -25,12 +25,14 @@
 package org.squiddev.cobalt;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
 
 import java.io.IOException;
 
+@Disabled("Doesn't really test anything useful")
 public class PerformanceTest {
 	private static final int TOTAL = Integer.parseInt(System.getProperty("cobalt.perfTotal", "1"));
 	private static final int DISCARD = Integer.parseInt(System.getProperty("cobalt.perfDiscard", "0"));

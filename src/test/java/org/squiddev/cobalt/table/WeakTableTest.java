@@ -35,6 +35,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.userdataOf;
+import static org.squiddev.cobalt.table.TableOperations.getArrayLength;
+import static org.squiddev.cobalt.table.TableOperations.getHashLength;
 
 public abstract class WeakTableTest {
 	protected final LuaState state = new LuaState();
@@ -91,8 +93,8 @@ public abstract class WeakTableTest {
 			OperationHelper.setTable(state, t, ValueFactory.valueOf("string"), stringValue);
 			OperationHelper.setTable(state, t, ValueFactory.valueOf("string2"), LuaString.valueOf("another string"));
 			OperationHelper.setTable(state, t, ValueFactory.valueOf(1), tableValue2);
-			assertThat("table must have at least 4 elements", t.getHashLength(), greaterThanOrEqualTo(4));
-			assertThat("array part must have 1 element", t.getArrayLength(), greaterThanOrEqualTo(1));
+			assertThat("table must have at least 4 elements", getHashLength(t), greaterThanOrEqualTo(4));
+			assertThat("array part must have 1 element", getArrayLength(t), greaterThanOrEqualTo(1));
 
 			// check that table can be used to get elements
 			assertEquals(tableValue, OperationHelper.getTable(state, t, ValueFactory.valueOf("table")));

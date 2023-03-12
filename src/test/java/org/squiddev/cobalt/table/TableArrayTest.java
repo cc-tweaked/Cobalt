@@ -27,12 +27,14 @@ package org.squiddev.cobalt.table;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 
+import java.util.Collection;
 import java.util.Vector;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.Matchers.between;
+import static org.squiddev.cobalt.table.TableOperations.*;
 
 /**
  * Tests for tables used as lists.
@@ -54,9 +56,9 @@ public class TableArrayTest {
 		}
 
 		// Ensure capacities make sense
-		assertEquals(0, t.getHashLength());
+		assertEquals(0, getHashLength(t));
 
-		assertThat(t.getArrayLength(), between(32, 64));
+		assertThat(getArrayLength(t), between(32, 64));
 	}
 
 	@Test
@@ -75,8 +77,8 @@ public class TableArrayTest {
 			assertEquals(LuaInteger.valueOf(i), OperationHelper.getTable(state, t, ValueFactory.valueOf(i)));
 		}
 
-		assertThat(t.getArrayLength(), between(3, 12));
-		assertThat(t.getHashLength(), lessThanOrEqualTo(3));
+		assertThat(getArrayLength(t), between(3, 12));
+		assertThat(getHashLength(t), lessThanOrEqualTo(3));
 	}
 
 	@Test
@@ -93,8 +95,8 @@ public class TableArrayTest {
 		}
 
 		// Ensure capacities make sense
-		assertEquals(32, t.getArrayLength());
-		assertEquals(0, t.getHashLength());
+		assertEquals(32, getArrayLength(t));
+		assertEquals(0, getHashLength(t));
 
 	}
 
@@ -108,15 +110,15 @@ public class TableArrayTest {
 			OperationHelper.setTable(state, t, str, LuaInteger.valueOf(i));
 		}
 
-		assertThat(t.getArrayLength(), between(8, 18)); // 1, 2, ..., 9
-		assertThat(t.getHashLength(), between(11, 33)); // 0, "0", "1", ..., "9"
+		assertThat(getArrayLength(t), between(8, 18)); // 1, 2, ..., 9
+		assertThat(getHashLength(t), between(11, 33)); // 0, "0", "1", ..., "9"
 
-		LuaValue[] keys = t.keys();
+		Collection<LuaValue> keys = keys(t);
 
 		int intKeys = 0;
 		int stringKeys = 0;
 
-		assertEquals(20, keys.length);
+		assertEquals(20, keys.size());
 		for (LuaValue k : keys) {
 			if (k instanceof LuaInteger) {
 				final int ik = k.toInteger();
@@ -146,7 +148,7 @@ public class TableArrayTest {
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("test"), LuaString.valueOf("foo"));
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("explode"), LuaString.valueOf("explode"));
-		assertEquals(2, t.keyCount());
+		assertEquals(2, keyCount(t));
 	}
 
 	@Test
@@ -171,22 +173,22 @@ public class TableArrayTest {
 	public void testRemove1() throws LuaError, UnwindThrowable {
 		LuaTable t = new LuaTable(0, 1);
 
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("test"), LuaString.valueOf("foo"));
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("explode"), Constants.NIL);
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 		OperationHelper.setTable(state, t, ValueFactory.valueOf(42), Constants.NIL);
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 		OperationHelper.setTable(state, t, new LuaTable(), Constants.NIL);
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("test"), Constants.NIL);
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf(10), LuaInteger.valueOf(5));
 		OperationHelper.setTable(state, t, ValueFactory.valueOf(10), Constants.NIL);
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 	}
 
 	@Test
@@ -195,23 +197,23 @@ public class TableArrayTest {
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("test"), LuaString.valueOf("foo"));
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("string"), LuaInteger.valueOf(10));
-		assertEquals(2, t.keyCount());
+		assertEquals(2, keyCount(t));
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("string"), Constants.NIL);
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("three"), LuaDouble.valueOf(3.14));
-		assertEquals(2, t.keyCount());
+		assertEquals(2, keyCount(t));
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("test"), Constants.NIL);
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf(10), LuaInteger.valueOf(5));
-		assertEquals(2, t.keyCount());
+		assertEquals(2, keyCount(t));
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf(10), Constants.NIL);
-		assertEquals(1, t.keyCount());
+		assertEquals(1, keyCount(t));
 
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("three"), Constants.NIL);
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 	}
 
 	@Test
@@ -293,7 +295,7 @@ public class TableArrayTest {
 
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaString.valueOf("Test Value! " + i);
-			t.insert(0, test);
+			t.insert(t.length() + 1, test);
 			v.insertElementAt(test, v.size());
 			compareLists(t, v);
 		}
@@ -316,7 +318,7 @@ public class TableArrayTest {
 	private static void prefillLists(LuaTable t, Vector<LuaString> v) {
 		for (int i = 1; i <= 32; ++i) {
 			LuaString test = LuaString.valueOf("Test Value! " + i);
-			t.insert(0, test);
+			t.insert(t.length() + 1, test);
 			v.insertElementAt(test, v.size());
 		}
 	}
@@ -339,7 +341,7 @@ public class TableArrayTest {
 		Vector<LuaString> v = new Vector<>();
 		prefillLists(t, v);
 		for (int i = 1; i <= 32; ++i) {
-			t.remove(0);
+			t.remove(t.length());
 			v.removeElementAt(v.size() - 1);
 			compareLists(t, v);
 		}

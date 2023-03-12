@@ -25,8 +25,6 @@
 package org.squiddev.cobalt;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.*;
@@ -96,7 +94,6 @@ public final class LuaTable extends LuaValue {
 	 */
 	public LuaTable() {
 		super(TTABLE);
-		array = NOVALS;
 	}
 
 	/**
@@ -183,26 +180,8 @@ public final class LuaTable extends LuaValue {
 	 */
 	public void presize(int nArray) {
 		if (nArray > array.length) {
-			resize(getHashLength(), 1 << log2(nArray), false);
+			resize(nodes.length, 1 << log2(nArray), false);
 		}
-	}
-
-	/**
-	 * Get the length of the array part of the table.
-	 *
-	 * @return length of the array part, does not relate to count of objects in the table.
-	 */
-	public int getArrayLength() {
-		return array.length;
-	}
-
-	/**
-	 * Get the length of the hash part of the table.
-	 *
-	 * @return length of the hash part, does not relate to count of objects in the table.
-	 */
-	public int getHashLength() {
-		return nodes.length;
 	}
 
 	@Override
@@ -324,8 +303,8 @@ public final class LuaTable extends LuaValue {
 	}
 
 	public int length() {
-		int a = getArrayLength();
-		/**
+		int a = array.length;
+		/*
 		 * Array cannot contain nil value, except if that array is statically allocated
 		 * So if the last element is nil it means we need to binary search the array to find
 		 * the first element non nil followed with a nil value
@@ -419,7 +398,6 @@ public final class LuaTable extends LuaValue {
 	 * or {@link Constants#NIL} if there are no more.
 	 * @throws LuaError if {@code this} is not a table, or the supplied key is invalid.
 	 * @see LuaTable
-	 * @see #inext(LuaValue)
 	 * @see ValueFactory#valueOf(int)
 	 * @see Varargs#first()
 	 * @see Varargs#arg(int)
@@ -534,44 +512,6 @@ public final class LuaTable extends LuaValue {
 	// Compute ceil(log2(x))
 	private static int log2(int x) {
 		return 32 - Integer.numberOfLeadingZeros(x - 1);
-	}
-
-	/**
-	 * This may be deprecated in a future release.
-	 * It is recommended to count via iteration over next() instead
-	 *
-	 * @return count of keys in the table
-	 * @throws LuaError If iterating the table fails.
-	 */
-	public int keyCount() throws LuaError {
-		LuaValue k = NIL;
-		for (int i = 0; true; i++) {
-			Varargs n = next(k);
-			if ((k = n.first()).isNil()) {
-				return i;
-			}
-		}
-	}
-
-	/**
-	 * This may be deprecated in a future release.
-	 * It is recommended to use next() instead
-	 *
-	 * @return array of keys in the table
-	 * @throws LuaError If iterating the table fails.
-	 */
-	public LuaValue[] keys() throws LuaError {
-		List<LuaValue> l = new ArrayList<>();
-		LuaValue k = NIL;
-		while (true) {
-			Varargs n = next(k);
-			if ((k = n.first()).isNil()) {
-				break;
-			}
-			l.add(k);
-		}
-
-		return l.toArray(new LuaValue[l.size()]);
 	}
 
 	//region Resizing
@@ -1006,7 +946,7 @@ public final class LuaTable extends LuaValue {
 			mt = value.metatable;
 		}
 
-		public LuaValue strongValue() {
+		LuaValue strongValue() {
 			LuaValue u = ref.get();
 			if (u != null) return u;
 

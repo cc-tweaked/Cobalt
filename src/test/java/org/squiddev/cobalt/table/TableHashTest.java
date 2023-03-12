@@ -31,6 +31,8 @@ import org.squiddev.cobalt.function.TwoArgFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.squiddev.cobalt.table.TableOperations.getHashLength;
+import static org.squiddev.cobalt.table.TableOperations.keyCount;
 
 /**
  * Tests for tables used as lists.
@@ -47,21 +49,21 @@ public class TableHashTest {
 	public void testSetRemove() throws LuaError, UnwindThrowable {
 		LuaTable t = new LuaTable();
 
-		assertEquals(0, t.getHashLength());
+		assertEquals(0, getHashLength(t));
 		assertEquals(0, t.length());
-		assertEquals(0, t.keyCount());
+		assertEquals(0, keyCount(t));
 
 		String[] keys = {"abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "wxy", "z01",
 			"cd", "ef", "g", "hi", "jk", "lm", "no", "pq", "rs",};
 		int[] capacities = {0, 1, 2, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 32, 32, 32};
 		for (int i = 0; i < keys.length; ++i) {
-			assertEquals(capacities[i], t.getHashLength());
+			assertEquals(capacities[i], getHashLength(t));
 			String si = "Test Value! " + i;
 			OperationHelper.setTable(state, t, ValueFactory.valueOf(keys[i]), ValueFactory.valueOf(si));
 			assertEquals(0, t.length());
-			assertEquals(i + 1, t.keyCount());
+			assertEquals(i + 1, keyCount(t));
 		}
-		assertEquals(capacities[keys.length], t.getHashLength());
+		assertEquals(capacities[keys.length], getHashLength(t));
 		for (int i = 0; i < keys.length; ++i) {
 			LuaValue vi = LuaString.valueOf("Test Value! " + i);
 			assertEquals(vi, OperationHelper.getTable(state, t, ValueFactory.valueOf(keys[i])));
@@ -74,8 +76,8 @@ public class TableHashTest {
 		for (int i = 0; i < keys.length; ++i) {
 			OperationHelper.setTable(state, t, ValueFactory.valueOf(keys[i]), LuaString.valueOf("Replacement Value! " + i));
 			assertEquals(0, t.length());
-			assertEquals(keys.length, t.keyCount());
-			assertEquals(capacities[keys.length], t.getHashLength());
+			assertEquals(keys.length, keyCount(t));
+			assertEquals(capacities[keys.length], getHashLength(t));
 		}
 		for (int i = 0; i < keys.length; ++i) {
 			LuaValue vi = LuaString.valueOf("Replacement Value! " + i);
@@ -86,11 +88,11 @@ public class TableHashTest {
 		for (int i = 0; i < keys.length; ++i) {
 			OperationHelper.setTable(state, t, ValueFactory.valueOf(keys[i]), Constants.NIL);
 			assertEquals(0, t.length());
-			assertEquals(keys.length - i - 1, t.keyCount());
+			assertEquals(keys.length - i - 1, keyCount(t));
 			if (i < keys.length - 1) {
-				assertEquals(capacities[keys.length], t.getHashLength());
+				assertEquals(capacities[keys.length], getHashLength(t));
 			} else {
-				assertTrue(0 <= t.getHashLength());
+				assertTrue(0 <= getHashLength(t));
 			}
 		}
 		for (String key : keys) {

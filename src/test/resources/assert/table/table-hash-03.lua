@@ -1,4 +1,5 @@
 --- Tests a regression with table hashing
+-- TODO: Get this in a state where it's actually useful, it's too slow to be useful right now.
 
 local hash = setmetatable({}, { __mode = "k" })
 local size = 0
