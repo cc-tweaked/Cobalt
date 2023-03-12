@@ -48,6 +48,11 @@ public abstract class LuaClosure extends LuaFunction {
 	public abstract void setUpvalue(int i, Upvalue upvalue);
 
 	@Override
+	public final String debugName() {
+		return getPrototype().sourceShort() + ":" + getPrototype().lineDefined;
+	}
+
+	@Override
 	public LuaClosure checkClosure() {
 		return this;
 	}

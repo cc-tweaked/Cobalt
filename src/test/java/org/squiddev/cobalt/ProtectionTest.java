@@ -24,43 +24,52 @@
  */
 package org.squiddev.cobalt;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
-import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
-import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.interrupt.InterruptAction;
+import org.squiddev.cobalt.interrupt.InterruptHandler;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Tests that long running programs are terminated correctly.
  */
 public class ProtectionTest {
-	private ScriptHelper helpers;
+	private static final ExecutorService executor = Executors.newCachedThreadPool();
+	private final ScriptHelper helpers = new ScriptHelper("/protection/");
+
+	private Future<?> interrupt;
 
 	@BeforeEach
 	public void setup() {
-		helpers = new ScriptHelper("/protection/");
-		helpers.setup(s -> s.debug(new DebugHandler() {
-			private long time = System.currentTimeMillis();
-
+		class Handler implements InterruptHandler {
 			@Override
-			public void poll() throws LuaError {
-				if (System.currentTimeMillis() > time + 500) {
-					time = System.currentTimeMillis();
-					throw new LuaError("Timed out");
-				}
+			public InterruptAction interrupted() throws LuaError {
+				throw new LuaError("Timed out");
 			}
+		}
 
-			@Override
-			public void onInstruction(DebugState ds, DebugFrame di, int pc) throws LuaError, UnwindThrowable {
-				poll();
-				super.onInstruction(ds, di, pc);
+		Handler handler = new Handler();
+		helpers.setup(s -> s.interruptHandler(handler));
+
+		interrupt = executor.submit(() -> {
+			while (true) {
+				Thread.sleep(500);
+				helpers.state.interrupt();
 			}
-		}));
+		});
+	}
+
+	@AfterEach
+	public void tearDown() {
+		interrupt.cancel(true);
 	}
 
 	@Timeout(3)

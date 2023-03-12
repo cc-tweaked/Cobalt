@@ -44,7 +44,7 @@ import org.squiddev.cobalt.function.LuaFunction;
  * @see LuaValue
  * @see Constants#NIL
  */
-public class LuaNil extends LuaValue {
+public final class LuaNil extends LuaValue {
 	static final LuaNil _NIL = new LuaNil();
 
 	private LuaNil() {

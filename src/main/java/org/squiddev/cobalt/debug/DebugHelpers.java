@@ -26,11 +26,12 @@ package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
+import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.lib.DebugLib;
 
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
+import static org.squiddev.cobalt.debug.DebugFrame.FLAG_ANY_HOOK;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_TAIL;
 
 /**
@@ -101,9 +102,9 @@ public final class DebugHelpers {
 				// Strictly speaking we should search the global table for this term - see Lua 5.3's pushglobalfuncname/
 				// pushfuncname. However, I'm somewhat reluctant to do that, so we just check it's a global.
 				sb.append(kind[1] == GLOBAL ? "function" : kind[1]).append(" '").append(kind[0]).append('\'');
-			} else if (di.closure != null && di.closure.getPrototype().lineDefined == 0) {
+			} else if (di.func instanceof LuaClosure closure && closure.getPrototype().lineDefined == 0) {
 				sb.append("main chunk");
-			} else if (di.closure != null) {
+			} else if (di.func instanceof LuaClosure) {
 				sb.append("function <").append(di.func.debugName()).append(">");
 			} else {
 				sb.append('?');
@@ -146,7 +147,7 @@ public final class DebugHelpers {
 
 	public static LuaString[] getFuncName(DebugFrame di, int stackpos) {
 		if (di.closure == null) return null;
-		if ((di.flags & FLAG_HOOKED) != 0) return new LuaString[]{QUESTION, HOOK};
+		if ((di.flags & FLAG_ANY_HOOK) != 0) return new LuaString[]{QUESTION, HOOK};
 
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);
@@ -174,7 +175,7 @@ public final class DebugHelpers {
 	// return StrValue[] { name, namewhat } if found, null if not
 	public static LuaString[] getObjectName(DebugFrame di, int stackpos) {
 		if (di.closure == null) return null;
-		if ((di.flags & FLAG_HOOKED) != 0) return new LuaString[]{QUESTION, HOOK};
+		if ((di.flags & FLAG_ANY_HOOK) != 0) return new LuaString[]{QUESTION, HOOK};
 
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);

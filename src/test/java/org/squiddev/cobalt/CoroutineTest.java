@@ -24,32 +24,29 @@
  */
 package org.squiddev.cobalt;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHelpers;
-import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.function.ResumableVarArgFunction;
+import org.squiddev.cobalt.interrupt.InterruptAction;
+import org.squiddev.cobalt.interrupt.InterruptHandler;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKYIELD;
 
 /**
  * Tests yielding in a whole load of places
  */
 @Timeout(1)
 public class CoroutineTest {
-	private ScriptHelper helpers;
+	private final ScriptHelper helpers = new ScriptHelper("/coroutine/");
 
 	public static String[] getTests() {
 		return new String[]{
@@ -57,12 +54,8 @@ public class CoroutineTest {
 		};
 	}
 
-	@BeforeEach
-	public void setup() {
-		helpers = new ScriptHelper("/coroutine/");
-		helpers.setup();
+	private void addGlobals() {
 		RegisteredFunction.bind(helpers.globals, new RegisteredFunction[]{
-			RegisteredFunction.ofFactory("suspend", Suspend::new),
 			RegisteredFunction.ofFactory("run", Run::new),
 			RegisteredFunction.ofV("assertEquals", CoroutineTest::assertEquals$),
 			RegisteredFunction.ofV("fail", CoroutineTest::fail$),
@@ -74,36 +67,26 @@ public class CoroutineTest {
 	@MethodSource("getTests")
 	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		helpers.setup();
-		setup();
+		addGlobals();
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@MethodSource("getTests")
 	public void runSuspend(String name) throws IOException, CompileException, LuaError, InterruptedException {
-		helpers.setup(x -> x.debug(new SuspendingDebug()));
-		setup();
+		var handler = new SuspendingHandler();
+		helpers.setup(x -> x.interruptHandler(handler));
+		handler.state = helpers.state;
+		addGlobals();
+		helpers.state.interrupt();
 
 		LuaFunction function = helpers.loadScript(name);
 		Varargs result = LuaThread.runMain(helpers.state, function);
-		while (result == null && !helpers.state.getMainThread().getStatus().equals("dead")) {
+		while (result == null && helpers.state.getMainThread().isAlive()) {
 			result = LuaThread.run(helpers.state.getCurrentThread(), Constants.NONE);
 		}
 
-		assertEquals("dead", helpers.state.getMainThread().getStatus());
-	}
-
-	private static class Suspend extends ResumableVarArgFunction<Void> {
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			LuaThread.suspend(state);
-			return Constants.NONE;
-		}
-
-		@Override
-		protected Varargs resumeThis(LuaState state, Void object, Varargs value) {
-			return Constants.NONE;
-		}
+		assertEquals("dead", helpers.state.getMainThread().getStatus().getDisplayName());
 	}
 
 	private static class Run extends ResumableVarArgFunction<LuaThread> {
@@ -139,36 +122,15 @@ public class CoroutineTest {
 		return args;
 	}
 
-	private static class SuspendingDebug extends DebugHandler {
+	private static class SuspendingHandler implements InterruptHandler {
+		LuaState state;
 		private boolean suspend = true;
 
-		private int flags;
-		private boolean inHook;
-
 		@Override
-		public void onInstruction(DebugState ds, DebugFrame di, int pc) throws LuaError, UnwindThrowable {
-			di.pc = pc;
-
-			if (suspend) {
-				// Save the current state
-				flags = di.flags;
-				inHook = ds.inhook;
-
-				// Set HOOK_YIELD and HOOKED flags so we know its an instruction hook
-				di.flags |= FLAG_HOOKYIELD | FLAG_HOOKED;
-
-				// We don't want to suspend next tick.
-				suspend = false;
-				LuaThread.suspend(ds.getLuaState());
-			}
-
-			// Restore the old state
-			ds.inhook = inHook;
-			di.flags = flags;
-			suspend = true;
-
-			// And continue as normal
-			super.onInstruction(ds, di, pc);
+		public InterruptAction interrupted() {
+			state.interrupt();
+			suspend = !suspend;
+			return suspend ? InterruptAction.CONTINUE : InterruptAction.SUSPEND;
 		}
 	}
 }

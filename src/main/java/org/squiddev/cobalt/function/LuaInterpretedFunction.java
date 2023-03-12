@@ -28,7 +28,6 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.debug.Upvalue;
 
@@ -163,34 +162,37 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	}
 
 	@Override
-	public String debugName() {
-		return getPrototype().sourceShort() + ":" + getPrototype().lineDefined;
-	}
+	public Varargs resume(LuaState state, DebugFrame frame, Object object, Varargs value) throws LuaError, UnwindThrowable {
+		DebugState ds = DebugState.get(state);
 
-	@Override
-	public Varargs resume(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
-		DebugState ds = DebugHandler.getDebugState(state);
-		DebugFrame di = ds.getStackUnsafe();
-
-		if ((di.flags & FLAG_HOOKED) != 0) {
+		if ((frame.flags & (FLAG_ANY_HOOK | FLAG_INTERRUPTED)) != 0) {
 			// We're resuming in from a hook
-			ds.inhook = false;
-			di.flags ^= FLAG_HOOKED;
+			assert ds.inhook || (frame.flags & FLAG_INTERRUPTED) != 0;
 
-			if ((di.flags & FLAG_HOOKYIELD) != 0) {
-				// Yielded within instruction hook, do nothing
-			} else if (di.top != -1) {
+			if ((frame.flags & FLAG_INTERRUPTED) != 0) {
+				// This occurs when the insn/line debug hook yield, we continue execution, and then we suspend instead.
+				// In this case, we just clear the flag and then resume execution - like with the insn/line hook,
+				// everything else should be handled by the interpreter.
+				frame.flags &= ~FLAG_INTERRUPTED;
+			} else if ((frame.flags & (FLAG_INSN_HOOK | FLAG_LINE_HOOK)) != 0) {
+				// Yielded within instruction hook, do nothing - we'll handle this inside the interpreter.
+			} else if ((frame.flags & FLAG_RETURN_HOOK) != 0) {
 				// Yielded while returning. This one's pretty simple, but verbose due to how returns are
 				// implemented
-				return resumeReturn(state, ds, di, this);
-			} else {
+				ds.inhook = false;
+				frame.flags &= ~FLAG_RETURN_HOOK;
+				return resumeReturn(state, ds, frame, this);
+			} else if ((frame.flags & FLAG_CALL_HOOK) != 0) {
 				// Yielded while calling. Finish off setupCall
-				di.pc = di.top = 0;
+				ds.inhook = false;
+				frame.flags &= ~FLAG_CALL_HOOK;
+			} else {
+				throw new AssertionError("Incorrect debug flag set");
 			}
 		} else {
-			LuaInterpreter.resume(state, di, this, value);
+			LuaInterpreter.resume(state, frame, this, value);
 		}
 
-		return execute(state, di, this);
+		return execute(state, frame, this);
 	}
 }

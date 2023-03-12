@@ -42,6 +42,15 @@ public interface DebugHook {
 	LuaString TAILRETURN = valueOf("tail return");
 
 	/**
+	 * Should this hook be inherited by child threads?
+	 *
+	 * @return Whether this hook should be inherited when a new thread is created?
+	 */
+	default boolean inheritHook() {
+		return true;
+	}
+
+	/**
 	 * Called after entering a function
 	 *
 	 * @param state Current lua state
@@ -50,7 +59,8 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
+	default void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
+	}
 
 	/**
 	 * Called before exiting a function
@@ -61,7 +71,8 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
+	default void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
+	}
 
 	/**
 	 * Called before ever 'n' instructions
@@ -72,7 +83,8 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
+	default void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
+	}
 
 	/**
 	 * Called before each line changes
@@ -84,5 +96,6 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable;
+	default void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable {
+	}
 }

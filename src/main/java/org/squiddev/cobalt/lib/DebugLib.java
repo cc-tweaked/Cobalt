@@ -29,6 +29,7 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.debug.FunctionDebugHook;
 import org.squiddev.cobalt.function.*;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -112,17 +113,17 @@ public final class DebugLib {
 		DebugState ds = thread.getDebugState();
 
 		LuaValue hook;
-		if (ds.hookfunc == null) {
+		if (ds.getHook() == null) {
 			hook = NIL;
-		} else if (ds.hookfunc instanceof LuaValue) {
-			hook = (LuaValue) ds.hookfunc;
+		} else if (ds.getHook() instanceof FunctionDebugHook) {
+			hook = ((FunctionDebugHook) ds.getHook()).getFunction();
 		} else {
 			hook = EXTERNAL_HOOK;
 		}
 		return varargsOf(
 			hook,
-			valueOf((ds.hookcall ? "c" : "") + (ds.hookrtrn ? "r" : "") + (ds.hookline ? "l" : "")),
-			valueOf(ds.hookcount));
+			valueOf((ds.hasCallHook() ? "c" : "") + (ds.hasReturnHook() ? "r" : "") + (ds.hasLineHook() ? "l" : "")),
+			valueOf(ds.hookCount));
 	}
 
 	private static Varargs sethook(LuaState state, Varargs args) throws LuaError {
@@ -146,7 +147,13 @@ public final class DebugLib {
 		} else {
 			count = 0;
 		}
-		thread.getDebugState().setHook(func, call, line, rtrn, count);
+		thread.getDebugState().setHook(func == null ? null : new FunctionDebugHook(func), call, line, rtrn, count);
+
+		// See DebugState.onReturn
+		// TODO: Remove this once every function pushes/pops a debug frame.
+		DebugFrame returnInto = thread.getDebugState().getStack();
+		if (returnInto != null) returnInto.oldPc = returnInto.pc;
+
 		return NONE;
 	}
 
@@ -235,12 +242,12 @@ public final class DebugLib {
 					info.rawset(FUNC, di.func == null ? NIL : di.func);
 				}
 				case 'L' -> {
-					if (di.closure != null) {
+					if (di.func instanceof LuaClosure closure) {
 						LuaTable lines = new LuaTable();
 						info.rawset(ACTIVELINES, lines);
-						int[] lineinfo = di.closure.getPrototype().lineInfo;
-						if (lineinfo != null) {
-							for (int line : lineinfo) lines.rawset(line, TRUE);
+						int[] lineInfo = closure.getPrototype().lineInfo;
+						if (lineInfo != null) {
+							for (int line : lineInfo) lines.rawset(line, TRUE);
 						}
 					}
 				}

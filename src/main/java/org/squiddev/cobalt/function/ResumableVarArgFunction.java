@@ -26,16 +26,11 @@ package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_HOOKED;
-import static org.squiddev.cobalt.debug.DebugFrame.FLAG_JAVA;
+import static org.squiddev.cobalt.debug.DebugFrame.*;
 
 public abstract class ResumableVarArgFunction<T> extends LibFunction implements Resumable<Object> {
-	private static final Object CALL_MARKER = new Object();
-	private static final Object RETURN_MARKER = new Object();
-
 	@Override
 	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return invoke(state, Constants.NONE).first();
@@ -58,70 +53,61 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 
 	@Override
 	public final Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
-		DebugState ds = DebugHandler.getDebugState(state);
+		DebugState ds = DebugState.get(state);
 
 		// Push the frame
 		DebugFrame di = ds.pushJavaInfo();
 		di.setFunction(this, null);
-		di.flags |= FLAG_JAVA;
-		if (!ds.inhook && ds.hookcall) {
-			try {
-				ds.hookCall(di);
-			} catch (UnwindThrowable e) {
-				di.state = CALL_MARKER;
-				di.extras = args;
-				throw e;
-			}
-		}
+		ds.onCall(di, args);
 
 		Varargs result = invoke(state, di, args);
-		onReturn(state.debug, ds, di, result);
+		onReturn(ds, di, result);
 		return result;
 	}
 
 	@Override
-	public final Varargs resume(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
-		DebugState ds = DebugHandler.getDebugState(state);
+	public final Varargs resume(LuaState state, DebugFrame frame, Object object, Varargs value) throws LuaError, UnwindThrowable {
+		DebugState ds = DebugState.get(state);
+		DebugFrame di = ds.getStackUnsafe();
 
-		if (object == CALL_MARKER) {
-			// We yielded within the call hook: extract the arguments from the state.
-			DebugFrame di = ds.getStackUnsafe();
-			if (ds.inhook && (di.flags & FLAG_HOOKED) != 0) {
-				ds.inhook = false;
-				di.flags ^= FLAG_HOOKED;
-			}
+		if ((di.flags & FLAG_CALL_HOOK) != 0) {
+			// We yielded within the call hook: extract the arguments from the state and then execute.
+			// TODO: Ideally we'd do this inside DebugFrame when resuming, but that requires a bigger change.
+			assert ds.inhook;
+			ds.inhook = false;
+			frame.flags &= ~FLAG_CALL_HOOK;
 
 			// Reset the state and invoke the main function
-			di.state = null;
 			Varargs result = invoke(state, di, di.extras);
-			onReturn(state.debug, ds, di, result);
+			onReturn(ds, di, result);
 			return result;
-		} else if (object == RETURN_MARKER) {
-			// We yielded within the return hook: just return without calling the hook.
-			DebugFrame di = ds.getStackUnsafe();
-			if (ds.inhook && (di.flags & FLAG_HOOKED) != 0) ds.inhook = false;
+		} else if ((di.flags & FLAG_RETURN_HOOK) != 0) {
+			// We yielded within the return hook, so now can just return normlly.
+			assert ds.inhook;
+			ds.inhook = false;
+			frame.flags &= ~FLAG_RETURN_HOOK;
 
 			// Just pop the frame
 			Varargs args = di.extras;
-			state.debug.onReturnError(ds);
+			ds.onReturnNoHook();
 			return args;
 		} else {
 			@SuppressWarnings("unchecked")
 			Varargs result = resumeThis(state, (T) object, value);
-			onReturn(state.debug, ds, ds.getStackUnsafe(), result);
+			onReturn(ds, ds.getStackUnsafe(), result);
 			return result;
 		}
 	}
 
 	@Override
-	public final Varargs resumeError(LuaState state, Object object, LuaError error) throws LuaError, UnwindThrowable {
-		if (object == RETURN_MARKER || object == CALL_MARKER) throw error;
+	public final Varargs resumeError(LuaState state, DebugFrame frame, Object object, LuaError error) throws LuaError, UnwindThrowable {
+		if ((frame.flags & FLAG_ANY_HOOK) != 0) throw error;
 
 		@SuppressWarnings("unchecked")
 		Varargs result = resumeErrorThis(state, (T) object, error);
 
-		DebugState ds = DebugHandler.getDebugState(state);
-		onReturn(state.debug, ds, ds.getStack(), result);
+		DebugState ds = DebugState.get(state);
+		onReturn(ds, ds.getStack(), result);
 		return result;
 	}
 
@@ -133,11 +119,10 @@ public abstract class ResumableVarArgFunction<T> extends LibFunction implements 
 		throw error;
 	}
 
-	private static void onReturn(DebugHandler debug, DebugState ds, DebugFrame di, Varargs result) throws LuaError, UnwindThrowable {
+	private static void onReturn(DebugState ds, DebugFrame di, Varargs result) throws LuaError, UnwindThrowable {
 		try {
-			debug.onReturn(ds, di);
+			ds.onReturn(di);
 		} catch (UnwindThrowable e) {
-			di.state = RETURN_MARKER;
 			di.extras = result;
 			throw e;
 		}

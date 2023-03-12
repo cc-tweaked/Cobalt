@@ -25,7 +25,6 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
@@ -43,39 +42,49 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
  * @see LuaValue
  * @see CoroutineLib
  */
-public class LuaThread extends LuaValue {
-	/**
-	 * A coroutine which has been run at all
-	 */
-	private static final int STATUS_INITIAL = 0;
+public final class LuaThread extends LuaValue {
+	public enum Status {
+		/**
+		 * A coroutine which has been run at all.
+		 */
+		INITIAL("suspended"),
 
-	/**
-	 * A coroutine which has yielded
-	 */
-	private static final int STATUS_SUSPENDED = 1;
+		/**
+		 * A coroutine which has yielded.
+		 */
+		SUSPENDED("suspended"),
 
-	/**
-	 * A coroutine which is currently running
-	 */
-	private static final int STATUS_RUNNING = 2;
+		/**
+		 * A coroutine which is currently running.
+		 */
+		RUNNING("running"),
 
-	/**
-	 * A coroutine which has resumed another coroutine
-	 */
-	private static final int STATUS_NORMAL = 3;
+		/**
+		 * A coroutine which has resumed another coroutine.
+		 */
+		NORMAL("normal"),
 
-	/**
-	 * A coroutine which has finished executing
-	 */
-	private static final int STATUS_DEAD = 4;
+		/**
+		 * A coroutine which has finished executing.
+		 */
+		DEAD("dead");
 
-	private static final String[] STATUS_NAMES = {
-		"suspended",
-		"suspended",
-		"running",
-		"normal",
-		"dead",
-	};
+		private final String name;
+		private final LuaValue nameValue;
+
+		Status(String name) {
+			this.name = name;
+			nameValue = ValueFactory.valueOf(name);
+		}
+
+		public String getDisplayName() {
+			return name;
+		}
+
+		public LuaValue getDisplayNameValue() {
+			return nameValue;
+		}
+	}
 
 	/**
 	 * The state that this thread lives in
@@ -85,7 +94,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * The current status of this thread
 	 */
-	private int status;
+	private Status status;
 
 	/**
 	 * The environment this thread has.
@@ -105,7 +114,7 @@ public class LuaThread extends LuaValue {
 	/**
 	 * The main function for this thread
 	 */
-	final LuaFunction function;
+	private final LuaFunction function;
 
 	/**
 	 * The thread which resumed this one, and so should be resumed back into.
@@ -123,7 +132,7 @@ public class LuaThread extends LuaValue {
 		Objects.requireNonNull(state, "state cannot be null");
 		Objects.requireNonNull(env, "env cannot be null");
 
-		status = STATUS_RUNNING;
+		status = Status.RUNNING;
 		luaState = state;
 		debugState = new DebugState(state);
 		this.env = env;
@@ -143,11 +152,22 @@ public class LuaThread extends LuaValue {
 		Objects.requireNonNull(func, "func cannot be null");
 		Objects.requireNonNull(env, "env cannot be null");
 
-		status = STATUS_INITIAL;
+		status = Status.INITIAL;
 		luaState = state;
 		debugState = new DebugState(state);
 		this.env = env;
 		function = func;
+
+		LuaThread current = state.getCurrentThread();
+		if (current != null && current.debugState.getHook() != null && current.debugState.getHook().inheritHook()) {
+			current.debugState.setHook(
+				current.debugState.getHook(),
+				current.debugState.hasCallHook(),
+				current.debugState.hasLineHook(),
+				current.debugState.hasReturnHook(),
+				current.debugState.hookCount
+			);
+		}
 	}
 
 	@Override
@@ -176,8 +196,8 @@ public class LuaThread extends LuaValue {
 		return true;
 	}
 
-	public String getStatus() {
-		return STATUS_NAMES[status];
+	public Status getStatus() {
+		return status;
 	}
 
 	/**
@@ -190,7 +210,7 @@ public class LuaThread extends LuaValue {
 	}
 
 	public boolean isAlive() {
-		return status != STATUS_DEAD;
+		return status != Status.DEAD;
 	}
 
 	/**
@@ -201,7 +221,7 @@ public class LuaThread extends LuaValue {
 	 * @return LuaFunction on the call stack, or null if outside of range of active stack
 	 */
 	public static LuaFunction getCallstackFunction(LuaState state, int level) {
-		DebugFrame info = DebugHandler.getDebugState(state).getFrame(level);
+		DebugFrame info = DebugState.get(state).getFrame(level);
 		return info == null ? null : info.func;
 	}
 
@@ -209,7 +229,7 @@ public class LuaThread extends LuaValue {
 	 * Get the debug state for this thread
 	 *
 	 * @return This thread's debug state
-	 * @see DebugHandler#getDebugState(LuaState)
+	 * @see DebugState#get(LuaState)
 	 */
 	public DebugState getDebugState() {
 		return debugState;
@@ -252,8 +272,8 @@ public class LuaThread extends LuaValue {
 		Objects.requireNonNull(args, "args cannot be null");
 
 		LuaThread thread = state.currentThread;
-		if (thread.status != STATUS_RUNNING) {
-			throw new LuaError("cannot yield a " + STATUS_NAMES[thread.status] + " thread");
+		if (thread.status != Status.RUNNING) {
+			throw new LuaError("cannot yield a " + thread.status.getDisplayName() + " thread");
 		}
 		if (thread.isMainThread()) throw new LuaError("cannot yield main thread");
 
@@ -266,37 +286,21 @@ public class LuaThread extends LuaValue {
 	 * @param state  The current lua state
 	 * @param thread The thread to resume
 	 * @param args   The arguments to resume with
-	 * @return The arguments the parent coroutine yielded with, if yielding is currently blocked.
+	 * @return Will never return.
 	 * @throws LuaError        If this coroutine cannot resume another.
 	 * @throws UnwindThrowable If we can yield this stack with an exception
 	 */
 	public static <T> T resume(LuaState state, LuaThread thread, Varargs args) throws LuaError, UnwindThrowable {
 		LuaThread current = state.currentThread;
-		if (current.status != STATUS_RUNNING) {
-			throw new LuaError("cannot resume from a " + STATUS_NAMES[current.status] + " thread");
+		if (current.status != Status.RUNNING) {
+			throw new LuaError("cannot resume from a " + current.status.getDisplayName() + " thread");
 		}
 
-		if (thread.status > STATUS_SUSPENDED) {
-			throw new LuaError("cannot resume " + STATUS_NAMES[thread.status] + " coroutine");
+		if (thread.status.ordinal() > Status.SUSPENDED.ordinal()) {
+			throw new LuaError("cannot resume " + thread.status.getDisplayName() + " coroutine");
 		}
 
 		throw UnwindThrowable.resume(thread, args);
-	}
-
-	/**
-	 * Suspend the current thread. Note, this may return or throw an exception, so you must handle both cases.
-	 *
-	 * @param state The current lua state
-	 * @throws LuaError        If this coroutine cannot be suspended.
-	 * @throws UnwindThrowable If we can yield this stack with an exception
-	 */
-	public static void suspend(LuaState state) throws LuaError, UnwindThrowable {
-		LuaThread current = state.currentThread;
-		if (current.status != STATUS_RUNNING) {
-			throw new LuaError("cannot suspend a " + STATUS_NAMES[current.status] + " thread");
-		}
-
-		throw UnwindThrowable.suspend();
 	}
 
 	public static Varargs runMain(LuaState state, LuaFunction function) throws LuaError {
@@ -315,7 +319,7 @@ public class LuaThread extends LuaValue {
 	 * @return {@link Varargs} provided as arguments to {@link #yield(LuaState, Varargs)}
 	 * @throws LuaError If the current function threw an exception.
 	 */
-	public static Varargs run(LuaThread thread, Varargs args) throws LuaError, InterruptedException {
+	public static Varargs run(LuaThread thread, Varargs args) throws LuaError {
 		return run(thread.luaState, thread, null, args);
 	}
 
@@ -328,11 +332,11 @@ public class LuaThread extends LuaValue {
 		do {
 			final DebugState ds = thread.debugState;
 			state.currentThread = thread;
-			if (thread.status == STATUS_INITIAL && function == null) function = thread.function;
+			if (thread.status == Status.INITIAL && function == null) function = thread.function;
 
 			try {
 				if (function != null) {
-					thread.status = STATUS_RUNNING;
+					thread.status = Status.RUNNING;
 
 					// We only want to execute the function the first time, so null it out
 					LuaFunction toExecute = function;
@@ -345,7 +349,7 @@ public class LuaThread extends LuaValue {
 						le = LuaError.wrap(e);
 					}
 				} else {
-					thread.status = STATUS_RUNNING;
+					thread.status = Status.RUNNING;
 
 					outer:
 					while (true) {
@@ -358,7 +362,7 @@ public class LuaThread extends LuaValue {
 								// We need to set the error to null first so we don't continue to propogate this error.
 								LuaError err = le;
 								le = null;
-								args = frame.resumeError(state, err);
+								args = ds.resumeError(frame, err);
 							}
 
 							while (true) {
@@ -372,7 +376,7 @@ public class LuaThread extends LuaValue {
 									if (frame == null) break;
 								}
 
-								args = frame.resume(state, args);
+								args = ds.resume(frame, args);
 							}
 						} catch (Exception | VirtualMachineError e) {
 							args = null;
@@ -382,7 +386,7 @@ public class LuaThread extends LuaValue {
 				}
 
 				// We've died, yield into the parent coroutine
-				thread.status = STATUS_DEAD;
+				thread.status = Status.DEAD;
 				LuaThread previous = thread.previousThread;
 				thread.previousThread = null;
 				thread = previous;
@@ -396,18 +400,18 @@ public class LuaThread extends LuaValue {
 				}
 			} catch (UnwindThrowable e) {
 				if (e.isSuspend()) {
-					thread.status = STATUS_SUSPENDED;
+					thread.status = Status.SUSPENDED;
 					return null;
 				} else if (e.isYield()) {
 					// Yield into the parent coroutine
-					thread.status = STATUS_SUSPENDED;
+					thread.status = Status.SUSPENDED;
 					LuaThread previous = thread.previousThread;
 					thread.previousThread = null;
 					thread = previous;
 					args = e.getArgs();
 				} else {
 					// Resume into the next coroutine
-					thread.status = STATUS_NORMAL;
+					thread.status = Status.NORMAL;
 					LuaThread next = e.getThread();
 					next.previousThread = state.currentThread;
 					thread = next;

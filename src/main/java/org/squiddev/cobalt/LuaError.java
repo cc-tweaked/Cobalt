@@ -27,6 +27,8 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.lib.UncheckedLuaError;
 
+import java.io.Serial;
+
 /**
  * RuntimeException that is thrown and caught in response to a lua error.
  * <p>
@@ -39,6 +41,7 @@ import org.squiddev.cobalt.lib.UncheckedLuaError;
  * This is analagous to the fact that any lua script can throw a lua error at any time.
  */
 public final class LuaError extends Exception {
+	@Serial
 	private static final long serialVersionUID = 3065540200206862088L;
 
 	private LuaValue value;

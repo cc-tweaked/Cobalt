@@ -22,18 +22,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.squiddev.cobalt.compiler;
+package org.squiddev.cobalt.interrupt;
 
-import java.io.Serial;
+import org.squiddev.cobalt.LuaError;
 
 /**
- * Represents a failure in compiling a binary chunk or string
+ * The main handler for debugging
  */
-public class CompileException extends Exception {
-	@Serial
-	private static final long serialVersionUID = 5563020350887073386L;
-
-	CompileException(String message) {
-		super(message);
-	}
+public interface InterruptHandler {
+	/**
+	 * Called within long running processes (such as pattern matching)
+	 * to allow terminating the process.
+	 *
+	 * @throws LuaError On a runtime error.
+	 */
+	InterruptAction interrupted() throws LuaError;
 }

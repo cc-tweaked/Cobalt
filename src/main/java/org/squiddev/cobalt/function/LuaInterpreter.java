@@ -26,7 +26,6 @@ package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.debug.Upvalue;
 
@@ -152,19 +151,14 @@ public final class LuaInterpreter {
 		Prototype p = function.p;
 		if (p.isVarArg >= VARARG_NEEDSARG) stack[p.parameters] = new LuaTable(varargs);
 
-		DebugState ds = DebugHandler.getDebugState(state);
+		DebugState ds = DebugState.get(state);
 		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
 		di.setFunction(function, varargs, stack);
 		di.flags |= flags;
 		di.extras = NONE;
-		di.pc = 0;
+		di.top = di.pc = 0;
+		ds.onCall(di, NONE);
 
-		if (!ds.inhook && ds.hookcall) {
-			// Pretend we are at the first instruction for the hook.
-			ds.hookCall(di);
-		}
-
-		di.top = 0;
 		return di;
 	}
 
@@ -181,8 +175,7 @@ public final class LuaInterpreter {
 	}
 
 	static Varargs execute(final LuaState state, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
-		final DebugState ds = DebugHandler.getDebugState(state);
-		final DebugHandler handler = state.debug;
+		final DebugState ds = DebugState.get(state);
 
 		newFrame:
 		while (true) {
@@ -200,7 +193,11 @@ public final class LuaInterpreter {
 
 			// process instructions
 			while (true) {
-				handler.onInstruction(ds, di, pc);
+				if (state.isInterrupted()) {
+					di.pc = pc;
+					state.handleInterrupt();
+				}
+				ds.onInstruction(di, pc);
 
 				// pull out instruction
 				int i = code[pc++];
@@ -469,7 +466,7 @@ public final class LuaInterpreter {
 						int flags = di.flags, top = di.top;
 						Varargs v = di.extras;
 						di.cleanup();
-						handler.onReturn(ds, di);
+						ds.onReturn(di);
 
 						Varargs ret = switch (b) {
 							case 0 -> ValueFactory.varargsOfCopy(stack, a, top - v.count() - a, v);
@@ -483,7 +480,7 @@ public final class LuaInterpreter {
 							return ret;
 						} else {
 							di = ds.getStackUnsafe();
-							function = (LuaInterpretedFunction) di.closure;
+							function = (LuaInterpretedFunction) di.func;
 							resume(state, di, function, ret);
 							continue newFrame;
 						}
@@ -776,7 +773,6 @@ public final class LuaInterpreter {
 
 	public static Varargs resumeReturn(LuaState state, DebugState ds, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
 		int i = function.p.code[di.pc];
-		DebugHandler handler = state.debug;
 
 		switch (((i >> POS_OP) & MAX_OP)) {
 			case OP_RETURN: {
@@ -784,22 +780,21 @@ public final class LuaInterpreter {
 				int b = (i >>> POS_B) & MAXARG_B;
 
 				Varargs ret = switch (b) {
-					case 0 ->
-						ValueFactory.varargsOfCopy(di.stack, a, di.top - di.extras.count() - a, di.extras);
+					case 0 -> ValueFactory.varargsOfCopy(di.stack, a, di.top - di.extras.count() - a, di.extras);
 					case 1 -> NONE;
 					case 2 -> di.stack[a];
 					default -> ValueFactory.varargsOfCopy(di.stack, a, b - 1);
 				};
 
 				int flags = di.flags;
-				handler.onReturnError(ds);
+				ds.onReturnNoHook();
 
 				if ((flags & FLAG_FRESH) != 0) {
 					// If we're a fresh invocation then return to the parent.
 					return ret;
 				} else {
 					di = ds.getStackUnsafe();
-					function = (LuaInterpretedFunction) di.closure;
+					function = (LuaInterpretedFunction) di.func;
 					resume(state, di, function, ret);
 					return execute(state, di, function);
 				}

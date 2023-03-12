@@ -35,52 +35,39 @@ import org.squiddev.cobalt.function.LuaInterpreter;
  * which will track function calls, hook functions, etc.
  */
 public final class DebugFrame {
-
 	/**
-	 * Whether this function is currently within a debug hook.
+	 * Whether this function contributes to the Java call stack
 	 *
 	 * @see #flags
-	 * @see DebugState#hookCall(DebugFrame) and other {@code hook*} functions.
-	 * @see org.squiddev.cobalt.function.ResumableVarArgFunction
-	 * @see org.squiddev.cobalt.function.LuaInterpretedFunction
+	 * @see DebugState#pushJavaInfo()
 	 */
-	public static final int FLAG_HOOKED = 1 << 2;
+	public static final int FLAG_JAVA_STACK = 1 << 0;
 
 	/**
 	 * This is a fresh instance of a {@link LuaInterpreter}. The interpreter
 	 * loop should not continue beyond functions marked with this flag.
 	 */
-	public static final int FLAG_FRESH = 1 << 3;
+	public static final int FLAG_FRESH = 1 << 1;
+
+	/**
+	 * Whether this function was tail called. When set, an additional "tail calls..." entry is added to the traceback.
+	 *
+	 * @see #flags
+	 * @see LuaInterpreter
+	 */
+	public static final int FLAG_TAIL = 1 << 2;
 
 	/**
 	 * If this function is a yielded, protected call. Namely, if one can
-	 * {@link Resumable#resumeError(LuaState, Object, LuaError)} into it.
+	 * {@link Resumable#resumeError(LuaState, DebugFrame, Object, LuaError)} into it.
 	 *
 	 * @see #flags
 	 * @see org.squiddev.cobalt.lib.CoroutineLib {@code coroutine.resume} sets this, in order to receive errors from the
 	 * child coroutine.
 	 * @see org.squiddev.cobalt.lib.BaseLib {@code pcall}/{@code xpcall} set this for obvious reasons.
 	 */
-	public static final int FLAG_YPCALL = 1 << 4;
+	public static final int FLAG_YPCALL = 1 << 3;
 	// TODO: Remove this and just have a child interface to Resumable?
-
-	/**
-	 * Whether this function is currently within a line/instruction debug hook.
-	 *
-	 * @see #flags
-	 * @see DebugState#hookInstruction(DebugFrame)
-	 * @see org.squiddev.cobalt.function.LuaInterpretedFunction#resume(LuaState, Object, Varargs)
-	 */
-	public static final int FLAG_HOOKYIELD = 1 << 6;
-
-	/**
-	 * If the result should be inverted  (due to using lt rather than le).
-	 *
-	 * @see #flags
-	 * @see OperationHelper#le(LuaState, LuaValue, LuaValue)
-	 * @see LuaInterpreter#resume(LuaState, DebugFrame, LuaInterpretedFunction, Varargs)
-	 */
-	public static final int FLAG_LEQ = 1 << 7;
 
 	/**
 	 * If this function errored. This is a really gross hack to ensure we don't resume into errored
@@ -89,31 +76,59 @@ public final class DebugFrame {
 	 * @see #flags
 	 * @see org.squiddev.cobalt.lib.BaseLib and the xpcall implementation.
 	 */
-	public static final int FLAG_ERROR = 1 << 10;
+	public static final int FLAG_ERROR = 1 << 4;
 
 	/**
-	 * Whether this function is currently within line debug hook.
+	 * If the result should be inverted  (due to using lt rather than le).
 	 *
 	 * @see #flags
-	 * @see DebugState#hookInstruction(DebugFrame)
+	 * @see OperationHelper#le(LuaState, LuaValue, LuaValue)
+	 * @see LuaInterpreter#resume(LuaState, DebugFrame, LuaInterpretedFunction, Varargs)
 	 */
-	public static final int FLAG_HOOKYIELD_LINE = 1 << 11;
+	public static final int FLAG_LEQ = 1 << 5;
 
 	/**
-	 * Whether this function contributes to the Java call stack
-	 *
-	 * @see #flags
-	 * @see DebugState#pushJavaInfo()
+	 * Whether this function was suspended by a call to {@link LuaState#handleInterrupt()}.
 	 */
-	public static final int FLAG_JAVA = 1 << 12;
+	public static final int FLAG_INTERRUPTED = 1 << 6;
 
 	/**
-	 * Whether this function was tail called
+	 * Whether this function is currently within an on-call debug hook.
 	 *
 	 * @see #flags
-	 * @see LuaInterpreter
+	 * @see DebugState#onCall(DebugFrame, Varargs)
 	 */
-	public static final int FLAG_TAIL = 1 << 13;
+	public static final int FLAG_CALL_HOOK = 1 << 10;
+
+	/**
+	 * Whether this function is currently within an on-return debug hook. This is used when resuming a function after a
+	 * yield.
+	 *
+	 * @see #flags
+	 * @see DebugState#onReturn(DebugFrame)
+	 */
+	public static final int FLAG_RETURN_HOOK = 1 << 11;
+
+	/**
+	 * Whether this function is currently within a line debug hook.
+	 *
+	 * @see #flags
+	 * @see DebugState#onInstruction(DebugFrame, int)
+	 */
+	public static final int FLAG_INSN_HOOK = 1 << 12;
+
+	/**
+	 * Whether this function is currently within an instruction count debug hook.
+	 *
+	 * @see #flags
+	 * @see DebugState#onInstruction(DebugFrame, int)
+	 */
+	public static final int FLAG_LINE_HOOK = 1 << 13;
+
+	/**
+	 * Whether this function is currently within any hook.
+	 */
+	public static final int FLAG_ANY_HOOK = FLAG_CALL_HOOK | FLAG_RETURN_HOOK | FLAG_INSN_HOOK | FLAG_LINE_HOOK;
 
 	/**
 	 * The debug info's function
@@ -274,23 +289,5 @@ public final class DebugFrame {
 
 		// FIXME: Use top rather than maxstacksize. Sadly it isn't currently updated.
 		return index > 0 && index <= closure.getPrototype().maxStackSize ? TEMPORARY : null;
-	}
-
-	@SuppressWarnings("unchecked")
-	public Varargs resume(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
-		if (func instanceof Resumable<?>) {
-			return ((Resumable<Object>) func).resume(state, this.state, args);
-		} else {
-			throw new NonResumableException(func == null ? "null" : func.debugName());
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	public Varargs resumeError(LuaState state, LuaError error) throws LuaError, UnwindThrowable {
-		if (func instanceof Resumable<?>) {
-			return ((Resumable<Object>) func).resumeError(state, this.state, error);
-		} else {
-			throw new NonResumableException(func == null ? "null" : func.debugName());
-		}
 	}
 }

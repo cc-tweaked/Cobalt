@@ -77,7 +77,7 @@ public final class CoroutineLib {
 	}
 
 	private static LuaValue status(LuaState state, LuaValue arg) throws LuaError {
-		return valueOf(arg.checkThread().getStatus());
+		return arg.checkThread().getStatus().getDisplayNameValue();
 	}
 
 	private static LuaValue wrap(LuaState state, LuaValue arg) throws LuaError {

@@ -39,10 +39,6 @@ public class Constants {
 	 */
 	public static final int TINT = (-2);
 	/**
-	 * Type enumeration constant for lua values that have no type, for example weak table entries
-	 */
-	public static final int TNONE = (-1);
-	/**
 	 * Type enumeration constant for lua nil
 	 */
 	public static final int TNIL = 0;

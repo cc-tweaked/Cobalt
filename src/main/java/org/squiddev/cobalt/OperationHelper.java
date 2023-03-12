@@ -25,7 +25,7 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -291,7 +291,7 @@ public final class OperationHelper {
 				if (h.isNil()) {
 					h = left.metatag(state, Constants.LT);
 					if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
-						DebugFrame frame = DebugHandler.getDebugState(state).getStackUnsafe();
+						DebugFrame frame = DebugState.get(state).getStackUnsafe();
 
 						frame.flags |= FLAG_LEQ;
 						boolean result = !OperationHelper.call(state, h, right, left).toBoolean();

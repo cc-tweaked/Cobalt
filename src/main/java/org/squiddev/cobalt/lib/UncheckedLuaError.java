@@ -26,6 +26,8 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.LuaError;
 
+import java.io.Serial;
+
 /**
  * An unchecked version of {@link org.squiddev.cobalt.LuaError}.
  * <p>
@@ -35,6 +37,7 @@ import org.squiddev.cobalt.LuaError;
  * @see org.squiddev.cobalt.LuaError#wrap(Throwable)
  */
 public final class UncheckedLuaError extends RuntimeException {
+	@Serial
 	private static final long serialVersionUID = -2431451026200110553L;
 
 	public UncheckedLuaError(LuaError error) {

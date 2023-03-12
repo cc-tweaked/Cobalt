@@ -24,12 +24,14 @@
  */
 package org.squiddev.cobalt;
 
+import java.io.Serial;
 import java.util.Objects;
 
 /**
  * An interface which is thrown when you want the VM to yield.
  */
 public final class UnwindThrowable extends Throwable {
+	@Serial
 	private static final long serialVersionUID = -197039276914556877L;
 
 	private static final UnwindThrowable suspendCache = new UnwindThrowable(Constants.NONE, null, true, true);

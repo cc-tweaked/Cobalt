@@ -26,8 +26,11 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.debug.DebugHandler;
+import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.interrupt.InterruptAction;
+import org.squiddev.cobalt.interrupt.InterruptHandler;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -69,10 +72,8 @@ public final class LuaState {
 	 */
 	public final LoadState.FunctionFactory compiler;
 
-	/**
-	 * The handler for the debugger. Override this for custom debug actions.
-	 */
-	public final DebugHandler debug;
+	private volatile boolean interrupted;
+	private final InterruptHandler interruptHandler;
 
 	/**
 	 * The currently executing thread
@@ -97,7 +98,7 @@ public final class LuaState {
 
 	private LuaState(Builder builder) {
 		compiler = builder.compiler;
-		debug = builder.debug;
+		interruptHandler = builder.interruptHandler;
 		reportError = builder.reportError;
 
 		mainThread = currentThread = new LuaThread(this, new LuaTable());
@@ -132,6 +133,74 @@ public final class LuaState {
 		return currentThread;
 	}
 
+	/**
+	 * Interrupt the execution of the current runtime.
+	 * <p>
+	 * This method is expected to be called from another thread. When the Lua runtime is next able to do so, it will
+	 * call the current {@link InterruptHandler}'s {@link InterruptHandler#interrupted()} method.
+	 *
+	 * @see InterruptHandler
+	 * @see #checkInterrupt()
+	 */
+	public void interrupt() {
+		if (interruptHandler == null) throw new IllegalStateException("LuaState has no interrupt handler");
+		interrupted = true;
+	}
+
+	/**
+	 * Check if the Lua runtime was interrupted;
+	 *
+	 * @return If the VM is currently interrupted.
+	 * @see #handleInterrupt()
+	 * @see #handleInterruptWithoutYield()
+	 */
+	public boolean isInterrupted() {
+		return interrupted;
+	}
+
+	/**
+	 * Handle the current runtime interrupt. Calls to this method should be guarded with a check of
+	 * {@link #isInterrupted()}.
+	 *
+	 * @throws LuaError        If the {@linkplain InterruptHandler#interrupted() handler} threw an error.
+	 * @throws UnwindThrowable If the handler requested the runtime be {@linkplain InterruptAction#SUSPEND suspended}.
+	 * @see #interrupt()
+	 */
+	public void handleInterrupt() throws UnwindThrowable, LuaError {
+		interrupted = false;
+		switch (interruptHandler.interrupted()) {
+			case CONTINUE -> {
+			}
+			case SUSPEND -> {
+				if (currentThread.getStatus() != LuaThread.Status.RUNNING) {
+					throw new IllegalStateException("Called checkInterrupt from a " + currentThread.getStatus().getDisplayName() + " thread");
+				}
+
+				DebugFrame top = currentThread.getDebugState().getStackUnsafe();
+				top.flags |= DebugFrame.FLAG_INTERRUPTED;
+
+				throw UnwindThrowable.suspend();
+			}
+		}
+	}
+
+	/**
+	 * Handle an interrupt. Unlike {@link #handleInterrupt()}, this will continue execution if the
+	 * handler attempts to {@linkplain InterruptAction#SUSPEND suspend} the Lua machine.
+	 *
+	 * @throws LuaError If the {@linkplain InterruptHandler#interrupted() handler} threw an error.
+	 * @see #interrupt()
+	 */
+	public void handleInterruptWithoutYield() throws LuaError {
+		interrupted = false;
+		switch (interruptHandler.interrupted()) {
+			case CONTINUE -> {
+			}
+			// We can't suspend here, so just set the interrupted flag again so we check later.
+			case SUSPEND -> interrupted = true;
+		}
+	}
+
 	@Deprecated
 	public void reportInternalError(Throwable error) {
 		if (reportError != null) reportError.report(error, () -> "Uncaught Java exception");
@@ -150,7 +219,7 @@ public final class LuaState {
 	 */
 	public static class Builder {
 		private LoadState.FunctionFactory compiler = LoadState::interpretedFunction;
-		private DebugHandler debug = DebugHandler.INSTANCE;
+		private InterruptHandler interruptHandler = null;
 		private ErrorReporter reportError;
 
 		/**
@@ -169,25 +238,25 @@ public final class LuaState {
 		 * @return This builder
 		 */
 		public Builder compiler(LoadState.FunctionFactory compiler) {
-			if (compiler == null) throw new NullPointerException("compiler cannot be null");
+			Objects.requireNonNull(compiler, "compiler cannot be null");
 			this.compiler = compiler;
 			return this;
 		}
 
 		/**
-		 * Set the debug handler for this Lua state.
+		 * Set the interrupt handler for this Lua state.
 		 *
-		 * @param debug The new debug handler
+		 * @param handler The new interrupt handler.
 		 * @return This builder
 		 */
-		public Builder debug(DebugHandler debug) {
-			if (debug == null) throw new NullPointerException("debug cannot be null");
-			this.debug = debug;
+		public Builder interruptHandler(InterruptHandler handler) {
+			Objects.requireNonNull(handler, "handler cannot be null");
+			interruptHandler = handler;
 			return this;
 		}
 
 		public Builder errorReporter(ErrorReporter reporter) {
-			if (reporter == null) throw new NullPointerException("report cannot be null");
+			Objects.requireNonNull(reporter, "reporter cannot be null");
 			reportError = reporter;
 			return this;
 		}

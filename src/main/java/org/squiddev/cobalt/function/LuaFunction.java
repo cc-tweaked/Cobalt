@@ -25,9 +25,6 @@
 package org.squiddev.cobalt.function;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHook;
-import org.squiddev.cobalt.debug.DebugState;
 
 /**
  * Base class for functions implemented in Java.
@@ -41,7 +38,7 @@ import org.squiddev.cobalt.debug.DebugState;
  * @see LibFunction
  * @see LuaInterpretedFunction
  */
-public abstract class LuaFunction extends LuaValue implements DebugHook {
+public abstract class LuaFunction extends LuaValue {
 	private LuaTable env;
 
 	public LuaFunction() {
@@ -191,24 +188,4 @@ public abstract class LuaFunction extends LuaValue implements DebugHook {
 	 * @see #call(LuaState, LuaValue)
 	 */
 	public abstract Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
-
-	@Override
-	public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-		call(state, CALL);
-	}
-
-	@Override
-	public void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-		call(state, RETURN);
-	}
-
-	@Override
-	public void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-		call(state, COUNT);
-	}
-
-	@Override
-	public void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable {
-		call(state, LINE, ValueFactory.valueOf(newLine));
-	}
 }

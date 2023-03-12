@@ -125,4 +125,14 @@ public final class Prototype {
 		}
 		return null;  // not found
 	}
+
+	/**
+	 * Get the line of the instruction at the given offset.
+	 *
+	 * @param pc The program counter.
+	 * @return The line, or {@code -1} if not set.
+	 */
+	public int getLine(int pc) {
+		return lineInfo != null && pc >= 0 && pc <= lineInfo.length ? lineInfo[pc] : -1;
+	}
 }

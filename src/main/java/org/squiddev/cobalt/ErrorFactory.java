@@ -25,8 +25,9 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugHelpers;
+import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.function.LuaClosure;
 
 /**
  * Factory class for errors
@@ -103,9 +104,9 @@ public class ErrorFactory {
 		String type = operand.typeName();
 		LuaString[] kind = null;
 		if (stack >= 0) {
-			DebugFrame info = DebugHandler.getDebugState(state).getStack();
-			if (info != null && info.closure != null) {
-				if (stack < info.closure.getPrototype().maxStackSize) {
+			DebugFrame info = DebugState.get(state).getStack();
+			if (info != null && info.func instanceof LuaClosure closure) {
+				if (stack < closure.getPrototype().maxStackSize) {
 					kind = DebugHelpers.getObjectName(info, stack);
 				}
 			}

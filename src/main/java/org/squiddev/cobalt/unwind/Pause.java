@@ -2,6 +2,8 @@ package org.squiddev.cobalt.unwind;
 
 import org.squiddev.cobalt.UnwindThrowable;
 
+import java.io.Serial;
+
 /**
  * Wraps a {@link UnwindThrowable}, allowing functions to accumulate state as they unwind.
  *
@@ -10,6 +12,9 @@ import org.squiddev.cobalt.UnwindThrowable;
  */
 @Deprecated
 public class Pause extends Throwable {
+	@Serial
+	private static final long serialVersionUID = -398434492393581558L;
+
 	public final UnwindState resumeAt;
 	public Object state;
 

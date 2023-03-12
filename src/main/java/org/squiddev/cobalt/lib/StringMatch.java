@@ -1,7 +1,6 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.function.VarArgFunction;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -235,7 +234,7 @@ class StringMatch {
 				return varargsOf(valueOf(result + 1), valueOf(result + pat.length()));
 			}
 		} else {
-			MatchState ms = new MatchState(state.debug, s, pat);
+			MatchState ms = new MatchState(state, s, pat);
 
 			boolean anchor = false;
 			int poff = 0;
@@ -267,7 +266,7 @@ class StringMatch {
 
 		public GMatchAux(LuaState state, LuaString src, LuaString pat) {
 			this.srclen = src.length();
-			this.ms = new MatchState(state.debug, src, pat);
+			this.ms = new MatchState(state, src, pat);
 			this.soffset = 0;
 		}
 
@@ -307,21 +306,21 @@ class StringMatch {
 			this.replace = replace;
 			this.maxS = maxS;
 
-			ms = new MatchState(state.debug, src, pattern);
+			ms = new MatchState(state, src, pattern);
 			count = EMPTY;
 		}
 	}
 
 	static class MatchState {
-		private final DebugHandler handler;
+		private final LuaState state;
 		final LuaString s;
 		final LuaString p;
 		int level;
 		int[] cinit;
 		int[] clen;
 
-		MatchState(DebugHandler handler, LuaString s, LuaString pattern) {
-			this.handler = handler;
+		MatchState(LuaState state, LuaString s, LuaString pattern) {
+			this.state = state;
 			this.s = s;
 			this.p = pattern;
 			this.level = 0;
@@ -525,7 +524,7 @@ class StringMatch {
 		 */
 		int match(int soffset, int poffset) throws LuaError {
 			while (true) {
-				handler.poll();
+				if(state.isInterrupted()) state.handleInterruptWithoutYield();
 
 				// Check if we are at the end of the pattern -
 				// equivalent to the '\0' case in the C version, but our pattern

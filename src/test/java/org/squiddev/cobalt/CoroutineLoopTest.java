@@ -41,7 +41,7 @@ public class CoroutineLoopTest {
 		LuaThread thread = new LuaThread(helpers.state, helpers.loadScript(name), helpers.globals);
 
 		int i = 0;
-		while (!thread.getStatus().equals("dead")) {
+		while (thread.isAlive()) {
 			LuaThread.run(thread, ValueFactory.valueOf("Resume " + i++));
 		}
 	}

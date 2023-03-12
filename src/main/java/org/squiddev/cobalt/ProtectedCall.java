@@ -2,7 +2,6 @@ package org.squiddev.cobalt;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHandler;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.unwind.SuspendedFunction;
 
@@ -78,7 +77,7 @@ public class ProtectedCall {
 	 * @param state The current Lua VM.
 	 * @param args  The arguments returned from the yielding function or error handler.
 	 * @return The success/failure of calling this function.
-	 * @see Resumable#resume(LuaState, Object, Varargs)
+	 * @see Resumable#resume(LuaState, DebugFrame, Object, Varargs)
 	 */
 	public Result resume(LuaState state, Varargs args) throws UnwindThrowable {
 		if (currentTask != null) {
@@ -95,7 +94,7 @@ public class ProtectedCall {
 	}
 
 	private void finish(LuaState state) {
-		assert DebugHandler.getDebugState(state).getStackUnsafe() == currentFrame;
+		assert DebugState.get(state).getStackUnsafe() == currentFrame;
 		assert (currentFrame.flags & FLAG_YPCALL) != 0;
 
 		// Clear the pcall mask and restore the error function.
@@ -116,7 +115,7 @@ public class ProtectedCall {
 	 * @param error The error that occurred.
 	 * @return The success/failure of calling this function.
 	 * @throws UnwindThrowable If the error handler yields.
-	 * @see Resumable#resumeError(LuaState, Object, LuaError)
+	 * @see Resumable#resumeError(LuaState, DebugFrame, Object, LuaError)
 	 */
 	public Result resumeError(LuaState state, LuaError error) throws UnwindThrowable {
 		// If we've already had an error, then this must be a problem in the error handler and so fail. Otherwise the
@@ -126,7 +125,7 @@ public class ProtectedCall {
 
 	private Result callErrorHandler(LuaState state, Throwable error) throws UnwindThrowable {
 		// Mark the top frame as errored, meaning it will not be resumed.
-		DebugHandler.getDebugState(state).getStackUnsafe().flags |= FLAG_ERROR;
+		DebugState.get(state).getStackUnsafe().flags |= FLAG_ERROR;
 		if (currentTask != null) currentTask = null;
 
 		// And mark us as being in the error handler.
@@ -157,13 +156,12 @@ public class ProtectedCall {
 	}
 
 	private static void closeUntil(LuaState state, DebugFrame top) {
-		DebugState ds = DebugHandler.getDebugState(state);
-		DebugHandler handler = state.debug;
+		DebugState ds = DebugState.get(state);
 
 		DebugFrame current;
 		while ((current = ds.getStackUnsafe()) != top) {
 			current.cleanup();
-			handler.onReturnError(ds);
+			ds.onReturnNoHook();
 		}
 	}
 

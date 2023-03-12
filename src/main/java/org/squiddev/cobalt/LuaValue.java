@@ -245,7 +245,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see #optValue(LuaValue)
 	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
-	 * @see Constants#TNONE
 	 */
 	public final boolean isNil() {
 		return type == TNIL;
@@ -739,7 +738,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isNil()
 	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
-	 * @see Constants#TNONE
 	 */
 	public LuaValue optValue(LuaValue defval) {
 		return this;
