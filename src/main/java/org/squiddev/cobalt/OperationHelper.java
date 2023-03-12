@@ -559,11 +559,9 @@ public final class OperationHelper {
 
 	public static void setTable(LuaState state, LuaValue t, int key, LuaValue value) throws LuaError, UnwindThrowable {
 		// Optimised case for an integer key.
-		if (t.isTable()) {
-			if (!((LuaTable) t).rawget(key).isNil()) {
-				((LuaTable) t).rawset(key, value);
-				return;
-			}
+		if (t instanceof LuaTable table && !table.rawget(key).isNil()) {
+			table.rawset(key, value);
+			return;
 		}
 
 		// Fall back to the slow lookup.
@@ -574,8 +572,7 @@ public final class OperationHelper {
 		LuaValue tm;
 		int loop = 0;
 		do {
-			if (t.isTable()) {
-				LuaTable table = (LuaTable) t;
+			if (t instanceof LuaTable table) {
 				key.checkValidKey();
 				if (!table.rawget(key).isNil() || (tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
 					table.rawset(key, value);

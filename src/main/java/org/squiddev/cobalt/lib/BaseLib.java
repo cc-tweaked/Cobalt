@@ -165,7 +165,7 @@ public class BaseLib {
 
 	private static Varargs type(LuaState state, Varargs args) throws LuaError {
 		// type(v) -> value
-		return valueOf(args.checkValue(1).typeName());
+		return args.checkValue(1).luaTypeName();
 	}
 
 	private static Varargs rawequal(LuaState state, Varargs args) throws LuaError {

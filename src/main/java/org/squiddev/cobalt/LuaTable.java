@@ -793,7 +793,7 @@ public final class LuaTable extends LuaValue {
 		Node node = nodes[hashmod(search, nodes.length - 1)];
 		while (true) {
 			LuaValue key = node.key();
-			if (key instanceof LuaInteger && ((LuaInteger) key).v == search) {
+			if (key instanceof LuaInteger keyI && keyI.v == search) {
 				return node;
 			} else {
 				int next = node.next;
@@ -853,21 +853,24 @@ public final class LuaTable extends LuaValue {
 	}
 
 	public void rawset(int key, LuaValue value) {
-		LuaValue valueOf = null;
+		rawset(key, value, null);
+	}
+
+	private void rawset(int key, LuaValue value, LuaValue valueOf) {
 		do {
 			if (key > 0 && key <= array.length) {
 				array[key - 1] = weakValues ? weaken(value) : value;
 				return;
 			}
 
-			if (valueOf == null) valueOf = valueOf(key);
-
-			Node node = rawgetNode(valueOf);
-			if (node == null) node = newKey(valueOf);
+			Node node = rawgetNode(key);
+			if (node == null) {
+				if (valueOf == null) valueOf = valueOf(key);
+				node = newKey(valueOf);
+			}
 
 			// newKey will have handled this otherwise
 			if (node != null) {
-				// if (value.isNil() && !weakKeys) node.key = weaken((LuaValue) node.key);
 				node.value = weakValues ? weaken(value) : value;
 				return;
 			}
@@ -875,8 +878,8 @@ public final class LuaTable extends LuaValue {
 	}
 
 	public void rawset(LuaValue key, LuaValue value) {
-		if (key instanceof LuaInteger) {
-			rawset(((LuaInteger) key).v, value);
+		if (key instanceof LuaInteger keyI) {
+			rawset(keyI.v, value, key);
 			return;
 		}
 

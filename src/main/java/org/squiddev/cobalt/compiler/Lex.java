@@ -249,7 +249,7 @@ final class Lex {
 		// is much more limited than C's version.
 		if (str.startsWith("0x") || str.startsWith("0X")) {
 			try {
-				return ValueFactory.valueOf(Long.valueOf(str.substring(2), 16));
+				return ValueFactory.valueOf(Long.parseLong(str.substring(2), 16));
 			} catch (NumberFormatException ignored) {
 			}
 		}

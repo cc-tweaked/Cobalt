@@ -84,7 +84,7 @@ public class Constants {
 	 * @see LuaValue#type()
 	 * @see LuaValue#typeName()
 	 */
-	public static final String[] TYPE_NAMES = {
+	static final String[] TYPE_NAMES = {
 		"nil",
 		"boolean",
 		"lightuserdata",
@@ -96,6 +96,8 @@ public class Constants {
 		"thread",
 		"value",
 	};
+
+	static final LuaString[] TYPE_NAMES_LUA = Arrays.stream(TYPE_NAMES).map(LuaString::valueOf).toArray(LuaString[]::new);
 
 	/**
 	 * LuaValue constant corresponding to lua {@code nil}

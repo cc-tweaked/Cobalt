@@ -133,11 +133,20 @@ public abstract class LuaValue extends Varargs {
 	 * @see #type()
 	 */
 	public final String typeName() {
-		if (type >= 0) {
-			return Constants.TYPE_NAMES[type];
-		} else {
-			throw new IllegalStateException("cannot get type of " + this);
-		}
+		return Constants.TYPE_NAMES[type];
+	}
+
+	/**
+	 * Get the String name of the type of this value.
+	 *
+	 * @return name from type name list {@link Constants#TYPE_NAMES}
+	 * corresponding to the type of this value:
+	 * "nil", "boolean", "number", "string",
+	 * "table", "function", "userdata", "thread"
+	 * @see #type()
+	 */
+	public final LuaString luaTypeName() {
+		return Constants.TYPE_NAMES_LUA[type];
 	}
 
 	/**
