@@ -39,8 +39,8 @@ checkallerrors('getmetatable', {}, 'bad argument')
 
 -- ipairs
 banner('ipairs')
-checkallpass('ipairs', { sometable })
-checkallerrors('ipairs', { notatable }, 'bad argument')
+checkallpass('ipairs', { notanil })
+checkallerrors('ipairs', { {} }, 'bad argument')
 
 -- load
 banner('load')

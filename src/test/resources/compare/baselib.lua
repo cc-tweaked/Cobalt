@@ -41,9 +41,8 @@ print('collectgarbage("count")', type(collectgarbage("count")))
 -- dofile (not supported)
 -- ipairs
 print('pcall(ipairs)', pcall(ipairs))
-print('pcall(ipairs,nil)', pcall(ipairs, nil))
-print('pcall(ipairs,"a")', pcall(ipairs, "a"))
-print('pcall(ipairs,1)', pcall(ipairs, 1))
+print('ipairs(nil)', ipairs(nil))
+for k, v in ipairs("hello") do print('ipairs(hello)', k, v) end
 for k, v in ipairs({}) do print('ipairs1', k, v) end
 for k, v in ipairs({ 'one', 'two' }) do print('ipairs2', k, v) end
 for k, v in ipairs({ aa = 'aaa', bb = 'bbb' }) do print('ipairs3', k, v) end

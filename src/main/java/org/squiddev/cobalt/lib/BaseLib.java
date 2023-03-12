@@ -40,6 +40,7 @@ import org.squiddev.cobalt.unwind.SuspendedTask;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
@@ -87,7 +88,7 @@ public class BaseLib {
 
 		// remember next, and inext for use in pairs and ipairs
 		next = env.rawget("next");
-		inext = RegisteredFunction.ofV("inext", BaseLib::inext).create();
+		inext = RegisteredFunction.ofS("inext", BaseLib::inext).create();
 	}
 
 	private static LuaValue error(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
@@ -232,7 +233,7 @@ public class BaseLib {
 
 	private Varargs ipairs(LuaState state, Varargs args) throws LuaError {
 		// ipairst) -> iter-func, t, 0
-		return varargsOf(inext, args.arg(1).checkTable(), Constants.ZERO);
+		return varargsOf(inext, args.checkValue(1), Constants.ZERO);
 	}
 
 	private static Varargs rawlen(LuaState state, Varargs args) throws LuaError {
@@ -250,9 +251,21 @@ public class BaseLib {
 		return args.arg(1).checkTable().next(args.arg(2));
 	}
 
-	private static Varargs inext(LuaState state, Varargs args) throws LuaError {
+	private static Varargs inext(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		// inext( table, [int-index] ) -> next-index, next-value
-		return args.arg(1).checkTable().inext(args.arg(2));
+		LuaValue table = args.arg(1);
+		int key = args.arg(2).checkInteger() + 1;
+
+		if (table instanceof LuaTable tbl && tbl.getMetatable(state) == null) {
+			// Fast path for simple tables.
+			LuaValue v = tbl.rawget(key);
+			return v.isNil() ? NIL : varargsOf(valueOf(key), v);
+		}
+
+		return SuspendedTask.run(di, () -> {
+			LuaValue v = OperationHelper.getTable(state, table, key);
+			return v.isNil() ? NIL : varargsOf(valueOf(key), v);
+		});
 	}
 
 	// pcall(f, arg1, ...) -> status, result1, ...
