@@ -76,8 +76,14 @@ describe("Lua tables", function()
 			local slice = make_slice(original, 2, 3)
 
 			table.sort(slice)
-			expect(table.concat(original)):eq("ebcda")
+			expect(original):same { "e", "b", "c", "d", "a" }
 			expect(next(slice)):eq(nil)
+		end)
+	end)
+
+	describe("table.pack", function()
+		it("counts nils :lua>=5.2", function()
+			expect(table.pack(1, "foo", nil, nil)):same { n = 4, 1, "foo" }
 		end)
 	end)
 
@@ -92,6 +98,25 @@ describe("Lua tables", function()
 			assert(a == 1)
 			assert(b == 2)
 			assert(c == nil)
+		end)
+
+		it("takes slices of tables :lua>=5.2", function()
+			expect(table.pack(table.unpack({ 1, "foo" }))):same { n = 2, 1, "foo" }
+			expect(table.pack(table.unpack({ 1, "foo" }, 2))):same { n = 1, "foo" }
+			expect(table.pack(table.unpack({ 1, "foo" }, 2, 5))):same { n = 4, "foo" }
+		end)
+
+		it("uses metamethods :lua>=5.3", function()
+			local basic = make_slice({ "a", "b", "c", "d", "e" }, 2, 3)
+			expect(table.pack(table.unpack(basic))):same { n = 3, "b", "c", "d" }
+			expect(table.pack(table.unpack(basic, 2))):same { n = 2, "c", "d" }
+		end)
+	end)
+
+	describe("table.concat", function()
+		it("uses metamethods :lua>=5.3", function()
+			local basic = make_slice({ "a", "b", "c", "d", "e" }, 2, 3)
+			expect(table.concat(basic)):eq("bcd")
 		end)
 	end)
 end)

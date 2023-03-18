@@ -26,7 +26,10 @@ package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.RegisteredFunction;
+import org.squiddev.cobalt.function.SuspendedVarArgFunction;
 import org.squiddev.cobalt.unwind.AutoUnwind;
 import org.squiddev.cobalt.unwind.SuspendedTask;
 
@@ -47,6 +50,10 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public final class TableLib {
 	private static final LuaValue N = LuaString.valueOf("n");
 
+	private static final int TABLE_READ = 1;
+	private static final int TABLE_WRITE = 1 << 1;
+	private static final int TABLE_LEN = 1 << 2;
+
 	private TableLib() {
 	}
 
@@ -55,18 +62,35 @@ public final class TableLib {
 			RegisteredFunction.of("getn", TableLib::getn),
 			RegisteredFunction.of("maxn", TableLib::maxn),
 			RegisteredFunction.ofV("remove", TableLib::remove),
-			RegisteredFunction.ofV("concat", TableLib::concat),
+			RegisteredFunction.ofS("concat", TableLib::concat),
 			RegisteredFunction.ofV("insert", TableLib::insert),
 			RegisteredFunction.ofV("pack", TableLib::pack),
 			RegisteredFunction.ofFactory("sort", Sort::new),
-			RegisteredFunction.ofFactory("foreach", ForEach::new),
-			RegisteredFunction.ofFactory("foreachi", ForEachI::new),
-			RegisteredFunction.ofFactory("unpack", Unpack::new),
+			RegisteredFunction.ofS("foreach", TableLib::foreach),
+			RegisteredFunction.ofS("foreachi", TableLib::foreachi),
+			RegisteredFunction.ofS("unpack", TableLib::unpack),
 		});
 
 		env.rawset("unpack", t.rawget("unpack"));
 
 		LibFunction.setGlobalLibrary(state, env, "table", t);
+	}
+
+	private static LuaValue checkTableLike(LuaState state, Varargs args, int index, int flags) throws LuaError {
+		LuaValue value = args.arg(index);
+		if (!value.isTable()) {
+			LuaTable metatable = value.getMetatable(state);
+			if (metatable != null
+				// For each operation, check (flag => metatag!=nil).
+				&& ((flags & TABLE_LEN) == 0 || !metatable.rawget(CachedMetamethod.LEN).isNil())
+				&& ((flags & TABLE_READ) == 0 || metatable.rawget(CachedMetamethod.INDEX).isNil())
+				&& ((flags & TABLE_WRITE) == 0 || metatable.rawget(CachedMetamethod.NEWINDEX).isNil())
+			) {
+				return value;
+			}
+		}
+
+		return value.checkTable();
 	}
 
 	private static LuaValue getn(LuaState state, LuaValue arg) throws LuaError {
@@ -86,12 +110,33 @@ public final class TableLib {
 		return table.remove(pos);
 	}
 
-	private static Varargs concat(LuaState state, Varargs args) throws LuaError {
-		LuaTable table = args.arg(1).checkTable();
-		return table.concat(
-			args.arg(2).optLuaString(EMPTYSTRING),
-			args.arg(3).optInteger(1),
-			args.exists(4) ? args.arg(4).checkInteger() : table.length());
+	/**
+	 * Concatenate the contents of a table efficiently.
+	 */
+	private static Varargs concat(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		return SuspendedTask.run(di, () -> {
+			LuaValue table = checkTableLike(state, args, 1, TABLE_READ | TABLE_LEN);
+			int length = OperationHelper.intLength(state, table);
+
+			LuaString separator = args.arg(2).optLuaString(EMPTYSTRING);
+			int start = args.arg(3).optInteger(1);
+			length = args.arg(4).optInteger(length);
+
+			return concatImpl(state, table, separator, start, length);
+		});
+	}
+
+	@AutoUnwind
+	private static LuaValue concatImpl(LuaState state, LuaValue table, LuaString sep, int i, int j) throws LuaError, UnwindThrowable {
+		Buffer sb = new Buffer();
+		if (i <= j) {
+			sb.append(OperationHelper.getTable(state, table, i).checkLuaString());
+			while (++i <= j) {
+				sb.append(sep);
+				sb.append(OperationHelper.getTable(state, table, i).checkLuaString());
+			}
+		}
+		return sb.toLuaString();
 	}
 
 	private static Varargs insert(LuaState state, Varargs args) throws LuaError {
@@ -114,19 +159,18 @@ public final class TableLib {
 	private static class Sort extends SuspendedVarArgFunction {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			LuaTable table = args.arg(1).checkTable();
-			LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
-
+			LuaValue table = checkTableLike(state, args, 1, TABLE_LEN | TABLE_READ | TABLE_WRITE);
 			return SuspendedTask.run(di, () -> {
-				// TODO: Error with "object length is not a number"
-				int n = OperationHelper.length(state, table).checkInteger();
+				int n = OperationHelper.intLength(state, table);
+
+				LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
 				if (n > 1) heapSort(state, table, n, compare);
 				return NONE;
 			});
 		}
 
 		@AutoUnwind
-		private static void heapSort(LuaState state, LuaTable table, int count, LuaValue compare) throws LuaError, UnwindThrowable {
+		private static void heapSort(LuaState state, LuaValue table, int count, LuaValue compare) throws LuaError, UnwindThrowable {
 			for (int start = count / 2 - 1; start >= 0; start--) {
 				siftDown(state, table, start, count - 1, compare);
 			}
@@ -142,7 +186,7 @@ public final class TableLib {
 		}
 
 		@AutoUnwind
-		private static void siftDown(LuaState state, LuaTable table, int start, int end, LuaValue compare) throws LuaError, UnwindThrowable {
+		private static void siftDown(LuaState state, LuaValue table, int start, int end, LuaValue compare) throws LuaError, UnwindThrowable {
 			LuaValue rootValue = OperationHelper.getTable(state, table, start + 1);
 
 			for (int root = start; root * 2 + 1 <= end; ) {
@@ -180,147 +224,70 @@ public final class TableLib {
 	/**
 	 * {@code foreach(table, func) -> void}: Call the supplied function once for each key-value pair
 	 */
-	private static class ForEach extends ResumableVarArgFunction<ForEach.State> {
-		private static final class State {
-			LuaValue k = NIL;
-			final LuaTable table;
-			final LuaValue func;
+	private static Varargs foreach(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		LuaTable table = args.arg(1).checkTable();
+		LuaFunction function = args.arg(2).checkFunction();
 
-			State(LuaTable table, LuaValue func) {
-				this.table = table;
-				this.func = func;
-			}
-		}
-
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			LuaTable table = args.arg(1).checkTable();
-			LuaFunction function = args.arg(2).checkFunction();
-
-			State res = new State(table, function);
-			di.state = res;
-			return run(state, res);
-		}
-
-		@Override
-		protected Varargs resumeThis(LuaState state, State res, Varargs value) throws LuaError, UnwindThrowable {
-			return run(state, res);
-		}
-
-		private static LuaValue run(LuaState state, State res) throws LuaError, UnwindThrowable {
+		return SuspendedTask.run(di, () -> {
 			Varargs n;
-			LuaValue k = res.k;
-			while (!(res.k = k = ((n = res.table.next(k)).first())).isNil()) {
-				LuaValue r = OperationHelper.call(state, res.func, k, n.arg(2));
+			LuaValue k = NIL;
+			while (!(k = (n = table.next(k)).first()).isNil()) {
+				LuaValue r = OperationHelper.call(state, function, k, n.arg(2));
 				if (!r.isNil()) return r;
 			}
 			return NIL;
-		}
+		});
 	}
 
 	/**
 	 * {@code foreachi(table, func) -> void}: Call the supplied function once for each key-value pair in the contiguous
 	 * array part
 	 */
-	private static class ForEachI extends ResumableVarArgFunction<ForEachI.State> {
-		private static final class State {
-			int k = 0;
-			final LuaTable table;
-			final LuaValue func;
+	private static Varargs foreachi(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		LuaTable table = args.arg(1).checkTable();
+		LuaFunction function = args.arg(2).checkFunction();
 
-			State(LuaTable table, LuaValue func) {
-				this.table = table;
-				this.func = func;
-			}
-		}
-
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			LuaTable table = args.arg(1).checkTable();
-			LuaFunction function = args.arg(2).checkFunction();
-
-			State res = new State(table, function);
-			di.state = res;
-			return run(state, res);
-		}
-
-		@Override
-		protected Varargs resumeThis(LuaState state, State res, Varargs value) throws LuaError, UnwindThrowable {
-			return run(state, res);
-		}
-
-		private static LuaValue run(LuaState state, State res) throws LuaError, UnwindThrowable {
+		return SuspendedTask.run(di, () -> {
 			LuaValue v;
-			int k = res.k;
-			while (!(v = res.table.rawget(res.k = ++k)).isNil()) {
-				LuaValue r = OperationHelper.call(state, res.func, valueOf(k), v);
+			int k = 0;
+			while (!(v = table.rawget(++k)).isNil()) {
+				LuaValue r = OperationHelper.call(state, function, valueOf(k), v);
 				if (!r.isNil()) return r;
 			}
 			return NIL;
-		}
+		});
 	}
 
 	/**
 	 * {@code unpack(table[, start[, stop]])}
 	 */
-	private static final class Unpack extends ResumableVarArgFunction<Unpack.State> {
-		static final class State {
-			final LuaValue table;
-			final int start;
+	private static Varargs unpack(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+		LuaValue table = args.arg(1);
+		int start = args.arg(2).optInteger(1);
+		LuaValue endValue = args.arg(3);
 
-			int index;
-
-			int end;
-			LuaValue[] values;
-
-			State(LuaValue table, int start) {
-				this.table = table;
-				this.start = start;
-			}
-		}
-
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			LuaValue table = args.arg(1);
-			int start = args.arg(2).optInteger(1);
-			State res = new State(table, start);
-			di.state = res;
-
-			LuaValue endValue = args.arg(3);
-			int end = res.end = (endValue.isNil() ? OperationHelper.length(state, table) : endValue).checkInteger();
+		if (table instanceof LuaTable tbl && table.getMetatable(state) == null) {
+			// Do the fast path when we're a table with no metatable. In theory we could even turn this into an
+			// array copy, but probably not worth it.
+			int end = endValue.isNil() ? tbl.length() : endValue.checkInteger();
 			if (start > end) return NONE;
-			LuaValue[] values = res.values = new LuaValue[end - start + 1];
 
-			for (int i = start; i <= end; res.index = ++i) {
-				values[i - start] = OperationHelper.getTable(state, table, valueOf(i));
-			}
-
+			LuaValue[] values = new LuaValue[end - start + 1];
+			for (int i = start; i <= end; i++) values[i - start] = tbl.rawget(i);
 			return varargsOf(values);
 		}
 
-		@Override
-		protected Varargs resumeThis(LuaState state, State res, Varargs value) throws LuaError, UnwindThrowable {
-			int start = res.start;
-			LuaValue table = res.table;
-			int end = res.end;
-			LuaValue[] values = res.values;
+		// Exactly the same code as above, but using OperationHelper.
+		return SuspendedTask.run(di, () -> {
+			int end = endValue.isNil() ? OperationHelper.intLength(state, table) : endValue.checkInteger();
+			if (start > end) return NONE;
 
-			// If values is null, then we've yielded from fetching the length.
-			if (values == null) {
-				end = res.end = value.first().checkInteger();
-				if (start > end) return NONE;
-				values = res.values = new LuaValue[end - start + 1];
-				res.index = start;
-			} else {
-				values[res.index - start] = value.first();
-				res.index++;
+			LuaValue[] values = new LuaValue[end - start + 1];
+			for (int i = start; i <= end; i++) {
+				LuaValue value = OperationHelper.getTable(state, table, i);
+				values[i - start] = value;
 			}
-
-			for (int i = res.index; i <= end; res.index = ++i) {
-				values[i - start] = OperationHelper.getTable(state, table, valueOf(i));
-			}
-
 			return varargsOf(values);
-		}
+		});
 	}
 }

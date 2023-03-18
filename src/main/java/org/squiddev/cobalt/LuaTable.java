@@ -281,27 +281,6 @@ public final class LuaTable extends LuaValue {
 		}
 	}
 
-	/**
-	 * Concatenate the contents of a table efficiently, using {@link Buffer}
-	 *
-	 * @param sep {@link LuaString} separater to apply between elements
-	 * @param i   the first element index
-	 * @param j   the last element index, inclusive
-	 * @return {@link LuaString} value of the concatenation
-	 * @throws LuaError When a value is not a string.
-	 */
-	public LuaValue concat(LuaString sep, int i, int j) throws LuaError {
-		Buffer sb = new Buffer();
-		if (i <= j) {
-			sb.append(rawget(i).checkLuaString());
-			while (++i <= j) {
-				sb.append(sep);
-				sb.append(rawget(i).checkLuaString());
-			}
-		}
-		return sb.toLuaString();
-	}
-
 	public int length() {
 		int a = array.length;
 		/*

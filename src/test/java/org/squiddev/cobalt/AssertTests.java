@@ -66,7 +66,6 @@ public class AssertTests {
 		"string-compare",
 		"string-issues",
 		"string-format",
-		"table",
 		"time",
 		"traceback",
 	})

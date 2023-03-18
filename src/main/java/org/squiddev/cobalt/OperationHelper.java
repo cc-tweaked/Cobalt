@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
@@ -374,6 +375,19 @@ public final class OperationHelper {
 				return OperationHelper.call(state, h, value);
 			}
 		}
+	}
+
+	@AutoUnwind
+	public static int intLength(LuaState state, LuaValue table) throws LuaError, UnwindThrowable {
+		LuaValue length = length(state, table);
+		if (length instanceof LuaInteger i) return i.v;
+
+		// TODO: Would be useful to have a checkInteger function which accepts an error message.
+		double value = length.toDouble();
+		int intValue = (int) value;
+		if (value == intValue) return intValue;
+
+		throw new LuaError("object length is not an integer");
 	}
 
 	/**
