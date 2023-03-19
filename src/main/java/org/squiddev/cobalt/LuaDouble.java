@@ -106,11 +106,6 @@ public final class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public boolean isLong() {
-		return v == (long) v;
-	}
-
-	@Override
 	public double toDouble() {
 		return v;
 	}
@@ -121,43 +116,8 @@ public final class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public long toLong() {
-		return (long) v;
-	}
-
-	@Override
-	public double optDouble(double defval) {
-		return v;
-	}
-
-	@Override
-	public int optInteger(int defval) {
-		return (int) (long) v;
-	}
-
-	@Override
-	public long optLong(long defval) {
-		return (long) v;
-	}
-
-	// object equality, used for key comparison
 	public boolean equals(Object o) {
 		return o instanceof LuaDouble && ((LuaDouble) o).v == v;
-	}
-
-	@Override
-	public boolean raweq(LuaValue val) {
-		return val.raweq(v);
-	}
-
-	@Override
-	public boolean raweq(double val) {
-		return v == val;
-	}
-
-	@Override
-	public boolean raweq(int val) {
-		return v == val;
 	}
 
 	@Override
@@ -185,18 +145,8 @@ public final class LuaDouble extends LuaNumber {
 	}
 
 	@Override
-	public LuaString optLuaString(LuaString defval) {
-		return checkLuaString();
-	}
-
-	@Override
 	public LuaValue toLuaString() {
 		return checkLuaString();
-	}
-
-	@Override
-	public String optString(String defval) {
-		return toString();
 	}
 
 	@Override
@@ -223,10 +173,5 @@ public final class LuaDouble extends LuaNumber {
 	public LuaValue checkValidKey() throws LuaError {
 		if (Double.isNaN(v)) throw new LuaError("table index is NaN");
 		return this;
-	}
-
-	@Override
-	public double checkArith() {
-		return v;
 	}
 }

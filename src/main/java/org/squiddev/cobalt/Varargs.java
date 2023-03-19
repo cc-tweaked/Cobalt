@@ -129,17 +129,6 @@ public abstract class Varargs {
 	}
 
 	/**
-	 * Return argument i as a LuaValue if it is not nil, or throw an error if it is nil.
-	 *
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @return LuaValue value if the argument is not nil
-	 * @throws LuaError if the argument doesn't exist or evaluates to nil.
-	 */
-	public LuaValue checkNotNil(int i) throws LuaError {
-		return arg(i).checkNotNil();
-	}
-
-	/**
 	 * Throw an error if {@code test} fails
 	 *
 	 * @param test user	 supplied assertion to test against

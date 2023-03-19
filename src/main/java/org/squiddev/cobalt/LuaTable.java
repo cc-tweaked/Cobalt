@@ -34,10 +34,8 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * <p>
  * Almost all API's implemented in {@link LuaTable} are defined and documented in {@link LuaValue}.
  * <p>
- * If a table is needed, the one of the type-checking functions can be used such as
- * {@link #isTable()},
- * {@link #checkTable()}, or
- * {@link #optTable(LuaTable)}
+ * If a table is needed, the one of the type-checking functions can be used such as {@link #checkTable()} or
+ * {@link #optTable(LuaTable)}.
  * <p>
  * The main table operations are defined on {@link OperationHelper} and {@link LuaTable}
  * for getting and setting values with and without metatag processing:
@@ -163,11 +161,6 @@ public final class LuaTable extends LuaValue {
 
 	@Override
 	public LuaTable checkTable() {
-		return this;
-	}
-
-	@Override
-	public LuaTable optTable(LuaTable defval) {
 		return this;
 	}
 

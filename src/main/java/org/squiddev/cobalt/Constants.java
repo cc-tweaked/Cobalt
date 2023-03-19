@@ -102,7 +102,7 @@ public class Constants {
 	/**
 	 * LuaValue constant corresponding to lua {@code nil}
 	 */
-	public static final LuaValue NIL = LuaNil._NIL;
+	public static final LuaValue NIL = LuaNil.INSTANCE;
 
 	/**
 	 * LuaBoolean constant corresponding to lua {@code true}

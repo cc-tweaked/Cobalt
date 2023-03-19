@@ -24,10 +24,7 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.Constants;
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
 
 import java.io.DataOutputStream;
@@ -155,16 +152,16 @@ public class BytecodeDumper {
 							dumpDouble(o.toDouble());
 						}
 						case NUMBER_FORMAT_INTS_ONLY -> {
-							if (!ALLOW_INTEGER_CASTING && !o.isInteger()) {
+							if (!ALLOW_INTEGER_CASTING && !(o instanceof LuaInteger)) {
 								throw new IllegalArgumentException("not an integer: " + o);
 							}
 							writer.write(Constants.TNUMBER);
 							dumpInt(o.toInteger());
 						}
 						case NUMBER_FORMAT_NUM_PATCH_INT32 -> {
-							if (o.isInteger()) {
+							if (o instanceof LuaInteger oInt) {
 								writer.write(Constants.TINT);
-								dumpInt(o.toInteger());
+								dumpInt(oInt.v);
 							} else {
 								writer.write(Constants.TNUMBER);
 								dumpDouble(o.toDouble());

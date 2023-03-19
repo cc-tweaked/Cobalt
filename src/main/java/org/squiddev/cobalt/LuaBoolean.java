@@ -72,11 +72,6 @@ public final class LuaBoolean extends LuaValue {
 	}
 
 	@Override
-	public boolean optBoolean(boolean defval) {
-		return value;
-	}
-
-	@Override
 	public boolean checkBoolean() {
 		return value;
 	}

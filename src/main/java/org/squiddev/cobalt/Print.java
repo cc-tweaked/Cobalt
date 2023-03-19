@@ -343,21 +343,14 @@ public class Print {
 						LuaString s = (LuaString) v;
 						ps.print(s.length() < 48 ?
 							s.toString() :
-							s.substringOfEnd(0, 32).toString() + "...+" + (s.length() - 32) + "b");
+							s.substringOfEnd(0, 32) + "...+" + (s.length() - 32) + "b");
 					}
 					case Constants.TFUNCTION -> ps.print((v instanceof LuaClosure) ?
 						((LuaClosure) v).getPrototype().toString() : v.toString());
 					case Constants.TUSERDATA -> {
-						Object o = v.toUserdata();
-						if (o != null) {
-							String n = o.getClass().getName();
-							n = n.substring(n.lastIndexOf('.') + 1);
-							ps.print(n + ": " + Integer.toHexString(o.hashCode()));
-						} else {
-							ps.print(v.toString());
-						}
+						ps.print(v);
 					}
-					default -> ps.print(v.toString());
+					default -> ps.print(v);
 				}
 			}
 			if (i + 1 == top) {

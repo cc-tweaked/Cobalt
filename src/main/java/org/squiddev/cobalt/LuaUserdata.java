@@ -40,6 +40,7 @@ public class LuaUserdata extends LuaValue {
 		this.metatable = metatable;
 	}
 
+	@Override
 	public int hashCode() {
 		return instance.hashCode();
 	}
@@ -48,30 +49,8 @@ public class LuaUserdata extends LuaValue {
 		return instance;
 	}
 
-	@Override
-	public boolean isUserdata(Class<?> c) {
-		return c.isAssignableFrom(instance.getClass());
-	}
-
-	@Override
 	public Object toUserdata() {
 		return instance;
-	}
-
-	@Override
-	public <T> T toUserdata(Class<T> c) {
-		return c.isAssignableFrom(instance.getClass()) ? c.cast(instance) : null;
-	}
-
-	@Override
-	public Object optUserdata(Object defval) {
-		return instance;
-	}
-
-	@Override
-	public <T> T optUserdata(Class<T> c, T defval) throws LuaError {
-		if (!c.isAssignableFrom(instance.getClass())) throw ErrorFactory.typeError(this, c.getName());
-		return c.cast(instance);
 	}
 
 	@Override
@@ -95,17 +74,8 @@ public class LuaUserdata extends LuaValue {
 		return c.cast(instance);
 	}
 
+	@Override
 	public boolean equals(Object val) {
-		return this == val || val instanceof LuaUserdata && instance.equals(((LuaUserdata) val).instance);
-	}
-
-	@Override
-	public boolean raweq(LuaValue val) {
-		return val.raweq(this);
-	}
-
-	@Override
-	public boolean raweq(LuaUserdata val) {
-		return this == val || (metatable == val.metatable && instance.equals(val.instance));
+		return this == val || (val instanceof LuaUserdata other && metatable == other.metatable && instance.equals(other.instance));
 	}
 }

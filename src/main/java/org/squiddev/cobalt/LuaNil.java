@@ -24,9 +24,6 @@
  */
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
-
 /**
  * Class to encapsulate behavior of the singleton instance {@code nil}
  * <p>
@@ -45,7 +42,7 @@ import org.squiddev.cobalt.function.LuaFunction;
  * @see Constants#NIL
  */
 public final class LuaNil extends LuaValue {
-	static final LuaNil _NIL = new LuaNil();
+	static final LuaNil INSTANCE = new LuaNil();
 
 	private LuaNil() {
 		super(Constants.TNIL);
@@ -72,83 +69,7 @@ public final class LuaNil extends LuaValue {
 	}
 
 	@Override
-	public LuaValue checkNotNil() throws LuaError {
-		throw ErrorFactory.argError(this, "value");
-	}
-
-	@Override
 	public LuaValue checkValidKey() throws LuaError {
 		throw new LuaError("table index is nil");
-	}
-
-	// optional argument conversions - nil always falls back to default value
-	@Override
-	public boolean optBoolean(boolean defval) {
-		return defval;
-	}
-
-	@Override
-	public LuaClosure optClosure(LuaClosure defval) {
-		return defval;
-	}
-
-	@Override
-	public double optDouble(double defval) {
-		return defval;
-	}
-
-	@Override
-	public LuaFunction optFunction(LuaFunction defval) {
-		return defval;
-	}
-
-	@Override
-	public int optInteger(int defval) {
-		return defval;
-	}
-
-	@Override
-	public long optLong(long defval) {
-		return defval;
-	}
-
-	@Override
-	public LuaNumber optNumber(LuaNumber defval) {
-		return defval;
-	}
-
-	@Override
-	public LuaTable optTable(LuaTable defval) {
-		return defval;
-	}
-
-	@Override
-	public LuaThread optThread(LuaThread defval) {
-		return defval;
-	}
-
-	@Override
-	public String optString(String defval) {
-		return defval;
-	}
-
-	@Override
-	public LuaString optLuaString(LuaString defval) {
-		return defval;
-	}
-
-	@Override
-	public Object optUserdata(Object defval) {
-		return defval;
-	}
-
-	@Override
-	public <T> T optUserdata(Class<T> c, T defval) {
-		return defval;
-	}
-
-	@Override
-	public LuaValue optValue(LuaValue defval) {
-		return defval;
 	}
 }

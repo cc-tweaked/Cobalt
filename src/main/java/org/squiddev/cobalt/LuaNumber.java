@@ -26,7 +26,7 @@ package org.squiddev.cobalt;
 
 /**
  * Base class for representing numbers as lua values directly.
- *
+ * <p>
  * The main subclasses are {@link LuaInteger} which holds values that fit in a java int,
  * and {@link LuaDouble} which holds all other number values.
  *
@@ -51,11 +51,6 @@ public abstract class LuaNumber extends LuaValue {
 	}
 
 	@Override
-	public LuaNumber optNumber(LuaNumber defval) {
-		return this;
-	}
-
-	@Override
 	public LuaValue toNumber() {
 		return this;
 	}
@@ -68,10 +63,5 @@ public abstract class LuaNumber extends LuaValue {
 	@Override
 	public LuaTable getMetatable(LuaState state) {
 		return state.numberMetatable;
-	}
-
-	@Override
-	public double checkArith() {
-		return toDouble();
 	}
 }

@@ -87,47 +87,12 @@ public final class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public boolean isInteger() {
-		return true;
-	}
-
-	@Override
-	public boolean isIntExact() {
-		return true;
-	}
-
-	@Override
-	public boolean isLong() {
-		return true;
-	}
-
-	@Override
 	public double toDouble() {
 		return v;
 	}
 
 	@Override
 	public int toInteger() {
-		return v;
-	}
-
-	@Override
-	public long toLong() {
-		return v;
-	}
-
-	@Override
-	public double optDouble(double defval) {
-		return v;
-	}
-
-	@Override
-	public int optInteger(int defval) {
-		return v;
-	}
-
-	@Override
-	public long optLong(long defval) {
 		return v;
 	}
 
@@ -142,42 +107,17 @@ public final class LuaInteger extends LuaNumber {
 	}
 
 	@Override
-	public LuaString optLuaString(LuaString defval) {
-		return LuaString.valueOf(Integer.toString(v));
-	}
-
-	@Override
 	public LuaValue toLuaString() {
 		return LuaString.valueOf(Integer.toString(v));
-	}
-
-	@Override
-	public String optString(String defval) {
-		return Integer.toString(v);
 	}
 
 	public int hashCode() {
 		return v;
 	}
 
-	// object equality, used for key comparison
+	@Override
 	public boolean equals(Object o) {
 		return o instanceof LuaInteger && ((LuaInteger) o).v == v;
-	}
-
-	@Override
-	public boolean raweq(LuaValue val) {
-		return val.raweq(v);
-	}
-
-	@Override
-	public boolean raweq(double val) {
-		return v == val;
-	}
-
-	@Override
-	public boolean raweq(int val) {
-		return v == val;
 	}
 
 	@Override
@@ -198,10 +138,5 @@ public final class LuaInteger extends LuaNumber {
 	@Override
 	public String checkString() {
 		return String.valueOf(v);
-	}
-
-	@Override
-	public double checkArith() {
-		return v;
 	}
 }

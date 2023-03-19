@@ -27,7 +27,7 @@ public final class GlobalRegistry {
 	 */
 	public LuaTable getSubTable(LuaString name) {
 		LuaValue value = table.rawget(name);
-		if (value.isTable()) return (LuaTable) value;
+		if (value instanceof LuaTable table) return table;
 
 		LuaTable newValue = new LuaTable();
 		table.rawset(name, newValue);

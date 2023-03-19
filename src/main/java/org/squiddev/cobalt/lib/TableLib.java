@@ -78,7 +78,7 @@ public final class TableLib {
 
 	private static LuaValue checkTableLike(LuaState state, Varargs args, int index, int flags) throws LuaError {
 		LuaValue value = args.arg(index);
-		if (!value.isTable()) {
+		if (!(value instanceof LuaTable)) {
 			LuaTable metatable = value.getMetatable(state);
 			if (metatable != null
 				// For each operation, check (flag => metatag!=nil).

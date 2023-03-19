@@ -150,38 +150,9 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Check if {@code this} is a {@code boolean}
-	 *
-	 * @return true if this is a {@code boolean}, otherwise false
-	 * @see #isBoolean()
-	 * @see #toBoolean()
-	 * @see #checkBoolean()
-	 * @see #optBoolean(boolean)
-	 * @see Constants#TBOOLEAN
-	 */
-	public final boolean isBoolean() {
-		return type == TBOOLEAN;
-	}
-
-	/**
-	 * Check if {@code this} is a {@code function} that is a closure,
-	 * meaning interprets lua bytecode for its execution
-	 *
-	 * @return true if this is a {@code closure}, otherwise false
-	 * @see #isFunction()
-	 * @see #checkClosure()
-	 * @see #optClosure(LuaClosure)
-	 * @see Constants#TFUNCTION
-	 */
-	public boolean isClosure() {
-		return false;
-	}
-
-	/**
 	 * Check if {@code this} is a {@code function}
 	 *
 	 * @return true if this is a {@code function}, otherwise false
-	 * @see #isClosure()
 	 * @see #checkFunction()
 	 * @see #optFunction(LuaFunction)
 	 * @see Constants#TFUNCTION
@@ -191,72 +162,17 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Check if {@code this} is a {@code number} and is representable by java int
-	 * without rounding or truncation
-	 *
-	 * @return true if this is a {@code number}
-	 * meaning derives from {@link LuaNumber}
-	 * or derives from {@link LuaString} and is convertible to a number,
-	 * and can be represented by int,
-	 * otherwise false
-	 * @see #isIntExact()
-	 * @see #isLong()
-	 * @see #toNumber()
-	 * @see #checkInteger()
-	 * @see #optInteger(int)
-	 * @see Constants#TNUMBER
-	 */
-	public boolean isInteger() {
-		return false;
-	}
-
-	/**
-	 * Check if {@code this} is a {@link LuaInteger}
-	 * <p>
-	 * No attempt to convert from string will be made by this call.
-	 *
-	 * @return true if this is a {@code LuaInteger},
-	 * otherwise false
-	 * @see #isInteger()
-	 * @see #isNumber()
-	 * @see #toNumber()
-	 * @see Constants#TNUMBER
-	 */
-	public boolean isIntExact() {
-		return false;
-	}
-
-	/**
-	 * Check if {@code this} is a {@code number} and is representable by java long
-	 * without rounding or truncation
-	 *
-	 * @return true if this is a {@code number}
-	 * meaning derives from {@link LuaNumber}
-	 * or derives from {@link LuaString} and is convertible to a number,
-	 * and can be represented by long,
-	 * otherwise false
-	 * @see #toNumber()
-	 * @see #checkLong()
-	 * @see #optLong(long)
-	 * @see Constants#TNUMBER
-	 */
-	public boolean isLong() {
-		return false;
-	}
-
-	/**
 	 * Check if {@code this} is {@code nil}
 	 *
 	 * @return true if this is {@code nil}, otherwise false
 	 * @see Constants#NIL
 	 * @see Constants#NONE
-	 * @see #checkNotNil()
 	 * @see #optValue(LuaValue)
 	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
 	 */
 	public final boolean isNil() {
-		return type == TNIL;
+		return this == NIL;
 	}
 
 	/**
@@ -303,55 +219,11 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Check if {@code this} is a {@code table}
-	 *
-	 * @return true if this is a {@code table}, otherwise false
-	 * @see #checkTable()
-	 * @see #optTable(LuaTable)
-	 * @see Constants#TTABLE
-	 */
-	public final boolean isTable() {
-		return type == TTABLE;
-	}
-
-	/**
-	 * Check if {@code this} is a {@code userdata}
-	 *
-	 * @return true if this is a {@code userdata}, otherwise false
-	 * @see #isUserdata(Class)
-	 * @see #toUserdata()
-	 * @see #checkUserdata()
-	 * @see #optUserdata(Object)
-	 * @see Constants#TUSERDATA
-	 */
-	public final boolean isUserdata() {
-		return type == TUSERDATA;
-	}
-
-	/**
-	 * Check if {@code this} is a {@code userdata} of type {@code c}
-	 *
-	 * @param c Class to test instance against
-	 * @return true if this is a {@code userdata}
-	 * and the instance is assignable to {@code c},
-	 * otherwise false
-	 * @see #isUserdata()
-	 * @see #toUserdata(Class)
-	 * @see #checkUserdata(Class)
-	 * @see #optUserdata(Class, Object)
-	 * @see Constants#TUSERDATA
-	 */
-	public boolean isUserdata(Class<?> c) {
-		return false;
-	}
-
-	/**
 	 * Convert to boolean false if {@link Constants#NIL} or {@link Constants#FALSE}, true if anything else
 	 *
 	 * @return Value cast to byte if number or string convertible to number, otherwise 0
 	 * @see #optBoolean(boolean)
 	 * @see #checkBoolean()
-	 * @see #isBoolean()
 	 * @see Constants#TBOOLEAN
 	 */
 	public final boolean toBoolean() {
@@ -363,7 +235,6 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return Value cast to double if number or string convertible to number, otherwise 0
 	 * @see #toInteger()
-	 * @see #toLong()
 	 * @see #optDouble(double)
 	 * @see #checkNumber()
 	 * @see #isNumber()
@@ -377,7 +248,6 @@ public abstract class LuaValue extends Varargs {
 	 * Convert to int if numeric, or 0 if not.
 	 *
 	 * @return Value cast to int if number or string convertible to number, otherwise 0
-	 * @see #toLong()
 	 * @see #toDouble()
 	 * @see #optInteger(int)
 	 * @see #checkNumber()
@@ -385,23 +255,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#TNUMBER
 	 */
 	public int toInteger() {
-		return 0;
-	}
-
-	/**
-	 * Convert to long if numeric, or 0 if not.
-	 *
-	 * @return Value cast to long if number or string convertible to number, otherwise 0
-	 * @see #isInteger()
-	 * @see #isIntExact()
-	 * @see #toInteger()
-	 * @see #toDouble()
-	 * @see #optLong(long)
-	 * @see #checkNumber()
-	 * @see #isNumber()
-	 * @see Constants#TNUMBER
-	 */
-	public long toLong() {
 		return 0;
 	}
 
@@ -418,35 +271,6 @@ public abstract class LuaValue extends Varargs {
 	@Override
 	public String toString() {
 		return typeName() + ": " + Integer.toHexString(hashCode());
-	}
-
-	/**
-	 * Convert to userdata instance, or null.
-	 *
-	 * @return userdata instance if userdata, or null if not {@link LuaUserdata}
-	 * @see #optUserdata(Object)
-	 * @see #checkUserdata()
-	 * @see #isUserdata()
-	 * @see Constants#TUSERDATA
-	 */
-	public Object toUserdata() {
-		return null;
-	}
-
-	/**
-	 * Convert to userdata instance if specific type, or null.
-	 *
-	 * @param <T> The type of this userdata.
-	 * @param c   Use this class to create userdata
-	 * @return userdata instance if is a userdata whose instance derives from {@code c},
-	 * or null if not {@link LuaUserdata}
-	 * @see #optUserdata(Class, Object)
-	 * @see #checkUserdata(Class)
-	 * @see #isUserdata(Class)
-	 * @see Constants#TUSERDATA
-	 */
-	public <T> T toUserdata(Class<T> c) {
-		return null;
 	}
 
 	/**
@@ -506,29 +330,10 @@ public abstract class LuaValue extends Varargs {
 	 * throws {@link LuaError} otherwise
 	 * @throws LuaError if was not a boolean or nil or none.
 	 * @see #checkBoolean()
-	 * @see #isBoolean()
 	 * @see Constants#TBOOLEAN
 	 */
-	public boolean optBoolean(boolean defval) throws LuaError {
-		throw ErrorFactory.argError(this, "boolean");
-	}
-
-	/**
-	 * Check that optional argument is a closure and return as {@link LuaClosure}
-	 * <p>
-	 * A {@link LuaClosure} is a {@link LuaFunction} that executes lua byteccode.
-	 *
-	 * @param defval {@link LuaClosure} to return if {@code this} is nil or none
-	 * @return {@code this} cast to {@link LuaClosure} if a function,
-	 * {@code defval} if nil or none,
-	 * throws {@link LuaError} otherwise
-	 * @throws LuaError if was not a closure or nil or none.
-	 * @see #checkClosure()
-	 * @see #isClosure()
-	 * @see Constants#TFUNCTION
-	 */
-	public LuaClosure optClosure(LuaClosure defval) throws LuaError {
-		throw ErrorFactory.argError(this, "closure");
+	public final boolean optBoolean(boolean defval) throws LuaError {
+		return this == NIL ? defval : checkBoolean();
 	}
 
 	/**
@@ -546,8 +351,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isNumber()
 	 * @see Constants#TNUMBER
 	 */
-	public double optDouble(double defval) throws LuaError {
-		throw ErrorFactory.argError(this, "number");
+	public final double optDouble(double defval) throws LuaError {
+		return this == NIL ? defval : checkDouble();
 	}
 
 	/**
@@ -567,8 +372,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isFunction()
 	 * @see Constants#TFUNCTION
 	 */
-	public LuaFunction optFunction(LuaFunction defval) throws LuaError {
-		throw ErrorFactory.argError(this, "function");
+	public final LuaFunction optFunction(LuaFunction defval) throws LuaError {
+		return this == NIL ? defval : checkFunction();
 	}
 
 	/**
@@ -587,8 +392,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isNumber()
 	 * @see Constants#TNUMBER
 	 */
-	public int optInteger(int defval) throws LuaError {
-		throw ErrorFactory.argError(this, "number");
+	public final int optInteger(int defval) throws LuaError {
+		return this == NIL ? defval : checkInteger();
 	}
 
 	/**
@@ -607,8 +412,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isNumber()
 	 * @see Constants#TNUMBER
 	 */
-	public long optLong(long defval) throws LuaError {
-		throw ErrorFactory.argError(this, "number");
+	public final long optLong(long defval) throws LuaError {
+		return this == NIL ? defval : checkLong();
 	}
 
 	/**
@@ -628,8 +433,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isNumber()
 	 * @see Constants#TNUMBER
 	 */
-	public LuaNumber optNumber(LuaNumber defval) throws LuaError {
-		throw ErrorFactory.argError(this, "number");
+	public final LuaNumber optNumber(LuaNumber defval) throws LuaError {
+		return this == NIL ? defval : checkNumber();
 	}
 
 	/**
@@ -646,8 +451,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #toString()
 	 * @see Constants#TSTRING
 	 */
-	public String optString(String defval) throws LuaError {
-		throw ErrorFactory.argError(this, "string");
+	public final String optString(String defval) throws LuaError {
+		return this == NIL ? defval : checkString();
 	}
 
 	/**
@@ -664,8 +469,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #toString()
 	 * @see Constants#TSTRING
 	 */
-	public LuaString optLuaString(LuaString defval) throws LuaError {
-		throw ErrorFactory.argError(this, "string");
+	public final LuaString optLuaString(LuaString defval) throws LuaError {
+		return this == NIL ? defval : checkLuaString();
 	}
 
 	/**
@@ -677,11 +482,10 @@ public abstract class LuaValue extends Varargs {
 	 * throws {@link LuaError} if some other type
 	 * @throws LuaError if was not a table or nil or none.
 	 * @see #checkTable()
-	 * @see #isTable()
 	 * @see Constants#TTABLE
 	 */
-	public LuaTable optTable(LuaTable defval) throws LuaError {
-		throw ErrorFactory.argError(this, "table");
+	public final LuaTable optTable(LuaTable defval) throws LuaError {
+		return this == NIL ? defval : checkTable();
 	}
 
 	/**
@@ -696,25 +500,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see #isThread()
 	 * @see Constants#TTHREAD
 	 */
-	public LuaThread optThread(LuaThread defval) throws LuaError {
-		throw ErrorFactory.argError(this, "thread");
-	}
-
-	/**
-	 * Check that optional argument is a userdata and return the Object instance
-	 *
-	 * @param defval Object to return if {@code this} is nil or none
-	 * @return Object instance of the userdata if a {@link LuaUserdata},
-	 * {@code defval} if nil or none,
-	 * throws {@link LuaError} if some other type
-	 * @throws LuaError if was not a userdata or nil or none.
-	 * @see #checkUserdata()
-	 * @see #isUserdata()
-	 * @see #optUserdata(Class, Object)
-	 * @see Constants#TUSERDATA
-	 */
-	public Object optUserdata(Object defval) throws LuaError {
-		throw ErrorFactory.argError(this, "object");
+	public final LuaThread optThread(LuaThread defval) throws LuaError {
+		return this == NIL ? defval : checkThread();
 	}
 
 	/**
@@ -729,12 +516,10 @@ public abstract class LuaValue extends Varargs {
 	 * throws {@link LuaError} if some other type
 	 * @throws LuaError if was not a userdata whose instance is assignable to {@code c} or nil or none.
 	 * @see #checkUserdata(Class)
-	 * @see #isUserdata(Class)
-	 * @see #optUserdata(Object)
 	 * @see Constants#TUSERDATA
 	 */
-	public <T> T optUserdata(Class<T> c, T defval) throws LuaError {
-		throw ErrorFactory.argError(this, c.getName());
+	public final <T> T optUserdata(Class<T> c, T defval) throws LuaError {
+		return this == NIL ? defval : checkUserdata(c);
 	}
 
 	/**
@@ -748,8 +533,8 @@ public abstract class LuaValue extends Varargs {
 	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
 	 */
-	public LuaValue optValue(LuaValue defval) {
-		return this;
+	public final LuaValue optValue(LuaValue defval) {
+		return this == NIL ? defval : this;
 	}
 
 
@@ -764,34 +549,6 @@ public abstract class LuaValue extends Varargs {
 	 */
 	public boolean checkBoolean() throws LuaError {
 		throw ErrorFactory.argError(this, "boolean");
-	}
-
-	/**
-	 * Check that the value is a {@link LuaClosure} ,
-	 * or throw {@link LuaError} if not
-	 * <p>
-	 * {@link LuaClosure} is a subclass of {@link LuaFunction} that interprets lua bytecode.
-	 *
-	 * @return {@code this} cast as {@link LuaClosure}
-	 * @throws LuaError if not a {@link LuaClosure}
-	 * @see #checkFunction()
-	 * @see #optClosure(LuaClosure)
-	 * @see #isClosure()
-	 * @see Constants#TFUNCTION
-	 */
-	public LuaClosure checkClosure() throws LuaError {
-		throw ErrorFactory.argError(this, "closure");
-	}
-
-	/**
-	 * Check this is a number or raise an arithmetic error
-	 *
-	 * @return The number
-	 * @throws LuaError if not a number
-	 * @see #checkDouble()
-	 */
-	public double checkArith() throws LuaError {
-		throw ErrorFactory.arithError(this);
 	}
 
 	/**
@@ -822,7 +579,6 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return {@code this} if if a lua function or closure
 	 * @throws LuaError if not a function
-	 * @see #checkClosure()
 	 */
 	public LuaFunction checkFunction() throws LuaError {
 		throw ErrorFactory.argError(this, "function");
@@ -942,7 +698,6 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return {@code this} if it is a {@link LuaTable}
 	 * @throws LuaError if {@code this} is not a {@link LuaTable}
-	 * @see #isTable()
 	 * @see #optTable(LuaTable)
 	 * @see Constants#TTABLE
 	 */
@@ -968,8 +723,6 @@ public abstract class LuaValue extends Varargs {
 	 *
 	 * @return {@code this} if it is a {@link LuaUserdata}
 	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
-	 * @see #isUserdata()
-	 * @see #optUserdata(Object)
 	 * @see #checkUserdata(Class)
 	 * @see Constants#TUSERDATA
 	 */
@@ -984,8 +737,6 @@ public abstract class LuaValue extends Varargs {
 	 * @param c   The class of userdata to convert to
 	 * @return {@code this} if it is a {@link LuaUserdata}
 	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
-	 * @see #isUserdata(Class)
-	 * @see #optUserdata(Class, Object)
 	 * @see #checkUserdata()
 	 * @see Constants#TUSERDATA
 	 */
@@ -994,23 +745,11 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Check that this is not the value {@link Constants#NIL}, or throw {@link LuaError} if it is
-	 *
-	 * @return {@code this} if it is not {@link Constants#NIL}
-	 * @throws LuaError if {@code this} is {@link Constants#NIL}
-	 * @see #optValue(LuaValue)
-	 */
-	public LuaValue checkNotNil() throws LuaError {
-		return this;
-	}
-
-	/**
 	 * Check that this is a valid key in a table index operation, or throw {@link LuaError} if not
 	 *
 	 * @return {@code this} if valid as a table key
 	 * @throws LuaError if not valid as a table key
 	 * @see #isNil()
-	 * @see #isIntExact()
 	 */
 	public LuaValue checkValidKey() throws LuaError {
 		return this;
@@ -1087,67 +826,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see CoreLibraries
 	 */
 	public boolean setfenv(LuaTable env) {
-		return false;
-	}
-
-	// object equality, used for key comparison
-	public boolean equals(Object obj) {
-		return this == obj;
-	}
-
-	/**
-	 * Equals: Perform direct equality comparison with another value
-	 * without metatag processing.
-	 *
-	 * @param val The value to compare with.
-	 * @return true if {@code (this == rhs)}, false otherwise
-	 * @see #raweq(LuaUserdata)
-	 * @see #raweq(double)
-	 * @see #raweq(int)
-	 * @see Constants#EQ
-	 */
-	public boolean raweq(LuaValue val) {
-		return this == val;
-	}
-
-	/**
-	 * Equals: Perform direct equality comparison with a {@link LuaUserdata} value
-	 * without metatag processing.
-	 *
-	 * @param val The {@link LuaUserdata} to compare with.
-	 * @return true if {@code this} is userdata
-	 * and their metatables are the same using ==
-	 * and their instances are equal using {@link #equals(Object)},
-	 * otherwise false
-	 * @see #raweq(LuaValue)
-	 */
-	public boolean raweq(LuaUserdata val) {
-		return false;
-	}
-
-	/**
-	 * Equals: Perform direct equality comparison with a double value
-	 * without metatag processing.
-	 *
-	 * @param val The double value to compare with.
-	 * @return true if {@code this} is a {@link LuaNumber}
-	 * whose value equals val,
-	 * otherwise false
-	 */
-	public boolean raweq(double val) {
-		return false;
-	}
-
-	/**
-	 * Equals: Perform direct equality comparison with a int value
-	 * without metatag processing.
-	 *
-	 * @param val The double value to compare with.
-	 * @return true if {@code this} is a {@link LuaNumber}
-	 * whose value equals val,
-	 * otherwise false
-	 */
-	public boolean raweq(int val) {
 		return false;
 	}
 

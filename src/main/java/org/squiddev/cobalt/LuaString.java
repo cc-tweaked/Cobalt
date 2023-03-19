@@ -312,12 +312,6 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 		return this == o || (o instanceof LuaString str && equals(str));
 	}
 
-	// equality w/o metatable processing
-	@Override
-	public boolean raweq(LuaValue val) {
-		return val instanceof LuaString str && equals(str);
-	}
-
 	private boolean equals(LuaString s) {
 		if (this == s) return true;
 		if (s.length != length) return false;
@@ -598,65 +592,18 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	}
 
 	@Override
-	public boolean isInteger() {
-		double d = scanNumber(10);
-		return !Double.isNaN(d) && (int) d == d;
-	}
-
-	@Override
-	public boolean isLong() {
-		double d = scanNumber(10);
-		return !Double.isNaN(d) && (long) d == d;
-	}
-
-	@Override
 	public double toDouble() {
 		return scanNumber(10);
 	}
 
 	@Override
 	public int toInteger() {
-		return (int) toLong();
-	}
-
-	@Override
-	public long toLong() {
-		return (long) toDouble();
-	}
-
-	@Override
-	public double optDouble(double defValue) throws LuaError {
-		return checkNumber().checkDouble();
-	}
-
-	@Override
-	public int optInteger(int defValue) throws LuaError {
-		return checkNumber().checkInteger();
-	}
-
-	@Override
-	public long optLong(long defdefValueval) throws LuaError {
-		return checkNumber().checkLong();
-	}
-
-	@Override
-	public LuaNumber optNumber(LuaNumber defValue) throws LuaError {
-		return checkNumber().checkNumber();
-	}
-
-	@Override
-	public LuaString optLuaString(LuaString defValue) {
-		return this;
+		return (int) (long)toDouble();
 	}
 
 	@Override
 	public LuaValue toLuaString() {
 		return this;
-	}
-
-	@Override
-	public String optString(String defValue) {
-		return toString();
 	}
 
 	@Override

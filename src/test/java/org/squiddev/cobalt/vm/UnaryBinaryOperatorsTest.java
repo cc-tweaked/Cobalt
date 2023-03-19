@@ -232,7 +232,7 @@ public class UnaryBinaryOperatorsTest {
 		LuaValue tbl = new LuaTable();
 		LuaValue tbl2 = new LuaTable();
 		LuaValue tbl3 = new LuaTable();
-		LuaValue uda = new LuaUserdata(new Object());
+		LuaUserdata uda = new LuaUserdata(new Object());
 		LuaValue udb = new LuaUserdata(uda.toUserdata());
 		LuaValue uda2 = new LuaUserdata(new Object());
 		LuaValue uda3 = new LuaUserdata(uda.toUserdata());

@@ -132,7 +132,7 @@ public final class DebugLib {
 		int i1 = a++;
 		LuaFunction func = args.arg(i1).optFunction(null);
 		int i3 = a++;
-		String str = args.arg(i3).optString("");
+		LuaString str = args.arg(i3).optLuaString(EMPTYSTRING);
 		int i2 = a++;
 		int count = args.arg(i2).optInteger(0);
 		boolean call = false, line = false, rtrn = false;
@@ -265,9 +265,9 @@ public final class DebugLib {
 		int local = args.arg(arg + 1).checkInteger();
 		if (args.arg(arg).isFunction()) {
 			LuaFunction function = args.arg(arg).checkFunction();
-			if (!function.isClosure()) return NIL;
+			if (!(function instanceof LuaClosure closure)) return NIL;
 
-			Prototype proto = function.checkClosure().getPrototype();
+			Prototype proto = closure.getPrototype();
 			LocalVariable[] variables = proto.locals;
 			return variables != null && local > 0 && local <= variables.length && local <= proto.parameters
 				? variables[local - 1].name : NIL;

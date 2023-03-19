@@ -88,9 +88,6 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  *
  * @see LuaValue
  * @see LuaFunction
- * @see LuaValue#isClosure()
- * @see LuaValue#checkClosure()
- * @see LuaValue#optClosure(LuaClosure)
  * @see LoadState
  */
 public final class LuaInterpretedFunction extends LuaClosure implements Resumable<Object> {

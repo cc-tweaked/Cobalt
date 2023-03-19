@@ -56,11 +56,6 @@ public abstract class LuaFunction extends LuaValue {
 	}
 
 	@Override
-	public final LuaFunction optFunction(LuaFunction defval) {
-		return this;
-	}
-
-	@Override
 	public final LuaTable getMetatable(LuaState state) {
 		return state.functionMetatable;
 	}

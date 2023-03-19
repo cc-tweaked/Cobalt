@@ -171,11 +171,6 @@ public final class LuaThread extends LuaValue {
 	}
 
 	@Override
-	public LuaThread optThread(LuaThread defval) {
-		return this;
-	}
-
-	@Override
 	public LuaThread checkThread() {
 		return this;
 	}

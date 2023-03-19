@@ -51,19 +51,4 @@ public abstract class LuaClosure extends LuaFunction {
 	public final String debugName() {
 		return getPrototype().sourceShort() + ":" + getPrototype().lineDefined;
 	}
-
-	@Override
-	public LuaClosure checkClosure() {
-		return this;
-	}
-
-	@Override
-	public boolean isClosure() {
-		return true;
-	}
-
-	@Override
-	public LuaClosure optClosure(LuaClosure defval) {
-		return this;
-	}
 }

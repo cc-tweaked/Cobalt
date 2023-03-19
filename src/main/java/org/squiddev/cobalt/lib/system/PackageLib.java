@@ -27,6 +27,7 @@ package org.squiddev.cobalt.lib.system;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
@@ -144,7 +145,7 @@ public class PackageLib {
 		int n = args.count();
 		LuaValue value = loaded.rawget(modname);
 		LuaTable module;
-		if (!value.isTable()) { /* not found? */
+		if (!(value instanceof LuaTable table)) { /* not found? */
 			/* try global variable (and create one if it does not exist) */
 			LuaTable globals = state.getCurrentThread().getfenv();
 			module = findtable(globals, modname);
@@ -153,7 +154,7 @@ public class PackageLib {
 			}
 			loaded.rawset(modname, module);
 		} else {
-			module = (LuaTable) value;
+			module = table;
 		}
 
 		/* check whether table already has a _NAME field */
@@ -171,7 +172,7 @@ public class PackageLib {
 		if (f == null) {
 			throw new LuaError("no calling function");
 		}
-		if (!f.isClosure()) {
+		if (!(f instanceof LuaClosure)) {
 			throw new LuaError("'module' not called from a Lua function");
 		}
 		f.setfenv(module);
@@ -201,10 +202,10 @@ public class PackageLib {
 				LuaTable field = new LuaTable(); /* new table for field */
 				table.rawset(key, field);
 				table = field;
-			} else if (!val.isTable()) {  /* field has a non-table value? */
+			} else if (!(val instanceof LuaTable tableVal)) {  /* field has a non-table value? */
 				return null;
 			} else {
-				table = (LuaTable) val;
+				table = tableVal;
 			}
 		} while (e < fname.length());
 		return table;

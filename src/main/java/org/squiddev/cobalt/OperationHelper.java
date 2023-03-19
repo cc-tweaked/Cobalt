@@ -312,31 +312,25 @@ public final class OperationHelper {
 		int tLeft = left.type();
 		if (tLeft != right.type()) return false;
 
-		switch (tLeft) {
-			case TNIL:
-				return true;
-			case TNUMBER:
-				return left.toDouble() == right.toDouble();
-			case TBOOLEAN:
-				return left.toBoolean() == right.toBoolean();
-			case TSTRING:
-				return left == right || left.raweq(right);
-			case TUSERDATA:
-			case TTABLE: {
-				if (left == right || left.raweq(right)) return true;
+		return switch (tLeft) {
+			case TNIL -> true;
+			case TNUMBER -> left.toDouble() == right.toDouble();
+			case TBOOLEAN -> left.toBoolean() == right.toBoolean();
+			case TSTRING -> left == right ||  left.equals(right);
+			case TUSERDATA, TTABLE -> {
+				if (left == right || left.equals(right)) yield true;
 
 				LuaTable leftMeta = left.getMetatable(state);
-				if (leftMeta == null) return false;
+				if (leftMeta == null) yield false;
 
 				LuaTable rightMeta = right.getMetatable(state);
-				if (rightMeta == null) return false;
+				if (rightMeta == null) yield false;
 
 				LuaValue h = leftMeta.rawget(CachedMetamethod.EQ);
-				return !(h.isNil() || h != rightMeta.rawget(CachedMetamethod.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
+				yield !(h.isNil() || h != rightMeta.rawget(CachedMetamethod.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
 			}
-			default:
-				return left == right || left.raweq(right);
-		}
+			default -> left == right || left.equals(right);
+		};
 	}
 	//endregion
 
@@ -526,8 +520,8 @@ public final class OperationHelper {
 
 	public static LuaValue getTable(LuaState state, LuaValue t, int key) throws LuaError, UnwindThrowable {
 		// Optimised case for an integer key.
-		if (t.isTable()) {
-			LuaValue value = ((LuaTable) t).rawget(key);
+		if (t instanceof LuaTable table) {
+			LuaValue value = table.rawget(key);
 			if (!value.isNil()) return value;
 		}
 
@@ -539,8 +533,8 @@ public final class OperationHelper {
 		LuaValue tm;
 		int loop = 0;
 		do {
-			if (t.isTable()) {
-				LuaValue res = ((LuaTable) t).rawget(key);
+			if (t instanceof LuaTable table) {
+				LuaValue res = table.rawget(key);
 				if (!res.isNil() || (tm = t.metatag(state, CachedMetamethod.INDEX)).isNil()) {
 					return res;
 				}

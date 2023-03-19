@@ -170,7 +170,7 @@ public class BaseLib {
 
 	private static Varargs rawequal(LuaState state, Varargs args) throws LuaError {
 		// rawequal(v1, v2) -> boolean
-		return valueOf(args.checkValue(1) == args.checkValue(2));
+		return valueOf(args.checkValue(1).equals(args.checkValue(2)));
 	}
 
 	private static Varargs rawget(LuaState state, Varargs args) throws LuaError {

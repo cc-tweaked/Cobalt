@@ -55,4 +55,12 @@ describe("The base library", function()
 			expect(inext("hello", 0)):eq(nil)
 		end)
 	end)
+
+	describe("rawequal", function()
+		it("two large integers are equal", function()
+			-- Older versions of Cobalt uses == instead of .equals, so this was
+			-- false.
+			expect(rawequal(26463, tonumber("26463"))):eq(true)
+		end)
+	end)
 end)
