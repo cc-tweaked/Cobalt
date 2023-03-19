@@ -197,7 +197,9 @@ setmetatable(expect, expect)
 function expect.error(fun, ...)
 	local ok, res = pcall(fun, ...) local _, line = pcall(error, "", 2)
 	if ok then fail("expected function to error") end
-	if res:sub(1, #line) == line then
+	if type(res) ~= "string" then
+		-- Do nothing
+	elseif res:sub(1, #line) == line then
 		res = res:sub(#line + 1)
 	elseif res:sub(1, 7) == "pcall: " then
 		res = res:sub(8)

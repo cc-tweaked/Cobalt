@@ -55,6 +55,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public class BaseLib {
 	private static final LuaString FUNCTION_STR = valueOf("function");
 	private static final LuaString LOAD_MODE = valueOf("bt");
+	private static final LuaString ASSERTION_FAILED = valueOf("assertion failed!");
 
 	private LuaValue next;
 	private LuaValue inext;
@@ -125,10 +126,9 @@ public class BaseLib {
 
 	private static Varargs assert_(LuaState state, Varargs args) throws LuaError {
 		// assert( v [,message] ) -> v, message | ERR
-		if (!args.first().toBoolean()) {
-			throw new LuaError(args.count() > 1 ? args.arg(2).optString("assertion failed!") : "assertion failed!");
-		}
-		return args;
+		if (args.first().toBoolean()) return args;
+		args.checkValue(1);
+		throw new LuaError(args.count() > 1 ? args.arg(2) : ASSERTION_FAILED);
 	}
 
 

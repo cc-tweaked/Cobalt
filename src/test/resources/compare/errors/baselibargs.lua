@@ -6,7 +6,7 @@ require 'args'
 -- assert
 banner('assert')
 checkallpass('assert', { { true, 123 }, anylua })
-checkallerrors('assert', { { nil, false, n = 2 }, { nil, n = 1 } }, 'assertion failed')
+checkallerrors('assert', { { nil, false, n = 2 } }, 'assertion failed')
 checkallerrors('assert', { { nil, false, n = 2 }, { 'message' } }, 'message')
 
 -- collectgarbage

@@ -101,6 +101,18 @@ public final class LuaError extends Exception {
 	}
 
 	/**
+	 * Construct a LuaError with a message.
+	 *
+	 * @param message message to supply
+	 */
+	public LuaError(LuaValue message) {
+		super(rawToString(message));
+		this.level = 1;
+		calculateLevel = true;
+		value = message;
+	}
+
+	/**
 	 * Construct a LuaError with a message, and level to draw line number information from.
 	 *
 	 * @param message message to supply
@@ -145,7 +157,7 @@ public final class LuaError extends Exception {
 		if (getCause() != null) state.reportInternalError(getCause(), () -> "Uncaught Java exception");
 
 		LuaThread thread = state.getCurrentThread();
-		if (level > 0 && value.isString()) {
+		if (level > 0 && value.type() == Constants.TSTRING) {
 			String fileLine;
 			if (calculateLevel) {
 				fileLine = DebugHelpers.fileLine(thread);

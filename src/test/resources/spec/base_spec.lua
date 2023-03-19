@@ -1,4 +1,22 @@
 describe("The base library", function()
+	describe("assert", function()
+		it("returns values by default", function()
+			expect({assert("a", true, 3)}):same { "a", true, 3 }
+		end)
+
+		it("requires at least one argument :lua~=5.2", function()
+			expect.error(assert):str_match("bad argument #1"):str_match("value expected")
+		end)
+
+		it("defaults to 'assertion failed!'", function()
+			expect.error(assert, false):eq("assertion failed!")
+		end)
+
+		it("accepts any type as an error message :lua>=5.3", function()
+			expect.error(assert, false, 123):eq(123)
+		end)
+	end)
+
 	describe("tonumber", function()
 		it("rejects partial numbers", function()
 			local invalid = { "-", " -", "- ", " - ", "0x" }
