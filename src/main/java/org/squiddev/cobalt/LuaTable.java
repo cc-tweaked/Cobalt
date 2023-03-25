@@ -747,7 +747,7 @@ public final class LuaTable extends LuaValue {
 	}
 
 	private Node getNode(LuaValue search) {
-		if (nodes.length == 0) return null;
+		if (nodes.length == 0 || search == NIL) return null;
 
 		int slot = hashSlot(search);
 		Node node = nodes[slot];
