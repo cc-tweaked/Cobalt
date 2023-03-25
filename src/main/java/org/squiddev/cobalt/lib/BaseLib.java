@@ -299,7 +299,7 @@ public class BaseLib {
 
 			ProtectedCall call = new ProtectedCall(di, errFunc);
 			di.state = call;
-			return call.apply(state, func, Constants.NONE).asBoolAndResult();
+			return call.apply(state, func, args.subargs(3)).asBoolAndResult();
 		}
 
 		@Override

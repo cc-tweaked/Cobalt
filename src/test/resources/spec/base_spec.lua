@@ -63,4 +63,25 @@ describe("The base library", function()
 			expect(rawequal(26463, tonumber("26463"))):eq(true)
 		end)
 	end)
+
+	describe("xpcall", function()
+		it("accepts multiple values :lua>=5.2", function()
+			local ok, res = xpcall(table.pack, function() end, 1, 2, 3)
+			expect(ok):eq(true)
+			expect(res):same { n = 3, 1, 2, 3 }
+		end)
+	end)
+
+	describe("load", function()
+		-- I'd hope nobody relies on this behaviour, but you never know!
+		it("propagates the current error handler", function()
+			local res = {
+				xpcall(
+					function() return load(function() error("oh no", 0) end) end,
+					function(e) return "caught " .. e end
+				)
+			}
+			expect(res):same { true, nil, "caught oh no"}
+		end)
+	end)
 end)
