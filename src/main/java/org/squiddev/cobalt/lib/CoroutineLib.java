@@ -60,6 +60,7 @@ public final class CoroutineLib {
 			RegisteredFunction.of("create", CoroutineLib::create),
 			RegisteredFunction.ofV("running", CoroutineLib::running),
 			RegisteredFunction.of("status", CoroutineLib::status),
+			RegisteredFunction.of("isyieldable", CoroutineLib::isyieldable),
 			RegisteredFunction.of("wrap", CoroutineLib::wrap),
 			RegisteredFunction.ofFactory("resume", Resume::new),
 			RegisteredFunction.ofFactory("yield", Yield::new),
@@ -78,6 +79,11 @@ public final class CoroutineLib {
 
 	private static LuaValue status(LuaState state, LuaValue arg) throws LuaError {
 		return arg.checkThread().getStatus().getDisplayNameValue();
+	}
+
+	private static LuaValue isyieldable(LuaState state, LuaValue arg) throws LuaError {
+		// Much simpler in our case, as coroutines can always yield.
+		return valueOf(!arg.optThread(state.getCurrentThread()).isMainThread());
 	}
 
 	private static LuaValue wrap(LuaState state, LuaValue arg) throws LuaError {
