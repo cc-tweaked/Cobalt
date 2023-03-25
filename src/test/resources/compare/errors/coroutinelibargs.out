@@ -26,13 +26,13 @@
 -		coroutine.resume(<function>)	...bad argument...
 ====== coroutine.running ======
 --- checkallpass
--		coroutine.running(nil)	nil
--		coroutine.running('abc')	nil
--		coroutine.running(1.25)	nil
--		coroutine.running(true)	nil
--		coroutine.running(<table>)	nil
--		coroutine.running(<function>)	nil
--		coroutine.running(<thread>)	nil
+-		coroutine.running(nil)	<thread>,true
+-		coroutine.running('abc')	<thread>,true
+-		coroutine.running(1.25)	<thread>,true
+-		coroutine.running(true)	<thread>,true
+-		coroutine.running(<table>)	<thread>,true
+-		coroutine.running(<function>)	<thread>,true
+-		coroutine.running(<thread>)	<thread>,true
 ====== coroutine.status ======
 --- checkallpass
 -		coroutine.status(<thread>)	'suspended'

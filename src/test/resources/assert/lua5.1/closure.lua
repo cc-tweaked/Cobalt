@@ -156,7 +156,8 @@ t()
 
 local f
 
-assert(coroutine.running() == nil)
+local running, main_thread = coroutine.running()
+assert(running ~= nil and main_thread)
 
 
 -- tests for global environment
@@ -367,7 +368,7 @@ if not T then
 else
 
   local turn
-  
+
   function fact (t, x)
     assert(turn == t)
     if x == 0 then return 1

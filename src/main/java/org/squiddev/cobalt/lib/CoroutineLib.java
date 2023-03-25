@@ -58,7 +58,7 @@ public final class CoroutineLib {
 	public static void add(LuaState state, LuaTable env) {
 		LibFunction.setGlobalLibrary(state, env, "coroutine", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("create", CoroutineLib::create),
-			RegisteredFunction.of("running", CoroutineLib::running),
+			RegisteredFunction.ofV("running", CoroutineLib::running),
 			RegisteredFunction.of("status", CoroutineLib::status),
 			RegisteredFunction.of("wrap", CoroutineLib::wrap),
 			RegisteredFunction.ofFactory("resume", Resume::new),
@@ -71,9 +71,9 @@ public final class CoroutineLib {
 		return new LuaThread(state, func, state.getCurrentThread().getfenv());
 	}
 
-	private static LuaValue running(LuaState state) {
-		final LuaThread r = state.getCurrentThread();
-		return r.isMainThread() ? Constants.NIL : r;
+	private static Varargs running(LuaState state, Varargs args) {
+		LuaThread r = state.getCurrentThread();
+		return varargsOf(r, valueOf(r.isMainThread()));
 	}
 
 	private static LuaValue status(LuaState state, LuaValue arg) throws LuaError {
