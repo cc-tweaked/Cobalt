@@ -32,18 +32,23 @@ function describe(name, func)
 	if path == nil then error("Cannot define tasks at this time") end
 	local old_path, old_active = path, active
 
-	path = path .. name .. " ⊳ "
+	path = path .. name .. " ▸ "
 	active = active and check_version(name)
 	func()
 
 	path, active = old_path, old_active
 end
 
+function pending(name, func)
+	if path == nil then error("Cannot define tasks at this time") end
+	tests[#tests + 1] = { path = path, name = name, func = false }
+end
+
 function it(name, func)
 	if path == nil then error("Cannot define tasks at this time") end
 
 	local active = active and check_version(name)
-	tests[#tests + 1] = { name = path .. name, func = active and func }
+	tests[#tests + 1] = { path = path, name = name, func = active and func }
 end
 
 fail = error
@@ -51,11 +56,15 @@ dofile("src/test/resources/spec/_prelude.lua")
 for _, file in ipairs(files) do dofile(file) end
 path = nil
 
+local function log_test(colour, test, status)
+	print(("\27[38:5:247m%s\27[38:5:%dm%s \27[38:5:247m(%s)\27[0m"):format(test.path, colour, test.name, status))
+end
+
 local total, skipped, failed = 0, 0, 0
 for _, test in ipairs(tests) do
 	if not test.func then
 		skipped = skipped + 1
-		if verbose then print("\27[33m" .. test.name .. " (skipped)\27[0m") end
+		if verbose then log_test(184, test, "skipped") end
 	else
 		total = total + 1
 
@@ -66,13 +75,14 @@ for _, test in ipairs(tests) do
 		end
 		if not ok then
 			failed = failed + 1
-			print("\27[31m" .. test.name .. "\27[0m")
+
+			log_test(197, test, "failed")
 			print(debug.traceback(co, err))
 		else
-			if verbose then print("\27[32m" .. test.name .. "\27[0m") end
+			if verbose then log_test(70, test, "passed") end
 		end
 	end
 end
 
-print(("Ran %d tests (%d skipped)"):format(total, skipped))
+print(("\27[1mRan %d tests (%d skipped)\27[0m"):format(total, skipped))
 if failed > 0 then os.exit(1) end

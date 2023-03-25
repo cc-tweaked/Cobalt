@@ -1,11 +1,9 @@
 package org.squiddev.cobalt;
 
-import org.junit.jupiter.api.DynamicContainer;
-import org.junit.jupiter.api.DynamicNode;
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.*;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
+import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.system.SystemLibraries;
@@ -30,6 +28,7 @@ public class LuaSpecTest {
 		state = new LuaState();
 		env = state.getMainThread().getfenv();
 		SystemLibraries.debugGlobals(state);
+		TestLib.add(env);
 
 		try (InputStream is = new BufferedInputStream(Files.newInputStream(ROOT.resolve("_prelude.lua")))) {
 			var expect = LoadState.load(state, is, "@_prelude.lua", env);
@@ -68,8 +67,25 @@ public class LuaSpecTest {
 			return Constants.NIL;
 		}).create());
 
+		env.rawset("pending", RegisteredFunction.of("pending", (state, arg1, arg2) -> {
+			String name = arg1.checkString();
+			arg2.checkFunction();
+			if (nodes == null) throw new LuaError("Cannot register tests at this stage");
+
+			nodes.add(DynamicTest.dynamicTest(name, () -> Assumptions.assumeFalse(false, "Test is 'pending'.")));
+
+			return Constants.NIL;
+		}).create());
+
 		env.rawset("fail", RegisteredFunction.of("fail", (state, arg) -> {
-			throw new AssertionError(arg.checkString());
+			var frame = state.getCurrentThread().getDebugState().getFrame(2);
+			var values = frame.stack;
+			for (int i = 0; i < values.length; i++) {
+				var value = values[i];
+				var local = frame.closure.getPrototype().getLocalName(i + 1, frame.pc);
+				if (!value.isNil() || local != null) System.out.printf("% 2d => %s [%s]\n", i, values[i], local);
+			}
+			throw new AssertionError(arg.checkString() + "\n" + DebugHelpers.traceback(state.getCurrentThread(), 0));
 		}).create());
 	}
 

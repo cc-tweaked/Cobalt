@@ -95,12 +95,21 @@ public final class TableLib {
 
 	private static LuaValue getn(LuaState state, LuaValue arg) throws LuaError {
 		// getn(table) -> number
-		return LuaInteger.valueOf(arg.checkTable().length());
+		return valueOf(arg.checkTable().length());
 	}
 
 	private static LuaValue maxn(LuaState state, LuaValue arg) throws LuaError {
 		// maxn(table) -> number
-		return valueOf(arg.checkTable().maxn());
+		LuaTable table = arg.checkTable();
+		double max = 0;
+		LuaValue k = NIL;
+		while (true) {
+			Varargs pair = table.next(k);
+			if ((k = pair.first()).isNil()) break;
+			if (k.type() == TNUMBER) max = Math.max(max, k.toDouble());
+		}
+
+		return valueOf(max);
 	}
 
 	private static Varargs remove(LuaState state, Varargs args) throws LuaError {

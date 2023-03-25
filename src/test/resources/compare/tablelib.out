@@ -193,9 +193,9 @@ t.a="c"	true
 t["a"],t.a	true	c	c
 t.a=nil	true
 t["a"],t.a	true	nil	nil
-t[nil]="d"	false	string
+t[nil]="d"	false	tablelib.lua:255: table index is nil
 t[nil]	true	nil
-t[nil]=nil	false	string
+t[nil]=nil	false	tablelib.lua:257: table index is nil
 t[nil]	true	nil
 ------ basic table tests on function metatable on __index table
 t[1]=2	true
@@ -211,10 +211,10 @@ t.a=nil	true
 metatable call args	table	a
 metatable call args	table	a
 t["a"],t.a	true	dummy	dummy
-t[nil]="d"	false	string
+t[nil]="d"	false	tablelib.lua:255: table index is nil
 metatable call args	table	nil
 t[nil]	true	dummy
-t[nil]=nil	false	string
+t[nil]=nil	false	tablelib.lua:257: table index is nil
 metatable call args	table	nil
 t[nil]	true	dummy
 ------ basic table tests on function metatable on __newindex table
@@ -233,9 +233,11 @@ t["a"],t.a	true	nil	nil
 metatable call args	table	a	nil
 t.a=nil	true
 t["a"],t.a	true	nil	nil
-t[nil]="d"	false	string
+metatable call args	table	nil	d
+t[nil]="d"	true
 t[nil]	true	nil
-t[nil]=nil	false	string
+metatable call args	table	nil	nil
+t[nil]=nil	true
 t[nil]	true	nil
 ------ basic table tests on plain metatable on __index table
 t[1]=2	true
@@ -248,9 +250,9 @@ t.a="c"	true
 t["a"],t.a	true	c	c
 t.a=nil	true
 t["a"],t.a	true	nil	nil
-t[nil]="d"	false	string
+t[nil]="d"	false	tablelib.lua:255: table index is nil
 t[nil]	true	nil
-t[nil]=nil	false	string
+t[nil]=nil	false	tablelib.lua:257: table index is nil
 t[nil]	true	nil
 ------ basic table tests on plain metatable on __newindex table
 t[1]=2	true
@@ -263,9 +265,9 @@ t.a="c"	true
 t["a"],t.a	true	c	c
 t.a=nil	true
 t["a"],t.a	true	nil	nil
-t[nil]="d"	false	string
+t[nil]="d"	false	tablelib.lua:255: table index is nil
 t[nil]	true	nil
-t[nil]=nil	false	string
+t[nil]=nil	false	tablelib.lua:257: table index is nil
 t[nil]	true	nil
 -- sort tests
 default (lexical) comparator

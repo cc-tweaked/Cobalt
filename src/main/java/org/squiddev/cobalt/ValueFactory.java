@@ -104,17 +104,6 @@ public class ValueFactory {
 	}
 
 	/**
-	 * Construct a {@link LuaTable} initialized with supplied array values.
-	 *
-	 * @param varargs  {@link Varargs} containing the values to use in initialization
-	 * @param firstarg the index of the first argument to use from the varargs, 1 being the first.
-	 * @return new {@link LuaTable} instance with sequential elements coming from the varargs.
-	 */
-	public static LuaTable tableOf(Varargs varargs, int firstarg) {
-		return new LuaTable(varargs, firstarg);
-	}
-
-	/**
 	 * Construct an empty {@link LuaTable} preallocated to hold array and hashed elements
 	 *
 	 * @param narray Number of array elements to preallocate
@@ -365,11 +354,5 @@ public class ValueFactory {
 		}
 
 		return v3.count() == 0 ? new LuaValue.PairVarargs(v1, v2) : new LuaValue.ArrayVarargs(new LuaValue[]{v1, v2}, v3);
-	}
-
-	public static LuaTable weakTable(boolean weakKeys, boolean weakValues) {
-		LuaTable table = new LuaTable();
-		table.useWeak(weakKeys, weakValues);
-		return table;
 	}
 }

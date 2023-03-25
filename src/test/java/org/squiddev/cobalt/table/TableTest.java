@@ -39,8 +39,6 @@ import static org.squiddev.cobalt.table.TableOperations.getArrayLength;
 import static org.squiddev.cobalt.table.TableOperations.getHashLength;
 
 public class TableTest {
-	private final LuaState state = new LuaState();
-
 	private int keyCount(LuaTable t) throws LuaError {
 		return keys(t).length;
 	}
@@ -60,16 +58,16 @@ public class TableTest {
 
 
 	@Test
-	public void testInOrderIntegerKeyInsertion() throws LuaError, UnwindThrowable {
+	public void testInOrderIntegerKeyInsertion() {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
-			OperationHelper.setTable(state, t, valueOf(i), valueOf("Test Value! " + i));
+			t.rawset(i, valueOf("Test Value! " + i));
 		}
 
 		// Ensure all keys are still there.
 		for (int i = 1; i <= 32; ++i) {
-			assertEquals("Test Value! " + i, OperationHelper.getTable(state, t, valueOf(i)).toString());
+			assertEquals("Test Value! " + i, t.rawget(valueOf(i)).toString());
 		}
 
 		// Ensure capacities make sense
@@ -78,19 +76,19 @@ public class TableTest {
 	}
 
 	@Test
-	public void testRekeyCount() throws LuaError, UnwindThrowable {
+	public void testRekeyCount() {
 		LuaTable t = new LuaTable();
 
 		// NOTE: This order of insertion is important.
-		OperationHelper.setTable(state, t, valueOf(3), LuaInteger.valueOf(3));
-		OperationHelper.setTable(state, t, valueOf(1), LuaInteger.valueOf(1));
-		OperationHelper.setTable(state, t, valueOf(5), LuaInteger.valueOf(5));
-		OperationHelper.setTable(state, t, valueOf(4), LuaInteger.valueOf(4));
-		OperationHelper.setTable(state, t, valueOf(6), LuaInteger.valueOf(6));
-		OperationHelper.setTable(state, t, valueOf(2), LuaInteger.valueOf(2));
+		t.rawset(3, LuaInteger.valueOf(3));
+		t.rawset(1, LuaInteger.valueOf(1));
+		t.rawset(5, LuaInteger.valueOf(5));
+		t.rawset(4, LuaInteger.valueOf(4));
+		t.rawset(6, LuaInteger.valueOf(6));
+		t.rawset(2, LuaInteger.valueOf(2));
 
 		for (int i = 1; i < 6; ++i) {
-			assertEquals(LuaInteger.valueOf(i), OperationHelper.getTable(state, t, valueOf(i)));
+			assertEquals(LuaInteger.valueOf(i), t.rawget(valueOf(i)));
 		}
 
 		assertThat(getArrayLength(t), between(3, 12));
@@ -98,16 +96,16 @@ public class TableTest {
 	}
 
 	@Test
-	public void testOutOfOrderIntegerKeyInsertion() throws LuaError, UnwindThrowable {
+	public void testOutOfOrderIntegerKeyInsertion() {
 		LuaTable t = new LuaTable();
 
 		for (int i = 32; i > 0; --i) {
-			OperationHelper.setTable(state, t, valueOf(i), valueOf("Test Value! " + i));
+			t.rawset(i, valueOf("Test Value! " + i));
 		}
 
 		// Ensure all keys are still there.
 		for (int i = 1; i <= 32; ++i) {
-			assertEquals("Test Value! " + i, OperationHelper.getTable(state, t, valueOf(i)).toString());
+			assertEquals("Test Value! " + i, t.rawget(i).toString());
 		}
 
 		// Ensure capacities make sense
@@ -117,13 +115,13 @@ public class TableTest {
 	}
 
 	@Test
-	public void testStringAndIntegerKeys() throws LuaError, UnwindThrowable {
+	public void testStringAndIntegerKeys() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 0; i < 10; ++i) {
 			LuaString str = valueOf(String.valueOf(i));
-			OperationHelper.setTable(state, t, valueOf(i), str);
-			OperationHelper.setTable(state, t, str, LuaInteger.valueOf(i));
+			t.rawset(i, str);
+			t.rawset(str, LuaInteger.valueOf(i));
 		}
 
 		assertThat(getArrayLength(t), between(8, 18)); // 1, 2, ..., 9
@@ -159,126 +157,122 @@ public class TableTest {
 	}
 
 	@Test
-	public void testBadInitialCapacity() throws LuaError, UnwindThrowable {
+	public void testBadInitialCapacity() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
-		OperationHelper.setTable(state, t, valueOf("test"), valueOf("foo"));
-		OperationHelper.setTable(state, t, valueOf("explode"), valueOf("explode"));
+		t.rawset("test", valueOf("foo"));
+		t.rawset("explode", valueOf("explode"));
 		assertEquals(2, keyCount(t));
 	}
 
 	@Test
-	public void testRemove0() throws LuaError, UnwindThrowable {
+	public void testRemove0() {
 		LuaTable t = new LuaTable(2, 0);
 
-		OperationHelper.setTable(state, t, valueOf(1), valueOf("foo"));
-		OperationHelper.setTable(state, t, valueOf(2), valueOf("bah"));
-		assertNotSame(Constants.NIL, OperationHelper.getTable(state, t, valueOf(1)));
-		assertNotSame(Constants.NIL, OperationHelper.getTable(state, t, valueOf(2)));
-		assertEquals(Constants.NIL, OperationHelper.getTable(state, t, valueOf(3)));
+		t.rawset(1, valueOf("foo"));
+		t.rawset(2, valueOf("bah"));
+		assertNotSame(Constants.NIL, t.rawget(1));
+		assertNotSame(Constants.NIL, t.rawget(2));
+		assertEquals(Constants.NIL, t.rawget(3));
 
-		OperationHelper.setTable(state, t, valueOf(1), Constants.NIL);
-		OperationHelper.setTable(state, t, valueOf(2), Constants.NIL);
-		OperationHelper.setTable(state, t, valueOf(3), Constants.NIL);
-		assertEquals(Constants.NIL, OperationHelper.getTable(state, t, valueOf(1)));
-		assertEquals(Constants.NIL, OperationHelper.getTable(state, t, valueOf(2)));
-		assertEquals(Constants.NIL, OperationHelper.getTable(state, t, valueOf(3)));
+		t.rawset(1, Constants.NIL);
+		t.rawset(2, Constants.NIL);
+		t.rawset(3, Constants.NIL);
+		assertEquals(Constants.NIL, t.rawget(1));
+		assertEquals(Constants.NIL, t.rawget(2));
+		assertEquals(Constants.NIL, t.rawget(3));
 	}
 
 	@Test
-	public void testRemove1() throws LuaError, UnwindThrowable {
+	public void testRemove1() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
-		OperationHelper.setTable(state, t, valueOf("test"), valueOf("foo"));
-		OperationHelper.setTable(state, t, valueOf("explode"), Constants.NIL);
-		OperationHelper.setTable(state, t, valueOf(42), Constants.NIL);
-		OperationHelper.setTable(state, t, new LuaTable(), Constants.NIL);
-		OperationHelper.setTable(state, t, valueOf("test"), Constants.NIL);
+		t.rawset("test", valueOf("foo"));
+		t.rawset("explode", Constants.NIL);
+		t.rawset(42, Constants.NIL);
+		t.rawset(new LuaTable(), Constants.NIL);
+		t.rawset("test", Constants.NIL);
 		assertEquals(0, keyCount(t));
 
-		OperationHelper.setTable(state, t, valueOf(10), LuaInteger.valueOf(5));
-		OperationHelper.setTable(state, t, valueOf(10), Constants.NIL);
+		t.rawset(10, LuaInteger.valueOf(5));
+		t.rawset(10, Constants.NIL);
 		assertEquals(0, keyCount(t));
 	}
 
 	@Test
-	public void testRemove2() throws LuaError, UnwindThrowable {
+	public void testRemove2() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
-		OperationHelper.setTable(state, t, valueOf("test"), valueOf("foo"));
-		OperationHelper.setTable(state, t, valueOf("string"), LuaInteger.valueOf(10));
+		t.rawset("test", valueOf("foo"));
+		t.rawset("string", LuaInteger.valueOf(10));
 		assertEquals(2, keyCount(t));
 
-		OperationHelper.setTable(state, t, valueOf("string"), Constants.NIL);
-		OperationHelper.setTable(state, t, valueOf("three"), valueOf(3.14));
+		t.rawset("string", Constants.NIL);
+		t.rawset("three", valueOf(3.14));
 		assertEquals(2, keyCount(t));
 
-		OperationHelper.setTable(state, t, valueOf("test"), Constants.NIL);
+		t.rawset("test", Constants.NIL);
 		assertEquals(1, keyCount(t));
 
-		OperationHelper.setTable(state, t, valueOf(10), LuaInteger.valueOf(5));
+		t.rawset(10, LuaInteger.valueOf(5));
 		assertEquals(2, keyCount(t));
 
-		OperationHelper.setTable(state, t, valueOf(10), Constants.NIL);
+		t.rawset(10, Constants.NIL);
 		assertEquals(1, keyCount(t));
 
-		OperationHelper.setTable(state, t, valueOf("three"), Constants.NIL);
+		t.rawset("three", Constants.NIL);
 		assertEquals(0, keyCount(t));
 	}
 
 	@Test
-	public void testInOrderLuaLength() throws LuaError, UnwindThrowable {
+	public void testInOrderLuaLength() {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
-			OperationHelper.setTable(state, t, valueOf(i), valueOf("Test Value! " + i));
-			assertEquals(i, OperationHelper.length(state, t).toInteger());
-			assertEquals(i, t.maxn(), 1e-10);
+			t.rawset(i, valueOf("Test Value! " + i));
+			assertEquals(i, t.length());
 		}
 	}
 
 	@Test
-	public void testOutOfOrderLuaLength() throws LuaError, UnwindThrowable {
+	public void testOutOfOrderLuaLength() {
 		LuaTable t = new LuaTable();
 
 		for (int j = 8; j < 32; j += 8) {
 			for (int i = j; i > 0; --i) {
-				OperationHelper.setTable(state, t, valueOf(i), valueOf("Test Value! " + i));
+				t.rawset(i, valueOf("Test Value! " + i));
 			}
-			assertEquals(j, OperationHelper.length(state, t).toInteger());
-			assertEquals(j, t.maxn(), 1e-10);
+			assertEquals(j, t.length());
 		}
 	}
 
 	@Test
-	public void testStringKeysLuaLength() throws LuaError, UnwindThrowable {
+	public void testStringKeysLuaLength() {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
-			OperationHelper.setTable(state, t, valueOf("str-" + i), valueOf("String Key Test Value! " + i));
-			assertEquals(0, OperationHelper.length(state, t).toInteger());
-			assertEquals(0, t.maxn(), 1e-10);
+			t.rawset("str-" + i, valueOf("String Key Test Value! " + i));
+			assertEquals(0, t.length());
 		}
 	}
 
 	@Test
-	public void testMixedKeysLuaLength() throws LuaError, UnwindThrowable {
+	public void testMixedKeysLuaLength() {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
-			OperationHelper.setTable(state, t, valueOf("str-" + i), valueOf("String Key Test Value! " + i));
-			OperationHelper.setTable(state, t, valueOf(i), valueOf("Int Key Test Value! " + i));
-			assertEquals(i, OperationHelper.length(state, t).toInteger());
-			assertEquals(i, t.maxn(), 1e-10);
+			t.rawset("str-" + i, valueOf("String Key Test Value! " + i));
+			t.rawset(i, valueOf("Int Key Test Value! " + i));
+			assertEquals(i, t.length());
 		}
 	}
 
-	private void compareLists(LuaTable t, Vector<LuaString> v) throws LuaError, UnwindThrowable {
+	private void compareLists(LuaTable t, Vector<LuaString> v) {
 		int n = v.size();
-		assertEquals(v.size(), OperationHelper.length(state, t).toInteger());
+		assertEquals(v.size(), t.length());
 		for (int j = 0; j < n; j++) {
 			Object vj = v.elementAt(j);
-			Object tj = OperationHelper.getTable(state, t, valueOf(j + 1)).toString();
+			Object tj = t.rawget(j + 1).toString();
 			vj = vj.toString();
 			assertEquals(vj, tj);
 		}

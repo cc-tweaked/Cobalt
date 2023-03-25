@@ -47,12 +47,6 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
-		if (left instanceof LuaInteger && right instanceof LuaInteger) {
-			int x = ((LuaInteger) left).v, y = ((LuaInteger) right).v;
-			int r = x + y;
-			if (((x ^ r) & (y ^ r)) >= 0) return valueOf(r);
-		}
-
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(dLeft + dRight);
@@ -66,12 +60,6 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
-		if (left instanceof LuaInteger && right instanceof LuaInteger) {
-			int x = ((LuaInteger) left).v, y = ((LuaInteger) right).v;
-			int r = x - y;
-			if (((x ^ r) & (y ^ r)) >= 0) return valueOf(r);
-		}
-
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(dLeft - dRight);
@@ -316,7 +304,7 @@ public final class OperationHelper {
 			case TNIL -> true;
 			case TNUMBER -> left.toDouble() == right.toDouble();
 			case TBOOLEAN -> left.toBoolean() == right.toBoolean();
-			case TSTRING -> left == right ||  left.equals(right);
+			case TSTRING -> left == right || left.equals(right);
 			case TUSERDATA, TTABLE -> {
 				if (left == right || left.equals(right)) yield true;
 
@@ -567,26 +555,18 @@ public final class OperationHelper {
 
 	public static void setTable(LuaState state, LuaValue t, int key, LuaValue value) throws LuaError, UnwindThrowable {
 		// Optimised case for an integer key.
-		if (t instanceof LuaTable table && !table.rawget(key).isNil()) {
-			table.rawset(key, value);
-			return;
-		}
+		if (t instanceof LuaTable table && table.trySet(key, value)) return;
 
 		// Fall back to the slow lookup.
 		setTable(state, t, valueOf(key), value);
 	}
 
 	public static void setTable(LuaState state, LuaValue t, LuaValue key, LuaValue value, int stack) throws LuaError, UnwindThrowable {
-		LuaValue tm;
 		int loop = 0;
 		do {
-			if (t instanceof LuaTable table) {
-				key.checkValidKey();
-				if (!table.rawget(key).isNil() || (tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
-					table.rawset(key, value);
-					return;
-				}
-			} else if ((tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
+			LuaValue tm;
+			if (t instanceof LuaTable table && table.trySet(key, value)) return;
+			if ((tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 			if (tm.isFunction()) {

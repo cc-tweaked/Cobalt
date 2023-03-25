@@ -292,7 +292,10 @@ public final class DebugState {
 	 */
 	public void onInstruction(DebugFrame frame, int pc) throws LuaError, UnwindThrowable {
 		frame.pc = pc;
+		if (inhook || (hookMask & (HOOK_LINE | HOOK_COUNT)) != 0) onInstructionWorker(frame, pc);
+	}
 
+	private void onInstructionWorker(DebugFrame frame, int pc) throws LuaError, UnwindThrowable {
 		if (inhook) {
 			// If we're in a hook and one of these flags is set, then we are resuming from a yield inside the hook. The
 			// hooks have been run at this point, so we just need to clear the flag and continue.

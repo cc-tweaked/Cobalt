@@ -252,9 +252,9 @@ for i, test in ipairs(tests) do
 	print('t["a"],t.a', pcall(function() return testtable["a"], testtable.a end))
 	print('t.a=nil', pcall(function() testtable.a = nil end))
 	print('t["a"],t.a', pcall(function() return testtable["a"], testtable.a end))
-	print('t[nil]="d"', shoulderr(pcall(function() testtable[nil] = "d" end)))
+	print('t[nil]="d"', pcall(function() testtable[nil] = "d" end))
 	print('t[nil]', pcall(function() return testtable[nil] end))
-	print('t[nil]=nil', shoulderr(pcall(function() testtable[nil] = nil end)))
+	print('t[nil]=nil', pcall(function() testtable[nil] = nil end))
 	print('t[nil]', pcall(function() return testtable[nil] end))
 end
 

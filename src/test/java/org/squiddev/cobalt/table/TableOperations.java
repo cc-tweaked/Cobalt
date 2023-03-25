@@ -16,43 +16,31 @@ import static org.squiddev.cobalt.Constants.NIL;
 /**
  * Nasty utility functions for writing table tests.
  */
-final class TableOperations {
+public final class TableOperations {
 	private static final Field nodes;
 	private static final Field array;
+	private static final Field lastFree;
 
 	static {
-		Field nodesField, arrayField;
+		Field nodesField, arrayField, lastFreeField;
 		try {
 			nodesField = LuaTable.class.getDeclaredField("nodes");
 			nodesField.setAccessible(true);
 
 			arrayField = LuaTable.class.getDeclaredField("array");
 			arrayField.setAccessible(true);
+
+			lastFreeField = LuaTable.class.getDeclaredField("lastFree");
+			lastFreeField.setAccessible(true);
 		} catch (ReflectiveOperationException e) {
 			throw new RuntimeException(e);
 		}
 		nodes = nodesField;
 		array = arrayField;
+		lastFree = lastFreeField;
 	}
 
 	private TableOperations() {
-	}
-
-	/**
-	 * Count the number of keys in this table.
-	 *
-	 * @param table The table to count keys on.
-	 * @return count of keys in the table
-	 * @throws LuaError If iterating the table fails.
-	 */
-	public static int keyCount(LuaTable table) throws LuaError {
-		LuaValue k = NIL;
-		for (int i = 0; true; i++) {
-			Varargs n = table.next(k);
-			if ((k = n.first()).isNil()) {
-				return i;
-			}
-		}
 	}
 
 	/**
@@ -99,6 +87,20 @@ final class TableOperations {
 	public static int getArrayLength(LuaTable table) {
 		try {
 			return Array.getLength(array.get(table));
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Get the length of the hash part of the table.
+	 *
+	 * @param table The current table.
+	 * @return length of the hash part, does not relate to count of objects in the table.
+	 */
+	public static int getLastFree(LuaTable table) {
+		try {
+			return (int) lastFree.get(table);
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException(e);
 		}

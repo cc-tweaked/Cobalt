@@ -24,7 +24,10 @@
  */
 package org.squiddev.cobalt;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.lang.ref.WeakReference;
+import java.util.Map;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.*;
@@ -65,7 +68,6 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * <li>{@link ValueFactory#listOf(LuaValue[])} initialize array part</li>
  * <li>{@link ValueFactory#listOf(LuaValue[], Varargs)} initialize array part</li>
  * <li>{@link ValueFactory#tableOf(LuaValue[])} initialize named hash part</li>
- * <li>{@link ValueFactory#tableOf(Varargs, int)} initialize named hash part</li>
  * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[])} initialize array and named parts</li>
  * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[], Varargs)} initialize array and named parts</li>
  * </ul>
@@ -139,23 +141,12 @@ public final class LuaTable extends LuaValue {
 	 * @param varargs Unnamed elements in order {@code value-1, value-2, ... }
 	 */
 	public LuaTable(Varargs varargs) {
-		this(varargs, 1);
-	}
-
-	/**
-	 * Construct table of unnamed elements.
-	 *
-	 * @param varargs  Unnamed elements in order {@code value-1, value-2, ... }
-	 * @param firstarg the index in varargs of the first argument to include in the table
-	 */
-	public LuaTable(Varargs varargs, int firstarg) {
 		super(TTABLE);
-		int nskip = firstarg - 1;
-		int n = Math.max(varargs.count() - nskip, 0);
+		int n = Math.max(varargs.count(), 0);
 		resize(n, 1, false);
 		rawset(N, valueOf(n));
 		for (int i = 1; i <= n; i++) {
-			rawset(i, varargs.arg(i + nskip));
+			rawset(i, varargs.arg(i));
 		}
 	}
 
@@ -178,11 +169,12 @@ public final class LuaTable extends LuaValue {
 	}
 
 	@Override
-	public LuaTable getMetatable(LuaState state) {
+	public LuaTable getMetatable(@Nullable LuaState state) {
 		return metatable;
 	}
 
-	public void setMetatable(LuaTable mt) {
+	@Override
+	public void setMetatable(@Nullable LuaState state, LuaTable mt) {
 		metatable = mt;
 
 		boolean newWeakKeys = false, newWeakValues = false;
@@ -201,19 +193,6 @@ public final class LuaTable extends LuaValue {
 			weakValues = newWeakValues;
 			rehash(null, true);
 		}
-	}
-
-	public void useWeak(boolean newWeakKeys, boolean newWeakValues) {
-		if (newWeakKeys != weakKeys || newWeakValues != weakValues) {
-			weakKeys = newWeakKeys;
-			weakValues = newWeakValues;
-			rehash(null, true);
-		}
-	}
-
-	@Override
-	public void setMetatable(LuaState state, LuaTable metatable) {
-		setMetatable(metatable);
 	}
 
 	/**
@@ -326,27 +305,19 @@ public final class LuaTable extends LuaValue {
 	}
 
 	/**
-	 * Return table.maxn() as defined by lua 5.0.
-	 * <p>
-	 * Provided for compatibility, not a scalable operation.
+	 * Get the number of entries in this table.
 	 *
-	 * @return value for maxn
+	 * @return The number of items in this table.
+	 * @see Map#size()
+	 * @see #length()
 	 */
-	public double maxn() {
-		double n = 0;
-		for (int i = 0; i < array.length; i++) {
-			if (!strengthen(array[i]).isNil()) {
-				n = i + 1;
-			}
+	public int size() {
+		int i = 0;
+		for (var k : array) if (!strengthen(k).isNil()) i++;
+		for (var e : nodes) {
+			if (!e.key().isNil() && !e.value().isNil()) i++;
 		}
-		for (Node node : nodes) {
-			LuaValue value = node.key();
-			if (value.type() == Constants.TNUMBER) {
-				double key = value.toDouble();
-				if (key > n) n = key;
-			}
-		}
-		return n;
+		return i;
 	}
 
 	/**
@@ -759,7 +730,7 @@ public final class LuaTable extends LuaValue {
 		return mainNode;
 	}
 
-	private Node rawgetNode(int search) {
+	private Node getNode(int search) {
 		if (nodes.length == 0) return null;
 
 		Node node = nodes[hashmod(search, nodes.length - 1)];
@@ -775,7 +746,7 @@ public final class LuaTable extends LuaValue {
 		}
 	}
 
-	private Node rawgetNode(LuaValue search) {
+	private Node getNode(LuaValue search) {
 		if (nodes.length == 0) return null;
 
 		int slot = hashSlot(search);
@@ -798,7 +769,7 @@ public final class LuaTable extends LuaValue {
 		} else if (nodes.length == 0) {
 			return NIL;
 		} else {
-			Node node = rawgetNode(search);
+			Node node = getNode(search);
 			return node == null ? NIL : node.value();
 		}
 	}
@@ -806,7 +777,7 @@ public final class LuaTable extends LuaValue {
 	public LuaValue rawget(LuaValue search) {
 		if (search instanceof LuaInteger) return rawget(((LuaInteger) search).v);
 
-		Node node = rawgetNode(search);
+		Node node = getNode(search);
 		return node == null ? NIL : node.value();
 	}
 
@@ -814,7 +785,7 @@ public final class LuaTable extends LuaValue {
 		int flag = 1 << search.ordinal();
 		if ((metatableFlags & flag) != 0) return NIL;
 
-		Node node = rawgetNode(search.getKey());
+		Node node = getNode(search.getKey());
 		if (node != null) {
 			LuaValue value = node.value();
 			if (!value.isNil()) return value;
@@ -822,6 +793,71 @@ public final class LuaTable extends LuaValue {
 
 		metatableFlags |= flag;
 		return NIL;
+	}
+
+	private boolean hasNewIndex() {
+		LuaTable metatable = this.metatable;
+		return metatable != null && metatable.rawget(CachedMetamethod.NEWINDEX) != NIL;
+	}
+
+	/**
+	 * Set a key in this table if the key is already present or if there is no metamethod.
+	 *
+	 * @param key   The key to set.
+	 * @param value The value to set.
+	 * @return {@code true} if the table was updated. If {@code false}, the table's metamethod should be invoked.
+	 * @see OperationHelper#setTable(LuaState, LuaValue, int, LuaValue)
+	 */
+	boolean trySet(int key, LuaValue value) {
+		return trySet(key, value, null);
+	}
+
+	private boolean trySet(int key, LuaValue value, LuaValue keyValue) {
+		if (key > 0 && key <= array.length) {
+			// If value is absent and we've got a __newindex method, don't insert.
+			if (strengthen(array[key - 1]) == NIL && hasNewIndex()) return false;
+			array[key - 1] = weakValues ? weaken(value) : value;
+			return true;
+		}
+
+		Node node = getNode(key);
+		if (node == null) {
+			if (hasNewIndex()) return false;
+		} else {
+			if (node.value() == NIL && hasNewIndex()) return false;
+			node.value = weakValues ? weaken(value) : value;
+			return true;
+		}
+
+		assert !hasNewIndex();
+		rawset(key, value, keyValue);
+		return true;
+	}
+
+	/**
+	 * Set a key in this table if the key is already present or if there is no metamethod.
+	 *
+	 * @param key   The key to set.
+	 * @param value The value to set.
+	 * @return {@code true} if the table was updated. If {@code false}, the table's metamethod should be invoked.
+	 * @see OperationHelper#setTable(LuaState, LuaValue, LuaValue, LuaValue)
+	 */
+	boolean trySet(LuaValue key, LuaValue value) throws LuaError {
+		if (key instanceof LuaInteger keyI) return trySet(keyI.v, value, key);
+
+		Node node = getNode(key);
+		if (node == null) {
+			if (hasNewIndex()) return false;
+		} else {
+			if (node.value() == NIL && hasNewIndex()) return false;
+			node.value = weakValues ? weaken(value) : value;
+			return true;
+		}
+
+		assert !hasNewIndex();
+		key.checkValidKey();
+		rawset(key, value);
+		return true;
 	}
 
 	public void rawset(int key, LuaValue value) {
@@ -835,7 +871,7 @@ public final class LuaTable extends LuaValue {
 				return;
 			}
 
-			Node node = rawgetNode(key);
+			Node node = getNode(key);
 			if (node == null) {
 				if (valueOf == null) valueOf = valueOf(key);
 				node = newKey(valueOf);
@@ -858,7 +894,7 @@ public final class LuaTable extends LuaValue {
 		// TODO: Check valid key here instead of at the call site!
 
 		do {
-			Node node = rawgetNode(key);
+			Node node = getNode(key);
 			if (node == null) node = newKey(key);
 
 			// newKey will have handled this otherwise
