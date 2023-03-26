@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.debug;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.function.LuaClosure;
@@ -96,12 +97,12 @@ public final class DebugHelpers {
 			if (di.currentLine() > 0) sb.append(di.currentLine()).append(":");
 			sb.append(" in ");
 
-			LuaString[] kind = di.getFuncKind();
+			ObjectName kind = di.getFuncKind();
 
 			if (kind != null) {
 				// Strictly speaking we should search the global table for this term - see Lua 5.3's pushglobalfuncname/
 				// pushfuncname. However, I'm somewhat reluctant to do that, so we just check it's a global.
-				sb.append(kind[1] == GLOBAL ? "function" : kind[1]).append(" '").append(kind[0]).append('\'');
+				sb.append(kind.what() == GLOBAL ? "function" : kind.what()).append(" '").append(kind.name()).append('\'');
 			} else if (di.func instanceof LuaClosure closure && closure.getPrototype().lineDefined == 0) {
 				sb.append("main chunk");
 			} else if (di.func instanceof LuaClosure) {
@@ -141,13 +142,13 @@ public final class DebugHelpers {
 		return di != null ? di.sourceLine() : null;
 	}
 
-	private static LuaString[] fromMetamethod(String name) {
-		return new LuaString[]{valueOf("__" + name), METAMETHOD};
+	private static ObjectName fromMetamethod(String name) {
+		return new ObjectName(valueOf("__" + name), METAMETHOD);
 	}
 
-	public static LuaString[] getFuncName(DebugFrame di, int stackpos) {
+	public static @Nullable ObjectName getFuncName(DebugFrame di, int stackpos) {
 		if (di.closure == null) return null;
-		if ((di.flags & FLAG_ANY_HOOK) != 0) return new LuaString[]{QUESTION, HOOK};
+		if ((di.flags & FLAG_ANY_HOOK) != 0) return new ObjectName(QUESTION, HOOK);
 
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);
@@ -173,9 +174,9 @@ public final class DebugHelpers {
 	}
 
 	// return StrValue[] { name, namewhat } if found, null if not
-	public static LuaString[] getObjectName(DebugFrame di, int stackpos) {
+	public static @Nullable ObjectName getObjectName(DebugFrame di, int stackpos) {
 		if (di.closure == null) return null;
-		if ((di.flags & FLAG_ANY_HOOK) != 0) return new LuaString[]{QUESTION, HOOK};
+		if ((di.flags & FLAG_ANY_HOOK) != 0) return new ObjectName(QUESTION, HOOK);
 
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);
@@ -183,7 +184,7 @@ public final class DebugHelpers {
 		LuaString name = p.getLocalName(stackpos + 1, pc);
 
 		// is a local?
-		if (name != null) return new LuaString[]{name, LOCAL};
+		if (name != null) return new ObjectName(name, LOCAL);
 
 		i = symbexec(p, pc, stackpos); /* try symbolic execution */
 		lua_assert(pc != -1);
@@ -193,7 +194,7 @@ public final class DebugHelpers {
 				// lua_assert(p.k[g].isString());
 				LuaValue value = p.constants[g];
 				LuaString string = OperationHelper.toStringDirect(value);
-				return new LuaString[]{string, GLOBAL};
+				return new ObjectName(string, GLOBAL);
 			}
 			case OP_MOVE -> {
 				int a = Lua.GETARG_A(i);
@@ -202,15 +203,15 @@ public final class DebugHelpers {
 			}
 			case OP_GETTABLE -> {
 				int k = Lua.GETARG_C(i); /* key index */
-				return new LuaString[]{constantName(p, k), FIELD};
+				return new ObjectName(constantName(p, k), FIELD);
 			}
 			case OP_GETUPVAL -> {
 				int u = Lua.GETARG_B(i); /* upvalue index */
-				return new LuaString[]{u < p.upvalueNames.length ? p.upvalueNames[u] : DebugLib.QMARK, UPVALUE};
+				return new ObjectName(u < p.upvalueNames.length ? p.upvalueNames[u] : DebugLib.QMARK, UPVALUE);
 			}
 			case OP_SELF -> {
 				int k = Lua.GETARG_C(i); /* key index */
-				return new LuaString[]{constantName(p, k), METHOD};
+				return new ObjectName(constantName(p, k), METHOD);
 			}
 		}
 

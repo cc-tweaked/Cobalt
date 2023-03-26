@@ -260,7 +260,7 @@ public final class OperationHelper {
 				if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
 					return OperationHelper.call(state, h, left, right).toBoolean();
 				} else {
-					throw new LuaError("attempt to compare two " + left.typeName() + " values");
+					throw ErrorFactory.compareError(left, right);
 				}
 		}
 	}
@@ -292,7 +292,7 @@ public final class OperationHelper {
 					return OperationHelper.call(state, h, left, right).toBoolean();
 				}
 
-				throw new LuaError("attempt to compare two " + left.typeName() + " values");
+				throw ErrorFactory.compareError(left, right);
 		}
 	}
 

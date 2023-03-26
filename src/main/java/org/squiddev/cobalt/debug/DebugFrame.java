@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.debug;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
@@ -267,7 +268,7 @@ public final class DebugFrame {
 	 *
 	 * @return This function's kind
 	 */
-	public LuaString[] getFuncKind() {
+	public @Nullable ObjectName getFuncKind() {
 		DebugFrame previous = this.previous;
 		if ((flags & FLAG_TAIL) != 0) return null;
 

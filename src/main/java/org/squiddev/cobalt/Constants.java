@@ -135,9 +135,9 @@ public class Constants {
 	public static final LuaNumber MINUSONE = LuaInteger.valueOf(-1);
 
 	/**
-	 * LuaValue array constant with no values
+	 * LuaString constant with value "__name" for use as metatag
 	 */
-	public static final LuaValue[] NOVALS = {};
+	public static final LuaString NAME = valueOf("__name");
 
 	/**
 	 * LuaString constant with value "__index" for use as metatag

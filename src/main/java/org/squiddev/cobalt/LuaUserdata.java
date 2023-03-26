@@ -54,12 +54,12 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public LuaTable getMetatable(LuaState state) {
+	public final LuaTable getMetatable(LuaState state) {
 		return metatable;
 	}
 
 	@Override
-	public void setMetatable(LuaState state, LuaTable metatable) {
+	public final void setMetatable(LuaState state, LuaTable metatable) {
 		this.metatable = metatable;
 	}
 

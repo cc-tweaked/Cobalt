@@ -26,10 +26,7 @@ package org.squiddev.cobalt.lib;
 
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.debug.DebugHelpers;
-import org.squiddev.cobalt.debug.DebugState;
-import org.squiddev.cobalt.debug.FunctionDebugHook;
+import org.squiddev.cobalt.debug.*;
 import org.squiddev.cobalt.function.*;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -234,9 +231,9 @@ public final class DebugLib {
 					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().isVarArg > 0));
 				}
 				case 'n' -> {
-					LuaString[] kind = di.getFuncKind();
-					info.rawset(NAME, kind != null ? kind[0] : NIL);
-					info.rawset(NAMEWHAT, kind != null ? kind[1] : EMPTYSTRING);
+					ObjectName kind = di.getFuncKind();
+					info.rawset(NAME, kind != null ? kind.name() : NIL);
+					info.rawset(NAMEWHAT, kind != null ? kind.what() : EMPTYSTRING);
 				}
 				case 'f' -> {
 					info.rawset(FUNC, di.func == null ? NIL : di.func);

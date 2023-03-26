@@ -150,10 +150,12 @@ public final class Buffer {
 	 * Append a {@link LuaString} to the buffer.
 	 *
 	 * @param str The string to append
+	 * @return {@code this}, for chaining.
 	 */
-	public void append(LuaString str) {
+	public Buffer append(LuaString str) {
 		ensure(str.length());
 		length = str.copyTo(bytes, length);
+		return this;
 	}
 
 	/**
@@ -161,13 +163,15 @@ public final class Buffer {
 	 * The Java string will be converted to bytes by limiting between 0 and 255
 	 *
 	 * @param str The string to append
+	 * @return {@code this}, for chaining.
 	 * @see LuaString#encode(String, byte[], int)
 	 */
-	public void append(String str) {
+	public Buffer append(String str) {
 		final int n = str.length();
 		ensure(n);
 		LuaString.encode(str, bytes, length);
 		length += n;
+		return this;
 	}
 
 	/**
