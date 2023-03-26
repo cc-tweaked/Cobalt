@@ -160,7 +160,7 @@ public final class LuaThread extends LuaValue {
 
 		LuaThread current = state.getCurrentThread();
 		if (current != null && current.debugState.getHook() != null && current.debugState.getHook().inheritHook()) {
-			current.debugState.setHook(
+			debugState.setHook(
 				current.debugState.getHook(),
 				current.debugState.hasCallHook(),
 				current.debugState.hasLineHook(),
