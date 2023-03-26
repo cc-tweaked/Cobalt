@@ -216,40 +216,18 @@ public final class LuaTable extends LuaValue {
 	}
 
 	/**
-	 * Remove the element at a position in a list-table
+	 * Move items inside this table.
 	 *
-	 * @param pos the position to remove
-	 * @return The removed item, or {@link Constants#NONE} if not removed
+	 * @param from  The start position.
+	 * @param to    The destination position.
+	 * @param count The number of values to move.
 	 */
-	public Varargs remove(int pos) {
-		int n = length();
-		if (pos == 0) {
-			pos = n;
-		} else if (pos > n) {
-			return NONE;
-		}
-		LuaValue v = rawget(pos);
-		for (LuaValue r = v; !r.isNil(); ) {
-			r = rawget(pos + 1);
-			rawset(pos++, r);
-		}
-		return v.isNil() ? NONE : v;
-	}
-
-	/**
-	 * Insert an element at a position in a list-table
-	 *
-	 * @param pos   the position to remove
-	 * @param value The value to insert
-	 */
-	public void insert(int pos, LuaValue value) {
-		if (pos == 0) {
-			pos = length() + 1;
-		}
-		while (!value.isNil()) {
-			LuaValue v = rawget(pos);
-			rawset(pos++, value);
-			value = v;
+	public void move(int from, int to, int count) {
+		// TODO: Use System.arraycopy here where possible.
+		if (to >= from + count || to <= from) {
+			for (int i = 0; i < count; i++) rawset(to + i, rawget(from + i));
+		} else {
+			for (int i = count - 1; i >= 0; i--) rawset(to + i, rawget(from + i));
 		}
 	}
 

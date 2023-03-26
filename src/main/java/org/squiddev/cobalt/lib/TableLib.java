@@ -61,9 +61,10 @@ public final class TableLib {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("getn", TableLib::getn),
 			RegisteredFunction.of("maxn", TableLib::maxn),
-			RegisteredFunction.ofV("remove", TableLib::remove),
+			RegisteredFunction.ofS("remove", TableLib::remove),
 			RegisteredFunction.ofS("concat", TableLib::concat),
-			RegisteredFunction.ofV("insert", TableLib::insert),
+			RegisteredFunction.ofS("insert", TableLib::insert),
+			RegisteredFunction.ofS("move", TableLib::move),
 			RegisteredFunction.ofV("pack", TableLib::pack),
 			RegisteredFunction.ofFactory("sort", Sort::new),
 			RegisteredFunction.ofS("foreach", TableLib::foreach),
@@ -112,11 +113,34 @@ public final class TableLib {
 		return valueOf(max);
 	}
 
-	private static Varargs remove(LuaState state, Varargs args) throws LuaError {
+	private static Varargs remove(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
 		// remove (table [, pos]) -> removed-ele
-		LuaTable table = args.arg(1).checkTable();
-		int pos = args.count() > 1 ? args.arg(2).checkInteger() : 0;
-		return table.remove(pos);
+		LuaValue table = checkTableLike(state, args, 1, TABLE_READ | TABLE_WRITE | TABLE_LEN);
+
+		if (table instanceof LuaTable tbl && tbl.getMetatable(state) == null) {
+			// Optimised case where we can access the table directly.
+			int size = tbl.length();
+			int pos = args.arg(2).optInteger(size);
+			if (pos > size) return NONE; // Lua 5.2 would throw an error here. Not clear what the best option is!
+			LuaValue v = tbl.rawget(pos);
+			tbl.move(pos + 1, pos, size - pos);
+			tbl.rawset(size, NIL);
+			return v;
+		}
+
+		return SuspendedTask.run(frame, () -> {
+			int size = OperationHelper.intLength(state, table);
+			int pos = args.arg(2).optInteger(size);
+			if (pos > size) return NONE;
+
+			LuaValue v = OperationHelper.getTable(state, table, pos);
+			for (; pos < size; pos++) {
+				LuaValue value = OperationHelper.getTable(state, table, pos + 1);
+				OperationHelper.setTable(state, table, pos, value);
+			}
+			OperationHelper.setTable(state, table, pos, NIL);
+			return v;
+		});
 	}
 
 	/**
@@ -148,12 +172,92 @@ public final class TableLib {
 		return sb.toLuaString();
 	}
 
-	private static Varargs insert(LuaState state, Varargs args) throws LuaError {
-		final LuaTable table = args.arg(1).checkTable();
-		final int pos = args.count() > 2 ? args.arg(2).checkInteger() : 0;
-		final LuaValue value = args.arg(args.count() > 2 ? 3 : 2);
-		table.insert(pos, value);
-		return NONE;
+	private static Varargs insert(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
+		LuaValue table = checkTableLike(state, args, 1, TABLE_READ | TABLE_WRITE | TABLE_LEN);
+		switch (args.count()) {
+			case 2 -> {
+				LuaValue value = args.arg(2);
+				if (table instanceof LuaTable tbl && table.getMetatable(state) == null) {
+					// Optimised case where we can access the table directly.
+					tbl.rawset(tbl.length() + 1, value);
+					return NONE;
+				}
+
+				return SuspendedTask.run(frame, () -> {
+					int length = OperationHelper.intLength(state, table);
+					OperationHelper.setTable(state, table, length + 1, value);
+					return NONE;
+				});
+			}
+			case 3 -> {
+				int position = args.arg(2).checkInteger();
+				LuaValue value = args.arg(3);
+
+				if (table instanceof LuaTable tbl && table.getMetatable(state) == null) {
+					// Optimised case where we can access the table directly.
+					int end = Math.max(tbl.length() + 1, position);
+					tbl.move(position, position + 1, end - position);
+					tbl.rawset(position, value);
+					return NONE;
+				}
+
+				return SuspendedTask.run(frame, () -> {
+					int end = Math.max(OperationHelper.intLength(state, table) + 1, position);
+
+					for (int i = end; i > position; i--) {
+						OperationHelper.setTable(state, table, i, OperationHelper.getTable(state, table, i - 1));
+					}
+					OperationHelper.setTable(state, table, position, value);
+					return NONE;
+				});
+			}
+			default -> {
+				throw new LuaError("wrong number of arguments to \"insert\"");
+			}
+		}
+	}
+
+	private static Varargs move(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
+		int from = args.arg(2).checkInteger();
+		int end = args.arg(3).checkInteger();
+		int to = args.arg(4).checkInteger();
+		LuaValue dest = args.arg(5).optValue(args.first());
+		LuaValue source = checkTableLike(state, args, 1, TABLE_READ | TABLE_WRITE | TABLE_LEN);
+
+		if (end < from) return dest;
+
+		int count = end - from + 1;
+
+		// Some additional overflow sanity checks.
+		if (from < 1 && end >= Integer.MAX_VALUE + from) {
+			throw ErrorFactory.argError(3, "too many elements to move");
+		}
+		if (to > Integer.MAX_VALUE - count + 1) {
+			throw ErrorFactory.argError(4, "destination wrap around");
+		}
+
+		// If we've moving within the current table and have no metamethods, go through the table directly -
+		// should be more optimal.
+		if (source == dest && source instanceof LuaTable table && source.getMetatable(state) == null) {
+			table.move(from, to, count);
+			return table;
+		}
+
+		// Otherwise do the "proper implementation.
+		return SuspendedTask.run(frame, () -> {
+			if (to >= from + count || to <= from || !OperationHelper.eq(state, source, dest)) {
+				for (int i = 0; i < count; i++) {
+					LuaValue value = OperationHelper.getTable(state, source, from + i);
+					OperationHelper.setTable(state, dest, to + i, value);
+				}
+			} else {
+				for (int i = count - 1; i >= 0; i--) {
+					LuaValue value = OperationHelper.getTable(state, source, from + i);
+					OperationHelper.setTable(state, dest, to + i, value);
+				}
+			}
+			return dest;
+		});
 	}
 
 	private static Varargs pack(LuaState state, Varargs args) {

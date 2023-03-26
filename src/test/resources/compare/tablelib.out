@@ -53,10 +53,10 @@ table.remove(t,5)
 {[10]=ten,[1]=two,[2]=three,[3]=five,[4]=six,[a]=aaa,[b]=bbb,[c]=ccc}	4
 table.remove(t,10)
 {[10]=ten,[1]=two,[2]=three,[3]=five,[4]=six,[a]=aaa,[b]=bbb,[c]=ccc}	4
-table.remove(t,-1)
-{[10]=ten,[1]=two,[2]=three,[3]=five,[4]=six,[a]=aaa,[b]=bbb,[c]=ccc}	4
-table.remove(t,-1)
-{[10]=ten,[1]=two,[2]=three,[3]=five,[4]=six,[a]=aaa,[b]=bbb,[c]=ccc}	4
+table.remove(t,-1)	nil
+{[0]=two,[10]=ten,[1]=three,[2]=five,[3]=six,[a]=aaa,[b]=bbb,[c]=ccc}	3
+table.remove(t,-1)	nil
+{[-1]=two,[0]=three,[10]=ten,[1]=five,[2]=six,[a]=aaa,[b]=bbb,[c]=ccc}	2
 -- sort tests
 one-two-three
 one-three-two

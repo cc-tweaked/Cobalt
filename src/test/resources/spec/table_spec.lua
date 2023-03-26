@@ -1,4 +1,13 @@
 describe("Lua tables", function()
+	local maxI, minI
+	-- Not clear what the definition of maxinteger is on Cobalt, so for now we
+	-- just assume it matches Java's version.
+	if math.maxinteger then
+		maxI, minI = math.maxinteger, math.mininteger
+	else
+		maxI, minI = 2^31 - 1, -2^31
+	end
+
 	-- Create a slice of a table - the returned table is a view of the original contents, not a copy.
 	--
 	-- This is mostly intended for testing functions which use metamethods.
@@ -250,6 +259,290 @@ describe("Lua tables", function()
 		it("behaves identically to PUC Lua on sparse tables", function()
 			expect(table.maxn({[1]="e",[2]="a",[3]="b",[4]="c"})):eq(4)
 			expect(table.maxn({[1]="e",[2]="a",[3]="b",[4]="c",[8]="f"})):eq(8)
+		end)
+	end)
+
+	-- Test both directly on a table and via a proxy
+	local function direct_and_proxy(name, func)
+		it(name, function()
+			local tbl = {}
+			return func(function(x) return x end)
+		end)
+
+		it(name .. " (with metatable) :lua>=5.3", function()
+			return func(function(tbl) return setmetatable({}, {
+				__len = function() return #tbl end,
+				__index = function(_, k) return tbl[k] end,
+				__newindex = function(_, k, v) tbl[k] = v end,
+			}) end)
+		end)
+	end
+
+	describe("table.insert", function()
+		direct_and_proxy("inserts at the beginning of the list", function(wrap)
+			local function mk_expected(size)
+				local out = {}
+				for i = 1, size do out[i] = "Value #" .. (size - i + 1) end
+				return out
+			end
+
+			local tbl = {}
+			local proxy = wrap(tbl)
+			for i = 1, 32 do
+				table.insert(proxy, 1, "Value #" .. i)
+				expect(tbl):same(mk_expected(i))
+			end
+		end)
+
+		direct_and_proxy("inserts at the end of the list", function(wrap)
+			local function mk_expected(size)
+				local out = {}
+				for i = 1, size do out[i] = "Value #" .. i end
+				return out
+			end
+
+			local tbl = {}
+			local proxy = wrap(tbl)
+			for i = 1, 32 do
+				table.insert(proxy, "Value #" .. i)
+				expect(tbl):same(mk_expected(i))
+			end
+		end)
+
+		direct_and_proxy("inserts in the middle of the list", function(wrap)
+			local function mk_expected(size)
+				local out = {}
+				for i = 1, math.ceil(size / 2) do out[i] = "Value #" .. (i * 2 - 1) end
+				for i = 1, math.floor(size / 2) do out[size - i + 1] = "Value #" .. (i * 2) end
+				return out
+			end
+
+			local tbl = {}
+			local proxy = wrap(tbl)
+			for i = 1, 32 do
+				table.insert(proxy, math.floor(i / 2) + 1, "Value #" .. i)
+				expect(tbl):same(mk_expected(i))
+			end
+		end)
+	end)
+
+	describe("table.remove", function()
+		it("removes values at 0 :lua>=5.2", function()
+			local a = {[0] = "ban"}
+			expect(#a):eq(0)
+			expect(table.remove(a)):eq("ban")
+			expect(a[0]):eq(nil)
+		end)
+
+		local function mk_filled()
+			local out = {}
+			for i = 1, 32 do out[i] = "Value #" .. i end
+			return out
+		end
+
+		direct_and_proxy("remove at beginning of list", function(wrap)
+			local function mk_expect(size)
+				local out = {}
+				for i = 1, size do out[i] = "Value #" .. (32 - size + i) end
+				return out
+			end
+
+			local tbl = mk_filled(size)
+			local proxy = wrap(tbl)
+
+			for i = 1, 32 do
+				expect(table.remove(proxy, 1)):eq("Value #" .. i)
+				expect(tbl):same(mk_expect(32 - i))
+			end
+		end)
+
+		direct_and_proxy("remove at end of list", function(wrap)
+			local function mk_expect(size)
+				local out = {}
+				for i = 1, size do out[i] = "Value #" .. i end
+				return out
+			end
+
+			local tbl = mk_filled(size)
+			local proxy = wrap(tbl)
+
+			for i = 1, 32 do
+				expect(table.remove(proxy)):eq("Value #" .. (32 - i + 1))
+				expect(tbl):same(mk_expect(32 - i))
+			end
+		end)
+	end)
+
+	describe("table.insert/table.remove PUC Lua tests", function()
+		-- Combined tests of table.insert and table.remove from nextvar.
+
+		-- Some assertions are commented out here, as we don't do the bounds checks that Lua 5.2 do.
+
+		local function test(a)
+			-- expect.error(table.insert, a, 2, 20)
+			table.insert(a, 10); table.insert(a, 2, 20)
+			table.insert(a, 1, -1); table.insert(a, 40)
+			table.insert(a, #a+1, 50)
+			table.insert(a, 2, -2)
+			expect(a[2]):ne(nil)
+			expect(a["2"]):eq(nil)
+			-- expect.error(table.insert, a, 0, 20)
+			-- expect.error(table.insert, a, #a + 2, 20)
+			expect(table.remove(a,1)):eq(-1)
+			expect(table.remove(a,1)):eq(-2)
+			expect(table.remove(a,1)):eq(10)
+			expect(table.remove(a,1)):eq(20)
+			expect(table.remove(a,1)):eq(40)
+			expect(table.remove(a,1)):eq(50)
+			expect(table.remove(a,1)):eq(nil)
+			expect(table.remove(a)):eq(nil)
+			expect(table.remove(a, #a)):eq(nil)
+		end
+
+		it("test #1", function()
+			local a = {n=0, [-7] = "ban"}
+			test(a)
+			expect(a.n):eq(0)
+			expect(a[-7]):eq("ban")
+		end)
+
+		it("test #2", function()
+			local a = {[-7] = "ban"};
+			test(a)
+			expect(a.n):eq(nil)
+			expect(#a):eq(0)
+			expect(a[-7] == "ban")
+		end)
+
+		it("test #3", function()
+			local a = {[-1] = "ban"}
+			test(a)
+			expect(a.n):eq(nil)
+			expect(table.remove(a)):eq(nil)
+			expect(a[-1]):eq("ban")
+		end)
+
+		it("test #4", function()
+			local a = {}
+			table.insert(a, 1, 10); table.insert(a, 1, 20); table.insert(a, 1, -1)
+			expect(table.remove(a)):eq(10)
+			expect(table.remove(a)):eq(20)
+			expect(table.remove(a)):eq(-1)
+			expect(table.remove(a)):eq(nil)
+		end)
+
+		it("test #4", function()
+			local a = {'c', 'd'}
+			table.insert(a, 3, 'a')
+			table.insert(a, 'b')
+			expect(table.remove(a, 1)):eq('c')
+			expect(table.remove(a, 1)):eq('d')
+			expect(table.remove(a, 1)):eq('a')
+			expect(table.remove(a, 1)):eq('b')
+			expect(table.remove(a, 1)):eq(nil)
+			assert(#a == 0 and a.n == nil)
+		end)
+
+		it("test #5", function()
+			local a = {10,20,30,40}
+			expect(table.remove(a, #a + 1)):eq(nil)
+			-- expect.error(table.remove, a, 0)
+			expect(a[#a]):eq(40)
+			expect(table.remove(a, #a)):eq(40)
+			expect(a[#a]):eq(30)
+			expect(table.remove(a, 2)):eq(20)
+			expect(a[#a]):eq(30)
+			expect(#a):eq(2)
+		end)
+	end)
+
+	describe("table.move :lua>=5.3", function()
+		direct_and_proxy("moves forward", function(wrap)
+			local tbl = { 10, 20, 30 }
+			table.move(wrap(tbl), 1, 3, 2)
+			expect(tbl):same { 10, 10, 20, 30 }
+		end)
+
+		direct_and_proxy("moves forward with overlap", function(wrap)
+			local tbl = { 10, 20, 30 }
+			table.move(wrap(tbl), 1, 3, 3)
+			expect(tbl):same { 10, 20, 10, 20, 30 }
+		end)
+
+		direct_and_proxy("moves forward to new table", function(wrap)
+			local tbl = { 10, 20, 30 }
+			local new = {}
+			table.move(wrap(tbl), 1, 10, 1, wrap(new))
+			expect(new):same { 10, 20, 30 }
+		end)
+
+		-- We do test this above too, but this is a more explicit test.
+		it("uses metamethods", function()
+			local a = setmetatable({}, {
+				__index = function (_,k) return k * 10 end,
+				__newindex = error
+			})
+			local b = table.move(a, 1, 10, 3, {})
+			expect(a):same {}
+			expect(b):same { nil,nil,10,20,30,40,50,60,70,80,90,100 }
+
+		  	local b = setmetatable({""}, {
+				__index = error,
+				__newindex = function (t,k,v) t[1] = string.format("%s(%d,%d)", t[1], k, v) end
+			})
+
+			table.move(a, 10, 13, 3, b)
+			expect(b[1]):eq "(3,100)(4,110)(5,120)(6,130)"
+			expect.error(table.move, b, 10, 13, 3, b):eq(b)
+		end)
+
+		it("copes close to overflow", function()
+			local a = table.move({[maxI - 2] = 1, [maxI - 1] = 2, [maxI] = 3}, maxI - 2, maxI, -10, {})
+			expect(a):same {[-10] = 1, [-9] = 2, [-8] = 3}
+
+			local a = table.move({[minI] = 1, [minI + 1] = 2, [minI + 2] = 3}, minI, minI + 2, -10, {})
+			expect(a):same { [-10] = 1, [-9] = 2, [-8] = 3 }
+
+			local a = table.move({45}, 1, 1, maxI)
+			expect(a):same { 45, [maxI] = 45 }
+
+			local a = table.move({[maxI] = 100}, maxI, maxI, minI)
+			expect(a):same { [minI] = 100, [maxI] = 100 }
+
+			local a = table.move({[minI] = 100}, minI, minI, maxI)
+			expect(a):same { [minI] = 100, [maxI] = 100 }
+		end)
+
+		it("copes with large numbers", function()
+			local function checkmove (f, e, t, x, y)
+				local pos1, pos2
+				local a = setmetatable({}, {
+					__index = function (_,k) pos1 = k end,
+					__newindex = function (_,k) pos2 = k; error() end
+				})
+				local st, msg = pcall(table.move, a, f, e, t)
+				expect(st):eq(false)
+				expect(msg):eq(nil)
+				expect(pos1):eq(x)
+				expect(pos2):eq(y)
+			end
+
+			checkmove(1, maxI, 0, 1, 0)
+			checkmove(0, maxI - 1, 1, maxI - 1, maxI)
+			checkmove(minI, -2, -5, -2, maxI - 6)
+			checkmove(minI + 1, -1, -2, -1, maxI - 3)
+			checkmove(minI, -2, 0, minI, 0)  -- non overlapping
+			checkmove(minI + 1, -1, 1, minI + 1, 1)  -- non overlapping
+		end)
+
+		it("errors on overflow :lua~=5.4", function()
+			expect.error(table.move, {}, 0, maxI, 1):str_match("too many")
+			expect.error(table.move, {}, -1, maxI - 1, 1):str_match("too many")
+			expect.error(table.move, {}, minI, -1, 1):str_match("too many")
+			expect.error(table.move, {}, minI, maxI, 1):str_match("too many")
+			expect.error(table.move, {}, 1, maxI, 2):str_match("wrap around")
+			expect.error(table.move, {}, 1, 2, maxI):str_match("wrap around")
+			expect.error(table.move, {}, minI, -2, 2):str_match("wrap around")
 		end)
 	end)
 

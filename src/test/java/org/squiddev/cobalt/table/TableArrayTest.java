@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 
 import java.util.Collection;
-import java.util.Vector;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -259,101 +258,4 @@ public class TableArrayTest {
 			assertEquals(i, t.length());
 		}
 	}
-
-	private void compareLists(LuaTable t, Vector<LuaString> v) {
-		int n = v.size();
-		assertEquals(v.size(), t.length());
-		for (int j = 0; j < n; j++) {
-			Object vj = v.elementAt(j);
-			Object tj = t.rawget(ValueFactory.valueOf(j + 1)).toString();
-			vj = vj.toString();
-			assertEquals(vj, tj);
-		}
-	}
-
-	@Test
-	public void testInsertBeginningOfList() {
-		LuaTable t = new LuaTable();
-		Vector<LuaString> v = new Vector<>();
-
-		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
-			t.insert(1, test);
-			v.insertElementAt(test, 0);
-			compareLists(t, v);
-		}
-	}
-
-	@Test
-	public void testInsertEndOfList() {
-		LuaTable t = new LuaTable();
-		Vector<LuaString> v = new Vector<>();
-
-		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
-			t.insert(t.length() + 1, test);
-			v.insertElementAt(test, v.size());
-			compareLists(t, v);
-		}
-	}
-
-	@Test
-	public void testInsertMiddleOfList() {
-		LuaTable t = new LuaTable();
-		Vector<LuaString> v = new Vector<>();
-
-		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
-			int m = i / 2;
-			t.insert(m + 1, test);
-			v.insertElementAt(test, m);
-			compareLists(t, v);
-		}
-	}
-
-	private static void prefillLists(LuaTable t, Vector<LuaString> v) {
-		for (int i = 1; i <= 32; ++i) {
-			LuaString test = LuaString.valueOf("Test Value! " + i);
-			t.insert(t.length() + 1, test);
-			v.insertElementAt(test, v.size());
-		}
-	}
-
-	@Test
-	public void testRemoveBeginningOfList() {
-		LuaTable t = new LuaTable();
-		Vector<LuaString> v = new Vector<>();
-		prefillLists(t, v);
-		for (int i = 1; i <= 32; ++i) {
-			t.remove(1);
-			v.removeElementAt(0);
-			compareLists(t, v);
-		}
-	}
-
-	@Test
-	public void testRemoveEndOfList() {
-		LuaTable t = new LuaTable();
-		Vector<LuaString> v = new Vector<>();
-		prefillLists(t, v);
-		for (int i = 1; i <= 32; ++i) {
-			t.remove(t.length());
-			v.removeElementAt(v.size() - 1);
-			compareLists(t, v);
-		}
-	}
-
-	@Test
-	public void testRemoveMiddleOfList() {
-		LuaTable t = new LuaTable();
-		Vector<LuaString> v = new Vector<>();
-		prefillLists(t, v);
-		for (int i = 1; i <= 32; ++i) {
-			int m = v.size() / 2;
-			t.remove(m + 1);
-			v.removeElementAt(m);
-			compareLists(t, v);
-		}
-	}
-
 }
