@@ -365,7 +365,7 @@ final class Lex {
 
 	private void readUtf8Esc() throws CompileException, UnwindThrowable {
 		saveAndNext();
-		if (current != '{') throw escapeError("mising '{'");
+		if (current != '{') throw escapeError("missing '{'");
 
 		int i = 4;
 		long codepoint = readHex();
