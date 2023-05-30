@@ -4,10 +4,10 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.Utf8Lib;
 import org.squiddev.cobalt.unwind.AutoUnwind;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * A Lexer for Lua code.
@@ -48,12 +48,12 @@ final class Lex {
 	private final static int FIRST_RESERVED = TK_AND;
 	private final static int NUM_RESERVED = TK_WHILE + 1 - FIRST_RESERVED;
 
-	private final static Map<LuaString, Integer> RESERVED;
+	private final static Map<ByteBuffer, Integer> RESERVED;
 
 	static {
-		Map<LuaString, Integer> reserved = new HashMap<>();
+		Map<ByteBuffer, Integer> reserved = new HashMap<>();
 		for (int i = 0; i < NUM_RESERVED; i++) {
-			reserved.put(ValueFactory.valueOf(tokenNames[i]), FIRST_RESERVED + i);
+			reserved.put(ValueFactory.valueOf(tokenNames[i]).toBuffer(), FIRST_RESERVED + i);
 		}
 		RESERVED = Collections.unmodifiableMap(reserved);
 	}
@@ -117,7 +117,7 @@ final class Lex {
 
 	private long lastPosition = 1 | 1L << POSITION_SHIFT;
 
-	private final HashMap<LuaString, LuaString> strings = new HashMap<>();
+	private final HashMap<ByteBuffer, LuaString> strings = new HashMap<>();
 
 	final Token token = new Token();
 	final Token lookahead = new Token();
@@ -197,21 +197,24 @@ final class Lex {
 	 * @return The created or interned string.
 	 */
 	LuaString newString(byte[] bytes, int offset, int len) {
-		LuaString string = LuaString.valueOf(bytes, offset, len);
-		LuaString interned = strings.get(string);
+		LuaString interned = strings.get(ByteBuffer.wrap(bytes, offset, len));
 		if (interned == null) {
 			// must copy bytes, since bytes could be from reusable buffer
 			byte[] slice = new byte[len];
 			System.arraycopy(bytes, offset, slice, 0, len);
-			interned = LuaString.valueOf(slice);
-			strings.put(interned, interned);
+			strings.put(ByteBuffer.wrap(slice), interned = LuaString.valueOf(slice));
 		}
 		return interned;
 	}
 
 	LuaString newString(String value) {
-		LuaString string = LuaString.valueOf(value);
-		return strings.computeIfAbsent(string, Function.identity());
+		byte[] contents = new byte[value.length()];
+		LuaString.encode(value, contents, 0);
+		var buffer = ByteBuffer.wrap(contents);
+
+		LuaString interned = strings.get(buffer);
+		if (interned == null) strings.put(buffer, interned = LuaString.valueOf(contents));
+		return interned;
 	}
 
 	/**
@@ -580,11 +583,11 @@ final class Lex {
 						do {
 							saveAndNext();
 						} while (isAlphaNum(current) || current == '_');
-						LuaString ts = newString(buff, 0, bufferSize);
-						if (RESERVED.containsKey(ts)) {
-							return RESERVED.get(ts);
+						Integer reservedIdx = RESERVED.get(ByteBuffer.wrap(buff, 0, bufferSize));
+						if (reservedIdx != null) {
+							return reservedIdx;
 						} else {
-							token.value = ts;
+							token.value = newString(buff, 0, bufferSize);
 							return TK_NAME;
 						}
 					} else {
