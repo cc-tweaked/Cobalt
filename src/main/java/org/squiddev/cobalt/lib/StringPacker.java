@@ -257,7 +257,7 @@ class StringPacker {
 						if (string.byteAt(j) == 0) throw ErrorFactory.argError(i - 1, "string contains zeros");
 					}
 
-					buffer.ensure(string.length());
+					buffer.ensure(string.length() + 1);
 					string.copyTo(buffer.output, buffer.offset);
 					buffer.offset += string.length() + 1;
 					break;
