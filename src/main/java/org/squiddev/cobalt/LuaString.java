@@ -598,7 +598,7 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 
 	@Override
 	public int toInteger() {
-		return (int) (long)toDouble();
+		return (int) (long) toDouble();
 	}
 
 	@Override
@@ -631,8 +631,10 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	private double scanNumber(int base) {
 		if (base < 2 || base > 36) return Double.NaN;
 
-		byte[] bytes = bytes();
+		return parseNumber(bytes(), offset, length, base);
+	}
 
+	public static double parseNumber(byte[] bytes, int offset, int length, int base) {
 		int i = offset, j = offset + length;
 		while (i < j && StringLib.isWhitespace(bytes[i])) i++;
 		while (i < j && StringLib.isWhitespace(bytes[j - 1])) j--;
@@ -685,7 +687,6 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	 * or Double.NaN if not
 	 */
 	private static double scanDouble(byte[] bytes, int start, int end) {
-		if (end > start + 64) end = start + 64;
 		for (int i = start; i < end; i++) {
 			switch (bytes[i]) {
 				case '-':

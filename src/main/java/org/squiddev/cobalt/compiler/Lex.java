@@ -247,24 +247,6 @@ final class Lex {
 		return false;
 	}
 
-	private LuaNumber parseNumber(String str) throws CompileException {
-		// If we're a hex string, try to parse as a long. Java's handling of hex floats
-		// is much more limited than C's version.
-		if (str.startsWith("0x") || str.startsWith("0X")) {
-			try {
-				return ValueFactory.valueOf(Long.parseLong(str.substring(2), 16));
-			} catch (NumberFormatException ignored) {
-			}
-		}
-
-		try {
-			return ValueFactory.valueOf(Double.parseDouble(str));
-		} catch (NumberFormatException ignored) {
-		}
-
-		throw lexError("malformed number", TK_NUMBER);
-	}
-
 	private LuaNumber readNumeral() throws CompileException, UnwindThrowable {
 		assert isDigit(current);
 
@@ -287,7 +269,9 @@ final class Lex {
 			}
 		}
 
-		return parseNumber(new String(buff, 0, bufferSize));
+		var value = LuaString.parseNumber(buff, 0, bufferSize, 10);
+		if (Double.isNaN(value)) throw lexError("malformed number", TK_NUMBER);
+		return ValueFactory.valueOf(value);
 	}
 
 	/**
