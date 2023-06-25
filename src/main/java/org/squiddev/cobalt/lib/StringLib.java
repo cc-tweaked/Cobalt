@@ -87,11 +87,19 @@ public final class StringLib {
 
 	private static LuaValue lower(LuaState state, LuaValue arg) throws LuaError {
 		LuaString string = arg.checkLuaString();
-		if (string.length() == 0) return EMPTYSTRING;
 
-		byte[] value = new byte[string.length()];
+		// Find the first capital letter,
+		int i = 0, len = string.length();
+		for (; i < len; i++) {
+			byte b = string.byteAt(i);
+			if (b >= 'A' && b <= 'Z') break;
+		}
+		// If there are none, just return the string unchanged.
+		if (i == len) return string;
+
+		byte[] value = new byte[len];
 		string.copyTo(value, 0);
-		for (int i = 0; i < value.length; i++) {
+		for (; i < value.length; i++) {
 			byte c = value[i];
 			if (c >= 'A' && c <= 'Z') value[i] = (byte) (c | 0x20);
 		}
@@ -102,19 +110,25 @@ public final class StringLib {
 		LuaString s = arg.checkLuaString();
 		int n = s.length();
 		byte[] b = new byte[n];
-		for (int i = 0, j = n - 1; i < n; i++, j--) {
-			b[j] = (byte) s.charAt(i);
-		}
+		for (int i = 0, j = n - 1; i < n; i++, j--) b[j] = s.byteAt(i);
 		return LuaString.valueOf(b);
 	}
 
 	private static LuaValue upper(LuaState state, LuaValue arg) throws LuaError {
 		LuaString string = arg.checkLuaString();
-		if (string.length() == 0) return EMPTYSTRING;
+
+		// Find the first lower-case letter
+		int i = 0, len = string.length();
+		for (; i < len; i++) {
+			byte b = string.byteAt(i);
+			if (b >= 'a' && b <= 'z') break;
+		}
+		// If there are none, just return the string unchanged.
+		if (i == len) return string;
 
 		byte[] value = new byte[string.length()];
 		string.copyTo(value, 0);
-		for (int i = 0; i < value.length; i++) {
+		for (i = 0; i < value.length; i++) {
 			byte c = value[i];
 			if (c >= 'a' && c <= 'z') value[i] = (byte) (c & ~0x20);
 		}
