@@ -86,8 +86,7 @@ public class PackageLib {
 			_CPATH, _CPATH_DEFAULT,
 			_LOADERS, listOf(
 				RegisteredFunction.ofV("preload_loader", PackageLib::loader_preload).create(),
-				RegisteredFunction.ofV("lua_loader", this::loader_Lua).create(),
-				RegisteredFunction.ofV("java_loader", PackageLib::loader_Java).create()
+				RegisteredFunction.ofV("lua_loader", this::loader_Lua).create()
 			)
 		));
 	}
@@ -341,18 +340,6 @@ public class PackageLib {
 			sb.append("\n\t'").append(filename).append("': ").append(v.arg(2));
 		}
 		return valueOf(sb.toString());
-	}
-
-	private static Varargs loader_Java(LuaState state, Varargs args) throws LuaError {
-		String name = args.arg(1).checkString();
-		String classname = toClassname(name);
-		try {
-			return Class.forName(classname).asSubclass(LuaValue.class).getConstructor().newInstance();
-		} catch (ClassNotFoundException cnfe) {
-			return valueOf("\n\tno class '" + classname + "'");
-		} catch (Exception e) {
-			return valueOf("\n\tjava load failed on '" + classname + "', " + e);
-		}
 	}
 
 	/**

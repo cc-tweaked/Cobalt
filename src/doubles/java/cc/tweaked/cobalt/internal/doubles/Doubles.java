@@ -132,7 +132,7 @@ class Doubles {
 		return sign(getBits(value));
 	}
 
-	@SuppressWarnings("unsafe.cast")
+	@SuppressWarnings("cast.unsafe")
 	private static @Unsigned long getBits(double value) {
 		return (@Unsigned long) Double.doubleToRawLongBits(value);
 	}
