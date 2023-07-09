@@ -29,13 +29,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.junit.jupiter.api.Test;
 
+import static cc.tweaked.cobalt.internal.doubles.DoubleTestHelper.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.*;
 
 public class FastDtoaTest {
 	private static final int BUFFER_SIZE = 100;

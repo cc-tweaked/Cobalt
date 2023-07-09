@@ -31,14 +31,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.SignednessGlb;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import java.util.Arrays;
 
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.digitToChar;
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.digitToChar;
 
 /**
  * A decimal representation buffer, this contains the final digits ready for formatting, the position
@@ -46,8 +46,7 @@ import static org.squiddev.cobalt.lib.doubles.UnsignedValues.digitToChar;
  * Also includes point position {@code pointPosition}
  */
 final class DecimalRepBuf {
-	@SuppressWarnings("ImplicitNumericConversion")
-	private static final int ASCII_ZERO = '0';
+	private static final char ASCII_ZERO = '0';
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int DECIMAL_OVERFLOW = 10 + '0';
 
@@ -102,7 +101,7 @@ final class DecimalRepBuf {
 		// Increment the last digit recursively until we find a non '9' digit.
 		for (int i = length - 1; i > 0; --i) {
 			if ((int) buffer[i] != DECIMAL_OVERFLOW) break;
-			buffer[i] = (char) ASCII_ZERO;
+			buffer[i] = ASCII_ZERO;
 			buffer[i - 1]++;
 		}
 		// If the first digit is now '0'+ 10 we had a buffer with all '9's. With the
@@ -216,12 +215,12 @@ final class DecimalRepBuf {
 	 * If leading zeros are removed then the decimal point position is adjusted.
 	 */
 	public void trimZeros() {
-		while (length > 0 && ((int) buffer[length - 1]) == ASCII_ZERO) {
+		while (length > 0 && buffer[length - 1] == ASCII_ZERO) {
 			length--;
 		}
 
 		int firstNonZero = 0;
-		while (firstNonZero < length && ((int) buffer[firstNonZero]) == ASCII_ZERO) {
+		while (firstNonZero < length && buffer[firstNonZero] == ASCII_ZERO) {
 			firstNonZero++;
 		}
 		if (firstNonZero != 0) {
@@ -239,13 +238,13 @@ final class DecimalRepBuf {
 	 */
 	public void truncateZeros(boolean exponential) {
 		int stop = exponential ? 1 : Math.max(1, pointPosition);
-		while (length > stop && ((int) buffer[length - 1]) == ASCII_ZERO) {
+		while (length > stop && buffer[length - 1] == ASCII_ZERO) {
 			length--;
 		}
 	}
 
 	public void truncateAllZeros() {
-		while (length > 0 && ((int) buffer[length - 1]) == ASCII_ZERO) {
+		while (length > 0 && buffer[length - 1] == ASCII_ZERO) {
 			length--;
 		}
 	}

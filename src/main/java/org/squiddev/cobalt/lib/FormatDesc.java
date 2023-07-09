@@ -27,7 +27,7 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.Buffer;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter;
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
 
 public class FormatDesc {
 	private boolean leftAdjust;

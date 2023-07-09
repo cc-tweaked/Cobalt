@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 final class Assert {
 	public static void requireState(boolean condition, String msg) {

@@ -3,6 +3,7 @@ asm = "9.3"
 slf4j = "2.0.6"
 
 checkerFramework-plugin = "0.6.17"
+checkerFramework = "3.36.0"
 
 kotlin = "1.8.10"
 kotlin-coroutines = "1.6.4"
@@ -17,6 +18,9 @@ asm-analysis = { module = "org.ow2.asm:asm-analysis", version.ref = "asm" }
 asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
 asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
 asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+
+checkerFramework-qual = { module = "org.checkerframework:checker-qual", version.ref = "checkerFramework" }
+checkerFramework = { module = "org.checkerframework:checker", version.ref = "checkerFramework" }
 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
@@ -42,4 +46,3 @@ testAnnotationProcessor = ["jmh-processor"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-checkerFramework = { id = "org.checkerframework", version.ref = "checkerFramework-plugin" }

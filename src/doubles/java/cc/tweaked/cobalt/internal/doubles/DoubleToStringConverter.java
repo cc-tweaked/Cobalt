@@ -29,13 +29,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
-import org.squiddev.cobalt.Buffer;
 
+import static cc.tweaked.cobalt.internal.doubles.Assert.requireArg;
 import static java.util.Objects.requireNonNull;
-import static org.squiddev.cobalt.lib.doubles.Assert.requireArg;
 
 public final class DoubleToStringConverter {
 	public static final Symbols ECMA_SCRIPT_SYMBOLS = new Symbols("Infinity", "NaN", 'e');
@@ -44,28 +43,28 @@ public final class DoubleToStringConverter {
 	 * or a requested_digits parameter > MAX_FIXED_DIGITS_AFTER_POINT then the
 	 * function returns false.
 	 */
-	public static final int MAX_FIXED_DIGITS_BEFORE_POINT = 308;
+	private static final int MAX_FIXED_DIGITS_BEFORE_POINT = 308;
 	private static final double FIRST_NON_FIXED = 1e308; // exponent must be the same as MAX_FIXED_DIGITS_BEFORE_POINT
-	public static final int MAX_FIXED_DIGITS_AFTER_POINT = 100;
+	private static final int MAX_FIXED_DIGITS_AFTER_POINT = 100;
 
 	/**
 	 * When calling toExponential with a requested_digits
 	 * parameter > MAX_EXPONENTIAL_DIGITS then the function returns false.
 	 */
-	public static final int MAX_EXPONENTIAL_DIGITS = 120;
+	private static final int MAX_EXPONENTIAL_DIGITS = 120;
 
 	/**
 	 * When calling toPrecision with a requested_digits
 	 * parameter < MIN_PRECISION_DIGITS or requested_digits > MAX_PRECISION_DIGITS
 	 * then the function returns false.
 	 */
-	public static final int MIN_PRECISION_DIGITS = 1;
+	private static final int MIN_PRECISION_DIGITS = 1;
 	/**
 	 * When calling toPrecision with a requested_digits
 	 * parameter < MIN_PRECISION_DIGITS or requested_digits > MAX_PRECISION_DIGITS
 	 * then the function returns false.
 	 */
-	public static final int MAX_PRECISION_DIGITS = 120;
+	private static final int MAX_PRECISION_DIGITS = 120;
 
 	/**
 	 * The maximal number of digits that are needed to emit a double in base 10.
@@ -75,13 +74,13 @@ public final class DoubleToStringConverter {
 	 * Note that doubleToAscii null-terminates its input. So the given buffer
 	 * should be at least BASE_10_MAXIMAL_LENGTH + 1 characters long.
 	 */
-	public static final int BASE_10_MAXIMAL_LENGTH = 17;
+	private static final int BASE_10_MAXIMAL_LENGTH = 17;
 
-	public static final int EXPONENTIAL_REP_CAPACITY = MAX_EXPONENTIAL_DIGITS + 2;
-	public static final int FIXED_REP_CAPACITY = MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
-	public static final int PRECISION_REP_CAPACITY = MAX_PRECISION_DIGITS + 1;
+	private static final int EXPONENTIAL_REP_CAPACITY = MAX_EXPONENTIAL_DIGITS + 2;
+	private static final int FIXED_REP_CAPACITY = MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
+	private static final int PRECISION_REP_CAPACITY = MAX_PRECISION_DIGITS + 1;
 
-	public static final int MAX_EXPONENT_LENGTH = 5;
+	private static final int MAX_EXPONENT_LENGTH = 5;
 
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
@@ -159,8 +158,7 @@ public final class DoubleToStringConverter {
 	 * @see Symbols#Symbols(String, String, int)
 	 * @see PrecisionPolicy#PrecisionPolicy(int, int)
 	 */
-	public DoubleToStringConverter(int flags,
-								   PrecisionPolicy precisionPolicy) {
+	public DoubleToStringConverter(int flags, PrecisionPolicy precisionPolicy) {
 		this(flags,
 			precisionPolicy,
 			0);
@@ -240,7 +238,7 @@ public final class DoubleToStringConverter {
 	 * If either of them is NULL or the value is not special then the
 	 * function returns false.
 	 */
-	private void handleSpecialValues(double value, FormatOptions fo, Buffer resultBuilder) {
+	private void handleSpecialValues(double value, FormatOptions fo, CharBuffer resultBuilder) {
 		boolean sign = value < 0.0;
 
 		int effectiveWidth = fo.getWidth();
@@ -284,7 +282,7 @@ public final class DoubleToStringConverter {
 		int length,
 		int exponent,
 		FormatOptions fo,
-		Buffer resultBuilder
+		CharBuffer resultBuilder
 	) {
 		requireArg(decimalDigits.length() != 0, "decimalDigits must not be empty");
 		requireArg(length <= decimalDigits.length(), "length must be smaller than decimalDigits");
@@ -373,7 +371,7 @@ public final class DoubleToStringConverter {
 		double value,
 		int digitsAfterPoint,
 		FormatOptions fo,
-		Buffer resultBuilder
+		CharBuffer resultBuilder
 	) {
 		int decimalPoint = decimalDigits.getPointPosition();
 		int digitsLength = decimalDigits.length();
@@ -547,7 +545,7 @@ public final class DoubleToStringConverter {
 		double value,
 		int requestedDigits,
 		FormatOptions formatOptions,
-		Buffer resultBuilder
+		CharBuffer resultBuilder
 	) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
@@ -595,7 +593,7 @@ public final class DoubleToStringConverter {
 	 * @param formatOptions
 	 * @throws IllegalArgumentException if <code>requestedDigits > MAX_EXPONENTIAL_DIGITS</code>
 	 */
-	public void toExponential(double value, int requestedDigits, FormatOptions formatOptions, Buffer resultBuilder) {
+	public void toExponential(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
@@ -675,7 +673,7 @@ public final class DoubleToStringConverter {
 	 * @throws IllegalArgumentException when <code>precision < MIN_PRECISION_DIGITS</code> or
 	 *                                  <code>precision > MAX_PRECISION_DIGITS</code>
 	 */
-	public void toPrecision(double value, int precision, FormatOptions formatOptions, Buffer resultBuilder) {
+	public void toPrecision(double value, int precision, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		if (new Ieee.Double(value).isSpecial()) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
@@ -737,7 +735,7 @@ public final class DoubleToStringConverter {
 			(value != 0.0 || !uniqueZero);
 	}
 
-	private void appendSign(double value, FormatOptions formatOptions, Buffer resultBuilder) {
+	private void appendSign(double value, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		if (shouldEmitMinus(value)) {
 			resultBuilder.append('-');
 		} else if (formatOptions.isSpaceWhenPositive()) {
@@ -857,7 +855,7 @@ public final class DoubleToStringConverter {
 	 * Add character padding to the builder. If count is non-positive,
 	 * nothing is added to the builder.
 	 */
-	private static void addPadding(Buffer sb, @Unsigned int character, int count) {
+	private static void addPadding(CharBuffer sb, @Unsigned int character, int count) {
 		for (int i = count; i > 0; i--) {
 			sb.append((char) character);
 		}

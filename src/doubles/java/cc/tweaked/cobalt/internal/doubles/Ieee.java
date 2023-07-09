@@ -29,14 +29,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.requireState;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUlong;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
+import static cc.tweaked.cobalt.internal.doubles.Assert.requireState;
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.toUlong;
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.ulongGT;
 
 final class Ieee {
 	public static class Double {

@@ -28,13 +28,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 import org.junit.jupiter.api.Test;
 
-import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK;
-import static org.squiddev.cobalt.lib.doubles.DoubleTestHelper.CHECK_EQ;
+import static cc.tweaked.cobalt.internal.doubles.DoubleTestHelper.CHECK;
+import static cc.tweaked.cobalt.internal.doubles.DoubleTestHelper.CHECK_EQ;
 
 public class BignumTest {
 	private static final int kBufferSize = 1024;

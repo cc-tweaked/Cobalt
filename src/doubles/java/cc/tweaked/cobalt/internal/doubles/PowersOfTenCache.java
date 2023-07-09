@@ -28,11 +28,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-public class PowersOfTenCache {
+class PowersOfTenCache {
 	/**
 	 * Not all powers of ten are cached. The decimal exponent of two neighboring
 	 * cached numbers will differ by DECIMAL_EXPONENT_DISTANCE.

@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
@@ -36,8 +36,8 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 import java.math.BigInteger;
 import java.util.Objects;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.requireState;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.toUint;
+import static cc.tweaked.cobalt.internal.doubles.Assert.requireState;
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.toUint;
 
 /**
  * A mutable proxy object to java BigDecimal.  Probably can be
@@ -48,7 +48,6 @@ final class Bignum {
 	private static final long LONG_UNSIGNED_BITS = 0x7fff_ffff_ffff_ffffL;
 	private static final BigInteger INT_MASK = BigInteger.valueOf(0xffff_ffffL);
 	private static final BigInteger NOT_INT_MASK = INT_MASK.not();
-
 
 	private BigInteger val;
 
@@ -69,6 +68,7 @@ final class Bignum {
 	}
 
 	@Override
+	@SuppressWarnings("override.receiver")
 	public int hashCode() {
 		return Objects.hash(val);
 	}

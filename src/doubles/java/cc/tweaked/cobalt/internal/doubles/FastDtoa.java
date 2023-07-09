@@ -28,12 +28,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.requireArg;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.*;
+import static cc.tweaked.cobalt.internal.doubles.Assert.requireArg;
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.*;
 
 final class FastDtoa {
 	@SuppressWarnings("ImplicitNumericConversion")

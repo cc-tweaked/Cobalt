@@ -29,12 +29,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
-import static org.squiddev.cobalt.lib.doubles.Assert.requireArg;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGE;
+import static cc.tweaked.cobalt.internal.doubles.Assert.requireArg;
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.ulongGE;
 
 /**
  * This "Do It Yourself Floating Point" class implements a floating-point number

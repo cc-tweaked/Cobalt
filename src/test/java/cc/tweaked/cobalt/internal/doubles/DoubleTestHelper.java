@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.PolySigned;
 import org.checkerframework.checker.signedness.qual.Unsigned;
@@ -38,12 +38,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.uintGT;
+import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.ulongGT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.uintGT;
-import static org.squiddev.cobalt.lib.doubles.UnsignedValues.ulongGT;
 
 public final class DoubleTestHelper {
 	public static void CHECK(boolean v) {

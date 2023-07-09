@@ -28,14 +28,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.squiddev.cobalt.lib.doubles;
+package cc.tweaked.cobalt.internal.doubles;
 
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter.Flags;
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter.FormatOptions;
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter.PrecisionPolicy;
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter.Symbols;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.Buffer;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.Flags;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.FormatOptions;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.PrecisionPolicy;
-import org.squiddev.cobalt.lib.doubles.DoubleToStringConverter.Symbols;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

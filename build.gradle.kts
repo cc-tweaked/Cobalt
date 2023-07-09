@@ -2,7 +2,6 @@ plugins {
 	java
 	`maven-publish`
 	id("com.github.hierynomus.license") version "0.16.1"
-	alias(libs.plugins.checkerFramework)
 }
 
 group = "org.squiddev"
@@ -16,6 +15,11 @@ java {
 	withSourcesJar()
 }
 
+sourceSets {
+	// Put double conversion in a separate library, so we can run the signedness checker on it.
+	register("doubles")
+}
+
 repositories {
 	mavenCentral()
 }
@@ -26,12 +30,50 @@ val buildTools by configurations.creating {
 }
 
 dependencies {
+	compileOnly(libs.checkerFramework.qual)
+	implementation(sourceSets["doubles"].output)
+
+	testCompileOnly(libs.checkerFramework.qual)
 	testImplementation(libs.bundles.test)
 	testRuntimeOnly(libs.bundles.testRuntime)
 
 	testAnnotationProcessor(libs.bundles.testAnnotationProcessor)
 
 	"buildTools"(project(":build-tools"))
+}
+
+/**
+ * Configure the checker framework for a given source set.
+ */
+fun configureChecker(sourceSet: SourceSet, arguments: () -> List<String>) {
+	dependencies {
+		add(sourceSet.compileOnlyConfigurationName, libs.checkerFramework.qual)
+		add(sourceSet.annotationProcessorConfigurationName, libs.checkerFramework)
+	}
+
+	tasks.named(sourceSet.compileJavaTaskName, JavaCompile::class) {
+		options.isFork = true
+		options.compilerArgumentProviders.add {
+			arguments()
+		}
+		options.forkOptions.jvmArgumentProviders.add {
+			listOf(
+				"--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+				"--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+			)
+		}
+	}
+}
+
+configureChecker(sourceSets["doubles"]) {
+	listOf("-processor", "org.checkerframework.checker.signedness.SignednessChecker")
 }
 
 // Point compileJava to emit to classes/uninstrumentedJava/main, and then add a task to instrument these classes,
@@ -67,10 +109,8 @@ license {
 	include("*.java")
 }
 
-checkerFramework {
-	// add '-PskipCheckerFramework' to the gradle command line to speed up the build
-	checkers = listOf("org.checkerframework.checker.signedness.SignednessChecker")
-	extraJavacArgs = listOf("-AonlyDefs=^org\\.squiddev\\.cobalt\\.lib\\.doubles\\.")
+tasks.jar {
+	from(sourceSets["doubles"].output)
 }
 
 publishing {
@@ -110,16 +150,8 @@ publishing {
 	}
 }
 
-sourceSets.configureEach {
-	val sourceSet = this
-	tasks.named(compileJavaTaskName, JavaCompile::class) {
-		options.compilerArgs.add("-Xlint")
-
-		// Only enable skipCheckerFramework on main.
-		extensions.configure(org.checkerframework.gradle.plugin.CheckerFrameworkTaskExtension::class) {
-			skipCheckerFramework = sourceSet.name != "main"
-		}
-	}
+tasks.withType(JavaCompile::class) {
+	options.compilerArgs.add("-Xlint")
 }
 
 tasks.test {
