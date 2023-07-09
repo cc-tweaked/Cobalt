@@ -27,8 +27,7 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
-import org.squiddev.cobalt.function.OneArgFunction;
-import org.squiddev.cobalt.function.ZeroArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.Bit32Lib;
 import org.squiddev.cobalt.lib.Utf8Lib;
 
@@ -105,20 +104,10 @@ public class AssertTests {
 
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.1/");
 		helpers.setup();
-		helpers.globals.rawset("mkdir", new OneArgFunction() {
-			@Override
-			public LuaValue call(LuaState state, LuaValue arg) throws LuaError {
-				return valueOf(new File(arg.checkString()).mkdirs());
-			}
-		});
+		helpers.globals.rawset("mkdir", LibFunction.create((state, arg) -> valueOf(new File(arg.checkString()).mkdirs())));
 
 		// TODO: Move this into the debug library
-		((LuaTable) helpers.globals.rawget("debug")).rawset("debug", new ZeroArgFunction() {
-			@Override
-			public LuaValue call(LuaState state) {
-				return Constants.NIL;
-			}
-		});
+		((LuaTable) helpers.globals.rawget("debug")).rawset("debug", LibFunction.create(s -> Constants.NIL));
 
 		helpers.runWithDump(name);
 	}

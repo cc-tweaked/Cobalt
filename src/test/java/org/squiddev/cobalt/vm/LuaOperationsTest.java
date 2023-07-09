@@ -27,10 +27,7 @@ package org.squiddev.cobalt.vm;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.LuaInterpretedFunction;
-import org.squiddev.cobalt.function.ZeroArgFunction;
+import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.ByteArrayInputStream;
@@ -65,16 +62,12 @@ public class LuaOperationsTest {
 	private final LuaValue stringlong = valueOf(samplestringlong);
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
 	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
-	private final LuaFunction somefunc = new ZeroArgFunction() {
-		{
-			setfenv(table);
-		}
+	private final LuaFunction somefunc = LibFunction.create(s -> NIL);
 
-		@Override
-		public LuaValue call(LuaState state) {
-			return NIL;
-		}
-	};
+	{
+		somefunc.setfenv(table);
+	}
+
 	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
 	private final Prototype proto = DataFactory.prototype();
@@ -229,13 +222,13 @@ public class LuaOperationsTest {
 
 		// function tests
 		{
-			LuaFunction f = new ZeroArgFunction() {
+			LuaFunction f = new VarArgFunction() {
 				{
 					setfenv(_G);
 				}
 
 				@Override
-				public LuaValue call(LuaState state) {
+				public Varargs invoke(LuaState state, Varargs varargs) {
 					return getfenv().rawget(valueOf("a"));
 				}
 			};

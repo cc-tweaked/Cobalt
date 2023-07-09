@@ -28,7 +28,6 @@ package org.squiddev.cobalt.lib.system;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.*;
@@ -474,21 +473,18 @@ public class IoLib {
 	}
 
 	private static Varargs doLines(final LuaFile f, final boolean autoClose) {
-		return new VarArgFunction() {
-			@Override
-			public Varargs invoke(LuaState state, Varargs args) throws LuaError {
-				//	lines iterator(s,var) -> var'
-				checkOpen(f);
+		return LibFunction.createV((state, args) -> {
+			//	lines iterator(s,var) -> var'
+			checkOpen(f);
 
-				try {
-					LuaValue result = readLine(f);
-					if (autoClose && result == NIL) doClose(f);
-					return result;
-				} catch (IOException e) {
-					return errorResult(e);
-				}
+			try {
+				LuaValue result = readLine(f);
+				if (autoClose && result == NIL) doClose(f);
+				return result;
+			} catch (IOException e) {
+				return errorResult(e);
 			}
-		};
+		});
 	}
 
 	private static Varargs doWrite(LuaFile f, Varargs args) throws IOException, LuaError {

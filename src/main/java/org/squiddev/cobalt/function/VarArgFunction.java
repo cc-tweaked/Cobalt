@@ -49,7 +49,7 @@ import org.squiddev.cobalt.*;
  * @see TwoArgFunction
  * @see ThreeArgFunction
  */
-public abstract class VarArgFunction extends LibFunction {
+public non-sealed abstract class VarArgFunction extends LibFunction {
 	@Override
 	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return invoke(state, Constants.NONE).first();
@@ -70,7 +70,4 @@ public abstract class VarArgFunction extends LibFunction {
 		return invoke(state, ValueFactory.varargsOf(arg1, arg2, arg3)).first();
 	}
 
-	public interface Signature {
-		Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
-	}
 }

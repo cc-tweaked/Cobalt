@@ -24,10 +24,8 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.Constants;
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.TableLib;
 
@@ -128,18 +126,19 @@ import org.squiddev.cobalt.lib.TableLib;
  * See the source code in any of the library functions
  * such as {@link BaseLib} or {@link TableLib} for other examples.
  */
-public abstract class LibFunction extends LuaFunction {
+public sealed abstract class LibFunction extends LuaFunction
+	permits ZeroArgFunction, OneArgFunction, TwoArgFunction, ThreeArgFunction, VarArgFunction, ResumableVarArgFunction {
 	/**
 	 * The common name for this function, useful for debugging.
 	 * <p>
 	 * Binding functions initialize this to the name to which it is bound.
 	 */
-	String name;
+	@Nullable String name;
 
 	/**
 	 * Default constructor for use by subclasses
 	 */
-	public LibFunction() {
+	LibFunction() {
 	}
 
 	@Override
@@ -151,4 +150,51 @@ public abstract class LibFunction extends LuaFunction {
 		env.rawset(name, library);
 		state.registry().getSubTable(Constants.LOADED).rawset(name, library);
 	}
+
+	// region Factories
+	public static LibFunction create(ZeroArg fn) {
+		return new ZeroArgFunction(fn);
+	}
+
+	public static LibFunction create(OneArg fn) {
+		return new OneArgFunction(fn);
+	}
+
+	public static LibFunction create(TwoArg fn) {
+		return new TwoArgFunction(fn);
+	}
+
+	public static LibFunction create(ThreeArg fn) {
+		return new ThreeArgFunction(fn);
+	}
+
+	public static LibFunction createV(ManyArgs fn) {
+		return new VarArgFunction() {
+			@Override
+			public Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+				return fn.invoke(state, args);
+			}
+		};
+	}
+
+	public interface ZeroArg {
+		LuaValue call(LuaState state) throws LuaError, UnwindThrowable;
+	}
+
+	public interface OneArg {
+		LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable;
+	}
+
+	public interface TwoArg {
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable;
+	}
+
+	public interface ThreeArg {
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable;
+	}
+
+	public interface ManyArgs {
+		Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
+	}
+	// endregion
 }

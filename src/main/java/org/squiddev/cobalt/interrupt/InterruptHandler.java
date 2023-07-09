@@ -31,7 +31,7 @@ import org.squiddev.cobalt.LuaError;
  */
 public interface InterruptHandler {
 	/**
-	 * Called within long running processes (such as pattern matching)
+	 * Called within long-running processes (such as pattern matching)
 	 * to allow terminating the process.
 	 *
 	 * @throws LuaError On a runtime error.

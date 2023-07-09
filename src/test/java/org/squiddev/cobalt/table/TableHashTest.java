@@ -27,7 +27,7 @@ package org.squiddev.cobalt.table;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.TwoArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -162,13 +162,10 @@ public class TableHashTest {
 		final LuaTable t = new LuaTable();
 		final LuaTable mt = new LuaTable();
 
-		final TwoArgFunction fb = new TwoArgFunction() {
-			@Override
-			public LuaValue call(LuaState state, LuaValue tbl, LuaValue key) {
-				assertEquals(tbl, t);
-				return ValueFactory.valueOf("from mt: " + key);
-			}
-		};
+		final LibFunction fb = LibFunction.create((state, tbl, key) -> {
+			assertEquals(tbl, t);
+			return ValueFactory.valueOf("from mt: " + key);
+		});
 
 		// set basic values
 		OperationHelper.setTable(state, t, ValueFactory.valueOf("ppp"), ValueFactory.valueOf("abc"));

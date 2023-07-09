@@ -27,51 +27,38 @@ package org.squiddev.cobalt.function;
 import org.squiddev.cobalt.*;
 
 /**
- * Abstract base class for Java function implementations that take one argument and
- * return one value.
- * <p>
- * Subclasses need only implement {@link LuaFunction#call(LuaState, LuaValue)} to complete this class,
- * simplifying development.
- * All other uses of {@link LuaFunction#call(LuaState)}, {@link LuaFunction#invoke(LuaState, Varargs)},etc,
- * are routed through this method by this class,
- * dropping or extending arguments with {@code nil} values as required.
- * <p>
- * If more than one argument are required, or no arguments are required,
- * or variable argument or variable return values,
- * then use one of the related function
- * {@link ZeroArgFunction}, {@link TwoArgFunction}, {@link ThreeArgFunction}, or {@link VarArgFunction}.
- * <p>
- * See {@link LibFunction} for more information on implementation libraries and library functions.
- *
- * @see LuaFunction#call(LuaState, LuaValue)
- * @see LibFunction
- * @see ZeroArgFunction
- * @see TwoArgFunction
- * @see ThreeArgFunction
- * @see VarArgFunction
+ * A {@link LibFunction} which accepts one argument. This invokes a {@link LibFunction.OneArg} implementation, filling
+ * in or dropping arguments as needed.
  */
-public abstract class OneArgFunction extends LibFunction {
-	@Override
-	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
-		return call(state, Constants.NIL);
+final class OneArgFunction extends LibFunction {
+	private final OneArg function;
+
+	OneArgFunction(OneArg function) {
+		this.function = function;
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
-		return call(state, arg1);
+	public LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
+		return function.call(state, Constants.NIL);
 	}
 
 	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
-		return call(state, arg1);
+	public LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
+		return function.call(state, arg);
 	}
 
 	@Override
-	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
-		return call(state, varargs.first());
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
+		return function.call(state, arg1);
 	}
 
-	public interface Signature {
-		LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable;
+	@Override
+	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
+		return function.call(state, arg1);
+	}
+
+	@Override
+	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
+		return function.call(state, varargs.first());
 	}
 }

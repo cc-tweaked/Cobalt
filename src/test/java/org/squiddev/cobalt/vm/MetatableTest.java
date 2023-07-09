@@ -27,7 +27,9 @@ package org.squiddev.cobalt.vm;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -40,12 +42,7 @@ public class MetatableTest {
 
 	private final LuaValue string = valueOf(samplestring);
 	private final LuaTable table = ValueFactory.tableOf();
-	private final LuaFunction function = new ZeroArgFunction() {
-		@Override
-		public LuaValue call(LuaState state) {
-			return Constants.NIL;
-		}
-	};
+	private final LuaFunction function = LibFunction.create(s -> Constants.NIL);
 	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, function, table);
 	private final LuaClosure closure = DataFactory.closure();
@@ -177,13 +174,7 @@ public class MetatableTest {
 		assertEquals(abc, OperationHelper.getTable(state, userdatamt, valueOf(1)));
 
 		// plain metatable
-		OperationHelper.setTable(state, mt, Constants.INDEX, new TwoArgFunction() {
-			@Override
-			public LuaValue call(LuaState state1, LuaValue arg1, LuaValue arg2) {
-				return valueOf(arg1.typeName() + "[" + arg2.toString() + "]=xyz");
-			}
-
-		});
+		OperationHelper.setTable(state, mt, Constants.INDEX, LibFunction.create((state1, arg1, arg2) -> valueOf(arg1.typeName() + "[" + arg2.toString() + "]=xyz")));
 		assertEquals("table[1]=xyz", OperationHelper.getTable(state, table, valueOf(1)).toString());
 		assertEquals("userdata[1]=xyz", OperationHelper.getTable(state, userdata, valueOf(1)).toString());
 		assertEquals("nil[1]=xyz", OperationHelper.getTable(state, Constants.NIL, valueOf(1)).toString());
@@ -230,14 +221,10 @@ public class MetatableTest {
 		assertEquals(abc, OperationHelper.getTable(state, fallback, valueOf(9)));
 
 		// metatable with function call
-		OperationHelper.setTable(state, mt, Constants.NEWINDEX, new ThreeArgFunction() {
-			@Override
-			public LuaValue call(LuaState state1, LuaValue arg1, LuaValue arg2, LuaValue arg3) {
-				fallback.rawset(arg2, valueOf("via-func-" + arg3));
-				return Constants.NIL;
-			}
-
-		});
+		OperationHelper.setTable(state, mt, Constants.NEWINDEX, LibFunction.create((state1, arg1, arg2, arg3) -> {
+			fallback.rawset(arg2, valueOf("via-func-" + arg3));
+			return Constants.NIL;
+		}));
 		OperationHelper.setTable(state, table, valueOf(12), abc);
 		OperationHelper.setTable(state, userdata, valueOf(13), abc);
 		OperationHelper.setTable(state, Constants.NIL, valueOf(14), abc);

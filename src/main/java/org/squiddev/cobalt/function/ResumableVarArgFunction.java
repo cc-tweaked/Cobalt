@@ -30,7 +30,7 @@ import org.squiddev.cobalt.debug.DebugState;
 
 import static org.squiddev.cobalt.debug.DebugFrame.*;
 
-public abstract class ResumableVarArgFunction<T> extends LibFunction implements Resumable<Object> {
+public non-sealed abstract class ResumableVarArgFunction<T> extends LibFunction implements Resumable<Object> {
 	@Override
 	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return invoke(state, Constants.NONE).first();

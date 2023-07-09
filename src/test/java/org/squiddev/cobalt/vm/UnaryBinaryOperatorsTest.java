@@ -26,7 +26,7 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.TwoArgFunction;
+import org.squiddev.cobalt.function.LibFunction;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -204,19 +204,9 @@ public class UnaryBinaryOperatorsTest {
 		assertEquals(OperationHelper.eq(state, Constants.NIL, da) ? Constants.TRUE : Constants.FALSE, Constants.FALSE);
 	}
 
-	private static final TwoArgFunction RETURN_NIL = new TwoArgFunction() {
-		@Override
-		public LuaValue call(LuaState state, LuaValue lhs, LuaValue rhs) {
-			return Constants.NIL;
-		}
-	};
+	private static final LibFunction RETURN_NIL = LibFunction.create((state, lhs, rhs) -> Constants.NIL);
 
-	private static final TwoArgFunction RETURN_ONE = new TwoArgFunction() {
-		@Override
-		public LuaValue call(LuaState state, LuaValue lhs, LuaValue rhs) {
-			return Constants.ONE;
-		}
-	};
+	private static final LibFunction RETURN_ONE = LibFunction.create((state, lhs, rhs) -> Constants.ONE);
 
 
 	@Test
@@ -521,19 +511,9 @@ public class UnaryBinaryOperatorsTest {
 		}
 	}
 
-	private static final TwoArgFunction RETURN_LHS = new TwoArgFunction() {
-		@Override
-		public LuaValue call(LuaState state, LuaValue lhs, LuaValue rhs) {
-			return lhs;
-		}
-	};
+	private static final LibFunction RETURN_LHS = LibFunction.create((state, lhs, rhs) -> lhs);
 
-	private static final TwoArgFunction RETURN_RHS = new TwoArgFunction() {
-		@Override
-		public LuaValue call(LuaState state, LuaValue lhs, LuaValue rhs) {
-			return rhs;
-		}
-	};
+	private static final LibFunction RETURN_RHS = LibFunction.create((state, lhs, rhs) -> rhs);
 
 	@Test
 	public void testArithMetatag() throws LuaError, UnwindThrowable {
@@ -786,12 +766,7 @@ public class UnaryBinaryOperatorsTest {
 			}
 
 			// Ensures string arithmetic work as expected
-			state.stringMetatable = tableOf(Constants.ADD, new TwoArgFunction() {
-				@Override
-				public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
-					return OperationHelper.concat(valueOf(arg1.toString()), valueOf(arg2.toString()));
-				}
-			});
+			state.stringMetatable = tableOf(Constants.ADD, LibFunction.create((state, arg1, arg2) -> OperationHelper.concat(valueOf(arg1.toString()), valueOf(arg2.toString()))));
 
 			assertEquals(valueOf("ab"), OperationHelper.add(state, valueOf("a"), valueOf("b")));
 			assertEquals(valueOf("a2"), OperationHelper.add(state, valueOf("a"), valueOf("2")));

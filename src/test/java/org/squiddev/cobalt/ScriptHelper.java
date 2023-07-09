@@ -28,8 +28,8 @@ import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.VarArgFunction;
 import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.lib.system.SystemLibraries;
 
@@ -72,12 +72,7 @@ public class ScriptHelper {
 	private void setupCommon(LuaState state) {
 		this.state = state;
 		globals = SystemLibraries.debugGlobals(state, this::load, new VoidInputStream(), stdoutStream);
-		globals.rawset("id_", new VarArgFunction() {
-			@Override
-			public Varargs invoke(LuaState state, Varargs args) {
-				return args;
-			}
-		});
+		globals.rawset("id_", LibFunction.createV((state$, args) -> args));
 		TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
 	}
 
