@@ -55,7 +55,7 @@ final class BigNumDtoa {
 
 	private static int normalizedExponent(@Unsigned long significand, int exponent) {
 		assert significand != 0L;
-		while ((significand & Ieee.Double.HIDDEN_BIT) == 0L) {
+		while ((significand & Doubles.HIDDEN_BIT) == 0L) {
 			significand = significand << 1;
 			exponent = exponent - 1;
 		}
@@ -87,11 +87,9 @@ final class BigNumDtoa {
 	 */
 	public static void bignumDtoa(double v, BignumDtoaMode mode, int requestedDigits, DecimalRepBuf buf) {
 		assert v > 0.0;
-		assert !new Ieee.Double(v).isSpecial();
-		@Unsigned long significand;
-		int exponent;
-		significand = new Ieee.Double(v).significand();
-		exponent = new Ieee.Double(v).exponent();
+		assert !Doubles.isSpecial(v);
+		@Unsigned long significand = Doubles.significand(v);
+		int exponent = Doubles.exponent(v);
 
 		boolean isEven = (significand & 1L) == 0L;
 		int normalizedExponent = normalizedExponent(significand, exponent);
@@ -265,7 +263,7 @@ final class BigNumDtoa {
 		final double k1Log10 = 0.30102999566398114;  // 1/lg(10)
 
 		// For doubles len(f) == 53 (don't forget the hidden bit).
-		double estimate = Math.ceil((double) (exponent + Ieee.Double.SIGNIFICAND_SIZE - 1) * k1Log10 - 1e-10);
+		double estimate = Math.ceil((double) (exponent + Doubles.SIGNIFICAND_SIZE - 1) * k1Log10 - 1e-10);
 		return (int) estimate;
 	}
 

@@ -174,7 +174,7 @@ final class FastDtoa {
 	 * increases with higher requestedDigits.
 	 */
 	private static boolean digitGenCounted(DiyFp w, int requestedDigits, DecimalRepBuf buf, int[] kappa) {
-		assert MINIMAL_TARGET_EXPONENT <= w.e() && w.e() <= MAXIMAL_TARGET_EXPONENT;
+		assert MINIMAL_TARGET_EXPONENT <= w.exponent() && w.exponent() <= MAXIMAL_TARGET_EXPONENT;
 		// w is assumed to have an error less than 1 unit. Whenever w is scaled we
 		// also scale its error.
 		@Unsigned long wError = 1L;
@@ -182,17 +182,17 @@ final class FastDtoa {
 		// fractional digits. We don't emit any decimal separator, but adapt kappa
 		// instead. Example: instead of writing "1.2" we put "12" into the buffer and
 		// increase kappa by 1.
-		DiyFp one = new DiyFp(1L << -w.e(), w.e());
+		DiyFp one = new DiyFp(1L << -w.exponent(), w.exponent());
 		// Division by one is a shift.
-		@Unsigned int integrals = toUint(w.f() >>> -one.e());
+		@Unsigned int integrals = toUint(w.significand() >>> -one.exponent());
 		// Modulo by one is an and.
-		@Unsigned long fractionals = w.f() & (one.f() - 1L);
+		@Unsigned long fractionals = w.significand() & (one.significand() - 1L);
 		@Unsigned int divisor;
 		int divisorExponentPlusOne;
 		{
 			int[] inDivisorExponentPlusOne = new int[1];
 			@Unsigned int[] inDivisor = new int[1];
-			biggestPowerTen(integrals, DiyFp.SIGNIFICAND_SIZE - (-one.e()),
+			biggestPowerTen(integrals, DiyFp.SIGNIFICAND_SIZE - (-one.exponent()),
 				inDivisor, inDivisorExponentPlusOne);
 			divisor = inDivisor[0];
 			divisorExponentPlusOne = inDivisorExponentPlusOne[0];
@@ -217,9 +217,9 @@ final class FastDtoa {
 		}
 
 		if (requestedDigits == 0) {
-			@Unsigned long rest = (toUlong(integrals) << -one.e()) + fractionals;
+			@Unsigned long rest = (toUlong(integrals) << -one.exponent()) + fractionals;
 			return roundWeedCounted(buf, rest,
-				toUlong(divisor) << -one.e(), wError,
+				toUlong(divisor) << -one.exponent(), wError,
 				kappa);
 		}
 
@@ -229,20 +229,20 @@ final class FastDtoa {
 		// data (the 'unit'), too.
 		// Note that the multiplication by 10 does not overflow, because w.e >= -60
 		// and thus one.e >= -60.
-		assert one.e() >= -60;
-		assert ulongLT(fractionals, one.f());
-		assert ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.f());
+		assert one.exponent() >= -60;
+		assert ulongLT(fractionals, one.significand());
+		assert ulongGE(uDivide(0xFFFF_FFFF_FFFF_FFFFL, 10L), one.significand());
 		while (requestedDigits > 0 && ulongGT(fractionals, wError)) {
 			fractionals *= 10L;
 			wError *= 10L;
 			// Integer division by one.
-			buf.append(fractionals >>> -one.e());
+			buf.append(fractionals >>> -one.exponent());
 			requestedDigits--;
-			fractionals &= one.f() - 1L;  // Modulo by one.
+			fractionals &= one.significand() - 1L;  // Modulo by one.
 			kappa[0]--;
 		}
 		if (requestedDigits != 0) return false;
-		return roundWeedCounted(buf, fractionals, one.f(), wError,
+		return roundWeedCounted(buf, fractionals, one.significand(), wError,
 			kappa);
 	}
 
@@ -255,16 +255,16 @@ final class FastDtoa {
 	 * therefore the rounding strategy for halfway cases is irrelevant.
 	 */
 	private static boolean grisu3Counted(double v, int requestedDigits, DecimalRepBuf buf, int[] decimalExponent) {
-		DiyFp w = new Ieee.Double(v).asNormalizedDiyFp();
+		DiyFp w = Doubles.asNormalizedDiyFp(v);
 		DiyFp ten_mk;  // Cached power of ten: 10^-k
 		int mk;        // -k
 		{
 			DiyFp[] inTenMk = new DiyFp[1];
 			int[] inMk = new int[1];
 			int tenMkMinimalBinaryExponent =
-				MINIMAL_TARGET_EXPONENT - (w.e() + DiyFp.SIGNIFICAND_SIZE);
+				MINIMAL_TARGET_EXPONENT - (w.exponent() + DiyFp.SIGNIFICAND_SIZE);
 			int tenMkMaximalBinaryExponent =
-				MAXIMAL_TARGET_EXPONENT - (w.e() + DiyFp.SIGNIFICAND_SIZE);
+				MAXIMAL_TARGET_EXPONENT - (w.exponent() + DiyFp.SIGNIFICAND_SIZE);
 			PowersOfTenCache.getCachedPowerForBinaryExponentRange(
 				tenMkMinimalBinaryExponent,
 				tenMkMaximalBinaryExponent,
@@ -272,8 +272,8 @@ final class FastDtoa {
 			ten_mk = inTenMk[0];
 			mk = inMk[0];
 		}
-		assert MINIMAL_TARGET_EXPONENT <= w.e() + ten_mk.e() + DiyFp.SIGNIFICAND_SIZE;
-		assert MAXIMAL_TARGET_EXPONENT >= w.e() + ten_mk.e() + DiyFp.SIGNIFICAND_SIZE;
+		assert MINIMAL_TARGET_EXPONENT <= w.exponent() + ten_mk.exponent() + DiyFp.SIGNIFICAND_SIZE;
+		assert MAXIMAL_TARGET_EXPONENT >= w.exponent() + ten_mk.exponent() + DiyFp.SIGNIFICAND_SIZE;
 		// Note that ten_mk is only an approximation of 10^-k. A DiyFp only contains a
 		// 64 bit significand and ten_mk is thus only precise up to 64 bits.
 
@@ -316,7 +316,7 @@ final class FastDtoa {
 	 */
 	public static boolean fastDtoa(double v, int requestedDigits, DecimalRepBuf buf) {
 		assert v > 0.0;
-		assert !new Ieee.Double(v).isSpecial();
+		assert !Doubles.isSpecial(v);
 
 		boolean result;
 		int[] decimalExponent = new int[1]; // initialized to 0

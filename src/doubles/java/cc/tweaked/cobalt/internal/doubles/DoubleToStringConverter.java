@@ -549,7 +549,7 @@ public final class DoubleToStringConverter {
 	) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
-		if (new Ieee.Double(value).isSpecial()) {
+		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
@@ -594,7 +594,7 @@ public final class DoubleToStringConverter {
 	 * @throws IllegalArgumentException if <code>requestedDigits > MAX_EXPONENTIAL_DIGITS</code>
 	 */
 	public void toExponential(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
-		if (new Ieee.Double(value).isSpecial()) {
+		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
@@ -674,7 +674,7 @@ public final class DoubleToStringConverter {
 	 *                                  <code>precision > MAX_PRECISION_DIGITS</code>
 	 */
 	public void toPrecision(double value, int precision, FormatOptions formatOptions, CharBuffer resultBuilder) {
-		if (new Ieee.Double(value).isSpecial()) {
+		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
@@ -731,8 +731,7 @@ public final class DoubleToStringConverter {
 	@SuppressWarnings("operation.mixed.unsignedrhs")
 	private boolean shouldEmitMinus(double value) {
 		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		return (Double.doubleToRawLongBits(value) & Ieee.Double.SIGN_MASK) != 0 &&
-			(value != 0.0 || !uniqueZero);
+		return (Double.doubleToRawLongBits(value) & Doubles.SIGN_MASK) != 0 && (value != 0.0 || !uniqueZero);
 	}
 
 	private void appendSign(double value, FormatOptions formatOptions, CharBuffer resultBuilder) {
@@ -816,13 +815,13 @@ public final class DoubleToStringConverter {
 	 *                        and the {@link DecimalRepBuf#getSign() sign} of the number.
 	 */
 	public static void doubleToAscii(double v, DtoaMode mode, int requestedDigits, DecimalRepBuf buffer) {
-		assert !new Ieee.Double(v).isSpecial() : "value can't be a special value";
+		assert !Doubles.isSpecial(v) : "value can't be a special value";
 		requireArg(requestedDigits >= 0, "requestedDigits must be >= 0");
 
 		// begin with an empty buffer
 		buffer.reset();
 
-		if (new Ieee.Double(v).sign() < 0) {
+		if (Doubles.sign(v) < 0) {
 			buffer.setSign(true);
 			v = -v;
 		} else {

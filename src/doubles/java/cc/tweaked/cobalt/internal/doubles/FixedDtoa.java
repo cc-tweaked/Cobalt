@@ -37,7 +37,7 @@ import org.checkerframework.checker.signedness.qual.Unsigned;
 import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.*;
 
 final class FixedDtoa {
-	private static final int DOUBLE_SIGNIFICAND_SIZE = Ieee.Double.SIGNIFICAND_SIZE;  // Includes the hidden bit.
+	private static final int DOUBLE_SIGNIFICAND_SIZE = Doubles.SIGNIFICAND_SIZE;  // Includes the hidden bit.
 	private static final @Unsigned long TEN_POW_OF_7 = 10000000L;
 
 	// Represents a 128bit type. This class should be replaced by a native type on
@@ -153,8 +153,7 @@ final class FixedDtoa {
 		}
 	}
 
-	private static void fillDigits32FixedLength(@Unsigned int number, int requestedLength,
-												DecimalRepBuf buf) {
+	private static void fillDigits32FixedLength(@Unsigned int number, int requestedLength, DecimalRepBuf buf) {
 		int start = buf.length();
 		buf.addLength(requestedLength);
 		for (int i = buf.length() - 1; i >= start; i--) {
@@ -176,8 +175,7 @@ final class FixedDtoa {
 	}
 
 
-	private static void fillDigits64FixedLength(@Unsigned long number,
-												DecimalRepBuf buf) {
+	private static void fillDigits64FixedLength(@Unsigned long number, DecimalRepBuf buf) {
 		// For efficiency cut the number into 3 uint32_t parts, and print those.
 		@Unsigned int part2 = toUint(uRemainder(number, TEN_POW_OF_7));
 		number = uDivide(number, TEN_POW_OF_7);
@@ -221,8 +219,7 @@ final class FixedDtoa {
 	// might be updated. If this function generates the digits 99 and the buffer
 	// already contained "199" (thus yielding a buffer of "19999") then a
 	// rounding-up will change the contents of the buffer to "20000".
-	private static void fillFractionals(@Unsigned long fractionals, int exponent,
-										int fractionalCount, DecimalRepBuf buf) {
+	private static void fillFractionals(@Unsigned long fractionals, int exponent, int fractionalCount, DecimalRepBuf buf) {
 		assert -128 <= exponent && exponent <= 0;
 		// 'fractionals' is a fixed-point number, with binary point at bit
 		// (-exponent). Inside the function the non-converted remainder of fractionals
@@ -295,8 +292,8 @@ final class FixedDtoa {
 	// returns false.
 	public static boolean fastFixedDtoa(double v, int fractionalCount, DecimalRepBuf buf) {
 		final @Unsigned long kMaxUInt32 = 0xFFFF_FFFFL;
-		@Unsigned long significand = new Ieee.Double(v).significand();
-		int exponent = new Ieee.Double(v).exponent();
+		@Unsigned long significand = Doubles.significand(v);
+		int exponent = Doubles.exponent(v);
 		// v = significand * 2^exponent (with significand a 53bit integer).
 		// If the exponent is larger than 20 (i.e. we may have a 73bit number) then we
 		// don't know how to compute the representation. 2^73 ~= 9.5*10^21.

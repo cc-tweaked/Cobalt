@@ -33,8 +33,8 @@ package cc.tweaked.cobalt.internal.doubles;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static cc.tweaked.cobalt.internal.doubles.DoubleTestHelper.CHECK_EQ;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DiyFpTest {
 	@Test
@@ -43,11 +43,11 @@ public class DiyFpTest {
 		DiyFp diy_fp2 = new DiyFp(1L, 0);
 		DiyFp diff = DiyFp.minus(diy_fp1, diy_fp2);
 
-		CHECK_EQ(2, diff.f());  // NOLINT
-		CHECK_EQ(0, diff.e());
-		diy_fp1.subtract(diy_fp2);
-		CHECK_EQ(2, diy_fp1.f());  // NOLINT
-		CHECK_EQ(0, diy_fp1.e());
+		CHECK_EQ(2, diff.significand());  // NOLINT
+		CHECK_EQ(0, diff.exponent());
+		diy_fp1 = DiyFp.minus(diy_fp1, diy_fp2);
+		CHECK_EQ(2, diy_fp1.significand());  // NOLINT
+		CHECK_EQ(0, diy_fp1.exponent());
 	}
 
 	@Test
@@ -56,30 +56,30 @@ public class DiyFpTest {
 		DiyFp diy_fp2 = new DiyFp(2L, 0);
 		DiyFp product = DiyFp.times(diy_fp1, diy_fp2);
 
-		CHECK_EQ(0, product.f());  // NOLINT
-		assertEquals(64, product.e());
-		diy_fp1.multiply(diy_fp2);
-		CHECK_EQ(0, diy_fp1.f());  // NOLINT
-		CHECK_EQ(64, diy_fp1.e());
+		CHECK_EQ(0, product.significand());  // NOLINT
+		assertEquals(64, product.exponent());
+		diy_fp1 = DiyFp.times(diy_fp1, diy_fp2);
+		CHECK_EQ(0, diy_fp1.significand());  // NOLINT
+		CHECK_EQ(64, diy_fp1.exponent());
 
 		diy_fp1 = new DiyFp(0x80000000_00000000L, 11);
 		diy_fp2 = new DiyFp(2L, 13);
 		product = DiyFp.times(diy_fp1, diy_fp2);
-		CHECK_EQ(1, product.f());  // NOLINT
-		CHECK_EQ(11 + 13 + 64, product.e());
+		CHECK_EQ(1, product.significand());  // NOLINT
+		CHECK_EQ(11 + 13 + 64, product.exponent());
 
 		// Test rounding.
 		diy_fp1 = new DiyFp(0x80000000_00000001L, 11);
 		diy_fp2 = new DiyFp(1L, 13);
 		product = DiyFp.times(diy_fp1, diy_fp2);
-		CHECK_EQ(1, product.f());  // NOLINT
-		CHECK_EQ(11 + 13 + 64, product.e());
+		CHECK_EQ(1, product.significand());  // NOLINT
+		CHECK_EQ(11 + 13 + 64, product.exponent());
 
 		diy_fp1 = new DiyFp(0x7fffffff_ffffffffL, 11);
 		diy_fp2 = new DiyFp(1L, 13);
 		product = DiyFp.times(diy_fp1, diy_fp2);
-		CHECK_EQ(0, product.f());  // NOLINT
-		CHECK_EQ(11 + 13 + 64, product.e());
+		CHECK_EQ(0, product.significand());  // NOLINT
+		CHECK_EQ(11 + 13 + 64, product.exponent());
 
 		// Halfway cases are allowed to round either way. So don't check for it.
 
@@ -88,8 +88,8 @@ public class DiyFpTest {
 		diy_fp2 = new DiyFp(0xFFFFFFFF_FFFFFFFFL, 13);
 		// 128bit result: 0xfffffffffffffffe0000000000000001
 		product = DiyFp.times(diy_fp1, diy_fp2);
-		CHECK_EQ(0xFFFFFFFF_FFFFFFFeL, product.f());
-		CHECK_EQ(11 + 13 + 64, product.e());
+		CHECK_EQ(0xFFFFFFFF_FFFFFFFeL, product.significand());
+		CHECK_EQ(11 + 13 + 64, product.exponent());
 	}
 
 

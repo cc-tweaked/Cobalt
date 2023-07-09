@@ -42,10 +42,6 @@ final class UnsignedValues {
 
 	private static final @Unsigned long INT_MASK = 0xffff_ffffL;
 	private static final @Unsigned long NOT_INT_MASK = ~INT_MASK;
-	@SuppressWarnings("cast.unsafe") // The exact value needed for unsigned comparisons
-	private static final @Unsigned int INT_MIN_VALUE = (@Unsigned int) Integer.MIN_VALUE;
-	@SuppressWarnings("cast.unsafe") // The exact value needed for unsigned comparisons
-	private static final @Unsigned long LONG_MIN_VALUE = (@Unsigned long) Long.MIN_VALUE;
 
 	/**
 	 * return true the unsigned long value can fit into an unsigned int
@@ -54,7 +50,6 @@ final class UnsignedValues {
 		return (value & NOT_INT_MASK) == 0L;
 	}
 
-	@SuppressWarnings("argument") // because API method isn't annotated
 	public static @Unsigned long toUlong(@Unsigned int value) {
 		return Integer.toUnsignedLong(value);
 	}
@@ -98,90 +93,51 @@ final class UnsignedValues {
 		return Long.remainderUnsigned(dividend, divisor);
 	}
 
-
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean uintLE(@Unsigned int lval, @Unsigned int rval) {
-		return lval + INT_MIN_VALUE <= rval + INT_MIN_VALUE;
+		return Integer.compareUnsigned(lval, rval) <= 0;
 	}
 
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean uintLT(@Unsigned int lval, @Unsigned int rval) {
-		return lval + INT_MIN_VALUE < rval + INT_MIN_VALUE;
+		return Integer.compareUnsigned(lval, rval) < 0;
 	}
 
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean uintGE(@Unsigned int lval, @Unsigned int rval) {
-		return lval + INT_MIN_VALUE >= rval + INT_MIN_VALUE;
+		return Integer.compareUnsigned(lval, rval) >= 0;
 	}
 
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean uintGT(@Unsigned int lval, @Unsigned int rval) {
-		return lval + INT_MIN_VALUE > rval + INT_MIN_VALUE;
+		return Integer.compareUnsigned(lval, rval) > 0;
 	}
 
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean ulongGE(@Unsigned long lval, @Unsigned long rval) {
-		return lval + LONG_MIN_VALUE >= rval + LONG_MIN_VALUE;
+		return Long.compareUnsigned(lval, rval) >= 0;
 	}
 
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean ulongGT(@Unsigned long lval, @Unsigned long rval) {
-		return lval + LONG_MIN_VALUE > rval + LONG_MIN_VALUE;
+		return Long.compareUnsigned(lval, rval) > 0;
 	}
 
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean ulongLE(@Unsigned long lval, @Unsigned long rval) {
-		return lval + LONG_MIN_VALUE <= rval + LONG_MIN_VALUE;
+		return Long.compareUnsigned(lval, rval) <= 0;
 	}
 
-	@SuppressWarnings("comparison.unsignedlhs")
 	public static boolean ulongLT(@Unsigned long lval, @Unsigned long rval) {
-		return lval + LONG_MIN_VALUE < rval + LONG_MIN_VALUE;
+		return Long.compareUnsigned(lval, rval) < 0;
 	}
 
 	private UnsignedValues() {
 	}
 
 	// method overridden to avoid implicit casts
-	@SuppressWarnings({"cast.unsafe", "ImplicitNumericConversion"})
+	@SuppressWarnings({"cast.unsafe"})
 	public static char digitToChar(@Unsigned long digit) {
-		if (ulongGT(digit, 9)) {
-			throw new IllegalArgumentException("digit must be 0-9");
-		}
+		if (ulongGT(digit, 9)) throw new IllegalArgumentException("digit must be 0-9");
 		return (char) (digit + ASCII_ZERO);
 	}
 
 	@SuppressWarnings("cast.unsafe")
 	public static char digitToChar(@Unsigned int digit) {
-		if (uintGT(digit, 9)) {
-			throw new IllegalArgumentException("digit must be 0-9");
-		}
-		return (char) (digit + ASCII_ZERO);
-	}
-
-	// method overridden to avoid implicit casts
-
-	/**
-	 * convert to integer value to character equivilent, works like {@link #digitToChar}, but allows
-	 * {@code digit} to be 10 that is corrected later.
-	 */
-	@SuppressWarnings({"cast.unsafe", "ImplicitNumericConversion"})
-	public static char digitToCharWithOverflow(@Unsigned long digit) {
-		if (ulongGT(digit, 10)) {
-			throw new IllegalArgumentException("digit must be 0-10");
-		}
-		return (char) (digit + ASCII_ZERO);
-	}
-
-	/**
-	 * convert to integer value to character equivilent, works like {@link #digitToChar}, but allows
-	 * {@code digit} to be 10 that is corrected later.
-	 */
-	@SuppressWarnings("cast.unsafe")
-	public static char digitToCharWithOverflow(@Unsigned int digit) {
-		if (uintGT(digit, 10)) {
-			throw new IllegalArgumentException("digit must be 0-10");
-		}
+		if (uintGT(digit, 9)) throw new IllegalArgumentException("digit must be 0-9");
 		return (char) (digit + ASCII_ZERO);
 	}
 }

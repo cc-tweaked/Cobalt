@@ -164,7 +164,7 @@ public class DtoaTest {
 		CHECK_EQ(299, buffer.getPointPosition());
 
 		long smallest_normal64 = 0x00100000_00000000L;
-		double v = new Ieee.Double(smallest_normal64).value();
+		double v = Double.longBitsToDouble(smallest_normal64);
 		doubleToAscii(v, DtoaMode.PRECISION, 20, buffer);
 		CHECK_GE(20, buffer.length());
 		buffer.truncateAllZeros();
@@ -172,7 +172,7 @@ public class DtoaTest {
 		CHECK_EQ(-307, buffer.getPointPosition());
 
 		long largest_denormal64 = 0x000FFFFF_FFFFFFFFL;
-		v = new Ieee.Double(largest_denormal64).value();
+		v = Double.longBitsToDouble(largest_denormal64);
 		doubleToAscii(v, DtoaMode.PRECISION, 20, buffer);
 		CHECK_GE(20, buffer.length());
 		buffer.truncateAllZeros();
