@@ -1,6 +1,6 @@
-package cc.squiddev.cobalt.build.coroutine
+package cc.tweaked.cobalt.build.coroutine
 
-import cc.squiddev.cobalt.build.*
+import cc.tweaked.cobalt.build.*
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*

@@ -1,7 +1,7 @@
-package cc.squiddev.cobalt.build
+package cc.tweaked.cobalt.build
 
-import cc.squiddev.cobalt.build.coroutine.CoroutineInstrumentation
-import cc.squiddev.cobalt.build.coroutine.DefinitionScanner
+import cc.tweaked.cobalt.build.coroutine.CoroutineInstrumentation
+import cc.tweaked.cobalt.build.coroutine.DefinitionScanner
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes

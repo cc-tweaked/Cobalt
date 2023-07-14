@@ -1,8 +1,8 @@
-package cc.squiddev.cobalt.build.coroutine
+package cc.tweaked.cobalt.build.coroutine
 
-import cc.squiddev.cobalt.build.UnsupportedConstruct
-import cc.squiddev.cobalt.build.quoteForGraphViz
-import cc.squiddev.cobalt.build.withMethodTraceVisitor
+import cc.tweaked.cobalt.build.UnsupportedConstruct
+import cc.tweaked.cobalt.build.quoteForGraphViz
+import cc.tweaked.cobalt.build.withMethodTraceVisitor
 import org.objectweb.asm.Label
 import org.objectweb.asm.Opcodes.GOTO
 import org.objectweb.asm.tree.*

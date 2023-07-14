@@ -1,8 +1,8 @@
-package cc.squiddev.cobalt.build.coroutine
+package cc.tweaked.cobalt.build.coroutine
 
-import cc.squiddev.cobalt.build.ClassEmitter
-import cc.squiddev.cobalt.build.UnsupportedConstruct
-import cc.squiddev.cobalt.build.logger
+import cc.tweaked.cobalt.build.ClassEmitter
+import cc.tweaked.cobalt.build.UnsupportedConstruct
+import cc.tweaked.cobalt.build.logger
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes

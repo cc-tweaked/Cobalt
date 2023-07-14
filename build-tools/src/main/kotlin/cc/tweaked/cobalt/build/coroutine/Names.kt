@@ -1,4 +1,4 @@
-package cc.squiddev.cobalt.build.coroutine
+package cc.tweaked.cobalt.build.coroutine
 
 import org.objectweb.asm.*
 

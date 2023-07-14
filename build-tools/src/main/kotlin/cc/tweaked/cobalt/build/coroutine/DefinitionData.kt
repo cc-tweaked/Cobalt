@@ -1,7 +1,7 @@
-package cc.squiddev.cobalt.build.coroutine
+package cc.tweaked.cobalt.build.coroutine
 
-import cc.squiddev.cobalt.build.UnsupportedConstruct
-import cc.squiddev.cobalt.build.logger
+import cc.tweaked.cobalt.build.UnsupportedConstruct
+import cc.tweaked.cobalt.build.logger
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
 import org.slf4j.Logger
@@ -11,7 +11,7 @@ private val logger: Logger = logger {}
 sealed interface YieldType {
 
 	/**
-	 * This method is annotated with the [cc.squiddev.cobalt.build.coroutine.AUTO_UNWIND] annotation.
+	 * This method is annotated with the [cc.tweaked.cobalt.build.coroutine.AUTO_UNWIND] annotation.
 	 *
 	 * Calls to this method (and the definition itself) will be instrumented to include an extra state parameter.
 	 */
@@ -37,7 +37,7 @@ sealed interface YieldType {
 
 enum class InstrumentType {
 	/**
-	 * This method is annotated with the [cc.squiddev.cobalt.build.coroutine.AUTO_UNWIND], and so should be instrumented
+	 * This method is annotated with the [cc.tweaked.cobalt.build.coroutine.AUTO_UNWIND], and so should be instrumented
 	 * as such.
 	 */
 	AUTO_UNWIND,

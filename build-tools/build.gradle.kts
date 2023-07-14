@@ -22,5 +22,5 @@ dependencies {
 }
 
 tasks.jar {
-	manifest.attributes("Main-Class" to "cc.squiddev.cobalt.build.Main")
+	manifest.attributes("Main-Class" to "cc.tweaked.cobalt.build.Main")
 }

@@ -1,4 +1,4 @@
-package cc.squiddev.cobalt.build
+package cc.tweaked.cobalt.build
 
 import org.objectweb.asm.ConstantDynamic
 import org.objectweb.asm.Handle
