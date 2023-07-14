@@ -35,7 +35,7 @@ public class Utf8Lib {
 			RegisteredFunction.ofV("codes", this::codes),
 			RegisteredFunction.ofV("codepoint", Utf8Lib::codepoint),
 			RegisteredFunction.ofV("len", Utf8Lib::len),
-			RegisteredFunction.ofV("offset", Utf8Lib::offset),
+			RegisteredFunction.of("offset", Utf8Lib::offset),
 		});
 		t.rawset("charpattern", PATTERN);
 
@@ -54,7 +54,7 @@ public class Utf8Lib {
 		return j;
 	}
 
-	private static Varargs char$(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue char$(LuaState state, Varargs args) throws LuaError {
 		Buffer sb = new Buffer(args.count());
 		byte[] buffer = null;
 		for (int i = 1, n = args.count(); i <= n; i++) {
@@ -124,13 +124,13 @@ public class Utf8Lib {
 		return valueOf(n);
 	}
 
-	private static Varargs offset(LuaState state, Varargs args) throws LuaError {
-		LuaString s = args.arg(1).checkLuaString();
-		int n = args.arg(2).checkInteger();
+	private static LuaValue offset(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+		LuaString s = arg1.checkLuaString();
+		int n = arg2.checkInteger();
 
 		int length = s.length();
 		int position = (n >= 0) ? 1 : length + 1;
-		position = posRelative(args.arg(3).optInteger(position), length) - 1;
+		position = posRelative(arg3.optInteger(position), length) - 1;
 		if (position < 0 || position > length) throw ErrorFactory.argError(3, "position out of range");
 
 		if (n == 0) {

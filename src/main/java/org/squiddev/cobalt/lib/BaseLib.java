@@ -67,7 +67,7 @@ public class BaseLib {
 			RegisteredFunction.of("error", BaseLib::error),
 			RegisteredFunction.ofV("setfenv", BaseLib::setfenv),
 			RegisteredFunction.ofV("assert", BaseLib::assert_),
-			RegisteredFunction.ofV("getfenv", BaseLib::getfenv),
+			RegisteredFunction.of("getfenv", BaseLib::getfenv),
 			RegisteredFunction.ofV("getmetatable", BaseLib::getmetatable),
 			RegisteredFunction.ofV("loadstring", BaseLib::loadstring),
 			RegisteredFunction.ofV("select", BaseLib::select),
@@ -80,7 +80,7 @@ public class BaseLib {
 			RegisteredFunction.ofV("tonumber", BaseLib::tonumber),
 			RegisteredFunction.ofV("pairs", this::pairs),
 			RegisteredFunction.ofV("ipairs", this::ipairs),
-			RegisteredFunction.ofV("rawlen", BaseLib::rawlen),
+			RegisteredFunction.of("rawlen", BaseLib::rawlen),
 			RegisteredFunction.ofV("next", BaseLib::next),
 			RegisteredFunction.ofFactory("pcall", PCall::new),
 			RegisteredFunction.ofFactory("xpcall", XpCall::new),
@@ -132,9 +132,9 @@ public class BaseLib {
 	}
 
 
-	private static Varargs getfenv(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue getfenv(LuaState state, LuaValue args) throws LuaError {
 		// getfenv( [f] ) -> env
-		LuaValue f = getfenvobj(state, args.first(), true);
+		LuaValue f = getfenvobj(state, args, true);
 		if (f instanceof LibFunction) {
 			return state.getCurrentThread().getfenv();
 		} else {
@@ -142,7 +142,7 @@ public class BaseLib {
 		}
 	}
 
-	private static Varargs getmetatable(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue getmetatable(LuaState state, Varargs args) throws LuaError {
 		// getmetatable( object ) -> table
 		LuaTable mt = args.checkValue(1).getMetatable(state);
 		return mt != null ? mt.rawget(Constants.METATABLE).optValue(mt) : Constants.NIL;
@@ -163,22 +163,22 @@ public class BaseLib {
 		return args.subargs(i < 0 ? n + i + 2 : i + 1);
 	}
 
-	private static Varargs type(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue type(LuaState state, Varargs args) throws LuaError {
 		// type(v) -> value
 		return args.checkValue(1).luaTypeName();
 	}
 
-	private static Varargs rawequal(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue rawequal(LuaState state, Varargs args) throws LuaError {
 		// rawequal(v1, v2) -> boolean
 		return valueOf(args.checkValue(1).equals(args.checkValue(2)));
 	}
 
-	private static Varargs rawget(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue rawget(LuaState state, Varargs args) throws LuaError {
 		// rawget(table, index) -> value
 		return args.arg(1).checkTable().rawget(args.checkValue(2));
 	}
 
-	private static Varargs rawset(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue rawset(LuaState state, Varargs args) throws LuaError {
 		// rawset(table, index, value) -> table
 		LuaTable t = args.arg(1).checkTable();
 		LuaValue k = args.checkValue(2);
@@ -188,25 +188,34 @@ public class BaseLib {
 		return t;
 	}
 
-	private static Varargs setmetatable(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue setmetatable(LuaState state, Varargs args) throws LuaError {
 		// setmetatable(table, metatable) -> table
-		final LuaValue t = args.first();
+		LuaValue t = args.first();
+		LuaTable mt;
+
+		LuaValue mtValue = args.checkValue(2);
+		if (mtValue instanceof LuaTable tbl) {
+			mt = tbl;
+		} else if (mtValue.isNil()) {
+			mt = null;
+		} else {
+			throw ErrorFactory.argError(mtValue, "nil or table");
+		}
+
 		final LuaTable mt0 = t.getMetatable(state);
 		if (mt0 != null && !mt0.rawget(Constants.METATABLE).isNil()) {
 			throw new LuaError("cannot change a protected metatable");
 		}
-		final LuaValue mt = args.checkValue(2);
-		t.setMetatable(state, mt.isNil() ? null : mt.checkTable());
+		t.setMetatable(state, mt);
 		return t;
 	}
 
-	private static Varargs tostring(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private static LuaValue tostring(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		// tostring(e) -> value
 		return OperationHelper.toString(state, args.checkValue(1));
-
 	}
 
-	private static Varargs tonumber(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue tonumber(LuaState state, Varargs args) throws LuaError {
 		// tonumber"(e [,base]) -> value
 		LuaValue arg1 = args.checkValue(1);
 		final int base = args.arg(2).optInteger(10);
@@ -236,9 +245,8 @@ public class BaseLib {
 		return varargsOf(inext, args.checkValue(1), Constants.ZERO);
 	}
 
-	private static Varargs rawlen(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue rawlen(LuaState state, LuaValue v) throws LuaError {
 		// rawlen( table | string ) -> int
-		LuaValue v = args.arg(1);
 		return switch (v.type()) {
 			case Constants.TTABLE -> ValueFactory.valueOf(v.checkTable().length());
 			case Constants.TSTRING -> ValueFactory.valueOf(v.checkLuaString().length());

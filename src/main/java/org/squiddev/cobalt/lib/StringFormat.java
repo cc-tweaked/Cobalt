@@ -48,7 +48,7 @@ class StringFormat {
 	 *
 	 * @throws LuaError On invalid arguments.
 	 */
-	static Varargs format(LuaState state, FormatState format) throws LuaError, UnwindThrowable {
+	static LuaString format(LuaState state, FormatState format) throws LuaError, UnwindThrowable {
 		LuaString fmt = format.format;
 		final int n = fmt.length();
 		Buffer result = format.buffer;

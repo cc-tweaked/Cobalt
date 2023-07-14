@@ -120,7 +120,7 @@ public class MathLib {
 		return varargsOf(valueOf(m), valueOf(e));
 	}
 
-	private static Varargs max(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue max(LuaState state, Varargs args) throws LuaError {
 		double m = args.arg(1).checkDouble();
 		for (int i = 2, n = args.count(); i <= n; ++i) {
 			m = Math.max(m, args.arg(i).checkDouble());
@@ -128,7 +128,7 @@ public class MathLib {
 		return valueOf(m);
 	}
 
-	private static Varargs min(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue min(LuaState state, Varargs args) throws LuaError {
 		double m = args.arg(1).checkDouble();
 		for (int i = 2, n = args.count(); i <= n; ++i) {
 			m = Math.min(m, args.arg(i).checkDouble());
@@ -149,7 +149,7 @@ public class MathLib {
 		return Constants.NONE;
 	}
 
-	private Varargs random(LuaState state, Varargs args) throws LuaError {
+	private LuaValue random(LuaState state, Varargs args) throws LuaError {
 		if (random == null) random = new Random();
 
 		switch (args.count()) {

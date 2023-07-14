@@ -191,7 +191,7 @@ class StringPacker {
 	 * Returns a binary string containing the values v1, v2, etc.
 	 * serialized in binary form (packed) according to the format string fmt.
 	 */
-	static Varargs pack(Varargs args) throws LuaError {
+	static LuaValue pack(Varargs args) throws LuaError {
 		LuaString fmt = args.arg(1).checkLuaString();
 
 		Info info = new Info(fmt);

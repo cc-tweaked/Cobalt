@@ -260,7 +260,7 @@ public final class TableLib {
 		});
 	}
 
-	private static Varargs pack(LuaState state, Varargs args) {
+	private static LuaValue pack(LuaState state, Varargs args) {
 		int count = args.count();
 		LuaTable table = new LuaTable(count, 1);
 		for (int i = 1; i <= count; i++) table.rawset(i, args.arg(i));

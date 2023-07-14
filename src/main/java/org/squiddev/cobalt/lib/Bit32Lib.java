@@ -52,7 +52,7 @@ public class Bit32Lib {
 		}));
 	}
 
-	private static Varargs band(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue band(LuaState state, Varargs args) throws LuaError {
 		int result = -1;
 		for (int i = 1; i <= args.count(); i++) {
 			result &= args.arg(i).checkInteger();
@@ -64,7 +64,7 @@ public class Bit32Lib {
 		return bitsToValue(~arg.checkInteger());
 	}
 
-	private static Varargs bor(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue bor(LuaState state, Varargs args) throws LuaError {
 		int result = 0;
 		for (int i = 1; i <= args.count(); i++) {
 			result |= args.arg(i).checkInteger();
@@ -72,7 +72,7 @@ public class Bit32Lib {
 		return bitsToValue(result);
 	}
 
-	private static Varargs btest(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue btest(LuaState state, Varargs args) throws LuaError {
 		int bits = -1;
 		for (int i = 1; i <= args.count(); i++) {
 			bits &= args.arg(i).checkInteger();
@@ -80,7 +80,7 @@ public class Bit32Lib {
 		return valueOf(bits != 0);
 	}
 
-	private static Varargs bxor(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue bxor(LuaState state, Varargs args) throws LuaError {
 		int result = 0;
 		for (int i = 1; i <= args.count(); i++) {
 			result ^= args.arg(i).checkInteger();
@@ -99,7 +99,7 @@ public class Bit32Lib {
 		return bitsToValue((arg1.checkInteger() >>> field) & (-1 >>> (32 - width)));
 	}
 
-	private static Varargs replace(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue replace(LuaState state, Varargs args) throws LuaError {
 		int n = args.arg(1).checkInteger();
 		int v = args.arg(2).checkInteger();
 		int field = args.arg(3).checkInteger();

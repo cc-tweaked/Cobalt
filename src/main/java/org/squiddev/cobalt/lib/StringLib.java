@@ -61,7 +61,7 @@ public final class StringLib {
 			RegisteredFunction.of("reverse", StringLib::reverse),
 			RegisteredFunction.of("upper", StringLib::upper),
 			RegisteredFunction.of("packsize", StringLib::packsize),
-			RegisteredFunction.ofV("dump", StringLib::dump),
+			RegisteredFunction.of("dump", StringLib::dump),
 			RegisteredFunction.ofV("byte", StringLib::byte$),
 			RegisteredFunction.ofV("char", StringLib::char$),
 			RegisteredFunction.ofV("find", StringMatch::find),
@@ -219,7 +219,7 @@ public final class StringLib {
 	 * @return The characters for this string
 	 * @throws LuaError If the argument is not a number or is out of bounds.
 	 */
-	private static Varargs char$(LuaState state, Varargs args) throws LuaError {
+	private static LuaValue char$(LuaState state, Varargs args) throws LuaError {
 		int n = args.count();
 		byte[] bytes = new byte[n];
 		for (int i = 0, a = 1; i < n; i++, a++) {
@@ -241,9 +241,9 @@ public final class StringLib {
 	 *
 	 * @throws LuaError If the function cannot be dumped.
 	 */
-	static LuaValue dump(LuaState state, Varargs args) throws LuaError {
-		LuaFunction f = args.arg(1).checkFunction();
-		boolean strip = args.arg(2).optBoolean(false);
+	static LuaValue dump(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		LuaFunction f = arg1.checkFunction();
+		boolean strip = arg2.optBoolean(false);
 		if (!(f instanceof LuaClosure)) throw new LuaError("unable to dump given function");
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
