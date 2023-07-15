@@ -166,8 +166,7 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 
 	/**
 	 * Create a string from a concatenation of other strings. This may be more efficient than building a string
-	 * with {@link Buffer} or {@link OperationHelper#concat(LuaString, LuaString)}, as it defers allocating the
-	 * underlying byte array.
+	 * with {@link Buffer} as it defers allocating the underlying byte array.
 	 *
 	 * @param contents  The array of strings to build this from. All values in the range {@code [offset, offset+length)}
 	 *                  must be {@link LuaString}s.

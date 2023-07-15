@@ -26,13 +26,13 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,76 +75,26 @@ public class LuaOperationsTest {
 	private final LuaUserdata userdataobj = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = ValueFactory.userdataOf(sampledata);
 
-	private void throwsLuaError(String methodName, Object obj) {
-		try {
-			try {
-				LuaValue.class.getMethod(methodName, LuaState.class).invoke(obj, state);
-			} catch (NoSuchMethodException e1) {
-				try {
-					LuaValue.class.getMethod(methodName).invoke(obj);
-				} catch (NoSuchMethodException e2) {
-					OperationHelper.class.getMethod(methodName, LuaState.class, LuaValue.class).invoke(null, state, obj);
-				}
-			}
-			fail("failed to throw LuaError as required");
-		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError)) {
-				fail("not a LuaError: " + e.getTargetException());
-			}
-		} catch (Exception e) {
-			fail("bad exception: " + e);
-		}
-	}
-
-	private void throwsLuaError(String methodName, Object obj, Object arg) {
-		try {
-			try {
-				LuaValue.class.getMethod(methodName, LuaState.class, LuaValue.class).invoke(obj, state, arg);
-			} catch (NoSuchMethodException e) {
-				LuaValue.class.getMethod(methodName, LuaValue.class).invoke(obj, arg);
-			}
-			fail("failed to throw LuaError as required");
-		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError)) {
-				fail("not a LuaError: " + e.getTargetException());
-			}
-		} catch (Exception e) {
-			fail("bad exception: " + e);
-		}
-	}
-
-	private void setfenvThrowsLuaError(String methodName, Object obj, Object arg) {
-		try {
-			LuaValue.class.getMethod(methodName, LuaTable.class).invoke(obj, arg);
-			fail("failed to throw LuaError as required");
-		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError)) {
-				fail("not a LuaError: " + e.getTargetException());
-			}
-		} catch (Exception e) {
-			fail("bad exception: " + e);
-		}
-	}
-
 	@Test
 	public void testLength() throws LuaError, UnwindThrowable {
-		throwsLuaError("length", somenil);
-		throwsLuaError("length", sometrue);
-		throwsLuaError("length", somefalse);
-		throwsLuaError("length", zero);
-		throwsLuaError("length", intint);
-		throwsLuaError("length", longdouble);
-		throwsLuaError("length", doubledouble);
-		assertEquals(samplestringstring.length(), OperationHelper.length(state, stringstring).toInteger());
-		assertEquals(samplestringint.length(), OperationHelper.length(state, stringint).toInteger());
-		assertEquals(samplestringlong.length(), OperationHelper.length(state, stringlong).toInteger());
-		assertEquals(samplestringdouble.length(), OperationHelper.length(state, stringdouble).toInteger());
+		var length = LuaOperators.createUnOp(state, "#");
+		assertThrows(LuaError.class, () -> length.apply(somenil));
+		assertThrows(LuaError.class, () -> length.apply(sometrue));
+		assertThrows(LuaError.class, () -> length.apply(somefalse));
+		assertThrows(LuaError.class, () -> length.apply(zero));
+		assertThrows(LuaError.class, () -> length.apply(intint));
+		assertThrows(LuaError.class, () -> length.apply(longdouble));
+		assertThrows(LuaError.class, () -> length.apply(doubledouble));
+		assertEquals(samplestringstring.length(), length.apply(stringstring).toInteger());
+		assertEquals(samplestringint.length(), length.apply(stringint).toInteger());
+		assertEquals(samplestringlong.length(), length.apply(stringlong).toInteger());
+		assertEquals(samplestringdouble.length(), length.apply(stringdouble).toInteger());
 		assertEquals(2, table.length());
-		throwsLuaError("length", somefunc);
-		throwsLuaError("length", thread);
-		throwsLuaError("length", someclosure);
-		throwsLuaError("length", userdataobj);
-		throwsLuaError("length", userdatacls);
+		assertThrows(LuaError.class, () -> length.apply(somefunc));
+		assertThrows(LuaError.class, () -> length.apply(thread));
+		assertThrows(LuaError.class, () -> length.apply(someclosure));
+		assertThrows(LuaError.class, () -> length.apply(userdataobj));
+		assertThrows(LuaError.class, () -> length.apply(userdatacls));
 	}
 
 	@Test
@@ -199,11 +149,8 @@ public class LuaOperationsTest {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
 			return LuaC.compile(is, name);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			fail(e.toString());
-			return null;
+		} catch (CompileException e) {
+			throw new IllegalStateException("Failed to compile " + name, e);
 		}
 	}
 
