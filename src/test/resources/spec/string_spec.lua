@@ -1,4 +1,11 @@
 describe("The string library", function()
+	describe("string.format", function()
+		it("'q' option formats edge-case numbers correctly", function()
+			local formatted = string.format("%q %q %q", 0/0, 1/0, -1/0)
+			expect(formatted):eq("(0/0) 1e9999 -1e9999")
+		end)
+	end)
+
 	describe("string.pack", function()
 		it("'z' modifier on exactly the buffer boundary", function()
 			local packed = string.pack("z", ("#"):rep(32))
