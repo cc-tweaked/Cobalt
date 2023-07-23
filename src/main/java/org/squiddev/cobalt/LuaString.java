@@ -24,9 +24,9 @@
  */
 package org.squiddev.cobalt;
 
+import cc.tweaked.internal.string.NumberParser;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
-import org.squiddev.cobalt.lib.StringLib;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -629,94 +629,8 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 
 	private double scanNumber(int base) {
 		if (base < 2 || base > 36) return Double.NaN;
-
-		return parseNumber(bytes(), offset, length, base);
+		return NumberParser.parse(bytes(), offset, length, base);
 	}
 
-	public static double parseNumber(byte[] bytes, int offset, int length, int base) {
-		int i = offset, j = offset + length;
-		while (i < j && StringLib.isWhitespace(bytes[i])) i++;
-		while (i < j && StringLib.isWhitespace(bytes[j - 1])) j--;
-
-		boolean isNeg = i < j && bytes[i] == '-';
-		if (isNeg) i++;
-
-		if (i >= j) return Double.NaN;
-
-		if ((base == 10 || base == 16) && (bytes[i] == '0' && i + 1 < j && (bytes[i + 1] == 'x' || bytes[i + 1] == 'X'))) {
-			base = 16;
-			i += 2;
-
-			if (i >= j) return Double.NaN;
-		}
-
-		double l = scanLong(base, bytes, i, j);
-		double value = Double.isNaN(l) && base == 10 ? scanDouble(bytes, i, j) : l;
-		return isNeg ? -value : value;
-	}
-
-	/**
-	 * Scan and convert a long value, or return Double.NaN if not found.
-	 *
-	 * @param base  the base to use, such as 10
-	 * @param start the index to start searching from
-	 * @param end   the first index beyond the search range
-	 * @return double value if conversion is valid,
-	 * or Double.NaN if not
-	 */
-	private static double scanLong(int base, byte[] bytes, int start, int end) {
-		long x = 0;
-		for (int i = start; i < end; i++) {
-			int digit = bytes[i] - (base <= 10 || (bytes[i] >= '0' && bytes[i] <= '9') ? '0' :
-				bytes[i] >= 'A' && bytes[i] <= 'Z' ? ('A' - 10) : ('a' - 10));
-			if (digit < 0 || digit >= base) {
-				return Double.NaN;
-			}
-			x = x * base + digit;
-		}
-		return x;
-	}
-
-	/**
-	 * Scan and convert a double value, or return Double.NaN if not a double.
-	 *
-	 * @param start the index to start searching from
-	 * @param end   the first index beyond the search range
-	 * @return double value if conversion is valid,
-	 * or Double.NaN if not
-	 */
-	private static double scanDouble(byte[] bytes, int start, int end) {
-		for (int i = start; i < end; i++) {
-			switch (bytes[i]) {
-				case '-':
-				case '+':
-				case '.':
-				case 'e':
-				case 'E':
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-					break;
-				default:
-					return Double.NaN;
-			}
-		}
-		char[] c = new char[end - start];
-		for (int i = start; i < end; i++) {
-			c[i - start] = (char) bytes[i];
-		}
-		try {
-			return Double.parseDouble(String.valueOf(c));
-		} catch (NumberFormatException e) {
-			return Double.NaN;
-		}
-	}
 	// endregion
 }

@@ -6,5 +6,20 @@ describe("The Lua lexer/parser", function()
 			local fn, res = load("return 2f")
 			expect(fn):eq(nil)
 		end)
+
+		it("rejects malformed hex floating points", function()
+			expect(tonumber('0x3.3.3')):eq(nil) -- two decimal points
+			expect(tonumber('-0xaaP ')):eq(nil) -- no exponent
+			expect(tonumber('0x0.51p')):eq(nil) -- no digits
+			expect(tonumber('0x5p+-2')):eq(nil) -- double signs
+		end)
+
+		it("parses hex floating points", function()
+			expect(0x0p12):eq(0)
+			expect(0x.0p-3):eq(0)
+			expect(tonumber('  +0x0.51p+8  ')):eq(0x51)
+			expect(0Xabcdef.0):eq(0x.ABCDEFp+24)
+			expect(0x1p9999):eq(math.huge)
+		end)
 	end)
 end)
