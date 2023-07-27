@@ -3,6 +3,7 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.*;
 
 import static org.squiddev.cobalt.Constants.*;
+import static org.squiddev.cobalt.lib.FormatDesc.*;
 import static org.squiddev.cobalt.lib.StringLib.L_ESC;
 
 class StringFormat {
@@ -60,7 +61,7 @@ class StringFormat {
 				continue;
 			}
 
-			if (i >= n) throw new LuaError("invalid option '%' to 'format'");
+			if (i >= n) throw new LuaError("invalid conversion '%' to 'format'");
 
 			if (fmt.charAt(i) == L_ESC) {
 				i++;
@@ -69,36 +70,55 @@ class StringFormat {
 			}
 
 			LuaValue value = format.args.arg(++format.arg);
-			FormatDesc fdsc = new FormatDesc(fmt, i);
-			i += fdsc.length;
+			FormatDesc desc = new FormatDesc(fmt, i);
+			i += desc.length;
 
-			switch (fdsc.conversion) {
-				case 'c' -> fdsc.format(result, (byte) value.checkLong());
-				case 'i', 'd', 'o', 'u', 'x', 'X' -> fdsc.format(result, value.checkLong());
-				case 'e', 'E', 'f', 'g', 'G' -> fdsc.format(result, value.checkDouble());
-				case 'q' -> addQuoted(result, format.arg, value);
+			switch (desc.conversion) {
+				case 'c' -> {
+					desc.checkFlags(LEFT_ADJUST);
+					desc.format(result, (byte) value.checkLong());
+				}
+				case 'i', 'd' -> {
+					desc.checkFlags(LEFT_ADJUST | EXPLICIT_PLUS | SPACE | ZERO_PAD | PRECISION);
+					desc.format(result, value.checkLong());
+				}
+				case 'u' -> {
+					desc.checkFlags(LEFT_ADJUST | ZERO_PAD | PRECISION);
+					desc.format(result, value.checkLong());
+				}
+				case 'o', 'x', 'X' -> {
+					desc.checkFlags(LEFT_ADJUST | ALTERNATE_FORM | ZERO_PAD | PRECISION);
+					desc.format(result, value.checkLong());
+				}
+				case 'e', 'E', 'f', 'g', 'G' -> {
+					desc.checkFlags(LEFT_ADJUST | EXPLICIT_PLUS | SPACE | ALTERNATE_FORM | ZERO_PAD | PRECISION);
+					desc.format(result, value.checkDouble());
+				}
+				case 'q' -> {
+					desc.checkFlags(0);
+					addQuoted(result, format.arg, value);
+				}
 				case 's' -> {
+					desc.checkFlags(LEFT_ADJUST | PRECISION);
 					try {
-						addString(result, fdsc, OperationHelper.checkToString(OperationHelper.toString(state, value)));
+						desc.format(result, OperationHelper.checkToString(OperationHelper.toString(state, value)));
 					} catch (UnwindThrowable e) {
-						format.current = fdsc;
+						format.current = desc;
 						format.i = i;
 						throw e;
 					}
 				}
-				default -> throw new LuaError("invalid option '%" + (char) fdsc.conversion + "' to 'format'");
+				default -> {
+					var buffer = new Buffer();
+					buffer.append("invalid conversion '%");
+					buffer.append(desc.format, desc.start, desc.length);
+					buffer.append("' to 'format'");
+					throw new LuaError(buffer.toLuaString());
+				}
 			}
 		}
 
 		return result.toLuaString();
-	}
-
-	static void addString(Buffer result, FormatDesc fdsc, LuaString s) {
-		if (fdsc.precision == -1 && s.length() >= 100) {
-			result.append(s);
-		} else {
-			fdsc.format(result, s);
-		}
 	}
 
 	private static void addQuoted(Buffer buf, int arg, LuaValue s) throws LuaError {

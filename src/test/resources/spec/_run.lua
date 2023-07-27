@@ -1,5 +1,10 @@
 --- Run our test suite inside a Lua interpreter. No Lua version actually passes
 -- all our tests, but it's a good way to check compliance.
+--
+-- It's often useful to test against multiple Lua versions at once, which can be
+-- done with the following Fish Shell command:
+--
+--   for lua in /usr/bin/lua5.{1,2,3,4}; echo "=> $lua"; $lua src/test/resources/spec/_run.lua ; end
 
 local verbose = false
 for _, arg in ipairs(arg) do

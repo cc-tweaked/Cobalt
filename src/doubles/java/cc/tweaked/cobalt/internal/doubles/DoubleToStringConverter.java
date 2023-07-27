@@ -395,12 +395,7 @@ public final class DoubleToStringConverter {
 	 *                                  MAX_FIXED_DIGITS_AFTER_POINT</code><br/>
 	 *                                  characters (one additional character for the sign, and one for the decimal point).
 	 */
-	public static void toFixed(
-		double value,
-		int requestedDigits,
-		FormatOptions formatOptions,
-		CharBuffer resultBuilder
-	) {
+	public static void toFixed(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
 		if (Doubles.isSpecial(value)) {
@@ -454,15 +449,11 @@ public final class DoubleToStringConverter {
 		}
 
 		if (requestedDigits < 0) {
-			throw new IllegalArgumentException(
-				String.format("requestedDigits must be >= 0. got: %d",
-					requestedDigits));
+			throw new IllegalArgumentException(String.format("requestedDigits must be >= 0. got: %d", requestedDigits));
 		}
 
 		if (requestedDigits > MAX_EXPONENTIAL_DIGITS) {
-			throw new IllegalArgumentException(
-				String.format("requestedDigits must be less than %d. got: %d",
-					MAX_EXPONENTIAL_DIGITS, requestedDigits));
+			throw new IllegalArgumentException(String.format("requestedDigits must be less than %d. got: %d", MAX_EXPONENTIAL_DIGITS, requestedDigits));
 		}
 
 
@@ -475,12 +466,7 @@ public final class DoubleToStringConverter {
 		decimalRep.zeroExtend(requestedDigits + 1);
 
 		int exponent = decimalRep.getPointPosition() - 1;
-		createExponentialRepresentation(decimalRep,
-			value,
-			decimalRep.length(),
-			exponent,
-			formatOptions,
-			resultBuilder);
+		createExponentialRepresentation(decimalRep, value, decimalRep.length(), exponent, formatOptions, resultBuilder);
 	}
 
 	/**
@@ -533,8 +519,7 @@ public final class DoubleToStringConverter {
 		}
 
 		if (precision < MIN_PRECISION_DIGITS || precision > MAX_PRECISION_DIGITS) {
-			throw new IllegalArgumentException(String.format(
-				"argument precision must be in range (%d,%d)", MIN_PRECISION_DIGITS, MAX_PRECISION_DIGITS));
+			throw new IllegalArgumentException(String.format("argument precision must be in range (%d,%d)", MIN_PRECISION_DIGITS, MAX_PRECISION_DIGITS));
 		}
 
 		// Find a sufficiently precise decimal representation of n.
@@ -562,18 +547,9 @@ public final class DoubleToStringConverter {
 			// is allowed to return less characters.
 			decimalRep.zeroExtend(precision);
 
-			createExponentialRepresentation(decimalRep,
-				value,
-				precision,
-				exponent,
-				formatOptions,
-				resultBuilder);
+			createExponentialRepresentation(decimalRep, value, precision, exponent, formatOptions, resultBuilder);
 		} else {
-			createDecimalRepresentation(decimalRep,
-				value,
-				Math.max(0, precision - decimalRep.getPointPosition()),
-				formatOptions,
-				resultBuilder);
+			createDecimalRepresentation(decimalRep, value, Math.max(0, precision - decimalRep.getPointPosition()), formatOptions, resultBuilder);
 		}
 	}
 

@@ -161,6 +161,18 @@ public final class Buffer implements CharBuffer {
 	}
 
 	/**
+	 * Append a {@link LuaString} to the buffer.
+	 *
+	 * @param str The string to append
+	 * @return {@code this}, for chaining.
+	 */
+	public Buffer append(LuaString str, int start, int srcLength) {
+		ensure(length);
+		length = str.copyTo(start, bytes, length, srcLength);
+		return this;
+	}
+
+	/**
 	 * Append a Java String to the buffer.
 	 * The Java string will be converted to bytes by limiting between 0 and 255
 	 *

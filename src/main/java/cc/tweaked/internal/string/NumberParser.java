@@ -187,6 +187,6 @@ public final class NumberParser {
 			exponent += givenExponent;
 		}
 
-		return Math.scalb(result, exponent);
+		return Math.scalb((double) result, exponent);
 	}
 }

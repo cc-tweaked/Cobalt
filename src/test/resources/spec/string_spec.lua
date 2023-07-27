@@ -1,6 +1,6 @@
 describe("The string library", function()
 	describe("string.pack", function()
-		it("'z' modifier on exactly the buffer boundary", function()
+		it("'z' modifier on exactly the buffer boundary :lua>=5.3", function()
 			local packed = string.pack("z", ("#"):rep(32))
 			expect(packed):eq("################################\0")
 		end)
