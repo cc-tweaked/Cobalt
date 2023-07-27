@@ -24,10 +24,11 @@
  */
 package org.squiddev.cobalt.lib;
 
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
+import cc.tweaked.internal.string.CharProperties;
 import org.squiddev.cobalt.Buffer;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
-import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
 
 public class FormatDesc {
 	private boolean leftAdjust;
@@ -41,13 +42,6 @@ public class FormatDesc {
 		new DoubleToStringConverter.Symbols("inf", "nan", 'e');
 	private static final DoubleToStringConverter.Symbols UPPER_SYMBOLS =
 		new DoubleToStringConverter.Symbols("INF", "NAN", 'E');
-	private static final DoubleToStringConverter DOUBLE_CONVERTER = new DoubleToStringConverter(
-		DoubleToStringConverter.Flags.UNIQUE_ZERO |
-			DoubleToStringConverter.Flags.NO_TRAILING_ZERO |
-			DoubleToStringConverter.Flags.EMIT_POSITIVE_EXPONENT_SIGN,
-		new DoubleToStringConverter.PrecisionPolicy(4, 0),
-		2
-	);
 
 	private int width;
 	int precision;
@@ -76,10 +70,10 @@ public class FormatDesc {
 		}
 
 		width = -1;
-		if (Character.isDigit((char) c)) {
+		if (CharProperties.isDigit(c)) {
 			width = c - '0';
 			c = ((p < n) ? strfrmt.charAt(p++) : 0);
-			if (Character.isDigit((char) c)) {
+			if (CharProperties.isDigit(c)) {
 				width = width * 10 + (c - '0');
 				c = ((p < n) ? strfrmt.charAt(p++) : 0);
 			}
@@ -88,10 +82,10 @@ public class FormatDesc {
 		precision = -1;
 		if (c == '.') {
 			c = ((p < n) ? strfrmt.charAt(p++) : 0);
-			if (Character.isDigit((char) c)) {
+			if (CharProperties.isDigit(c)) {
 				precision = c - '0';
 				c = ((p < n) ? strfrmt.charAt(p++) : 0);
-				if (Character.isDigit((char) c)) {
+				if (CharProperties.isDigit(c)) {
 					precision = precision * 10 + (c - '0');
 					c = ((p < n) ? strfrmt.charAt(p++) : 0);
 				}
@@ -100,9 +94,7 @@ public class FormatDesc {
 			}
 		}
 
-		if (Character.isDigit((char) c)) {
-			throw new LuaError("invalid format (width or precision too long)");
-		}
+		if (CharProperties.isDigit(c)) throw new LuaError("invalid format (width or precision too long)");
 
 		zeroPad &= !leftAdjust; // '-' overrides '0'
 		space &= !explicitPlus;
@@ -212,28 +204,16 @@ public class FormatDesc {
 	}
 
 	public void format(Buffer buf, double number) {
-		int prec = this.precision;
+		int prec = precision;
 		if (prec == -1) prec = 6;
 
-		if (conversion == 'g' || conversion == 'G') {
-			if (prec == 0) prec = 1;
-			DOUBLE_CONVERTER.toPrecision(
-				number, prec,
-				doubleOpts(conversion == 'G'),
-				buf
-			);
-		} else if (conversion == 'e' || conversion == 'E') {
-			DOUBLE_CONVERTER.toExponential(
-				number, prec,
-				doubleOpts(conversion == 'E'),
-				buf
-			);
-		} else if (conversion == 'f') {
-			DOUBLE_CONVERTER.toFixed(
-				number, prec,
-				doubleOpts(false),
-				buf
-			);
+		switch (conversion) {
+			case 'g', 'G' -> {
+				if (prec == 0) prec = 1;
+				DoubleToStringConverter.toPrecision(number, prec, doubleOpts(conversion == 'G'), buf);
+			}
+			case 'e', 'E' -> DoubleToStringConverter.toExponential(number, prec, doubleOpts(conversion == 'E'), buf);
+			case 'f' -> DoubleToStringConverter.toFixed(number, prec, doubleOpts(false), buf);
 		}
 	}
 
