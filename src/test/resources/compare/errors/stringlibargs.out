@@ -280,7 +280,7 @@ needcheck 	string_char(3)	3
 --- checkallpass
 -		string.format('%q','abc')	'"abc"'
 -		string.format('%s','abc')	'abc'
--		string.format('%q',1.25)	'0x1.4p0'
+-		string.format('%q',1.25)	'0x1.4p+0'
 -		string.format('%s',1.25)	'1.25'
 --- checkallerrors
 -		string.format('%c',nil)	...bad argument...

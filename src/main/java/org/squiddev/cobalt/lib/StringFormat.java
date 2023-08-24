@@ -1,5 +1,6 @@
 package org.squiddev.cobalt.lib;
 
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
 import org.squiddev.cobalt.*;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -129,7 +130,12 @@ class StringFormat {
 					buf.append(Integer.toString(s.checkInteger()));
 				} else {
 					double value = s.checkDouble();
-					buf.append((long) value == value ? Long.toString((long) value) : Double.toHexString(value));
+					// handle NaN, infinity, and negative infinity
+					if (Double.isNaN(value)) buf.append("(0/0)");
+					else if (value == Double.POSITIVE_INFINITY) buf.append("1e9999");
+					else if (value == Double.NEGATIVE_INFINITY) buf.append("-1e9999");
+					else if ((long) value == value) buf.append(Long.toString((long) value));
+					else DoubleToStringConverter.toHex(value, -1, DEFAULT_LOWER_OPTIONS, buf);
 				}
 			}
 			case TBOOLEAN, TNIL -> buf.append(s.toString());
