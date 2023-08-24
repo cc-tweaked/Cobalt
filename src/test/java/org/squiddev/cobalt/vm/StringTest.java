@@ -26,7 +26,10 @@ package org.squiddev.cobalt.vm;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.UnwindThrowable;
 import org.squiddev.cobalt.lib.CoreLibraries;
 
 import java.io.IOException;
@@ -66,8 +69,9 @@ public class StringTest {
 		is.reset();
 		assertEquals('e', is.read());
 
+		var length = LuaOperators.createUnOp(state, "#");
 		LuaString substr = str.substringOfEnd(1, 4);
-		assertEquals(3, OperationHelper.length(state, substr).toInteger());
+		assertEquals(3, length.apply(substr).toInteger());
 
 		is.close();
 		is = substr.toInputStream();

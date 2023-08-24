@@ -169,7 +169,8 @@ public final class StringLib {
 
 		@Override
 		public Varargs resumeThis(LuaState state, FormatState formatState, Varargs value) throws LuaError, UnwindThrowable {
-			StringFormat.addString(formatState.buffer, formatState.current, OperationHelper.checkToString(value.first()));
+			LuaString s = OperationHelper.checkToString(value.first());
+			formatState.current.format(formatState.buffer, s);
 			return StringFormat.format(state, formatState);
 		}
 	}

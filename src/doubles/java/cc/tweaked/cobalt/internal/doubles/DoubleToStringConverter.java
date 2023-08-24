@@ -34,10 +34,8 @@ package cc.tweaked.cobalt.internal.doubles;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 import static cc.tweaked.cobalt.internal.doubles.Assert.requireArg;
-import static java.util.Objects.requireNonNull;
 
 public final class DoubleToStringConverter {
-	public static final Symbols ECMA_SCRIPT_SYMBOLS = new Symbols("Infinity", "NaN", 'e');
 	/**
 	 * When calling toFixed with a double > 10^MAX_FIXED_DIGITS_BEFORE_POINT
 	 * or a requested_digits parameter > MAX_FIXED_DIGITS_AFTER_POINT then the
@@ -66,170 +64,54 @@ public final class DoubleToStringConverter {
 	 */
 	private static final int MAX_PRECISION_DIGITS = 120;
 
-	/**
-	 * The maximal number of digits that are needed to emit a double in base 10.
-	 * A higher precision can be achieved by using more digits, but the shortest
-	 * accurate representation of any double will never use more digits than
-	 * BASE_10_MAXIMAL_LENGTH.
-	 * Note that doubleToAscii null-terminates its input. So the given buffer
-	 * should be at least BASE_10_MAXIMAL_LENGTH + 1 characters long.
-	 */
-	private static final int BASE_10_MAXIMAL_LENGTH = 17;
-
 	private static final int EXPONENTIAL_REP_CAPACITY = MAX_EXPONENTIAL_DIGITS + 2;
 	private static final int FIXED_REP_CAPACITY = MAX_FIXED_DIGITS_BEFORE_POINT + MAX_FIXED_DIGITS_AFTER_POINT + 1;
 	private static final int PRECISION_REP_CAPACITY = MAX_PRECISION_DIGITS + 1;
 
+	/**
+	 * Minimum width of the exponent, padding with "0"s if it is shorter than this.
+	 */
+	private static final int MIN_EXPONENT_WIDTH = 2;
 	private static final int MAX_EXPONENT_LENGTH = 5;
 
 	@SuppressWarnings("ImplicitNumericConversion")
 	private static final int ASCII_ZERO = '0';
 
-	public static class Flags {
-		/**
-		 * No special flags (0)
-		 */
-		public static final int NO_FLAGS = 0;
-		/**
-		 * When the number is converted into exponent
-		 * form, emits a '+' for positive exponents. Example: <code>1.2e+2</code>
-		 */
-		public static final int EMIT_POSITIVE_EXPONENT_SIGN = 1;
-		/**
-		 * When the input number is an integer and is
-		 * converted into decimal format then a trailing decimal point is appended.
-		 * <p/>
-		 * Example: <code>2345.0</code> is converted to <code>"2345.".</code>
-		 */
-		public static final int EMIT_TRAILING_DECIMAL_POINT = 2;
-		/**
-		 * In addition to a trailing decimal point emits a trailing '0'-character.
-		 * This flag requires the <code>EMIT_TRAILING_DECIMAL_POINT</code> flag.
-		 * <p/>
-		 * Example: <code>2345.0</code> is converted to <code>"2345.0".</code>
-		 */
-		public static final int EMIT_TRAILING_ZERO_AFTER_POINT = 4;
-		/**
-		 * <code>"-0.0"</code> is converted to <code>"0.0"</code>.
-		 */
-		public static final int UNIQUE_ZERO = 8;
-		/**
-		 * Trailing zeros are removed from the fractional portion
-		 * of the result in precision mode. Matches C++ <code>printf</code>'s %g.
-		 * <p/>
-		 * When EMIT_TRAILING_ZERO_AFTER_POINT is also given, one trailing zero is
-		 * preserved.
-		 */
-		public static final int NO_TRAILING_ZERO = 16;
-	}
-
-
-	private final int flags;
-	private final PrecisionPolicy precisionPolicy;
-	private final int minExponentWidth;
+	/*
+	 * When converting to precision mode the converter may add
+	 * max_leading_padding_zeroes before returning the number in exponential
+	 * format.
+	 * <p/>
+	 * Example with maxLeadingZeroes = 6.<br/>
+	 * <code>
+	 * toPrecision(0.0000012345, 2) -> "0.0000012"<br/>
+	 * toPrecision(0.00000012345, 2) -> "1.2e-7"<br/>
+	 * </code>
+	 * <p/>
+	 * Similarily the converter may add up to
+	 * maxTrailingZeroes in precision mode to avoid
+	 * returning an exponential representation. A zero added by the
+	 * <code>EMIT_TRAILING_ZERO_AFTER_POINT</code> flag is counted for this limit.
+	 * <p/>
+	 * Examples for maxTrailingZeroes = 1:<br/>
+	 * <code>
+	 * toPrecision(230.0, 2) -> "230"<br/>
+	 * toPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.<br/>
+	 * toPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.<br/>
+	 * </code>
+	 */
 
 	/**
-	 * Construct a <code>DoubleToStringConvertor</code>.
-	 * <p/>
-	 * Flags should be a bit-or combination of the possible Flags members.
-	 *  <ul>
-	 *    <li><code>NO_FLAGS</code>: no special flags</li>
-	 *    <li><code>EMIT_POSITIVE_EXPONENT_SIGN</code>: when the number is converted into exponent
-	 *        form, emits a '+' for positive exponents. Example: 1.2e+2</li>
-	 *    <li><code>EMIT_TRAILING_DECIMAL_POINT</code>: when the input number is an integer and is
-	 *        converted into decimal format then a trailing decimal point is appended.
-	 *        Example: 2345.0 is converted to "2345.".</li>
-	 *    <li><code>EMIT_TRAILING_ZERO_AFTER_POINT</code>: in addition to a trailing decimal point
-	 *        emits a trailing '0'-character. This flag requires the
-	 *             EMIT_TRAILING_DECIMAL_POINT flag.
-	 *        Example: 2345.0 is converted to "2345.0".</li>
-	 *    <li><code>UNIQUE_ZERO</code>: "-0.0" is converted to "0.0".</li>
-	 *    <li><code>NO_TRAILING_ZERO</code>: Trailing zeros are removed from the fractional portion
-	 *        of the result in precision mode. Matches C++ <code>printf</code>'s %g.
-	 *        When EMIT_TRAILING_ZERO_AFTER_POINT is also given, one trailing zero is
-	 *        preserved.</li>
-	 *  </ul>
-	 * <p/>
-	 *
-	 * @param flags           the bit-or combination of {@link Flags}
-	 * @param precisionPolicy the parameters that configure when {@link #toPrecision}
-	 *                        output switches to exponential representation, see
-	 *                        {@link PrecisionPolicy#PrecisionPolicy(int, int)}
-	 * @see Symbols#Symbols(String, String, int)
-	 * @see PrecisionPolicy#PrecisionPolicy(int, int)
+	 * Maximum allowed leading zeros before switching to exponential representation
 	 */
-	public DoubleToStringConverter(int flags, PrecisionPolicy precisionPolicy) {
-		this(flags,
-			precisionPolicy,
-			0);
-	}
+	private static final int MAX_LEADING_ZEROS = 4;
 
 	/**
-	 * Construct a <code>DoubleToStringConvertor</code>.
-	 * <p/>
-	 * Flags should be a bit-or combination of the possible Flags-enum.
-	 *  <ul>
-	 *    <li><code>NO_FLAGS</code>: no special flags</li>
-	 *    <li><code>EMIT_POSITIVE_EXPONENT_SIGN</code>: when the number is converted into exponent
-	 *        form, emits a '+' for positive exponents. Example: 1.2e+2</li>
-	 *    <li><code>EMIT_TRAILING_DECIMAL_POINT</code>: when the input number is an integer and is
-	 *        converted into decimal format then a trailing decimal point is appended.
-	 *        Example: 2345.0 is converted to "2345.".</li>
-	 *    <li><code>EMIT_TRAILING_ZERO_AFTER_POINT</code>: in addition to a trailing decimal point
-	 *        emits a trailing '0'-character. This flag requires the
-	 *             EMIT_TRAILING_DECIMAL_POINT flag.
-	 *        Example: 2345.0 is converted to "2345.0".</li>
-	 *    <li><code>UNIQUE_ZERO</code>: "-0.0" is converted to "0.0".</li>
-	 *    <li><code>NO_TRAILING_ZERO</code>: Trailing zeros are removed from the fractional portion
-	 *        of the result in precision mode. Matches C++ <code>printf</code>'s %g.
-	 *        When EMIT_TRAILING_ZERO_AFTER_POINT is also given, one trailing zero is
-	 *        preserved.</li>
-	 *  </ul>
-	 * <p/>
-	 * The <code>minExponentWidth</code> is used for exponential representations.
-	 * The converter adds leading '0's to the exponent until the exponent
-	 *   is at least minExponentWidth digits long.
-	 * <p/>
-	 * The <code>minExponentWidth</code> is clamped to 5.
-	 * As such, the exponent may never have more than 5 digits in total.<br/>
-	 *
-	 * @param flags            the bit-or combination of {@link Flags}
-	 * @param precisionPolicy  the parameters that configure when {@link #toPrecision}
-	 *                         output switches to exponential representation, see
-	 *                         {@link PrecisionPolicy#PrecisionPolicy(int, int)}
-	 * @param minExponentWidth The converter adds leading '0's to the exponent until the exponent
-	 *                         is at least <code>minExponentWidth</code> digits long, clamped to 5
-	 * @see Symbols#Symbols(String, String, int)
-	 * @see PrecisionPolicy#PrecisionPolicy(int, int)
+	 * Maximum allowed trailing zeros before switching to exponential representation
 	 */
-	public DoubleToStringConverter(int flags,
-								   PrecisionPolicy precisionPolicy,
-								   int minExponentWidth) {
-		this.flags = flags;
-		this.precisionPolicy = requireNonNull(precisionPolicy);
-		this.minExponentWidth = minExponentWidth;
-		// When 'trailing zero after the point' is set, then 'trailing point'
-		// must be set too.
-		if ((flags & Flags.EMIT_TRAILING_DECIMAL_POINT) == 0 && (flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) {
-			throw new IllegalArgumentException("the flag EMIT_TRAILING_DECIMAL_POINT must be set when " +
-				"EMIT_TRAILING_ZERO_AFTER_POINT is set");
-		}
-	}
+	private static final int MAX_TRAILING_ZEROS = 0;
 
-	/**
-	 * Returns a converter following the EcmaScript specification.
-	 * <p/>
-	 * <b>Flags:</b> UNIQUE_ZERO and EMIT_POSITIVE_EXPONENT_SIGN.<br/>
-	 * <b>Special values:</b> "Infinity" and "NaN".
-	 * Lower case 'e' for exponential values.<br/>
-	 * <b>PrecisionPolicy.maxLeadingZeros</b>: 6<br/>
-	 * <b>PrecisionPolicy.maxTrailingZeroes</b>: 0<br/>
-	 */
-	@SuppressWarnings("ImplicitNumericConversion")
-	public static DoubleToStringConverter ecmaScriptConverter() {
-		int flags = Flags.UNIQUE_ZERO | Flags.EMIT_POSITIVE_EXPONENT_SIGN;
-		return new DoubleToStringConverter(flags,
-			new PrecisionPolicy(6, 0));
+	private DoubleToStringConverter() {
 	}
 
 	/**
@@ -238,36 +120,36 @@ public final class DoubleToStringConverter {
 	 * If either of them is NULL or the value is not special then the
 	 * function returns false.
 	 */
-	private void handleSpecialValues(double value, FormatOptions fo, CharBuffer resultBuilder) {
+	private static void handleSpecialValues(double value, FormatOptions fo, CharBuffer resultBuilder) {
 		boolean sign = value < 0.0;
 
-		int effectiveWidth = fo.getWidth();
-		if (sign || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) effectiveWidth--;
+		int effectiveWidth = fo.width();
+		if (sign || fo.explicitPlus() || fo.spaceWhenPositive()) effectiveWidth--;
 
 		String symbol;
 		boolean isInfinite = Double.isInfinite(value);
 		if (isInfinite) {
-			symbol = fo.getSymbols().getInfinitySymbol();
+			symbol = fo.symbols().infinitySymbol();
 		} else if (Double.isNaN(value)) {
-			symbol = fo.getSymbols().getNanSymbol();
+			symbol = fo.symbols().nanSymbol();
 		} else {
 			throw new IllegalStateException("Unreachable");
 		}
 
-		if (!fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
+		if (!fo.leftAdjust() && symbol.length() < effectiveWidth) {
 			addPadding(resultBuilder, ' ', effectiveWidth - symbol.length());
 		}
 
 		if (sign) {
 			resultBuilder.append('-');
-		} else if (fo.isExplicitPlus()) {
+		} else if (fo.explicitPlus()) {
 			resultBuilder.append('+');
-		} else if (fo.isSpaceWhenPositive()) {
+		} else if (fo.spaceWhenPositive()) {
 			resultBuilder.append(' ');
 		}
 		resultBuilder.append(symbol);
 
-		if (fo.isLeftAdjust() && symbol.length() < effectiveWidth) {
+		if (fo.leftAdjust() && symbol.length() < effectiveWidth) {
 			addPadding(resultBuilder, ' ', effectiveWidth - symbol.length());
 		}
 	}
@@ -276,7 +158,7 @@ public final class DoubleToStringConverter {
 	 * Constructs an exponential representation (i.e. 1.234e56).
 	 * The given exponent assumes a decimal point after the first decimal digit.
 	 */
-	private void createExponentialRepresentation(
+	private static void createExponentialRepresentation(
 		final DecimalRepBuf decimalDigits,
 		double value,
 		int length,
@@ -288,24 +170,23 @@ public final class DoubleToStringConverter {
 		requireArg(length <= decimalDigits.length(), "length must be smaller than decimalDigits");
 
 		assert (double) exponent < 1e4;
-		ExponentPart exponentPart = createExponentPart(exponent);
+		ExponentPart exponentPart = createExponentPart(exponent, MIN_EXPONENT_WIDTH);
 
-		boolean emitTrailingPoint = fo.isAlternateForm() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
-		boolean emitTrailingZero = (flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0;
+		boolean emitTrailingPoint = fo.alternateForm();
 
 		int padWidth = 0;
-		if (fo.getWidth() > 0) {
-			int valueWidth = calculateExpWidth(length, fo, exponentPart, shouldEmitMinus(value), emitTrailingPoint, emitTrailingZero);
-			padWidth = fo.getWidth() - valueWidth;
+		if (fo.width() > 0) {
+			int valueWidth = calculateExpWidth(length, fo, exponentPart, shouldEmitMinus(value), emitTrailingPoint);
+			padWidth = fo.width() - valueWidth;
 		}
 
-		if (padWidth > 0 && !fo.isLeftAdjust() && !fo.isZeroPad()) {
+		if (padWidth > 0 && !fo.leftAdjust() && !fo.zeroPad()) {
 			addPadding(resultBuilder, ' ', padWidth);
 		}
 
 		appendSign(value, fo, resultBuilder);
 
-		if (padWidth > 0 && !fo.isLeftAdjust() && fo.isZeroPad()) {
+		if (padWidth > 0 && !fo.leftAdjust() && fo.zeroPad()) {
 			addPadding(resultBuilder, '0', padWidth);
 		}
 
@@ -313,19 +194,19 @@ public final class DoubleToStringConverter {
 		if (length != 1) {
 			resultBuilder.append('.');
 			resultBuilder.append(decimalDigits.getBuffer(), 1, length - 1);
-		} else if (fo.isAlternateForm()) {
+		} else if (fo.alternateForm()) {
 			resultBuilder.append('.');
 		}
-		resultBuilder.append((char) fo.getSymbols().getExponentCharacter());
-		resultBuilder.append(exponentPart.getBuffer(), exponentPart.getStart(), exponentPart.length());
+		resultBuilder.append((char) fo.symbols().exponentCharacter());
+		resultBuilder.append(exponentPart.buffer(), exponentPart.start(), exponentPart.length());
 
 		// zeroPad is ignored if leftAdjust is set
-		if (padWidth > 0 && fo.isLeftAdjust()) {
+		if (padWidth > 0 && fo.leftAdjust()) {
 			addPadding(resultBuilder, ' ', padWidth);
 		}
 	}
 
-	private ExponentPart createExponentPart(int exponent) {
+	private static ExponentPart createExponentPart(int exponent, int minLength) {
 		boolean sign = false;
 		if (exponent < 0) {
 			sign = true;
@@ -343,19 +224,13 @@ public final class DoubleToStringConverter {
 				exponent /= 10;
 			}
 		}
-		// Add prefix '0' to make exponent width >= min(min_exponent_with_, MAX_EXPONENT_LENGTH)
-		// For example: convert 1e+9 -> 1e+09, if min_exponent_with_ is set to 2
-		while ((MAX_EXPONENT_LENGTH + 1) - firstCharPos < Math.min(minExponentWidth, MAX_EXPONENT_LENGTH)) {
+		// Add prefix '0' to make exponent width >= MIN_EXPONENT_LENGTH
+		// For example: convert 1e+9 -> 1e+09
+		while ((MAX_EXPONENT_LENGTH + 1) - firstCharPos < minLength) {
 			buffer[--firstCharPos] = '0';
 		}
 
-		if (sign) {
-			buffer[--firstCharPos] = '-';
-		} else {
-			if ((flags & Flags.EMIT_POSITIVE_EXPONENT_SIGN) != 0) {
-				buffer[--firstCharPos] = '+';
-			}
-		}
+		buffer[--firstCharPos] = sign ? '-' : '+';
 
 		return new ExponentPart(buffer, firstCharPos, (MAX_EXPONENT_LENGTH + 1) - firstCharPos);
 	}
@@ -366,7 +241,7 @@ public final class DoubleToStringConverter {
 	 *
 	 * @param digitsAfterPoint width of fractional part, must always be big enough to print all digits passed
 	 */
-	private void createDecimalRepresentation(
+	private static void createDecimalRepresentation(
 		DecimalRepBuf decimalDigits,
 		double value,
 		int digitsAfterPoint,
@@ -380,25 +255,21 @@ public final class DoubleToStringConverter {
 			throw new IllegalArgumentException("too many digits for given digitAfterPoint");
 		}
 
-		boolean emitTrailingPoint = fo.isAlternateForm() || (flags & Flags.EMIT_TRAILING_DECIMAL_POINT) != 0;
-		boolean emitTrailingZero = (flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0;
-
 		int padWidth = 0;
-		if (fo.getWidth() > 0) {
-			int valueWidth = calculateDecimalWidth(decimalDigits, fo, digitsAfterPoint,
-				shouldEmitMinus(value), emitTrailingPoint, emitTrailingZero);
-			padWidth = fo.getWidth() - valueWidth;
+		if (fo.width() > 0) {
+			int valueWidth = calculateDecimalWidth(decimalDigits, fo, digitsAfterPoint, shouldEmitMinus(value), fo.alternateForm());
+			padWidth = fo.width() - valueWidth;
 		}
 
 		// space padding before the number and sign
-		if (padWidth > 0 && !fo.isLeftAdjust() && !fo.isZeroPad()) {
+		if (padWidth > 0 && !fo.leftAdjust() && !fo.zeroPad()) {
 			addPadding(resultBuilder, ' ', padWidth);
 		}
 
 		appendSign(value, fo, resultBuilder);
 
 		// zero padding after the sign, before the rest of the number
-		if (padWidth > 0 && !fo.isLeftAdjust() && fo.isZeroPad()) {
+		if (padWidth > 0 && !fo.leftAdjust() && fo.zeroPad()) {
 			addPadding(resultBuilder, '0', padWidth);
 		}
 
@@ -433,26 +304,20 @@ public final class DoubleToStringConverter {
 			int remainingDigits = digitsAfterPoint - (digitsLength - decimalPoint);
 			addPadding(resultBuilder, '0', remainingDigits);
 		}
-		if (digitsAfterPoint == 0 && emitTrailingPoint) {
+		if (digitsAfterPoint == 0 && fo.alternateForm()) {
 			resultBuilder.append('.');
-			if (emitTrailingZero) {
-				resultBuilder.append('0');
-			}
 		}
 
-		if (padWidth > 0 && fo.isLeftAdjust()) {
-			addPadding(resultBuilder,
-				fo.isZeroPad() ? '0' : ' ',
-				padWidth);
+		if (padWidth > 0 && fo.leftAdjust()) {
+			addPadding(resultBuilder, fo.zeroPad() ? '0' : ' ', padWidth);
 		}
 	}
 
 	/**
 	 * Calculate the print width of the decimal digits.
 	 */
-	private int calculateDecimalWidth(
-		DecimalRepBuf decimalDigits, FormatOptions fo,
-		int digitsAfterPoint, boolean emitMinus, boolean emitTrailingPoint, boolean emitTrailingZero
+	private static int calculateDecimalWidth(
+		DecimalRepBuf decimalDigits, FormatOptions fo, int digitsAfterPoint, boolean emitMinus, boolean emitTrailingPoint
 	) {
 		int decimalPoint = decimalDigits.getPointPosition();
 		int digitsLength = decimalDigits.length();
@@ -473,31 +338,20 @@ public final class DoubleToStringConverter {
 				valueWidth = 1 + (digitsAfterPoint > 0 ? 1 + digitsAfterPoint : 0);
 			}
 		}
-		if (digitsAfterPoint == 0 && emitTrailingPoint) {
-			valueWidth += emitTrailingZero ? 2 : 1;         // trailing point, possible zero as well
-		}
-
-		if (emitMinus || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
-			valueWidth++;                                   // '-', '+', or ' '
-		}
+		if (digitsAfterPoint == 0 && emitTrailingPoint) valueWidth += 1; // trailing point
+		if (emitMinus || fo.explicitPlus() || fo.spaceWhenPositive()) valueWidth++; // '-', '+', or ' '
 		return valueWidth;
 	}
 
-	private int calculateExpWidth(
-		int digitsLength, FormatOptions fo, ExponentPart exponentPart,
-		boolean emitMinus, boolean emitTrailingPoint, boolean emitTrailingZero
+	private static int calculateExpWidth(
+		int digitsLength, FormatOptions fo, ExponentPart exponentPart, boolean emitMinus, boolean emitTrailingPoint
 	) {
 		// length of digits + exponent digits + decimal point + exponent character
-		int valueWidth = digitsLength + exponentPart.length() + ((digitsLength > 1) ? 2 : 1);
-		if (emitMinus || fo.isExplicitPlus() || fo.isSpaceWhenPositive()) {
-			valueWidth++;
-		}
-		if (digitsLength == 1 && emitTrailingPoint) {
-			valueWidth += emitTrailingZero ? 2 : 1;
-		}
+		int valueWidth = digitsLength + exponentPart.length() + (digitsLength > 1 ? 2 : 1);
+		if (digitsLength == 1 && emitTrailingPoint) valueWidth += 1; // trailing point
+		if (emitMinus || fo.explicitPlus() || fo.spaceWhenPositive()) valueWidth++; // '-', '+', or ' '
 		return valueWidth;
 	}
-
 
 	/**
 	 * Computes a decimal representation with a fixed number of digits after the
@@ -541,12 +395,7 @@ public final class DoubleToStringConverter {
 	 *                                  MAX_FIXED_DIGITS_AFTER_POINT</code><br/>
 	 *                                  characters (one additional character for the sign, and one for the decimal point).
 	 */
-	public void toFixed(
-		double value,
-		int requestedDigits,
-		FormatOptions formatOptions,
-		CharBuffer resultBuilder
-	) {
+	public static void toFixed(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
 		if (Doubles.isSpecial(value)) {
@@ -593,41 +442,31 @@ public final class DoubleToStringConverter {
 	 * @param formatOptions
 	 * @throws IllegalArgumentException if <code>requestedDigits > MAX_EXPONENTIAL_DIGITS</code>
 	 */
-	public void toExponential(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	public static void toExponential(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
 
 		if (requestedDigits < 0) {
-			throw new IllegalArgumentException(
-				String.format("requestedDigits must be >= 0. got: %d",
-					requestedDigits));
+			throw new IllegalArgumentException(String.format("requestedDigits must be >= 0. got: %d", requestedDigits));
 		}
 
 		if (requestedDigits > MAX_EXPONENTIAL_DIGITS) {
-			throw new IllegalArgumentException(
-				String.format("requestedDigits must be less than %d. got: %d",
-					MAX_EXPONENTIAL_DIGITS, requestedDigits));
+			throw new IllegalArgumentException(String.format("requestedDigits must be less than %d. got: %d", MAX_EXPONENTIAL_DIGITS, requestedDigits));
 		}
 
 
 		// DOUBLE_CONVERSION_ASSERT(EXPONENTIAL_REP_CAPACITY > BASE_10_MAXIMAL_LENGTH);
 		DecimalRepBuf decimalRep = new DecimalRepBuf(EXPONENTIAL_REP_CAPACITY);
 
-		doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1,
-			decimalRep);
+		doubleToAscii(value, DtoaMode.PRECISION, requestedDigits + 1, decimalRep);
 		assert decimalRep.length() <= requestedDigits + 1;
 
 		decimalRep.zeroExtend(requestedDigits + 1);
 
 		int exponent = decimalRep.getPointPosition() - 1;
-		createExponentialRepresentation(decimalRep,
-			value,
-			decimalRep.length(),
-			exponent,
-			formatOptions,
-			resultBuilder);
+		createExponentialRepresentation(decimalRep, value, decimalRep.length(), exponent, formatOptions, resultBuilder);
 	}
 
 	/**
@@ -673,15 +512,14 @@ public final class DoubleToStringConverter {
 	 * @throws IllegalArgumentException when <code>precision < MIN_PRECISION_DIGITS</code> or
 	 *                                  <code>precision > MAX_PRECISION_DIGITS</code>
 	 */
-	public void toPrecision(double value, int precision, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	public static void toPrecision(double value, int precision, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
 		}
 
 		if (precision < MIN_PRECISION_DIGITS || precision > MAX_PRECISION_DIGITS) {
-			throw new IllegalArgumentException(String.format(
-				"argument precision must be in range (%d,%d)", MIN_PRECISION_DIGITS, MAX_PRECISION_DIGITS));
+			throw new IllegalArgumentException(String.format("argument precision must be in range (%d,%d)", MIN_PRECISION_DIGITS, MAX_PRECISION_DIGITS));
 		}
 
 		// Find a sufficiently precise decimal representation of n.
@@ -695,12 +533,8 @@ public final class DoubleToStringConverter {
 		int decimalPoint = decimalRep.getPointPosition();
 		int exponent = decimalPoint - 1;
 
-		int extraZero = ((flags & Flags.EMIT_TRAILING_ZERO_AFTER_POINT) != 0) ? 1 : 0;
-		boolean asExponential =
-			(-decimalPoint + 1 > precisionPolicy.getMaxLeadingZeroes()) ||
-				(decimalPoint - precision + extraZero >
-					precisionPolicy.getMaxTrailingZeroes());
-		if ((flags & Flags.NO_TRAILING_ZERO) != 0 && !formatOptions.isAlternateForm()) {
+		boolean asExponential = (-decimalPoint + 1 > MAX_LEADING_ZEROS) || (decimalPoint - precision > MAX_TRAILING_ZEROS);
+		if (!formatOptions.alternateForm()) {
 			// Truncate trailing zeros that occur after the decimal point (if exponential,
 			// that is everything after the first digit).
 			decimalRep.truncateZeros(asExponential);
@@ -713,38 +547,121 @@ public final class DoubleToStringConverter {
 			// is allowed to return less characters.
 			decimalRep.zeroExtend(precision);
 
-			createExponentialRepresentation(decimalRep,
-				value,
-				precision,
-				exponent,
-				formatOptions,
-				resultBuilder);
+			createExponentialRepresentation(decimalRep, value, precision, exponent, formatOptions, resultBuilder);
 		} else {
-			createDecimalRepresentation(decimalRep,
-				value,
-				Math.max(0, precision - decimalRep.getPointPosition()),
-				formatOptions,
-				resultBuilder);
+			createDecimalRepresentation(decimalRep, value, Math.max(0, precision - decimalRep.getPointPosition()), formatOptions, resultBuilder);
 		}
 	}
 
-	@SuppressWarnings("operation.mixed.unsignedrhs")
-	private boolean shouldEmitMinus(double value) {
-		boolean uniqueZero = ((flags & Flags.UNIQUE_ZERO) != 0);
-		return (Double.doubleToRawLongBits(value) & Doubles.SIGN_MASK) != 0 && (value != 0.0 || !uniqueZero);
+	/**
+	 * Computes a representation in hexadecimal exponential format with <code>requestedDigits</code> after the decimal
+	 * point. The last emitted digit is rounded.
+	 *
+	 * @param value           The value to format.
+	 * @param requestedDigits The number of digits after the decimal place, or {@code -1}.
+	 * @param formatOptions   Additional options for this number's formatting.
+	 * @param resultBuilder   The buffer to output to.
+	 */
+	public static void toHex(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
+		if (Doubles.isSpecial(value)) {
+			handleSpecialValues(value, formatOptions, resultBuilder);
+			return;
+		}
+
+		boolean negative = shouldEmitMinus(value);
+
+		double absValue = Math.abs(value);
+		ExponentPart significand = createHexSignificand(absValue, requestedDigits, formatOptions);
+
+		int exponentValue = absValue == 0 ? 0 : Doubles.exponent(absValue) + Doubles.PHYSICAL_SIGNIFICAND_SIZE;
+		ExponentPart exponent = createExponentPart(exponentValue, 1);
+
+		int valueWidth = significand.length() + exponent.length() + 3;
+		if (negative || formatOptions.explicitPlus() || formatOptions.spaceWhenPositive()) valueWidth++;
+		int padWidth = formatOptions.width() <= 0 ? 0 : formatOptions.width() - valueWidth;
+
+		if (padWidth > 0 && !formatOptions.leftAdjust() && !formatOptions.zeroPad()) {
+			addPadding(resultBuilder, ' ', padWidth);
+		}
+
+		appendSign(value, formatOptions, resultBuilder);
+		resultBuilder.append('0');
+		resultBuilder.append(formatOptions.symbols().hexSeparator());
+
+		if (padWidth > 0 && !formatOptions.leftAdjust() && formatOptions.zeroPad()) {
+			addPadding(resultBuilder, '0', padWidth);
+		}
+
+		resultBuilder.append(significand.buffer(), significand.start(), significand.length());
+		resultBuilder.append(formatOptions.symbols().hexExponent());
+		resultBuilder.append(exponent.buffer(), exponent.start(), exponent.length());
+
+		if (padWidth > 0 && formatOptions.leftAdjust()) addPadding(resultBuilder, ' ', padWidth);
 	}
 
-	private void appendSign(double value, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	private static ExponentPart createHexSignificand(double value, int requestedDigits, FormatOptions fo) {
+		// Compute the significand, and then truncate it to requestedDigits
+		int shiftDistance = requestedDigits == -1 || requestedDigits >= 13 ? 0 : Doubles.SIGNIFICAND_SIZE - (1 + requestedDigits * 4);
+		long significand = Doubles.significand(value);
+		long truncatedSig = significand >>> shiftDistance;
+
+		// Round our value if needed.
+		long roundingBits = significand & ~(~0L << shiftDistance);
+		boolean leastZero = (truncatedSig & 0x1L) == 0L;
+		boolean round = ((1L << (shiftDistance - 1)) & roundingBits) != 0L;
+		boolean sticky = shiftDistance > 1 && (~(1L << (shiftDistance - 1)) & roundingBits) != 0;
+		if ((leastZero && round && sticky) || (!leastZero && round)) truncatedSig++;
+
+		final int minLength = 15;
+		char[] mainBuffer = new char[minLength + Math.max(0, requestedDigits)];
+
+		// Now blat out the long
+		int i = minLength, end = minLength - 1;
+		long shrinkingSig = truncatedSig;
+		do {
+			var digit = shrinkingSig & 0xf;
+			mainBuffer[--i] = digit <= 9
+				? UnsignedValues.digitToChar(digit)
+				: (char) (fo.symbols().hexBase() + (digit - 10));
+			shrinkingSig >>>= 4L;
+		} while (shrinkingSig != 0);
+
+		// If a denormal, push a '0' to the start.
+		if (Doubles.isDenormal(value)) mainBuffer[--i] = '0';
+
+		// Remove trailing '0's.
+		while (end > i && mainBuffer[end] == '0') end--;
+
+		// Pad with extra 0s if needed.
+		int expectedEnd = i + requestedDigits;
+		while (end < expectedEnd) mainBuffer[++end] = '0';
+
+		// Add a decimal place in.
+		if (end - i > 0 || fo.alternateForm()) {
+			mainBuffer[i - 1] = mainBuffer[i];
+			mainBuffer[i] = '.';
+			i--;
+		}
+
+		return new ExponentPart(mainBuffer, i, end - i + 1);
+	}
+
+	@SuppressWarnings("operation.mixed.unsignedrhs")
+	private static boolean shouldEmitMinus(double value) {
+		return (Double.doubleToRawLongBits(value) & Doubles.SIGN_MASK) != 0 && value != 0.0;
+	}
+
+	private static void appendSign(double value, FormatOptions formatOptions, CharBuffer resultBuilder) {
 		if (shouldEmitMinus(value)) {
 			resultBuilder.append('-');
-		} else if (formatOptions.isSpaceWhenPositive()) {
+		} else if (formatOptions.spaceWhenPositive()) {
 			resultBuilder.append(' ');
-		} else if (formatOptions.isExplicitPlus()) {
+		} else if (formatOptions.explicitPlus()) {
 			resultBuilder.append('+');
 		}
 	}
 
-	public enum DtoaMode {
+	enum DtoaMode {
 		// Produce a fixed number of digits after the decimal point.
 		// For instance fixed(0.1, 4) becomes 0.1000
 		// If the input number is big, the output will be big.
@@ -814,7 +731,7 @@ public final class DoubleToStringConverter {
 	 *                        the {@link DecimalRepBuf#getPointPosition() pointPosition},
 	 *                        and the {@link DecimalRepBuf#getSign() sign} of the number.
 	 */
-	public static void doubleToAscii(double v, DtoaMode mode, int requestedDigits, DecimalRepBuf buffer) {
+	static void doubleToAscii(double v, DtoaMode mode, int requestedDigits, DecimalRepBuf buffer) {
 		assert !Doubles.isSpecial(v) : "value can't be a special value";
 		requireArg(requestedDigits >= 0, "requestedDigits must be >= 0");
 
@@ -854,192 +771,54 @@ public final class DoubleToStringConverter {
 	 * Add character padding to the builder. If count is non-positive,
 	 * nothing is added to the builder.
 	 */
-	private static void addPadding(CharBuffer sb, @Unsigned int character, int count) {
-		for (int i = count; i > 0; i--) {
-			sb.append((char) character);
-		}
+	private static void addPadding(CharBuffer sb, char character, int count) {
+		for (int i = count; i > 0; i--) sb.append(character);
 	}
 
 	/**
 	 * Parameter object for the symbols used during conversion.
+	 * <p>
+	 * {@link #infinitySymbol} and {@link #nanSymbol} provide the string representation for these special values.
+	 * If the string is {@code null} and the special value is encountered then the conversion functions return false.
+	 * <p/>
+	 * The {@link #exponentCharacter} is used in exponential representations. It is usually 'e' or 'E'.
 	 *
-	 * @see #Symbols(String, String, int)
+	 * @param infinitySymbol    string representation of 'infinity' special value
+	 * @param nanSymbol         string representation of 'NaN' special value
+	 * @param exponentCharacter used in exponential representations, it is usually 'e' or 'E'
 	 */
-	public static class Symbols {
-		private final String infinitySymbol;
-		private final String nanSymbol;
-		private final @Unsigned int exponentCharacter;
-
-		/**
-		 * Construct a symbols parameter object
-		 * <p/>
-		 * <code>infinitySymbol</code> and <code>nanSymbol</code> provide the string representation for these
-		 * special values. If the string is NULL and the special value is encountered
-		 * then the conversion functions return false.
-		 * <p/>
-		 * The <code>exponentCharacter</code> is used in exponential representations. It is
-		 * usually 'e' or 'E'.<br/>
-		 *
-		 * @param infinitySymbol    string representation of 'infinity' special value
-		 * @param nanSymbol         string representation of 'NaN' special value
-		 * @param exponentCharacter used in exponential representations, it is usually 'e' or 'E'
-		 */
-		public Symbols(String infinitySymbol, String nanSymbol, @Unsigned int exponentCharacter) {
-			this.infinitySymbol = requireNonNull(infinitySymbol);
-			this.nanSymbol = requireNonNull(nanSymbol);
-			this.exponentCharacter = exponentCharacter;
-		}
-
-		public String getInfinitySymbol() {
-			return infinitySymbol;
-		}
-
-		public String getNanSymbol() {
-			return nanSymbol;
-		}
-
-		public @Unsigned int getExponentCharacter() {
-			return exponentCharacter;
-		}
+	public record Symbols(
+		String infinitySymbol,
+		String nanSymbol,
+		@Unsigned int exponentCharacter,
+		char hexSeparator,
+		char hexExponent,
+		char hexBase
+	) {
 	}
 
 	/**
-	 * Parameter object configuring usage of {@link DoubleToStringConverter#toPrecision}
-	 *
-	 * @see #PrecisionPolicy(int, int)
+	 * @param explicitPlus  if true, and the number is positive a '+' is emitted before the number
+	 * @param alternateForm if true, the formatted output will end with '.' even if fractional part is zero.
+	 * @param width         total width to pad the number or <code>-1</code> if no padding requested
+	 * @param zeroPad       pad with zeros instead of spaces
+	 * @param leftAdjust    add padding to the end of instead of the beginning
 	 */
-	public static class PrecisionPolicy {
-		private final int maxLeadingZeroes;
-		private final int maxTrailingZeroes;
-
-		/**
-		 * When converting to precision mode the converter may add
-		 * max_leading_padding_zeroes before returning the number in exponential
-		 * format.
-		 * <p/>
-		 * Example with maxLeadingZeroes = 6.<br/>
-		 * <code>
-		 * toPrecision(0.0000012345, 2) -> "0.0000012"<br/>
-		 * toPrecision(0.00000012345, 2) -> "1.2e-7"<br/>
-		 * </code>
-		 * <p/>
-		 * Similarily the converter may add up to
-		 * maxTrailingZeroes in precision mode to avoid
-		 * returning an exponential representation. A zero added by the
-		 * <code>EMIT_TRAILING_ZERO_AFTER_POINT</code> flag is counted for this limit.
-		 * <p/>
-		 * Examples for maxTrailingZeroes = 1:<br/>
-		 * <code>
-		 * toPrecision(230.0, 2) -> "230"<br/>
-		 * toPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.<br/>
-		 * toPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.<br/>
-		 * </code>
-		 *
-		 * @param maxLeadingZeroes  Maximum allowed leading zeros before switching to exponential representation
-		 * @param maxTrailingZeroes Maximum allowed trailing zeros before switching to exponential representation
-		 */
-		public PrecisionPolicy(int maxLeadingZeroes, int maxTrailingZeroes) {
-			this.maxLeadingZeroes = maxLeadingZeroes;
-			this.maxTrailingZeroes = maxTrailingZeroes;
-		}
-
-		public int getMaxLeadingZeroes() {
-			return maxLeadingZeroes;
-		}
-
-		public int getMaxTrailingZeroes() {
-			return maxTrailingZeroes;
-		}
+	public record FormatOptions(
+		Symbols symbols,
+		boolean explicitPlus,
+		boolean spaceWhenPositive,
+		boolean alternateForm,
+		int width,
+		boolean zeroPad,
+		boolean leftAdjust
+	) {
 	}
 
-	public static class FormatOptions {
-		private final Symbols symbols;
-		private final boolean explicitPlus;
-		private final boolean spaceWhenPositive;
-		private final boolean alternateForm;
-		private final int width;
-		private final boolean zeroPad;
-		private final boolean leftAdjust;
-
-		/**
-		 * @param explicitPlus  if true, and the number is positive a '+' is emitted before the number
-		 * @param alternateForm if true, the formatted output will end with '.' even if fractional part is zero,
-		 *                      also turns off {@link Flags#NO_TRAILING_ZERO} flag
-		 * @param width         total width to pad the number or <code>-1</code> if no padding requested
-		 * @param zeroPad       pad with zeros instead of spaces
-		 * @param leftAdjust    add padding to the end of instead of the beginning
-		 */
-		public FormatOptions(Symbols symbols,
-							 boolean explicitPlus,
-							 boolean spaceWhenPositive,
-							 boolean alternateForm,
-							 int width,
-							 boolean zeroPad,
-							 boolean leftAdjust) {
-			this.symbols = symbols;
-			this.explicitPlus = explicitPlus;
-			this.spaceWhenPositive = spaceWhenPositive;
-			this.alternateForm = alternateForm;
-			this.width = width;
-			this.zeroPad = zeroPad;
-			this.leftAdjust = leftAdjust;
-		}
-
-		public Symbols getSymbols() {
-			return symbols;
-		}
-
-		public boolean isExplicitPlus() {
-			return explicitPlus;
-		}
-
-		public boolean isSpaceWhenPositive() {
-			return spaceWhenPositive;
-		}
-
-		public boolean isAlternateForm() {
-			return alternateForm;
-		}
-
-		public int getWidth() {
-			return width;
-		}
-
-		public boolean isZeroPad() {
-			return zeroPad;
-		}
-
-		public boolean isLeftAdjust() {
-			return leftAdjust;
-		}
-	}
-
-	private static class ExponentPart {
-		private final char[] buffer;
-		private final int start;
-		private final int length;
-
-		public ExponentPart(char[] buffer, int start, int length) {
-			this.buffer = buffer;
-			this.start = start;
-			this.length = length;
-		}
-
-		public char[] getBuffer() {
-			return buffer;
-		}
-
-		public int getStart() {
-			return start;
-		}
-
-		public int length() {
-			return length;
-		}
-
+	private record ExponentPart(char[] buffer, int start, int length) {
 		@Override
 		public String toString() {
-			return String.valueOf(buffer, start, length);
+			return "Exponent(" + String.valueOf(buffer, start, length) + ")";
 		}
 	}
 }

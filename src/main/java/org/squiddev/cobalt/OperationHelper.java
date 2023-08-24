@@ -198,31 +198,6 @@ public final class OperationHelper {
 		return h;
 	}
 
-	/**
-	 * Perform metatag processing for concatenation operations.
-	 * <p>
-	 * Finds the {@link Constants#CONCAT} metatag value and invokes it,
-	 * or throws {@link LuaError} if it doesn't exist.
-	 *
-	 * @param state The current lua state
-	 * @param left  The right-hand-side value to perform the operation with
-	 * @param right The right-hand-side value to perform the operation with
-	 * @return {@link LuaValue} resulting from metatag processing for {@link Constants#CONCAT} metatag.
-	 * @throws LuaError        If the {@code __concat} metatag was not defined for either operand
-	 * @throws UnwindThrowable If the {@code __concat} metamethod yielded.
-	 */
-	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		return concat(state, left, right, -1, -1);
-	}
-
-	public static LuaValue concat(LuaState state, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError, UnwindThrowable {
-		if (left.isString() && right.isString()) {
-			return concat(left.checkLuaString(), right.checkLuaString());
-		} else {
-			return concatNonStrings(state, left, right, leftStack, rightStack);
-		}
-	}
-
 	public static LuaValue concatNonStrings(LuaState state, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError, UnwindThrowable {
 		LuaValue h = left.metatag(state, Constants.CONCAT);
 		if (h.isNil() && (h = right.metatag(state, Constants.CONCAT)).isNil()) {
@@ -234,13 +209,6 @@ public final class OperationHelper {
 		}
 
 		return OperationHelper.call(state, h, left, right);
-	}
-
-	public static LuaString concat(LuaString left, LuaString right) {
-		byte[] b = new byte[left.length() + right.length()];
-		left.copyTo(b, 0);
-		right.copyTo(b, left.length());
-		return LuaString.valueOf(b);
 	}
 	//endregion
 

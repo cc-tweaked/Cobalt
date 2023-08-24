@@ -1,5 +1,7 @@
 package org.squiddev.cobalt.compiler;
 
+import cc.tweaked.internal.string.CharProperties;
+import cc.tweaked.internal.string.NumberParser;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.Utf8Lib;
 import org.squiddev.cobalt.unwind.AutoUnwind;
@@ -248,7 +250,7 @@ final class Lex {
 	}
 
 	private LuaNumber readNumeral() throws CompileException, UnwindThrowable {
-		assert isDigit(current);
+		assert CharProperties.isDigit(current);
 
 		int first = current;
 		saveAndNext();
@@ -262,14 +264,14 @@ final class Lex {
 			// Exponential and sign
 			if (checkNext(exp1, exp2)) checkNext('+', '-');
 
-			if (isHex(current) || current == '.') {
+			if (CharProperties.isHex(current) || current == '.') {
 				saveAndNext();
 			} else {
 				break;
 			}
 		}
 
-		var value = LuaString.parseNumber(buff, 0, bufferSize, 10);
+		var value = NumberParser.parse(buff, 0, bufferSize, 10);
 		if (Double.isNaN(value)) throw lexError("malformed number", TK_NUMBER);
 		return ValueFactory.valueOf(value);
 	}
@@ -339,8 +341,8 @@ final class Lex {
 
 	private int readHex() throws CompileException, UnwindThrowable {
 		saveAndNext();
-		if (!isHex(current)) throw escapeError("hexadecimal digit expected");
-		return hexValue(current);
+		if (!CharProperties.isHex(current)) throw escapeError("hexadecimal digit expected");
+		return CharProperties.hexValue(current);
 	}
 
 	private int readHexEsc() throws CompileException, UnwindThrowable {
@@ -358,10 +360,10 @@ final class Lex {
 		long codepoint = readHex();
 		while (true) {
 			saveAndNext();
-			if (!isHex(current)) break;
+			if (!CharProperties.isHex(current)) break;
 
 			i++;
-			codepoint = (codepoint << 4) | hexValue(current);
+			codepoint = (codepoint << 4) | CharProperties.hexValue(current);
 			if (codepoint > Utf8Lib.MAX_UNICODE) throw escapeError("UTF-8 value too large");
 		}
 		if (current != '}') throw escapeError("missing '}'");
@@ -380,7 +382,7 @@ final class Lex {
 	private int readDecEsc() throws CompileException, UnwindThrowable {
 		int i = 0;
 		int result = 0;
-		for (; i < 3 && isDigit(current); i++) {
+		for (; i < 3 && CharProperties.isDigit(current); i++) {
 			result = 10 * result + current - '0';
 			saveAndNext();
 		}
@@ -438,14 +440,14 @@ final class Lex {
 						case 'z': { // "zap" following span of spaces
 							bufferSize--;
 							next(); // Skip z and remove '\\'
-							while (current != EOZ && isSpace(current)) {
+							while (current != EOZ && CharProperties.isSpace(current)) {
 								if (currIsNewline()) inclineNumber();
 								next();
 							}
 							break;
 						}
 						default: {
-							if (!isDigit(current)) {
+							if (!CharProperties.isDigit(current)) {
 								bufferSize--;
 								saveAndNext(); /* handles \\, \", \', and \? */
 							} else { /* \xxx */
@@ -541,7 +543,7 @@ final class Lex {
 						} else {
 							return TK_CONCAT; /* .. */
 						}
-					} else if (!isDigit(current)) {
+					} else if (!CharProperties.isDigit(current)) {
 						return '.';
 					} else {
 						token.value = readNumeral();
@@ -552,21 +554,21 @@ final class Lex {
 					return TK_EOS;
 				}
 				default -> {
-					if (isSpace(current)) {
+					if (CharProperties.isSpace(current)) {
 						next();
 						continue;
 					}
 
-					if (isDigit(current)) {
+					if (CharProperties.isDigit(current)) {
 						token.value = readNumeral();
 						return TK_NUMBER;
 					}
 
-					if (isAlpha(current) || current == '_') {
+					if (CharProperties.isAlpha(current) || current == '_') {
 						/* identifier or reserved word */
 						do {
 							saveAndNext();
-						} while (isAlphaNum(current) || current == '_');
+						} while (CharProperties.isAlphaNum(current) || current == '_');
 						Integer reservedIdx = RESERVED.get(ByteBuffer.wrap(buff, 0, bufferSize));
 						if (reservedIdx != null) {
 							return reservedIdx;
@@ -611,36 +613,6 @@ final class Lex {
 	void lookahead() throws CompileException, UnwindThrowable {
 		LuaC._assert(lookahead.token == TK_EOS);
 		lookahead.token = lexToken(lookahead);
-	}
-
-	private static boolean isAlphaNum(int c) {
-		return c >= '0' && c <= '9'
-			|| c >= 'a' && c <= 'z'
-			|| c >= 'A' && c <= 'Z'
-			|| c == '_';
-	}
-
-	private static boolean isAlpha(int c) {
-		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
-	}
-
-	private static boolean isDigit(int c) {
-		return c >= '0' && c <= '9';
-	}
-
-	private static boolean isSpace(int c) {
-		return c <= ' ';
-	}
-
-	private static boolean isHex(int c) {
-		return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
-	}
-
-	private static int hexValue(int c) {
-		// Terrible bit twiddling right here:
-		// 'A'..'F' corresponds to 0x41..0x46, and 'a'..'f' to 0x61..0x66. So bitwise and with 0xf
-		// gives us the last digit, +9 to map from 1..6 to 10..15.
-		return c <= '9' ? c - '0' : (c & 0xf) + 9;
 	}
 
 	static long packPosition(int line, int column) {

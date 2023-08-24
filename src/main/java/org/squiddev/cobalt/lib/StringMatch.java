@@ -30,20 +30,15 @@ class StringMatch {
 		CHAR_TABLE = new byte[256];
 
 		for (int i = 0; i < 256; ++i) {
-			final char c = (char) i;
-			CHAR_TABLE[i] = (byte) ((Character.isDigit(c) ? MASK_DIGIT : 0) |
-				(Character.isLowerCase(c) ? MASK_LOWERCASE : 0) |
-				(Character.isUpperCase(c) ? MASK_UPPERCASE : 0) |
-				((c < ' ' || c == 0x7F) ? MASK_CONTROL : 0));
-			if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')) {
-				CHAR_TABLE[i] |= MASK_HEXDIGIT;
-			}
-			if ((c >= '!' && c <= '/') || (c >= ':' && c <= '@')) {
-				CHAR_TABLE[i] |= MASK_PUNCT;
-			}
-			if ((CHAR_TABLE[i] & (MASK_LOWERCASE | MASK_UPPERCASE)) != 0) {
-				CHAR_TABLE[i] |= MASK_ALPHA;
-			}
+			byte mask = 0;
+			if (i <= ' ' || i == 0x7f) mask |= MASK_CONTROL;
+			if (i >= '0' && i <= '9') mask |= MASK_DIGIT;
+			if (i >= 'a' && i <= 'z') mask |= MASK_LOWERCASE;
+			if (i >= 'A' && i <= 'Z') mask |= MASK_UPPERCASE;
+			if ((i >= 'a' && i <= 'f') || (i >= 'A' && i <= 'F') || (i >= '0' && i <= '9')) mask |= MASK_HEXDIGIT;
+			if ((i >= '!' && i <= '/') || (i >= ':' && i <= '@')) mask |= MASK_PUNCT;
+			if ((mask & (MASK_LOWERCASE | MASK_UPPERCASE)) != 0) mask |= MASK_ALPHA;
+			CHAR_TABLE[i] = mask;
 		}
 
 		CHAR_TABLE[' '] = MASK_SPACE;
@@ -524,7 +519,7 @@ class StringMatch {
 		 */
 		int match(int soffset, int poffset) throws LuaError {
 			while (true) {
-				if(state.isInterrupted()) state.handleInterruptWithoutYield();
+				if (state.isInterrupted()) state.handleInterruptWithoutYield();
 
 				// Check if we are at the end of the pattern -
 				// equivalent to the '\0' case in the C version, but our pattern

@@ -18,9 +18,9 @@ local widths = { "", "1", "2", "6", "20" }
 local function do_format(code, value)
 	local ok, res = pcall(string.format, code, value)
 	if not ok then
-		return res:gsub("format.lua:%d+: ", "")
+		return ok, res:gsub("format.lua:%d+: ", "")
 	else
-		return res
+		return ok, res
 	end
 end
 
@@ -35,13 +35,19 @@ local function format(convs, values)
 
 					for i = 1, #values do
 						local value = values[i]
-						local default_res = do_format(default_code, value)
-						local res = do_format(code, value)
+						local ok, res = do_format(code, value)
+						local _, default_res = do_format(default_code, value)
 
 						if default_res ~= res or default_code == code then
-							local value_code = type(value) == "string" and "q" or "s"
+							local ty = type(value)
+							local value_code = "s"
+							if ty == "string" then value_code = "q"
+							elseif ty == "number" and value % 1 == 0 then value_code = "d"
+							end
 							print(string.format("string.format(%q, %" .. value_code .. ") == %q", code, value, res))
 						end
+
+						if not ok then break end -- No sense printing identical errors
 					end
 				end
 			end
@@ -56,13 +62,15 @@ format({ 'i', 'd', 'o', 'u', 'x', 'X', }, {
 })
 
 print("== Floats ==")
-format({ 'e', 'E', 'f', 'F', 'g', 'G', }, {
+format({ 'e', 'E', 'f', 'F', 'g', 'G', 'a', 'A' }, {
 	0, 1, -1, 2, -2, 3, -3,
 	math.abs(0 / 0), 1 / 0, -1 / 0,
 	1e2, 1e4, 1e5, 1e6, 1e7,
 	1e-2, 1e-4, 1e-5, 1e-6, 1e-7,
 	123.456, 123.456e7, 123.456e-7,
 	123.456789123, 123.456789123e7, 123.456789123e-7,
+	0x1.0ap+1,
+	0x1.0p-1022, 0x1.0p-1022 / 2, 0x1.0p-1022 / 3, -- Denormals
 })
 
 print("== Strings ==")

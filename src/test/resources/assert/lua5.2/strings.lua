@@ -203,7 +203,7 @@ check("%100.3d", "too long")
 check("%1"..aux..".3d", "too long")
 check("%1.100d", "too long")
 check("%10.1"..aux.."004d", "too long")
-check("%t", "invalid option")
+check("%t", "invalid conversion")
 check("%"..aux.."d", "repeated flags")
 check("%d %d", "got nil") -- FIX ME: PUC Lua reports "no value"
 

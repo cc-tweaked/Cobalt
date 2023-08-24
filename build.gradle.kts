@@ -88,7 +88,7 @@ val instrumentJava = tasks.register(mainSource.getTaskName("Instrument", "Java")
 	outputs.dir(javaClassesDir).withPropertyName("outputDir")
 
 	javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
-	mainClass.set("cc.squiddev.cobalt.build.MainKt")
+	mainClass.set("cc.tweaked.cobalt.build.MainKt")
 	classpath = buildTools
 
 	args = listOf(

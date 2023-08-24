@@ -56,8 +56,8 @@ checkallerrors('string.format', { numfmts, notanumber }, 'bad argument')
 checkallpass('string.format', { strfmts, notastring_prim })
 checkallpass('string.format', { { "%s" }, notastring_complex }, true)
 checkallerrors('string.format', { { "%q" }, notastring_complex }, 'bad argument #2')
-checkallerrors('string.format', { { '%w' }, somestring }, "invalid option '%w'")
-checkallerrors('string.format', { { '%' }, somestring }, "invalid option '%'")
+checkallerrors('string.format', { { '%w' }, somestring }, "invalid conversion '%w'")
+checkallerrors('string.format', { { '%' }, somestring }, "invalid conversion '%'")
 checkallerrors('string.format', { { '%######s' }, somestring }, "invalid format (repeated flags)")
 
 -- string.gmatch

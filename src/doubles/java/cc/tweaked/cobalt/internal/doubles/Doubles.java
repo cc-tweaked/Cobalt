@@ -45,7 +45,7 @@ class Doubles {
 	private static final @Unsigned long SIGNIFICAND_MASK = 0x000FFFFFFFFFFFFFL;
 	public static final @Unsigned long HIDDEN_BIT = 0x0010000000000000L;
 
-	private static final int PHYSICAL_SIGNIFICAND_SIZE = 52;  // Excludes the hidden bit.
+	public static final int PHYSICAL_SIGNIFICAND_SIZE = 52;  // Excludes the hidden bit.
 	public static final int SIGNIFICAND_SIZE = 53;
 	private static final int EXPONENT_BIAS = 0x3FF + PHYSICAL_SIGNIFICAND_SIZE;
 	private static final int DENORMAL_EXPONENT = -EXPONENT_BIAS + 1;
@@ -133,7 +133,7 @@ class Doubles {
 	}
 
 	@SuppressWarnings("cast.unsafe")
-	private static @Unsigned long getBits(double value) {
+	public static @Unsigned long getBits(double value) {
 		return (@Unsigned long) Double.doubleToRawLongBits(value);
 	}
 }
