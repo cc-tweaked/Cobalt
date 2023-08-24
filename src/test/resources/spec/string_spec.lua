@@ -1,8 +1,12 @@
 describe("The string library", function()
 	describe("string.format", function()
-		it("'q' option formats edge-case numbers correctly", function()
+		it("'q' option formats edge-case numbers correctly :lua>=5.4", function()
 			local formatted = string.format("%q %q %q", 0/0, 1/0, -1/0)
 			expect(formatted):eq("(0/0) 1e9999 -1e9999")
+		end)
+
+		it("'q' option prints hexadecimal floats :lua>=5.4", function()
+			expect(("%q"):format(234.53)):eq("0x1.d50f5c28f5c29p+7")
 		end)
 	end)
 

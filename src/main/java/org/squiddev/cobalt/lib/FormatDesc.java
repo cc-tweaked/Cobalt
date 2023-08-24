@@ -36,6 +36,10 @@ public class FormatDesc {
 	private static final DoubleToStringConverter.Symbols UPPER_SYMBOLS =
 		new DoubleToStringConverter.Symbols("INF", "NAN", 'E', 'X', 'P', 'A');
 
+	static final DoubleToStringConverter.FormatOptions DEFAULT_LOWER_OPTIONS = new DoubleToStringConverter.FormatOptions(
+		LOWER_SYMBOLS, false, false, false, -1, false, false
+	);
+
 	private static final int MAX_FLAGS = 5;
 	static final int LEFT_ADJUST = 1 << 0;
 	static final int EXPLICIT_PLUS = 1 << 1;
