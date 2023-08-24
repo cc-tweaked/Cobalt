@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.squiddev"
-version = "0.7.1"
+version = "0.7.2"
 
 java {
 	toolchain {
