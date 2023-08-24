@@ -270,7 +270,7 @@ public abstract class LuaValue extends Varargs {
 	 */
 	@Override
 	public String toString() {
-		return typeName() + ": " + Integer.toHexString(hashCode());
+		return ErrorFactory.typeName(this) + ": " + Integer.toHexString(hashCode());
 	}
 
 	/**

@@ -26,6 +26,13 @@ describe("The base library", function()
 		end)
 	end)
 
+	describe("tostring", function()
+		it("uses __name :lua>=5.3", function()
+			local obj = setmetatable({}, { __name="abc" })
+			expect(tostring(obj)):str_match("^abc: ")
+		end)
+	end)
+
 	describe("ipairs", function()
 		local function make_slice(tbl, start, len)
 			return setmetatable({}, {
