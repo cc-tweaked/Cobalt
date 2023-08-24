@@ -90,7 +90,7 @@ class StringFormat {
 					desc.checkFlags(LEFT_ADJUST | ALTERNATE_FORM | ZERO_PAD | PRECISION);
 					desc.format(result, value.checkLong());
 				}
-				case 'e', 'E', 'f', 'g', 'G' -> {
+				case 'e', 'E', 'f', 'g', 'G', 'a', 'A' -> {
 					desc.checkFlags(LEFT_ADJUST | EXPLICIT_PLUS | SPACE | ALTERNATE_FORM | ZERO_PAD | PRECISION);
 					desc.format(result, value.checkDouble());
 				}

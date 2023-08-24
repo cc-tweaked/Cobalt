@@ -38,7 +38,7 @@ import org.squiddev.cobalt.Buffer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DoubleToStringConverterTest {
-	private static final Symbols SYMBOLS = new Symbols("Infinity", "NaN", 'e');
+	private static final Symbols SYMBOLS = new Symbols("Infinity", "NaN", 'e', 'x', 'p', 'a');
 	private static final FormatOptions DEFAULT = new FormatOptions(SYMBOLS, false, false, false, -1, false, false);
 	private static final FormatOptions WITH_TRAILING = new FormatOptions(SYMBOLS, false, false, true, -1, false, false);
 
@@ -153,6 +153,16 @@ class DoubleToStringConverterTest {
 		testPrec("            -1.00000", -1.0, precision, fo);
 	}
 
+	@Test
+	void toHex() {
+		testHex("0x0p+0", 0.0, -1, DEFAULT);
+		testHex("0x1p+0", 1.0, -1, DEFAULT);
+		testHex("0x1.8p+1", 3.0, -1, DEFAULT);
+		testHex("0x1.8ae147ae147aep+3", 12.34, -1, DEFAULT);
+		testHex("0x2p+3", 12.34, 0, DEFAULT);
+		testHex("0x1.0ap+1", 0x1.0ap+1, -1, DEFAULT);
+	}
+
 	private void testPrec(String expected, double val, int requestedDigits, FormatOptions fo) {
 		Buffer appendable = new Buffer();
 		DoubleToStringConverter.toPrecision(val, requestedDigits, fo, appendable);
@@ -184,6 +194,12 @@ class DoubleToStringConverterTest {
 	private void testFixed(String expected, double val, int requestedDigits) {
 		Buffer appendable = new Buffer();
 		DoubleToStringConverter.toFixed(val, requestedDigits, DEFAULT, appendable);
+		assertEquals(expected, appendable.toString());
+	}
+
+	private void testHex(String expected, double val, int requestedDigits, FormatOptions fo) {
+		Buffer appendable = new Buffer();
+		DoubleToStringConverter.toHex(val, requestedDigits, fo, appendable);
 		assertEquals(expected, appendable.toString());
 	}
 

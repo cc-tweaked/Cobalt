@@ -170,7 +170,7 @@ public final class DoubleToStringConverter {
 		requireArg(length <= decimalDigits.length(), "length must be smaller than decimalDigits");
 
 		assert (double) exponent < 1e4;
-		ExponentPart exponentPart = createExponentPart(exponent);
+		ExponentPart exponentPart = createExponentPart(exponent, MIN_EXPONENT_WIDTH);
 
 		boolean emitTrailingPoint = fo.alternateForm();
 
@@ -206,7 +206,7 @@ public final class DoubleToStringConverter {
 		}
 	}
 
-	private static ExponentPart createExponentPart(int exponent) {
+	private static ExponentPart createExponentPart(int exponent, int minLength) {
 		boolean sign = false;
 		if (exponent < 0) {
 			sign = true;
@@ -226,7 +226,7 @@ public final class DoubleToStringConverter {
 		}
 		// Add prefix '0' to make exponent width >= MIN_EXPONENT_LENGTH
 		// For example: convert 1e+9 -> 1e+09
-		while ((MAX_EXPONENT_LENGTH + 1) - firstCharPos < MIN_EXPONENT_WIDTH) {
+		while ((MAX_EXPONENT_LENGTH + 1) - firstCharPos < minLength) {
 			buffer[--firstCharPos] = '0';
 		}
 
@@ -553,6 +553,99 @@ public final class DoubleToStringConverter {
 		}
 	}
 
+	/**
+	 * Computes a representation in hexadecimal exponential format with <code>requestedDigits</code> after the decimal
+	 * point. The last emitted digit is rounded.
+	 *
+	 * @param value           The value to format.
+	 * @param requestedDigits The number of digits after the decimal place, or {@code -1}.
+	 * @param formatOptions   Additional options for this number's formatting.
+	 * @param resultBuilder   The buffer to output to.
+	 */
+	public static void toHex(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
+		if (Doubles.isSpecial(value)) {
+			handleSpecialValues(value, formatOptions, resultBuilder);
+			return;
+		}
+
+		boolean negative = shouldEmitMinus(value);
+
+		double absValue = Math.abs(value);
+		ExponentPart significand = createHexSignificand(absValue, requestedDigits, formatOptions);
+
+		int exponentValue = absValue == 0 ? 0 : Doubles.exponent(absValue) + Doubles.PHYSICAL_SIGNIFICAND_SIZE;
+		ExponentPart exponent = createExponentPart(exponentValue, 1);
+
+		int valueWidth = significand.length() + exponent.length() + 3;
+		if (negative || formatOptions.explicitPlus() || formatOptions.spaceWhenPositive()) valueWidth++;
+		int padWidth = formatOptions.width() <= 0 ? 0 : formatOptions.width() - valueWidth;
+
+		if (padWidth > 0 && !formatOptions.leftAdjust() && !formatOptions.zeroPad()) {
+			addPadding(resultBuilder, ' ', padWidth);
+		}
+
+		appendSign(value, formatOptions, resultBuilder);
+		resultBuilder.append('0');
+		resultBuilder.append(formatOptions.symbols().hexSeparator());
+
+		if (padWidth > 0 && !formatOptions.leftAdjust() && formatOptions.zeroPad()) {
+			addPadding(resultBuilder, '0', padWidth);
+		}
+
+		resultBuilder.append(significand.buffer(), significand.start(), significand.length());
+		resultBuilder.append(formatOptions.symbols().hexExponent());
+		resultBuilder.append(exponent.buffer(), exponent.start(), exponent.length());
+
+		if (padWidth > 0 && formatOptions.leftAdjust()) addPadding(resultBuilder, ' ', padWidth);
+	}
+
+	private static ExponentPart createHexSignificand(double value, int requestedDigits, FormatOptions fo) {
+		// Compute the significand, and then truncate it to requestedDigits
+		int shiftDistance = requestedDigits == -1 || requestedDigits >= 13 ? 0 : Doubles.SIGNIFICAND_SIZE - (1 + requestedDigits * 4);
+		long significand = Doubles.significand(value);
+		long truncatedSig = significand >>> shiftDistance;
+
+		// Round our value if needed.
+		long roundingBits = significand & ~(~0L << shiftDistance);
+		boolean leastZero = (truncatedSig & 0x1L) == 0L;
+		boolean round = ((1L << (shiftDistance - 1)) & roundingBits) != 0L;
+		boolean sticky = shiftDistance > 1 && (~(1L << (shiftDistance - 1)) & roundingBits) != 0;
+		if ((leastZero && round && sticky) || (!leastZero && round)) truncatedSig++;
+
+		final int minLength = 15;
+		char[] mainBuffer = new char[minLength + Math.max(0, requestedDigits)];
+
+		// Now blat out the long
+		int i = minLength, end = minLength - 1;
+		long shrinkingSig = truncatedSig;
+		do {
+			var digit = shrinkingSig & 0xf;
+			mainBuffer[--i] = digit <= 9
+				? UnsignedValues.digitToChar(digit)
+				: (char) (fo.symbols().hexBase() + (digit - 10));
+			shrinkingSig >>>= 4L;
+		} while (shrinkingSig != 0);
+
+		// If a denormal, push a '0' to the start.
+		if (Doubles.isDenormal(value)) mainBuffer[--i] = '0';
+
+		// Remove trailing '0's.
+		while (end > i && mainBuffer[end] == '0') end--;
+
+		// Pad with extra 0s if needed.
+		int expectedEnd = i + requestedDigits;
+		while (end < expectedEnd) mainBuffer[++end] = '0';
+
+		// Add a decimal place in.
+		if (end - i > 0 || fo.alternateForm()) {
+			mainBuffer[i - 1] = mainBuffer[i];
+			mainBuffer[i] = '.';
+			i--;
+		}
+
+		return new ExponentPart(mainBuffer, i, end - i + 1);
+	}
+
 	@SuppressWarnings("operation.mixed.unsignedrhs")
 	private static boolean shouldEmitMinus(double value) {
 		return (Double.doubleToRawLongBits(value) & Doubles.SIGN_MASK) != 0 && value != 0.0;
@@ -693,9 +786,15 @@ public final class DoubleToStringConverter {
 	 * @param infinitySymbol    string representation of 'infinity' special value
 	 * @param nanSymbol         string representation of 'NaN' special value
 	 * @param exponentCharacter used in exponential representations, it is usually 'e' or 'E'
-	 * @see #Symbols(String, String, int)
 	 */
-	public record Symbols(String infinitySymbol, String nanSymbol, @Unsigned int exponentCharacter) {
+	public record Symbols(
+		String infinitySymbol,
+		String nanSymbol,
+		@Unsigned int exponentCharacter,
+		char hexSeparator,
+		char hexExponent,
+		char hexBase
+	) {
 	}
 
 	/**

@@ -32,9 +32,9 @@ import org.squiddev.cobalt.LuaString;
 
 public class FormatDesc {
 	private static final DoubleToStringConverter.Symbols LOWER_SYMBOLS =
-		new DoubleToStringConverter.Symbols("inf", "nan", 'e');
+		new DoubleToStringConverter.Symbols("inf", "nan", 'e', 'x', 'p', 'a');
 	private static final DoubleToStringConverter.Symbols UPPER_SYMBOLS =
-		new DoubleToStringConverter.Symbols("INF", "NAN", 'E');
+		new DoubleToStringConverter.Symbols("INF", "NAN", 'E', 'X', 'P', 'A');
 
 	private static final int MAX_FLAGS = 5;
 	static final int LEFT_ADJUST = 1 << 0;
@@ -240,15 +240,19 @@ public class FormatDesc {
 
 	public void format(Buffer buf, double number) {
 		int prec = precision;
-		if (prec == -1) prec = 6;
-
 		switch (conversion) {
 			case 'g', 'G' -> {
-				if (prec == 0) prec = 1;
-				DoubleToStringConverter.toPrecision(number, prec, doubleOpts(conversion == 'G'), buf);
+				int computedPrecision = switch (prec) {
+					case -1 -> 6;
+					case 0 -> 1;
+					default -> prec;
+				};
+				DoubleToStringConverter.toPrecision(number, computedPrecision, doubleOpts(conversion == 'G'), buf);
 			}
-			case 'e', 'E' -> DoubleToStringConverter.toExponential(number, prec, doubleOpts(conversion == 'E'), buf);
-			case 'f' -> DoubleToStringConverter.toFixed(number, prec, doubleOpts(false), buf);
+			case 'e', 'E' ->
+				DoubleToStringConverter.toExponential(number, prec == -1 ? 6 : prec, doubleOpts(conversion == 'E'), buf);
+			case 'a', 'A' -> DoubleToStringConverter.toHex(number, prec, doubleOpts(conversion == 'A'), buf);
+			case 'f' -> DoubleToStringConverter.toFixed(number, prec == -1 ? 6 : prec, doubleOpts(false), buf);
 		}
 	}
 
