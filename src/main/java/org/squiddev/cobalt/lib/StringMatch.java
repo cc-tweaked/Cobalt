@@ -36,7 +36,9 @@ class StringMatch {
 			if (i >= 'a' && i <= 'z') mask |= MASK_LOWERCASE;
 			if (i >= 'A' && i <= 'Z') mask |= MASK_UPPERCASE;
 			if ((i >= 'a' && i <= 'f') || (i >= 'A' && i <= 'F') || (i >= '0' && i <= '9')) mask |= MASK_HEXDIGIT;
-			if ((i >= '!' && i <= '/') || (i >= ':' && i <= '@')) mask |= MASK_PUNCT;
+			if ((i >= '!' && i <= '/') || (i >= ':' && i <= '@') || (i >= '[' && i <= '`') || (i >= '{' && i <= '~')) {
+				mask |= MASK_PUNCT;
+			}
 			if ((mask & (MASK_LOWERCASE | MASK_UPPERCASE)) != 0) mask |= MASK_ALPHA;
 			CHAR_TABLE[i] = mask;
 		}
@@ -472,6 +474,7 @@ class StringMatch {
 				case 'c' -> res = (cdata & MASK_CONTROL) != 0;
 				case 'p' -> res = (cdata & MASK_PUNCT) != 0;
 				case 's' -> res = (cdata & MASK_SPACE) != 0;
+				case 'g' -> res = c >= '!' && c <= '~';
 				case 'w' -> res = (cdata & (MASK_ALPHA | MASK_DIGIT)) != 0;
 				case 'x' -> res = (cdata & MASK_HEXDIGIT) != 0;
 				case 'z' -> res = (c == 0);
