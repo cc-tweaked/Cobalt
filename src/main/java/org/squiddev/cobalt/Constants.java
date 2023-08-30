@@ -117,7 +117,7 @@ public class Constants {
 	/**
 	 * LuaValue constant corresponding to a {@link Varargs} list of no values
 	 */
-	public static final Varargs NONE = None._NONE;
+	public static final Varargs NONE = new None();
 
 	/**
 	 * LuaValue number constant equal to 0
@@ -268,8 +268,6 @@ public class Constants {
 	 * @see Constants#NONE
 	 */
 	private static final class None extends Varargs {
-		static None _NONE = new None();
-
 		@Override
 		public LuaValue arg(int i) {
 			return NIL;

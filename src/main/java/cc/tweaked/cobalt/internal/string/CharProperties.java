@@ -1,7 +1,7 @@
-package cc.tweaked.internal.string;
+package cc.tweaked.cobalt.internal.string;
 
 /**
- * Various properties on characters, as used by the lexer and
+ * Various properties on characters, as used by the lexer, and other parsers within the codebase.
  */
 public final class CharProperties {
 	private CharProperties() {

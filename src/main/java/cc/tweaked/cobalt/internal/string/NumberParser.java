@@ -1,4 +1,4 @@
-package cc.tweaked.internal.string;
+package cc.tweaked.cobalt.internal.string;
 
 import org.squiddev.cobalt.lib.StringLib;
 

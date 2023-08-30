@@ -1,5 +1,6 @@
 package org.squiddev.cobalt.lib;
 
+import cc.tweaked.cobalt.internal.string.CharProperties;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.VarArgFunction;
 
@@ -32,10 +33,10 @@ class StringMatch {
 		for (int i = 0; i < 256; ++i) {
 			byte mask = 0;
 			if (i <= ' ' || i == 0x7f) mask |= MASK_CONTROL;
-			if (i >= '0' && i <= '9') mask |= MASK_DIGIT;
+			if (CharProperties.isDigit(i)) mask |= MASK_DIGIT;
 			if (i >= 'a' && i <= 'z') mask |= MASK_LOWERCASE;
 			if (i >= 'A' && i <= 'Z') mask |= MASK_UPPERCASE;
-			if ((i >= 'a' && i <= 'f') || (i >= 'A' && i <= 'F') || (i >= '0' && i <= '9')) mask |= MASK_HEXDIGIT;
+			if (CharProperties.isHex(i)) mask |= MASK_HEXDIGIT;
 			if ((i >= '!' && i <= '/') || (i >= ':' && i <= '@') || (i >= '[' && i <= '`') || (i >= '{' && i <= '~')) {
 				mask |= MASK_PUNCT;
 			}

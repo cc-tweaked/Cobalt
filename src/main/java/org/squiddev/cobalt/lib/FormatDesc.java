@@ -25,7 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
-import cc.tweaked.internal.string.CharProperties;
+import cc.tweaked.cobalt.internal.string.CharProperties;
 import org.squiddev.cobalt.Buffer;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;

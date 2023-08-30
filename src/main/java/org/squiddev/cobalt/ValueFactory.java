@@ -104,17 +104,6 @@ public class ValueFactory {
 	}
 
 	/**
-	 * Construct an empty {@link LuaTable} preallocated to hold array and hashed elements
-	 *
-	 * @param narray Number of array elements to preallocate
-	 * @param nhash  Number of hash elements to preallocate
-	 * @return new {@link LuaTable} instance with no values and no metatable, but preallocated for array and hashed elements.
-	 */
-	public static LuaTable tableOf(int narray, int nhash) {
-		return new LuaTable(narray, nhash);
-	}
-
-	/**
 	 * Construct a {@link LuaTable} initialized with supplied array values.
 	 *
 	 * @param unnamedValues array of {@link LuaValue} containing the values to use in initialization
@@ -122,18 +111,6 @@ public class ValueFactory {
 	 */
 	public static LuaTable listOf(LuaValue... unnamedValues) {
 		return new LuaTable(null, unnamedValues, null);
-	}
-
-	/**
-	 * Construct a {@link LuaTable} initialized with supplied array values.
-	 *
-	 * @param unnamedValues array of {@link LuaValue} containing the first values to use in initialization
-	 * @param lastarg       {@link Varargs} containing additional values to use in initialization
-	 *                      to be put after the last unnamedValues element
-	 * @return new {@link LuaTable} instance with sequential elements coming from the array and varargs.
-	 */
-	public static LuaTable listOf(LuaValue[] unnamedValues, Varargs lastarg) {
-		return new LuaTable(null, unnamedValues, lastarg);
 	}
 
 	/**
@@ -145,38 +122,6 @@ public class ValueFactory {
 	 */
 	public static LuaTable tableOf(LuaValue... namedValues) {
 		return new LuaTable(namedValues, null, null);
-	}
-
-	/**
-	 * Construct a {@link LuaTable} initialized with supplied named values and sequential elements.
-	 * The named values will be assigned first, and the sequential elements will be assigned later,
-	 * possibly overwriting named values at the same slot if there are conflicts.
-	 *
-	 * @param namedValues   array of {@link LuaValue} containing the keys and values to use in initialization
-	 *                      in order {@code {key-a, value-a, key-b, value-b, ...} }
-	 * @param unnamedValues array of {@link LuaValue} containing the sequenctial elements to use in initialization
-	 *                      in order {@code {value-1, value-2, ...} }, or null if there are none
-	 * @return new {@link LuaTable} instance with named and sequential values supplied.
-	 */
-	public static LuaTable tableOf(LuaValue[] namedValues, LuaValue[] unnamedValues) {
-		return new LuaTable(namedValues, unnamedValues, null);
-	}
-
-	/**
-	 * Construct a {@link LuaTable} initialized with supplied named values and sequential elements in an array part and as varargs.
-	 * The named values will be assigned first, and the sequential elements will be assigned later,
-	 * possibly overwriting named values at the same slot if there are conflicts.
-	 *
-	 * @param namedValues   array of {@link LuaValue} containing the keys and values to use in initialization
-	 *                      in order {@code {key-a, value-a, key-b, value-b, ...} }
-	 * @param unnamedValues array of {@link LuaValue} containing the first sequenctial elements to use in initialization
-	 *                      in order {@code {value-1, value-2, ...} }, or null if there are none
-	 * @param lastarg       {@link Varargs} containing additional values to use in the sequential part of the initialization,
-	 *                      to be put after the last unnamedValues element
-	 * @return new {@link LuaTable} instance with named and sequential values supplied.
-	 */
-	public static LuaTable tableOf(LuaValue[] namedValues, LuaValue[] unnamedValues, Varargs lastarg) {
-		return new LuaTable(namedValues, unnamedValues, lastarg);
 	}
 
 	/**
@@ -249,27 +194,6 @@ public class ValueFactory {
 	/**
 	 * Construct a {@link Varargs} around an array of {@link LuaValue}s.
 	 *
-	 * @param v The array of {@link LuaValue}s
-	 * @param r {@link Varargs} contain values to include at the end
-	 * @return {@link Varargs} wrapping the supplied values.
-	 * @see ValueFactory#varargsOf(LuaValue[])
-	 * @see ValueFactory#varargsOfCopy(LuaValue[], int, int, Varargs)
-	 */
-	public static Varargs varargsOf(final LuaValue[] v, Varargs r) {
-		if (v.length == 0) return r;
-
-		if (Varargs.DepthVarargs.depth(r) > MAX_DEPTH) {
-			LuaValue[] values = Arrays.copyOf(v, v.length + r.count());
-			r.fill(values, v.length);
-			return new LuaValue.ArrayVarargs(values, Constants.NONE);
-		}
-
-		return v.length == 1 ? new LuaValue.PairVarargs(v[0], r) : new LuaValue.ArrayVarargs(v, r);
-	}
-
-	/**
-	 * Construct a {@link Varargs} around an array of {@link LuaValue}s.
-	 *
 	 * @param v      The array of {@link LuaValue}s
 	 * @param offset number of initial values to skip in the array
 	 * @param length number of values to include from the array
@@ -294,7 +218,6 @@ public class ValueFactory {
 	 * @param length number of values to include from the array
 	 * @param more   {@link Varargs} contain values to include at the end
 	 * @return {@link Varargs} wrapping the supplied values.
-	 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 	 * @see ValueFactory#varargsOfCopy(LuaValue[], int, int)
 	 */
 	public static Varargs varargsOfCopy(final LuaValue[] v, final int offset, final int length, Varargs more) {

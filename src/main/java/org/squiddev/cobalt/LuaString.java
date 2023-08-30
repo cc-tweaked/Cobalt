@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt;
 
-import cc.tweaked.internal.string.NumberParser;
+import cc.tweaked.cobalt.internal.string.NumberParser;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
