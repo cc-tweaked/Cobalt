@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.lib;
 
+import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.lib.system.SystemLibraries;
@@ -44,7 +45,7 @@ public final class CoreLibraries {
 	 * @see #debugGlobals(LuaState)
 	 * @see CoreLibraries
 	 */
-	public static LuaTable standardGlobals(LuaState state) {
+	public static LuaTable standardGlobals(LuaState state) throws LuaError {
 		LuaTable globals = state.getMainThread().getfenv();
 		new BaseLib().add(globals);
 		TableLib.add(state, globals);
@@ -64,7 +65,7 @@ public final class CoreLibraries {
 	 * @see CoreLibraries
 	 * @see DebugLib
 	 */
-	public static LuaTable debugGlobals(LuaState state) {
+	public static LuaTable debugGlobals(LuaState state) throws LuaError {
 		LuaTable _G = standardGlobals(state);
 		DebugLib.add(state, _G);
 		return _G;

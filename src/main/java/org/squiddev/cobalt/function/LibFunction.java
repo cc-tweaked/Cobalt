@@ -146,7 +146,7 @@ public sealed abstract class LibFunction extends LuaFunction
 		return name != null ? name : super.toString();
 	}
 
-	public static void setGlobalLibrary(LuaState state, LuaTable env, String name, LuaValue library) {
+	public static void setGlobalLibrary(LuaState state, LuaTable env, String name, LuaValue library) throws LuaError {
 		env.rawset(name, library);
 		state.registry().getSubTable(Constants.LOADED).rawset(name, library);
 	}

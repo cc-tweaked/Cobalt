@@ -64,17 +64,6 @@ public class LuaUserdata extends LuaValue {
 	}
 
 	@Override
-	public Object checkUserdata() {
-		return instance;
-	}
-
-	@Override
-	public <T> T checkUserdata(Class<T> c) throws LuaError {
-		if (!c.isAssignableFrom(instance.getClass())) throw ErrorFactory.typeError(this, c.getName());
-		return c.cast(instance);
-	}
-
-	@Override
 	public boolean equals(Object val) {
 		return this == val || (val instanceof LuaUserdata other && metatable == other.metatable && instance.equals(other.instance));
 	}

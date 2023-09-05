@@ -54,7 +54,7 @@ public final class StringLib {
 	private StringLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("len", StringLib::len),
 			RegisteredFunction.of("lower", StringLib::lower),

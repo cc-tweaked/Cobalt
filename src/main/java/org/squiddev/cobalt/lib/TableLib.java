@@ -57,7 +57,7 @@ public final class TableLib {
 	private TableLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("getn", TableLib::getn),
 			RegisteredFunction.of("maxn", TableLib::maxn),
@@ -260,7 +260,7 @@ public final class TableLib {
 		});
 	}
 
-	private static LuaValue pack(LuaState state, Varargs args) {
+	public static LuaValue pack(LuaState state, Varargs args) throws LuaError {
 		int count = args.count();
 		LuaTable table = new LuaTable(count, 1);
 		for (int i = 1; i <= count; i++) table.rawset(i, args.arg(i));

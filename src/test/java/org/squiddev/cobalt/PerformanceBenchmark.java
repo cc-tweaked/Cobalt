@@ -44,7 +44,7 @@ public class PerformanceBenchmark {
 		final ScriptHelper helpers = new ScriptHelper("/perf/");
 
 		@Setup(Level.Iteration)
-		public void setup() {
+		public void setup() throws LuaError {
 			helpers.setupQuiet();
 		}
 	}

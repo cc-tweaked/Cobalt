@@ -114,7 +114,7 @@ public class BaseLib {
 	}
 
 	private static LuaValue getfenvobj(LuaState state, LuaValue arg, boolean optional) throws LuaError {
-		if (arg.isFunction()) return arg;
+		if (arg instanceof LuaFunction) return arg;
 
 		int level = optional ? arg.optInteger(1) : arg.checkInteger();
 		Varargs.argCheck(level >= 0, 1, "level must be non-negative");
@@ -183,8 +183,7 @@ public class BaseLib {
 		LuaTable t = args.arg(1).checkTable();
 		LuaValue k = args.checkValue(2);
 		LuaValue v = args.checkValue(3);
-		if (k.isNil()) throw new LuaError("table index is nil");
-		t.rawset(k.checkValidKey(), v);
+		t.rawset(k, v);
 		return t;
 	}
 

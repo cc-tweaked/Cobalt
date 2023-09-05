@@ -386,14 +386,13 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue call(LuaState state, LuaValue function, int stack) throws LuaError, UnwindThrowable {
-		if (function.isFunction()) {
-			return ((LuaFunction) function).call(state);
-		} else {
-			LuaValue meta = function.metatag(state, Constants.CALL);
-			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
+		if (function instanceof LuaFunction func) return func.call(state);
 
-			return ((LuaFunction) meta).call(state, function);
-		}
+		LuaValue meta = function.metatag(state, Constants.CALL);
+		if (meta instanceof LuaFunction metaFunc) return metaFunc.call(state, function);
+
+		throw ErrorFactory.operandError(state, function, "call", stack);
+
 	}
 
 	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg) throws LuaError, UnwindThrowable {
@@ -401,14 +400,12 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg, int stack) throws LuaError, UnwindThrowable {
-		if (function.isFunction()) {
-			return ((LuaFunction) function).call(state, arg);
-		} else {
-			LuaValue meta = function.metatag(state, Constants.CALL);
-			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
+		if (function instanceof LuaFunction func) return func.call(state, arg);
 
-			return ((LuaFunction) meta).call(state, function, arg);
-		}
+		LuaValue meta = function.metatag(state, Constants.CALL);
+		if (meta instanceof LuaFunction metaFunc) return metaFunc.call(state, function, arg);
+
+		throw ErrorFactory.operandError(state, function, "call", stack);
 	}
 
 	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
@@ -416,14 +413,12 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, int stack) throws LuaError, UnwindThrowable {
-		if (function.isFunction()) {
-			return ((LuaFunction) function).call(state, arg1, arg2);
-		} else {
-			LuaValue meta = function.metatag(state, Constants.CALL);
-			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
+		if (function instanceof LuaFunction func) return func.call(state, arg1, arg2);
 
-			return ((LuaFunction) meta).call(state, function, arg1, arg2);
-		}
+		LuaValue meta = function.metatag(state, Constants.CALL);
+		if (meta instanceof LuaFunction metaFunc) return metaFunc.call(state, function, arg1, arg2);
+
+		throw ErrorFactory.operandError(state, function, "call", stack);
 	}
 
 	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
@@ -431,14 +426,15 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int stack) throws LuaError, UnwindThrowable {
-		if (function.isFunction()) {
-			return ((LuaFunction) function).call(state, arg1, arg2, arg3);
-		} else {
-			LuaValue meta = function.metatag(state, Constants.CALL);
-			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
+		if (function instanceof LuaFunction func) return func.call(state, arg1, arg2, arg3);
 
-			return ((LuaFunction) meta).invoke(state, ValueFactory.varargsOf(function, arg1, arg2, arg3)).first();
+		LuaValue meta = function.metatag(state, Constants.CALL);
+		if (meta instanceof LuaFunction metaFunc) {
+			return metaFunc.invoke(state, ValueFactory.varargsOf(function, arg1, arg2, arg3)).first();
 		}
+
+		throw ErrorFactory.operandError(state, function, "call", stack);
+
 	}
 
 	public static Varargs invoke(LuaState state, LuaValue function, Varargs args) throws LuaError, UnwindThrowable {
@@ -446,14 +442,14 @@ public final class OperationHelper {
 	}
 
 	public static Varargs invoke(LuaState state, LuaValue function, Varargs args, int stack) throws LuaError, UnwindThrowable {
-		if (function.isFunction()) {
-			return ((LuaFunction) function).invoke(state, args);
-		} else {
-			LuaValue meta = function.metatag(state, Constants.CALL);
-			if (!meta.isFunction()) throw ErrorFactory.operandError(state, function, "call", stack);
+		if (function instanceof LuaFunction func) return func.invoke(state, args);
 
-			return ((LuaFunction) meta).invoke(state, ValueFactory.varargsOf(function, args));
+		LuaValue meta = function.metatag(state, Constants.CALL);
+		if (meta instanceof LuaFunction metaFunc) {
+			return metaFunc.invoke(state, ValueFactory.varargsOf(function, args));
 		}
+
+		throw ErrorFactory.operandError(state, function, "call", stack);
 	}
 
 	//endregion
@@ -497,9 +493,9 @@ public final class OperationHelper {
 			} else if ((tm = t.metatag(state, CachedMetamethod.INDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
-			if (tm.isFunction()) {
-				return ((LuaFunction) tm).call(state, t, key);
-			}
+
+			if (tm instanceof LuaFunction metaFunc) return metaFunc.call(state, t, key);
+
 			t = tm;
 			stack = -1;
 		}
@@ -537,8 +533,8 @@ public final class OperationHelper {
 			if ((tm = t.metatag(state, CachedMetamethod.NEWINDEX)).isNil()) {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
-			if (tm.isFunction()) {
-				((LuaFunction) tm).call(state, t, key, value);
+			if (tm instanceof LuaFunction metaFunc) {
+				metaFunc.call(state, t, key, value);
 				return;
 			}
 			t = tm;

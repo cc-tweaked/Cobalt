@@ -28,6 +28,7 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.debug.Upvalue;
+import org.squiddev.cobalt.lib.TableLib;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -149,7 +150,7 @@ public final class LuaInterpreter {
 
 	private static DebugFrame setupCallFinish(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		if (p.isVarArg >= VARARG_NEEDSARG) stack[p.parameters] = new LuaTable(varargs);
+		if (p.isVarArg >= VARARG_NEEDSARG) stack[p.parameters] = TableLib.pack(state, varargs);
 
 		DebugState ds = DebugState.get(state);
 		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
@@ -432,13 +433,15 @@ public final class LuaInterpreter {
 						}
 
 						LuaFunction functionVal;
-						if (val.isFunction()) {
-							functionVal = (LuaFunction) val;
+						if (val instanceof LuaFunction func) {
+							functionVal = func;
 						} else {
 							LuaValue meta = val.metatag(state, Constants.CALL);
-							if (!meta.isFunction()) throw ErrorFactory.operandError(state, val, "call", a);
+							if (!(meta instanceof LuaFunction func)) {
+								throw ErrorFactory.operandError(state, val, "call", a);
+							}
 
-							functionVal = (LuaFunction) meta;
+							functionVal = func;
 							args = ValueFactory.varargsOf(val, args);
 						}
 

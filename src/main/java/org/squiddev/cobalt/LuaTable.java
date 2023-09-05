@@ -64,12 +64,8 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * methods on {@link LuaValue}:
  * <ul>
  * <li>{@link ValueFactory#tableOf()} empty table</li>
- * <li>{@link ValueFactory#tableOf(int, int)} table with capacity</li>
  * <li>{@link ValueFactory#listOf(LuaValue[])} initialize array part</li>
- * <li>{@link ValueFactory#listOf(LuaValue[], Varargs)} initialize array part</li>
  * <li>{@link ValueFactory#tableOf(LuaValue[])} initialize named hash part</li>
- * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[])} initialize array and named parts</li>
- * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[], Varargs)} initialize array and named parts</li>
  * </ul>
  *
  * @see LuaValue
@@ -77,7 +73,6 @@ import static org.squiddev.cobalt.ValueFactory.*;
 public final class LuaTable extends LuaValue {
 	private static final Object[] EMPTY_ARRAY = new Object[0];
 	private static final Node[] EMPTY_NODES = new Node[0];
-	private static final LuaString N = valueOf("n");
 
 	private Object[] array = EMPTY_ARRAY;
 	private Node[] nodes = EMPTY_NODES;
@@ -99,55 +94,12 @@ public final class LuaTable extends LuaValue {
 	/**
 	 * Construct table with preset capacity.
 	 *
-	 * @param narray capacity of array part
-	 * @param nhash  capacity of hash part
+	 * @param arraySize capacity of array part
+	 * @param hashSize  capacity of hash part
 	 */
-	public LuaTable(int narray, int nhash) {
+	public LuaTable(int arraySize, int hashSize) {
 		super(TTABLE);
-		resize(narray, nhash, false);
-	}
-
-	/**
-	 * Construct table with named and unnamed parts.
-	 *
-	 * @param named   Named elements in order {@code key-a, value-a, key-b, value-b, ... }
-	 * @param unnamed Unnamed elements in order {@code value-1, value-2, ... }
-	 * @param lastarg Additional unnamed values beyond {@code unnamed.length}
-	 */
-	public LuaTable(LuaValue[] named, LuaValue[] unnamed, Varargs lastarg) {
-		super(TTABLE);
-		int nn = (named != null ? named.length : 0);
-		int nu = (unnamed != null ? unnamed.length : 0);
-		int nl = (lastarg != null ? lastarg.count() : 0);
-		resize(nu + nl, nn >> 1, false);
-		for (int i = 0; i < nu; i++) {
-			rawset(i + 1, unnamed[i]);
-		}
-		if (lastarg != null) {
-			for (int i = 1, n = lastarg.count(); i <= n; ++i) {
-				rawset(nu + i, lastarg.arg(i));
-			}
-		}
-		for (int i = 0; i < nn; i += 2) {
-			if (!named[i + 1].isNil()) {
-				rawset(named[i], named[i + 1]);
-			}
-		}
-	}
-
-	/**
-	 * Construct table of unnamed elements.
-	 *
-	 * @param varargs Unnamed elements in order {@code value-1, value-2, ... }
-	 */
-	public LuaTable(Varargs varargs) {
-		super(TTABLE);
-		int n = Math.max(varargs.count(), 0);
-		resize(n, 1, false);
-		rawset(N, valueOf(n));
-		for (int i = 1; i <= n; i++) {
-			rawset(i, varargs.arg(i));
-		}
+		resize(arraySize, hashSize, false);
 	}
 
 	@Override
@@ -212,7 +164,7 @@ public final class LuaTable extends LuaValue {
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 */
 	public void rawset(String key, LuaValue value) {
-		rawset(ValueFactory.valueOf(key), value);
+		rawsetImpl(ValueFactory.valueOf(key), value);
 	}
 
 	/**
@@ -552,7 +504,7 @@ public final class LuaTable extends LuaValue {
 			Node old = oldNode[i];
 			LuaValue key = old.key();
 			LuaValue value = old.value();
-			if (!key.isNil() && !value.isNil()) rawset(key, value);
+			if (!key.isNil() && !value.isNil()) rawsetImpl(key, value);
 		}
 	}
 
@@ -833,7 +785,6 @@ public final class LuaTable extends LuaValue {
 		}
 
 		assert !hasNewIndex();
-		key.checkValidKey();
 		rawset(key, value);
 		return true;
 	}
@@ -863,7 +814,13 @@ public final class LuaTable extends LuaValue {
 		} while (true);
 	}
 
-	public void rawset(LuaValue key, LuaValue value) {
+	public void rawset(LuaValue key, LuaValue value) throws LuaError {
+		if (key.isNil()) throw new LuaError("table index is nil");
+		if (key instanceof LuaDouble d && Double.isNaN(d.v)) throw new LuaError("table index is NaN");
+		rawsetImpl(key, value);
+	}
+
+	public void rawsetImpl(LuaValue key, LuaValue value) {
 		if (key instanceof LuaInteger keyI) {
 			rawset(keyI.v, value, key);
 			return;

@@ -53,23 +53,23 @@ public class ScriptHelper {
 		this.subdir = subdir;
 	}
 
-	public void setup() {
+	public void setup() throws LuaError {
 		setup(x -> {
 		});
 	}
 
-	public void setup(Consumer<LuaState.Builder> extend) {
+	public void setup(Consumer<LuaState.Builder> extend) throws LuaError {
 		LuaState.Builder builder = LuaState.builder();
 		extend.accept(builder);
 		setupCommon(builder.build());
 	}
 
-	public void setupQuiet() {
+	public void setupQuiet() throws LuaError {
 		setupCommon(new LuaState());
 		stdout.setOut(new VoidOutputStream());
 	}
 
-	private void setupCommon(LuaState state) {
+	private void setupCommon(LuaState state) throws LuaError {
 		this.state = state;
 		globals = SystemLibraries.debugGlobals(state, this::load, new VoidInputStream(), stdoutStream);
 		globals.rawset("id_", LibFunction.createV((state$, args) -> args));

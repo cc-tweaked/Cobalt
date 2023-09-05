@@ -264,7 +264,7 @@ public class MetatableTest {
 		assertEquals(rg, t.rawget("gg"));
 	}
 
-	private LuaTable makeTable(String key1, String val1, String key2, String val2) {
+	private LuaTable makeTable(String key1, String val1, String key2, String val2) throws LuaError {
 		return ValueFactory.tableOf(
 			valueOf(key1), valueOf(val1),
 			valueOf(key2), valueOf(val2)

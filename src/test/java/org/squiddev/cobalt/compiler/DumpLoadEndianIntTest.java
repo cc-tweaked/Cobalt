@@ -51,7 +51,7 @@ public class DumpLoadEndianIntTest {
 	private LuaState state;
 
 	@BeforeEach
-	public void setup() {
+	public void setup() throws LuaError {
 		state = new LuaState();
 		_G = CoreLibraries.standardGlobals(state);
 		BytecodeDumper.ALLOW_INTEGER_CASTING = false;

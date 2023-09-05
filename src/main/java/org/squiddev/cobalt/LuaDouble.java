@@ -168,10 +168,4 @@ public final class LuaDouble extends LuaNumber {
 	public String checkString() {
 		return toString();
 	}
-
-	@Override
-	public LuaValue checkValidKey() throws LuaError {
-		if (Double.isNaN(v)) throw new LuaError("table index is NaN");
-		return this;
-	}
 }

@@ -106,22 +106,28 @@ public class ValueFactory {
 	/**
 	 * Construct a {@link LuaTable} initialized with supplied array values.
 	 *
-	 * @param unnamedValues array of {@link LuaValue} containing the values to use in initialization
+	 * @param values array of {@link LuaValue} containing the values to use in initialization
 	 * @return new {@link LuaTable} instance with sequential elements coming from the array.
 	 */
-	public static LuaTable listOf(LuaValue... unnamedValues) {
-		return new LuaTable(null, unnamedValues, null);
+	public static LuaTable listOf(LuaValue... values) {
+		LuaTable table = new LuaTable(values.length, 0);
+		for (int i = 0; i < values.length; i++) table.rawset(i + 1, values[i]);
+		return table;
 	}
 
 	/**
 	 * Construct a {@link LuaTable} initialized with supplied named values.
 	 *
-	 * @param namedValues array of {@link LuaValue} containing the keys and values to use in initialization
-	 *                    in order {@code {key-a, value-a, key-b, value-b, ...} }
+	 * @param items array of {@link LuaValue} containing the keys and values to use in initialization
+	 *              in order {@code {key-a, value-a, key-b, value-b, ...} }
 	 * @return new {@link LuaTable} instance with non-sequential keys coming from the supplied array.
 	 */
-	public static LuaTable tableOf(LuaValue... namedValues) {
-		return new LuaTable(namedValues, null, null);
+	public static LuaTable tableOf(LuaValue... items) throws LuaError {
+		LuaTable table = new LuaTable(0, items.length >> 1);
+		for (int i = 0; i < items.length; i += 2) {
+			if (!items[i + 1].isNil()) table.rawset(items[i], items[i + 1]);
+		}
+		return table;
 	}
 
 	/**

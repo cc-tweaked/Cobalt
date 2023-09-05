@@ -67,9 +67,4 @@ public final class LuaNil extends LuaValue {
 	public int hashCode() {
 		return 0;
 	}
-
-	@Override
-	public LuaValue checkValidKey() throws LuaError {
-		throw new LuaError("table index is nil");
-	}
 }

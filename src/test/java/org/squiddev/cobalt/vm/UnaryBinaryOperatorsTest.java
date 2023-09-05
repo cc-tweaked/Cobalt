@@ -246,17 +246,17 @@ public class UnaryBinaryOperatorsTest {
 		LuaTable smt = state.stringMetatable;
 		try {
 			// always return nil0
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,});
-			state.numberMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,});
-			state.stringMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,});
-			tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,}));
-			tbl2.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,}));
-			uda.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,}));
+			state.booleanMetatable = tableOf(Constants.EQ, RETURN_NIL);
+			state.numberMetatable = tableOf(Constants.EQ, RETURN_NIL);
+			state.stringMetatable = tableOf(Constants.EQ, RETURN_NIL);
+			tbl.setMetatable(state, tableOf(Constants.EQ, RETURN_NIL));
+			tbl2.setMetatable(state, tableOf(Constants.EQ, RETURN_NIL));
+			uda.setMetatable(state, tableOf(Constants.EQ, RETURN_NIL));
 			udb.setMetatable(state, uda.getMetatable(state));
-			uda2.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,}));
+			uda2.setMetatable(state, tableOf(Constants.EQ, RETURN_NIL));
 			// diff metatag function
-			tbl3.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,}));
-			uda3.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,}));
+			tbl3.setMetatable(state, tableOf(Constants.EQ, RETURN_ONE));
+			uda3.setMetatable(state, tableOf(Constants.EQ, RETURN_ONE));
 
 			// primitive types or same valu do not invoke metatag as per C implementation
 			assertEquals(tru, eq.apply(tru, tru) ? Constants.TRUE : Constants.FALSE);
@@ -300,17 +300,17 @@ public class UnaryBinaryOperatorsTest {
 			assertEquals(fal, eq.apply(uda3, uda) ? Constants.TRUE : Constants.FALSE);
 
 			// always use right argument
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,});
-			state.numberMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,});
-			state.stringMetatable = tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,});
-			tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,}));
-			tbl2.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,}));
-			uda.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,}));
+			state.booleanMetatable = tableOf(Constants.EQ, RETURN_ONE);
+			state.numberMetatable = tableOf(Constants.EQ, RETURN_ONE);
+			state.stringMetatable = tableOf(Constants.EQ, RETURN_ONE);
+			tbl.setMetatable(state, tableOf(Constants.EQ, RETURN_ONE));
+			tbl2.setMetatable(state, tableOf(Constants.EQ, RETURN_ONE));
+			uda.setMetatable(state, tableOf(Constants.EQ, RETURN_ONE));
 			udb.setMetatable(state, uda.getMetatable(state));
-			uda2.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_ONE,}));
+			uda2.setMetatable(state, tableOf(Constants.EQ, RETURN_ONE));
 			// diff metatag function
-			tbl3.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,}));
-			uda3.setMetatable(state, tableOf(new LuaValue[]{Constants.EQ, RETURN_NIL,}));
+			tbl3.setMetatable(state, tableOf(Constants.EQ, RETURN_NIL));
+			uda3.setMetatable(state, tableOf(Constants.EQ, RETURN_NIL));
 
 			// primitive types or same value do not invoke metatag as per C implementation
 			assertEquals(tru, eq.apply(tru, tru) ? Constants.TRUE : Constants.FALSE);
@@ -544,21 +544,21 @@ public class UnaryBinaryOperatorsTest {
 			assertThrows(LuaError.class, () -> mod.apply(tru, tbl));
 
 			// always use left argument
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.ADD, RETURN_LHS,});
+			state.booleanMetatable = tableOf(Constants.ADD, RETURN_LHS);
 			assertEquals(tru, add.apply(tru, fal));
 			assertEquals(tru, add.apply(tru, tbl));
 			assertEquals(tbl, add.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> add.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.SUB, RETURN_LHS,});
+			state.booleanMetatable = tableOf(Constants.SUB, RETURN_LHS);
 			assertEquals(tru, sub.apply(tru, fal));
 			assertEquals(tru, sub.apply(tru, tbl));
 			assertEquals(tbl, sub.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> sub.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> add.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MUL, RETURN_LHS,});
+			state.booleanMetatable = tableOf(Constants.MUL, RETURN_LHS);
 			assertEquals(tru, mul.apply(tru, fal));
 			assertEquals(tru, mul.apply(tru, tbl));
 			assertEquals(tbl, mul.apply(tbl, tru));
@@ -566,21 +566,21 @@ public class UnaryBinaryOperatorsTest {
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.DIV, RETURN_LHS,});
+			state.booleanMetatable = tableOf(Constants.DIV, RETURN_LHS);
 			assertEquals(tru, div.apply(tru, fal));
 			assertEquals(tru, div.apply(tru, tbl));
 			assertEquals(tbl, div.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> div.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.POW, RETURN_LHS,});
+			state.booleanMetatable = tableOf(Constants.POW, RETURN_LHS);
 			assertEquals(tru, pow.apply(tru, fal));
 			assertEquals(tru, pow.apply(tru, tbl));
 			assertEquals(tbl, pow.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> pow.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MOD, RETURN_LHS,});
+			state.booleanMetatable = tableOf(Constants.MOD, RETURN_LHS);
 			assertEquals(tru, mod.apply(tru, fal));
 			assertEquals(tru, mod.apply(tru, tbl));
 			assertEquals(tbl, mod.apply(tbl, tru));
@@ -588,28 +588,28 @@ public class UnaryBinaryOperatorsTest {
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
 			// always use right argument
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.ADD, RETURN_RHS,});
+			state.booleanMetatable = tableOf(Constants.ADD, RETURN_RHS);
 			assertEquals(fal, add.apply(tru, fal));
 			assertEquals(tbl, add.apply(tru, tbl));
 			assertEquals(tru, add.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> add.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.SUB, RETURN_RHS,});
+			state.booleanMetatable = tableOf(Constants.SUB, RETURN_RHS);
 			assertEquals(fal, sub.apply(tru, fal));
 			assertEquals(tbl, sub.apply(tru, tbl));
 			assertEquals(tru, sub.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> sub.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> add.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MUL, RETURN_RHS,});
+			state.booleanMetatable = tableOf(Constants.MUL, RETURN_RHS);
 			assertEquals(fal, mul.apply(tru, fal));
 			assertEquals(tbl, mul.apply(tru, tbl));
 			assertEquals(tru, mul.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> mul.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.DIV, RETURN_RHS,});
+			state.booleanMetatable = tableOf(Constants.DIV, RETURN_RHS);
 			assertEquals(fal, div.apply(tru, fal));
 			assertEquals(tbl, div.apply(tru, tbl));
 			assertEquals(tru, div.apply(tbl, tru));
@@ -617,14 +617,14 @@ public class UnaryBinaryOperatorsTest {
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.POW, RETURN_RHS,});
+			state.booleanMetatable = tableOf(Constants.POW, RETURN_RHS);
 			assertEquals(fal, pow.apply(tru, fal));
 			assertEquals(tbl, pow.apply(tru, tbl));
 			assertEquals(tru, pow.apply(tbl, tru));
 			assertThrows(LuaError.class, () -> pow.apply(tbl, tbl2));
 			assertThrows(LuaError.class, () -> sub.apply(tru, tbl));
 
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.MOD, RETURN_RHS,});
+			state.booleanMetatable = tableOf(Constants.MOD, RETURN_RHS);
 			assertEquals(fal, mod.apply(tru, fal));
 			assertEquals(tbl, mod.apply(tru, tbl));
 			assertEquals(tru, mod.apply(tbl, tru));
@@ -658,42 +658,42 @@ public class UnaryBinaryOperatorsTest {
 		assertThrows(LuaError.class, () -> add.apply(tbl, zero));
 		assertThrows(LuaError.class, () -> add.apply(zero, tbl));
 
-		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.ADD, RETURN_ONE,}));
+		tbl.setMetatable(state, tableOf(Constants.ADD, RETURN_ONE));
 		assertEquals(one, add.apply(tbl, zero));
 		assertEquals(one, add.apply(zero, tbl));
 
 		assertThrows(LuaError.class, () -> sub.apply(tbl, zero));
 		assertThrows(LuaError.class, () -> sub.apply(zero, tbl));
 
-		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.SUB, RETURN_ONE,}));
+		tbl.setMetatable(state, tableOf(Constants.SUB, RETURN_ONE));
 		assertEquals(one, sub.apply(tbl, zero));
 		assertEquals(one, sub.apply(zero, tbl));
 
 		assertThrows(LuaError.class, () -> mul.apply(tbl, zero));
 		assertThrows(LuaError.class, () -> mul.apply(zero, tbl));
 
-		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.MUL, RETURN_ONE,}));
+		tbl.setMetatable(state, tableOf(Constants.MUL, RETURN_ONE));
 		assertEquals(one, mul.apply(tbl, zero));
 		assertEquals(one, mul.apply(zero, tbl));
 
 		assertThrows(LuaError.class, () -> div.apply(tbl, zero));
 		assertThrows(LuaError.class, () -> div.apply(zero, tbl));
 
-		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.DIV, RETURN_ONE,}));
+		tbl.setMetatable(state, tableOf(Constants.DIV, RETURN_ONE));
 		assertEquals(one, div.apply(tbl, zero));
 		assertEquals(one, div.apply(zero, tbl));
 
 		assertThrows(LuaError.class, () -> pow.apply(tbl, zero));
 		assertThrows(LuaError.class, () -> pow.apply(zero, tbl));
 
-		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.POW, RETURN_ONE,}));
+		tbl.setMetatable(state, tableOf(Constants.POW, RETURN_ONE));
 		assertEquals(one, pow.apply(tbl, zero));
 		assertEquals(one, pow.apply(zero, tbl));
 
 		assertThrows(LuaError.class, () -> mod.apply(tbl, zero));
 		assertThrows(LuaError.class, () -> mod.apply(zero, tbl));
 
-		tbl.setMetatable(state, tableOf(new LuaValue[]{Constants.MOD, RETURN_ONE,}));
+		tbl.setMetatable(state, tableOf(Constants.MOD, RETURN_ONE));
 		assertEquals(one, mod.apply(tbl, zero));
 		assertEquals(one, mod.apply(zero, tbl));
 	}
@@ -1012,7 +1012,7 @@ public class UnaryBinaryOperatorsTest {
 			assertThrows(LuaError.class, () -> concat.apply(ghi, concat.apply(tbl, def)));
 
 			// always use right argument
-			state.booleanMetatable = tableOf(new LuaValue[]{Constants.CONCAT, RETURN_RHS});
+			state.booleanMetatable = tableOf(Constants.CONCAT, RETURN_RHS);
 			assertEquals(tbl, concat.apply(tru, tbl));
 			assertEquals(tru, concat.apply(tbl, tru));
 			assertEquals(tbl, concat.apply(tru, tbl));

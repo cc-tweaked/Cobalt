@@ -42,7 +42,7 @@ public class SimpleTests {
 	private LuaTable _G;
 
 	@BeforeEach
-	public void setup() {
+	public void setup() throws LuaError {
 		state = new LuaState();
 		_G = SystemLibraries.standardGlobals(state);
 	}

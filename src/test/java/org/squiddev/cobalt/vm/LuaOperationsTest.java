@@ -40,6 +40,18 @@ import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class LuaOperationsTest {
+	private interface Constructor<T> {
+		T construct() throws Exception;
+	}
+
+	private static <T> T safeConstruct(Constructor<T> c) {
+		try {
+			return c.construct();
+		} catch (Exception e) {
+			throw e instanceof RuntimeException re ? re : new RuntimeException(e);
+		}
+	}
+
 	private final int sampleint = 77;
 	private final long samplelong = 123400000000L;
 	private final double sampledouble = 55.25;
@@ -61,7 +73,7 @@ public class LuaOperationsTest {
 	private final LuaValue stringint = valueOf(samplestringint);
 	private final LuaValue stringlong = valueOf(samplestringlong);
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
-	private final LuaTable table = ValueFactory.listOf(new LuaValue[]{valueOf("aaa"), valueOf("bbb")});
+	private final LuaTable table = safeConstruct(() -> ValueFactory.listOf(valueOf("aaa"), valueOf("bbb")));
 	private final LuaFunction somefunc = LibFunction.create(s -> NIL);
 
 	{
@@ -118,7 +130,7 @@ public class LuaOperationsTest {
 	}
 
 	@Test
-	public void testSetfenv() {
+	public void testSetfenv() throws LuaError {
 		LuaTable table2 = ValueFactory.listOf(valueOf("ccc"), valueOf("ddd"));
 		assertFalse(somenil.setfenv(table2));
 		assertFalse(sometrue.setfenv(table2));

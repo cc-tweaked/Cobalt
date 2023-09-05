@@ -46,7 +46,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 public class MathLib {
 	private Random random;
 
-	public void add(LuaState state, LuaTable env) {
+	public void add(LuaState state, LuaTable env) throws LuaError {
 		final RegisteredFunction[] functions = new RegisteredFunction[]{
 			RegisteredFunction.of("abs", (s, arg) -> valueOf(Math.abs(arg.checkDouble()))),
 			RegisteredFunction.of("ceil", (s, arg) -> valueOf(Math.ceil(arg.checkDouble()))),

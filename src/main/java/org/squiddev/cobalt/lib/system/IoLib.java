@@ -209,7 +209,7 @@ public class IoLib {
 		this.stdout = stdout;
 	}
 
-	public void add(LuaState state, LuaTable env) {
+	public void add(LuaState state, LuaTable env) throws LuaError {
 		// io lib functions
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("close", this::close),

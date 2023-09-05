@@ -35,7 +35,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * Subclass of LibFunction that implements the Lua standard {@code bit32} library.
  */
 public class Bit32Lib {
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LibFunction.setGlobalLibrary(state, env, "bit32", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("band", Bit32Lib::band),
 			RegisteredFunction.of("bnot", Bit32Lib::bnot),

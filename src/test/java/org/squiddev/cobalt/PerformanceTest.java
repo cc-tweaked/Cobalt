@@ -40,7 +40,7 @@ public class PerformanceTest {
 	private ScriptHelper helpers;
 
 	@BeforeEach
-	public void setup() {
+	public void setup() throws LuaError {
 		helpers = new ScriptHelper("/perf/");
 		helpers.setupQuiet();
 	}

@@ -1,5 +1,6 @@
 package org.squiddev.cobalt.lib.system;
 
+import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.lib.CoreLibraries;
@@ -18,7 +19,7 @@ public final class SystemLibraries {
 	 * @param state The current lua state
 	 * @return Table of globals initialized with the standard JSE libraries
 	 */
-	public static LuaTable standardGlobals(LuaState state) {
+	public static LuaTable standardGlobals(LuaState state) throws LuaError {
 		return standardGlobals(state, ResourceLoader.FILES, System.in, System.out);
 	}
 
@@ -28,7 +29,7 @@ public final class SystemLibraries {
 	 * @param state The current lua state
 	 * @return Table of globals initialized with the standard JSE libraries
 	 */
-	public static LuaTable standardGlobals(LuaState state, ResourceLoader resources, InputStream stdin, PrintStream stdout) {
+	public static LuaTable standardGlobals(LuaState state, ResourceLoader resources, InputStream stdin, PrintStream stdout) throws LuaError {
 		LuaTable globals = CoreLibraries.standardGlobals(state);
 		new SystemBaseLib(resources, stdin, stdout).add(globals);
 		new PackageLib(resources).add(state, globals);
@@ -43,7 +44,7 @@ public final class SystemLibraries {
 	 * @param state The current lua state
 	 * @return Table of globals initialized with the standard JSE libraries
 	 */
-	public static LuaTable debugGlobals(LuaState state) {
+	public static LuaTable debugGlobals(LuaState state) throws LuaError {
 		return debugGlobals(state, ResourceLoader.FILES, System.in, System.out);
 	}
 
@@ -54,7 +55,7 @@ public final class SystemLibraries {
 	 * @return Table of globals initialized with the standard JSE and debug libraries
 	 * @see DebugLib
 	 */
-	public static LuaTable debugGlobals(LuaState state, ResourceLoader loader, InputStream stdin, PrintStream stdout) {
+	public static LuaTable debugGlobals(LuaState state, ResourceLoader loader, InputStream stdin, PrintStream stdout) throws LuaError {
 		LuaTable globals = standardGlobals(state, loader, stdin, stdout);
 		DebugLib.add(state, globals);
 		return globals;

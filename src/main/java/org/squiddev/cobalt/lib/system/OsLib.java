@@ -61,7 +61,7 @@ public class OsLib {
 
 	private final long startTime = System.nanoTime();
 
-	public void add(LuaState state, LuaTable env) {
+	public void add(LuaState state, LuaTable env) throws LuaError {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("clock", this::clock),
 			RegisteredFunction.of("date", OsLib::date),

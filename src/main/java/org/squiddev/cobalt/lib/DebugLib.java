@@ -72,7 +72,7 @@ public final class DebugLib {
 	private DebugLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LibFunction.setGlobalLibrary(state, env, "debug", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("debug", DebugLib::debug),
 			RegisteredFunction.ofV("getfenv", DebugLib::getfenv),
@@ -260,8 +260,7 @@ public final class DebugLib {
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 
 		int local = args.arg(arg + 1).checkInteger();
-		if (args.arg(arg).isFunction()) {
-			LuaFunction function = args.arg(arg).checkFunction();
+		if (args.arg(arg) instanceof LuaFunction function) {
 			if (!(function instanceof LuaClosure closure)) return NIL;
 
 			Prototype proto = closure.getPrototype();

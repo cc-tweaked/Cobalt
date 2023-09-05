@@ -73,7 +73,7 @@ public class PackageLib {
 		this.loader = loader;
 	}
 
-	public void add(LuaState state, LuaTable env) {
+	public void add(LuaState state, LuaTable env) throws LuaError {
 		env.rawset("require", RegisteredFunction.ofS("require", (s, f, a) -> SuspendedTask.run(f, () -> require(s, a))).create());
 		env.rawset("module", RegisteredFunction.ofS("module", (s, f, a) -> SuspendedTask.run(f, () -> module(s, a))).create());
 
@@ -91,7 +91,7 @@ public class PackageLib {
 		));
 	}
 
-	private static LuaTable loaded(LuaState state) {
+	private static LuaTable loaded(LuaState state) throws LuaError {
 		return state.registry().getSubTable(Constants.LOADED);
 	}
 
@@ -188,7 +188,7 @@ public class PackageLib {
 	 * @param fname the name to look up or create, such as "abc.def.ghi"
 	 * @return the table for that name, possible a new one, or null if a non-table has that name already.
 	 */
-	private static LuaTable findtable(LuaTable table, LuaString fname) {
+	private static LuaTable findtable(LuaTable table, LuaString fname) throws LuaError {
 		int b, e = (-1);
 		do {
 			e = fname.indexOf(_DOT, b = e + 1);
@@ -265,11 +265,9 @@ public class PackageLib {
 
 			/* call loader with module name as argument */
 			chunk = OperationHelper.call(state, loader, name);
-			if (chunk.isFunction()) {
-				break;
-			}
+			if (chunk instanceof LuaFunction) break;
 			if (chunk.isString()) {
-				sb.append(chunk.toString());
+				sb.append(chunk);
 			}
 		}
 
@@ -329,9 +327,7 @@ public class PackageLib {
 
 			// try loading the file
 			Varargs v = SystemBaseLib.loadFile(state, loader, filename);
-			if (v.first().isFunction()) {
-				return v.first();
-			}
+			if (v.first() instanceof LuaFunction f) return f;
 
 			// report error
 			if (sb == null) {

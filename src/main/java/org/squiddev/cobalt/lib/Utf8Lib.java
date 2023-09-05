@@ -26,7 +26,7 @@ public class Utf8Lib {
 	 */
 	private LibFunction codesIter;
 
-	public void add(LuaState state, LuaTable env) {
+	public void add(LuaState state, LuaTable env) throws LuaError {
 		codesIter = RegisteredFunction.ofV("utf8.codesIter", Utf8Lib::codesIter).create();
 
 		LuaTable t = new LuaTable(0, 6);
