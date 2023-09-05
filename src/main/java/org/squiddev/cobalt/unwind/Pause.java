@@ -20,7 +20,7 @@ public class Pause extends Throwable {
 
 	public Pause(UnwindThrowable cause, UnwindState resumeAt) {
 		super(null, cause, true, false);
-		this.resumeAt = resumeAt;
+		state = this.resumeAt = resumeAt;
 	}
 
 	@Override
@@ -31,5 +31,10 @@ public class Pause extends Throwable {
 	@Override
 	public synchronized Throwable fillInStackTrace() {
 		return this;
+	}
+
+	public void pushState(UnwindState newState) {
+		newState.child = state;
+		state = newState;
 	}
 }

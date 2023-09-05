@@ -1,11 +1,8 @@
 package cc.tweaked.cobalt.build.coroutine
 
 import cc.tweaked.cobalt.build.*
-import org.objectweb.asm.Handle
-import org.objectweb.asm.Label
-import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
-import org.objectweb.asm.Type
 import org.objectweb.asm.commons.LocalVariablesSorter
 import org.objectweb.asm.tree.*
 import kotlin.math.ceil
@@ -47,7 +44,7 @@ private fun makeStateClass(generator: ClassEmitter, yieldPoints: List<YieldPoint
 	objectCounts = (ceil(objectCounts / 4.0) * 4).toInt()
 
 	val name = "${UNWIND_STATE.internalName}\$L${longCounts}O${objectCounts}"
-	generator.generate(name) { cw ->
+	generator.generate(name, flags = ClassWriter.COMPUTE_FRAMES) { cw ->
 		cw.visit(V1_8, ACC_PUBLIC.or(ACC_FINAL).or(ACC_SYNTHETIC), name, null, UNWIND_STATE.internalName, null)
 		for (i in 0 until longCounts) cw.visitField(ACC_PUBLIC, "l$i", "J", null, null).visitEnd()
 		for (i in 0 until objectCounts) cw.visitField(ACC_PUBLIC, "o$i", OBJECT.descriptor, null, null).visitEnd()
@@ -59,6 +56,33 @@ private fun makeStateClass(generator: ClassEmitter, yieldPoints: List<YieldPoint
 		constructor.visitInsn(RETURN)
 		constructor.visitMaxs(1, 1)
 		constructor.visitEnd()
+
+		// Create a helper function in the style of UnwindState.getOrCreate. We call this function a lot, so it's worth
+		// moving it into its own helper.
+		cw.visitMethod(ACC_PUBLIC.or(ACC_STATIC), "getOrCreate", "(${OBJECT.descriptor})L$name;", null, null)
+			.also { mw ->
+				mw.visitCode()
+
+				val isNotNull = Label()
+				val endIf = Label()
+				mw.visitVarInsn(ALOAD, 0)
+				mw.visitJumpInsn(IFNONNULL, isNotNull)
+				// if(null): new State();
+				mw.visitTypeInsn(NEW, name)
+				mw.visitInsn(DUP)
+				mw.visitMethodInsn(INVOKESPECIAL, name, "<init>", "()V", false)
+				mw.visitJumpInsn(GOTO, endIf)
+				// if(non-null): (State) state
+				mw.visitLabel(isNotNull)
+				mw.visitVarInsn(ALOAD, 0)
+				mw.visitTypeInsn(CHECKCAST, name)
+				// end
+				mw.visitLabel(endIf)
+				mw.visitInsn(ARETURN)
+
+				mw.visitMaxs(2, 1)
+				mw.visitEnd()
+			}
 
 		cw.visitEnd()
 	}
@@ -74,23 +98,24 @@ private fun getExceptionType(yieldType: YieldType): Type = when (yieldType) {
 }
 
 /** Add labels after each yield point, so we can insert our try/catch handler. */
-private fun instrumentMethodCalls(method: MethodNode, yieldPoints: List<YieldPoint>): List<Label> = yieldPoints.map { yieldPoint ->
-	// TODO: This method (especially adding the null argument) is conceptually quite nasty. It'd be nice to mutate the
-	//  method node, but it's not the end of the world.
+private fun instrumentMethodCalls(method: MethodNode, yieldPoints: List<YieldPoint>): List<Label> =
+	yieldPoints.map { yieldPoint ->
+		// TODO: This method (especially adding the null argument) is conceptually quite nasty. It'd be nice to mutate the
+		//  method node, but it's not the end of the world.
 
-	// @AutoUnwind calls require an implicit state argument. Note this must appear BEFORE the label.
-	if (yieldPoint.yieldType == YieldType.AutoUnwind) method.instructions.insertBefore(yieldPoint.label, InsnNode(ACONST_NULL))
+		// @AutoUnwind calls require an implicit state argument. Note this must appear BEFORE the label.
+		if (yieldPoint.yieldType == YieldType.AutoUnwind) method.instructions.insertBefore(yieldPoint.label, InsnNode(ACONST_NULL))
 
-	// We also require a label after each resume point, so we can wrap it in a try block.
-	when (val after = yieldPoint.yieldAt.next) {
-		is LabelNode -> after.label
-		else -> {
-			val label = LabelNode()
-			method.instructions.insert(yieldPoint.yieldAt, label)
-			label.label
+		// We also require a label after each resume point, so we can wrap it in a try block.
+		when (val after = yieldPoint.yieldAt.next) {
+			is LabelNode -> after.label
+			else -> {
+				val label = LabelNode()
+				method.instructions.insert(yieldPoint.yieldAt, label)
+				label.label
+			}
 		}
 	}
-}
 
 /**
  * The main rewriter for @AutoUnwind-annotated functions.
@@ -156,7 +181,14 @@ private class AutoUnwindRewriter(
 		// switch(state.state) {
 		val invalidState = Label()
 		sink.visitFieldInsn(GETFIELD, state.internalName, "state", "I")
-		sink.visitTableSwitchInsn(0, yieldPoints.size - 1, invalidState, *rebuild.toTypedArray())
+		if (yieldPoints.size == 1) {
+			// TABLESWITCH instructions are very large - in the trivial case we can do a much smaller comparison. We
+			// could probably do an if-else chain for small sizes too, but then we have to load the state multiple times
+			// so the trade-offs are less clear.
+			sink.visitJumpInsn(IFEQ, rebuild[0])
+		} else {
+			sink.visitTableSwitchInsn(0, yieldPoints.size - 1, invalidState, *rebuild.toTypedArray())
+		}
 
 		// default: throw new IllegalStateExeception("Resuming into unknown state")
 		sink.visitLabel(invalidState)
@@ -258,32 +290,17 @@ private class AutoUnwindRewriter(
 		val tryCatch = tryCatches[stateIdx]
 		sink.visitLabel(tryCatch)
 
-		// state = state == null ? new State() : (State)state;
-		val isNotNull = Label()
-		val endIf = Label()
+		// state = State.getOrCreate(state);
 		sink.visitVarInsn(ALOAD, stateLocal)
-		sink.visitJumpInsn(IFNONNULL, isNotNull)
-		// if(null): new State();
-		sink.visitTypeInsn(NEW, state.internalName)
-		sink.visitInsn(DUP)
-		sink.visitMethodInsn(INVOKESPECIAL, state.internalName, "<init>", "()V", false)
-		sink.visitJumpInsn(GOTO, endIf)
-		// if(non-null): (State) state
-		sink.visitLabel(isNotNull)
-		sink.visitVarInsn(ALOAD, stateLocal)
-		sink.visitTypeInsn(CHECKCAST, state.internalName)
-		// end
-		sink.visitLabel(endIf)
-		sink.visitVarInsn(ASTORE, stateLocal) // Actually the store is done later, but same difference.
+		sink.visitMethodInsn(INVOKESTATIC, state.internalName, "getOrCreate", "(${OBJECT.descriptor})${state.descriptor}", false)
+		sink.visitVarInsn(ASTORE, stateLocal)
 
 		when (yieldPoint.yieldType) {
 			is YieldType.AutoUnwind -> {
-				// state.child = e.child
+				// e.pushState(child)
 				sink.visitInsn(DUP)
 				sink.visitVarInsn(ALOAD, stateLocal)
-				sink.visitInsn(SWAP)
-				sink.visitFieldInsn(GETFIELD, PAUSE.internalName, "state", OBJECT.descriptor)
-				sink.visitFieldInsn(PUTFIELD, UNWIND_STATE.internalName, "child", OBJECT.descriptor)
+				sink.visitMethodInsn(INVOKEVIRTUAL, PAUSE.internalName, "pushState", "(${UNWIND_STATE.descriptor})V", false)
 			}
 
 			is YieldType.Resume, is YieldType.Direct -> {
@@ -322,11 +339,6 @@ private class AutoUnwindRewriter(
 				}
 			}
 		}
-
-		// exception.state = state
-		sink.visitInsn(DUP)
-		sink.visitVarInsn(ALOAD, stateLocal)
-		sink.visitFieldInsn(PUTFIELD, PAUSE.internalName, "state", OBJECT.descriptor)
 
 		// throw exception
 		sink.visitInsn(ATHROW)

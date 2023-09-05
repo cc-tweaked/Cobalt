@@ -13,4 +13,8 @@ public class UnwindState {
 	public int state;
 	public Varargs resumeArgs;
 	public Object child;
+
+	public static UnwindState getOrCreate(Object x) {
+		return x == null ? new UnwindState() : (UnwindState) x;
+	}
 }
