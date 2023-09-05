@@ -143,7 +143,7 @@ public class LuaC {
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
 	@AutoUnwind
-	private static Prototype loadBinaryChunk(int firstByte, InputReader reader, LuaString name) throws CompileException, UnwindThrowable {
+	private static Prototype loadBinaryChunk(int firstByte, InputReader reader, LuaString name) throws CompileException, LuaError, UnwindThrowable {
 		name = LoadState.getSourceName(name);
 		// check rest of signature
 		if (firstByte != LoadState.LUA_SIGNATURE[0]
@@ -167,31 +167,25 @@ public class LuaC {
 	 * @return The compiled code
 	 * @throws CompileException If there is a syntax error.
 	 */
-	public static Prototype compile(InputStream stream, String name) throws CompileException {
+	public static Prototype compile(InputStream stream, String name) throws CompileException, LuaError {
 		return compile(stream, valueOf(name), null);
 	}
 
-	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws CompileException {
-		Object result;
-		try {
-			result = SuspendedTask.noYield(() -> {
-				try {
-					return compile(new InputStreamReader(stream), name, mode);
-				} catch (CompileException e) {
-					return e;
-				}
-			});
-		} catch (LuaError e) {
-			// Wish Java had an effect system :(.
-			throw new AssertionError("Lua compiler should never throw a Lua error", e);
-		}
+	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws CompileException, LuaError {
+		Object result = SuspendedTask.noYield(() -> {
+			try {
+				return compile(new InputStreamReader(stream), name, mode);
+			} catch (CompileException e) {
+				return e;
+			}
+		});
 
 		if (result instanceof CompileException) throw (CompileException) result;
 		return (Prototype) result;
 	}
 
 	@AutoUnwind
-	public static Prototype compile(InputReader stream, LuaString name, LuaString mode) throws CompileException, UnwindThrowable {
+	public static Prototype compile(InputReader stream, LuaString name, LuaString mode) throws CompileException, LuaError, UnwindThrowable {
 		int firstByte = stream.read();
 		if (firstByte == '\033') {
 			checkMode(mode, "binary");
@@ -206,7 +200,7 @@ public class LuaC {
 	 * Parse the input
 	 */
 	@AutoUnwind
-	private static Prototype loadTextChunk(int firstByte, InputReader stream, LuaString name) throws CompileException, UnwindThrowable {
+	private static Prototype loadTextChunk(int firstByte, InputReader stream, LuaString name) throws CompileException, LuaError, UnwindThrowable {
 		Parser parser = new Parser(stream, firstByte, name);
 		parser.lexer.skipShebang();
 		FuncState funcstate = parser.openFunc();
@@ -229,7 +223,7 @@ public class LuaC {
 		}
 
 		@Override
-		public int read() throws CompileException, UnwindThrowable {
+		public int read() throws CompileException {
 			try {
 				return stream.read();
 			} catch (IOException e) {

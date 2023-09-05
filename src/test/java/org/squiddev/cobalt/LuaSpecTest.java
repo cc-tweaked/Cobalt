@@ -97,7 +97,7 @@ public class LuaSpecTest {
 				LuaFunction function;
 				try (InputStream stream = Files.newInputStream(path)) {
 					function = LoadState.load(state, stream, "@" + path.getFileName(), env);
-				} catch (IOException | CompileException e) {
+				} catch (IOException | CompileException | LuaError e) {
 					throw new RuntimeException("Failed to load " + path, e);
 				}
 

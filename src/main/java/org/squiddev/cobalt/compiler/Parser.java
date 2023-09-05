@@ -133,7 +133,7 @@ final class Parser {
 		if (value > limit) errorLimit(fs, limit, msg);
 	}
 
-	private boolean testNext(int c) throws CompileException, UnwindThrowable {
+	private boolean testNext(int c) throws CompileException, LuaError, UnwindThrowable {
 		if (lexer.token.token() == c) {
 			lexer.nextToken();
 			return true;
@@ -146,7 +146,7 @@ final class Parser {
 		if (lexer.token.token() != c) errorExpected(c);
 	}
 
-	private void checkNext(int c) throws CompileException, UnwindThrowable {
+	private void checkNext(int c) throws CompileException, LuaError, UnwindThrowable {
 		check(c);
 		lexer.nextToken();
 	}
@@ -155,7 +155,7 @@ final class Parser {
 		if (!c) throw syntaxError(msg);
 	}
 
-	private void checkMatch(int what, int who, int where) throws CompileException, UnwindThrowable {
+	private void checkMatch(int what, int who, int where) throws CompileException, LuaError, UnwindThrowable {
 		if (testNext(what)) return;
 
 		if (where == lexer.token.line()) {
@@ -165,7 +165,7 @@ final class Parser {
 		}
 	}
 
-	private LuaString strCheckName() throws CompileException, UnwindThrowable {
+	private LuaString strCheckName() throws CompileException, LuaError, UnwindThrowable {
 		check(TK_NAME);
 		LuaString ts = lexer.token.stringContents();
 		lexer.nextToken();
@@ -176,7 +176,7 @@ final class Parser {
 		e.init(ExpKind.VK, fs.stringK(s));
 	}
 
-	private void checkName(ExpDesc e) throws CompileException, UnwindThrowable {
+	private void checkName(ExpDesc e) throws CompileException, LuaError, UnwindThrowable {
 		codeString(e, strCheckName());
 	}
 
@@ -265,7 +265,7 @@ final class Parser {
 		}
 	}
 
-	private void singleVar(ExpDesc var) throws CompileException, UnwindThrowable {
+	private void singleVar(ExpDesc var) throws CompileException, LuaError, UnwindThrowable {
 		var.position = lexer.token.position();
 
 		LuaString varname = strCheckName();
@@ -358,7 +358,7 @@ final class Parser {
 	/* GRAMMAR RULES */
 	/*============================================================*/
 
-	private void field(ExpDesc v) throws CompileException, UnwindThrowable {
+	private void field(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		/* field -> ['.' | ':'] NAME */
 		ExpDesc key = new ExpDesc();
 		fs.exp2AnyReg(v);
@@ -368,7 +368,7 @@ final class Parser {
 		fs.indexed(v, key, indexPos);
 	}
 
-	private void yindex(ExpDesc v) throws CompileException, UnwindThrowable {
+	private void yindex(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		/* index -> '[' expr ']' */
 		lexer.nextToken(); // skip the '['
 		expression(v);
@@ -394,7 +394,7 @@ final class Parser {
 		}
 	}
 
-	private void recordField(ConsControl cc) throws CompileException, UnwindThrowable {
+	private void recordField(ConsControl cc) throws CompileException, LuaError, UnwindThrowable {
 		/* recfield -> (NAME | `['exp1`]') = exp1 */
 		FuncState fs = this.fs;
 		int reg = this.fs.freeReg;
@@ -437,14 +437,14 @@ final class Parser {
 		}
 	}
 
-	private void listField(ConsControl cc) throws CompileException, UnwindThrowable {
+	private void listField(ConsControl cc) throws CompileException, LuaError, UnwindThrowable {
 		expression(cc.v);
 		checkLimit(fs, cc.arraySize, Lex.MAX_INT, "items in a constructor");
 		cc.arraySize++;
 		cc.toStore++;
 	}
 
-	private void constructor(ExpDesc t) throws CompileException, UnwindThrowable {
+	private void constructor(ExpDesc t) throws CompileException, LuaError, UnwindThrowable {
 		/* constructor -> ?? */
 		FuncState fs = this.fs;
 		int line = lexer.token.line();
@@ -505,7 +505,7 @@ final class Parser {
 
 	/* }====================================================================== */
 
-	private void parlist() throws CompileException, UnwindThrowable {
+	private void parlist() throws CompileException, LuaError, UnwindThrowable {
 		/* parlist -> [ param { `,' param } ] */
 		FuncState fs = this.fs;
 		int numParams = 0;
@@ -533,7 +533,7 @@ final class Parser {
 		fs.reserveRegs(fs.activeVariableCount);  /* reserve register for parameters */
 	}
 
-	private void body(ExpDesc e, boolean needSelf, int line) throws CompileException, UnwindThrowable {
+	private void body(ExpDesc e, boolean needSelf, int line) throws CompileException, LuaError, UnwindThrowable {
 		/* body -> `(' parlist `)' chunk END */
 		FuncState newFuncState = openFunc();
 		newFuncState.lineDefined = line;
@@ -551,7 +551,7 @@ final class Parser {
 		pushClosure(newFuncState, proto, e);
 	}
 
-	private int expList1(ExpDesc v) throws CompileException, UnwindThrowable {
+	private int expList1(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		/* explist1 -> expr { `,' expr } */
 		int n = 1; // at least one expression
 		expression(v);
@@ -563,7 +563,7 @@ final class Parser {
 		return n;
 	}
 
-	private void funcArgs(ExpDesc f) throws CompileException, UnwindThrowable {
+	private void funcArgs(ExpDesc f) throws CompileException, LuaError, UnwindThrowable {
 		FuncState fs = this.fs;
 		ExpDesc args = new ExpDesc();
 		long position = lexer.token.position();
@@ -613,7 +613,7 @@ final class Parser {
 	 ** =======================================================================
 	 */
 
-	private void prefixExpression(ExpDesc v) throws CompileException, UnwindThrowable {
+	private void prefixExpression(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		/* prefixexp -> NAME | '(' expr ')' */
 		switch (lexer.token.token()) {
 			case '(' -> {
@@ -632,7 +632,7 @@ final class Parser {
 		}
 	}
 
-	private void primaryExpression(ExpDesc v) throws CompileException, UnwindThrowable {
+	private void primaryExpression(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		/*
 		 * primaryexp -> prefixexp { `.' NAME | `[' exp `]' | `:' NAME funcargs |
 		 * funcargs }
@@ -669,7 +669,7 @@ final class Parser {
 		}
 	}
 
-	private void simpleExpression(ExpDesc v) throws CompileException, UnwindThrowable {
+	private void simpleExpression(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		/*
 		 * simpleexp -> NUMBER | STRING | NIL | true | false | ... | constructor |
 		 * FUNCTION body | primaryexp
@@ -719,7 +719,7 @@ final class Parser {
 	 ** subexpr -> (simpleexp | unop subexpr) { binop subexpr }
 	 ** where `binop' is any binary operator with a priority higher than `limit'
 	 */
-	private BinOpr subExpression(ExpDesc v, int limit) throws CompileException, UnwindThrowable {
+	private BinOpr subExpression(ExpDesc v, int limit) throws CompileException, LuaError, UnwindThrowable {
 		enterLevel();
 		UnOpr unop = UnOpr.ofToken(lexer.token.token());
 		if (unop != null) {
@@ -747,7 +747,7 @@ final class Parser {
 		return binop; // return first untreated operator
 	}
 
-	private void expression(ExpDesc v) throws CompileException, UnwindThrowable {
+	private void expression(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		subExpression(v, 0);
 	}
 
@@ -766,7 +766,7 @@ final class Parser {
 		};
 	}
 
-	private void block() throws CompileException, UnwindThrowable {
+	private void block() throws CompileException, LuaError, UnwindThrowable {
 		/* block -> chunk */
 		FuncState fs = this.fs;
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
@@ -817,7 +817,7 @@ final class Parser {
 		}
 	}
 
-	private void assignment(LhsAssign lh, int nvars) throws CompileException, UnwindThrowable {
+	private void assignment(LhsAssign lh, int nvars) throws CompileException, LuaError, UnwindThrowable {
 		ExpDesc e = new ExpDesc();
 		checkCondition(lh.v.kind.isVar(), "syntax error");
 		if (testNext(',')) { // assignment -> `,' primaryexp assignment
@@ -841,7 +841,7 @@ final class Parser {
 		fs.storeVar(lh.v, e);
 	}
 
-	private int cond() throws CompileException, UnwindThrowable {
+	private int cond() throws CompileException, LuaError, UnwindThrowable {
 		/* cond -> exp */
 		ExpDesc v = new ExpDesc();
 		expression(v); // read condition
@@ -864,7 +864,7 @@ final class Parser {
 		fs.concat(bl.breaklist, fs.jump());
 	}
 
-	private void whileStmt() throws CompileException, UnwindThrowable {
+	private void whileStmt() throws CompileException, LuaError, UnwindThrowable {
 		/* whilestat -> WHILE cond DO block END */
 		int line = lexer.token.line();
 		lexer.nextToken(); // Skip WHILE
@@ -882,7 +882,7 @@ final class Parser {
 		fs.patchToHere(contExit); // false conditions finish the loop
 	}
 
-	private void repeatStmt() throws CompileException, UnwindThrowable {
+	private void repeatStmt() throws CompileException, LuaError, UnwindThrowable {
 		/* repeatstat -> REPEAT block UNTIL cond */
 		int line = lexer.token.line();
 		lexer.nextToken(); // Skip REPEAT
@@ -908,13 +908,13 @@ final class Parser {
 		leaveBlock(fs); // finish loop */
 	}
 
-	private void exp1() throws CompileException, UnwindThrowable {
+	private void exp1() throws CompileException, LuaError, UnwindThrowable {
 		ExpDesc e = new ExpDesc();
 		expression(e);
 		fs.exp2NextReg(e);
 	}
 
-	private void forBody(int base, long position, int nvars, boolean isNum) throws CompileException, UnwindThrowable {
+	private void forBody(int base, long position, int nvars, boolean isNum) throws CompileException, LuaError, UnwindThrowable {
 		/* forbody -> DO block */
 		FuncState.BlockCnt bl = new FuncState.BlockCnt();
 		FuncState fs = this.fs;
@@ -933,7 +933,7 @@ final class Parser {
 		fs.patchList(isNum ? endFor : fs.jump(), prep + 1);
 	}
 
-	private void forNum(LuaString varName, long position) throws CompileException, UnwindThrowable {
+	private void forNum(LuaString varName, long position) throws CompileException, LuaError, UnwindThrowable {
 		/* fornum -> NAME = exp1,exp1[,exp1] forbody */
 		FuncState fs = this.fs;
 		int base = fs.freeReg;
@@ -954,7 +954,7 @@ final class Parser {
 		forBody(base, position, 1, true);
 	}
 
-	private void forList(LuaString indexName) throws CompileException, UnwindThrowable {
+	private void forList(LuaString indexName) throws CompileException, LuaError, UnwindThrowable {
 		/* forlist -> NAME {,NAME} IN explist1 forbody */
 		FuncState fs = this.fs;
 		ExpDesc e = new ExpDesc();
@@ -974,7 +974,7 @@ final class Parser {
 		forBody(base, position, nvars - 3, false);
 	}
 
-	private void forStmt() throws CompileException, UnwindThrowable {
+	private void forStmt() throws CompileException, LuaError, UnwindThrowable {
 		/* forstat -> FOR (fornum | forlist) END */
 		long position = lexer.token.position();
 		lexer.nextToken(); /* skip `for' */
@@ -992,7 +992,7 @@ final class Parser {
 		leaveBlock(fs); // loop scope (`break' jumps to this point)
 	}
 
-	private int testThenBlock() throws CompileException, UnwindThrowable {
+	private int testThenBlock() throws CompileException, LuaError, UnwindThrowable {
 		// test_then_block -> [IF | ELSEIF] cond THEN block
 		lexer.nextToken(); // skip IF or ELSEIF
 		int condExit = cond();
@@ -1001,7 +1001,7 @@ final class Parser {
 		return condExit;
 	}
 
-	private void ifStat() throws CompileException, UnwindThrowable {
+	private void ifStat() throws CompileException, LuaError, UnwindThrowable {
 		// ifstat -> IF cond THEN block {ELSEIF cond THEN block} [ELSE block] END
 		int line = lexer.token.line();
 
@@ -1026,7 +1026,7 @@ final class Parser {
 		checkMatch(TK_END, TK_IF, line);
 	}
 
-	private void localFunc() throws CompileException, UnwindThrowable {
+	private void localFunc() throws CompileException, LuaError, UnwindThrowable {
 		ExpDesc v = new ExpDesc();
 		FuncState fs = this.fs;
 		newLocal(strCheckName(), 0);
@@ -1040,7 +1040,7 @@ final class Parser {
 		fs.getLocal(fs.activeVariableCount - 1).startpc = fs.pc;
 	}
 
-	private void localStmt() throws CompileException, UnwindThrowable {
+	private void localStmt() throws CompileException, LuaError, UnwindThrowable {
 		/* stat -> LOCAL NAME {`,' NAME} [`=' explist1] */
 		int nvars = 0;
 		ExpDesc e = new ExpDesc();
@@ -1059,7 +1059,7 @@ final class Parser {
 		adjustLocalVars(nvars);
 	}
 
-	private boolean funcName(ExpDesc v) throws CompileException, UnwindThrowable {
+	private boolean funcName(ExpDesc v) throws CompileException, LuaError, UnwindThrowable {
 		// funcname -> NAME {field} [`:' NAME]
 		singleVar(v);
 		while (lexer.token.token() == '.') field(v);
@@ -1072,7 +1072,7 @@ final class Parser {
 		return needSelf;
 	}
 
-	private void funcStmt() throws CompileException, UnwindThrowable {
+	private void funcStmt() throws CompileException, LuaError, UnwindThrowable {
 		// funcstat -> FUNCTION funcname body
 		long position = lexer.token.position();
 		lexer.nextToken(); // skip FUNCTION
@@ -1084,7 +1084,7 @@ final class Parser {
 		fs.fixPosition(position); // definition `happens' in the first line
 	}
 
-	private void exprStmt() throws CompileException, UnwindThrowable {
+	private void exprStmt() throws CompileException, LuaError, UnwindThrowable {
 		// stat -> func | assignment
 		FuncState fs = this.fs;
 		LhsAssign v = new LhsAssign(null);
@@ -1096,7 +1096,7 @@ final class Parser {
 		}
 	}
 
-	private void returnStmt() throws CompileException, UnwindThrowable {
+	private void returnStmt() throws CompileException, LuaError, UnwindThrowable {
 		// stat -> RETURN explist
 		FuncState fs = this.fs;
 		int first, nret; // registers with returned values
@@ -1127,7 +1127,7 @@ final class Parser {
 		fs.ret(first, nret);
 	}
 
-	private boolean statement() throws CompileException, UnwindThrowable {
+	private boolean statement() throws CompileException, LuaError, UnwindThrowable {
 		switch (lexer.token.token()) {
 			case TK_IF -> { // stat -> ifstat
 				ifStat();
@@ -1181,7 +1181,7 @@ final class Parser {
 		}
 	}
 
-	void chunk() throws CompileException, UnwindThrowable {
+	void chunk() throws CompileException, LuaError, UnwindThrowable {
 		/* chunk -> { stat [`;'] } */
 		boolean islast = false;
 		enterLevel();

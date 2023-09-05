@@ -25,7 +25,6 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugHelpers;
-import org.squiddev.cobalt.lib.UncheckedLuaError;
 
 import java.io.Serial;
 
@@ -134,7 +133,6 @@ public final class LuaError extends Exception {
 	 */
 	public static LuaError wrap(Throwable error) {
 		if (error instanceof LuaError) return (LuaError) error;
-		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause();
 		return new LuaError(error);
 	}
 

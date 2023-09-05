@@ -27,7 +27,7 @@ package org.squiddev.cobalt.compiler;
 import java.io.Serial;
 
 /**
- * Represents a failure in compiling a binary chunk or string
+ * An error thrown when parsing a Lua chunk (source of binary) fails.
  */
 public class CompileException extends Exception {
 	@Serial

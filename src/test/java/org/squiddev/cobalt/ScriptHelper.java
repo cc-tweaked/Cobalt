@@ -126,7 +126,7 @@ public class ScriptHelper {
 	 * @return The loaded LuaFunction
 	 * @throws IOException
 	 */
-	public LuaFunction loadScript(String name) throws IOException, CompileException {
+	public LuaFunction loadScript(String name) throws IOException, CompileException, LuaError {
 		InputStream script = load(name + ".lua");
 		if (script == null) fail("Could not load script for test case: " + name);
 		try {
@@ -136,11 +136,11 @@ public class ScriptHelper {
 		}
 	}
 
-	public void runWithDump(String script) throws InterruptedException, LuaError, IOException, CompileException {
+	public void runWithDump(String script) throws LuaError, IOException, CompileException {
 		runWithDump(loadScript(script));
 	}
 
-	public void runWithDump(LuaFunction function) throws InterruptedException, LuaError {
+	public void runWithDump(LuaFunction function) throws LuaError {
 		try {
 			LuaThread.runMain(state, function);
 		} catch (LuaError e) {

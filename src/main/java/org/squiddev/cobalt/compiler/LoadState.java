@@ -24,16 +24,12 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.CoreLibraries;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -100,7 +96,7 @@ public final class LoadState {
 		return closure;
 	}
 
-	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException, CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaTable env) throws CompileException, LuaError {
 		return load(state, stream, valueOf(name), env);
 	}
 
@@ -115,11 +111,11 @@ public final class LoadState {
 	 * @throws IllegalArgumentException If the signature is bac
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws CompileException, LuaError {
 		return load(state, stream, name, null, env);
 	}
 
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws CompileException, LuaError {
 		return state.compiler.load(LuaC.compile(stream, name, mode), env);
 	}
 

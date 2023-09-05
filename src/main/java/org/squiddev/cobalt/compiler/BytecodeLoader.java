@@ -97,7 +97,7 @@ final class BytecodeLoader {
 	 */
 	private byte[] buf = new byte[512];
 
-	private byte readByte() throws UnwindThrowable, CompileException {
+	private byte readByte() throws CompileException, LuaError, UnwindThrowable {
 		int c = is.read();
 		if (c < 0) {
 			throw new CompileException(EOF_ERROR);
@@ -105,7 +105,7 @@ final class BytecodeLoader {
 		return (byte) c;
 	}
 
-	private int readUnsignedByte() throws UnwindThrowable, CompileException {
+	private int readUnsignedByte() throws CompileException, LuaError, UnwindThrowable {
 		int c = is.read();
 		if (c < 0) {
 			throw new CompileException(EOF_ERROR);
@@ -113,7 +113,7 @@ final class BytecodeLoader {
 		return c;
 	}
 
-	private void readFully(byte[] buffer, int start, int size) throws UnwindThrowable, CompileException {
+	private void readFully(byte[] buffer, int start, int size) throws CompileException, LuaError, UnwindThrowable {
 		for (int i = 0; i < size; i++) {
 			byte b = readByte();
 			buffer[start + i] = b;
@@ -125,7 +125,7 @@ final class BytecodeLoader {
 	 *
 	 * @return the int value laoded.
 	 */
-	private int loadInt() throws CompileException, UnwindThrowable {
+	private int loadInt() throws CompileException, LuaError, UnwindThrowable {
 		readFully(buf, 0, 4);
 		return luacLittleEndian ?
 			(buf[3] << 24) | ((0xff & buf[2]) << 16) | ((0xff & buf[1]) << 8) | (0xff & buf[0]) :
@@ -137,7 +137,7 @@ final class BytecodeLoader {
 	 *
 	 * @return the array of int values laoded.
 	 */
-	private int[] loadIntArray() throws CompileException, UnwindThrowable {
+	private int[] loadIntArray() throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
 		if (n == 0) {
 			return NOINTS;
@@ -164,7 +164,7 @@ final class BytecodeLoader {
 	 *
 	 * @return the long value laoded.
 	 */
-	private long loadInt64() throws CompileException, UnwindThrowable {
+	private long loadInt64() throws CompileException, LuaError, UnwindThrowable {
 		int a, b;
 		if (this.luacLittleEndian) {
 			a = loadInt();
@@ -181,7 +181,7 @@ final class BytecodeLoader {
 	 *
 	 * @return the {@link LuaString} value laoded.
 	 */
-	private LuaString loadString() throws CompileException, UnwindThrowable {
+	private LuaString loadString() throws CompileException, LuaError, UnwindThrowable {
 		int size = this.luacSizeofSizeT == 8 ? (int) loadInt64() : loadInt();
 		if (size == 0) {
 			return null;
@@ -221,9 +221,9 @@ final class BytecodeLoader {
 	 * Load a number from a binary chunk
 	 *
 	 * @return the {@link LuaValue} loaded
-	 * @throws CompileException, UnwindThrowable if an i/o exception occurs
+	 * @throws CompileException, LuaError, UnwindThrowable if an i/o exception occurs
 	 */
-	private LuaValue loadNumber() throws CompileException, UnwindThrowable {
+	private LuaValue loadNumber() throws CompileException, LuaError, UnwindThrowable {
 		if (luacNumberFormat == NUMBER_FORMAT_INTS_ONLY) {
 			return LuaInteger.valueOf(loadInt());
 		} else {
@@ -234,9 +234,9 @@ final class BytecodeLoader {
 	/**
 	 * Load a list of constants from a binary chunk
 	 *
-	 * @throws CompileException, UnwindThrowable if an i/o exception occurs
+	 * @throws CompileException, LuaError, UnwindThrowable if an i/o exception occurs
 	 */
-	private LuaValue[] loadConstants() throws CompileException, UnwindThrowable {
+	private LuaValue[] loadConstants() throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
 		LuaValue[] values = n > 0 ? new LuaValue[n] : NOVALUES;
 		for (int i = 0; i < n; i++) {
@@ -252,7 +252,7 @@ final class BytecodeLoader {
 		return values;
 	}
 
-	private Prototype[] loadChildren(LuaString source) throws CompileException, UnwindThrowable {
+	private Prototype[] loadChildren(LuaString source) throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
 		Prototype[] protos = n > 0 ? new Prototype[n] : NOPROTOS;
 		for (int i = 0; i < n; i++) {
@@ -261,7 +261,7 @@ final class BytecodeLoader {
 		return protos;
 	}
 
-	private LocalVariable[] loadLocals() throws CompileException, UnwindThrowable {
+	private LocalVariable[] loadLocals() throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
 		LocalVariable[] locals = n > 0 ? new LocalVariable[n] : NOLOCVARS;
 		for (int i = 0; i < n; i++) {
@@ -273,7 +273,7 @@ final class BytecodeLoader {
 		return locals;
 	}
 
-	private LuaString[] loadUpvalueNames() throws CompileException, UnwindThrowable {
+	private LuaString[] loadUpvalueNames() throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
 		LuaString[] upvalueNames = n > 0 ? new LuaString[n] : NOSTRVALUES;
 		for (int i = 0; i < n; i++) upvalueNames[i] = loadString();
@@ -285,9 +285,9 @@ final class BytecodeLoader {
 	 *
 	 * @param p name of the source
 	 * @return {@link Prototype} instance that was loaded
-	 * @throws CompileException, UnwindThrowable On stream read errors
+	 * @throws CompileException, LuaError, UnwindThrowable On stream read errors
 	 */
-	public Prototype loadFunction(LuaString p) throws CompileException, UnwindThrowable {
+	public Prototype loadFunction(LuaString p) throws CompileException, LuaError, UnwindThrowable {
 		LuaString source = loadString();
 		if (source == null) source = p;
 
@@ -314,10 +314,10 @@ final class BytecodeLoader {
 	/**
 	 * Load the lua chunk header values.
 	 *
-	 * @throws CompileException, UnwindThrowable      if an i/o exception occurs.
+	 * @throws CompileException, LuaError, UnwindThrowable      if an i/o exception occurs.
 	 * @throws CompileException  If the bytecode is invalid.
 	 */
-	public void loadHeader() throws CompileException, UnwindThrowable, CompileException {
+	public void loadHeader() throws CompileException, LuaError, UnwindThrowable {
 		int luacVersion = readByte();
 		if (luacVersion != LUAC_VERSION) throw new CompileException("unsupported luac version");
 

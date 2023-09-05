@@ -149,7 +149,7 @@ public class LuaOperationsTest {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
 			return LuaC.compile(is, name);
-		} catch (CompileException e) {
+		} catch (CompileException | LuaError e) {
 			throw new IllegalStateException("Failed to compile " + name, e);
 		}
 	}

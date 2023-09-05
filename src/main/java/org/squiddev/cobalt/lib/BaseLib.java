@@ -345,8 +345,6 @@ public class BaseLib {
 					return state.compiler.load(LuaC.compile(stream, chunkName == null ? FUNCTION_STR : chunkName, mode), funcEnv);
 				} catch (CompileException e) {
 					return varargsOf(Constants.NIL, valueOf(e.getMessage()));
-				} catch (UncheckedLuaError e) {
-					throw e.getCause();
 				}
 			})).asResultOrFailure();
 		}
@@ -365,7 +363,7 @@ public class BaseLib {
 	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName, LuaString mode, LuaTable env) {
 		try {
 			return LoadState.load(state, is, chunkName, mode, env);
-		} catch (CompileException e) {
+		} catch (LuaError | CompileException e) {
 			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
 		}
 	}
@@ -387,15 +385,9 @@ public class BaseLib {
 		}
 
 		@Override
-		public int read() throws UnwindThrowable {
+		public int read() throws LuaError, UnwindThrowable {
 			if (!bytes.hasRemaining()) {
-				LuaValue value;
-				try {
-					value = OperationHelper.call(state, func);
-				} catch (LuaError e) {
-					throw new UncheckedLuaError(e);
-				}
-
+				LuaValue value = OperationHelper.call(state, func);
 				if (!fillBuffer(value)) return -1;
 			}
 
@@ -403,14 +395,14 @@ public class BaseLib {
 		}
 
 		@Override
-		public int resume(Varargs varargs) throws CompileException, UnwindThrowable {
+		public int resume(Varargs varargs) throws LuaError, UnwindThrowable {
 			if (!fillBuffer(varargs.first())) return -1;
 			return read();
 		}
 
-		private boolean fillBuffer(LuaValue value) {
+		private boolean fillBuffer(LuaValue value) throws LuaError {
 			if (value.isNil()) return false;
-			if (!value.isString()) throw new UncheckedLuaError(new LuaError("reader function must return a string"));
+			if (!value.isString()) throw new LuaError(new LuaError("reader function must return a string"));
 
 			LuaString ls = OperationHelper.toStringDirect(value);
 			bytes = ls.toBuffer();

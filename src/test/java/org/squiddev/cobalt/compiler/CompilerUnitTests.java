@@ -26,6 +26,7 @@ package org.squiddev.cobalt.compiler;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.Print;
 import org.squiddev.cobalt.Prototype;
 
@@ -44,7 +45,7 @@ public class CompilerUnitTests {
 		"all", "api", "attrib", "big", "calls", "checktable", "closure", "code", "constructs", "db", "errors",
 		"events", "files", "gc", "literals", "locals", "main", "math", "nextvar", "pm", "sort", "strings", "vararg",
 	})
-	public void lua51(String filename) throws IOException, CompileException {
+	public void lua51(String filename) throws IOException, CompileException, LuaError {
 		compareResults("/bytecode-compiler/lua5.1/", filename);
 	}
 
@@ -52,11 +53,11 @@ public class CompilerUnitTests {
 	@ValueSource(strings = {
 		"modulo", "construct", "bigattr", "controlchars", "comparators", "mathrandomseed", "varargs",
 	})
-	public void regression(String filename) throws IOException, CompileException {
+	public void regression(String filename) throws IOException, CompileException, LuaError {
 		compareResults("/bytecode-compiler/regressions/", filename);
 	}
 
-	private static void compareResults(String dir, String file) throws IOException, CompileException {
+	private static void compareResults(String dir, String file) throws IOException, CompileException, LuaError {
 		// Compile source file
 		Prototype sourcePrototype = LuaC.compile(CompilerUnitTests.class.getResourceAsStream(dir + file + ".lua"), "@" + file + ".lua");
 		String sourceBytecode = dumpState(sourcePrototype);

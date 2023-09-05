@@ -1,5 +1,6 @@
 package org.squiddev.cobalt.vm;
 
+import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -15,7 +16,7 @@ public final class DataFactory {
 	public static Prototype prototype() {
 		try {
 			return LuaC.compile(new ByteArrayInputStream(new byte[]{}), "=prototype");
-		} catch (CompileException e) {
+		} catch (CompileException | LuaError e) {
 			throw new RuntimeException(e);
 		}
 	}
