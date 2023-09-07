@@ -162,7 +162,7 @@ public abstract class Varargs {
 		sb.append("(");
 		for (int i = 1, n = count(); i <= n; i++) {
 			if (i > 1) sb.append(",");
-			sb.append(arg(i).toString());
+			sb.append(arg(i));
 		}
 		sb.append(")");
 		return sb.toString();

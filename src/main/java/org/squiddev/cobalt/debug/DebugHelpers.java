@@ -48,6 +48,9 @@ public final class DebugHelpers {
 	private static final LuaString HOOK = valueOf("hook");
 	private static final LuaString METAMETHOD = valueOf("metamethod");
 
+	private static final LuaString FUNCTION = valueOf("function");
+	private static final LuaString C = valueOf("[C]");
+
 	/**
 	 * Size of the first part of the stack
 	 */
@@ -69,7 +72,7 @@ public final class DebugHelpers {
 	 * @return String containing the stack trace.
 	 */
 	public static String traceback(LuaThread thread, int level) {
-		return traceback(new StringBuilder(), thread, level).toString();
+		return traceback(new Buffer(), thread, level).toString();
 	}
 
 	/**
@@ -79,7 +82,7 @@ public final class DebugHelpers {
 	 * @param thread LuaThread to provide stack trace for
 	 * @param level  0-based level to start reporting on
 	 */
-	public static StringBuilder traceback(StringBuilder sb, LuaThread thread, int level) {
+	public static Buffer traceback(Buffer sb, LuaThread thread, int level) {
 		sb.append("stack traceback:");
 
 		DebugState state = thread.getDebugState();
@@ -92,9 +95,9 @@ public final class DebugHelpers {
 			}
 
 			sb.append("\n\t");
-			sb.append(di.closure == null ? "[C]" : di.closure.getPrototype().sourceShort());
+			sb.append(di.closure == null ? C : di.closure.getPrototype().sourceShort());
 			sb.append(':');
-			if (di.currentLine() > 0) sb.append(di.currentLine()).append(":");
+			if (di.currentLine() > 0) sb.append(Integer.toString(di.currentLine())).append(":");
 			sb.append(" in ");
 
 			ObjectName kind = di.getFuncKind();
@@ -102,7 +105,7 @@ public final class DebugHelpers {
 			if (kind != null) {
 				// Strictly speaking we should search the global table for this term - see Lua 5.3's pushglobalfuncname/
 				// pushfuncname. However, I'm somewhat reluctant to do that, so we just check it's a global.
-				sb.append(kind.what() == GLOBAL ? "function" : kind.what()).append(" '").append(kind.name()).append('\'');
+				sb.append(kind.what() == GLOBAL ? FUNCTION : kind.what()).append(" '").append(kind.name()).append('\'');
 			} else if (di.func instanceof LuaClosure closure && closure.getPrototype().lineDefined == 0) {
 				sb.append("main chunk");
 			} else if (di.func instanceof LuaClosure) {

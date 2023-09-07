@@ -370,13 +370,13 @@ public final class DebugLib {
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		LuaValue messageValue = args.arg(a++);
 		if (messageValue != NIL && !messageValue.isString()) return messageValue;
-		String message = messageValue.optString(null);
+		LuaString message = messageValue.optLuaString(null);
 
 		int level = thread == state.getCurrentThread()
 			? args.arg(a).optInteger(1) - 1
 			: args.arg(a).optInteger(0);
 
-		StringBuilder sb = new StringBuilder();
+		Buffer sb = new Buffer();
 		if (message != null) sb.append(message).append('\n');
 		return valueOf(DebugHelpers.traceback(sb, thread, level).toString());
 	}
