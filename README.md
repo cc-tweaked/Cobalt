@@ -1,12 +1,28 @@
-# Cobalt [![Current build status](https://github.com/SquidDev/Cobalt/workflows/Build/badge.svg)](https://github.com/SquidDev/Cobalt/actions "Current build status")
+# Cobalt
+Cobalt is an Lua implementation for Java, designed for use in the Minecraft mod
+[CC: Tweaked]. Is is based on [LuaJ 2.0][LuaJ], though has diverged
+significantly over the years.
 
-## What?
-Cobalt is a fork of LuaJ 2.0 (Lua 5.1) with many features of LuaJ 3.0 backported.
+## Features
+Cobalt implements a (mostly) compliant Lua 5.1 implementation, with several
+interesting additional features:
 
-It allows multiple Lua instances to be run at once, with no shared metatables.
+ - Backports much of the Lua 5.2-5.4 standard library.
+ - Allows yielding _anywhere_ within a Lua program, including debug hooks and
+   any inside any native function.
+ - Support for interrupting and resuming the VM at arbitrary points.
+ - Efficient concatenation of strings using ropes.
 
-## Why?
-LuaJ 2.0 had too many bugs, mostly minor but annoying. Cobalt is an attempt to slim down LuaJ (only the JSE will be supported) and fix most of the bugs.
+## Using
+Don't.
 
-## But Lua 5.1 is outdated!
-I am considering having a separate Lua 5.3 branch but that is not an immediate priority right now.
+No seriously, don't. Cobalt is developed in-sync with CC: Tweaked, and so grows
+and changes according to the mod's needs. There is no guarantee of API stability
+between versions. It makes many design decisions which make sense for CC, but
+not for anything which needs a normal Lua implementation.
+
+Instead I recommend using one of the alternative Lua implementations, like
+[LuaJ], JNLua or Rembulan.
+
+[CC: Tweaked]: https://github.com/cc-tweaked/CC-Tweaked "cc-tweaked/CC-Tweaked: Just another ComputerCraft fork"
+[LuaJ]: https://github.com/luaj/luaj "luaj/luaj: Lightweight, fast, Java-centric Lua interpreter written for JME and JSE."
