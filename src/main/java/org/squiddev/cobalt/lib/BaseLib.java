@@ -34,7 +34,6 @@ import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.function.ResumableVarArgFunction;
-import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
@@ -47,7 +46,6 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * The basic global libraries in the Lua runtime.
  *
- * @see ResourceLoader
  * @see LibFunction
  * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.1">http://www.lua.org/manual/5.1/manual.html#5.1</a>

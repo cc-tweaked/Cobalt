@@ -31,7 +31,6 @@ import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
-import org.squiddev.cobalt.unwind.AutoUnwind;
 import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import static org.squiddev.cobalt.ValueFactory.*;
@@ -74,8 +73,8 @@ public class PackageLib {
 	}
 
 	public void add(LuaState state, LuaTable env) throws LuaError {
-		env.rawset("require", RegisteredFunction.ofS("require", (s, f, a) -> SuspendedTask.run(f, () -> require(s, a))).create());
-		env.rawset("module", RegisteredFunction.ofS("module", (s, f, a) -> SuspendedTask.run(f, () -> module(s, a))).create());
+		env.rawset("require", RegisteredFunction.ofV("require", (s, a) -> noYield(() -> require(s, a))).create());
+		env.rawset("module", RegisteredFunction.ofV("module", (s, a) -> noYield(() -> module(s, a))).create());
 
 		LibFunction.setGlobalLibrary(state, env, "package", packageTbl = tableOf(
 			_LOADED, loaded(state),
@@ -111,6 +110,14 @@ public class PackageLib {
 
 	// ======================== Module, Package loading =============================
 
+	private Varargs noYield(SuspendedTask.Action<Varargs> task) throws LuaError {
+		try {
+			return task.run();
+		} catch (UnwindThrowable e) {
+			throw new AssertionError("Task cannot yield", e);
+		}
+	}
+
 	/**
 	 * module (name [, ...])
 	 * <p>
@@ -137,7 +144,6 @@ public class PackageLib {
 	 * @return {@link Constants#NONE}
 	 * @throws LuaError If there is a name conflict.
 	 */
-	@AutoUnwind
 	private Varargs module(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		LuaTable loaded = loaded(state);
 		LuaString modname = args.arg(1).checkLuaString();
@@ -167,7 +173,7 @@ public class PackageLib {
 		}
 
 		// set the environment of the current function
-		LuaFunction f = LuaThread.getCallstackFunction(state, 1);
+		LuaFunction f = LuaThread.getCallstackFunction(state, 0);
 		if (f == null) {
 			throw new LuaError("no calling function");
 		}
@@ -241,7 +247,6 @@ public class PackageLib {
 	 * @return The loaded value
 	 * @throws LuaError If the module cannot be loaded.
 	 */
-	@AutoUnwind
 	private LuaValue require(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		LuaString name = args.first().checkLuaString();
 		LuaTable loaded = loaded(state);
@@ -336,43 +341,5 @@ public class PackageLib {
 			sb.append("\n\t'").append(filename).append("': ").append(v.arg(2));
 		}
 		return valueOf(sb.toString());
-	}
-
-	/**
-	 * Convert lua filename to valid class name
-	 *
-	 * @param filename Name of the file
-	 * @return The appropriate class name
-	 */
-	public static String toClassname(String filename) {
-		int n = filename.length();
-		int j = n;
-		if (filename.endsWith(".lua")) {
-			j -= 4;
-		}
-		for (int k = 0; k < j; k++) {
-			char c = filename.charAt(k);
-			if ((!isClassnamePart(c)) || (c == '/') || (c == '\\')) {
-				StringBuilder sb = new StringBuilder(j);
-				for (int i = 0; i < j; i++) {
-					c = filename.charAt(i);
-					sb.append(
-						(isClassnamePart(c)) ? c :
-							((c == '/') || (c == '\\')) ? '.' : '_');
-				}
-				return sb.toString();
-			}
-		}
-		return n == j ? filename : filename.substring(0, j);
-	}
-
-	private static boolean isClassnamePart(char c) {
-		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
-			return true;
-		}
-		return switch (c) {
-			case '.', '$', '_' -> true;
-			default -> false;
-		};
 	}
 }

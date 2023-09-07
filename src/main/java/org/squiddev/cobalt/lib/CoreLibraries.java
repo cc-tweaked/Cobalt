@@ -27,11 +27,9 @@ package org.squiddev.cobalt.lib;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 /**
- * The {@link CoreLibraries} class is a convenience class to standardize install "core" (i.e.
- * non-{@linkplain SystemLibraries system}) into the global state.
+ * Set up an environment with all core/safe globals installed.
  */
 public final class CoreLibraries {
 	private CoreLibraries() {
