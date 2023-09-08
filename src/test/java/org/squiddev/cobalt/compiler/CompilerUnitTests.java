@@ -30,7 +30,10 @@ import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.Print;
 import org.squiddev.cobalt.Prototype;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -84,10 +87,8 @@ public class CompilerUnitTests {
 	}
 
 	private static String dumpState(Prototype p) {
-		StringWriter output = new StringWriter();
-		try (PrintWriter ps = new PrintWriter(output)) {
-			Print.printFunction(ps, p, true, false);
-		}
+		StringBuilder output = new StringBuilder();
+		Print.printFunction(output, p, true, false);
 		return output.toString();
 	}
 }

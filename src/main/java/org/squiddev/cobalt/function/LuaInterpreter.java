@@ -30,9 +30,6 @@ import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.debug.Upvalue;
 import org.squiddev.cobalt.lib.TableLib;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
@@ -811,11 +808,9 @@ public final class LuaInterpreter {
 	private static LuaError reportIllegalResume(LuaState state, Prototype prototype, int pc) {
 		LuaError err = new LuaError("cannot resume this opcode");
 		state.reportInternalError(err, () -> {
-			StringWriter output = new StringWriter();
-			try (PrintWriter ps = new PrintWriter(output)) {
-				ps.printf("Resuming function at invalid opcode. file=\"%s\", pc=%d\n", prototype.shortSource(), pc + 1);
-				Print.printCode(ps, prototype, true);
-			}
+			StringBuilder output = new StringBuilder();
+			output.append(String.format("Resuming function at invalid opcode. file=\"%s\", pc=%d\n", prototype.shortSource(), pc + 1));
+			Print.printCode(output, prototype, true);
 			return output.toString();
 		});
 		return err;
