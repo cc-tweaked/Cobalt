@@ -115,10 +115,11 @@ public final class Buffer implements CharBuffer {
 	 * @param start  The start index
 	 * @param length The number of values to append
 	 */
-	public void append(byte[] b, int start, int length) {
+	public Buffer append(byte[] b, int start, int length) {
 		ensure(length);
 		System.arraycopy(b, start, bytes, this.length, length);
 		this.length += length;
+		return this;
 	}
 
 	/**

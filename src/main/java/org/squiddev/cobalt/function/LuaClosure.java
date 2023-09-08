@@ -49,6 +49,6 @@ public abstract class LuaClosure extends LuaFunction {
 
 	@Override
 	public final String debugName() {
-		return getPrototype().sourceShort() + ":" + getPrototype().lineDefined;
+		return getPrototype().shortSource() + ":" + getPrototype().lineDefined;
 	}
 }

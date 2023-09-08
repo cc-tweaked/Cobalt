@@ -338,7 +338,7 @@ public final class LuaThread extends LuaValue {
 					function = null;
 
 					try {
-						args = toExecute.invoke(state, args);
+						args = OperationHelper.invoke(state, toExecute, args);
 					} catch (Exception | VirtualMachineError e) {
 						args = null;
 						le = LuaError.wrap(e);

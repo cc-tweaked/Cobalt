@@ -456,7 +456,7 @@ public final class LuaInterpreter {
 
 							continue newFrame;
 						} else {
-							Varargs v = functionVal.invoke(state, args);
+							Varargs v = OperationHelper.invoke(state, functionVal, args);
 							di.top = a + v.count();
 							di.extras = v;
 							break;
@@ -813,7 +813,7 @@ public final class LuaInterpreter {
 		state.reportInternalError(err, () -> {
 			StringWriter output = new StringWriter();
 			try (PrintWriter ps = new PrintWriter(output)) {
-				ps.printf("Resuming function at invalid opcode. file=\"%s\", pc=%d\n", prototype.sourceShort(), pc + 1);
+				ps.printf("Resuming function at invalid opcode. file=\"%s\", pc=%d\n", prototype.shortSource(), pc + 1);
 				Print.printCode(ps, prototype, true);
 			}
 			return output.toString();

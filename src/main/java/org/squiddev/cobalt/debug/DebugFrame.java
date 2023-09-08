@@ -280,7 +280,7 @@ public final class DebugFrame {
 
 	public String sourceLine() {
 		if (closure == null) return func == null ? "nil" : func.debugName();
-		return closure.getPrototype().sourceShort() + ":" + currentLine();
+		return closure.getPrototype().shortSource() + ":" + currentLine();
 	}
 
 	public LuaString getLocalName(int index) {

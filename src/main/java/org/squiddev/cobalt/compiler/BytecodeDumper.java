@@ -161,7 +161,7 @@ public class BytecodeDumper {
 						case NUMBER_FORMAT_NUM_PATCH_INT32 -> {
 							if (o instanceof LuaInteger oInt) {
 								writer.write(Constants.TINT);
-								dumpInt(oInt.v);
+								dumpInt(oInt.intValue());
 							} else {
 								writer.write(Constants.TNUMBER);
 								dumpDouble(o.toDouble());

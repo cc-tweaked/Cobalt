@@ -113,7 +113,7 @@ public final class DebugLib {
 		if (ds.getHook() == null) {
 			hook = NIL;
 		} else if (ds.getHook() instanceof FunctionDebugHook) {
-			hook = ((FunctionDebugHook) ds.getHook()).getFunction();
+			hook = ((FunctionDebugHook) ds.getHook()).function();
 		} else {
 			hook = EXTERNAL_HOOK;
 		}
@@ -204,7 +204,7 @@ public final class DebugLib {
 						Prototype p = c.getPrototype();
 						info.rawset(WHAT, p.lineDefined == 0 ? MAIN : LUA);
 						info.rawset(SOURCE, p.source);
-						info.rawset(SHORT_SRC, p.sourceShort());
+						info.rawset(SHORT_SRC, p.shortSource());
 						info.rawset(LINEDEFINED, valueOf(p.lineDefined));
 						info.rawset(LASTLINEDEFINED, valueOf(p.lastLineDefined));
 					} else {
@@ -220,8 +220,8 @@ public final class DebugLib {
 				case 'l' -> {
 					if (c == null) continue;
 					Prototype p = c.getPrototype();
-					int line = p.lineInfo == null || di.pc < 0 || di.pc >= p.lineInfo.length ? -1 : p.lineInfo[di.pc];
-					int column = p.columnInfo == null || di.pc < 0 || di.pc >= p.columnInfo.length ? -1 : p.columnInfo[di.pc];
+					int line = p.lineAt(di.pc);
+					int column = p.columnAt(di.pc);
 					info.rawset(CURRENTLINE, valueOf(line));
 					if (column > 0) info.rawset(CURRENTCOLUMN, valueOf(column));
 				}
@@ -332,11 +332,7 @@ public final class DebugLib {
 
 	private static LuaString findupvalue(LuaClosure c, int up) {
 		Prototype p = c.getPrototype();
-		if (up > 0 && p.upvalueNames != null && up <= p.upvalueNames.length) {
-			return p.upvalueNames[up - 1];
-		} else {
-			return null;
-		}
+		return p.getUpvalueName(up - 1);
 	}
 
 	private static Varargs getupvalue(LuaState state, Varargs args) throws LuaError {

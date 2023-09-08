@@ -125,7 +125,7 @@ public final class LoadState {
 	 * @param name String name that appears in the chunk
 	 * @return source file name
 	 */
-	public static LuaString getSourceName(LuaString name) {
+	static LuaString getSourceName(LuaString name) {
 		if (name.length() > 0) {
 			return switch (name.charAt(0)) {
 				case '@', '=' -> name.substring(1);
@@ -146,7 +146,7 @@ public final class LoadState {
 	private static final LuaString EMPTY_STRING = valueOf("[string \"\"]");
 	private static final LuaString NEW_LINES = valueOf("\r\n");
 
-	public static LuaString getShortName(LuaString name) {
+	static LuaString getShortName(LuaString name) {
 		if (name.length() == 0) return EMPTY_STRING;
 		switch (name.charAt(0)) {
 			case '=' -> {
@@ -191,7 +191,7 @@ public final class LoadState {
 		return LuaString.valueOf(out, 0, offset);
 	}
 
-	public static void checkMode(LuaString mode, String current) throws CompileException {
+	static void checkMode(LuaString mode, String current) throws CompileException {
 		if (mode != null && mode.indexOf((byte) current.charAt(0)) == -1) {
 			throw new CompileException("attempt to load a " + current + " chunk (mode is " + mode + ")");
 		}

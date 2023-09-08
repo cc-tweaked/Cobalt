@@ -30,6 +30,8 @@ import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.lib.DebugLib;
 
+import java.util.Objects;
+
 import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_ANY_HOOK;
@@ -95,7 +97,7 @@ public final class DebugHelpers {
 			}
 
 			sb.append("\n\t");
-			sb.append(di.closure == null ? C : di.closure.getPrototype().sourceShort());
+			sb.append(di.closure == null ? C : di.closure.getPrototype().shortSource());
 			sb.append(':');
 			if (di.currentLine() > 0) sb.append(Integer.toString(di.currentLine())).append(":");
 			sb.append(" in ");
@@ -210,7 +212,7 @@ public final class DebugHelpers {
 			}
 			case OP_GETUPVAL -> {
 				int u = Lua.GETARG_B(i); /* upvalue index */
-				return new ObjectName(u < p.upvalueNames.length ? p.upvalueNames[u] : DebugLib.QMARK, UPVALUE);
+				return new ObjectName(Objects.requireNonNullElse(p.getUpvalueName(u), DebugLib.QMARK), UPVALUE);
 			}
 			case OP_SELF -> {
 				int k = Lua.GETARG_C(i); /* key index */

@@ -56,8 +56,8 @@ final class Parser {
 	FuncState fs;
 	public int nCcalls;
 
-	public Parser(InputReader stream, int firstByte, LuaString source) {
-		lexer = new Lex(source, stream, firstByte);
+	public Parser(InputReader stream, int firstByte, LuaString source, LuaString shortSource) {
+		lexer = new Lex(source, shortSource, stream, firstByte);
 		fs = null;
 	}
 

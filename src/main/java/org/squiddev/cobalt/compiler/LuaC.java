@@ -201,7 +201,7 @@ public class LuaC {
 	 */
 	@AutoUnwind
 	private static Prototype loadTextChunk(int firstByte, InputReader stream, LuaString name) throws CompileException, LuaError, UnwindThrowable {
-		Parser parser = new Parser(stream, firstByte, name);
+		Parser parser = new Parser(stream, firstByte, name, LoadState.getShortName(name));
 		parser.lexer.skipShebang();
 		FuncState funcstate = parser.openFunc();
 		funcstate.varargFlags = Lua.VARARG_ISVARARG; /* main func. is always vararg */

@@ -332,7 +332,7 @@ public final class DebugState {
 		// Similarly, if we've got a line hook and we've not yet run it, then do so.
 		if ((hookMask & HOOK_LINE) != 0 && (frame.flags & FLAG_LINE_HOOK) == 0) {
 			Prototype prototype = frame.closure.getPrototype();
-			int newLine = prototype.getLine(pc);
+			int newLine = prototype.lineAt(pc);
 			int oldPc = frame.oldPc;
 
 			/*
@@ -347,7 +347,7 @@ public final class DebugState {
 			*/
 			frame.flags |= FLAG_LINE_HOOK;
 
-			if (pc <= oldPc || newLine != prototype.getLine(oldPc)) {
+			if (pc <= oldPc || newLine != prototype.lineAt(oldPc)) {
 				inhook = true;
 				try {
 					hook.onLine(state, this, frame, newLine);

@@ -73,8 +73,8 @@ public final class OperationHelper {
 	}
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
-		if (left instanceof LuaInteger && right instanceof LuaInteger) {
-			return valueOf((long) ((LuaInteger) left).v * (long) ((LuaInteger) right).v);
+		if (left instanceof LuaInteger l && right instanceof LuaInteger r) {
+			return valueOf((long) l.intValue() * (long) r.intValue());
 		}
 
 		double dLeft, dRight;
@@ -330,7 +330,7 @@ public final class OperationHelper {
 	@AutoUnwind
 	public static int intLength(LuaState state, LuaValue table) throws LuaError, UnwindThrowable {
 		LuaValue length = length(state, table);
-		if (length instanceof LuaInteger i) return i.v;
+		if (length instanceof LuaInteger i) return i.intValue();
 
 		// TODO: Would be useful to have a checkInteger function which accepts an error message.
 		double value = length.toDouble();
@@ -357,7 +357,7 @@ public final class OperationHelper {
 		int type = value.type();
 		if (type == TNUMBER) {
 			if (value instanceof LuaInteger) {
-				int x = ((LuaInteger) value).v;
+				int x = ((LuaInteger) value).intValue();
 				if (x != Integer.MIN_VALUE) return valueOf(-x);
 			}
 

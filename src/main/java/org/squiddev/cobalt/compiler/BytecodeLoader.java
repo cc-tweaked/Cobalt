@@ -283,13 +283,15 @@ final class BytecodeLoader {
 	/**
 	 * Load a function prototype from the input stream
 	 *
-	 * @param p name of the source
+	 * @param givenSource name of the source
 	 * @return {@link Prototype} instance that was loaded
 	 * @throws CompileException, LuaError, UnwindThrowable On stream read errors
 	 */
-	public Prototype loadFunction(LuaString p) throws CompileException, LuaError, UnwindThrowable {
+	public Prototype loadFunction(LuaString givenSource) throws CompileException, LuaError, UnwindThrowable {
 		LuaString source = loadString();
-		if (source == null) source = p;
+		if (source == null) source = givenSource;
+
+		LuaString shortSource = LoadState.getShortName(source);
 
 		int lineDefined = loadInt();
 		int lastLineDefined = loadInt();
@@ -305,9 +307,9 @@ final class BytecodeLoader {
 		LuaString[] upvalueNames = loadUpvalueNames();
 
 		return new Prototype(
-			source,
+			source, shortSource,
 			constants, code, children, numparams, is_vararg, maxstacksize, nups,
-			lineDefined, lastLineDefined, lineInfo, null, locals, upvalueNames
+			lineDefined, lastLineDefined, lineInfo, NOINTS, locals, upvalueNames
 		);
 	}
 

@@ -86,7 +86,7 @@ public final class LuaDouble extends LuaNumber {
 	/**
 	 * The value being held by this instance.
 	 */
-	public final double v;
+	private final double v;
 
 	public static LuaNumber valueOf(double d) {
 		int id = (int) d;
@@ -103,6 +103,10 @@ public final class LuaDouble extends LuaNumber {
 	public int hashCode() {
 		long l = Double.doubleToLongBits(v);
 		return ((int) (l >> 32)) | (int) l;
+	}
+
+	public double doubleValue() {
+		return v;
 	}
 
 	@Override

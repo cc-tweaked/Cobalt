@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.compiler.LoadState;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 
@@ -41,7 +41,7 @@ import org.squiddev.cobalt.function.LuaInterpretedFunction;
  */
 public final class Prototype {
 	public final LuaString source;
-	private LuaString shortSource;
+	public final LuaString shortSource;
 
 	/**
 	 * Constants used by the function
@@ -77,11 +77,12 @@ public final class Prototype {
 	public final LuaString[] upvalueNames;
 
 	public Prototype(
-		LuaString source,
+		LuaString source, LuaString shortSource,
 		LuaValue[] constants, int[] code, Prototype[] children, int parameters, int isVarArg, int maxStackSize, int upvalues,
 		int lineDefined, int lastLineDefined, int[] lineInfo, int[] columnInfo, LocalVariable[] locals, LuaString[] upvalueNames
 	) {
 		this.source = source;
+		this.shortSource = shortSource;
 
 		this.constants = constants;
 		this.code = code;
@@ -99,9 +100,8 @@ public final class Prototype {
 		this.upvalueNames = upvalueNames;
 	}
 
-	public LuaString sourceShort() {
-		LuaString shortSource = this.shortSource;
-		return shortSource != null ? shortSource : (this.shortSource = LoadState.getShortName(source));
+	public LuaString shortSource() {
+		return shortSource;
 	}
 
 	public String toString() {
@@ -115,7 +115,7 @@ public final class Prototype {
 	 * @param pc     the program counter
 	 * @return the name, or null if not found
 	 */
-	public LuaString getLocalName(int number, int pc) {
+	public @Nullable LuaString getLocalName(int number, int pc) {
 		int i;
 		for (i = 0; i < locals.length && locals[i].startpc <= pc; i++) {
 			if (pc < locals[i].endpc) {  /* is variable active? */
@@ -126,13 +126,27 @@ public final class Prototype {
 		return null;  // not found
 	}
 
+	public @Nullable LuaString getUpvalueName(int index) {
+		return index >= 0 && index < upvalueNames.length ? upvalueNames[index] : null;
+	}
+
 	/**
 	 * Get the line of the instruction at the given offset.
 	 *
 	 * @param pc The program counter.
 	 * @return The line, or {@code -1} if not set.
 	 */
-	public int getLine(int pc) {
-		return lineInfo != null && pc >= 0 && pc <= lineInfo.length ? lineInfo[pc] : -1;
+	public int lineAt(int pc) {
+		return pc >= 0 && pc < lineInfo.length ? lineInfo[pc] : -1;
+	}
+
+	/**
+	 * Get the column of the instruction at the given offset.
+	 *
+	 * @param pc The program counter.
+	 * @return The column, or {@code -1} if not set.
+	 */
+	public int columnAt(int pc) {
+		return pc >= 0 && pc < columnInfo.length ? columnInfo[pc] : -1;
 	}
 }

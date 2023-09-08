@@ -153,8 +153,8 @@ public class Print {
 		int c = GETARG_C(i);
 		int bx = GETARG_Bx(i);
 		int sbx = GETARG_sBx(i);
-		int line = f.lineInfo != null && pc < f.lineInfo.length ? f.lineInfo[pc] : -1;
-		int column = f.columnInfo != null && pc < f.columnInfo.length ? f.columnInfo[pc] : -1;
+		int line = f.lineAt(pc);
+		int column = f.columnAt(pc);
 		ps.print("  " + (pc + 1) + "  ");
 		if (extended && line > 0 && column > 0) {
 			ps.print("[" + line + "/" + column + "]  ");
@@ -315,7 +315,7 @@ public class Print {
 	}
 
 	private static String id(Prototype f) {
-		return f.sourceShort() + ":" + f.lineDefined;
+		return f.shortSource() + ":" + f.lineDefined;
 	}
 
 	/**

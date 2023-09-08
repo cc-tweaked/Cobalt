@@ -31,6 +31,12 @@ describe("The base library", function()
 			local obj = setmetatable({}, { __name="abc" })
 			expect(tostring(obj)):str_match("^abc: ")
 		end)
+
+		it("can return a non-string value :lua<=5.2", function()
+			-- Lua 5.3+ requires this to be a string. Which is sensible, but a breaking change!
+			local obj = setmetatable({}, { __tostring = function() return false end })
+			expect(tostring(obj)):eq(false)
+		end)
 	end)
 
 	describe("ipairs", function()

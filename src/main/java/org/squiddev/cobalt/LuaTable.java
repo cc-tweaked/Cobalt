@@ -356,9 +356,8 @@ public final class LuaTable extends LuaValue {
 	 * @return The array slot or 0 if not usable in an array
 	 */
 	private static int arraySlot(LuaValue value) {
-		if (value instanceof LuaInteger) {
-			int val = ((LuaInteger) value).v;
-
+		if (value instanceof LuaInteger i) {
+			int val = i.intValue();
 			if (val > 0) return val;
 		}
 
@@ -666,7 +665,7 @@ public final class LuaTable extends LuaValue {
 		Node node = nodes[hashmod(search, nodes.length - 1)];
 		while (true) {
 			LuaValue key = node.key();
-			if (key instanceof LuaInteger keyI && keyI.v == search) {
+			if (key instanceof LuaInteger keyI && keyI.intValue() == search) {
 				return node;
 			} else {
 				int next = node.next;
@@ -705,7 +704,7 @@ public final class LuaTable extends LuaValue {
 	}
 
 	public LuaValue rawget(LuaValue search) {
-		if (search instanceof LuaInteger) return rawget(((LuaInteger) search).v);
+		if (search instanceof LuaInteger i) return rawget(i.intValue());
 
 		Node node = getNode(search);
 		return node == null ? NIL : node.value();
@@ -773,7 +772,7 @@ public final class LuaTable extends LuaValue {
 	 * @see OperationHelper#setTable(LuaState, LuaValue, LuaValue, LuaValue)
 	 */
 	boolean trySet(LuaValue key, LuaValue value) throws LuaError {
-		if (key instanceof LuaInteger keyI) return trySet(keyI.v, value, key);
+		if (key instanceof LuaInteger keyI) return trySet(keyI.intValue(), value, key);
 
 		Node node = getNode(key);
 		if (node == null) {
@@ -816,13 +815,13 @@ public final class LuaTable extends LuaValue {
 
 	public void rawset(LuaValue key, LuaValue value) throws LuaError {
 		if (key.isNil()) throw new LuaError("table index is nil");
-		if (key instanceof LuaDouble d && Double.isNaN(d.v)) throw new LuaError("table index is NaN");
+		if (key instanceof LuaDouble d && Double.isNaN(d.doubleValue())) throw new LuaError("table index is NaN");
 		rawsetImpl(key, value);
 	}
 
 	public void rawsetImpl(LuaValue key, LuaValue value) {
 		if (key instanceof LuaInteger keyI) {
-			rawset(keyI.v, value, key);
+			rawset(keyI.intValue(), value, key);
 			return;
 		}
 

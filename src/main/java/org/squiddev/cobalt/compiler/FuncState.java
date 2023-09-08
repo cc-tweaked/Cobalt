@@ -104,7 +104,7 @@ final class FuncState {
 		for (FuncState.UpvalueDesc upvalue : upvalues) upvalueNames[i++] = upvalue.name;
 
 		return new Prototype(
-			lexer.source,
+			lexer.source, lexer.shortSource,
 			// Code
 			constants.toArray(new LuaValue[0]), LuaC.realloc(code, pc),
 			children.toArray(new Prototype[0]),

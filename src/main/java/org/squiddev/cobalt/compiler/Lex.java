@@ -102,6 +102,8 @@ final class Lex {
 	 */
 	final LuaString source;
 
+	final LuaString shortSource;
+
 	/**
 	 * The buffer we're reading from
 	 */
@@ -127,8 +129,9 @@ final class Lex {
 	private byte[] buff = new byte[32];  /* buffer for tokens */
 	private int bufferSize; /* length of buffer */
 
-	Lex(LuaString source, InputReader z, int current) {
+	Lex(LuaString source, LuaString shortSource, InputReader z, int current) {
 		this.source = source;
+		this.shortSource = shortSource;
 		this.z = z;
 		this.current = current;
 
@@ -168,18 +171,16 @@ final class Lex {
 		}
 	}
 
-	private String txtToken(int token) {
-		return switch (token) {
-			case TK_NAME, TK_STRING, TK_NUMBER -> "'" + LuaString.valueOf(buff, 0, bufferSize) + "'";
-			default -> token2str(token);
-		};
-	}
-
 	CompileException lexError(String msg, int token) {
-		LuaString cid = LoadState.getShortName(source);
-		String message = cid + ":" + lineNumber + ": " + msg;
-		if (token != 0) message += " near " + txtToken(token);
-		return new CompileException(message);
+		var buffer = new Buffer().append(shortSource).append(":").append(Integer.toString(lineNumber)).append(": ").append(msg);
+		if (token != 0) {
+			buffer.append(" near ");
+			switch (token) {
+				case TK_NAME, TK_STRING, TK_NUMBER -> buffer.append("'").append(buff, 0, bufferSize).append("'");
+				default -> buffer.append(token2str(token));
+			}
+		}
+		return new CompileException(buffer.toString());
 	}
 
 	CompileException syntaxError(String msg) {
