@@ -3,9 +3,11 @@ plugins {
 	alias(libs.plugins.kotlin)
 }
 
+group = "cc.tweaked.cobalt"
+
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		languageVersion.set(JavaLanguageVersion.of(8))
 	}
 }
 

@@ -31,7 +31,7 @@ val buildTools by configurations.creating {
 
 dependencies {
 	compileOnly(libs.checkerFramework.qual)
-	implementation(sourceSets["doubles"].output)
+	compileOnly(sourceSets["doubles"].output)
 
 	testCompileOnly(libs.checkerFramework.qual)
 	testImplementation(libs.bundles.test)
@@ -82,17 +82,29 @@ val mainSource = sourceSets.main.get()
 val javaClassesDir = mainSource.java.classesDirectory.get()
 val untransformedClasses = project.layout.buildDirectory.dir("classes/uninstrumentedJava/main")
 
+val allUntransformedClasses by tasks.registering(Copy::class) {
+	from(tasks.compileJava)
+	from(sourceSets["doubles"].output.classesDirs)
+	into(layout.buildDirectory.dir(name))
+
+	duplicatesStrategy = DuplicatesStrategy.WARN
+}
+
 val instrumentJava = tasks.register(mainSource.getTaskName("Instrument", "Java"), JavaExec::class) {
-	dependsOn(tasks.compileJava)
-	inputs.dir(untransformedClasses).withPropertyName("inputDir")
+	inputs.files(allUntransformedClasses).withPropertyName("inputDir")
 	outputs.dir(javaClassesDir).withPropertyName("outputDir")
 
-	javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+	javaLauncher.set(
+		javaToolchains.launcherFor {
+			// Run under Java 8, so we can check compatibility of methods.
+			languageVersion.set(JavaLanguageVersion.of(8))
+		},
+	)
 	mainClass.set("cc.tweaked.cobalt.build.MainKt")
 	classpath = buildTools
 
 	args = listOf(
-		untransformedClasses.get().asFile.absolutePath,
+		allUntransformedClasses.get().destinationDir.absolutePath,
 		javaClassesDir.asFile.absolutePath,
 	)
 
@@ -109,8 +121,12 @@ license {
 	include("*.java")
 }
 
-tasks.jar {
-	from(sourceSets["doubles"].output)
+listOf(configurations.apiElements, configurations.runtimeElements).forEach { config ->
+	config {
+		artifacts.configureEach {
+			attributes { attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 6) }
+		}
+	}
 }
 
 publishing {

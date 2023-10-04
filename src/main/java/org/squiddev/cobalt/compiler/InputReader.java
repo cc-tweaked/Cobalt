@@ -6,7 +6,5 @@ import org.squiddev.cobalt.Varargs;
 public interface InputReader {
 	int read() throws CompileException, UnwindThrowable;
 
-	default int resume(Varargs varargs) throws CompileException, UnwindThrowable {
-		throw new IllegalStateException("Cannot resume a non-yielding InputReader.");
-	}
+	int resume(Varargs varargs) throws CompileException, UnwindThrowable;
 }

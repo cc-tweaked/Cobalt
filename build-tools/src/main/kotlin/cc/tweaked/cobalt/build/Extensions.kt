@@ -170,6 +170,22 @@ fun MethodVisitor.visitLoadInt(i: Int) = when (i) {
 	else -> visitLdcInsn(i)
 }
 
+/**
+ * Get the internal name of the boxed primitive type.
+ */
+val Type.boxedName: String?
+	get() = when (sort) {
+		Type.BOOLEAN -> "java/lang/Boolean"
+		Type.CHAR -> "java/lang/Character"
+		Type.SHORT -> "java/lang/Short"
+		Type.INT -> "java/lang/Integer"
+		Type.FLOAT -> "java/lang/Float"
+		Type.DOUBLE -> "java/lang/Double"
+		Type.LONG -> "java/lang/Long"
+		Type.OBJECT, Type.ARRAY -> null
+		else -> throw java.lang.IllegalArgumentException("$this is not a value type")
+	}
+
 @Suppress("NOTHING_TO_INLINE")
 inline fun logger(noinline fn: () -> Unit): Logger =
 	LoggerFactory.getLogger(fn.javaClass.toString().substringBefore("Kt$"))

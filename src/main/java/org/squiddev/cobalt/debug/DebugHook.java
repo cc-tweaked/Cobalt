@@ -46,9 +46,7 @@ public interface DebugHook {
 	 *
 	 * @return Whether this hook should be inherited when a new thread is created?
 	 */
-	default boolean inheritHook() {
-		return true;
-	}
+	boolean inheritHook();
 
 	/**
 	 * Called after entering a function
@@ -59,8 +57,7 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	default void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-	}
+	void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Called before exiting a function
@@ -71,8 +68,7 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	default void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-	}
+	void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Called before ever 'n' instructions
@@ -83,8 +79,7 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	default void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-	}
+	void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable;
 
 	/**
 	 * Called before each line changes
@@ -96,6 +91,5 @@ public interface DebugHook {
 	 * @throws LuaError        On a runtime error.
 	 * @throws UnwindThrowable If this hook transfers control to another coroutine.
 	 */
-	default void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable {
-	}
+	void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable;
 }

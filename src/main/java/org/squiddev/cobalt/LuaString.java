@@ -297,12 +297,12 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	@Override
 	public int compareTo(LuaString rhs) {
 		byte[] bytes = bytes(), rhsBytes = rhs.bytes();
-		// Find the first mismatched character in 0..n
-		int len = Math.min(length, rhs.length);
-		int mismatch = Arrays.mismatch(bytes, offset, offset + len, rhsBytes, rhs.offset, rhs.offset + len);
-		if (mismatch >= 0) return Byte.compareUnsigned(bytes[offset + mismatch], rhsBytes[rhs.offset + mismatch]);
 
-		// If one is a prefix of the other, sort by length.
+		for (int i = 0, j = 0; i < length && j < rhs.length; ++i, ++j) {
+			if (bytes[offset + i] != rhsBytes[rhs.offset + j]) {
+				return (bytes[offset + i] & 0xFF) - (rhsBytes[rhs.offset + j] & 0xFF);
+			}
+		}
 		return length - rhs.length;
 	}
 
@@ -325,7 +325,11 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	}
 
 	private static boolean equals(byte[] a, int aOffset, byte[] b, int bOffset, int length) {
-		return Arrays.equals(a, aOffset, aOffset + length, b, bOffset, bOffset + length);
+		if (a.length < aOffset + length || b.length < bOffset + length) return false;
+		while (--length >= 0) {
+			if (a[aOffset++] != b[bOffset++]) return false;
+		}
+		return true;
 	}
 
 	@Override

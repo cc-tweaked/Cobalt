@@ -48,7 +48,7 @@ private fun makeStateClass(generator: ClassEmitter, yieldPoints: List<YieldPoint
 
 	val name = "${UNWIND_STATE.internalName}\$L${longCounts}O${objectCounts}"
 	generator.generate(name) { cw ->
-		cw.visit(V1_8, ACC_PUBLIC.or(ACC_FINAL).or(ACC_SYNTHETIC), name, null, UNWIND_STATE.internalName, null)
+		cw.visit(V1_6, ACC_PUBLIC.or(ACC_FINAL).or(ACC_SYNTHETIC), name, null, UNWIND_STATE.internalName, null)
 		for (i in 0 until longCounts) cw.visitField(ACC_PUBLIC, "l$i", "J", null, null).visitEnd()
 		for (i in 0 until objectCounts) cw.visitField(ACC_PUBLIC, "o$i", OBJECT.descriptor, null, null).visitEnd()
 
@@ -441,12 +441,13 @@ private fun makeSuspendedFunction(emitter: ClassEmitter, methodReference: Handle
 	val (invokeOpcode, argTypes) = when (methodReference.tag) {
 		H_INVOKESTATIC -> Pair(INVOKESTATIC, originalArgTypes)
 		H_INVOKEVIRTUAL -> Pair(INVOKEVIRTUAL, arrayOf(Type.getObjectType(methodReference.owner), *originalArgTypes))
-		else -> throw UnsupportedConstruct("Cannot handle method refernece $methodReference")
+		H_INVOKESPECIAL -> Pair(INVOKEVIRTUAL, arrayOf(Type.getObjectType(methodReference.owner), *originalArgTypes))
+		else -> throw UnsupportedConstruct("Cannot handle method reference $methodReference")
 	}
 	val factoryDesc = Type.getMethodType(childName, *argTypes).descriptor
 
 	emitter.generate(childName.internalName) { cw ->
-		cw.visit(V1_8, ACC_FINAL, childName.internalName, null, OBJECT.internalName, arrayOf(SUSPENDED_FUNCTION.internalName))
+		cw.visit(V1_6, ACC_FINAL, childName.internalName, null, OBJECT.internalName, arrayOf(SUSPENDED_FUNCTION.internalName))
 
 		cw.visitField(ACC_PRIVATE, "state", OBJECT.descriptor, null, null).visitEnd()
 		cw.visitField(ACC_PRIVATE, "resumeAt", UNWIND_STATE.descriptor, null, null).visitEnd()

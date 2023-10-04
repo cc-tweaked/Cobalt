@@ -237,5 +237,10 @@ public class LuaC {
 				throw new CompileException("io error: " + message);
 			}
 		}
+
+		@Override
+		public int resume(Varargs varargs) {
+			throw new IllegalStateException("Cannot resume a non-yielding InputReader.");
+		}
 	}
 }

@@ -54,7 +54,5 @@ public interface Resumable<T> {
 	 * @throws LuaError        When a runtime error occurs.
 	 * @throws UnwindThrowable If this {@link Resumable} transfers control to another coroutine.
 	 */
-	default Varargs resumeError(LuaState state, DebugFrame frame, T object, LuaError error) throws LuaError, UnwindThrowable {
-		throw error;
-	}
+	Varargs resumeError(LuaState state, DebugFrame frame, T object, LuaError error) throws LuaError, UnwindThrowable;
 }

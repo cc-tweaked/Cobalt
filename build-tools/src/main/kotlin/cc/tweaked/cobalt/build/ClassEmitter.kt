@@ -27,7 +27,7 @@ class InMemoryClassEmitter : ClassEmitter {
 
 		logger.info("Writing {}", name)
 		val cw = NonLoadingClassWriter(classReader, flags)
-		write(CheckClassAdapter(cw))
+		write(CompatibilityChecker(CheckClassAdapter(cw)))
 		emitted[name] = cw.toByteArray()
 	}
 }
@@ -38,9 +38,9 @@ class FileClassEmitter(private val outputDir: Path) : ClassEmitter {
 	override fun generate(name: String, classReader: ClassReader?, flags: Int, write: (ClassVisitor) -> Unit) {
 		if (!emitted.add(name)) return
 
-		logger.info("Writing {}", name)
+		logger.debug("Writing {}", name)
 		val cw = NonLoadingClassWriter(classReader, flags)
-		write(CheckClassAdapter(cw))
+		write(CompatibilityChecker(CheckClassAdapter(cw)))
 
 		val outputFile = outputDir.resolve("$name.class")
 		Files.createDirectories(outputFile.parent)
@@ -68,6 +68,8 @@ private val subclassRelations = mapOf(
 	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/LuaString") to "org/squiddev/cobalt/LuaValue",
 	UnorderedPair("org/squiddev/cobalt/Varargs", "org/squiddev/cobalt/LuaValue") to "org/squiddev/cobalt/Varargs",
 )
+
+fun getCommonSuperclass(type1: String, type2: String): String? = subclassRelations[UnorderedPair(type1, type2)]
 
 /** A [ClassWriter] extension which avoids loading classes when computing frames. */
 private class NonLoadingClassWriter(reader: ClassReader?, flags: Int) : ClassWriter(reader, flags) {

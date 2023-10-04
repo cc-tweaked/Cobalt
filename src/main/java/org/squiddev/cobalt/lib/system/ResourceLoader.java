@@ -47,13 +47,16 @@ public interface ResourceLoader {
 	/**
 	 * A resource loader that reads from the filesystem.
 	 */
-	ResourceLoader FILES = filename -> {
-		File f = new File(filename);
+	ResourceLoader FILES = new ResourceLoader() {
+		@Override
+		public InputStream load(String filename) {
+			File f = new File(filename);
 
-		try {
-			return Files.newInputStream(f.toPath());
-		} catch (IOException ioe) {
-			return null;
+			try {
+				return Files.newInputStream(f.toPath());
+			} catch (IOException ioe) {
+				return null;
+			}
 		}
 	};
 }

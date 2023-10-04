@@ -192,4 +192,9 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 
 		return execute(state, frame, this);
 	}
+
+	@Override
+	public Varargs resumeError(LuaState state, DebugFrame frame, Object object, LuaError error) throws LuaError, UnwindThrowable {
+		throw error;
+	}
 }
