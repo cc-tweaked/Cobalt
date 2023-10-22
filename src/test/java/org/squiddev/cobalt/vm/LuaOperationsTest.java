@@ -82,7 +82,7 @@ public class LuaOperationsTest {
 
 	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, somefunc, table);
-	private final Prototype proto = DataFactory.prototype();
+	private final Prototype proto = DataFactory.prototype(state);
 	private final LuaClosure someclosure = new LuaInterpretedFunction(proto, table);
 	private final LuaUserdata userdataobj = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = ValueFactory.userdataOf(sampledata);
@@ -160,7 +160,7 @@ public class LuaOperationsTest {
 	public Prototype createPrototype(String script, String name) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
-			return LuaC.compile(is, name);
+			return LuaC.compile(state, is, name);
 		} catch (CompileException | LuaError e) {
 			throw new IllegalStateException("Failed to compile " + name, e);
 		}

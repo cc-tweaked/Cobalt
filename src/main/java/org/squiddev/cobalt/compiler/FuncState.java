@@ -228,7 +228,7 @@ final class FuncState {
 			code[jumpControlPc] = SETARG_A(op, reg);
 		} else {
 			// no register to put value or register already has the value
-			code[jumpControlPc] = CREATE_ABC(OP_TEST, GETARG_B(op), 0, Lua.GETARG_C(op));
+			code[jumpControlPc] = CREATE_ABC(OP_TEST, GETARG_B(op), 0, GETARG_C(op));
 		}
 
 		return true;
@@ -527,7 +527,7 @@ final class FuncState {
 	private void invertJump(ExpDesc e) throws CompileException {
 		int pc = getJumpControl(e.info);
 		int op = code[pc];
-		_assert(testTMode(GET_OPCODE(op)) && GET_OPCODE(op) != OP_TESTSET && Lua.GET_OPCODE(op) != OP_TEST);
+		_assert(testTMode(GET_OPCODE(op)) && GET_OPCODE(op) != OP_TESTSET && GET_OPCODE(op) != OP_TEST);
 
 		int a = GETARG_A(op);
 		int nota = a != 0 ? 0 : 1;

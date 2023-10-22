@@ -45,7 +45,7 @@ public class MetatableTest {
 	private final LuaFunction function = LibFunction.create(s -> Constants.NIL);
 	private final LuaState state = new LuaState();
 	private final LuaThread thread = new LuaThread(state, function, table);
-	private final LuaClosure closure = DataFactory.closure();
+	private final LuaClosure closure = DataFactory.closure(state);
 	private final LuaUserdata userdata = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatamt = ValueFactory.userdataOf(sampledata, table);
 

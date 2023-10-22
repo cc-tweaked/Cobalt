@@ -73,6 +73,7 @@ private val builtinMethods = run {
 
 	mapOf(
 		Desc("org/squiddev/cobalt/compiler/InputReader", "read", "()I") to YieldType.Resume,
+		Desc("org/squiddev/cobalt/unwind/SuspendedFunction", "call", "(Lorg/squiddev/cobalt/LuaState;)Ljava/lang/Object;") to YieldType.Resume,
 		Desc(opHelper, "eq", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
 		Desc(opHelper, "lt", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
 		Desc(opHelper, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,

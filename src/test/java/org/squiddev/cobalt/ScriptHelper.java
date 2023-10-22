@@ -34,6 +34,8 @@ import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -109,6 +111,10 @@ public class ScriptHelper {
 			String expectedOutput = getExpectedOutput(testName);
 			actualOutput = actualOutput.replaceAll("\r\n", "\n");
 			expectedOutput = expectedOutput.replaceAll("\r\n", "\n");
+
+			if (Boolean.getBoolean("cobalt.update") && !expectedOutput.equals(actualOutput)) {
+				Files.writeString(Path.of("src/test/resources", subdir, testName + ".out"), actualOutput);
+			}
 
 			assertEquals(expectedOutput, actualOutput);
 		} catch (LuaError e) {

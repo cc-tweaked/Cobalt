@@ -26,6 +26,7 @@ package org.squiddev.cobalt;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.squiddev.cobalt.compiler.LuaBytecodeFormat;
 
 
 public class CompareTest {
@@ -41,7 +42,7 @@ public class CompareTest {
 	})
 	public void errors(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/compare/errors/");
-		helpers.setup();
+		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
 		helpers.runComparisonTest(name);
 	}
 
@@ -59,7 +60,7 @@ public class CompareTest {
 	})
 	public void libs(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/compare/");
-		helpers.setup();
+		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
 		helpers.runComparisonTest(name);
 	}
 }

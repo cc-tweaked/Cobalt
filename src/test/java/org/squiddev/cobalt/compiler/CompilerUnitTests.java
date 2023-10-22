@@ -27,6 +27,7 @@ package org.squiddev.cobalt.compiler;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.Print;
 import org.squiddev.cobalt.Prototype;
 
@@ -61,12 +62,14 @@ public class CompilerUnitTests {
 	}
 
 	private static void compareResults(String dir, String file) throws IOException, CompileException, LuaError {
+		var state = LuaState.builder().bytecodeFormat(LuaBytecodeFormat.instance()).build();
+
 		// Compile source file
-		Prototype sourcePrototype = LuaC.compile(CompilerUnitTests.class.getResourceAsStream(dir + file + ".lua"), "@" + file + ".lua");
+		Prototype sourcePrototype = LuaC.compile(state, CompilerUnitTests.class.getResourceAsStream(dir + file + ".lua"), "@" + file + ".lua");
 		String sourceBytecode = dumpState(sourcePrototype);
 
 		// Load expected value from jar
-		Prototype expectedPrototype = LuaC.compile(CompilerUnitTests.class.getResourceAsStream(dir + file + ".lc"), file + ".lua");
+		Prototype expectedPrototype = LuaC.compile(state, CompilerUnitTests.class.getResourceAsStream(dir + file + ".lc"), file + ".lua");
 		String expectedBytecode = dumpState(expectedPrototype);
 
 		if (!expectedBytecode.equals(sourceBytecode)) {
@@ -80,7 +83,7 @@ public class CompilerUnitTests {
 		// Round-trip the bytecode
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		BytecodeDumper.dump(expectedPrototype, outputStream, false);
-		String redumpBytecode = dumpState(LuaC.compile(new ByteArrayInputStream(outputStream.toByteArray()), file + ".lua"));
+		String redumpBytecode = dumpState(LuaC.compile(state, new ByteArrayInputStream(outputStream.toByteArray()), file + ".lua"));
 
 		// compare again
 		assertEquals(sourceBytecode, redumpBytecode);

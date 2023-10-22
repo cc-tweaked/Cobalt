@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.squiddev.cobalt.compiler.BytecodeFormat;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
@@ -72,6 +74,8 @@ public final class LuaState {
 	 */
 	public final LoadState.FunctionFactory compiler;
 
+	private final @Nullable BytecodeFormat bytecodeFormat;
+
 	private volatile boolean interrupted;
 	private final InterruptHandler interruptHandler;
 
@@ -100,6 +104,7 @@ public final class LuaState {
 		compiler = builder.compiler;
 		interruptHandler = builder.interruptHandler;
 		reportError = builder.reportError;
+		bytecodeFormat = builder.bytecodeFormat;
 
 		mainThread = currentThread = new LuaThread(this, new LuaTable());
 	}
@@ -134,13 +139,22 @@ public final class LuaState {
 	}
 
 	/**
+	 * Get the bytecode parser/printer for this Lua state.
+	 *
+	 * @return The current bytecode format.
+	 */
+	public @Nullable BytecodeFormat getBytecodeFormat() {
+		return bytecodeFormat;
+	}
+
+	/**
 	 * Interrupt the execution of the current runtime.
 	 * <p>
 	 * This method is expected to be called from another thread. When the Lua runtime is next able to do so, it will
 	 * call the current {@link InterruptHandler}'s {@link InterruptHandler#interrupted()} method.
 	 *
 	 * @see InterruptHandler
-	 * @see #checkInterrupt()
+	 * @see #isInterrupted()
 	 */
 	public void interrupt() {
 		if (interruptHandler == null) throw new IllegalStateException("LuaState has no interrupt handler");
@@ -219,8 +233,9 @@ public final class LuaState {
 	 */
 	public static class Builder {
 		private LoadState.FunctionFactory compiler = LoadState::interpretedFunction;
-		private InterruptHandler interruptHandler = null;
-		private ErrorReporter reportError;
+		private @Nullable InterruptHandler interruptHandler;
+		private @Nullable ErrorReporter reportError;
+		private @Nullable BytecodeFormat bytecodeFormat;
 
 		/**
 		 * Build a Lua state from this builder
@@ -248,6 +263,7 @@ public final class LuaState {
 		 *
 		 * @param handler The new interrupt handler.
 		 * @return This builder
+		 * @see LuaState#interrupt()
 		 */
 		public Builder interruptHandler(InterruptHandler handler) {
 			Objects.requireNonNull(handler, "handler cannot be null");
@@ -255,9 +271,28 @@ public final class LuaState {
 			return this;
 		}
 
+		/**
+		 * Set the error callback used for this Lua state.
+		 *
+		 * @param reporter The new error builder.
+		 * @return This builder
+		 * @see LuaState#reportInternalError(Throwable, Supplier)
+		 */
 		public Builder errorReporter(ErrorReporter reporter) {
 			Objects.requireNonNull(reporter, "reporter cannot be null");
 			reportError = reporter;
+			return this;
+		}
+
+		/**
+		 * Set the bytecode parser/printer for this Lua state.
+		 *
+		 * @param bytecodeFormat The new bytecode format.
+		 * @return This builder
+		 */
+		public Builder bytecodeFormat(BytecodeFormat bytecodeFormat) {
+			Objects.requireNonNull(bytecodeFormat, "bytecodeFormat cannot be null");
+			this.bytecodeFormat = bytecodeFormat;
 			return this;
 		}
 	}

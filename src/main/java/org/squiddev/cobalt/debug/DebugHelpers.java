@@ -158,8 +158,8 @@ public final class DebugHelpers {
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);
 		int i = p.code[pc];
-		return switch (Lua.GET_OPCODE(i)) {
-			case OP_CALL, OP_TAILCALL -> getObjectName(di, Lua.GETARG_A(i));
+		return switch (GET_OPCODE(i)) {
+			case OP_CALL, OP_TAILCALL -> getObjectName(di, GETARG_A(i));
 			case OP_SELF, OP_GETTABLE -> fromMetamethod("index");
 			case OP_SETTABLE -> fromMetamethod("newindex");
 			case OP_ADD -> fromMetamethod("add");
@@ -193,29 +193,29 @@ public final class DebugHelpers {
 
 		i = symbexec(p, pc, stackpos); /* try symbolic execution */
 		lua_assert(pc != -1);
-		switch (Lua.GET_OPCODE(i)) {
+		switch (GET_OPCODE(i)) {
 			case OP_GETGLOBAL -> {
-				int g = Lua.GETARG_Bx(i); /* global index */
+				int g = GETARG_Bx(i); /* global index */
 				// lua_assert(p.k[g].isString());
 				LuaValue value = p.constants[g];
 				LuaString string = OperationHelper.toStringDirect(value);
 				return new ObjectName(string, GLOBAL);
 			}
 			case OP_MOVE -> {
-				int a = Lua.GETARG_A(i);
-				int b = Lua.GETARG_B(i); /* move from `b' to `a' */
+				int a = GETARG_A(i);
+				int b = GETARG_B(i); /* move from `b' to `a' */
 				if (b < a) return getObjectName(di, b); /* get name for `b' */
 			}
 			case OP_GETTABLE -> {
-				int k = Lua.GETARG_C(i); /* key index */
+				int k = GETARG_C(i); /* key index */
 				return new ObjectName(constantName(p, k), FIELD);
 			}
 			case OP_GETUPVAL -> {
-				int u = Lua.GETARG_B(i); /* upvalue index */
+				int u = GETARG_B(i); /* upvalue index */
 				return new ObjectName(Objects.requireNonNullElse(p.getUpvalueName(u), DebugLib.QMARK), UPVALUE);
 			}
 			case OP_SELF -> {
-				int k = Lua.GETARG_C(i); /* key index */
+				int k = GETARG_C(i); /* key index */
 				return new ObjectName(constantName(p, k), METHOD);
 			}
 		}
@@ -234,65 +234,65 @@ public final class DebugHelpers {
 		if (!(precheck(pt))) return 0;
 		for (pc = 0; pc < lastpc; pc++) {
 			int i = pt.code[pc];
-			int op = Lua.GET_OPCODE(i);
-			int a = Lua.GETARG_A(i);
+			int op = GET_OPCODE(i);
+			int a = GETARG_A(i);
 			int b = 0;
 			int c = 0;
-			if (!(op < Lua.NUM_OPCODES)) return 0;
+			if (!(op < NUM_OPCODES)) return 0;
 			if (!checkRegister(pt, a)) return 0;
-			switch (Lua.getOpMode(op)) {
-				case Lua.iABC -> {
-					b = Lua.GETARG_B(i);
-					c = Lua.GETARG_C(i);
-					if (!(checkArgMode(pt, b, Lua.getBMode(op)))) return 0;
-					if (!(checkArgMode(pt, c, Lua.getCMode(op)))) return 0;
+			switch (getOpMode(op)) {
+				case iABC -> {
+					b = GETARG_B(i);
+					c = GETARG_C(i);
+					if (!(checkArgMode(pt, b, getBMode(op)))) return 0;
+					if (!(checkArgMode(pt, c, getCMode(op)))) return 0;
 				}
-				case Lua.iABx -> {
-					b = Lua.GETARG_Bx(i);
-					if (Lua.getBMode(op) == Lua.OpArgK) {
+				case iABx -> {
+					b = GETARG_Bx(i);
+					if (getBMode(op) == OpArgK) {
 						if (!(b < pt.constants.length)) return 0;
 					}
 				}
-				case Lua.iAsBx -> {
-					b = Lua.GETARG_sBx(i);
-					if (Lua.getBMode(op) == Lua.OpArgR) {
+				case iAsBx -> {
+					b = GETARG_sBx(i);
+					if (getBMode(op) == OpArgR) {
 						int dest = pc + 1 + b;
 						if (!(0 <= dest && dest < pt.code.length)) return 0;
 						if (dest > 0) {
 							/* cannot jump to a setlist count */
 							int d = pt.code[dest - 1];
-							if ((Lua.GET_OPCODE(d) == Lua.OP_SETLIST && Lua.GETARG_C(d) == 0)) return 0;
+							if ((GET_OPCODE(d) == OP_SETLIST && GETARG_C(d) == 0)) return 0;
 						}
 					}
 				}
 			}
-			if (Lua.testAMode(op)) {
+			if (testAMode(op)) {
 				if (a == reg) {
 					last = pc; /* change register `a' */
 				}
 			}
-			if (Lua.testTMode(op)) {
+			if (testTMode(op)) {
 				if (!(pc + 2 < pt.code.length)) return 0; /* check skip */
-				if (!(Lua.GET_OPCODE(pt.code[pc + 1]) == Lua.OP_JMP)) return 0;
+				if (!(GET_OPCODE(pt.code[pc + 1]) == OP_JMP)) return 0;
 			}
 			switch (op) {
-				case Lua.OP_LOADBOOL: {
+				case OP_LOADBOOL: {
 					if (!(c == 0 || pc + 2 < pt.code.length)) return 0; /* check its jump */
 					break;
 				}
-				case Lua.OP_LOADNIL: {
+				case OP_LOADNIL: {
 					if (a <= reg && reg <= b) {
 						last = pc; /* set registers from `a' to `b' */
 					}
 					break;
 				}
 				case OP_GETUPVAL:
-				case Lua.OP_SETUPVAL: {
+				case OP_SETUPVAL: {
 					if (!(b < pt.upvalues)) return 0;
 					break;
 				}
 				case OP_GETGLOBAL:
-				case Lua.OP_SETGLOBAL: {
+				case OP_SETGLOBAL: {
 					if (!(pt.constants[b].isString())) return 0;
 					break;
 				}
@@ -303,11 +303,11 @@ public final class DebugHelpers {
 					}
 					break;
 				}
-				case Lua.OP_CONCAT: {
+				case OP_CONCAT: {
 					if (!(b < c)) return 0; /* at least two operands */
 					break;
 				}
-				case Lua.OP_TFORLOOP: {
+				case OP_TFORLOOP: {
 					if (!(c >= 1)) return 0; /* at least one result (control variable) */
 					if (!checkRegister(pt, a + 2 + c)) return 0; /* space for results */
 					if (reg >= a + 2) {
@@ -315,14 +315,14 @@ public final class DebugHelpers {
 					}
 					break;
 				}
-				case Lua.OP_FORLOOP:
-				case Lua.OP_FORPREP:
+				case OP_FORLOOP:
+				case OP_FORPREP:
 					if (!checkRegister(pt, a + 3)) return 0;
 					// fallthrough
-				case Lua.OP_JMP: {
+				case OP_JMP: {
 					int dest = pc + 1 + b;
 					/* not full check and jump is forward and do not skip `lastpc'? */
-					if (reg != Lua.NO_REG && pc < dest && dest <= lastpc) {
+					if (reg != NO_REG && pc < dest && dest <= lastpc) {
 						pc += b; /* do the jump */
 					}
 					break;
@@ -333,7 +333,7 @@ public final class DebugHelpers {
 						if (!checkRegister(pt, a + b - 1)) return 0;
 					}
 					c--; /* c = num. returns */
-					if (c == Lua.LUA_MULTRET) {
+					if (c == LUA_MULTRET) {
 						if (!(checkOpenUp(pt, pc))) return 0;
 					} else if (c != 0) {
 						if (!checkRegister(pt, a + c - 1)) return 0;
@@ -343,14 +343,14 @@ public final class DebugHelpers {
 					}
 					break;
 				}
-				case Lua.OP_RETURN: {
+				case OP_RETURN: {
 					b--; /* b = num. returns */
 					if (b > 0) {
 						if (!checkRegister(pt, a + b - 1)) return 0;
 					}
 					break;
 				}
-				case Lua.OP_SETLIST: {
+				case OP_SETLIST: {
 					if (b > 0) {
 						if (!checkRegister(pt, a + b)) return 0;
 					}
@@ -359,27 +359,27 @@ public final class DebugHelpers {
 					}
 					break;
 				}
-				case Lua.OP_CLOSURE: {
+				case OP_CLOSURE: {
 					int nup, j;
 					if (!(b < pt.children.length)) return 0;
 					nup = pt.children[b].upvalues;
 					if (!(pc + nup < pt.code.length)) return 0;
 					for (j = 1; j <= nup; j++) {
-						int op1 = Lua.GET_OPCODE(pt.code[pc + j]);
+						int op1 = GET_OPCODE(pt.code[pc + j]);
 						if (!(op1 == OP_GETUPVAL || op1 == OP_MOVE)) return 0;
 					}
-					if (reg != Lua.NO_REG) /* tracing? */ {
+					if (reg != NO_REG) /* tracing? */ {
 						pc += nup; /* do not 'execute' these pseudo-instructions */
 					}
 					break;
 				}
-				case Lua.OP_VARARG: {
-					if (!((pt.isVarArg & Lua.VARARG_ISVARARG) != 0
-						&& (pt.isVarArg & Lua.VARARG_NEEDSARG) == 0)) {
+				case OP_VARARG: {
+					if (!((pt.isVarArg & VARARG_ISVARARG) != 0
+						&& (pt.isVarArg & VARARG_NEEDSARG) == 0)) {
 						return 0;
 					}
 					b--;
-					if (b == Lua.LUA_MULTRET) {
+					if (b == LUA_MULTRET) {
 						if (!(checkOpenUp(pt, pc))) return 0;
 					}
 					if (!checkRegister(pt, a + b - 1)) return 0;
@@ -394,24 +394,25 @@ public final class DebugHelpers {
 
 	private static boolean precheck(Prototype pt) {
 		if (!(pt.maxStackSize <= LuaC.MAXSTACK)) return false;
-		lua_assert(pt.parameters + (pt.isVarArg & Lua.VARARG_HASARG) <= pt.maxStackSize);
-		lua_assert((pt.isVarArg & Lua.VARARG_NEEDSARG) == 0
-			|| (pt.isVarArg & Lua.VARARG_HASARG) != 0);
-		return pt.upvalueNames.length <= pt.upvalues && (pt.lineInfo.length == pt.code.length || pt.lineInfo.length == 0) && Lua.GET_OPCODE(pt.code[pt.code.length - 1]) == Lua.OP_RETURN;
+		lua_assert(pt.parameters + (pt.isVarArg & VARARG_HASARG) <= pt.maxStackSize);
+		lua_assert((pt.isVarArg & VARARG_NEEDSARG) == 0
+			|| (pt.isVarArg & VARARG_HASARG) != 0);
+		return pt.upvalueNames.length <= pt.upvalues && (pt.lineInfo.length == pt.code.length || pt.lineInfo.length == 0) && GET_OPCODE(pt.code[pt.code.length - 1]) == OP_RETURN;
 	}
 
 	private static boolean checkArgMode(Prototype pt, int val, int mode) {
 		switch (mode) {
-			case Lua.OpArgN:
+			case OpArgN:
 				if (!(val == 0)) return false;
 				break;
-			case Lua.OpArgU:
+			case OpArgU:
 				break;
-			case Lua.OpArgR:
+			case OpArgR:
 				checkRegister(pt, val);
 				break;
-			case Lua.OpArgK:
-				if (!(Lua.ISK(val) ? Lua.INDEXK(val) < pt.constants.length : val < pt.maxStackSize)) return false;
+			case OpArgK:
+				if (!(ISK(val) ? INDEXK(val) < pt.constants.length : val < pt.maxStackSize))
+					return false;
 				break;
 		}
 		return true;
@@ -423,15 +424,15 @@ public final class DebugHelpers {
 
 	private static boolean checkOpenUp(Prototype proto, int pc) {
 		int i = proto.code[(pc) + 1];
-		return switch (Lua.GET_OPCODE(i)) {
-			case OP_CALL, OP_TAILCALL, Lua.OP_RETURN, Lua.OP_SETLIST -> Lua.GETARG_B(i) == 0;
+		return switch (GET_OPCODE(i)) {
+			case OP_CALL, OP_TAILCALL, OP_RETURN, OP_SETLIST -> GETARG_B(i) == 0;
 			default -> false; /* invalid instruction after an open call */
 		};
 	}
 
 	private static LuaString constantName(Prototype proto, int index) {
-		if (Lua.ISK(index) && proto.constants[Lua.INDEXK(index)].isString()) {
-			return (LuaString) proto.constants[Lua.INDEXK(index)].toLuaString();
+		if (ISK(index) && proto.constants[INDEXK(index)].isString()) {
+			return (LuaString) proto.constants[INDEXK(index)].toLuaString();
 		} else {
 			return DebugLib.QMARK;
 		}

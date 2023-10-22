@@ -339,7 +339,7 @@ public class BaseLib {
 			return call.apply(state, SuspendedTask.toFunction(() -> {
 				try {
 					InputReader stream = new FunctionInputReader(state, function);
-					return state.compiler.load(LuaC.compile(stream, chunkName == null ? FUNCTION_STR : chunkName, mode), funcEnv);
+					return state.compiler.load(LuaC.compile(state, stream, chunkName == null ? FUNCTION_STR : chunkName, mode), funcEnv);
 				} catch (CompileException e) {
 					return varargsOf(Constants.NIL, valueOf(e.getMessage()));
 				}

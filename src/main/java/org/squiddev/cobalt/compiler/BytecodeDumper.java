@@ -31,7 +31,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class BytecodeDumper {
+class BytecodeDumper {
 	/**
 	 * for header of binary files -- this is Lua 5.1
 	 */
@@ -88,15 +88,11 @@ public class BytecodeDumper {
 		this.strip = strip;
 	}
 
-	void dumpBlock(final byte[] b, int size) throws IOException {
-		writer.write(b, 0, size);
-	}
-
-	void dumpChar(int b) throws IOException {
+	private void dumpChar(int b) throws IOException {
 		writer.write(b);
 	}
 
-	void dumpInt(int x) throws IOException {
+	private void dumpInt(int x) throws IOException {
 		if (IS_LITTLE_ENDIAN) {
 			writer.writeByte(x & 0xff);
 			writer.writeByte((x >> 8) & 0xff);
@@ -107,14 +103,14 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpString(LuaString s) throws IOException {
+	private void dumpString(LuaString s) throws IOException {
 		final int len = s.length();
 		dumpInt(len + 1);
 		s.write((OutputStream) writer);
 		writer.write(0);
 	}
 
-	void dumpDouble(double d) throws IOException {
+	private void dumpDouble(double d) throws IOException {
 		long l = Double.doubleToLongBits(d);
 		if (IS_LITTLE_ENDIAN) {
 			dumpInt((int) l);
@@ -124,7 +120,7 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpCode(final Prototype f) throws IOException {
+	private void dumpCode(final Prototype f) throws IOException {
 		final int[] code = f.code;
 		int n = code.length;
 		dumpInt(n);
@@ -133,7 +129,7 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpConstants(final Prototype f) throws IOException {
+	private void dumpConstants(final Prototype f) throws IOException {
 		final LuaValue[] k = f.constants;
 		int i, n = k.length;
 		dumpInt(n);
@@ -184,7 +180,7 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpDebug(final Prototype f) throws IOException {
+	private void dumpDebug(final Prototype f) throws IOException {
 		int i, n;
 		n = (strip) ? 0 : f.lineInfo.length;
 		dumpInt(n);
@@ -206,7 +202,7 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpFunction(final Prototype f, final LuaString string) throws IOException {
+	private void dumpFunction(final Prototype f, final LuaString string) throws IOException {
 		if (f.source == null || f.source.equals(string) || strip) {
 			dumpInt(0);
 		} else {
@@ -223,8 +219,8 @@ public class BytecodeDumper {
 		dumpDebug(f);
 	}
 
-	void dumpHeader() throws IOException {
-		writer.write(LoadState.LUA_SIGNATURE);
+	private void dumpHeader() throws IOException {
+		writer.write(LuaBytecodeFormat.LUA_SIGNATURE);
 		writer.write(LUAC_VERSION);
 		writer.write(LUAC_FORMAT);
 		writer.write(IS_LITTLE_ENDIAN ? 1 : 0);

@@ -860,7 +860,7 @@ final class Parser {
 		}
 		if (bl == null) throw syntaxError("no loop to break");
 
-		if (upval) fs.codeABC(Lua.OP_CLOSE, bl.nactvar, 0, 0);
+		if (upval) fs.codeABC(OP_CLOSE, bl.nactvar, 0, 0);
 		fs.concat(bl.breaklist, fs.jump());
 	}
 

@@ -29,6 +29,7 @@ import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import static org.squiddev.cobalt.Constants.*;
+import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUA_SIGNATURE;
 
 /**
  * Parser for bytecode
@@ -311,6 +312,13 @@ final class BytecodeLoader {
 			constants, code, children, numparams, is_vararg, maxstacksize, nups,
 			lineDefined, lastLineDefined, lineInfo, NOINTS, locals, upvalueNames
 		);
+	}
+
+	public void checkSignature() throws CompileException, LuaError, UnwindThrowable {
+		// Check rest of signature
+		if (is.read() != LUA_SIGNATURE[1] || is.read() != LUA_SIGNATURE[2] || is.read() != LUA_SIGNATURE[3]) {
+			throw new IllegalArgumentException("bad signature");
+		}
 	}
 
 	/**

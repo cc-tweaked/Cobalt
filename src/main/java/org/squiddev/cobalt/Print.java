@@ -22,6 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.function.LuaClosure;
@@ -29,54 +30,14 @@ import org.squiddev.cobalt.function.LuaClosure;
 import static org.squiddev.cobalt.Lua.*;
 
 /**
- * Debug helper class for pretty-printing Lua bytecode
+ * Debug helper class for pretty-printing Lua bytecode.
+ * <p>
+ * This follows the implementation in {@code luac.c}/{@code print.c}.
  *
  * @see Prototype
  * @see LuaClosure
  */
 public final class Print {
-	private static final String[] OPNAMES = {
-		"MOVE",
-		"LOADK",
-		"LOADBOOL",
-		"LOADNIL",
-		"GETUPVAL",
-		"GETGLOBAL",
-		"GETTABLE",
-		"SETGLOBAL",
-		"SETUPVAL",
-		"SETTABLE",
-		"NEWTABLE",
-		"SELF",
-		"ADD",
-		"SUB",
-		"MUL",
-		"DIV",
-		"MOD",
-		"POW",
-		"UNM",
-		"NOT",
-		"LEN",
-		"CONCAT",
-		"JMP",
-		"EQ",
-		"LT",
-		"LE",
-		"TEST",
-		"TESTSET",
-		"CALL",
-		"TAILCALL",
-		"RETURN",
-		"FORLOOP",
-		"FORPREP",
-		"TFORLOOP",
-		"SETLIST",
-		"CLOSE",
-		"CLOSURE",
-		"VARARG",
-		null,
-	};
-
 	private static void printString(StringBuilder out, final LuaString s) {
 		out.append('"');
 		for (int i = 0, n = s.length(); i < n; i++) {
@@ -94,25 +55,19 @@ public final class Print {
 					case '\r' -> out.append("\\r");
 					case '\n' -> out.append("\\n");
 					case 0x000B -> out.append("\\v");
-					default -> {
-						out.append('\\');
-						out.append(Integer.toString(1000 + c).substring(1));
-					}
+					default -> out.append(String.format("\\%03d", c));
 				}
 			}
 		}
 		out.append('"');
 	}
 
-	private static void printValue(StringBuilder out, LuaValue v) {
-		switch (v.type()) {
-			case Constants.TSTRING -> printString(out, (LuaString) v);
-			default -> out.append(v);
-		}
-	}
-
 	private static void printConstant(StringBuilder out, Prototype f, int i) {
-		printValue(out, f.constants[i]);
+		var value = f.constants[i];
+		switch (value.type()) {
+			case Constants.TSTRING -> printString(out, (LuaString) value);
+			default -> out.append(value);
+		}
 	}
 
 	/**
@@ -124,11 +79,14 @@ public final class Print {
 	 */
 	public static void printCode(StringBuilder out, Prototype f, boolean extended) {
 		int[] code = f.code;
-		int pc, n = code.length;
-		for (pc = 0; pc < n; pc++) {
+		for (int pc = 0; pc < code.length; pc++) {
 			printOpcode(out, f, pc, extended);
 			out.append("\n");
 		}
+	}
+
+	private static int MYK(int x) {
+		return -1 - x;
 	}
 
 	/**
@@ -149,60 +107,69 @@ public final class Print {
 		int bx = GETARG_Bx(i);
 		int sbx = GETARG_sBx(i);
 
-		out.append("  ").append(pc + 1).append("  ");
+		out.append("\t").append(pc + 1).append("\t");
 
 		int line = f.lineAt(pc);
 		int column = f.columnAt(pc);
 		if (extended && line > 0 && column > 0) {
-			out.append("[").append(line).append("/").append(column).append("]  ");
+			out.append("[").append(line).append("/").append(column).append("]");
 		} else if (line > 0) {
-			out.append("[").append(line).append("]  ");
+			out.append("[").append(line).append("]");
 		} else {
-			out.append("[-]  ");
+			out.append("[-]");
 		}
 
-		out.append(OPNAMES[o]).append("  ");
+		out.append("\t");
+
+		var name = Lua.getOpName(o);
+		out.append(name);
+		for (int j = name.length(); j < 9; j++) out.append(' ');
+
+		out.append("\t");
+
 		switch (getOpMode(o)) {
 			case iABC -> {
 				out.append(a);
-				if (getBMode(o) != OpArgN) out.append(" ").append(ISK(b) ? (-1 - INDEXK(b)) : b);
-				if (getCMode(o) != OpArgN) out.append(" ").append(ISK(c) ? (-1 - INDEXK(c)) : c);
+				if (getBMode(o) != OpArgN) out.append(" ").append(ISK(b) ? MYK(INDEXK(b)) : b);
+				if (getCMode(o) != OpArgN) out.append(" ").append(ISK(c) ? MYK(INDEXK(c)) : c);
 			}
-			case iABx -> out.append(a).append(" ").append(getBMode(o) == OpArgK ? -1 - bx : bx);
+			case iABx -> {
+				out.append(a);
+				if (getBMode(o) == OpArgK) out.append(" ").append(MYK(INDEXK(bx)));
+				if (getBMode(o) == OpArgU) out.append(" ").append(bx);
+			}
 			case iAsBx -> {
-				if (o == OP_JMP) {
-					out.append(sbx);
-				} else {
-					out.append(a).append(" ").append(sbx);
-				}
+				out.append(a).append(" ").append(sbx);
 			}
 		}
+
 		switch (o) {
 			case OP_LOADK -> {
-				out.append("  ; ");
+				out.append("\t; ");
 				printConstant(out, f, bx);
 			}
 			case OP_GETUPVAL, OP_SETUPVAL -> {
-				out.append("  ; ");
-				if (f.upvalueNames.length > b) {
-					printValue(out, f.upvalueNames[b]);
+				out.append("\t; ");
+				var upvalueName = f.getUpvalueName(b);
+				if (upvalueName != null) {
+					printString(out, upvalueName);
 				} else {
 					out.append("-");
 				}
 			}
 			case OP_GETGLOBAL, OP_SETGLOBAL -> {
-				out.append("  ; ");
+				out.append("\t; ");
 				printConstant(out, f, bx);
 			}
 			case OP_GETTABLE, OP_SELF -> {
 				if (ISK(c)) {
-					out.append("  ; ");
+					out.append("\t; ");
 					printConstant(out, f, INDEXK(c));
 				}
 			}
 			case OP_SETTABLE, OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_POW, OP_EQ, OP_LT, OP_LE -> {
 				if (ISK(b) || ISK(c)) {
-					out.append("  ; ");
+					out.append("\t; ");
 					if (ISK(b)) {
 						printConstant(out, f, INDEXK(b));
 					} else {
@@ -216,16 +183,16 @@ public final class Print {
 					}
 				}
 			}
-			case OP_JMP, OP_FORLOOP, OP_FORPREP -> out.append("  ; to ").append(sbx + pc + 2);
-			case OP_CLOSURE -> out.append("  ; ").append(f.children[bx].getClass().getName());
+			case OP_JMP, OP_FORLOOP, OP_FORPREP -> out.append("\t; to ").append(sbx + pc + 2);
+			case OP_CLOSURE -> out.append("\t; ").append(id(f.children[bx]));
 			case OP_SETLIST -> {
 				if (c == 0) {
-					out.append("  ; ").append(code[++pc]);
+					out.append("\t; ").append(code[++pc]);
 				} else {
-					out.append("  ; ").append(c);
+					out.append("\t; ").append(c);
 				}
 			}
-			case OP_VARARG -> out.append("  ; is_vararg=").append(f.isVarArg);
+			case OP_VARARG -> out.append("\t; is_vararg=").append(f.isVarArg);
 			default -> {
 			}
 		}
@@ -240,20 +207,19 @@ public final class Print {
 		} else {
 			s = "(string)";
 		}
-		String a = (f.lineDefined == 0) ? "main" : "function";
-		out.append("\n%").append(a)
+		out.append("\n%").append(f.lineDefined == 0 ? "main" : "function")
 			.append(" <").append(s).append(":").append(f.lineDefined).append(",").append(f.lastLineDefined).append("> (")
 			.append(f.code.length).append(" instructions, ").append(f.code.length * 4).append(" bytes at ").append(id(f)).append(")\n");
-		out.append(f.parameters).append(" param, ").append(f.maxStackSize).append(" slot, ").append(f.upvalueNames.length).append(" upvalue, ");
-		out.append(f.locals.length).append(" local, ").append(f.constants.length).append(" constant, ").append(f.children.length).append(" function\n");
+		out.append(f.parameters).append(" param, ").append(f.maxStackSize).append(" slots, ").append(f.upvalueNames.length).append(" upvalues, ");
+		out.append(f.locals.length).append(" locals, ").append(f.constants.length).append(" constants, ").append(f.children.length).append(" functions\n");
 	}
 
 	private static void printConstants(StringBuilder out, Prototype f) {
 		int i, n = f.constants.length;
 		out.append("constants (").append(n).append(") for ").append(id(f)).append(":\n");
 		for (i = 0; i < n; i++) {
-			out.append("  ").append(i + 1).append("  ");
-			printValue(out, f.constants[i]);
+			out.append("\t").append(i + 1).append("\t");
+			printConstant(out, f, i);
 			out.append("\n");
 		}
 	}
@@ -262,15 +228,19 @@ public final class Print {
 		int i, n = f.locals.length;
 		out.append("locals (").append(n).append(") for ").append(id(f)).append(":\n");
 		for (i = 0; i < n; i++) {
-			out.append("  ").append(i).append("  ").append(f.locals[i].name).append(" ").append(f.locals[i].startpc + 1).append(" ").append(f.locals[i].endpc + 1).append("\n");
+			out
+				.append("\t").append(i)
+				.append("\t").append(f.locals[i].name)
+				.append("\t").append(f.locals[i].startpc + 1)
+				.append("\t").append(f.locals[i].endpc + 1)
+				.append("\n");
 		}
 	}
 
-	private static void printUpValues(StringBuilder out, Prototype f) {
-		int i, n = f.upvalueNames.length;
-		out.append("upvalues (").append(n).append(") for ").append(id(f)).append(":\n");
-		for (i = 0; i < n; i++) {
-			out.append("  ").append(i).append("  ").append(f.upvalueNames[i]).append("\n");
+	private static void printUpvalues(StringBuilder out, Prototype f) {
+		out.append("upvalues (").append(f.upvalues).append(") for ").append(id(f)).append(":\n");
+		for (int i = 0, n = f.upvalues; i < n; i++) {
+			out.append("\t").append(i).append("\t").append(f.getUpvalueName(i)).append("\n");
 		}
 	}
 
@@ -281,7 +251,7 @@ public final class Print {
 		if (full) {
 			printConstants(out, f);
 			printLocals(out, f);
-			printUpValues(out, f);
+			printUpvalues(out, f);
 		}
 		for (i = 0; i < n; i++) {
 			printFunction(out, f.children[i], full, extended);
@@ -295,12 +265,11 @@ public final class Print {
 	/**
 	 * Print the state of a {@link LuaClosure} that is being executed
 	 *
-	 * @param out     The string builder to write to.
-	 * @param cl      The {@link LuaClosure}
-	 * @param pc      The program counter
-	 * @param stack   The stack of {@link LuaValue}
-	 * @param top     The top of the stack
-	 * @param varargs any {@link Varargs} value that may apply
+	 * @param out   The string builder to write to.
+	 * @param cl    The {@link LuaClosure}
+	 * @param pc    The program counter
+	 * @param stack The stack of {@link LuaValue}
+	 * @param top   The top of the stack
 	 */
 	public static void printState(StringBuilder out, LuaClosure cl, int pc, LuaValue[] stack, int top) {
 		// print opcode into buffer
@@ -322,8 +291,8 @@ public final class Print {
 							s.toString() :
 							s.substringOfEnd(0, 32) + "...+" + (s.length() - 32) + "b");
 					}
-					case Constants.TFUNCTION -> out.append((v instanceof LuaClosure) ?
-						((LuaClosure) v).getPrototype().toString() : v.toString());
+					case Constants.TFUNCTION ->
+						out.append(v instanceof LuaClosure c ? c.getPrototype().toString() : v.toString());
 					case Constants.TUSERDATA -> {
 						out.append(v);
 					}

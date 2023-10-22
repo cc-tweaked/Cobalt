@@ -52,7 +52,7 @@ public class DumpLoadEndianIntTest {
 
 	@BeforeEach
 	public void setup() throws LuaError {
-		state = new LuaState();
+		state = LuaState.builder().bytecodeFormat(LuaBytecodeFormat.instance()).build();
 		_G = CoreLibraries.standardGlobals(state);
 		BytecodeDumper.ALLOW_INTEGER_CASTING = false;
 	}
@@ -111,7 +111,7 @@ public class DumpLoadEndianIntTest {
 
 			// compile into prototype
 			InputStream is = new ByteArrayInputStream(script.getBytes());
-			Prototype p = LuaC.compile(is, "script");
+			Prototype p = LuaC.compile(state, is, "script");
 
 			// double check script result before dumping
 			LuaFunction f = new LuaInterpretedFunction(p, _G);

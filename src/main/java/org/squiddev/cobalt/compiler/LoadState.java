@@ -56,15 +56,10 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see FunctionFactory
  * @see LuaClosure
  * @see LuaFunction
- * @see LoadState#load(LuaState, InputStream, LuaString, LuaTable)
+ * @see LoadState#load(LuaState, InputStream, LuaString, LuaValue)
  * @see LuaC
  */
 public final class LoadState {
-	/**
-	 * Signature byte indicating the file is a compiled binary chunk
-	 */
-	static final byte[] LUA_SIGNATURE = {27, 'L', 'u', 'a'};
-
 	/**
 	 * Name for compiled chunks
 	 */
@@ -116,7 +111,7 @@ public final class LoadState {
 	}
 
 	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws CompileException, LuaError {
-		return state.compiler.load(LuaC.compile(stream, name, mode), env);
+		return state.compiler.load(LuaC.compile(state, stream, name, mode), env);
 	}
 
 	/**

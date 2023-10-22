@@ -25,7 +25,6 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.compiler.BytecodeDumper;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.StringFormat.FormatState;
@@ -245,11 +244,13 @@ public final class StringLib {
 	static LuaValue dump(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		LuaFunction f = arg1.checkFunction();
 		boolean strip = arg2.optBoolean(false);
-		if (!(f instanceof LuaClosure)) throw new LuaError("unable to dump given function");
+		var bytecode = state.getBytecodeFormat();
+
+		if (!(f instanceof LuaClosure closure) || bytecode == null) throw new LuaError("unable to dump given function");
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			BytecodeDumper.dump(((LuaClosure) f).getPrototype(), baos, strip);
+			bytecode.writeFunction(baos, closure.getPrototype(), strip);
 		} catch (IOException e) {
 			throw new LuaError(e.getMessage());
 		}

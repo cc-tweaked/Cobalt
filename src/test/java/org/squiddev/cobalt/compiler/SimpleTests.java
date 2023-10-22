@@ -50,7 +50,7 @@ public class SimpleTests {
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
-			LuaFunction c = LoadState.interpretedFunction(LuaC.compile(is, valueOf("script"), null), _G);
+			LuaFunction c = LoadState.interpretedFunction(LuaC.compile(state, is, valueOf("script"), null), _G);
 			LuaThread.runMain(state, c);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);
@@ -65,44 +65,54 @@ public class SimpleTests {
 
 	@Test
 	public void testAlmostTrivial() {
-		String s = "print( 2 )\n" +
-			"print( 3 )\n";
+		String s = """
+			print( 2 )
+			print( 3 )
+			""";
 		doTest(s);
 	}
 
 	@Test
 	public void testSimple() {
-		String s = "print( 'hello, world' )\n" +
-			"for i = 2,4 do\n" +
-			"	print( 'i', i )\n" +
-			"end\n";
+		String s = """
+			print( 'hello, world' )
+			for i = 2,4 do
+				print( 'i', i )
+			end
+			""";
 		doTest(s);
 	}
 
 	@Test
 	public void testBreak() {
-		String s = "a=1\n" +
-			"while true do\n" +
-			"  if a>10 then\n" +
-			"     break\n" +
-			"  end\n" +
-			"  a=a+1\n" +
-			"  print( a )\n" +
-			"end\n";
+		String s = """
+			a=1
+			while true do
+			  if a>10 then
+			     break
+			  end
+			  a=a+1
+			  print( a )
+			end
+			""";
 		doTest(s);
 	}
 
 	@Test
 	public void testShebang() {
-		String s = "#!../lua\n" +
-			"print( 2 )\n";
+		String s = """
+			#!../lua
+			print( 2 )
+			""";
 		doTest(s);
 	}
 
 	@Test
 	public void testInlineTable() {
-		String s = "A = {g=10}\n" +
-			"print( A )\n";
+		String s = """
+			A = {g=10}
+			print( A )
+			""";
 		doTest(s);
 	}
 
@@ -117,7 +127,7 @@ public class SimpleTests {
 		String s = "print('\\z";
 		assertThrows(CompileException.class, () -> {
 			InputStream is = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
-			LoadState.interpretedFunction(LuaC.compile(is, valueOf("script"), null), _G);
+			LoadState.interpretedFunction(LuaC.compile(state, is, valueOf("script"), null), _G);
 		});
 	}
 

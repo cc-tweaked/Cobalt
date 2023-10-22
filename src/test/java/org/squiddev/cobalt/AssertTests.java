@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
+import org.squiddev.cobalt.compiler.LuaBytecodeFormat;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.Bit32Lib;
 import org.squiddev.cobalt.lib.Utf8Lib;
@@ -103,7 +104,7 @@ public class AssertTests {
 		new File("libs/P1").mkdirs();
 
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.1/");
-		helpers.setup();
+		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
 		helpers.globals.rawset("mkdir", LibFunction.create((state, arg) -> valueOf(new File(arg.checkString()).mkdirs())));
 
 		// TODO: Move this into the debug library
@@ -119,7 +120,7 @@ public class AssertTests {
 	})
 	public void lua52(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.2/");
-		helpers.setup();
+		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
 		Bit32Lib.add(helpers.state, helpers.globals);
 
 		helpers.runWithDump(name);
@@ -134,7 +135,7 @@ public class AssertTests {
 	})
 	public void lua53(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.3/");
-		helpers.setup();
+		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
 		Bit32Lib.add(helpers.state, helpers.globals);
 		new Utf8Lib().add(helpers.state, helpers.globals);
 

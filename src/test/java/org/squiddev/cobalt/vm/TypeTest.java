@@ -61,8 +61,9 @@ public class TypeTest {
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
 	private final LuaTable table = tableOf();
 	private final LuaFunction somefunc = LibFunction.create(s -> NIL);
-	private final LuaThread thread = new LuaThread(new LuaState(), somefunc, table);
-	private final LuaClosure someclosure = DataFactory.closure();
+	private final LuaState state = new LuaState();
+	private final LuaThread thread = new LuaThread(state, somefunc, table);
+	private final LuaClosure someclosure = DataFactory.closure(state);
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);
 

@@ -1,6 +1,7 @@
 package org.squiddev.cobalt.vm;
 
 import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -13,15 +14,15 @@ public final class DataFactory {
 	private DataFactory() {
 	}
 
-	public static Prototype prototype() {
+	public static Prototype prototype(LuaState state) {
 		try {
-			return LuaC.compile(new ByteArrayInputStream(new byte[]{}), "=prototype");
+			return LuaC.compile(state, new ByteArrayInputStream(new byte[]{}), "=prototype");
 		} catch (CompileException | LuaError e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public static LuaInterpretedFunction closure() {
-		return new LuaInterpretedFunction(prototype(), new LuaTable());
+	public static LuaInterpretedFunction closure(LuaState state) {
+		return new LuaInterpretedFunction(prototype(state), new LuaTable());
 	}
 }
