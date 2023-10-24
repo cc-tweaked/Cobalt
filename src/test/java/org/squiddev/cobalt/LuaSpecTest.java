@@ -1,6 +1,7 @@
 package org.squiddev.cobalt;
 
 import org.junit.jupiter.api.*;
+import org.opentest4j.TestAbortedException;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugHelpers;
@@ -56,7 +57,7 @@ public class LuaSpecTest {
 				nodes = oldNodes;
 			}
 
-			nodes.add(DynamicContainer.dynamicContainer(stripTags(name), newNodes));
+			nodes.add(filterNode(name, DynamicContainer.dynamicContainer(stripTags(name), newNodes)));
 
 			return Constants.NIL;
 		}).create());
@@ -66,14 +67,12 @@ public class LuaSpecTest {
 			LuaFunction function = arg2.checkFunction();
 			if (nodes == null) throw new LuaError("Cannot register tests at this stage");
 
-			nodes.add(DynamicTest.dynamicTest(stripTags(name), () -> {
-				Assumptions.assumeFalse(name.contains(":!cobalt"), "Not run on Cobalt");
-
+			nodes.add(filterNode(name, DynamicTest.dynamicTest(stripTags(name), () -> {
 				// Run each test in a clean coroutine.
 				LuaThread thread = new LuaThread(state, function, env);
 				Varargs result = LuaThread.run(thread, Constants.NONE);
 				if (thread.isAlive()) throw new AssertionError("Thread unexpected yielded with " + result);
-			}));
+			})));
 
 			return Constants.NIL;
 		}).create());
@@ -98,6 +97,30 @@ public class LuaSpecTest {
 			}
 			throw new AssertionError(arg.checkString() + "\n" + DebugHelpers.traceback(state.getCurrentThread(), 0));
 		}).create());
+	}
+
+	private static DynamicNode filterNode(String name, DynamicNode node) {
+		return name.contains(":!cobalt") ? makePending(node) : node;
+	}
+
+	private static DynamicNode makePending(DynamicNode node) {
+		if (node instanceof DynamicContainer container) {
+			return DynamicContainer.dynamicContainer(
+				container.getDisplayName(),
+				container.getTestSourceUri().orElse(null),
+				container.getChildren().map(LuaSpecTest::makePending)
+			);
+		} else if (node instanceof DynamicTest test) {
+			return DynamicTest.dynamicTest(
+				test.getDisplayName(),
+				test.getTestSourceUri().orElse(null),
+				() -> {
+					throw new TestAbortedException("Not run on Cobalt");
+				}
+			);
+		} else {
+			throw new IllegalStateException("Unknown node " + node);
+		}
 	}
 
 	@TestFactory
