@@ -6,6 +6,7 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugHelpers;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
+import org.squiddev.cobalt.lib.Bit32Lib;
 import org.squiddev.cobalt.lib.CoreLibraries;
 import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.lib.system.SystemBaseLib;
@@ -35,6 +36,7 @@ public class LuaSpecTest {
 		env = state.getMainThread().getfenv();
 		CoreLibraries.debugGlobals(state);
 		new SystemBaseLib(ResourceLoader.FILES, System.in, System.out).add(env);
+		Bit32Lib.add(state, env);
 		TestLib.add(env);
 
 		try (InputStream is = new BufferedInputStream(Files.newInputStream(ROOT.resolve("_prelude.lua")))) {
