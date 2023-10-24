@@ -385,8 +385,11 @@ public final class TableLib {
 			int end = endValue.isNil() ? tbl.length() : endValue.checkInteger();
 			if (start > end) return NONE;
 
-			LuaValue[] values = new LuaValue[end - start + 1];
-			for (int i = start; i <= end; i++) values[i - start] = tbl.rawget(i);
+			long size = (long) end - start + 1;
+			if (size < 0 || size >= Integer.MAX_VALUE) throw new LuaError("too many results to unpack");
+
+			LuaValue[] values = new LuaValue[(int) size];
+			for (int i = 0; i < size; i++) values[i] = tbl.rawget(start + i);
 			return varargsOf(values);
 		}
 

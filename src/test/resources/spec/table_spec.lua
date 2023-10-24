@@ -547,6 +547,87 @@ describe("Lua tables", function()
 	end)
 
 	describe("table.sort", function()
+		local function check(a, f)
+			f = f or function(x, y) return x < y end
+			for i = #a, 2, -1 do
+				local x, y = a[i], a[i - 1]
+				if f(x, y) then
+					fail(("%s, %s at %d are out of order"):format(x, y, i))
+				end
+			end
+		end
+
+		it("a basic sort", function()
+			local a = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+			table.sort(a)
+			check(a)
+		end)
+
+		it("various permutations", function()
+			local unpack = table.unpack or unpack
+			local function perm (s, n)
+				n = n or #s
+				if n == 1 then
+					local t = {unpack(s)}
+					table.sort(t)
+					check(t)
+				else
+					for i = 1, n do
+					s[i], s[n] = s[n], s[i]
+					perm(s, n - 1)
+					s[i], s[n] = s[n], s[i]
+					end
+				end
+			end
+
+			perm {}
+			perm {1}
+			perm {1,2}
+			perm {1,2,3}
+			perm {1,2,3,4}
+			perm {2,2,3,4}
+			perm {1,2,3,4,5}
+			perm {1,2,3,3,5}
+			perm {1,2,3,4,5,6}
+			perm {2,2,3,3,5,6}
+		end)
+
+		it("a long list of items", function()
+			local limit = 30000
+			local a = {}
+			for i = 1, limit do a[i] = math.random() end
+			table.sort(a)
+			check(a)
+		end)
+
+		it("reverse sort", function()
+			local limit = 30000
+			local a = {}
+			for i = 1, limit do a[i] = math.random() end
+
+			table.sort(a, function(x, y) return y < x end)
+			check(a, function(x, y) return y < x end)
+		end)
+
+		it("equal items", function()
+			local limit = 30000
+			local a = {}
+			for i = 1, limit do a[i] = false end
+
+			table.sort(a, function(x,y) return nil end)
+		end)
+
+		it("invalid sort order :lua>=5.2 :!cobalt", function()
+			local function check (t)
+				local function f(a, b) assert(a and b); return true end
+				expect.error(table.sort, t, f):eq("invalid order function for sorting")
+			end
+
+			check {1,2,3,4}
+			check {1,2,3,4,5}
+			check {1,2,3,4,5,6}
+		end)
+
 		it("behaves identically to PUC Lua on sparse tables", function()
 			local test = {[1]="e",[2]="a",[3]="d",[4]="c",[8]="b"}
 
@@ -571,6 +652,12 @@ describe("Lua tables", function()
 			expect(original):same { "e", "b", "c", "d", "a" }
 			expect(next(slice)):eq(nil)
 		end)
+
+		it("ignores negative lengths :lua>=5.2", function()
+			local t = setmetatable({}, { __len = function() return -1 end })
+			expect(#t):eq(-1)
+			table.sort(t, function() fail("Unexpected comparison") end)
+		end)
 	end)
 
 	describe("table.pack", function()
@@ -590,6 +677,72 @@ describe("Lua tables", function()
 			assert(a == 1)
 			assert(b == 2)
 			assert(c == nil)
+		end)
+
+		it("some basic functionality :lua>=5.2", function()
+			-- Largely copied from sort.lua
+			local a, lim = {}, 2000
+			for i = 1, lim do a[i] = i end
+
+			expect(select(lim, table.unpack(a))):eq(lim)
+			expect(select('#', table.unpack(a))):eq(lim)
+
+			local x, y, z
+
+			x = table.unpack(a)
+			expect(x):eq(1)
+
+			x = {table.unpack(a)}
+			expect(#x):eq(lim) expect(x[1]):eq(1) expect(x[lim]):eq(lim)
+
+			x = {table.unpack(a, lim-2)}
+			expect(#x):eq(3) expect(x[1]):eq(lim-2) expect(x[3]):eq(lim)
+
+			x = {table.unpack(a, 10, 6)}
+			expect(next(x)):eq(nil)   -- no elements
+
+			x = {table.unpack(a, 11, 10)}
+			expect(next(x)):eq(nil)   -- no elements
+
+			x, y = table.unpack(a, 10, 10)
+			expect(x):eq(10) expect(y):eq(nil)
+
+			x, y, z = table.unpack(a, 10, 11)
+			expect(x):eq(10) expect(y):eq(11) expect(z):eq(nil)
+
+			a, x = table.unpack{1}
+			expect(a):eq(1) expect(x):eq(nil)
+
+			a, x = table.unpack({1,2}, 1, 1)
+			expect(a):eq(1) expect(x):eq(nil)
+		end)
+
+		it("on large values :lua>=5.2", function()
+			local maxi = (2 ^ 31) - 1 -- maximum value for an int
+  			local mini = -(2 ^ 31)    -- minimum value for an int
+			expect.error(table.unpack, {}, 0, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, 1, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, 0, maxI):eq("too many results to unpack")
+			expect.error(table.unpack, {}, 1, maxI):eq("too many results to unpack")
+			expect.error(table.unpack, {}, mini, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, -maxi, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, minI, maxI):eq("too many results to unpack")
+			table.unpack({}, maxi, 0)
+			table.unpack({}, maxi, 1)
+			table.unpack({}, maxI, minI)
+			pcall(table.unpack, {}, 1, maxi + 1)
+			local a, b = table.unpack({[maxi] = 20}, maxi, maxi)
+			assert(a == 20 and b == nil)
+			a, b = table.unpack({[maxi] = 20}, maxi - 1, maxi)
+			assert(a == nil and b == 20)
+			local t = {[maxI - 1] = 12, [maxI] = 23}
+			a, b = table.unpack(t, maxI - 1, maxI); assert(a == 12 and b == 23)
+			a, b = table.unpack(t, maxI, maxI); assert(a == 23 and b == nil)
+			a, b = table.unpack(t, maxI, maxI - 1); assert(a == nil and b == nil)
+			t = {[minI] = 12.3, [minI + 1] = 23.5}
+			a, b = table.unpack(t, minI, minI + 1); assert(a == 12.3 and b == 23.5)
+			a, b = table.unpack(t, minI, minI); assert(a == 12.3 and b == nil)
+			a, b = table.unpack(t, minI + 1, minI); assert(a == nil and b == nil)
 		end)
 
 		it("takes slices of tables :lua>=5.2", function()

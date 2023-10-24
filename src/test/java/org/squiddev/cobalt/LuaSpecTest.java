@@ -26,6 +26,10 @@ public class LuaSpecTest {
 
 	private List<DynamicNode> nodes;
 
+	private static String stripTags(String name) {
+		return name.replaceAll(" +:[^ ]+", "");
+	}
+
 	public LuaSpecTest() throws IOException, LuaError, CompileException {
 		state = new LuaState();
 		env = state.getMainThread().getfenv();
@@ -50,7 +54,7 @@ public class LuaSpecTest {
 				nodes = oldNodes;
 			}
 
-			nodes.add(DynamicContainer.dynamicContainer(name, newNodes));
+			nodes.add(DynamicContainer.dynamicContainer(stripTags(name), newNodes));
 
 			return Constants.NIL;
 		}).create());
@@ -60,7 +64,9 @@ public class LuaSpecTest {
 			LuaFunction function = arg2.checkFunction();
 			if (nodes == null) throw new LuaError("Cannot register tests at this stage");
 
-			nodes.add(DynamicTest.dynamicTest(name, () -> {
+			nodes.add(DynamicTest.dynamicTest(stripTags(name), () -> {
+				Assumptions.assumeFalse(name.contains(":!cobalt"), "Not run on Cobalt");
+
 				// Run each test in a clean coroutine.
 				LuaThread thread = new LuaThread(state, function, env);
 				Varargs result = LuaThread.run(thread, Constants.NONE);
@@ -75,7 +81,7 @@ public class LuaSpecTest {
 			arg2.checkFunction();
 			if (nodes == null) throw new LuaError("Cannot register tests at this stage");
 
-			nodes.add(DynamicTest.dynamicTest(name, () -> Assumptions.assumeFalse(false, "Test is 'pending'.")));
+			nodes.add(DynamicTest.dynamicTest(stripTags(name), () -> Assumptions.assumeFalse(false, "Test is 'pending'.")));
 
 			return Constants.NIL;
 		}).create());
