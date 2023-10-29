@@ -25,6 +25,8 @@ for line in handle:lines() do files[#files + 1] = line end
 handle:close()
 
 local function check_version(name)
+	if name:find(":cobalt") then return false end
+
 	local version_check = name:match(":lua([^ ]+)")
 	if not version_check then return true end
 

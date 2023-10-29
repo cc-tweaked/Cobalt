@@ -27,9 +27,62 @@ describe("The base library", function()
 	end)
 
 	describe("tostring", function()
+		it("nil", function() expect(tostring(nil)):eq("nil") end)
+
+		it("booleans", function()
+			expect(tostring(true)):eq("true")
+			expect(tostring(false)):eq("false")
+		end)
+
+		describe("numbers", function()
+			it("basic conversions", function()
+				expect(tostring(12)):eq("12")
+				expect(""..12):eq('12')
+				expect(12 .. ""):eq('12')
+
+				expect(tostring(1234567890123)):eq("1234567890123")
+			end)
+
+			it("floats", function()
+				expect(tostring(-1203)):eq("-1203")
+				expect(tostring(1203.125)):eq("1203.125")
+				expect(tostring(-0.5)):eq("-0.5")
+				expect(tostring(-32767)):eq("-32767")
+			end)
+
+			it("integers :lua>=5.3", function()
+				expect(tostring(4611686018427387904)):eq("4611686018427387904")
+				expect(tostring(-4611686018427387904)):eq("-4611686018427387904")
+			end)
+
+			it("integer-compatible floats are preserved :lua>=5.3 :!cobalt", function()
+				expect('' .. 12):eq('12') expect(12.0 .. ''):eq('12.0')
+				expect(tostring(-1203 + 0.0)):eq("-1203.0")
+			end)
+
+			it("integer-compatible floats are truncated :lua<=5.2", function()
+				expect(tostring(0.0)):eq("0")
+				expect('' .. 12):eq('12') expect(12.0 .. ''):eq('12')
+				expect(tostring(-1203 + 0.0)):eq("-1203")
+			end)
+		end)
+
+		it("tables", function() expect(tostring {}):str_match('^table:') end)
+
+		it("functions", function() expect(tostring(print)):str_match('^function:') end)
+
+		it("null bytes", function()
+			expect(tostring('\0')):eq("\0")
+		end)
+
 		it("uses __name :lua>=5.3", function()
-			local obj = setmetatable({}, { __name="abc" })
+			local obj = setmetatable({}, { __name = "abc" })
 			expect(tostring(obj)):str_match("^abc: ")
+		end)
+
+		it("errors if __tostring does not return a string :lua>=5.3 :!cobalt", function()
+			local obj = setmetatable({}, { __tostring = function () return {} end })
+			expect.error(tostring, obj):eq("'__tostring' must return a string")
 		end)
 
 		it("can return a non-string value :lua<=5.2", function()
@@ -86,6 +139,14 @@ describe("The base library", function()
 	end)
 
 	describe("load", function()
+		it("returns the error value", function()
+			local tbl = {}
+			local fun, err = load(function() error(tbl) end)
+
+			expect(fun):eq(nil)
+			expect(err):eq(tbl)
+		end)
+
 		-- I'd hope nobody relies on this behaviour, but you never know!
 		it("propagates the current error handler", function()
 			local res = {

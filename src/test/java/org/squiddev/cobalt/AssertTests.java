@@ -52,7 +52,6 @@ public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"debug",
-		"debug-coroutine-hook",
 		"debug-getinfo",
 		"debug-upvalue",
 		"gc",
@@ -60,12 +59,8 @@ public class AssertTests {
 		"invalid-tailcall",
 		"lex-context",
 		"lex-number",
-		"load-error",
-		"no-unwind",
 		"setlist",
-		"string-compare",
 		"string-issues",
-		"string-format",
 		"time",
 		"traceback",
 	})
@@ -95,7 +90,6 @@ public class AssertTests {
 		"nextvar",
 		"pm",
 		"sort",
-		"strings",
 		"vararg",
 		"verybig",
 	})
@@ -109,19 +103,6 @@ public class AssertTests {
 
 		// TODO: Move this into the debug library
 		((LuaTable) helpers.globals.rawget("debug")).rawset("debug", LibFunction.create(s -> Constants.NIL));
-
-		helpers.runWithDump(name);
-	}
-
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
-	@ValueSource(strings = {
-		"bitwise",
-		"strings",
-	})
-	public void lua52(String name) throws Exception {
-		ScriptHelper helpers = new ScriptHelper("/assert/lua5.2/");
-		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
-		Bit32Lib.add(helpers.state, helpers.globals);
 
 		helpers.runWithDump(name);
 	}

@@ -96,7 +96,7 @@ class StringFormat {
 					desc.format(result, value.checkDouble());
 				}
 				case 'q' -> {
-					desc.checkFlags(0);
+					if (desc.length != 1) throw new LuaError("specifier '%q' cannot have modifiers");
 					addQuoted(result, format.arg, value);
 				}
 				case 's' -> {
@@ -139,7 +139,7 @@ class StringFormat {
 				}
 			}
 			case TBOOLEAN, TNIL -> buf.append(s.toString());
-			default -> throw ErrorFactory.argError(arg, "value has no literal representation");
+			default -> throw ErrorFactory.argError(arg, "value has no literal form");
 		}
 	}
 

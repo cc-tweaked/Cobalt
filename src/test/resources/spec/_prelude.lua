@@ -11,7 +11,7 @@ local function serialise(value, seen, indent)
 		seen[value] = true
 
 		local items = {}
-		local len, contents_len = rawlen(value), 0
+		local len, contents_len = (rawlen and rawlen(value) or #value), 0
 		for k, v in pairs(value) do
 			local item
 			if type(k) == "number" and (k % 1) == 0 and k >= 1 and k <= len then

@@ -89,11 +89,13 @@ public class LuaSpecTest {
 
 		env.rawset("fail", RegisteredFunction.of("fail", (state, arg) -> {
 			var frame = state.getCurrentThread().getDebugState().getFrame(2);
-			var values = frame.stack;
-			for (int i = 0; i < values.length; i++) {
-				var value = values[i];
-				var local = frame.closure.getPrototype().getLocalName(i + 1, frame.pc);
-				if (!value.isNil() || local != null) System.out.printf("% 2d => %s [%s]\n", i, values[i], local);
+			if (frame != null && frame.stack != null) {
+				var values = frame.stack;
+				for (int i = 0; i < values.length; i++) {
+					var value = values[i];
+					var local = frame.closure.getPrototype().getLocalName(i + 1, frame.pc);
+					if (!value.isNil() || local != null) System.out.printf("% 2d => %s [%s]\n", i, values[i], local);
+				}
 			}
 			throw new AssertionError(arg.checkString() + "\n" + DebugHelpers.traceback(state.getCurrentThread(), 0));
 		}).create());
@@ -127,7 +129,7 @@ public class LuaSpecTest {
 	public Stream<DynamicNode> getTests() throws IOException {
 		return Files.walk(ROOT)
 			.filter(x -> x.getFileName().toString().endsWith("_spec.lua"))
-			.map(path -> {
+			.flatMap(path -> {
 				LuaFunction function;
 				try (InputStream stream = Files.newInputStream(path)) {
 					function = LoadState.load(state, stream, "@" + path.getFileName(), env);
@@ -144,7 +146,7 @@ public class LuaSpecTest {
 					this.nodes = null;
 				}
 
-				return DynamicContainer.dynamicContainer(path.getFileName().toString(), nodes);
+				return nodes.stream();
 			});
 	}
 }
