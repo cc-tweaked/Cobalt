@@ -26,7 +26,6 @@ package org.squiddev.cobalt.debug;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.lib.DebugLib;
 
@@ -185,14 +184,15 @@ public final class DebugHelpers {
 
 		Prototype p = di.closure.getPrototype();
 		int pc = di.pc; // currentpc(L, ci);
-		int i; // Instruction i;
 		LuaString name = p.getLocalName(stackpos + 1, pc);
 
 		// is a local?
 		if (name != null) return new ObjectName(name, LOCAL);
 
-		i = symbexec(p, pc, stackpos); /* try symbolic execution */
-		lua_assert(pc != -1);
+		pc = findSetReg(p, pc, stackpos); /* try symbolic execution */
+		if (pc == -1) return null;
+
+		int i = p.code[pc];
 		switch (GET_OPCODE(i)) {
 			case OP_GETGLOBAL -> {
 				int g = GETARG_Bx(i); /* global index */
@@ -223,211 +223,40 @@ public final class DebugHelpers {
 		return null; // no useful name found
 	}
 
-	// return last instruction, or 0 if error
-	private static int symbexec(Prototype pt, int lastpc, int reg) {
-		int pc;
-		int last; /* stores position of last instruction that changed `reg' */
-		last = pt.code.length - 1; /*
-		 * points to final return (a `neutral'
-		 * instruction)
-		 */
-		if (!(precheck(pt))) return 0;
-		for (pc = 0; pc < lastpc; pc++) {
+	private static int filterPc(int pc, int jumpTarget) {
+		return pc < jumpTarget ? -1 : pc;
+	}
+
+	private static int findSetReg(Prototype pt, int lastpc, int reg) {
+		int setreg = -1; // Last instruction that changed "reg";
+		int jumpTarget = 0; // Any code before this address is conditional
+
+		for (int pc = 0; pc < lastpc; pc++) {
 			int i = pt.code[pc];
 			int op = GET_OPCODE(i);
 			int a = GETARG_A(i);
-			int b = 0;
-			int c = 0;
-			if (!(op < NUM_OPCODES)) return 0;
-			if (!checkRegister(pt, a)) return 0;
-			switch (getOpMode(op)) {
-				case iABC -> {
-					b = GETARG_B(i);
-					c = GETARG_C(i);
-					if (!(checkArgMode(pt, b, getBMode(op)))) return 0;
-					if (!(checkArgMode(pt, c, getCMode(op)))) return 0;
-				}
-				case iABx -> {
-					b = GETARG_Bx(i);
-					if (getBMode(op) == OpArgK) {
-						if (!(b < pt.constants.length)) return 0;
-					}
-				}
-				case iAsBx -> {
-					b = GETARG_sBx(i);
-					if (getBMode(op) == OpArgR) {
-						int dest = pc + 1 + b;
-						if (!(0 <= dest && dest < pt.code.length)) return 0;
-						if (dest > 0) {
-							/* cannot jump to a setlist count */
-							int d = pt.code[dest - 1];
-							if ((GET_OPCODE(d) == OP_SETLIST && GETARG_C(d) == 0)) return 0;
-						}
-					}
-				}
-			}
-			if (testAMode(op)) {
-				if (a == reg) {
-					last = pc; /* change register `a' */
-				}
-			}
-			if (testTMode(op)) {
-				if (!(pc + 2 < pt.code.length)) return 0; /* check skip */
-				if (!(GET_OPCODE(pt.code[pc + 1]) == OP_JMP)) return 0;
-			}
 			switch (op) {
-				case OP_LOADBOOL: {
-					if (!(c == 0 || pc + 2 < pt.code.length)) return 0; /* check its jump */
-					break;
+				case OP_LOADNIL -> {
+					int b = GETARG_B(i);
+					if (a <= reg && reg <= a + b) setreg = filterPc(pc, jumpTarget);
 				}
-				case OP_LOADNIL: {
-					if (a <= reg && reg <= b) {
-						last = pc; /* set registers from `a' to `b' */
-					}
-					break;
+				case OP_TFORLOOP -> {
+					if (a >= a + 2) setreg = filterPc(pc, jumpTarget);
 				}
-				case OP_GETUPVAL:
-				case OP_SETUPVAL: {
-					if (!(b < pt.upvalues)) return 0;
-					break;
+				case OP_CALL, OP_TAILCALL -> {
+					if (reg >= a) setreg = filterPc(pc, jumpTarget);
 				}
-				case OP_GETGLOBAL:
-				case OP_SETGLOBAL: {
-					if (!(pt.constants[b].isString())) return 0;
-					break;
+				case OP_JMP -> {
+					int dest = pc + 1 + GETARG_sBx(i);
+					// If jump is forward and doesn't skip lastPc, update jump target
+					if (pc < dest && dest <= lastpc && dest > jumpTarget) jumpTarget = dest;
 				}
-				case OP_SELF: {
-					if (!checkRegister(pt, a + 1)) return 0;
-					if (reg == a + 1) {
-						last = pc;
-					}
-					break;
+				default -> {
+					if (testAMode(op) && reg == a) setreg = filterPc(pc, jumpTarget);
 				}
-				case OP_CONCAT: {
-					if (!(b < c)) return 0; /* at least two operands */
-					break;
-				}
-				case OP_TFORLOOP: {
-					if (!(c >= 1)) return 0; /* at least one result (control variable) */
-					if (!checkRegister(pt, a + 2 + c)) return 0; /* space for results */
-					if (reg >= a + 2) {
-						last = pc; /* affect all regs above its base */
-					}
-					break;
-				}
-				case OP_FORLOOP:
-				case OP_FORPREP:
-					if (!checkRegister(pt, a + 3)) return 0;
-					// fallthrough
-				case OP_JMP: {
-					int dest = pc + 1 + b;
-					/* not full check and jump is forward and do not skip `lastpc'? */
-					if (reg != NO_REG && pc < dest && dest <= lastpc) {
-						pc += b; /* do the jump */
-					}
-					break;
-				}
-				case OP_CALL:
-				case OP_TAILCALL: {
-					if (b != 0) {
-						if (!checkRegister(pt, a + b - 1)) return 0;
-					}
-					c--; /* c = num. returns */
-					if (c == LUA_MULTRET) {
-						if (!(checkOpenUp(pt, pc))) return 0;
-					} else if (c != 0) {
-						if (!checkRegister(pt, a + c - 1)) return 0;
-					}
-					if (reg >= a) {
-						last = pc; /* affect all registers above base */
-					}
-					break;
-				}
-				case OP_RETURN: {
-					b--; /* b = num. returns */
-					if (b > 0) {
-						if (!checkRegister(pt, a + b - 1)) return 0;
-					}
-					break;
-				}
-				case OP_SETLIST: {
-					if (b > 0) {
-						if (!checkRegister(pt, a + b)) return 0;
-					}
-					if (c == 0) {
-						pc++;
-					}
-					break;
-				}
-				case OP_CLOSURE: {
-					int nup, j;
-					if (!(b < pt.children.length)) return 0;
-					nup = pt.children[b].upvalues;
-					if (!(pc + nup < pt.code.length)) return 0;
-					for (j = 1; j <= nup; j++) {
-						int op1 = GET_OPCODE(pt.code[pc + j]);
-						if (!(op1 == OP_GETUPVAL || op1 == OP_MOVE)) return 0;
-					}
-					if (reg != NO_REG) /* tracing? */ {
-						pc += nup; /* do not 'execute' these pseudo-instructions */
-					}
-					break;
-				}
-				case OP_VARARG: {
-					if (!((pt.isVarArg & VARARG_ISVARARG) != 0
-						&& (pt.isVarArg & VARARG_NEEDSARG) == 0)) {
-						return 0;
-					}
-					b--;
-					if (b == LUA_MULTRET) {
-						if (!(checkOpenUp(pt, pc))) return 0;
-					}
-					if (!checkRegister(pt, a + b - 1)) return 0;
-					break;
-				}
-				default:
-					break;
 			}
 		}
-		return pt.code[last];
-	}
-
-	private static boolean precheck(Prototype pt) {
-		if (!(pt.maxStackSize <= LuaC.MAXSTACK)) return false;
-		lua_assert(pt.parameters + (pt.isVarArg & VARARG_HASARG) <= pt.maxStackSize);
-		lua_assert((pt.isVarArg & VARARG_NEEDSARG) == 0
-			|| (pt.isVarArg & VARARG_HASARG) != 0);
-		return pt.upvalueNames.length <= pt.upvalues && (pt.lineInfo.length == pt.code.length || pt.lineInfo.length == 0) && GET_OPCODE(pt.code[pt.code.length - 1]) == OP_RETURN;
-	}
-
-	private static boolean checkArgMode(Prototype pt, int val, int mode) {
-		switch (mode) {
-			case OpArgN:
-				if (!(val == 0)) return false;
-				break;
-			case OpArgU:
-				break;
-			case OpArgR:
-				checkRegister(pt, val);
-				break;
-			case OpArgK:
-				if (!(ISK(val) ? INDEXK(val) < pt.constants.length : val < pt.maxStackSize))
-					return false;
-				break;
-		}
-		return true;
-	}
-
-	private static boolean checkRegister(Prototype proto, int reg) {
-		return (reg < proto.maxStackSize);
-	}
-
-	private static boolean checkOpenUp(Prototype proto, int pc) {
-		int i = proto.code[(pc) + 1];
-		return switch (GET_OPCODE(i)) {
-			case OP_CALL, OP_TAILCALL, OP_RETURN, OP_SETLIST -> GETARG_B(i) == 0;
-			default -> false; /* invalid instruction after an open call */
-		};
+		return setreg;
 	}
 
 	private static LuaString constantName(Prototype proto, int index) {
@@ -436,9 +265,5 @@ public final class DebugHelpers {
 		} else {
 			return DebugLib.QMARK;
 		}
-	}
-
-	private static void lua_assert(boolean x) {
-		if (!x) throw new RuntimeException("lua_assert failed");
 	}
 }
