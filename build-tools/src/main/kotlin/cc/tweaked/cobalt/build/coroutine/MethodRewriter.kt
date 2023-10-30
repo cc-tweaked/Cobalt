@@ -359,7 +359,7 @@ private class AutoUnwindRewriter(
 	private fun packValue(type: Type): Unit = when (type.sort) {
 		Type.LONG -> Unit
 		// We widen an int to a long
-		Type.BOOLEAN, Type.CHAR, Type.SHORT, Type.INT -> sink.visitInsn(I2L)
+		Type.BOOLEAN, Type.BYTE, Type.CHAR, Type.SHORT, Type.INT -> sink.visitInsn(I2L)
 		// Floats and doubles are packed into longs.
 		Type.DOUBLE -> sink.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "doubleToRawLongBits", "(D)J", false)
 		Type.FLOAT -> {
@@ -373,7 +373,7 @@ private class AutoUnwindRewriter(
 	/** Unpack a primitive value from a long. */
 	private fun unpackValue(type: Type): Unit = when (type.sort) {
 		Type.LONG -> Unit
-		Type.BOOLEAN, Type.CHAR, Type.SHORT, Type.INT -> sink.visitInsn(L2I)
+		Type.BOOLEAN, Type.BYTE, Type.CHAR, Type.SHORT, Type.INT -> sink.visitInsn(L2I)
 		Type.DOUBLE -> sink.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "longBitsToDouble", "(J)D", false)
 		Type.FLOAT -> {
 			sink.visitInsn(L2I)

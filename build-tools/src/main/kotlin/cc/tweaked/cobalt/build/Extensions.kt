@@ -141,7 +141,7 @@ fun AbstractInsnNode.isConstant(): Boolean = when (opcode) {
 val Type.isReference: Boolean
 	get() = when (sort) {
 		Type.OBJECT, Type.ARRAY -> true
-		Type.BOOLEAN, Type.CHAR, Type.SHORT, Type.INT, Type.FLOAT, Type.DOUBLE, Type.LONG -> false
+		Type.BOOLEAN, Type.BYTE, Type.CHAR, Type.SHORT, Type.INT, Type.FLOAT, Type.DOUBLE, Type.LONG -> false
 		else -> throw IllegalArgumentException("$this is not a value type")
 	}
 
@@ -150,7 +150,7 @@ val Type.isReference: Boolean
  * @see Type.getOpcode for the other cases.
  */
 fun Type.getDefaultOpcode(): Int = when (sort) {
-	Type.BOOLEAN, Type.CHAR, Type.SHORT, Type.INT -> ICONST_0
+	Type.BOOLEAN, Type.BYTE, Type.CHAR, Type.SHORT, Type.INT -> ICONST_0
 	Type.FLOAT -> FCONST_0
 	Type.DOUBLE -> DCONST_0
 	Type.LONG -> LCONST_0
