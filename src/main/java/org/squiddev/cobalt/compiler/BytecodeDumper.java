@@ -24,64 +24,29 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.Constants;
+import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.function.LocalVariable;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUAC_FORMAT;
+import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUAC_VERSION;
+
 class BytecodeDumper {
-	/**
-	 * for header of binary files -- this is Lua 5.1
-	 */
-	public static final int LUAC_VERSION = 0x51;
-
-	/**
-	 * for header of binary files -- this is the official format
-	 */
-	public static final int LUAC_FORMAT = 0;
-
-	/**
-	 * size of header of binary files
-	 */
-	public static final int LUAC_HEADERSIZE = 12;
-
-	/**
-	 * set true to allow integer compilation
-	 */
-	public static boolean ALLOW_INTEGER_CASTING = false;
-
-	/**
-	 * format corresponding to non-number-patched lua, all numbers are floats or doubles
-	 */
-	public static final int NUMBER_FORMAT_FLOATS_OR_DOUBLES = 0;
-
-	/**
-	 * format corresponding to non-number-patched lua, all numbers are ints
-	 */
-	public static final int NUMBER_FORMAT_INTS_ONLY = 1;
-
-	/**
-	 * format corresponding to number-patched lua, all numbers are 32-bit (4 byte) ints
-	 */
-	public static final int NUMBER_FORMAT_NUM_PATCH_INT32 = 4;
-
-	/**
-	 * default number format
-	 */
-	public static final int NUMBER_FORMAT_DEFAULT = NUMBER_FORMAT_FLOATS_OR_DOUBLES;
-
-	// header fields
-	private boolean IS_LITTLE_ENDIAN = true;
-	private int NUMBER_FORMAT = NUMBER_FORMAT_DEFAULT;
-	private int SIZEOF_LUA_NUMBER = 8;
+	private static final boolean IS_LITTLE_ENDIAN = true;
+	private static final int NUMBER_FORMAT = 0;
+	private static final int SIZEOF_LUA_NUMBER = 8;
 	private static final int SIZEOF_INT = 4;
 	private static final int SIZEOF_SIZET = 4;
 	private static final int SIZEOF_INSTRUCTION = 4;
 
-	final DataOutputStream writer;
-	final boolean strip;
+	private final DataOutputStream writer;
+	private final boolean strip;
 
 	public BytecodeDumper(OutputStream w, boolean strip) {
 		this.writer = new DataOutputStream(w);
@@ -142,29 +107,8 @@ class BytecodeDumper {
 					dumpChar(o.toBoolean() ? 1 : 0);
 				}
 				case Constants.TNUMBER -> {
-					switch (NUMBER_FORMAT) {
-						case NUMBER_FORMAT_FLOATS_OR_DOUBLES -> {
-							writer.write(Constants.TNUMBER);
-							dumpDouble(o.toDouble());
-						}
-						case NUMBER_FORMAT_INTS_ONLY -> {
-							if (!ALLOW_INTEGER_CASTING && !(o instanceof LuaInteger)) {
-								throw new IllegalArgumentException("not an integer: " + o);
-							}
-							writer.write(Constants.TNUMBER);
-							dumpInt(o.toInteger());
-						}
-						case NUMBER_FORMAT_NUM_PATCH_INT32 -> {
-							if (o instanceof LuaInteger oInt) {
-								writer.write(Constants.TINT);
-								dumpInt(oInt.intValue());
-							} else {
-								writer.write(Constants.TNUMBER);
-								dumpDouble(o.toDouble());
-							}
-						}
-						default -> throw new IllegalArgumentException("number format not supported: " + NUMBER_FORMAT);
-					}
+					writer.write(Constants.TNUMBER);
+					dumpDouble(o.toDouble());
 				}
 				case Constants.TSTRING -> {
 					writer.write(Constants.TSTRING);
@@ -236,32 +180,6 @@ class BytecodeDumper {
 	 */
 	public static void dump(Prototype f, OutputStream w, boolean strip) throws IOException {
 		BytecodeDumper D = new BytecodeDumper(w, strip);
-		D.dumpHeader();
-		D.dumpFunction(f, null);
-	}
-
-	/**
-	 * @param f            the function to dump
-	 * @param w            the output stream to dump to
-	 * @param stripDebug   true to strip debugging info, false otherwise
-	 * @param numberFormat one of NUMBER_FORMAT_FLOATS_OR_DOUBLES, NUMBER_FORMAT_INTS_ONLY, NUMBER_FORMAT_NUM_PATCH_INT32
-	 * @param littleendian true to use little endian for numbers, false for big endian
-	 * @throws IOException              On stream write errors
-	 * @throws IllegalArgumentException if the number format it not supported
-	 */
-	public static void dump(Prototype f, OutputStream w, boolean stripDebug, int numberFormat, boolean littleendian) throws IOException {
-		switch (numberFormat) {
-			case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
-			case NUMBER_FORMAT_INTS_ONLY:
-			case NUMBER_FORMAT_NUM_PATCH_INT32:
-				break;
-			default:
-				throw new IllegalArgumentException("number format not supported: " + numberFormat);
-		}
-		BytecodeDumper D = new BytecodeDumper(w, stripDebug);
-		D.IS_LITTLE_ENDIAN = littleendian;
-		D.NUMBER_FORMAT = numberFormat;
-		D.SIZEOF_LUA_NUMBER = (numberFormat == NUMBER_FORMAT_INTS_ONLY ? 4 : 8);
 		D.dumpHeader();
 		D.dumpFunction(f, null);
 	}

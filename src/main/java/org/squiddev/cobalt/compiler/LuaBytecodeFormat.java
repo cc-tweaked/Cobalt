@@ -14,6 +14,17 @@ public final class LuaBytecodeFormat implements BytecodeFormat {
 	 */
 	static final byte[] LUA_SIGNATURE = {27, 'L', 'u', 'a'};
 
+	/**
+	 * The current Lua bytecode format, currently Lua 5.1
+	 */
+	static final int LUAC_VERSION = 0x51;
+
+	/**
+	 * The format for binary files. 0 denotes the "official" format.
+	 */
+	static final int LUAC_FORMAT = 0;
+
+
 	private static final LuaBytecodeFormat INSTANCE = new LuaBytecodeFormat();
 
 	private LuaBytecodeFormat() {

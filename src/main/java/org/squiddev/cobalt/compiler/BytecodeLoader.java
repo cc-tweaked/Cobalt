@@ -29,6 +29,7 @@ import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import static org.squiddev.cobalt.Constants.*;
+import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUAC_VERSION;
 import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUA_SIGNATURE;
 
 /**
@@ -52,21 +53,6 @@ final class BytecodeLoader {
 	 * format corresponding to number-patched lua, all numbers are 32-bit (4 byte) ints
 	 */
 	public static final int NUMBER_FORMAT_NUM_PATCH_INT32 = 4;
-
-	/**
-	 * for header of binary files -- this is Lua 5.1
-	 */
-	public static final int LUAC_VERSION = 0x51;
-
-	/**
-	 * for header of binary files -- this is the official format
-	 */
-	public static final int LUAC_FORMAT = 0;
-
-	/**
-	 * size of header of binary files
-	 */
-	public static final int LUAC_HEADERSIZE = 12;
 
 	// values read from the header
 	private boolean luacLittleEndian;
