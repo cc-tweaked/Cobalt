@@ -1,7 +1,6 @@
 package org.squiddev.cobalt;
 
 import org.junit.jupiter.api.*;
-import org.opentest4j.TestAbortedException;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugHelpers;
@@ -19,17 +18,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LuaSpecTest {
 	private static final Path ROOT = Path.of("src", "test", "resources", "spec");
+	private static final Pattern TAG = Pattern.compile(":([^ ]+)");
 	private final LuaState state;
 	private final LuaTable env;
 
 	private List<DynamicNode> nodes;
 
 	private static String stripTags(String name) {
-		return name.replaceAll(" +:[^ ]+", "");
+		return TAG.matcher(name).replaceAll("");
 	}
 
 	public LuaSpecTest() throws IOException, LuaError, CompileException {
@@ -39,6 +42,9 @@ public class LuaSpecTest {
 		new SystemBaseLib(ResourceLoader.FILES, System.in, System.out).add(env);
 		Bit32Lib.add(state, env);
 		TestLib.add(env);
+
+		// Set the "arg" global as we've have some tests which need it.
+		env.rawset("arg", new LuaTable());
 
 		try (InputStream is = new BufferedInputStream(Files.newInputStream(ROOT.resolve("_prelude.lua")))) {
 			var expect = LoadState.load(state, is, "@_prelude.lua", env);
@@ -101,8 +107,19 @@ public class LuaSpecTest {
 		}).create());
 	}
 
+	private static boolean checkTags(String name) {
+		var matcher = TAG.matcher(name);
+		while (matcher.find()) {
+			var tag = matcher.group(1);
+			if (tag.equals("cobalt") || tag.startsWith("lua")) continue;
+			if (tag.equals("!cobalt")) return false;
+			throw new IllegalStateException("Unknown tag " + tag);
+		}
+		return true;
+	}
+
 	private static DynamicNode filterNode(String name, DynamicNode node) {
-		return name.contains(":!cobalt") ? makePending(node) : node;
+		return checkTags(name) ? node : makePending(node);
 	}
 
 	private static DynamicNode makePending(DynamicNode node) {
@@ -117,7 +134,7 @@ public class LuaSpecTest {
 				test.getDisplayName(),
 				test.getTestSourceUri().orElse(null),
 				() -> {
-					throw new TestAbortedException("Not run on Cobalt");
+					assertThrows(Throwable.class, test.getExecutable(), "Test is marked :!cobalt, but passes on Cobalt.");
 				}
 			);
 		} else {

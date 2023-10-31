@@ -658,6 +658,48 @@ describe("Lua tables", function()
 			expect(#t):eq(-1)
 			table.sort(t, function() fail("Unexpected comparison") end)
 		end)
+
+		it("supports yielding in the comparator :cobalt", function()
+			expect.run_coroutine(function()
+				local x = { 32, 2, 4, 13 }
+				table.sort(x, function(a, b)
+					local x, y = coroutine.yield(a, b)
+					expect(x):eq(a)
+					expect(y):eq(b)
+
+					return a < b
+				end)
+
+				expect(x[1]):eq(2)
+				expect(x[2]):eq(4)
+				expect(x[3]):eq(13)
+				expect(x[4]):eq(32)
+			end)
+		end)
+
+		it("supports yielding in the metamethod :cobalt", function()
+			local meta = {
+				__lt = function(a, b)
+					local x, y = coroutine.yield(a, b)
+					expect(x):eq(a)
+					expect(y):eq(b)
+
+					return a.x < b.x
+				end,
+			}
+
+			local function create(val) return setmetatable({ x = val }, meta) end
+
+			expect.run_coroutine(function()
+				local x = { create(32), create(2), create(4), create(13) }
+				table.sort(x)
+
+				expect(x[1].x):eq(2)
+				expect(x[2].x):eq(4)
+				expect(x[3].x):eq(13)
+				expect(x[4].x):eq(32)
+			end)
+		end)
 	end)
 
 	describe("table.pack", function()
@@ -807,6 +849,38 @@ describe("Lua tables", function()
 		it("uses metamethods :lua>=5.3", function()
 			local basic = make_slice({ "a", "b", "c", "d", "e" }, 2, 3)
 			expect(table.concat(basic)):eq("bcd")
+		end)
+	end)
+
+	describe("table.foreach :lua==5.1", function()
+		it("supports yielding :cobalt", function()
+			expect.run_coroutine(function()
+				local x = { 3, "foo", 4, 1 }
+				local idx = 1
+				table.foreach(x, function(key, val)
+					expect(key):eq(idx)
+					expect(val):eq(x[idx])
+					expect(coroutine.yield(val)):eq(val)
+
+					idx = idx + 1
+				end)
+			end)
+		end)
+	end)
+
+	describe("table.foreachi :lua==5.1", function()
+		it("supports yielding :cobalt", function()
+			expect.run_coroutine(function()
+				local x = { 3, "foo", 4, 1 }
+				local idx = 1
+				table.foreachi(x, function(key, val)
+					expect(key):eq(idx)
+					expect(val):eq(x[idx])
+					expect(coroutine.yield(val)):eq(val)
+
+					idx = idx + 1
+				end)
+			end)
 		end)
 	end)
 end)

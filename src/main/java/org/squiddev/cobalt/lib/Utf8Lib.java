@@ -85,8 +85,8 @@ public class Utf8Lib {
 		int i = posRelative(args.arg(2).optInteger(1), length);
 		int j = posRelative(args.arg(3).optInteger(i), length);
 
-		if (i < 1) throw ErrorFactory.argError(2, "out of range");
-		if (j > length) throw ErrorFactory.argError(3, "out of range");
+		if (i < 1) throw ErrorFactory.argError(2, "out of bounds");
+		if (j > length) throw ErrorFactory.argError(3, "out of bounds");
 		if (i > j) return NONE;
 
 		IntBuffer off = new IntBuffer();
@@ -115,7 +115,7 @@ public class Utf8Lib {
 		IntBuffer offset = new IntBuffer();
 		while (i <= j) {
 			long codepoint = decodeUtf8(s, i, offset);
-			if (codepoint < 0) return varargsOf(Constants.FALSE, valueOf(i + 1));
+			if (codepoint < 0) return varargsOf(NIL, valueOf(i + 1));
 
 			n++;
 			i += offset.value;
@@ -131,7 +131,7 @@ public class Utf8Lib {
 		int length = s.length();
 		int position = (n >= 0) ? 1 : length + 1;
 		position = posRelative(arg3.optInteger(position), length) - 1;
-		if (position < 0 || position > length) throw ErrorFactory.argError(3, "position out of range");
+		if (position < 0 || position > length) throw ErrorFactory.argError(3, "position out of bounds");
 
 		if (n == 0) {
 			while (position > 0 && isCont(s, position)) position--;

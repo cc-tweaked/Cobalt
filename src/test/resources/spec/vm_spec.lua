@@ -13,4 +13,84 @@ describe("The Lua VM", function()
 			expect.error(string.match, a):str_match("string expected, got type a")
 		end)
 	end)
+
+	it("can yield within metamethods :lua>=5.2", function()
+		local create, ops
+		create = function(val) return setmetatable({ x = val }, ops) end
+		ops = {
+			__add = function(x, y)
+				local a, b = coroutine.yield(x, y)
+				return create(a.x + b.x)
+			end,
+			__div = function(x, y)
+				local a, b = coroutine.yield(x, y)
+				return create(a.x / b.x)
+			end,
+			__concat = function(x, y)
+				local a, b = coroutine.yield(x, y)
+				return create(a.x .. b.x)
+			end,
+			__eq = function(x, y)
+				local a, b = coroutine.yield(x, y)
+				return a.x == b.x
+			end,
+			__lt = function(x, y)
+				local a, b = coroutine.yield(x, y)
+				return a.x < b.x
+			end,
+			__len = function(x)
+				return coroutine.yield(x).x
+			end,
+			__index = function(tbl, key)
+				local res = coroutine.yield(key)
+				return res:upper()
+			end,
+			__newindex = function(tbl, key, val)
+				local rKey, rVal = coroutine.yield(key, val)
+				rawset(tbl, rKey, rVal .. "!")
+			end,
+		}
+
+		local varA = create(2)
+		local varB = create(3)
+
+		expect.run_coroutine(function()
+			expect(5):eq((varA + varB).x)
+			expect(5):eq((varB + varA).x)
+			expect(4):eq((varA + varA).x)
+			expect(6):eq((varB + varB).x)
+
+			expect(2 / 3):eq((varA / varB).x)
+			expect(3 / 2):eq((varB / varA).x)
+			expect(1):eq((varA / varA).x)
+			expect(1):eq((varB / varB).x)
+
+			expect("23"):eq((varA .. varB).x)
+			expect("32"):eq((varB .. varA).x)
+			expect("22"):eq((varA .. varA).x)
+			expect("33"):eq((varB .. varB).x)
+			expect("33333"):eq((varB .. varB .. varB .. varB .. varB).x)
+
+			expect(false):eq(varA == varB)
+			expect(false):eq(varB == varA)
+			expect(true):eq(varA == varA)
+			expect(true):eq(varB == varB)
+
+			expect(true):eq(varA < varB)
+			expect(false):eq(varB < varA)
+			expect(false):eq(varA < varA)
+			expect(false):eq(varB < varB)
+
+			expect(true):eq(varA <= varB)
+			expect(false):eq(varB <= varA)
+			expect(true):eq(varA <= varA)
+			expect(true):eq(varB <= varB)
+
+			expect(#varA):eq(2)
+
+			expect("HELLO"):eq(varA.hello)
+			varA.hello = "bar"
+			expect("bar!"):eq(varA.hello)
+		end)
+	end)
 end)

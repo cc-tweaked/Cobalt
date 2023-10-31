@@ -147,6 +147,25 @@ describe("The base library", function()
 			expect(err):eq(tbl)
 		end)
 
+		local getenv = getfenv or function(f)
+			local a,b = debug.getupvalue(f, 1)
+			expect(a):eq("_ENV")
+			return b
+		end
+
+		it("defaults to the global environment :lua>=5.2", function()
+			expect(getenv(load"a = 3")):eq(_G)
+		end)
+
+		it("accepts custom environments :lua>=5.2", function()
+			local c = {}
+			local f = load("a = 3", nil, nil, c)
+			expect(getenv(f)):eq(c)
+			expect(c.a):eq(nil)
+			f()
+			expect(c.a):eq(3)
+		end)
+
 		-- I'd hope nobody relies on this behaviour, but you never know!
 		it("propagates the current error handler", function()
 			local res = {
@@ -156,6 +175,197 @@ describe("The base library", function()
 				)
 			}
 			expect(res):same { true, nil, "caught oh no"}
+		end)
+	end)
+
+	describe("pcall", function()
+		describe("supports yielding :lua>=5.2", function()
+			it("with no error", function()
+				local ok, a, b, c = expect.run_coroutine(function()
+					return pcall(function()
+						local a, b, c = coroutine.yield(1, 2, 3)
+						return a, b, c
+					end)
+				end)
+
+				expect(ok):eq(true)
+				expect({ a, b, c }):same { 1, 2, 3 }
+			end)
+
+			it("with an error", function()
+				local ok, msg = expect.run_coroutine(function()
+					return pcall(function()
+						local a, b, c = coroutine.yield(1, 2, 3)
+						expect({ a, b, c }):same { 1, 2, 3 }
+						error("Error message", 0)
+					end)
+				end)
+
+				expect(ok):eq(false)
+				expect(msg):eq("Error message")
+			end)
+		end)
+	end)
+
+	describe("xpcall", function()
+		describe("supports yielding :lua>=5.2", function()
+			it("within the main function", function()
+				-- Ensure that yielding within a xpcall works as expected
+				expect.run_coroutine(function()
+					local ok, a, b, c = xpcall(function()
+						return coroutine.yield(1, 2, 3)
+					end, function(msg) return msg .. "!" end)
+
+					expect(true):eq(ok)
+					expect(1):eq(a)
+					expect(2):eq(b)
+					expect(3):eq(c)
+				end)
+			end)
+
+			it("within the main function (with an error)", function()
+				expect.run_coroutine(function()
+					local ok, msg = xpcall(function()
+						local a, b, c = coroutine.yield(1, 2, 3)
+						expect(1):eq(a)
+						expect(2):eq(b)
+						expect(3):eq(c)
+
+						error("Error message", 0)
+					end, function(msg) return msg .. "!" end)
+
+					expect(false):eq(ok)
+					expect("Error message!"):eq(msg)
+				end)
+			end)
+
+			it("with an error in the error handler", function()
+				expect.run_coroutine(function()
+					local ok, msg = xpcall(function()
+						local a, b, c = coroutine.yield(1, 2, 3)
+						expect(1):eq(a)
+						expect(2):eq(b)
+						expect(3):eq(c)
+
+						error("Error message")
+					end, function(msg) error(msg) end)
+
+					expect(false):eq(ok)
+					expect("error in error handling"):eq(msg)
+				end)
+			end)
+
+			it("within the error handler :cobalt", function()
+				expect.run_coroutine(function()
+					local ok, msg = xpcall(function()
+						local a, b, c = coroutine.yield(1, 2, 3)
+						expect(1):eq(a)
+						expect(2):eq(b)
+						expect(3):eq(c)
+
+						error("Error message", 0)
+					end, function(msg)
+						return coroutine.yield(msg) .. "!"
+					end)
+
+					expect(false):eq(ok)
+					expect("Error message!"):eq(msg)
+				end)
+			end)
+
+			it("within the error handler with an error :cobalt", function()
+				expect.run_coroutine(function()
+					local yielded = false
+					local ok, msg = xpcall(function()
+						local a, b, c = coroutine.yield(1, 2, 3)
+						expect(1):eq(a)
+						expect(2):eq(b)
+						expect(3):eq(c)
+
+						error("Error message", 0)
+					end, function(msg)
+						coroutine.yield(msg)
+						yielded = true
+						error("nope")
+					end)
+
+					expect(false):eq(ok)
+					expect("error in error handling"):eq(msg)
+					expect(yielded):describe("Yielded"):eq(true)
+				end)
+			end)
+		end)
+	end)
+
+	describe("getfenv/setfenv :lua==5.1", function()
+		it("loadstring uses the the thread environment", function()
+			local function do_load(s) return loadstring(s) end
+			setfenv(do_load, { loadstring = loadstring })
+		end)
+
+		it("can set the environment of the current thread", function()
+			local finished = false
+			local f = coroutine.wrap(function(env)
+				setfenv(0, env)
+				coroutine.yield(getfenv())
+				expect(getfenv(0)):describe("Thread environment has changed."):eq(env)
+				expect(getfenv(1)):describe("Our environment is the same."):eq(_G)
+				expect(getfenv(loadstring"")):describe("New environments are the same."):eq(env)
+				finished = true
+				return getfenv()
+			end)
+
+			local a = {}
+			expect(f(a)):eq(_G)
+			expect(f()):eq(_G)
+		end)
+
+		it("can set the environment of another thread", function()
+			local co = coroutine.create(function ()
+				coroutine.yield(getfenv(0))
+				return loadstring("return a")()
+		  	end)
+
+			local a = {a = 15}
+			debug.setfenv(co, a)
+			expect(debug.getfenv(co)):eq(a)
+			expect(select(2, coroutine.resume(co))):eq(a)
+			expect(select(2, coroutine.resume(co))):eq(a.a)
+		end)
+
+		it("can set the environment of closures", function()
+			local _G = _G
+			local g
+			local function f () expect(setfenv(2, {a='10'})):eq(g) end
+			g = function() f(); _G.expect(_G.getfenv(1).a):eq('10') end
+			g();
+			expect(getfenv(g).a):eq('10')
+		end)
+
+		it("more complex closure usage", function()
+			local _G = _G
+
+			-- Create a bunch of functions which increment a (global) counter.
+			local f = {}
+			for i=1,10 do f[i] = function(x) A=A+1; return A, _G.getfenv(x) end end
+
+			A = 10 -- Intentionally non-local
+			expect(f[1]()):eq(11)
+
+			-- Now put all our functions in their own environment
+			for i=1,10 do expect(setfenv(f[i], {A=i})):eq(f[i]) end
+
+			-- Calling f[3] should just increment its and do nothing else
+			expect(f[3]()):eq(4)
+			expect(A):eq(11)
+
+			-- Passing 1 to get the function's environment
+			local a, b = f[8](1)
+			expect(b.A):eq(9)
+
+			-- Passing 0 to get the thread environment.
+			a,b = f[8](0)
+			expect(b.A):eq(11)
 		end)
 	end)
 end)

@@ -70,7 +70,7 @@ describe("The string library", function()
 			expect({ ("foo"):find("") }):same { 1, 0 }
 		end)
 
-		it("fails on empty strings when out of bounds :lua>=5.2 :!cobalt`", function()
+		it("fails on empty strings when out of bounds :lua>=5.2 :!cobalt", function()
 			expect(string.find("", "", 2)):eq(nil)
 			expect(("foo"):find("", 10)):eq(nil)
 		end)
@@ -115,6 +115,20 @@ describe("The string library", function()
 					:describe(("Character classes for %d (%q)"):format(codepoint, string.char(codepoint)))
 					:equals(tbl[codepoint + 1])
 			end
+		end)
+	end)
+
+	describe("string.gsub", function()
+		it("supports yielding within the replacement function :cobalt", function()
+			local result, count = expect.run_coroutine(function()
+				return ("hello world"):gsub("%w", function(entry)
+					local x = coroutine.yield(entry)
+					return x:upper()
+				end)
+			end)
+
+			expect(result):eq("HELLO WORLD")
+			expect(count):eq(10)
 		end)
 	end)
 
@@ -311,9 +325,6 @@ describe("The string library", function()
 				{ math.pi, "math.pi", ":lua>=5.3" },
 				{ math.huge, "math.huge", ":lua>=5.4" },
 				{ -math.huge, "math.huge", ":lua>=5.4" },
-				-- Large numers
-				{ math.maxinteger, "math.maxinteger", ":lua>=5.3 :!cobalt" },
-				{ math.mininteger, "math.mininteger", ":lua>=5.3 :!cobalt" },
 			} do
 				local value, label, filter = value[1], value[2] or tostring(value[1]), value[3]
 				if filter then label = label .. " " .. filter end
@@ -322,6 +333,24 @@ describe("The string library", function()
 					expect(load(string.format('return %q', value))()):eq(value)
 				end)
 			end
+
+			it("roundtrips nan :lua>=5.4", function()
+				local res = load(string.format('return %q', 0/0))()
+				if res == res then fail(tostring(res) .. " is not nan") end
+			end)
+
+			-- Defining these separately to the above as on some systems
+			-- math.mininteger is nil, and obviously that round-trips!
+
+			it("roundtrips math.mininteger :lua>=5.3 :!cobalt", function()
+				expect(math.mininteger):type("number")
+				expect(load(string.format('return %q', math.mininteger))()):eq(math.mininteger)
+			end)
+
+			it("roundtrips math.maxinteger :lua>=5.3 :!cobalt", function()
+				expect(math.maxinteger):type("number")
+				expect(load(string.format('return %q', math.maxinteger))()):eq(math.maxinteger)
+			end)
 
 			it("errors on non-literal values :lua>=5.3", function()
 				expect.error(string.format, "%q", {}):str_match("value has no literal form")

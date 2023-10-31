@@ -160,24 +160,6 @@ local running, main_thread = coroutine.running()
 assert(running ~= nil and main_thread)
 
 
--- tests for global environment
-
-local function foo (a)
-  setfenv(0, a)
-  coroutine.yield(getfenv())
-  assert(getfenv(0) == a)
-  assert(getfenv(1) == _G)
-  assert(getfenv(loadstring"") == a)
-  return getfenv()
-end
-
-f = coroutine.wrap(foo)
-local a = {}
-assert(f(a) == _G)
-local a,b = pcall(f)
-assert(a and b == _G)
-
-
 -- tests for multiple yield/resume arguments
 
 local function eqtab (t1, t2)
@@ -405,19 +387,5 @@ _X = coroutine.wrap(function ()
     end)
 
 _X()
-
-
--- coroutine environments
-co = coroutine.create(function ()
-       coroutine.yield(getfenv(0))
-       return loadstring("return a")()
-     end)
-
-a = {a = 15}
-debug.setfenv(co, a)
-assert(debug.getfenv(co) == a)
-assert(select(2, coroutine.resume(co)) == a)
-assert(select(2, coroutine.resume(co)) == a.a)
-
 
 print'OK'

@@ -10,13 +10,26 @@ local function serialise(value, seen, indent)
 		if seen[value] then return tostring(value) end
 		seen[value] = true
 
-		local items = {}
-		local len, contents_len = (rawlen and rawlen(value) or #value), 0
-		for k, v in pairs(value) do
-			local item
-			if type(k) == "number" and (k % 1) == 0 and k >= 1 and k <= len then
-				item = serialise(v, seen, indent + 1)
-			elseif type(k) == "string" and k:match("^[%a_][%w_]*$") then
+		local length, keys, keysn = (rawlen and rawlen(value) or #value), {}, 1
+		for k in next, value do
+			if type(k) ~= "number" or k % 1 ~= 0 or k < 1 or k > length then
+				keys[keysn], keysn = k, keysn + 1
+			end
+		end
+
+		local items, contents_len = {}, 0
+		for i = 1, length do
+			local item = serialise(value[i], seen, indent + 1)
+
+			items[#items + 1] = item
+			contents_len = contents_len + #item
+			if item:find("\n") then contents_len = math.huge end
+		end
+
+		local contents_len = 0
+		for i = 1, keysn - 1 do
+			local k, v, item = keys[i], value[k]
+			if type(k) == "string" and k:match("^[%a_][%w_]*$") then
 				item = ("%s = %s"):format(k, serialise(v, seen, indent + 1))
 			else
 				item = ("[%s] = %s"):format(serialise(k, seen, indent + 1), serialise(v, seen, indent + 1))
@@ -205,6 +218,23 @@ function expect.error(fun, ...)
 		res = res:sub(8)
 	end
 	return setmetatable({ value = res }, expect_mt)
+end
+
+local function assert_resume(ok, ...)
+	if ok then return { n = select('#', ...), ... } end
+	fail(...)
+end
+
+--- Run a function in a coroutine, "echoing" the yielded value back as the resumption value.
+function expect.run_coroutine(f)
+	local unpack = table.unpack or unpack
+	local co = coroutine.create(f)
+	local result = { n = 0 }
+	while coroutine.status(co) ~= "dead" do
+		result = assert_resume(coroutine.resume(co, unpack(result, 1, result.n)))
+	end
+
+	return unpack(result, 1, result.n)
 end
 
 --- Construct a new expectation from the provided value

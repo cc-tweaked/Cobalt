@@ -90,7 +90,6 @@ public class AssertTests {
 		"nextvar",
 		"pm",
 		"sort",
-		"vararg",
 		"verybig",
 	})
 	public void lua51(String name) throws Exception {
@@ -112,7 +111,6 @@ public class AssertTests {
 		"db",
 		"nextvar",
 		"tpack",
-		"utf8",
 	})
 	public void lua53(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.3/");
