@@ -35,17 +35,8 @@ assert(doit("unpack({}, 1, n=2^30)"))
 assert(doit("a=math.sin()"))
 assert(not doit("tostring(1)") and doit("tostring()"))
 assert(doit "tonumber()")
-assert(doit "repeat until 1; a")
---checksyntax("break label", "", "label", 1)
-assert(doit ";")
-assert(doit "a=1;;")
-assert(doit "return;;")
 assert(doit "assert(false)")
 assert(doit "assert(nil)")
-assert(doit "a=math.sin\n(3)")
-assert(doit("function a (... , ...) end"))
-assert(doit("function a (, ...) end"))
-
 --[=[
 checksyntax([[
   local a = {4

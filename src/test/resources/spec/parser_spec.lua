@@ -82,4 +82,31 @@ describe("The Lua lexer/parser", function()
 			expect(x):eq(20)
 		end)
 	end)
+
+	describe("parse errors", function()
+		local function it_error(name, code, msg)
+			it(name, function()
+				local fn, err = (loadstring or load)(code)
+				expect(fn):eq(nil)
+				if msg then expect(err):str_match(msg) end
+			end)
+		end
+
+		local function it_lua51(name, code, msg)
+			it_error(name .. " :lua==5.1", code, msg)
+			it(name .. ":lua~=5.1 :!cobalt", function()
+				local fn, err = load(code)
+				if not fn then fail(err) end
+			end)
+		end
+
+		it_error("break with no scope", "break label()", "loop")
+		it_lua51("bare semicolon", ";")
+		it_lua51("multiple semicolons", "a=1;;")
+		it_error("multiple semicolons after return", "return;;")
+		it_lua51("ambiguous call syntax", "a=math.sin\n(3)")
+		it_error("bare variable after repeat", "repeat until 1; a")
+		it_error("multiple varargs", "function a (... , ...) end")
+		it_error("comma after varargs", "function a (, ...) end")
+	end)
 end)
