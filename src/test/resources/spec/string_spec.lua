@@ -130,6 +130,10 @@ describe("The string library", function()
 			expect(result):eq("HELLO WORLD")
 			expect(count):eq(10)
 		end)
+
+		it("back references to position captures do not error (issue #78)", function()
+			string.gsub("foo", "()(%1)", "")
+		end)
 	end)
 
 	describe("string.len", function()

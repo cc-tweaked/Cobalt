@@ -673,7 +673,7 @@ class StringMatch {
 		int match_capture(int soff, int l) throws LuaError {
 			l = check_capture(l);
 			int len = clen[l];
-			if ((s.length() - soff) >= len &&
+			if (len >= 0 && (s.length() - soff) >= len &&
 				LuaString.equals(s, cinit[l], s, soff, len)) {
 				return soff + len;
 			} else {
