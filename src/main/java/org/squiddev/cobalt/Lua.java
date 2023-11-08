@@ -30,7 +30,7 @@ package org.squiddev.cobalt;
  * <p>
  * This is a direct translation of C lua distribution header file constants for bytecode creation and processing.
  */
-public class Lua {
+public final class Lua {
 	/**
 	 * Use return values from previous op
 	 */
@@ -368,5 +368,8 @@ public class Lua {
 
 	public static String getOpName(int opcode) {
 		return opcodeNames[opcode];
+	}
+
+	private Lua() {
 	}
 }

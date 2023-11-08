@@ -103,7 +103,7 @@ class DefinitionScanner : DefinitionData {
 		private var autoUnwind: Boolean = false
 		var instrument: Boolean = false
 
-		override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String, interfaces: Array<out String>?) {
+		override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<out String>?) {
 			className = name
 			super.visit(version, access, name, signature, superName, interfaces)
 		}

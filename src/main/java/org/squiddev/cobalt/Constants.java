@@ -33,7 +33,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 /**
  * List of constants
  */
-public class Constants {
+public final class Constants {
 	/**
 	 * Type enumeration constant for lua numbers that are ints, for compatibility with lua 5.1 number patch only
 	 */
@@ -257,6 +257,9 @@ public class Constants {
 
 	static {
 		Arrays.fill(NILS, NIL);
+	}
+
+	private Constants() {
 	}
 
 	/**

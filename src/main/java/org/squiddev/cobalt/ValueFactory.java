@@ -27,8 +27,11 @@ package org.squiddev.cobalt;
 import java.util.Arrays;
 import java.util.List;
 
-public class ValueFactory {
+public final class ValueFactory {
 	private static final int MAX_DEPTH = 5;
+
+	private ValueFactory() {
+	}
 
 	/**
 	 * Convert java boolean to a {@link LuaValue}.

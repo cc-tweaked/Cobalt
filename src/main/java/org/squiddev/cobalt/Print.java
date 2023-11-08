@@ -38,6 +38,9 @@ import static org.squiddev.cobalt.Lua.*;
  * @see LuaClosure
  */
 public final class Print {
+	private Print() {
+	}
+
 	private static void printString(StringBuilder out, final LuaString s) {
 		out.append('"');
 		for (int i = 0, n = s.length(); i < n; i++) {

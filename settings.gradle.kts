@@ -1,3 +1,3 @@
-rootProject.name = "Cobalt"
+rootProject.name = "cobalt"
 
 include("build-tools")

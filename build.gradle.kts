@@ -1,9 +1,11 @@
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
+
 plugins {
 	java
 	`maven-publish`
 }
 
-group = "org.squiddev"
+group = "cc.tweaked"
 version = "0.7.3"
 
 java {
@@ -12,11 +14,6 @@ java {
 	}
 
 	withSourcesJar()
-}
-
-sourceSets {
-	// Put double conversion in a separate library, so we can run the signedness checker on it.
-	register("doubles")
 }
 
 repositories {
@@ -28,9 +25,15 @@ val buildTools by configurations.creating {
 	isCanBeResolved = true
 }
 
+val checkerFramework by configurations.creating {
+	isCanBeConsumed = false
+	isCanBeResolved = true
+}
+
 dependencies {
 	compileOnly(libs.checkerFramework.qual)
-	implementation(sourceSets["doubles"].output)
+
+	"checkerFramework"(libs.checkerFramework)
 
 	testCompileOnly(libs.checkerFramework.qual)
 	testImplementation(libs.bundles.test)
@@ -42,17 +45,28 @@ dependencies {
 }
 
 /**
- * Configure the checker framework for a given source set.
+ * Create a task which runs checker framework against our source code.
+ *
+ * This runs separately from the main compile task, allowing us to run checker framework multiple times with different
+ * options.
  */
-fun configureChecker(sourceSet: SourceSet, arguments: () -> List<String>) {
-	dependencies {
-		add(sourceSet.compileOnlyConfigurationName, libs.checkerFramework.qual)
-		add(sourceSet.annotationProcessorConfigurationName, libs.checkerFramework)
-	}
+fun runCheckerFramework(name: String, args: List<String>) {
+	val sourceSet = sourceSets.main.get()
 
-	tasks.named(sourceSet.compileJavaTaskName, JavaCompile::class) {
+	val runCheckerFramework = tasks.register("checker${name.uppercaseFirstChar()}", JavaCompile::class) {
+		description = "Runs CheckerFramework against the $name sources."
+		group = LifecycleBasePlugin.VERIFICATION_GROUP
+
+		javaCompiler = javaToolchains.compilerFor(java.toolchain)
+		source = sourceSet.java
+		classpath = sourceSets.main.get().compileClasspath
+
+		destinationDirectory = layout.buildDirectory.dir("classes/java/${sourceSet.name}Doubles")
+
+		options.annotationProcessorPath = checkerFramework
+		options.compilerArgs.add("-proc:only")
+		options.compilerArgs.addAll(args)
 		options.isFork = true
-		options.compilerArgs.addAll(arguments())
 		options.forkOptions.jvmArgs!!.addAll(
 			listOf(
 				"--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
@@ -67,11 +81,17 @@ fun configureChecker(sourceSet: SourceSet, arguments: () -> List<String>) {
 			),
 		)
 	}
+
+	tasks.check { dependsOn(runCheckerFramework) }
 }
 
-configureChecker(sourceSets["doubles"]) {
-	listOf("-processor", "org.checkerframework.checker.signedness.SignednessChecker")
-}
+runCheckerFramework(
+	"doubles",
+	listOf(
+		"-processor", "org.checkerframework.checker.signedness.SignednessChecker",
+		"""-AonlyDefs=^cc\.tweaked\.cobalt\.internal\.doubles\.""",
+	),
+)
 
 // Point compileJava to emit to classes/uninstrumentedJava/main, and then add a task to instrument these classes,
 // saving them back to the the original class directory. This is held together with so much string :(.
@@ -98,10 +118,6 @@ mainSource.compiledBy(instrumentJava)
 tasks.compileJava {
 	destinationDirectory = untransformedClasses
 	finalizedBy(instrumentJava)
-}
-
-tasks.jar {
-	from(sourceSets["doubles"].output)
 }
 
 publishing {
