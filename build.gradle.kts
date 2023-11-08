@@ -1,7 +1,6 @@
 plugins {
 	java
 	`maven-publish`
-	id("com.github.hierynomus.license") version "0.16.1"
 }
 
 group = "org.squiddev"
@@ -9,7 +8,7 @@ version = "0.7.3"
 
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		languageVersion = JavaLanguageVersion.of(17)
 	}
 
 	withSourcesJar()
@@ -53,10 +52,8 @@ fun configureChecker(sourceSet: SourceSet, arguments: () -> List<String>) {
 
 	tasks.named(sourceSet.compileJavaTaskName, JavaCompile::class) {
 		options.isFork = true
-		options.compilerArgumentProviders.add {
-			arguments()
-		}
-		options.forkOptions.jvmArgumentProviders.add {
+		options.compilerArgs.addAll(arguments())
+		options.forkOptions.jvmArgs!!.addAll(
 			listOf(
 				"--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
@@ -67,8 +64,8 @@ fun configureChecker(sourceSet: SourceSet, arguments: () -> List<String>) {
 				"--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
 				"--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
-			)
-		}
+			),
+		)
 	}
 }
 
@@ -83,30 +80,24 @@ val javaClassesDir = mainSource.java.classesDirectory.get()
 val untransformedClasses = project.layout.buildDirectory.dir("classes/uninstrumentedJava/main")
 
 val instrumentJava = tasks.register(mainSource.getTaskName("Instrument", "Java"), JavaExec::class) {
-	dependsOn(tasks.compileJava)
+	dependsOn(tasks.compileJava, "cleanInstrumentJava")
 	inputs.dir(untransformedClasses).withPropertyName("inputDir")
 	outputs.dir(javaClassesDir).withPropertyName("outputDir")
 
-	javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
-	mainClass.set("cc.tweaked.cobalt.build.MainKt")
+	javaLauncher = javaToolchains.launcherFor(java.toolchain)
+	mainClass = "cc.tweaked.cobalt.build.MainKt"
 	classpath = buildTools
 
 	args = listOf(
 		untransformedClasses.get().asFile.absolutePath,
 		javaClassesDir.asFile.absolutePath,
 	)
-
-	doFirst { project.delete(javaClassesDir) }
 }
 
 mainSource.compiledBy(instrumentJava)
 tasks.compileJava {
-	destinationDirectory.set(untransformedClasses)
+	destinationDirectory = untransformedClasses
 	finalizedBy(instrumentJava)
-}
-
-license {
-	include("*.java")
 }
 
 tasks.jar {
@@ -119,23 +110,23 @@ publishing {
 			from(components["java"])
 
 			pom {
-				name.set("Cobalt")
-				description.set("A reentrant fork of LuaJ for Lua 5.1")
-				url.set("https://github.com/SquidDev/Cobalt")
+				name = "Cobalt"
+				description = "A reentrant fork of LuaJ for Lua 5.1"
+				url = "https://github.com/SquidDev/Cobalt"
 
 				scm {
-					url.set("https://github.com/SquidDev/Cobalt.git")
+					url = "https://github.com/SquidDev/Cobalt.git"
 				}
 
 				issueManagement {
-					system.set("github")
-					url.set("https://github.com/SquidDev/Cobalt/issues")
+					system = "github"
+					url = "https://github.com/SquidDev/Cobalt/issues"
 				}
 
 				licenses {
 					license {
-						name.set("MIT")
-						url.set("https://github.com/SquidDev/Cobalt/blob/master/LICENSE")
+						name = "MIT"
+						url = "https://github.com/SquidDev/Cobalt/blob/master/LICENSE"
 					}
 				}
 			}
