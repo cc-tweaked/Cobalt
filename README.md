@@ -22,7 +22,7 @@ between versions. It makes many design decisions which make sense for CC, but
 not for anything which needs a normal Lua implementation.
 
 Instead I recommend using one of the alternative Lua implementations, like
-[LuaJ], JNLua or Rembulan.
+LuaJ, JNLua or Rembulan.
 
 [CC: Tweaked]: https://github.com/cc-tweaked/CC-Tweaked "cc-tweaked/CC-Tweaked: Just another ComputerCraft fork"
 [LuaJ]: https://github.com/luaj/luaj "luaj/luaj: Lightweight, fast, Java-centric Lua interpreter written for JME and JSE."

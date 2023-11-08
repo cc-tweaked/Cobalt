@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "cc.tweaked"
-version = "0.7.3"
+version = "0.8.0"
 
 java {
 	toolchain {
