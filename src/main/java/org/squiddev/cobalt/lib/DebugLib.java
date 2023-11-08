@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 
+import cc.tweaked.cobalt.internal.LegacyEnv;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.*;
 import org.squiddev.cobalt.function.*;
@@ -154,16 +155,16 @@ public final class DebugLib {
 		return NONE;
 	}
 
-	private static Varargs getfenv(LuaState state, Varargs args) throws LuaError {
+	private static Varargs getfenv(LuaState state, Varargs args) {
 		LuaValue object = args.first();
-		LuaValue env = object.getfenv();
+		LuaValue env = LegacyEnv.getEnv(object);
 		return env != null ? env : NIL;
 	}
 
 	private static Varargs setfenv(LuaState state, Varargs args) throws LuaError {
 		LuaValue object = args.first();
 		LuaTable env = args.arg(2).checkTable();
-		if (!object.setfenv(env)) throw new LuaError("'setfenv' cannot change environment of given object");
+		if (!LegacyEnv.setEnv(object, env)) throw new LuaError("'setfenv' cannot change environment of given object");
 		return object;
 	}
 
@@ -226,9 +227,9 @@ public final class DebugLib {
 					if (column > 0) info.rawset(CURRENTCOLUMN, valueOf(column));
 				}
 				case 'u' -> {
-					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().upvalues : 0));
+					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().upvalues() : 0));
 					info.rawset(NPARAMS, valueOf(c != null ? c.getPrototype().parameters : 0));
-					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().isVarArg > 0));
+					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().isVarArg));
 				}
 				case 'n' -> {
 					ObjectName kind = di.getFuncKind();
@@ -380,7 +381,7 @@ public final class DebugLib {
 	private static LuaClosure getClosureForUpvalue(Varargs args, int offset, int upvalue) throws LuaError {
 		LuaFunction function = args.arg(offset).checkFunction();
 		if (function instanceof LuaClosure closure) {
-			if (upvalue >= 0 && upvalue < closure.getPrototype().upvalues) return closure;
+			if (upvalue >= 0 && upvalue < closure.getPrototype().upvalues()) return closure;
 		}
 
 		throw ErrorFactory.argError(offset, "invalid upvalue index");

@@ -28,14 +28,17 @@ import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.function.*;
-import org.squiddev.cobalt.lib.CoreLibraries;
+import org.squiddev.cobalt.function.LibFunction;
+import org.squiddev.cobalt.function.LuaClosure;
+import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaInterpretedFunction;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.squiddev.cobalt.Constants.NIL;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 
@@ -76,14 +79,10 @@ public class LuaOperationsTest {
 	private final LuaTable table = safeConstruct(() -> ValueFactory.listOf(valueOf("aaa"), valueOf("bbb")));
 	private final LuaFunction somefunc = LibFunction.create(s -> NIL);
 
-	{
-		somefunc.setfenv(table);
-	}
-
 	private final LuaState state = new LuaState();
-	private final LuaThread thread = new LuaThread(state, somefunc, table);
+	private final LuaThread thread = new LuaThread(state, somefunc);
 	private final Prototype proto = DataFactory.prototype(state);
-	private final LuaClosure someclosure = new LuaInterpretedFunction(proto, table);
+	private final LuaClosure someclosure = new LuaInterpretedFunction(proto);
 	private final LuaUserdata userdataobj = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = ValueFactory.userdataOf(sampledata);
 
@@ -109,134 +108,12 @@ public class LuaOperationsTest {
 		assertThrows(LuaError.class, () -> length.apply(userdatacls));
 	}
 
-	@Test
-	public void testGetfenv() {
-		assertSame(NIL, sometrue.getfenv());
-		assertSame(NIL, somefalse.getfenv());
-		assertSame(NIL, zero.getfenv());
-		assertSame(NIL, intint.getfenv());
-		assertSame(NIL, longdouble.getfenv());
-		assertSame(NIL, doubledouble.getfenv());
-		assertSame(NIL, stringstring.getfenv());
-		assertSame(NIL, stringint.getfenv());
-		assertSame(NIL, stringlong.getfenv());
-		assertSame(NIL, stringdouble.getfenv());
-		assertSame(NIL, table.getfenv());
-		assertSame(table, thread.getfenv());
-		assertSame(table, someclosure.getfenv());
-		assertSame(table, somefunc.getfenv());
-		assertSame(NIL, userdataobj.getfenv());
-		assertSame(NIL, userdatacls.getfenv());
-	}
-
-	@Test
-	public void testSetfenv() throws LuaError {
-		LuaTable table2 = ValueFactory.listOf(valueOf("ccc"), valueOf("ddd"));
-		assertFalse(somenil.setfenv(table2));
-		assertFalse(sometrue.setfenv(table2));
-		assertFalse(somefalse.setfenv(table2));
-		assertFalse(zero.setfenv(table2));
-		assertFalse(intint.setfenv(table2));
-		assertFalse(longdouble.setfenv(table2));
-		assertFalse(doubledouble.setfenv(table2));
-		assertFalse(stringstring.setfenv(table2));
-		assertFalse(stringint.setfenv(table2));
-		assertFalse(stringlong.setfenv(table2));
-		assertFalse(stringdouble.setfenv(table2));
-		assertFalse(table.setfenv(table2));
-		thread.setfenv(table2);
-		assertSame(table2, thread.getfenv());
-		assertSame(table, someclosure.getfenv());
-		assertSame(table, somefunc.getfenv());
-		someclosure.setfenv(table2);
-		assertSame(table2, someclosure.getfenv());
-		assertSame(table, somefunc.getfenv());
-		somefunc.setfenv(table2);
-		assertSame(table2, somefunc.getfenv());
-		assertFalse(userdataobj.setfenv(table2));
-		assertFalse(userdatacls.setfenv(table2));
-	}
-
 	public Prototype createPrototype(String script, String name) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
 			return LuaC.compile(state, is, name);
 		} catch (CompileException | LuaError e) {
 			throw new IllegalStateException("Failed to compile " + name, e);
-		}
-	}
-
-	@Test
-	public void testFunctionClosureThreadEnv() throws LuaError, UnwindThrowable, InterruptedException {
-		// set up suitable environments for execution
-		LuaValue aaa = valueOf("aaa");
-		LuaValue eee = valueOf("eee");
-		LuaTable _G = CoreLibraries.standardGlobals(state);
-		LuaTable newenv = ValueFactory.tableOf(valueOf("a"), valueOf("aaa"),
-			valueOf("b"), valueOf("bbb"));
-		LuaTable mt = ValueFactory.tableOf(Constants.INDEX, _G);
-		newenv.setMetatable(state, mt);
-		OperationHelper.setTable(state, _G, valueOf("a"), aaa);
-		OperationHelper.setTable(state, newenv, valueOf("a"), eee);
-
-		// function tests
-		{
-			LuaFunction f = new VarArgFunction() {
-				{
-					setfenv(_G);
-				}
-
-				@Override
-				public Varargs invoke(LuaState state, Varargs varargs) {
-					return getfenv().rawget(valueOf("a"));
-				}
-			};
-			assertEquals(aaa, f.call(state));
-			f.setfenv(newenv);
-			assertEquals(newenv, f.getfenv());
-			assertEquals(eee, f.call(state));
-		}
-
-		// closure tests
-		{
-			Prototype p = createPrototype("return a\n", "closuretester");
-			LuaClosure c = new LuaInterpretedFunction(p, _G);
-			assertEquals(aaa, c.call(state));
-			c.setfenv(newenv);
-			assertEquals(newenv, c.getfenv());
-			assertEquals(eee, c.call(state));
-		}
-
-		// thread tests, functions created in threads inherit the thread's environment initially
-		// those closures created not in any other function get the thread's enviroment
-		Prototype p2 = createPrototype("return loadstring('return a')", "threadtester");
-		{
-			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p2, _G), _G);
-			Varargs v = LuaThread.run(t, Constants.NONE);
-			LuaValue f = v.arg(1);
-			assertEquals(Constants.TFUNCTION, f.type());
-			assertEquals(aaa, OperationHelper.call(state, f));
-			assertEquals(_G, f.getfenv());
-		}
-		{
-			// change the thread environment after creation!
-			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p2, _G), _G);
-			t.setfenv(newenv);
-			Varargs v = LuaThread.run(t, Constants.NONE);
-			LuaValue f = v.arg(1);
-			assertEquals(Constants.TFUNCTION, f.type());
-			assertEquals(eee, OperationHelper.call(state, f));
-			assertEquals(newenv, f.getfenv());
-		}
-		{
-			// let the closure have a different environment from the thread
-			Prototype p3 = createPrototype("return function() return a end", "envtester");
-			LuaThread t = new LuaThread(state, new LuaInterpretedFunction(p3, newenv), _G);
-			Varargs v = LuaThread.run(t, Constants.NONE);
-			LuaValue f = v.arg(1);
-			assertEquals(Constants.TFUNCTION, f.type());
-			assertEquals(eee, OperationHelper.call(state, f));
-			assertEquals(newenv, f.getfenv());
 		}
 	}
 }

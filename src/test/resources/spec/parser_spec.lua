@@ -40,7 +40,7 @@ describe("The Lua lexer/parser", function()
 			end
 		end)
 
-		it("environments are lexically scoped :lua>=5.2 :!cobalt", function()
+		it("environments are lexically scoped :lua>=5.2", function()
 			local function getenv(f)
 				local a,b = debug.getupvalue(f, 1)
 				expect(a):eq("_ENV")
@@ -93,8 +93,8 @@ describe("The Lua lexer/parser", function()
 		end
 
 		local function it_lua51(name, code, msg)
-			it_error(name .. " :lua==5.1", code, msg)
-			it(name .. ":lua~=5.1 :!cobalt", function()
+			it_error(name .. " :lua==5.1 :!cobalt", code, msg)
+			it(name .. ":lua~=5.1", function()
 				local fn, err = load(code)
 				if not fn then fail(err) end
 			end)

@@ -1,6 +1,8 @@
 package org.squiddev.cobalt;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.function.Executable;
+import org.opentest4j.AssertionFailedError;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugHelpers;
@@ -8,7 +10,6 @@ import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.Bit32Lib;
 import org.squiddev.cobalt.lib.CoreLibraries;
-import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.lib.system.SystemBaseLib;
 
 import java.io.BufferedInputStream;
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.AssertionFailureBuilder.assertionFailure;
 
 public class LuaSpecTest {
 	private static final Path ROOT = Path.of("src", "test", "resources", "spec");
@@ -37,9 +38,9 @@ public class LuaSpecTest {
 
 	public LuaSpecTest() throws IOException, LuaError, CompileException {
 		state = new LuaState();
-		env = state.getMainThread().getfenv();
+		env = state.globals();
 		CoreLibraries.debugGlobals(state);
-		new SystemBaseLib(ResourceLoader.FILES, System.in, System.out).add(env);
+		new SystemBaseLib(x -> null, System.in, System.out).add(env);
 		Bit32Lib.add(state, env);
 		TestLib.add(env);
 
@@ -75,7 +76,7 @@ public class LuaSpecTest {
 
 			nodes.add(filterNode(name, DynamicTest.dynamicTest(stripTags(name), () -> {
 				// Run each test in a clean coroutine.
-				LuaThread thread = new LuaThread(state, function, env);
+				LuaThread thread = new LuaThread(state, function);
 				Varargs result = LuaThread.run(thread, Constants.NONE);
 				if (thread.isAlive()) throw new AssertionError("Thread unexpected yielded with " + result);
 			})));
@@ -103,7 +104,10 @@ public class LuaSpecTest {
 					if (!value.isNil() || local != null) System.out.printf("% 2d => %s [%s]\n", i, values[i], local);
 				}
 			}
-			throw new AssertionError(arg.checkString() + "\n" + DebugHelpers.traceback(state.getCurrentThread(), 0));
+			throw assertionFailure()
+				.message(arg.checkString())
+				.reason(DebugHelpers.traceback(state.getCurrentThread(), 0))
+				.build();
 		}).create());
 	}
 
@@ -133,12 +137,40 @@ public class LuaSpecTest {
 			return DynamicTest.dynamicTest(
 				test.getDisplayName(),
 				test.getTestSourceUri().orElse(null),
-				() -> {
-					assertThrows(Throwable.class, test.getExecutable(), "Test is marked :!cobalt, but passes on Cobalt.");
-				}
+				PendingTest.of(test.getExecutable())
 			);
 		} else {
 			throw new IllegalStateException("Unknown node " + node);
+		}
+	}
+
+	/**
+	 * A test which is expected to fail.
+	 *
+	 * @param test The original test to run.
+	 */
+	private record PendingTest(Executable test) implements Executable {
+		public static PendingTest of(Executable test) {
+			return test instanceof PendingTest t ? t : new PendingTest(test);
+		}
+
+		@Override
+		public void execute() throws Throwable {
+			try {
+				test.execute();
+			} catch (Throwable actualException) {
+				// If we've got an expected error, then ignore it and mark this test as expected to fail.
+				if (actualException instanceof AssertionError || actualException instanceof LuaError) {
+					Assumptions.abort("Test is not run on Cobalt");
+					return;
+				}
+
+				// Otherwise there's some more critical bug, rethrow it!
+				throw actualException;
+			}
+
+			// This test should have failed but didn't!
+			throw new AssertionFailedError("Test is marked :!cobalt, but passes on Cobalt.");
 		}
 	}
 

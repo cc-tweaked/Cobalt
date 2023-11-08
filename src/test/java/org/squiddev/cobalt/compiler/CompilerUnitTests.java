@@ -56,6 +56,7 @@ public class CompilerUnitTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"modulo", "construct", "bigattr", "controlchars", "comparators", "mathrandomseed", "varargs",
+		"multi-assign",
 	})
 	public void regression(String filename) throws IOException, CompileException, LuaError {
 		compareResults("/bytecode-compiler/regressions/", filename);
@@ -72,7 +73,7 @@ public class CompilerUnitTests {
 		Prototype expectedPrototype = LuaC.compile(state, CompilerUnitTests.class.getResourceAsStream(dir + file + ".lc"), file + ".lua");
 		String expectedBytecode = dumpState(expectedPrototype);
 
-		if (!expectedBytecode.equals(sourceBytecode)) {
+		if (Boolean.getBoolean("cobalt.update") && !expectedBytecode.equals(sourceBytecode)) {
 			try (OutputStream output = Files.newOutputStream(Paths.get("src/test/resources" + dir + file + ".lc"))) {
 				BytecodeDumper.dump(sourcePrototype, output, false);
 			}
@@ -87,6 +88,32 @@ public class CompilerUnitTests {
 
 		// compare again
 		assertEquals(sourceBytecode, redumpBytecode);
+	}
+
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		"goto-close-1",
+		"goto-close-2",
+		"goto-if-1",
+		"goto-if-2",
+		"goto-nil",
+	})
+	public void listings(String file) throws IOException, CompileException, LuaError {
+		String dir = "/bytecode-compiler/listing/";
+		var state = LuaState.builder().build();
+
+		// Compile source file
+		Prototype sourcePrototype = LuaC.compile(state, CompilerUnitTests.class.getResourceAsStream(dir + file + ".lua"), "@" + file + ".lua");
+		String sourceBytecode = dumpState(sourcePrototype);
+
+		// Load expected value from jar
+		var expectedFile = Paths.get("src/test/resources" + dir + file + ".lc");
+		String expectedBytecode = Files.readString(expectedFile);
+
+		if (Boolean.getBoolean("cobalt.update") && !expectedBytecode.equals(sourceBytecode)) {
+			Files.writeString(expectedFile, sourceBytecode);
+		}
+		assertEquals(expectedBytecode, sourceBytecode);
 	}
 
 	private static String dumpState(Prototype p) {

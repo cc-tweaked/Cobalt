@@ -1,8 +1,8 @@
-describe("goto statements :lua>=5.2 :!cobalt", function()
+describe("goto statements :lua>=5.2", function()
 	describe("parse failures", function()
 		local function fail_parse(code, err)
 			local st, msg = load(code)
-			expect(st):describe("Code failed to load"):eq(nil)
+			expect(st):describe("Resulting function"):eq(nil)
 			expect(msg):str_match(err)
 		end
 
@@ -13,6 +13,10 @@ describe("goto statements :lua>=5.2 :!cobalt", function()
 
 		it("repeated label", function()
 			fail_parse([[ ::l1:: ::l1:: ]], "label 'l1' already defined")
+		end)
+
+		it("repeated label in different blocks :lua>=5.4", function()
+			fail_parse([[::l1:: do ::l1:: end]], "label 'l1' already defined")
 		end)
 
 		it("undefined label", function()
@@ -79,7 +83,7 @@ describe("goto statements :lua>=5.2 :!cobalt", function()
 	end
 
 	-- This fails on Lua 5.4 as labels cannot repeat.
-	it_str("goes to nearest label :lua<5.4", [[
+	it_str("goes to nearest label :lua<5.4 :!cobalt", [[
 		::l3::
 		-- goto to correct label when nested
 		do goto l3; ::l3:: end   -- does not loop jumping to previous label 'l3'
@@ -272,5 +276,15 @@ describe("goto statements :lua>=5.2 :!cobalt", function()
 			end
 		end
 		assert(a)
+	]])
+
+	it_str("Supports 'goto' as a normal identifier :cobalt", [[
+		local function goto() end
+
+		goto goto
+		::goto::
+
+		goto()
+		print(goto)
 	]])
 end)

@@ -28,11 +28,9 @@ import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.debug.Upvalue;
-import org.squiddev.cobalt.lib.TableLib;
 
-import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.Lua.VARARG_NEEDSARG;
+import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
 import static org.squiddev.cobalt.debug.DebugFrame.*;
 
@@ -71,7 +69,7 @@ public final class LuaInterpreter {
 
 		switch (p.parameters) {
 			case 0 -> {
-				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
+				return setupCallFinish(state, function, p.isVarArg ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
 			}
 			case 1 -> {
 				stack[0] = arg1;
@@ -92,11 +90,11 @@ public final class LuaInterpreter {
 
 		switch (p.parameters) {
 			case 0 -> {
-				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
+				return setupCallFinish(state, function, p.isVarArg ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
 			}
 			case 1 -> {
 				stack[0] = arg1;
-				return setupCallFinish(state, function, p.isVarArg != 0 ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
+				return setupCallFinish(state, function, p.isVarArg ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
 			}
 			case 2 -> {
 				stack[0] = arg1;
@@ -118,7 +116,7 @@ public final class LuaInterpreter {
 		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
 		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCallFinish(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
+		return setupCallFinish(state, function, p.isVarArg ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
 	}
 
 	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize) throws LuaError, UnwindThrowable {
@@ -130,7 +128,7 @@ public final class LuaInterpreter {
 
 		return setupCallFinish(
 			state, function,
-			p.isVarArg != 0 && argSize > p.parameters ? ValueFactory.varargsOfCopy(args, argStart + p.parameters, argSize - p.parameters) : NONE,
+			p.isVarArg && argSize > p.parameters ? ValueFactory.varargsOfCopy(args, argStart + p.parameters, argSize - p.parameters) : NONE,
 			stack, 0
 		);
 	}
@@ -143,12 +141,11 @@ public final class LuaInterpreter {
 		varargs = ValueFactory.varargsOfCopy(args, argStart, argSize, varargs);
 		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
 
-		return setupCallFinish(state, function, p.isVarArg != 0 ? varargs.subargs(p.parameters + 1) : NONE, stack, 0);
+		return setupCallFinish(state, function, p.isVarArg ? varargs.subargs(p.parameters + 1) : NONE, stack, 0);
 	}
 
 	private static DebugFrame setupCallFinish(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		if (p.isVarArg >= VARARG_NEEDSARG) stack[p.parameters] = TableLib.pack(state, varargs);
 
 		DebugState ds = DebugState.get(state);
 		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
@@ -212,17 +209,24 @@ public final class LuaInterpreter {
 						stack[a] = k[GETARG_Bx(i)];
 						break;
 
+					case OP_LOADKX: { // A: R(A) := Kst(extra arg)
+						assert GET_OPCODE(code[pc]) == OP_EXTRAARG;
+						int rb = GETARG_Ax(code[pc++]);
+						stack[a] = k[rb];
+						break;
+					}
+
 					case OP_LOADBOOL: { // A B C: R(A):= (Bool)B: if (C) pc++
 						stack[a] = GETARG_B(i) != 0 ? TRUE : FALSE;
 						if (GETARG_C(i) != 0) pc++; // skip next instruction (if C)
 						break;
 					}
 
-					case OP_LOADNIL: { // A B: R(A):= ...:= R(B):= nil
+					case OP_LOADNIL: { // A B     R(A), R(A+1), ..., R(A+B) := nil
 						int b = GETARG_B(i);
 						do {
-							stack[b--] = NIL;
-						} while (b >= a);
+							stack[a++] = NIL;
+						} while (b-- > 0);
 						break;
 					}
 
@@ -230,9 +234,12 @@ public final class LuaInterpreter {
 						stack[a] = upvalues[GETARG_B(i)].getValue();
 						break;
 
-					case OP_GETGLOBAL: // A Bx	R(A):= Gbl[Kst(Bx)]
-						stack[a] = OperationHelper.getTable(state, function.getfenv(), k[GETARG_Bx(i)]);
+					case OP_GETTABUP: {// A B C: R(A) := UpValue[B][RK(C)]
+						int b = GETARG_B(i);
+						int c = GETARG_C(i);
+						stack[a] = OperationHelper.getTable(state, upvalues[b].getValue(), ISK(c) ? k[INDEXK(c)] : stack[c], -b - 1);
 						break;
+					}
 
 					case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
 						int b = GETARG_B(i);
@@ -241,9 +248,12 @@ public final class LuaInterpreter {
 						break;
 					}
 
-					case OP_SETGLOBAL: // A Bx: Gbl[Kst(Bx)]:= R(A)
-						OperationHelper.setTable(state, function.getfenv(), k[GETARG_Bx(i)], stack[a]);
+					case OP_SETTABUP: {// A B C: UpValue[A][RK(B)] := RK(C)
+						int b = GETARG_B(i);
+						int c = GETARG_C(i);
+						OperationHelper.setTable(state, upvalues[a].getValue(), ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], -b - 1);
 						break;
+					}
 
 					case OP_SETUPVAL: // A B: UpValue[B]:= R(A)
 						upvalues[GETARG_B(i)].setValue(stack[a]);
@@ -338,7 +348,7 @@ public final class LuaInterpreter {
 					}
 
 					case OP_JMP: // sBx: pc+=sBx
-						pc += GETARG_sBx(i);
+						pc += doJump(di, i, 0);
 						break;
 
 					case OP_EQ: { // A B C: if ((RK(B) == RK(C)) ~= A) then pc++
@@ -346,9 +356,10 @@ public final class LuaInterpreter {
 						int c = GETARG_C(i);
 						if (OperationHelper.eq(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c]) == (a != 0)) {
 							// We assume the next instruction is a jump and read the branch from there.
-							pc += GETARG_sBx(code[pc]);
+							pc += doJump(di, code[pc], 1);
+						} else {
+							pc++;
 						}
-						pc++;
 						break;
 					}
 
@@ -356,9 +367,10 @@ public final class LuaInterpreter {
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
 						if (OperationHelper.lt(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c]) == (a != 0)) {
-							pc += GETARG_sBx(code[pc]);
+							pc += doJump(di, code[pc], 1);
+						} else {
+							pc++;
 						}
-						pc++;
 						break;
 					}
 
@@ -366,17 +378,19 @@ public final class LuaInterpreter {
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
 						if (OperationHelper.le(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c]) == (a != 0)) {
-							pc += GETARG_sBx(code[pc]);
+							pc += doJump(di, code[pc], 1);
+						} else {
+							pc++;
 						}
-						pc++;
 						break;
 					}
 
 					case OP_TEST: { // A C: if not (R(A) <=> C) then pc++
 						if (stack[a].toBoolean() == ((GETARG_C(i)) != 0)) {
-							pc += GETARG_sBx(code[pc]);
+							pc += doJump(di, code[pc], 1);
+						} else {
+							pc++;
 						}
-						pc++;
 						break;
 					}
 
@@ -387,9 +401,10 @@ public final class LuaInterpreter {
 						LuaValue val = stack[b];
 						if (val.toBoolean() == (c != 0)) {
 							stack[a] = val;
-							pc += GETARG_sBx(code[pc]);
+							pc += doJump(di, code[pc], 1);
+						} else {
+							pc++;
 						}
-						pc++;
 						break;
 					}
 
@@ -507,22 +522,21 @@ public final class LuaInterpreter {
 						break;
 					}
 
+					case OP_TFORCALL: {
+						Varargs result = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
+						for (int c = GETARG_C(i); c >= 1; --c) stack[a + 2 + c] = result.arg(c);
+
+						i = code[pc++];
+						a = GETARG_A(i);
+						assert GET_OPCODE(i) == OP_TFORLOOP;
+					}
+					// fallthrough to OP_TFORLOOP, avoiding an extra interpreter loop.
+
 					case OP_TFORLOOP: {
-						/*
-							A C R(A+3), ... ,R(A+2+C):= R(A)(R(A+1),
-							R(A+2)): if R(A+3) ~= nil then R(A+2)=R(A+3)
-							else pc++
-						*/
-						Varargs v = di.extras = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
-						LuaValue val = v.first();
-						if (val.isNil()) {
-							pc++;
-						} else {
-							stack[a + 2] = stack[a + 3] = val;
-							for (int c = GETARG_C(i); c > 1; --c) {
-								stack[a + 2 + c] = v.arg(c);
-							}
-							di.extras = NONE;
+						var value = stack[a + 1];
+						if (!value.isNil()) {
+							stack[a] = value;
+							pc += GETARG_sBx(i);
 						}
 						break;
 					}
@@ -530,7 +544,7 @@ public final class LuaInterpreter {
 					case OP_SETLIST: { // A B C: R(A)[(C-1)*FPF+i]:= R(A+i), 1 <= i <= B
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						if (c == 0) c = code[pc++];
+						if (c == 0) c = GETARG_Ax(code[pc++]);
 
 						int offset = (c - 1) * LFIELDS_PER_FLUSH;
 						LuaTable tbl = stack[a].checkTable();
@@ -547,20 +561,12 @@ public final class LuaInterpreter {
 						break;
 					}
 
-					case OP_CLOSE: { // A : close all variables in the stack up to (>=) R(A)
-						di.closeUpvalues(a);
-						break;
-					}
-
 					case OP_CLOSURE: { // A Bx: R(A):= closure(KPROTO[Bx], R(A), ... ,R(A+n))
 						Prototype newp = p.children[GETARG_Bx(i)];
-						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp, function.getfenv());
-						for (int j = 0, nup = newp.upvalues; j < nup; ++j) {
-							i = code[pc++];
-							int b = (i >>> POS_B) & MAXARG_B;
-							newcl.upvalues[j] = (i & 4) != 0
-								? upvalues[b] // OP_GETUPVAL
-								: di.getUpvalue(b); // OP_MOVE
+						LuaInterpretedFunction newcl = new LuaInterpretedFunction(newp);
+						for (int j = 0, nup = newp.upvalues(); j < nup; ++j) {
+							var up = newp.getUpvalue(j);
+							newcl.upvalues[j] = up.fromLocal() ? di.getUpvalue(up.index()) : upvalues[up.index()];
 						}
 						stack[a] = newcl;
 						break;
@@ -578,9 +584,20 @@ public final class LuaInterpreter {
 						}
 						break;
 					}
+
+					default: {
+						assert false : "Unknown opcode";
+						throw new IllegalStateException("Unknown opcode");
+					}
 				}
 			}
 		}
+	}
+
+	private static int doJump(DebugFrame frame, int i, int e) {
+		int a = GETARG_A(i);
+		if (a > 0) frame.closeUpvalues(a - 1);
+		return GETARG_sBx(i) + e;
 	}
 
 	private static void nativeCall(LuaState state, DebugFrame di, LuaValue[] stack, LuaValue val, int i, int a, int b, int c) throws UnwindThrowable, LuaError {
@@ -675,7 +692,7 @@ public final class LuaInterpreter {
 		int i = p.code[pc];
 
 		switch (GET_OPCODE(i)) {
-			case OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_POW, OP_UNM, OP_LEN, OP_GETTABLE, OP_GETGLOBAL, OP_SELF -> {
+			case OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_POW, OP_UNM, OP_LEN, OP_GETTABLE, OP_GETTABUP, OP_SELF -> {
 				di.stack[GETARG_A(i)] = varargs.first();
 			}
 
@@ -708,23 +725,14 @@ public final class LuaInterpreter {
 				}
 			}
 
-			case OP_SETTABLE, OP_SETGLOBAL -> {
+			case OP_SETTABLE, OP_SETTABUP -> {
 				// Nothing to be done here
 			}
 
-			case OP_TFORLOOP -> {
-				LuaValue o = varargs.first();
-				if (o.isNil()) {
-					di.pc++;
-				} else {
-					int a = GETARG_A(i);
-					LuaValue[] stack = di.stack;
-					stack[a + 2] = stack[a + 3] = o;
-					for (int c = GETARG_C(i); c > 1; --c) {
-						stack[a + 2 + c] = varargs.arg(c);
-					}
-					di.extras = Constants.NONE;
-				}
+			case OP_TFORCALL -> {
+				LuaValue[] stack = di.stack;
+				int a = GETARG_A(i);
+				for (int c = GETARG_C(i); c >= 1; --c) stack[a + 2 + c] = varargs.arg(c);
 			}
 
 			case OP_CONCAT -> {

@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 
 /**
@@ -40,15 +39,8 @@ import org.squiddev.cobalt.*;
  * @see LuaInterpretedFunction
  */
 public abstract class LuaFunction extends LuaValue {
-	private @Nullable LuaTable env;
-
 	public LuaFunction() {
 		super(Constants.TFUNCTION);
-	}
-
-	public LuaFunction(LuaTable env) {
-		super(Constants.TFUNCTION);
-		this.env = env;
 	}
 
 	@Override
@@ -59,17 +51,6 @@ public abstract class LuaFunction extends LuaValue {
 	@Override
 	public final LuaTable getMetatable(LuaState state) {
 		return state.functionMetatable;
-	}
-
-	@Override
-	public final LuaTable getfenv() {
-		return env;
-	}
-
-	@Override
-	public final boolean setfenv(LuaTable env) {
-		this.env = env;
-		return true;
 	}
 
 	public abstract String debugName();

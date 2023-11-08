@@ -1,0 +1,24 @@
+
+%main <goto-close-1.lua:0,0> (13 instructions, 52 bytes at goto-close-1.lua:0)
+0 param, 3 slots, 1 upvalues, 2 locals, 2 constants, 0 functions
+	1	[2]	LOADNIL  	0 0
+	2	[2]	JMP      	0 1	; to 4
+	3	[5]	JMP      	0 3	; to 7
+	4	[8]	NEWTABLE 	1 0 0
+	5	[9]	TEST     	1 1
+	6	[9]	JMP      	0 -4	; to 3
+	7	[12]	GETTABUP 	1 0 -1	; _ENV "assert"
+	8	[12]	EQ       	1 0 -2	; - true
+	9	[12]	JMP      	0 1	; to 11
+	10	[12]	LOADBOOL 	2 0 1
+	11	[12]	LOADBOOL 	2 1 0
+	12	[12]	CALL     	1 2 1
+	13	[12]	RETURN   	0 1
+constants (2) for goto-close-1.lua:0:
+	1	"assert"
+	2	true
+locals (2) for goto-close-1.lua:0:
+	0	X	2	14
+	1	a	5	7
+upvalues (1) for goto-close-1.lua:0:
+	0	_ENV	1	0

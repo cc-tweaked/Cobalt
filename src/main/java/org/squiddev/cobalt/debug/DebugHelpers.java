@@ -194,21 +194,16 @@ public final class DebugHelpers {
 
 		int i = p.code[pc];
 		switch (GET_OPCODE(i)) {
-			case OP_GETGLOBAL -> {
-				int g = GETARG_Bx(i); /* global index */
-				// lua_assert(p.k[g].isString());
-				LuaValue value = p.constants[g];
-				LuaString string = OperationHelper.toStringDirect(value);
-				return new ObjectName(string, GLOBAL);
-			}
 			case OP_MOVE -> {
 				int a = GETARG_A(i);
 				int b = GETARG_B(i); /* move from `b' to `a' */
 				if (b < a) return getObjectName(di, b); /* get name for `b' */
 			}
-			case OP_GETTABLE -> {
-				int k = GETARG_C(i); /* key index */
-				return new ObjectName(constantName(p, k), FIELD);
+			case OP_GETTABUP, OP_GETTABLE -> {
+				int t = GETARG_B(i);
+				LuaString table = GET_OPCODE(i) == OP_GETTABUP ? p.getUpvalueName(t) : p.getLocalName(t + 1, pc);
+				int c = GETARG_C(i); /* key index */
+				return new ObjectName(constantName(p, c), Objects.equals(table, Constants.ENV) ? GLOBAL : FIELD);
 			}
 			case OP_GETUPVAL -> {
 				int u = GETARG_B(i); /* upvalue index */
@@ -240,7 +235,7 @@ public final class DebugHelpers {
 					int b = GETARG_B(i);
 					if (a <= reg && reg <= a + b) setreg = filterPc(pc, jumpTarget);
 				}
-				case OP_TFORLOOP -> {
+				case OP_TFORCALL -> {
 					if (a >= a + 2) setreg = filterPc(pc, jumpTarget);
 				}
 				case OP_CALL, OP_TAILCALL -> {

@@ -269,16 +269,16 @@ assert(a()(2)(3)(10) == 15)
 
 -- test for dump/undump with upvalues
 local a, b = 20, 30
-x = loadstring(string.dump(function (x)
+x = loadstring(string.dump(function (x) assert(true) -- force _ENV to be the first upvalue, so it's compatible with string.dump
   if x == "set" then a = 10+b; b = b+1 else
   return a
   end
 end))
 assert(x() == nil)
-assert(debug.setupvalue(x, 1, "hi") == "a")
+assert(debug.setupvalue(x, 2, "hi") == "a")
 assert(x() == "hi")
-assert(debug.setupvalue(x, 2, 13) == "b")
-assert(not debug.setupvalue(x, 3, 10))   -- only 2 upvalues
+assert(debug.setupvalue(x, 3, 13) == "b")
+assert(not debug.setupvalue(x, 4, 10))   -- only 2 upvalues
 x("set")
 assert(x() == 23)
 x("set")

@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.lib;
 
+import cc.tweaked.cobalt.internal.LegacyEnv;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.InputReader;
@@ -60,7 +61,7 @@ public class BaseLib {
 
 	public void add(LuaTable env) {
 		env.rawset("_G", env);
-		env.rawset("_VERSION", valueOf("Lua 5.1"));
+		env.rawset("_VERSION", valueOf("Lua 5.2"));
 		RegisteredFunction.bind(env, new RegisteredFunction[]{
 			RegisteredFunction.of("error", BaseLib::error),
 			RegisteredFunction.ofV("setfenv", BaseLib::setfenv),
@@ -99,14 +100,7 @@ public class BaseLib {
 		// setfenv(f, table) -> void
 		LuaTable t = args.arg(2).checkTable();
 		LuaValue f = getfenvobj(state, args.arg(1), false);
-		if (f.isThread()) {
-			f.setfenv(t);
-			return Constants.NONE;
-		}
-
-		if (f instanceof LibFunction || !f.setfenv(t)) {
-			throw new LuaError("'setfenv' cannot change environment of given object");
-		}
+		if (!LegacyEnv.setEnv(f, t)) throw new LuaError("'setfenv' cannot change environment of given object");
 
 		return f;
 	}
@@ -133,11 +127,8 @@ public class BaseLib {
 	private static LuaValue getfenv(LuaState state, LuaValue args) throws LuaError {
 		// getfenv( [f] ) -> env
 		LuaValue f = getfenvobj(state, args, true);
-		if (f instanceof LibFunction) {
-			return state.getCurrentThread().getfenv();
-		} else {
-			return f.getfenv();
-		}
+		var env = LegacyEnv.getEnv(f);
+		return env == null ? state.globals() : env;
 	}
 
 	private static LuaValue getmetatable(LuaState state, Varargs args) throws LuaError {
@@ -325,7 +316,7 @@ public class BaseLib {
 			LuaValue scriptGen = args.arg(1);
 			LuaString chunkName = args.arg(2).optLuaString(null);
 			LuaString mode = args.arg(3).optLuaString(LOAD_MODE);
-			LuaTable funcEnv = args.arg(4).optTable(state.getCurrentThread().getfenv());
+			LuaValue funcEnv = args.arg(4).optTable(state.globals());
 
 			// If we're a string, load as normal
 			if (scriptGen.isString()) {
@@ -357,7 +348,7 @@ public class BaseLib {
 		}
 	}
 
-	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName, LuaString mode, LuaTable env) {
+	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName, LuaString mode, LuaValue env) {
 		try {
 			return LoadState.load(state, is, chunkName, mode, env);
 		} catch (LuaError | CompileException e) {
@@ -366,7 +357,7 @@ public class BaseLib {
 	}
 
 	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName) {
-		return loadStream(state, is, chunkName, null, state.getCurrentThread().getfenv());
+		return loadStream(state, is, chunkName, null, state.globals());
 	}
 
 	private static class FunctionInputReader implements InputReader {

@@ -92,7 +92,7 @@ public class CoroutineTest {
 	private static class Run extends ResumableVarArgFunction<LuaThread> {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			LuaThread thread = new LuaThread(state, args.first().checkFunction(), state.getCurrentThread().getfenv());
+			LuaThread thread = new LuaThread(state, args.first().checkFunction());
 			di.state = thread;
 			Varargs value = Constants.NONE;
 			while (thread.isAlive()) value = LuaThread.resume(state, thread, value);

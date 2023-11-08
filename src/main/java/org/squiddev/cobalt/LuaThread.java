@@ -97,11 +97,6 @@ public final class LuaThread extends LuaValue {
 	private Status status;
 
 	/**
-	 * The environment this thread has.
-	 */
-	private LuaTable env;
-
-	/**
 	 * The function called when handling errors
 	 */
 	private LuaValue errFunc;
@@ -125,17 +120,14 @@ public final class LuaThread extends LuaValue {
 	 * Constructor for main thread only
 	 *
 	 * @param state The current lua state
-	 * @param env   The thread's environment
 	 */
-	public LuaThread(LuaState state, LuaTable env) {
+	public LuaThread(LuaState state) {
 		super(Constants.TTHREAD);
 		Objects.requireNonNull(state, "state cannot be null");
-		Objects.requireNonNull(env, "env cannot be null");
 
 		status = Status.RUNNING;
 		luaState = state;
 		debugState = new DebugState(state);
-		this.env = env;
 		function = null;
 	}
 
@@ -144,18 +136,15 @@ public final class LuaThread extends LuaValue {
 	 *
 	 * @param state The current lua state
 	 * @param func  The function to execute
-	 * @param env   The environment to apply to the thread
 	 */
-	public LuaThread(LuaState state, LuaFunction func, LuaTable env) {
+	public LuaThread(LuaState state, LuaFunction func) {
 		super(Constants.TTHREAD);
 		Objects.requireNonNull(state, "state cannot be null");
 		Objects.requireNonNull(func, "func cannot be null");
-		Objects.requireNonNull(env, "env cannot be null");
 
 		status = Status.INITIAL;
 		luaState = state;
 		debugState = new DebugState(state);
-		this.env = env;
 		function = func;
 
 		LuaThread current = state.getCurrentThread();
@@ -178,17 +167,6 @@ public final class LuaThread extends LuaValue {
 	@Override
 	public LuaTable getMetatable(LuaState state) {
 		return state.threadMetatable;
-	}
-
-	@Override
-	public LuaTable getfenv() {
-		return env;
-	}
-
-	@Override
-	public boolean setfenv(LuaTable env) {
-		this.env = env;
-		return true;
 	}
 
 	public Status getStatus() {

@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.compiler;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.Constants;
 import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.LuaValue;
@@ -34,8 +35,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUAC_FORMAT;
-import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUAC_VERSION;
+import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.*;
 
 class BytecodeDumper {
 	private static final boolean IS_LITTLE_ENDIAN = true;
@@ -48,8 +48,8 @@ class BytecodeDumper {
 	private final DataOutputStream writer;
 	private final boolean strip;
 
-	public BytecodeDumper(OutputStream w, boolean strip) {
-		this.writer = new DataOutputStream(w);
+	private BytecodeDumper(OutputStream w, boolean strip) {
+		writer = new DataOutputStream(w);
 		this.strip = strip;
 	}
 
@@ -65,6 +65,14 @@ class BytecodeDumper {
 			writer.writeByte((x >> 24) & 0xff);
 		} else {
 			writer.writeInt(x);
+		}
+	}
+
+	private void dumpNullableString(@Nullable LuaString s) throws IOException {
+		if (s == null) {
+			dumpInt(0);
+		} else {
+			dumpString(s);
 		}
 	}
 
@@ -117,21 +125,22 @@ class BytecodeDumper {
 				default -> throw new IllegalArgumentException("bad type for " + o);
 			}
 		}
-		n = f.children.length;
-		dumpInt(n);
-		for (i = 0; i < n; i++) {
-			dumpFunction(f.children[i], f.source);
-		}
 	}
 
 	private void dumpDebug(final Prototype f) throws IOException {
+		if (f.source == null || strip) {
+			dumpInt(0);
+		} else {
+			dumpString(f.source);
+		}
+
 		int i, n;
-		n = (strip) ? 0 : f.lineInfo.length;
+		n = strip ? 0 : f.lineInfo.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
 			dumpInt(f.lineInfo[i]);
 		}
-		n = (strip) ? 0 : f.locals.length;
+		n = strip ? 0 : f.locals.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
 			LocalVariable lvi = f.locals[i];
@@ -139,28 +148,40 @@ class BytecodeDumper {
 			dumpInt(lvi.startpc);
 			dumpInt(lvi.endpc);
 		}
-		n = (strip) ? 0 : f.upvalueNames.length;
+		n = strip ? 0 : f.upvalues();
 		dumpInt(n);
-		for (i = 0; i < n; i++) {
-			dumpString(f.upvalueNames[i]);
-		}
+		for (i = 0; i < n; i++) dumpNullableString(f.getUpvalueName(i));
 	}
 
-	private void dumpFunction(final Prototype f, final LuaString string) throws IOException {
-		if (f.source == null || f.source.equals(string) || strip) {
-			dumpInt(0);
-		} else {
-			dumpString(f.source);
-		}
+	private void dumpFunction(final Prototype f) throws IOException {
 		dumpInt(f.lineDefined);
 		dumpInt(f.lastLineDefined);
-		dumpChar(f.upvalues);
 		dumpChar(f.parameters);
-		dumpChar(f.isVarArg);
+		dumpChar(f.isVarArg ? 1 : 0);
 		dumpChar(f.maxStackSize);
 		dumpCode(f);
 		dumpConstants(f);
+		dumpFunctions(f);
+		dumpUpvalues(f);
 		dumpDebug(f);
+	}
+
+	private void dumpUpvalues(Prototype f) throws IOException {
+		int n = f.upvalues();
+		dumpInt(n);
+		for (int i = 0; i < n; i++) {
+			var info = f.getUpvalue(i);
+			writer.writeBoolean(info.fromLocal());
+			writer.writeByte(info.byteIndex());
+		}
+	}
+
+	private void dumpFunctions(Prototype f) throws IOException {
+		int n = f.children.length;
+		dumpInt(n);
+		for (int i = 0; i < n; i++) {
+			dumpFunction(f.children[i]);
+		}
 	}
 
 	private void dumpHeader() throws IOException {
@@ -173,14 +194,20 @@ class BytecodeDumper {
 		writer.write(SIZEOF_INSTRUCTION);
 		writer.write(SIZEOF_LUA_NUMBER);
 		writer.write(NUMBER_FORMAT);
+		writer.write(LUAC_TAIL);
 	}
 
-	/*
-	 * Dump Lua function as precompiled chunk
+	/**
+	 * Dump Lua functions as a precompiled chunk.
+	 *
+	 * @param f     The function to dump.
+	 * @param w     The output stream to write to.
+	 * @param strip Whether to strip debug informtion.
+	 * @throws IOException If writing to the underlying stream failed.
 	 */
 	public static void dump(Prototype f, OutputStream w, boolean strip) throws IOException {
 		BytecodeDumper D = new BytecodeDumper(w, strip);
 		D.dumpHeader();
-		D.dumpFunction(f, null);
+		D.dumpFunction(f);
 	}
 }

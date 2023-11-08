@@ -76,7 +76,7 @@ public final class LoadState {
 		 * @param env       The function's environment.
 		 * @return The loaded function
 		 */
-		LuaClosure load(Prototype prototype, LuaTable env);
+		LuaClosure load(Prototype prototype, LuaValue env);
 	}
 
 	private LoadState() {
@@ -85,13 +85,14 @@ public final class LoadState {
 	/**
 	 * A basic {@link FunctionFactory} which loads into
 	 */
-	public static LuaClosure interpretedFunction(Prototype prototype, LuaTable env) {
-		LuaInterpretedFunction closure = new LuaInterpretedFunction(prototype, env);
+	public static LuaClosure interpretedFunction(Prototype prototype, LuaValue env) {
+		LuaInterpretedFunction closure = new LuaInterpretedFunction(prototype);
 		closure.nilUpvalues();
+		if (closure.upvalues.length > 0) closure.upvalues[0].setValue(env);
 		return closure;
 	}
 
-	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaTable env) throws CompileException, LuaError {
+	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaValue env) throws CompileException, LuaError {
 		return load(state, stream, valueOf(name), env);
 	}
 
@@ -106,11 +107,11 @@ public final class LoadState {
 	 * @throws IllegalArgumentException If the signature is bac
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws CompileException, LuaError {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaValue env) throws CompileException, LuaError {
 		return load(state, stream, name, null, env);
 	}
 
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws CompileException, LuaError {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaValue env) throws CompileException, LuaError {
 		return state.compiler.load(LuaC.compile(state, stream, name, mode), env);
 	}
 

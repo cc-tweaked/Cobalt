@@ -119,13 +119,13 @@ end
 local function expand(argsets, typesets, ...)
 	local n = typesets and #typesets or 0
 	if n <= 0 then
-		table.insert(argsets, arg)
+		table.insert(argsets, table.pack(...))
 		return argsets
 	end
 
 	local s, v = split(typesets)
 	for i = 1, (v.n or #v) do
-		expand(argsets, s, v[i], unpack(arg, 1, arg.n))
+		expand(argsets, s, v[i], ...)
 	end
 	return argsets
 end
@@ -158,7 +158,7 @@ local function subbanner(name)
 end
 
 local function pack(s, ...)
-	return s, arg
+	return s, table.pack(...)
 end
 
 -- check that all combinations of arguments pass

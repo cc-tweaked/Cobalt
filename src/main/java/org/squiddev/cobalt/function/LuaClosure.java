@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.debug.Upvalue;
 
@@ -32,10 +31,6 @@ import org.squiddev.cobalt.debug.Upvalue;
  * A lua function that provides a coroutine.
  */
 public abstract class LuaClosure extends LuaFunction {
-	public LuaClosure(LuaTable env) {
-		super(env);
-	}
-
 	/**
 	 * Get the prototype for this closure
 	 *

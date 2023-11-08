@@ -1,0 +1,92 @@
+
+%main <goto-close-2.lua:0,0> (25 instructions, 100 bytes at goto-close-2.lua:0)
+0 param, 11 slots, 1 upvalues, 10 locals, 2 constants, 3 functions
+	1	[1]	NEWTABLE 	0 0 0
+	2	[3]	LOADK    	1 -1	; 1
+	3	[4]	LOADNIL  	2 3
+	4	[5]	CLOSURE  	6 0	; goto-close-2.lua:5
+	5	[5]	SETTABLE 	0 -1 6	; 1 -
+	6	[7]	LOADNIL  	6 1
+	7	[10]	LEN      	8 0
+	8	[10]	ADD      	8 8 -1	; - 1
+	9	[10]	CLOSURE  	9 1	; goto-close-2.lua:10
+	10	[10]	SETTABLE 	0 8 9
+	11	[11]	LT       	1 -2 1	; 2 -
+	12	[11]	JMP      	2 11	; to 24
+	13	[13]	LOADNIL  	8 0
+	14	[14]	LEN      	9 0
+	15	[14]	ADD      	9 9 -1	; - 1
+	16	[14]	CLOSURE  	10 2	; goto-close-2.lua:14
+	17	[14]	SETTABLE 	0 9 10
+	18	[15]	ADD      	1 1 -1	; - 1
+	19	[16]	LOADNIL  	9 0
+	20	[16]	JMP      	7 -15	; to 6
+	21	[17]	JMP      	2 2	; to 24
+	22	[18]	JMP      	2 1	; to 24
+	23	[19]	JMP      	2 0	; to 24
+	24	[21]	RETURN   	0 2
+	25	[21]	RETURN   	0 1
+constants (2) for goto-close-2.lua:0:
+	1	1
+	2	2
+locals (10) for goto-close-2.lua:0:
+	0	t	2	26
+	1	i	3	24
+	2	a	4	24
+	3	b	4	24
+	4	c	4	24
+	5	d	4	24
+	6	b	7	24
+	7	c	7	23
+	8	d	14	22
+	9	a	20	22
+upvalues (1) for goto-close-2.lua:0:
+	0	_ENV	1	0
+
+%function <goto-close-2.lua:5,5> (6 instructions, 24 bytes at goto-close-2.lua:5)
+0 param, 4 slots, 4 upvalues, 0 locals, 0 constants, 0 functions
+	1	[5]	GETUPVAL 	0 0	; a
+	2	[5]	GETUPVAL 	1 1	; b
+	3	[5]	GETUPVAL 	2 2	; c
+	4	[5]	GETUPVAL 	3 3	; d
+	5	[5]	RETURN   	0 5
+	6	[5]	RETURN   	0 1
+constants (0) for goto-close-2.lua:5:
+locals (0) for goto-close-2.lua:5:
+upvalues (4) for goto-close-2.lua:5:
+	0	a	1	2
+	1	b	1	3
+	2	c	1	4
+	3	d	1	5
+
+%function <goto-close-2.lua:10,10> (6 instructions, 24 bytes at goto-close-2.lua:10)
+0 param, 4 slots, 4 upvalues, 0 locals, 0 constants, 0 functions
+	1	[10]	GETUPVAL 	0 0	; a
+	2	[10]	GETUPVAL 	1 1	; b
+	3	[10]	GETUPVAL 	2 2	; c
+	4	[10]	GETUPVAL 	3 3	; d
+	5	[10]	RETURN   	0 5
+	6	[10]	RETURN   	0 1
+constants (0) for goto-close-2.lua:10:
+locals (0) for goto-close-2.lua:10:
+upvalues (4) for goto-close-2.lua:10:
+	0	a	1	2
+	1	b	1	6
+	2	c	1	7
+	3	d	1	5
+
+%function <goto-close-2.lua:14,14> (6 instructions, 24 bytes at goto-close-2.lua:14)
+0 param, 4 slots, 4 upvalues, 0 locals, 0 constants, 0 functions
+	1	[14]	GETUPVAL 	0 0	; a
+	2	[14]	GETUPVAL 	1 1	; b
+	3	[14]	GETUPVAL 	2 2	; c
+	4	[14]	GETUPVAL 	3 3	; d
+	5	[14]	RETURN   	0 5
+	6	[14]	RETURN   	0 1
+constants (0) for goto-close-2.lua:14:
+locals (0) for goto-close-2.lua:14:
+upvalues (4) for goto-close-2.lua:14:
+	0	a	1	2
+	1	b	1	6
+	2	c	1	7
+	3	d	1	8

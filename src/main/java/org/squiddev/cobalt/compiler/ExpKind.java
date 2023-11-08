@@ -32,6 +32,11 @@ enum ExpKind {
 	VKNUM,
 
 	/**
+	 * info = localresult
+	 */
+	VNONRELOC,
+
+	/**
 	 * info = local register
 	 */
 	VLOCAL,
@@ -42,12 +47,7 @@ enum ExpKind {
 	VUPVAL,
 
 	/**
-	 * info = index of table, aux = index of global name in `k`.
-	 */
-	VGLOBAL,
-
-	/**
-	 * info = table register, aux = index register (or `k`)
+	 * info = table register/upvalue ("t"), aux = index register ("idx")
 	 */
 	VINDEXED,
 
@@ -62,11 +62,6 @@ enum ExpKind {
 	VRELOCABLE,
 
 	/**
-	 * info = result register
-	 */
-	VNONRELOC,
-
-	/**
 	 * info = instruction pc
 	 */
 	VCALL,
@@ -78,6 +73,10 @@ enum ExpKind {
 
 	boolean hasMultiRet() {
 		return this == VCALL || this == VVARARG;
+	}
+
+	boolean isInRegister() {
+		return this == VNONRELOC || this == VLOCAL;
 	}
 
 	boolean isVar() {
