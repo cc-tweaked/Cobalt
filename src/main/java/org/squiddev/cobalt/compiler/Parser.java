@@ -528,7 +528,7 @@ final class Parser {
 
 	FuncState openFunc() throws CompileException {
 		if (fs != null) checkLimit(fs, fs.children.size(), MAXARG_Bx, "functions");
-		FuncState fs = new FuncState(lexer, this.fs, activeVariableSize);
+		FuncState fs = new FuncState(lexer, this.fs, activeVariableSize, activeLabels.size());
 		this.fs = fs;
 		enterBlock(fs, false);
 		return fs;
@@ -1061,7 +1061,7 @@ final class Parser {
 	 * @param name The name of the label.
 	 */
 	private void checkRepeated(LuaString name) throws CompileException {
-		for (int i = fs.block.firstLabel; i < activeLabels.size(); i++) {
+		for (int i = fs.firstLabel; i < activeLabels.size(); i++) {
 			var label = activeLabels.get(i);
 			if (label.name == name) throw semError("label '" + name + "' already defined on line " + label.line);
 		}

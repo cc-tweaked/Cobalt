@@ -81,12 +81,13 @@ final class FuncState {
 
 	short activeVariableCount;  /* number of active local variables */
 
-	final int firstLocal;
+	final int firstLocal, firstLabel;
 
-	FuncState(Lex lexer, FuncState prev, int firstLocal) {
+	FuncState(Lex lexer, FuncState prev, int firstLocal, int firstLabel) {
 		this.lexer = lexer;
 		this.prev = prev;
 		this.firstLocal = firstLocal;
+		this.firstLabel = firstLabel;
 	}
 
 	Prototype toPrototype() {
