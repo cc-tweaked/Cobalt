@@ -5,7 +5,7 @@ describe("Varargs", function()
 
 	local function call(f, args) return f(unpack(args, 1, args.n)) end
 
-	describe("Lua 5.0 varargs :lua<=5.1", function()
+	describe("Lua 5.0 varargs :lua<=5.1 :!cobalt", function()
 		local function check(a, ...)
 			expect(arg):same(a)
 			return arg.n
@@ -23,7 +23,7 @@ describe("Varargs", function()
 		end)
 	end)
 
-	it("No Lua 5.0 varargs :lua>=5.2 :!cobalt", function()
+	it("No Lua 5.0 varargs :lua>=5.2", function()
 		(function(...)
 			expect(arg):eq(_G.arg)
 			return ...

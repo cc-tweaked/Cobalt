@@ -44,7 +44,7 @@ public final class CoreLibraries {
 	 * @see CoreLibraries
 	 */
 	public static LuaTable standardGlobals(LuaState state) throws LuaError {
-		LuaTable globals = state.getMainThread().getfenv();
+		LuaTable globals = state.globals();
 		new BaseLib().add(globals);
 		TableLib.add(state, globals);
 		StringLib.add(state, globals);

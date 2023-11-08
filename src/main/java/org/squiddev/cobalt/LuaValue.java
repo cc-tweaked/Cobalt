@@ -738,30 +738,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Get the environment for an instance.
-	 *
-	 * @return {@link LuaValue} currently set as the instance's environent.
-	 */
-	public LuaValue getfenv() {
-		return NIL;
-	}
-
-	/**
-	 * Set the environment on an object.
-	 * <p>
-	 * However, any object can serve as an environment if it contains suitable metatag
-	 * values to implement {@link OperationHelper#getTable(LuaState, LuaValue, LuaValue)} to provide the environment
-	 * values.
-	 *
-	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
-	 * @return If the environment could be changed.
-	 * @see CoreLibraries
-	 */
-	public boolean setfenv(LuaTable env) {
-		return false;
-	}
-
-	/**
 	 * Get particular metatag, or return {@link Constants#NIL} if it doesn't exist
 	 *
 	 * @param state The current lua state

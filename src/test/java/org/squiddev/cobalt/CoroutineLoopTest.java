@@ -38,7 +38,7 @@ public class CoroutineLoopTest {
 		ScriptHelper helpers = new ScriptHelper("/coroutine/loop-");
 		helpers.setup();
 
-		LuaThread thread = new LuaThread(helpers.state, helpers.loadScript(name), helpers.globals);
+		LuaThread thread = new LuaThread(helpers.state, helpers.loadScript(name));
 
 		int i = 0;
 		while (thread.isAlive()) {

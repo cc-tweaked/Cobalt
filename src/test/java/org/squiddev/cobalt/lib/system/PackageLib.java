@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib.system;
 
 
+import cc.tweaked.cobalt.internal.LegacyEnv;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
@@ -98,7 +99,7 @@ public class PackageLib {
 		LuaTable t = args.first().checkTable();
 		LuaTable m = t.getMetatable(state);
 		if (m == null) t.setMetatable(state, m = ValueFactory.tableOf());
-		m.rawset(Constants.INDEX, state.getCurrentThread().getfenv());
+		m.rawset(Constants.INDEX, state.globals());
 		return Constants.NONE;
 	}
 
@@ -152,7 +153,7 @@ public class PackageLib {
 		LuaTable module;
 		if (!(value instanceof LuaTable table)) { /* not found? */
 			/* try global variable (and create one if it does not exist) */
-			LuaTable globals = state.getCurrentThread().getfenv();
+			LuaTable globals = state.globals();
 			module = findtable(globals, modname);
 			if (module == null) {
 				throw new LuaError("name conflict for module '" + modname + "'");
@@ -180,7 +181,7 @@ public class PackageLib {
 		if (!(f instanceof LuaClosure)) {
 			throw new LuaError("'module' not called from a Lua function");
 		}
-		f.setfenv(module);
+		LegacyEnv.setEnv(f, module);
 
 		// apply the functions
 		for (int i = 2; i <= n; i++) OperationHelper.call(state, args.arg(i), module);

@@ -3,7 +3,6 @@ package org.squiddev.cobalt.vm;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LoadState;
-import org.squiddev.cobalt.function.LuaFunction;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +26,7 @@ public final class LuaOperators {
 	public static UnaryOperator createUnOp(LuaState state, String name) {
 		try {
 			var input = "local a = ... return " + name + " a";
-			LuaFunction function = LoadState.load(state, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), "=input", new LuaTable());
+			var function = LoadState.load(state, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), "=input", new LuaTable());
 			return a -> function.call(state, a);
 		} catch (CompileException | LuaError e) {
 			throw new IllegalStateException("Failed to create operator with " + name, e);
@@ -37,7 +36,7 @@ public final class LuaOperators {
 	public static BinaryOperator createBinOp(LuaState state, String name) {
 		try {
 			var input = "local a, b = ... return a " + name + " b";
-			LuaFunction function = LoadState.load(state, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), "=input", new LuaTable());
+			var function = LoadState.load(state, new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)), "=input", new LuaTable());
 			return (a, b) -> function.call(state, a, b);
 		} catch (CompileException | LuaError e) {
 			throw new IllegalStateException("Failed to create operator with " + name, e);

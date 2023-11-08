@@ -32,7 +32,7 @@ import static org.squiddev.cobalt.Lua.*;
 /**
  * Debug helper class for pretty-printing Lua bytecode.
  * <p>
- * This follows the implementation in {@code luac.c}/{@code print.c}.
+ * This follows the implementation in {@code luac.c}.
  *
  * @see Prototype
  * @see LuaClosure
@@ -107,6 +107,7 @@ public final class Print {
 		int a = GETARG_A(i);
 		int b = GETARG_B(i);
 		int c = GETARG_C(i);
+		int ax = GETARG_Ax(i);
 		int bx = GETARG_Bx(i);
 		int sbx = GETARG_sBx(i);
 
@@ -138,12 +139,11 @@ public final class Print {
 			}
 			case iABx -> {
 				out.append(a);
-				if (getBMode(o) == OpArgK) out.append(" ").append(MYK(INDEXK(bx)));
+				if (getBMode(o) == OpArgK) out.append(" ").append(MYK(bx));
 				if (getBMode(o) == OpArgU) out.append(" ").append(bx);
 			}
-			case iAsBx -> {
-				out.append(a).append(" ").append(sbx);
-			}
+			case iAsBx -> out.append(a).append(" ").append(sbx);
+			case iAx -> out.append(a).append(" ").append(MYK(ax));
 		}
 
 		switch (o) {
@@ -153,16 +153,27 @@ public final class Print {
 			}
 			case OP_GETUPVAL, OP_SETUPVAL -> {
 				out.append("\t; ");
-				var upvalueName = f.getUpvalueName(b);
-				if (upvalueName != null) {
-					printString(out, upvalueName);
-				} else {
-					out.append("-");
+				printUpvalueName(out, f, b);
+			}
+			case OP_GETTABUP -> {
+				out.append("\t; ");
+				printUpvalueName(out, f, b);
+				if (ISK(c)) {
+					out.append(" ");
+					printConstant(out, f, INDEXK(c));
 				}
 			}
-			case OP_GETGLOBAL, OP_SETGLOBAL -> {
+			case OP_SETTABUP -> {
 				out.append("\t; ");
-				printConstant(out, f, bx);
+				printUpvalueName(out, f, a);
+				if (ISK(b)) {
+					out.append(" ");
+					printConstant(out, f, INDEXK(b));
+				}
+				if (ISK(c)) {
+					out.append(" ");
+					printConstant(out, f, INDEXK(c));
+				}
 			}
 			case OP_GETTABLE, OP_SELF -> {
 				if (ISK(c)) {
@@ -186,7 +197,7 @@ public final class Print {
 					}
 				}
 			}
-			case OP_JMP, OP_FORLOOP, OP_FORPREP -> out.append("\t; to ").append(sbx + pc + 2);
+			case OP_JMP, OP_FORLOOP, OP_FORPREP, OP_TFORLOOP -> out.append("\t; to ").append(sbx + pc + 2);
 			case OP_CLOSURE -> out.append("\t; ").append(id(f.children[bx]));
 			case OP_SETLIST -> {
 				if (c == 0) {
@@ -195,9 +206,21 @@ public final class Print {
 					out.append("\t; ").append(c);
 				}
 			}
-			case OP_VARARG -> out.append("\t; is_vararg=").append(f.isVarArg);
+			case OP_EXTRAARG -> {
+				out.append("\t; ");
+				printConstant(out, f, ax);
+			}
 			default -> {
 			}
+		}
+	}
+
+	private static void printUpvalueName(StringBuilder out, Prototype f, int upvalue) {
+		var upvalueName = f.getUpvalueName(upvalue);
+		if (upvalueName != null) {
+			out.append(upvalueName);
+		} else {
+			out.append("-");
 		}
 	}
 
@@ -213,7 +236,7 @@ public final class Print {
 		out.append("\n%").append(f.lineDefined == 0 ? "main" : "function")
 			.append(" <").append(s).append(":").append(f.lineDefined).append(",").append(f.lastLineDefined).append("> (")
 			.append(f.code.length).append(" instructions, ").append(f.code.length * 4).append(" bytes at ").append(id(f)).append(")\n");
-		out.append(f.parameters).append(" param, ").append(f.maxStackSize).append(" slots, ").append(f.upvalueNames.length).append(" upvalues, ");
+		out.append(f.parameters).append(" param, ").append(f.maxStackSize).append(" slots, ").append(f.upvalues()).append(" upvalues, ");
 		out.append(f.locals.length).append(" locals, ").append(f.constants.length).append(" constants, ").append(f.children.length).append(" functions\n");
 	}
 
@@ -241,9 +264,15 @@ public final class Print {
 	}
 
 	private static void printUpvalues(StringBuilder out, Prototype f) {
-		out.append("upvalues (").append(f.upvalues).append(") for ").append(id(f)).append(":\n");
-		for (int i = 0, n = f.upvalues; i < n; i++) {
-			out.append("\t").append(i).append("\t").append(f.getUpvalueName(i)).append("\n");
+		out.append("upvalues (").append(f.upvalues()).append(") for ").append(id(f)).append(":\n");
+		for (int i = 0, n = f.upvalues(); i < n; i++) {
+			var upvalue = f.getUpvalue(i);
+			out
+				.append("\t").append(i)
+				.append("\t").append(upvalue.name())
+				.append("\t").append(upvalue.fromLocal() ? '1' : '0')
+				.append("\t").append(upvalue.index())
+				.append("\n");
 		}
 	}
 

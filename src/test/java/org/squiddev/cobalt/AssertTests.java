@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -40,6 +41,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 /**
  * Just runs various libraries in the main test suite
  */
+@Timeout(value = 15, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {"table-hash-01", "table-hash-02"})

@@ -81,7 +81,7 @@ public class SystemBaseLib {
 	private Varargs print(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
 		// print(...) -> void
 		return SuspendedTask.run(frame, () -> {
-			LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
+			LuaValue tostring = OperationHelper.getTable(state, state.globals(), valueOf("tostring"));
 			for (int i = 1, n = args.count(); i <= n; i++) {
 				if (i > 1) out.write('\t');
 				LuaValue value = OperationHelper.call(state, tostring, args.arg(i));

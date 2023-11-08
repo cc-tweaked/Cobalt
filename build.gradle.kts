@@ -127,7 +127,7 @@ publishing {
 
 			pom {
 				name = "Cobalt"
-				description = "A reentrant fork of LuaJ for Lua 5.1"
+				description = "A reentrant fork of LuaJ for Lua 5.2"
 				url = "https://github.com/SquidDev/Cobalt"
 
 				scm {

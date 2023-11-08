@@ -245,6 +245,11 @@ public final class Constants {
 	public static final LuaString LOADED = valueOf("_LOADED");
 
 	/**
+	 * LuaString constant with value "_ENV" for use as metatag
+	 */
+	public static final LuaString ENV = valueOf("_ENV");
+
+	/**
 	 * Constant limiting metatag loop processing
 	 */
 	public static final int MAXTAGLOOP = 100;

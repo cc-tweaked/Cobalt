@@ -62,28 +62,28 @@ a,arg[1],arg[2],arg[3]	q	2	r	s	nil
  ->	true
 ---- function r()
 --r():
-a,arg	nil	nil
+a,arg	nil	table
 a	nil
 ...
 ...,a	nil	nil
 a,...	nil
  ->	true
 --r("q"):
-a,arg	q	nil
+a,arg	q	table
 a	q
 ...
 ...,a	nil	q
 a,...	q
  ->	true
 --r("q","r"):
-a,arg	q	nil
+a,arg	q	table
 a	q
 ...	r
 ...,a	r	q
 a,...	q	r
  ->	true
 --r("q","r","s"):
-a,arg	q	nil
+a,arg	q	table
 a	q
 ...	r	s
 ...,a	r	q
@@ -155,19 +155,19 @@ arg	nil
 arg,...	nil
  ->	true
 --v("q"):
-arg	nil
+arg	q
 ...
-arg,...	nil
+arg,...	q
  ->	true
 --v("q","r"):
-arg	nil
+arg	q
 ...	r
-arg,...	nil	r
+arg,...	q	r
  ->	true
 --v("q","r","s"):
-arg	nil
+arg	q
 ...	r	s
-arg,...	nil	r	s
+arg,...	q	r	s
  ->	true
 varargstest result:	true
 ---------- metatable tests

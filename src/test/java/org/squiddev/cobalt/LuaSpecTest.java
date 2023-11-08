@@ -38,7 +38,7 @@ public class LuaSpecTest {
 
 	public LuaSpecTest() throws IOException, LuaError, CompileException {
 		state = new LuaState();
-		env = state.getMainThread().getfenv();
+		env = state.globals();
 		CoreLibraries.debugGlobals(state);
 		new SystemBaseLib(x -> null, System.in, System.out).add(env);
 		Bit32Lib.add(state, env);
@@ -76,7 +76,7 @@ public class LuaSpecTest {
 
 			nodes.add(filterNode(name, DynamicTest.dynamicTest(stripTags(name), () -> {
 				// Run each test in a clean coroutine.
-				LuaThread thread = new LuaThread(state, function, env);
+				LuaThread thread = new LuaThread(state, function);
 				Varargs result = LuaThread.run(thread, Constants.NONE);
 				if (thread.isAlive()) throw new AssertionError("Thread unexpected yielded with " + result);
 			})));

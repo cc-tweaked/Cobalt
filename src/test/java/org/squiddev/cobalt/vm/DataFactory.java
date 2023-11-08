@@ -2,7 +2,6 @@ package org.squiddev.cobalt.vm;
 
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.LuaC;
@@ -23,6 +22,6 @@ public final class DataFactory {
 	}
 
 	public static LuaInterpretedFunction closure(LuaState state) {
-		return new LuaInterpretedFunction(prototype(state), new LuaTable());
+		return new LuaInterpretedFunction(prototype(state));
 	}
 }

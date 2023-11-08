@@ -29,8 +29,7 @@ import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import static org.squiddev.cobalt.Constants.*;
-import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUAC_VERSION;
-import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.LUA_SIGNATURE;
+import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.*;
 
 /**
  * Parser for bytecode
@@ -76,7 +75,7 @@ final class BytecodeLoader {
 	private static final LuaValue[] NOVALUES = {};
 	private static final Prototype[] NOPROTOS = {};
 	private static final LocalVariable[] NOLOCVARS = {};
-	private static final LuaString[] NOSTRVALUES = {};
+	private static final Prototype.UpvalueInfo[] NOUPVALUES = {};
 	private static final int[] NOINTS = {};
 
 	/**
@@ -126,15 +125,11 @@ final class BytecodeLoader {
 	 */
 	private int[] loadIntArray() throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
-		if (n == 0) {
-			return NOINTS;
-		}
+		if (n == 0) return NOINTS;
 
 		// read all data at once
 		int m = n << 2;
-		if (buf.length < m) {
-			buf = new byte[m];
-		}
+		if (buf.length < m) buf = new byte[m];
 		readFully(buf, 0, m);
 		int[] array = new int[n];
 		for (int i = 0, j = 0; i < n; ++i, j += 4) {
@@ -169,10 +164,9 @@ final class BytecodeLoader {
 	 * @return the {@link LuaString} value laoded.
 	 */
 	private LuaString loadString() throws CompileException, LuaError, UnwindThrowable {
-		int size = this.luacSizeofSizeT == 8 ? (int) loadInt64() : loadInt();
-		if (size == 0) {
-			return null;
-		}
+		int size = luacSizeofSizeT == 8 ? (int) loadInt64() : loadInt();
+		if (size == 0) return null;
+
 		byte[] bytes = new byte[size];
 		readFully(bytes, 0, size);
 		return LuaString.valueOf(bytes, 0, bytes.length - 1);
@@ -185,22 +179,6 @@ final class BytecodeLoader {
 	 * @return {@link LuaInteger} or {@link LuaDouble} whose value corresponds to the bits provided.
 	 */
 	public static LuaValue longBitsToLuaNumber(long bits) {
-		if ((bits & ((1L << 63) - 1)) == 0L) {
-			return Constants.ZERO;
-		}
-
-		int e = (int) ((bits >> 52) & 0x7ffL) - 1023;
-
-		if (e >= 0 && e < 31) {
-			long f = bits & 0xFFFFFFFFFFFFFL;
-			int shift = 52 - e;
-			long intPrecMask = (1L << shift) - 1;
-			if ((f & intPrecMask) == 0) {
-				int intValue = (int) (f >> shift) | (1 << e);
-				return LuaInteger.valueOf(((bits >> 63) != 0) ? -intValue : intValue);
-			}
-		}
-
 		return ValueFactory.valueOf(Double.longBitsToDouble(bits));
 	}
 
@@ -211,11 +189,7 @@ final class BytecodeLoader {
 	 * @throws CompileException, LuaError, UnwindThrowable if an i/o exception occurs
 	 */
 	private LuaValue loadNumber() throws CompileException, LuaError, UnwindThrowable {
-		if (luacNumberFormat == NUMBER_FORMAT_INTS_ONLY) {
-			return LuaInteger.valueOf(loadInt());
-		} else {
-			return longBitsToLuaNumber(loadInt64());
-		}
+		return longBitsToLuaNumber(loadInt64());
 	}
 
 	/**
@@ -229,8 +203,7 @@ final class BytecodeLoader {
 		for (int i = 0; i < n; i++) {
 			values[i] = switch (readByte()) {
 				case TNIL -> Constants.NIL;
-				case TBOOLEAN -> (0 != readUnsignedByte() ? Constants.TRUE : Constants.FALSE);
-				case TINT -> LuaInteger.valueOf(loadInt());
+				case TBOOLEAN -> readByte() != 0 ? Constants.TRUE : Constants.FALSE;
 				case TNUMBER -> loadNumber();
 				case TSTRING -> loadString();
 				default -> throw new IllegalStateException("bad constant");
@@ -239,11 +212,11 @@ final class BytecodeLoader {
 		return values;
 	}
 
-	private Prototype[] loadChildren(LuaString source) throws CompileException, LuaError, UnwindThrowable {
+	private Prototype[] loadChildren() throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
 		Prototype[] protos = n > 0 ? new Prototype[n] : NOPROTOS;
 		for (int i = 0; i < n; i++) {
-			protos[i] = loadFunction(source);
+			protos[i] = loadFunction();
 		}
 		return protos;
 	}
@@ -252,51 +225,64 @@ final class BytecodeLoader {
 		int n = loadInt();
 		LocalVariable[] locals = n > 0 ? new LocalVariable[n] : NOLOCVARS;
 		for (int i = 0; i < n; i++) {
-			LuaString varname = loadString();
+			LuaString varName = loadString();
 			int startpc = loadInt();
 			int endpc = loadInt();
-			locals[i] = new LocalVariable(varname, startpc, endpc);
+			locals[i] = new LocalVariable(varName, startpc, endpc);
 		}
 		return locals;
 	}
 
-	private LuaString[] loadUpvalueNames() throws CompileException, LuaError, UnwindThrowable {
+	private void loadUpvaluesNames(Prototype.UpvalueInfo[] upvalues) throws CompileException, LuaError, UnwindThrowable {
 		int n = loadInt();
-		LuaString[] upvalueNames = n > 0 ? new LuaString[n] : NOSTRVALUES;
-		for (int i = 0; i < n; i++) upvalueNames[i] = loadString();
-		return upvalueNames;
+		for (int i = 0; i < n; i++) {
+			var upvalue = upvalues[i];
+			var name = loadString();
+			upvalues[i] = new Prototype.UpvalueInfo(name, upvalue.fromLocal(), upvalue.byteIndex());
+		}
+	}
+
+	private Prototype.UpvalueInfo[] loadUpvalues() throws CompileException, LuaError, UnwindThrowable {
+		int n = loadInt();
+		var upvalues = n > 0 ? new Prototype.UpvalueInfo[n] : NOUPVALUES;
+		for (int i = 0; i < n; i++) {
+			var inStack = readByte() != 0;
+			var slot = readByte();
+			upvalues[i] = new Prototype.UpvalueInfo(null, inStack, slot);
+		}
+		return upvalues;
 	}
 
 	/**
 	 * Load a function prototype from the input stream
 	 *
-	 * @param givenSource name of the source
 	 * @return {@link Prototype} instance that was loaded
 	 * @throws CompileException, LuaError, UnwindThrowable On stream read errors
 	 */
-	public Prototype loadFunction(LuaString givenSource) throws CompileException, LuaError, UnwindThrowable {
-		LuaString source = loadString();
-		if (source == null) source = givenSource;
-
-		LuaString shortSource = LoadState.getShortName(source);
-
+	public Prototype loadFunction() throws CompileException, LuaError, UnwindThrowable {
 		int lineDefined = loadInt();
 		int lastLineDefined = loadInt();
-		int nups = readUnsignedByte();
-		int numparams = readUnsignedByte();
-		int is_vararg = readUnsignedByte();
-		int maxstacksize = readUnsignedByte();
+		int numParams = readUnsignedByte();
+		boolean isVarArg = readByte() != 0;
+		int maxStackSize = readUnsignedByte();
+
 		int[] code = loadIntArray();
 		LuaValue[] constants = loadConstants();
-		Prototype[] children = loadChildren(source);
+		Prototype[] children = loadChildren();
+		Prototype.UpvalueInfo[] upvalues = loadUpvalues();
+
+		// See LoadDebug
+		var source = loadString();
+		if (source == null) source = LuaString.valueOf("=?");
+
 		int[] lineInfo = loadIntArray();
 		LocalVariable[] locals = loadLocals();
-		LuaString[] upvalueNames = loadUpvalueNames();
+		loadUpvaluesNames(upvalues);
 
 		return new Prototype(
-			source, shortSource,
-			constants, code, children, numparams, is_vararg, maxstacksize, nups,
-			lineDefined, lastLineDefined, lineInfo, NOINTS, locals, upvalueNames
+			source, LoadState.getShortName(source),
+			constants, code, children, numParams, isVarArg, maxStackSize, upvalues,
+			lineDefined, lastLineDefined, lineInfo, NOINTS, locals
 		);
 	}
 
@@ -315,24 +301,24 @@ final class BytecodeLoader {
 	 */
 	public void loadHeader() throws CompileException, LuaError, UnwindThrowable {
 		int luacVersion = readByte();
-		if (luacVersion != LUAC_VERSION) throw new CompileException("unsupported luac version");
+		if (luacVersion != LUAC_VERSION) throw new CompileException("version mismatch");
 
 		int luacFormat = readByte();
-		luacLittleEndian = (0 != readByte());
+		if (luacFormat != LUAC_FORMAT) throw new CompileException("incompatible");
+
+		luacLittleEndian = readByte() != 0;
 		int luacSizeofInt = readByte();
 		luacSizeofSizeT = readByte();
 		int luacSizeofInstruction = readByte();
 		int luacSizeofLuaNumber = readByte();
-		luacNumberFormat = readByte();
+		int luacNumberFormat = readByte();
 
-		// check format
-		switch (luacNumberFormat) {
-			case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
-			case NUMBER_FORMAT_INTS_ONLY:
-			case NUMBER_FORMAT_NUM_PATCH_INT32:
-				break;
-			default:
-				throw new CompileException("unsupported int size");
+		if (luacSizeofInt != 4 || luacSizeofInstruction != 4 || luacSizeofLuaNumber != 8 || luacNumberFormat != 0) {
+			throw new CompileException("incompatible");
+		}
+
+		for (byte b : LUAC_TAIL) {
+			if (readByte() != b) throw new CompileException("incompatible");
 		}
 	}
 }

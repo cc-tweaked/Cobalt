@@ -78,7 +78,6 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  * Since a {@link LuaInterpretedFunction} is a {@link LuaFunction} which is a {@link LuaValue},
  * all the value operations can be used directly such as:
  * <ul>
- * <li>{@link LuaValue#setfenv(LuaTable)}</li>
  * <li>{@link LuaFunction#call(LuaState)}</li>
  * <li>{@link LuaFunction#call(LuaState, LuaValue)}</li>
  * <li>{@link LuaFunction#invoke(LuaState, Varargs)}</li>
@@ -99,17 +98,15 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	/**
 	 * Supply the initial environment
 	 *
-	 * @param p   The prototype to run
-	 * @param env The environement to run in
+	 * @param p The prototype to run
 	 */
-	public LuaInterpretedFunction(Prototype p, LuaTable env) {
-		super(env);
+	public LuaInterpretedFunction(Prototype p) {
 		this.p = p;
-		this.upvalues = p.upvalues > 0 ? new Upvalue[p.upvalues] : NO_UPVALUES;
+		this.upvalues = p.upvalues() > 0 ? new Upvalue[p.upvalues()] : NO_UPVALUES;
 	}
 
 	public void nilUpvalues() {
-		int nups = p.upvalues;
+		int nups = p.upvalues();
 		if (nups > 0) {
 			Upvalue[] upvalues = this.upvalues;
 			for (int i = 0; i < nups; i++) {

@@ -29,7 +29,7 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.lib.system.SystemLibraries;
 
@@ -130,15 +130,11 @@ public class ScriptHelper {
 	 *
 	 * @param name The name of the file
 	 * @return The loaded LuaFunction
-	 * @throws IOException
 	 */
-	public LuaFunction loadScript(String name) throws IOException, CompileException, LuaError {
-		InputStream script = load(name + ".lua");
-		if (script == null) fail("Could not load script for test case: " + name);
-		try {
+	public LuaClosure loadScript(String name) throws IOException, CompileException, LuaError {
+		try (InputStream script = load(name + ".lua")) {
+			if (script == null) fail("Could not load script for test case: " + name);
 			return LoadState.load(state, script, "@" + name + ".lua", globals);
-		} finally {
-			script.close();
 		}
 	}
 
@@ -146,7 +142,7 @@ public class ScriptHelper {
 		runWithDump(loadScript(script));
 	}
 
-	public void runWithDump(LuaFunction function) throws LuaError {
+	public void runWithDump(LuaClosure function) throws LuaError {
 		try {
 			LuaThread.runMain(state, function);
 		} catch (LuaError e) {

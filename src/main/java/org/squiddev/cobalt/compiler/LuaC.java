@@ -116,6 +116,11 @@ public class LuaC {
 			((bc << Lua.POS_Bx) & Lua.MASK_Bx);
 	}
 
+	public static int CREATE_Ax(int o, int a) {
+		return ((o << Lua.POS_OP) & Lua.MASK_OP) |
+			((a << Lua.POS_Ax) & Lua.MASK_Ax);
+	}
+
 	public static int[] realloc(int[] v, int n) {
 		int[] a = new int[n];
 		if (v != null) System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
@@ -124,6 +129,12 @@ public class LuaC {
 
 	public static byte[] realloc(byte[] v, int n) {
 		byte[] a = new byte[n];
+		if (v != null) System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		return a;
+	}
+
+	public static short[] realloc(short[] v, int n) {
+		short[] a = new short[n];
 		if (v != null) System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
 		return a;
 	}
@@ -179,16 +190,7 @@ public class LuaC {
 	private static Prototype loadTextChunk(int firstByte, InputReader stream, LuaString name) throws CompileException, LuaError, UnwindThrowable {
 		Parser parser = new Parser(stream, firstByte, name, LoadState.getShortName(name));
 		parser.lexer.skipShebang();
-		FuncState funcstate = parser.openFunc();
-		funcstate.varargFlags = Lua.VARARG_ISVARARG; /* main func. is always vararg */
-
-		parser.lexer.nextToken(); // read first token
-		parser.chunk();
-		parser.check(Lex.TK_EOS);
-		Prototype prototype = parser.closeFunc();
-		LuaC._assert(funcstate.upvalues.size() == 0);
-		LuaC._assert(parser.fs == null);
-		return prototype;
+		return parser.mainFunction();
 	}
 
 	public record InputStreamReader(InputStream stream) implements InputReader {

@@ -298,12 +298,7 @@ describe("The base library", function()
 	end)
 
 	describe("getfenv/setfenv :lua==5.1", function()
-		it("loadstring uses the the thread environment", function()
-			local function do_load(s) return loadstring(s) end
-			setfenv(do_load, { loadstring = loadstring })
-		end)
-
-		it("can set the environment of the current thread", function()
+		it("can set the environment of the current thread :!cobalt", function()
 			local finished = false
 			local f = coroutine.wrap(function(env)
 				setfenv(0, env)
@@ -320,7 +315,7 @@ describe("The base library", function()
 			expect(f()):eq(_G)
 		end)
 
-		it("can set the environment of another thread", function()
+		it("can set the environment of another thread :!cobalt", function()
 			local co = coroutine.create(function ()
 				coroutine.yield(getfenv(0))
 				return loadstring("return a")()
@@ -337,7 +332,10 @@ describe("The base library", function()
 			local _G = _G
 			local g
 			local function f () expect(setfenv(2, {a='10'})):eq(g) end
-			g = function() f(); _G.expect(_G.getfenv(1).a):eq('10') end
+			g = function()
+				local _ = some_global -- Force us to get an _ENV upvalue
+				f(); _G.expect(_G.getfenv(1).a):eq('10')
+			end
 			g();
 			expect(getfenv(g).a):eq('10')
 		end)

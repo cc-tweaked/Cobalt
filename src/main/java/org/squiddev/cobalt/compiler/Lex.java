@@ -27,22 +27,22 @@ final class Lex {
 	// Terminal symbols denoted by reserved words
 	static final int
 		TK_AND = 257, TK_BREAK = 258, TK_DO = 259, TK_ELSE = 260, TK_ELSEIF = 261,
-		TK_END = 262, TK_FALSE = 263, TK_FOR = 264, TK_FUNCTION = 265, TK_IF = 266,
-		TK_IN = 267, TK_LOCAL = 268, TK_NIL = 269, TK_NOT = 270, TK_OR = 271, TK_REPEAT = 272,
-		TK_RETURN = 273, TK_THEN = 274, TK_TRUE = 275, TK_UNTIL = 276, TK_WHILE = 277;
+		TK_END = 262, TK_FALSE = 263, TK_FOR = 264, TK_FUNCTION = 265, TK_GOTO = 266, TK_IF = 267,
+		TK_IN = 268, TK_LOCAL = 269, TK_NIL = 270, TK_NOT = 271, TK_OR = 272, TK_REPEAT = 273,
+		TK_RETURN = 274, TK_THEN = 275, TK_TRUE = 276, TK_UNTIL = 277, TK_WHILE = 278;
 	// Other terminal symbols
 	static final int
-		TK_CONCAT = 278, TK_DOTS = 279, TK_EQ = 280, TK_GE = 281, TK_LE = 282, TK_NE = 283,
-		TK_EOS = 284,
-		TK_NUMBER = 285, TK_NAME = 286, TK_STRING = 287;
+		TK_CONCAT = 279, TK_DOTS = 280, TK_EQ = 281, TK_GE = 282, TK_LE = 283, TK_NE = 284, TK_DBCOLON = 285,
+		TK_EOS = 286,
+		TK_NUMBER = 287, TK_NAME = 288, TK_STRING = 289;
 
 	/* Token names: this must be consistent with the list above. */
 	private final static String[] tokenNames = {
 		"and", "break", "do", "else", "elseif",
-		"end", "false", "for", "function", "if",
+		"end", "false", "for", "function", "goto", "if",
 		"in", "local", "nil", "not", "or", "repeat",
 		"return", "then", "true", "until", "while",
-		"..", "...", "==", ">=", "<=", "~=",
+		"..", "...", "==", ">=", "<=", "~=", "::",
 		"<eof>",
 		"<number>", "<name>", "<string>",
 	};
@@ -55,9 +55,16 @@ final class Lex {
 	static {
 		Map<ByteBuffer, Integer> reserved = new HashMap<>();
 		for (int i = 0; i < NUM_RESERVED; i++) {
+			// We skip GOTO and inject it later on when parsing statements.
+			if (FIRST_RESERVED + i == TK_GOTO) continue;
+
 			reserved.put(ValueFactory.valueOf(tokenNames[i]).toBuffer(), FIRST_RESERVED + i);
 		}
 		RESERVED = Collections.unmodifiableMap(reserved);
+	}
+
+	static boolean isReserved(LuaString name) {
+		return RESERVED.containsKey(name.toBuffer());
 	}
 
 	static class Token {
@@ -531,6 +538,10 @@ final class Lex {
 				case '~' -> {
 					next();
 					return checkNext('=') ? TK_NE : '~';
+				}
+				case ':' -> {
+					next();
+					return checkNext(':') ? TK_DBCOLON : ':';
 				}
 				case '"', '\'' -> {
 					token.value = readString(current);

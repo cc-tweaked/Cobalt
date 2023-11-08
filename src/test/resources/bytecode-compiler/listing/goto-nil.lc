@@ -1,0 +1,38 @@
+
+%main <goto-nil.lua:0,0> (24 instructions, 96 bytes at goto-nil.lua:0)
+0 param, 4 slots, 1 upvalues, 2 locals, 5 constants, 0 functions
+	1	[1]	LOADNIL  	0 0
+	2	[3]	LOADNIL  	1 0
+	3	[4]	GETTABUP 	2 0 -1	; _ENV "assert"
+	4	[4]	EQ       	1 1 -2	; - nil
+	5	[4]	JMP      	0 1	; to 7
+	6	[4]	LOADBOOL 	3 0 1
+	7	[4]	LOADBOOL 	3 1 0
+	8	[4]	CALL     	2 2 1
+	9	[5]	LOADBOOL 	1 1 0
+	10	[6]	EQ       	0 0 -2	; - nil
+	11	[6]	JMP      	0 3	; to 15
+	12	[7]	LOADK    	0 -3	; 1
+	13	[7]	JMP      	2 -12	; to 2
+	14	[8]	JMP      	0 1	; to 16
+	15	[10]	ADD      	0 0 -3	; - 1
+	16	[12]	GETTABUP 	2 0 -1	; _ENV "assert"
+	17	[12]	EQ       	0 0 -4	; - 2
+	18	[12]	JMP      	0 2	; to 21
+	19	[12]	EQ       	1 1 -5	; - true
+	20	[12]	JMP      	0 1	; to 22
+	21	[12]	LOADBOOL 	3 0 1
+	22	[12]	LOADBOOL 	3 1 0
+	23	[12]	CALL     	2 2 1
+	24	[12]	RETURN   	0 1
+constants (5) for goto-nil.lua:0:
+	1	"assert"
+	2	nil
+	3	1
+	4	2
+	5	true
+locals (2) for goto-nil.lua:0:
+	0	x	2	25
+	1	y	3	25
+upvalues (1) for goto-nil.lua:0:
+	0	_ENV	1	0

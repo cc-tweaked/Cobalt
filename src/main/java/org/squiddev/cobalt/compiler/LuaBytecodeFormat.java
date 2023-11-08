@@ -15,15 +15,19 @@ public final class LuaBytecodeFormat implements BytecodeFormat {
 	static final byte[] LUA_SIGNATURE = {27, 'L', 'u', 'a'};
 
 	/**
-	 * The current Lua bytecode format, currently Lua 5.1
+	 * The current Lua bytecode format, currently Lua 5.2
 	 */
-	static final int LUAC_VERSION = 0x51;
+	static final int LUAC_VERSION = 0x52;
 
 	/**
 	 * The format for binary files. 0 denotes the "official" format.
 	 */
 	static final int LUAC_FORMAT = 0;
 
+	/**
+	 * Tail after the header, to catch conversion errors.
+	 */
+	static final byte[] LUAC_TAIL = {0x19, (byte) 0x93, '\r', '\n', 0x1a, '\n'};
 
 	private static final LuaBytecodeFormat INSTANCE = new LuaBytecodeFormat();
 
@@ -47,7 +51,7 @@ public final class LuaBytecodeFormat implements BytecodeFormat {
 			try {
 				loader.checkSignature();
 				loader.loadHeader();
-				return loader.loadFunction(LoadState.getSourceName(name));
+				return loader.loadFunction();
 			} catch (CompileException e) {
 				throw throwUnchecked0(e);
 			}

@@ -69,7 +69,7 @@ public final class CoroutineLib {
 
 	private static LuaValue create(LuaState state, LuaValue arg) throws LuaError {
 		final LuaFunction func = arg.checkFunction();
-		return new LuaThread(state, func, state.getCurrentThread().getfenv());
+		return new LuaThread(state, func);
 	}
 
 	private static Varargs running(LuaState state, Varargs args) {
@@ -88,8 +88,7 @@ public final class CoroutineLib {
 
 	private static LuaValue wrap(LuaState state, LuaValue arg) throws LuaError {
 		final LuaFunction func = arg.checkFunction();
-		final LuaTable env = func.getfenv();
-		final LuaThread thread = new LuaThread(state, func, env);
+		final LuaThread thread = new LuaThread(state, func);
 
 		return new Wrapped(thread);
 	}

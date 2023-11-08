@@ -1,4 +1,4 @@
-describe("goto statements :lua>=5.2 :!cobalt", function()
+describe("goto statements :lua>=5.2", function()
 	describe("parse failures", function()
 		local function fail_parse(code, err)
 			local st, msg = load(code)
@@ -272,5 +272,15 @@ describe("goto statements :lua>=5.2 :!cobalt", function()
 			end
 		end
 		assert(a)
+	]])
+
+	it_str("Supports 'goto' as a normal identifier :cobalt", [[
+		local function goto() end
+
+		goto goto
+		::goto::
+
+		goto()
+		print(goto)
 	]])
 end)

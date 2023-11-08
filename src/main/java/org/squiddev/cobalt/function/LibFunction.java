@@ -97,9 +97,6 @@ import org.squiddev.cobalt.lib.TableLib;
  * data it needs to and place it into the environment if needed.
  * In this case, it creates two function, 'sinh', and 'cosh', and puts
  * them into a global table called 'hyperbolic.'
- * It placed the library table into the globals via the {@link #getfenv()}
- * local variable which corresponds to the globals that apply when the
- * library is loaded.
  * <p>
  * To test it, a script such as this can be used:
  * <pre> {@code

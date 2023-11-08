@@ -89,6 +89,8 @@ public final class LuaState {
 	 */
 	private final LuaThread mainThread;
 
+	private final LuaTable globals = new LuaTable();
+
 	/**
 	 * Report an internal VM error.
 	 */
@@ -106,7 +108,16 @@ public final class LuaState {
 		reportError = builder.reportError;
 		bytecodeFormat = builder.bytecodeFormat;
 
-		mainThread = currentThread = new LuaThread(this, new LuaTable());
+		mainThread = currentThread = new LuaThread(this);
+	}
+
+	/**
+	 * Get the global environment.
+	 *
+	 * @return The global environment.
+	 */
+	public LuaTable globals() {
+		return globals;
 	}
 
 	/**

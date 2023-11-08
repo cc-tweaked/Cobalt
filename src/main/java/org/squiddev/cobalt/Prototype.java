@@ -55,11 +55,12 @@ public final class Prototype {
 	 */
 	public final Prototype[] children;
 
-	public final int upvalues;
+	private final UpvalueInfo[] upvalues;
+
 	public final int lineDefined;
 	public final int lastLineDefined;
 	public final int parameters;
-	public final int isVarArg;
+	public final boolean isVarArg;
 	public final int maxStackSize;
 
 	/**
@@ -74,12 +75,10 @@ public final class Prototype {
 	 */
 	public final LocalVariable[] locals;
 
-	public final LuaString[] upvalueNames;
-
 	public Prototype(
 		LuaString source, LuaString shortSource,
-		LuaValue[] constants, int[] code, Prototype[] children, int parameters, int isVarArg, int maxStackSize, int upvalues,
-		int lineDefined, int lastLineDefined, int[] lineInfo, int[] columnInfo, LocalVariable[] locals, LuaString[] upvalueNames
+		LuaValue[] constants, int[] code, Prototype[] children, int parameters, boolean isVarArg, int maxStackSize, UpvalueInfo[] upvalues,
+		int lineDefined, int lastLineDefined, int[] lineInfo, int[] columnInfo, LocalVariable[] locals
 	) {
 		this.source = source;
 		this.shortSource = shortSource;
@@ -97,7 +96,6 @@ public final class Prototype {
 		this.lineInfo = lineInfo;
 		this.columnInfo = columnInfo;
 		this.locals = locals;
-		this.upvalueNames = upvalueNames;
 	}
 
 	public LuaString shortSource() {
@@ -126,8 +124,16 @@ public final class Prototype {
 		return null;  // not found
 	}
 
+	public int upvalues() {
+		return upvalues.length;
+	}
+
+	public UpvalueInfo getUpvalue(int upvalue) {
+		return upvalues[upvalue];
+	}
+
 	public @Nullable LuaString getUpvalueName(int index) {
-		return index >= 0 && index < upvalueNames.length ? upvalueNames[index] : null;
+		return index >= 0 && index < upvalues.length ? upvalues[index].name() : null;
 	}
 
 	/**
@@ -148,5 +154,18 @@ public final class Prototype {
 	 */
 	public int columnAt(int pc) {
 		return pc >= 0 && pc < columnInfo.length ? columnInfo[pc] : -1;
+	}
+
+	/**
+	 * Information about an upvalue.
+	 *
+	 * @param name      The name of this upvalue.
+	 * @param fromLocal Whether this upvalue comes from a local (if true) or an upvalue (if false).
+	 * @param byteIndex The short index of this upvalue. Use {@link #index()} when an int index is needed.
+	 */
+	public record UpvalueInfo(@Nullable LuaString name, boolean fromLocal, byte byteIndex) {
+		public int index() {
+			return byteIndex & 0xFF;
+		}
 	}
 }
