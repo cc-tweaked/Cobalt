@@ -275,7 +275,7 @@ public final class Constants {
 	 *
 	 * @see Constants#NONE
 	 */
-	private static final class None extends Varargs {
+	static final class None extends Varargs {
 		@Override
 		public LuaValue arg(int i) {
 			return NIL;

@@ -178,8 +178,8 @@ public final class ValueFactory {
 		return switch (v.length) {
 			case 0 -> Constants.NONE;
 			case 1 -> v[0];
-			case 2 -> new LuaValue.PairVarargs(v[0], v[1]);
-			default -> new LuaValue.ArrayVarargs(v, Constants.NONE);
+			case 2 -> new DepthVarargs.PairVarargs(v[0], v[1]);
+			default -> new DepthVarargs.ArrayVarargs(v, Constants.NONE);
 		};
 	}
 
@@ -195,8 +195,8 @@ public final class ValueFactory {
 		return switch (v.size()) {
 			case 0 -> Constants.NONE;
 			case 1 -> v.get(0);
-			case 2 -> new LuaValue.PairVarargs(v.get(0), v.get(1));
-			default -> new LuaValue.ArrayVarargs(v.toArray(new LuaValue[0]), Constants.NONE);
+			case 2 -> new DepthVarargs.PairVarargs(v.get(0), v.get(1));
+			default -> new DepthVarargs.ArrayVarargs(v.toArray(new LuaValue[0]), Constants.NONE);
 		};
 	}
 
@@ -214,8 +214,8 @@ public final class ValueFactory {
 		return switch (length) {
 			case 0 -> Constants.NONE;
 			case 1 -> v[offset];
-			case 2 -> new LuaValue.PairVarargs(v[offset + 0], v[offset + 1]);
-			default -> new LuaValue.ArrayVarargs(Arrays.copyOfRange(v, offset, offset + length), Constants.NONE);
+			case 2 -> new DepthVarargs.PairVarargs(v[offset + 0], v[offset + 1]);
+			default -> new DepthVarargs.ArrayVarargs(Arrays.copyOfRange(v, offset, offset + length), Constants.NONE);
 		};
 	}
 
@@ -232,14 +232,14 @@ public final class ValueFactory {
 	public static Varargs varargsOfCopy(final LuaValue[] v, final int offset, final int length, Varargs more) {
 		if (length == 0) return more;
 
-		if (Varargs.DepthVarargs.depth(more) > MAX_DEPTH) {
+		if (DepthVarargs.depth(more) > MAX_DEPTH) {
 			LuaValue[] values = new LuaValue[length + more.count()];
 			System.arraycopy(v, offset, values, 0, length);
 			more.fill(values, length);
-			return new LuaValue.ArrayVarargs(values, Constants.NONE);
+			return new DepthVarargs.ArrayVarargs(values, Constants.NONE);
 		}
 
-		return length == 1 ? new LuaValue.PairVarargs(v[offset], more) : new LuaValue.ArrayVarargs(Arrays.copyOfRange(v, offset, offset + length), more);
+		return length == 1 ? new DepthVarargs.PairVarargs(v[offset], more) : new DepthVarargs.ArrayVarargs(Arrays.copyOfRange(v, offset, offset + length), more);
 	}
 
 	/**
@@ -254,14 +254,14 @@ public final class ValueFactory {
 	 * @return {@link Varargs} wrapping the supplied values.
 	 */
 	public static Varargs varargsOf(LuaValue v, Varargs r) {
-		if (Varargs.DepthVarargs.depth(r) > MAX_DEPTH) {
+		if (DepthVarargs.depth(r) > MAX_DEPTH) {
 			LuaValue[] values = new LuaValue[1 + r.count()];
 			values[0] = v;
 			r.fill(values, 1);
-			return new LuaValue.ArrayVarargs(values, Constants.NONE);
+			return new DepthVarargs.ArrayVarargs(values, Constants.NONE);
 		}
 
-		return r.count() == 0 ? v : new LuaValue.PairVarargs(v, r);
+		return r.count() == 0 ? v : new DepthVarargs.PairVarargs(v, r);
 	}
 
 	/**
@@ -277,14 +277,14 @@ public final class ValueFactory {
 	 * @return {@link Varargs} wrapping the supplied values.
 	 */
 	public static Varargs varargsOf(LuaValue v1, LuaValue v2, Varargs v3) {
-		if (Varargs.DepthVarargs.depth(v3) > MAX_DEPTH) {
+		if (DepthVarargs.depth(v3) > MAX_DEPTH) {
 			LuaValue[] values = new LuaValue[2 + v3.count()];
 			values[0] = v1;
 			values[1] = v2;
 			v3.fill(values, 2);
-			return new LuaValue.ArrayVarargs(values, Constants.NONE);
+			return new DepthVarargs.ArrayVarargs(values, Constants.NONE);
 		}
 
-		return v3.count() == 0 ? new LuaValue.PairVarargs(v1, v2) : new LuaValue.ArrayVarargs(new LuaValue[]{v1, v2}, v3);
+		return v3.count() == 0 ? new DepthVarargs.PairVarargs(v1, v2) : new DepthVarargs.ArrayVarargs(new LuaValue[]{v1, v2}, v3);
 	}
 }

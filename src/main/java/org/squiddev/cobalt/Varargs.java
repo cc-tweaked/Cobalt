@@ -47,7 +47,7 @@ package org.squiddev.cobalt;
  * @see ValueFactory#varargsOfCopy(LuaValue[], int, int, Varargs)
  * @see LuaValue#subargs(int)
  */
-public abstract class Varargs {
+public sealed abstract class Varargs permits LuaValue, DepthVarargs, Constants.None {
 
 	/**
 	 * Get the n-th argument value (1-based).
@@ -178,60 +178,8 @@ public abstract class Varargs {
 		int end = count();
 		return switch (end - start) {
 			case 0 -> arg(start);
-			case 1 -> new LuaValue.PairVarargs(arg(start), arg(end));
-			default -> end < start ? Constants.NONE : new SubVarargs(this, start, end);
+			case 1 -> new DepthVarargs.PairVarargs(arg(start), arg(end));
+			default -> end < start ? Constants.NONE : new DepthVarargs.SubVarargs(this, start, end);
 		};
-	}
-
-	protected abstract static class DepthVarargs extends Varargs {
-		protected final int depth;
-
-		protected DepthVarargs(int depth) {
-			this.depth = depth;
-		}
-
-		public static int depth(Varargs varargs) {
-			return varargs instanceof DepthVarargs ? ((DepthVarargs) varargs).depth : 1;
-		}
-	}
-
-	/**
-	 * Implementation of Varargs for use in the Varargs.subargs() function.
-	 *
-	 * @see Varargs#subargs(int)
-	 */
-	private static class SubVarargs extends LuaValue.DepthVarargs {
-		private final Varargs v;
-		private final int start;
-		private final int end;
-
-		public SubVarargs(Varargs varargs, int start, int end) {
-			super(depth(varargs));
-			this.v = varargs;
-			this.start = start;
-			this.end = end;
-		}
-
-		@Override
-		public LuaValue arg(int i) {
-			i += start - 1;
-			return i >= start && i <= end ? v.arg(i) : Constants.NIL;
-		}
-
-		@Override
-		public LuaValue first() {
-			return v.arg(start);
-		}
-
-		@Override
-		public void fill(LuaValue[] array, int offset) {
-			int size = end + 1 - start;
-			for (int i = 0; i < size; i++) array[offset + i] = v.arg(start + i);
-		}
-
-		@Override
-		public int count() {
-			return end + 1 - start;
-		}
 	}
 }

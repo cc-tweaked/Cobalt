@@ -34,7 +34,7 @@ package org.squiddev.cobalt;
  * @see LuaDouble
  * @see LuaValue
  */
-public abstract class LuaNumber extends LuaValue {
+public abstract sealed class LuaNumber extends LuaValue permits LuaInteger, LuaDouble {
 
 	public LuaNumber() {
 		super(Constants.TNUMBER);
