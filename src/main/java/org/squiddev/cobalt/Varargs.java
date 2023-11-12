@@ -47,7 +47,7 @@ package org.squiddev.cobalt;
  * @see ValueFactory#varargsOfCopy(LuaValue[], int, int, Varargs)
  * @see LuaValue#subargs(int)
  */
-public sealed abstract class Varargs permits LuaValue, DepthVarargs, Constants.None {
+public abstract class Varargs {
 
 	/**
 	 * Get the n-th argument value (1-based).

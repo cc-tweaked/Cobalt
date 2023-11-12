@@ -2,7 +2,7 @@ package org.squiddev.cobalt;
 
 import cc.tweaked.cobalt.memory.MarkedObject;
 
-public abstract non-sealed class MarkedLuaValue extends LuaValue implements MarkedObject {
+public abstract class MarkedLuaValue extends LuaValue implements MarkedObject {
 	private byte markMask = -1;
 
 	protected MarkedLuaValue(int type) {

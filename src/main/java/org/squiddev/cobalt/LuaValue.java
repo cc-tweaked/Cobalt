@@ -96,8 +96,7 @@ import static org.squiddev.cobalt.Constants.*;
  * @see LoadState
  * @see Varargs
  */
-public abstract sealed class LuaValue extends Varargs
-	permits LuaNil, LuaNumber, LuaBoolean, LuaString, MarkedLuaValue, LuaUserdata {
+public abstract class LuaValue extends Varargs {
 	private final int type;
 
 	protected LuaValue(int type) {
