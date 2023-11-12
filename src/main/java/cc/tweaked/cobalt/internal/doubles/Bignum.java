@@ -30,6 +30,7 @@
 
 package cc.tweaked.cobalt.internal.doubles;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.checker.signedness.qual.Signed;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
@@ -60,7 +61,7 @@ final class Bignum {
 	}
 
 	@Override
-	public boolean equals(Object o) {
+	public boolean equals(@Nullable Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		Bignum bignum = (Bignum) o;

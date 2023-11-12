@@ -48,6 +48,8 @@ package org.squiddev.cobalt;
  * @see LuaValue#subargs(int)
  */
 public abstract class Varargs {
+	Varargs() {
+	}
 
 	/**
 	 * Get the n-th argument value (1-based).

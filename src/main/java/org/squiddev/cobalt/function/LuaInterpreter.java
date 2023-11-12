@@ -38,6 +38,9 @@ import static org.squiddev.cobalt.debug.DebugFrame.*;
  * The main interpreter for {@link LuaInterpretedFunction}s.
  */
 public final class LuaInterpreter {
+	private LuaInterpreter() {
+	}
+
 	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
 		LuaValue[] stack = new LuaValue[p.maxStackSize];

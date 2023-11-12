@@ -24,10 +24,10 @@
  */
 package org.squiddev.cobalt.compiler;
 
+import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
-import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -154,7 +154,7 @@ class DefinitionScanner : DefinitionData {
 					clearLambda()
 
 					// If we're invoking the lambda metafactory to make an Action, then keep track of this lambda.
-					if (name == "run" && Type.getReturnType(descriptor) == SUSPENDED_TASK_ACTION && bootstrapMethodHandle == LAMBDA_METAFACTORY) {
+					if (name == "run" && Type.getReturnType(descriptor) == SUSPENDED_ACTION && bootstrapMethodHandle == LAMBDA_METAFACTORY) {
 						lastLambda = bootstrapMethodArguments[1] as Handle
 					}
 				}
@@ -162,7 +162,7 @@ class DefinitionScanner : DefinitionData {
 				override fun visitMethodInsn(opcode: Int, owner: String, callName: String, callDesc: String, isInterface: Boolean) {
 					// If we're invoking a static method on SuspendedTask, then both this function and the lambda should
 					// be instrumented.
-					if (opcode == INVOKESTATIC && owner == SUSPENDED_TASK.internalName) {
+					if (opcode == INVOKESTATIC && owner == SUSPENDED_ACTION.internalName) {
 						val lastLambda = this.lastLambda
 						if (lastLambda == null || !lastLambda.name.contains("lambda")) {
 							throw UnsupportedConstruct("$className.$name calls $owner.$callName with a non-lambda argument.")

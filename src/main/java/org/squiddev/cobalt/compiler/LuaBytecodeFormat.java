@@ -1,9 +1,9 @@
 package org.squiddev.cobalt.compiler;
 
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.LuaString;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.unwind.SuspendedFunction;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -47,7 +47,7 @@ public final class LuaBytecodeFormat implements BytecodeFormat {
 	public SuspendedFunction<Prototype> readFunction(LuaString name, InputReader input) {
 		var loader = new BytecodeLoader(input);
 
-		return SuspendedTask.toFunction(() -> {
+		return SuspendedAction.toFunction(() -> {
 			try {
 				loader.checkSignature();
 				loader.loadHeader();

@@ -24,9 +24,9 @@
  */
 package org.squiddev.cobalt.compiler;
 
+import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LocalVariable;
-import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.*;

@@ -1,5 +1,6 @@
-package org.squiddev.cobalt.unwind;
+package cc.tweaked.cobalt.internal.unwind;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.UnwindThrowable;
 
 import java.io.Serial;
@@ -24,7 +25,7 @@ public class Pause extends Throwable {
 	}
 
 	@Override
-	public synchronized UnwindThrowable getCause() {
+	public synchronized @Nullable UnwindThrowable getCause() {
 		return (UnwindThrowable) super.getCause();
 	}
 

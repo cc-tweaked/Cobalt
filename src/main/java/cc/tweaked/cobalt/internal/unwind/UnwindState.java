@@ -1,5 +1,6 @@
-package org.squiddev.cobalt.unwind;
+package cc.tweaked.cobalt.internal.unwind;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.Varargs;
 
 
@@ -11,8 +12,8 @@ import org.squiddev.cobalt.Varargs;
 @Deprecated
 public class UnwindState {
 	public int state;
-	public Varargs resumeArgs;
-	public Object child;
+	public @Nullable Varargs resumeArgs;
+	public @Nullable Object child;
 
 	public static UnwindState getOrCreate(Object x) {
 		return x == null ? new UnwindState() : (UnwindState) x;

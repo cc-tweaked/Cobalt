@@ -2,9 +2,9 @@ package org.squiddev.cobalt.compiler;
 
 import cc.tweaked.cobalt.internal.string.CharProperties;
 import cc.tweaked.cobalt.internal.string.NumberParser;
+import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.Utf8Lib;
-import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;

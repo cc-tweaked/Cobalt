@@ -9,7 +9,7 @@ import static org.squiddev.cobalt.Constants.NONE;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
-public class Utf8Lib {
+public final class Utf8Lib {
 	private static final int[] LIMITS = {0xFF, 0x7F, 0x7FF, 0xFFFF};
 	public static final long MAX_UNICODE = 0x10FFFFL;
 
@@ -26,13 +26,17 @@ public class Utf8Lib {
 	 */
 	private LibFunction codesIter;
 
-	public void add(LuaState state, LuaTable env) throws LuaError {
-		codesIter = RegisteredFunction.ofV("utf8.codesIter", Utf8Lib::codesIter).create();
+	private Utf8Lib() {
+	}
+
+	public static void add(LuaState state, LuaTable env) throws LuaError {
+		var self = new Utf8Lib();
+		self.codesIter = RegisteredFunction.ofV("utf8.codesIter", Utf8Lib::codesIter).create();
 
 		LuaTable t = new LuaTable(0, 6);
 		RegisteredFunction.bind(t, new RegisteredFunction[]{
 			RegisteredFunction.ofV("char", Utf8Lib::char$),
-			RegisteredFunction.ofV("codes", this::codes),
+			RegisteredFunction.ofV("codes", self::codes),
 			RegisteredFunction.ofV("codepoint", Utf8Lib::codepoint),
 			RegisteredFunction.ofV("len", Utf8Lib::len),
 			RegisteredFunction.of("offset", Utf8Lib::offset),

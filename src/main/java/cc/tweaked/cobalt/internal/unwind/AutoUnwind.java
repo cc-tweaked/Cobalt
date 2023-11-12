@@ -1,4 +1,6 @@
-package org.squiddev.cobalt.unwind;
+package cc.tweaked.cobalt.internal.unwind;
+
+import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

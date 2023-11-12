@@ -43,10 +43,14 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
-public class MathLib {
+public final class MathLib {
 	private Random random;
 
-	public void add(LuaState state, LuaTable env) throws LuaError {
+	private MathLib() {
+	}
+
+	public static void add(LuaState state, LuaTable env) throws LuaError {
+		var self = new MathLib();
 		final RegisteredFunction[] functions = new RegisteredFunction[]{
 			RegisteredFunction.of("abs", (s, arg) -> valueOf(Math.abs(arg.checkDouble()))),
 			RegisteredFunction.of("ceil", (s, arg) -> valueOf(Math.ceil(arg.checkDouble()))),
@@ -75,8 +79,8 @@ public class MathLib {
 			RegisteredFunction.ofV("min", MathLib::min),
 			RegisteredFunction.ofV("modf", MathLib::modf),
 			// We need to capture the current random state. This is implemented as an upvalue in PUC Lua.
-			RegisteredFunction.ofV("randomseed", this::randomseed),
-			RegisteredFunction.ofV("random", this::random),
+			RegisteredFunction.ofV("randomseed", self::randomseed),
+			RegisteredFunction.ofV("random", self::random),
 		};
 
 		LuaTable t = new LuaTable(0, functions.length + 3);

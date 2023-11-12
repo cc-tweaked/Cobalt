@@ -38,8 +38,8 @@ import org.squiddev.cobalt.*;
  * @see LibFunction
  * @see LuaInterpretedFunction
  */
-public abstract class LuaFunction extends LuaValue {
-	public LuaFunction() {
+public abstract sealed class LuaFunction extends LuaValue permits LibFunction, LuaClosure {
+	LuaFunction() {
 		super(Constants.TFUNCTION);
 	}
 

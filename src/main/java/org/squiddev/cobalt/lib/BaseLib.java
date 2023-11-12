@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 import cc.tweaked.cobalt.internal.LegacyEnv;
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.InputReader;
@@ -35,7 +36,6 @@ import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.function.ResumableVarArgFunction;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -51,7 +51,7 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.1">http://www.lua.org/manual/5.1/manual.html#5.1</a>
  */
-public class BaseLib {
+public final class BaseLib {
 	private static final LuaString FUNCTION_STR = valueOf("function");
 	private static final LuaString LOAD_MODE = valueOf("bt");
 	private static final LuaString ASSERTION_FAILED = valueOf("assertion failed!");
@@ -59,7 +59,11 @@ public class BaseLib {
 	private LuaValue next;
 	private LuaValue inext;
 
-	public void add(LuaTable env) {
+	private BaseLib() {
+	}
+
+	public static void add(LuaTable env) {
+		var self = new BaseLib();
 		env.rawset("_G", env);
 		env.rawset("_VERSION", valueOf("Lua 5.2"));
 		RegisteredFunction.bind(env, new RegisteredFunction[]{
@@ -77,8 +81,8 @@ public class BaseLib {
 			RegisteredFunction.ofV("setmetatable", BaseLib::setmetatable),
 			RegisteredFunction.ofV("tostring", BaseLib::tostring),
 			RegisteredFunction.ofV("tonumber", BaseLib::tonumber),
-			RegisteredFunction.ofV("pairs", this::pairs),
-			RegisteredFunction.ofV("ipairs", this::ipairs),
+			RegisteredFunction.ofV("pairs", self::pairs),
+			RegisteredFunction.ofV("ipairs", self::ipairs),
 			RegisteredFunction.of("rawlen", BaseLib::rawlen),
 			RegisteredFunction.ofV("next", BaseLib::next),
 			RegisteredFunction.ofFactory("pcall", PCall::new),
@@ -87,8 +91,8 @@ public class BaseLib {
 		});
 
 		// remember next, and inext for use in pairs and ipairs
-		next = env.rawget("next");
-		inext = RegisteredFunction.ofS("inext", BaseLib::inext).create();
+		self.next = env.rawget("next");
+		self.inext = RegisteredFunction.ofS("inext", BaseLib::inext).create();
 	}
 
 	private static LuaValue error(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
@@ -258,7 +262,7 @@ public class BaseLib {
 			return v.isNil() ? NIL : varargsOf(valueOf(key), v);
 		}
 
-		return SuspendedTask.run(di, () -> {
+		return SuspendedAction.run(di, () -> {
 			LuaValue v = OperationHelper.getTable(state, table, key);
 			return v.isNil() ? NIL : varargsOf(valueOf(key), v);
 		});
@@ -327,7 +331,7 @@ public class BaseLib {
 			LuaFunction function = scriptGen.checkFunction();
 			ProtectedCall call = new ProtectedCall(di, state.getCurrentThread().getErrorFunc());
 			di.state = call;
-			return call.apply(state, SuspendedTask.toFunction(() -> {
+			return call.apply(state, SuspendedAction.toFunction(() -> {
 				try {
 					InputReader stream = new FunctionInputReader(state, function);
 					return state.compiler.load(LuaC.compile(state, stream, chunkName == null ? FUNCTION_STR : chunkName, mode), funcEnv);

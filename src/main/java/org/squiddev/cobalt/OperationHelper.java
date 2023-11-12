@@ -24,10 +24,10 @@
  */
 package org.squiddev.cobalt;
 
+import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.unwind.AutoUnwind;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;

@@ -30,7 +30,7 @@ import org.squiddev.cobalt.debug.Upvalue;
 /**
  * A lua function that provides a coroutine.
  */
-public abstract class LuaClosure extends LuaFunction {
+public abstract non-sealed class LuaClosure extends LuaFunction {
 	/**
 	 * Get the prototype for this closure
 	 *

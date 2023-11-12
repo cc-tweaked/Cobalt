@@ -25,13 +25,13 @@
 package org.squiddev.cobalt.compiler;
 
 
+import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState.FunctionFactory;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.CoreLibraries;
-import org.squiddev.cobalt.unwind.AutoUnwind;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -156,7 +156,7 @@ public class LuaC {
 	}
 
 	public static Prototype compile(LuaState state, InputStream stream, LuaString name, LuaString mode) throws CompileException, LuaError {
-		Object result = SuspendedTask.noYield(() -> {
+		Object result = SuspendedAction.noYield(() -> {
 			try {
 				return compile(state, new InputStreamReader(stream), name, mode);
 			} catch (CompileException e) {

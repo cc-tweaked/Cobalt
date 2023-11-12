@@ -26,13 +26,13 @@ package org.squiddev.cobalt.lib.system;
 
 
 import cc.tweaked.cobalt.internal.LegacyEnv;
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import static org.squiddev.cobalt.ValueFactory.*;
 
@@ -111,7 +111,7 @@ public class PackageLib {
 
 	// ======================== Module, Package loading =============================
 
-	private Varargs noYield(SuspendedTask.Action<Varargs> task) throws LuaError {
+	private Varargs noYield(SuspendedAction<Varargs> task) throws LuaError {
 		try {
 			return task.run();
 		} catch (UnwindThrowable e) {

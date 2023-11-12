@@ -548,13 +548,13 @@ private fun makeSuspendedFunction(emitter: ClassEmitter, methodReference: Handle
 }
 
 /**
- * Rewrite methods which call static functions on [SUSPENDED_TASK].
+ * Rewrite methods which call static functions on [SUSPENDED_ACTION].
  */
 fun instrumentDispatch(method: MethodNode, emitter: ClassEmitter, mw: MethodVisitor) {
 	// We do our modifications directly on the MethodNode - it's a bit sad, but much easier as we're dealing with
 	// two adjacent nodes.
 	for (insn in method.instructions) {
-		if (insn.opcode != INVOKESTATIC || (insn as MethodInsnNode).owner != SUSPENDED_TASK.internalName) continue
+		if (insn.opcode != INVOKESTATIC || (insn as MethodInsnNode).owner != SUSPENDED_ACTION.internalName) continue
 
 		val invokeInsn = insn.previous as InvokeDynamicInsnNode
 		val methodReference = invokeInsn.bsmArgs[1] as Handle

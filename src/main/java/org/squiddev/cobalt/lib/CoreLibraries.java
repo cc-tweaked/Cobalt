@@ -45,12 +45,12 @@ public final class CoreLibraries {
 	 */
 	public static LuaTable standardGlobals(LuaState state) throws LuaError {
 		LuaTable globals = state.globals();
-		new BaseLib().add(globals);
+		BaseLib.add(globals);
 		TableLib.add(state, globals);
 		StringLib.add(state, globals);
 		CoroutineLib.add(state, globals);
-		new MathLib().add(state, globals);
-		new Utf8Lib().add(state, globals);
+		MathLib.add(state, globals);
+		Utf8Lib.add(state, globals);
 		return globals;
 	}
 

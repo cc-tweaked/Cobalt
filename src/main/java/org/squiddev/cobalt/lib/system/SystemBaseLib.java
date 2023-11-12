@@ -1,10 +1,10 @@
 package org.squiddev.cobalt.lib.system;
 
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -80,7 +80,7 @@ public class SystemBaseLib {
 
 	private Varargs print(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
 		// print(...) -> void
-		return SuspendedTask.run(frame, () -> {
+		return SuspendedAction.run(frame, () -> {
 			LuaValue tostring = OperationHelper.getTable(state, state.globals(), valueOf("tostring"));
 			for (int i = 1, n = args.count(); i <= n; i++) {
 				if (i > 1) out.write('\t');

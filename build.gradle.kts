@@ -93,6 +93,14 @@ runCheckerFramework(
 	),
 )
 
+runCheckerFramework(
+	"nonNull",
+	listOf(
+		"-processor", "org.checkerframework.checker.nullness.NullnessChecker",
+		"""-AonlyDefs=^cc\.tweaked\.cobalt\.""",
+	),
+)
+
 // Point compileJava to emit to classes/uninstrumentedJava/main, and then add a task to instrument these classes,
 // saving them back to the the original class directory. This is held together with so much string :(.
 val mainSource = sourceSets.main.get()
