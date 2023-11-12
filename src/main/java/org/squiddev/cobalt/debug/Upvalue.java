@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt.debug;
 
+import cc.tweaked.cobalt.memory.AllocatedObject;
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.squiddev.cobalt.LuaValue;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.function.LuaClosure;
@@ -34,7 +36,7 @@ import org.squiddev.cobalt.function.LuaClosure;
  * @see LuaClosure
  * @see Prototype
  */
-public final class Upvalue {
+public final class Upvalue implements AllocatedObject {
 	private LuaValue[] array; // initially the stack, becomes a holder
 	private int index;
 
@@ -98,5 +100,11 @@ public final class Upvalue {
 		index = 0;
 		this.previous = null;
 		return previous;
+	}
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		counter.traceValue(getValue(), depth);
+		return OBJECT_SIZE;
 	}
 }

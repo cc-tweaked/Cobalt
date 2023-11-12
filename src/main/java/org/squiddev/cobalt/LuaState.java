@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import cc.tweaked.cobalt.memory.AllocatedObject;
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.compiler.BytecodeFormat;
 import org.squiddev.cobalt.compiler.LoadState;
@@ -38,7 +40,7 @@ import java.util.function.Supplier;
 /**
  * Global lua state
  */
-public final class LuaState {
+public final class LuaState implements AllocatedObject {
 	/**
 	 * The metatable for all strings
 	 */
@@ -79,6 +81,8 @@ public final class LuaState {
 	private volatile boolean interrupted;
 	private final InterruptHandler interruptHandler;
 
+	public byte lastMask = 0;
+
 	/**
 	 * The currently executing thread
 	 */
@@ -118,6 +122,23 @@ public final class LuaState {
 	 */
 	public LuaTable globals() {
 		return globals;
+	}
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		counter.trace(stringMetatable, depth);
+		counter.trace(booleanMetatable, depth);
+		counter.trace(numberMetatable, depth);
+		counter.trace(nilMetatable, depth);
+		counter.trace(functionMetatable, depth);
+		counter.trace(threadMetatable, depth);
+
+		counter.trace(globals, depth);
+		counter.trace(currentThread, depth);
+		counter.trace(mainThread, depth);
+
+		counter.trace(registry.get(), depth);
+		return OBJECT_SIZE;
 	}
 
 	/**

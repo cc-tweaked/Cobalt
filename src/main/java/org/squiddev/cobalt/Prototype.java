@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import cc.tweaked.cobalt.memory.AllocatedObject;
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
@@ -39,7 +41,7 @@ import org.squiddev.cobalt.function.LuaInterpretedFunction;
  *
  * @see LuaInterpretedFunction
  */
-public final class Prototype {
+public final class Prototype implements AllocatedObject {
 	public final LuaString source;
 	public final LuaString shortSource;
 
@@ -75,6 +77,8 @@ public final class Prototype {
 	 */
 	public final LocalVariable[] locals;
 
+	private final long size;
+
 	public Prototype(
 		LuaString source, LuaString shortSource,
 		LuaValue[] constants, int[] code, Prototype[] children, int parameters, boolean isVarArg, int maxStackSize, UpvalueInfo[] upvalues,
@@ -96,6 +100,13 @@ public final class Prototype {
 		this.lineInfo = lineInfo;
 		this.columnInfo = columnInfo;
 		this.locals = locals;
+
+		size = OBJECT_SIZE + (POINTER_SIZE * 16) // Base size + fields
+			+ POINTER_SIZE * constants.length
+			+ 4L * code.length
+			+ 4L * lineInfo.length + 4L * columnInfo.length
+			+ (POINTER_SIZE + OBJECT_SIZE + 12) * locals.length // Size of array and its (unique) contents.
+			+ (POINTER_SIZE + OBJECT_SIZE + 8) * upvalues.length;
 	}
 
 	public LuaString shortSource() {
@@ -154,6 +165,15 @@ public final class Prototype {
 	 */
 	public int columnAt(int pc) {
 		return pc >= 0 && pc < columnInfo.length ? columnInfo[pc] : -1;
+	}
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		for (var constant : constants) counter.traceValue(constant, depth);
+		for (var child : children) counter.trace(child, depth);
+		for (var local : locals) counter.trace(local.name, depth);
+		for (var upvalue : upvalues) counter.trace(upvalue.name, depth);
+		return size;
 	}
 
 	/**

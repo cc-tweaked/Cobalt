@@ -5,6 +5,7 @@ hs_err_pid*
 /build-tools/build
 /*.txt
 /*.out
+/*.log
 
 # Editors
 *.iml
@@ -12,3 +13,4 @@ hs_err_pid*
 *.ipr
 *.iws
 /out
+/jmh_*.json

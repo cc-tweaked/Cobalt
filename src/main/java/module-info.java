@@ -1,6 +1,8 @@
 module cc.tweaked.cobalt {
 	requires static transitive org.checkerframework.checker.qual;
 
+	exports cc.tweaked.cobalt.memory;
+
 	exports org.squiddev.cobalt;
 	exports org.squiddev.cobalt.compiler;
 	exports org.squiddev.cobalt.debug;

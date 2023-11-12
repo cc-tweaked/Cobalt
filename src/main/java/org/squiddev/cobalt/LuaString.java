@@ -25,6 +25,8 @@
 package org.squiddev.cobalt;
 
 import cc.tweaked.cobalt.internal.string.NumberParser;
+import cc.tweaked.cobalt.memory.AllocatedObject;
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
@@ -56,7 +58,7 @@ import static org.squiddev.cobalt.Constants.NIL;
  * @see ValueFactory#valueOf(byte[])
  */
 @DefaultQualifier(NonNull.class)
-public final class LuaString extends LuaValue implements Comparable<LuaString> {
+public final class LuaString extends LuaValue implements Comparable<LuaString>, AllocatedObject {
 	/**
 	 * Size of cache of recent short strings. This is the maximum number of LuaStrings that
 	 * will be retained in the cache of recent short strings. Must be a power of 2.
@@ -633,4 +635,9 @@ public final class LuaString extends LuaValue implements Comparable<LuaString> {
 	}
 
 	// endregion
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		return OBJECT_SIZE + length;
+	}
 }

@@ -24,8 +24,11 @@
  */
 package org.squiddev.cobalt;
 
+import cc.tweaked.cobalt.memory.AllocatedObject;
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.debug.FunctionDebugHook;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
 
@@ -42,7 +45,7 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
  * @see LuaValue
  * @see CoroutineLib
  */
-public final class LuaThread extends LuaValue {
+public final class LuaThread extends LuaValue implements AllocatedObject {
 	public enum Status {
 		/**
 		 * A coroutine which has been run at all.
@@ -171,6 +174,28 @@ public final class LuaThread extends LuaValue {
 
 	public Status getStatus() {
 		return status;
+	}
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		counter.traceValue(errFunc, depth);
+		counter.trace(function, depth);
+		counter.trace(previousThread, depth);
+
+		if (debugState.getHook() instanceof FunctionDebugHook f) counter.trace(f.function(), depth);
+
+		for (int i = 0; ; i++) {
+			var frame = debugState.getFrame(i);
+			if (frame == null) break;
+
+			counter.trace(frame.func, depth);
+			counter.traceAnything(frame.state, depth);
+
+			var stack = frame.stack;
+			if (stack != null) for (var value : stack) counter.traceValue(value, depth);
+		}
+
+		return OBJECT_SIZE;
 	}
 
 	/**

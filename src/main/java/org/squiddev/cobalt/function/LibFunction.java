@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.function;
 
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.lib.BaseLib;
@@ -194,4 +195,9 @@ public sealed abstract class LibFunction extends LuaFunction
 		Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
 	}
 	// endregion
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		return OBJECT_SIZE;
+	}
 }

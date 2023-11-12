@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt.function;
 
+import cc.tweaked.cobalt.memory.AllocatedObject;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 
 /**
@@ -38,7 +40,7 @@ import org.squiddev.cobalt.*;
  * @see LibFunction
  * @see LuaInterpretedFunction
  */
-public abstract class LuaFunction extends LuaValue {
+public abstract class LuaFunction extends LuaValue implements AllocatedObject {
 	public LuaFunction() {
 		super(Constants.TFUNCTION);
 	}

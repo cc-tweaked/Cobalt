@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.function;
 
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
@@ -113,6 +114,13 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 				upvalues[i] = new Upvalue(Constants.NIL);
 			}
 		}
+	}
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		counter.trace(p, depth);
+		for (var upvalue : upvalues) counter.trace(upvalue, depth);
+		return OBJECT_SIZE;
 	}
 
 	@Override

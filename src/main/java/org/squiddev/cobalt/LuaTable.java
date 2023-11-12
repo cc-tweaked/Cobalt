@@ -24,6 +24,8 @@
  */
 package org.squiddev.cobalt;
 
+import cc.tweaked.cobalt.memory.MarkedObject;
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.ref.WeakReference;
@@ -70,10 +72,11 @@ import static org.squiddev.cobalt.ValueFactory.*;
  *
  * @see LuaValue
  */
-public final class LuaTable extends LuaValue {
+public final class LuaTable extends LuaValue implements MarkedObject {
 	private static final Object[] EMPTY_ARRAY = new Object[0];
 	private static final Node[] EMPTY_NODES = new Node[0];
 
+	private byte markMask;
 	private Object[] array = EMPTY_ARRAY;
 	private Node[] nodes = EMPTY_NODES;
 	private int lastFree = 0;
@@ -145,6 +148,24 @@ public final class LuaTable extends LuaValue {
 			weakValues = newWeakValues;
 			rehash(null, true);
 		}
+	}
+
+	@Override
+	public long traceObject(MemoryCounter counter, int depth) {
+		for (Object child : array) counter.traceValue(strengthen(child), depth);
+		for (Node node : nodes) {
+			counter.traceValue(strengthen(node.key), depth);
+			counter.traceValue(strengthen(node.value), depth);
+		}
+
+		return OBJECT_SIZE + POINTER_SIZE * array.length + (OBJECT_SIZE + POINTER_SIZE) * nodes.length;
+	}
+
+	@Override
+	public boolean markObject(byte mask) {
+		if (markMask == IGNORE || markMask == mask) return false;
+		markMask = mask;
+		return true;
 	}
 
 	/**
