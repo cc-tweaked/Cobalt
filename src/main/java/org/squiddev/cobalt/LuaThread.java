@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt;
 
-import cc.tweaked.cobalt.memory.AllocatedObject;
 import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
@@ -45,7 +44,7 @@ import static org.squiddev.cobalt.debug.DebugFrame.FLAG_YPCALL;
  * @see LuaValue
  * @see CoroutineLib
  */
-public final class LuaThread extends LuaValue implements AllocatedObject {
+public final class LuaThread extends MarkedLuaValue {
 	public enum Status {
 		/**
 		 * A coroutine which has been run at all.

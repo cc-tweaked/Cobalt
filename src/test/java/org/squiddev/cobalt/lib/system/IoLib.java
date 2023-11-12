@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib.system;
 
 
+import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
@@ -54,7 +55,7 @@ public class IoLib {
 	private static final LuaValue FILE = valueOf("file");
 	private static final LuaValue CLOSED_FILE = valueOf("closed file");
 
-	private class LuaFile extends LuaValue {
+	private class LuaFile extends MarkedLuaValue {
 		protected final RandomAccessFile file;
 		protected final InputStream is;
 		protected final OutputStream os;
@@ -186,6 +187,11 @@ public class IoLib {
 		@Override
 		public String toString() {
 			return "file (" + (isClosed() ? "closed" : Integer.toHexString(hashCode())) + ")";
+		}
+
+		@Override
+		public long traceObject(MemoryCounter counter, int depth) {
+			return OBJECT_SIZE;
 		}
 	}
 

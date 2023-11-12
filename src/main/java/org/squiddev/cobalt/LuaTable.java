@@ -24,7 +24,6 @@
  */
 package org.squiddev.cobalt;
 
-import cc.tweaked.cobalt.memory.MarkedObject;
 import cc.tweaked.cobalt.memory.MemoryCounter;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -72,11 +71,10 @@ import static org.squiddev.cobalt.ValueFactory.*;
  *
  * @see LuaValue
  */
-public final class LuaTable extends LuaValue implements MarkedObject {
+public final class LuaTable extends MarkedLuaValue {
 	private static final Object[] EMPTY_ARRAY = new Object[0];
 	private static final Node[] EMPTY_NODES = new Node[0];
 
-	private byte markMask;
 	private Object[] array = EMPTY_ARRAY;
 	private Node[] nodes = EMPTY_NODES;
 	private int lastFree = 0;
@@ -159,13 +157,6 @@ public final class LuaTable extends LuaValue implements MarkedObject {
 		}
 
 		return OBJECT_SIZE + POINTER_SIZE * array.length + (OBJECT_SIZE + POINTER_SIZE) * nodes.length;
-	}
-
-	@Override
-	public boolean markObject(byte mask) {
-		if (markMask == IGNORE || markMask == mask) return false;
-		markMask = mask;
-		return true;
 	}
 
 	/**
