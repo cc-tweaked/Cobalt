@@ -98,6 +98,20 @@ end
 expect_mt.not_equal = expect_mt.not_equals
 expect_mt.ne = expect_mt.not_equals
 
+--- Assert that this expectation has the provided value
+--
+-- @param value The value to require this expectation to be equal to
+-- @throws If the values are not equal
+function expect_mt:close_to(value, delta)
+	if value ~= delta and math.abs(value - self.value) >= delta then
+		self:_fail(("Expected %s to be close to\n but got %s"):format(format(value), format(self.value)))
+	end
+
+	return self
+end
+expect_mt.equal = expect_mt.equals
+expect_mt.eq = expect_mt.equals
+
 --- Assert that this expectation has something of the provided type
 --
 -- @tparam string exp_type The type to require this expectation to have

@@ -897,7 +897,7 @@ math.random(-4,-2)	number	true
 math.random(-4,-2)	number	true
 math.random(-4,-2)	number	true
 math.random(-4,-2)	number	true
-
+20	<zero>
 -- comparing new numbers
 false	false
 false	false
@@ -920,7 +920,7 @@ false	false
 false	false
 false	false
 -- resetting seed
-
+20	<zero>
 true
 true
 true
