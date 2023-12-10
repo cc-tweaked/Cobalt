@@ -178,8 +178,12 @@ final class Lex {
 		}
 	}
 
+	Buffer createErrorMessage(int line) {
+		return new Buffer().append(shortSource).append(":").append(Integer.toString(line)).append(": ");
+	}
+
 	CompileException lexError(String msg, int token) {
-		var buffer = new Buffer().append(shortSource).append(":").append(Integer.toString(lineNumber)).append(": ").append(msg);
+		var buffer = createErrorMessage(lineNumber).append(msg);
 		if (token != 0) {
 			buffer.append(" near ");
 			switch (token) {
@@ -596,10 +600,6 @@ final class Lex {
 				}
 			}
 		}
-	}
-
-	int lastLine() {
-		return unpackLine(lastPosition);
 	}
 
 	long lastPosition() {

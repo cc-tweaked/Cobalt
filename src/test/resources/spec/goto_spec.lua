@@ -1,14 +1,17 @@
 describe("goto statements :lua>=5.2", function()
 	describe("parse failures", function()
 		local function fail_parse(code, err)
-			local st, msg = load(code)
+			local st, msg = load(code, "=in")
 			expect(st):describe("Resulting function"):eq(nil)
 			expect(msg):str_match(err)
 		end
 
 		it("cannot see label inside block", function()
 			fail_parse([[ goto l1; do ::l1:: end ]], "label 'l1'")
-			fail_parse([[ do ::l1:: end goto l1; ]], "label 'l1'")
+			fail_parse([[
+				do ::l1:: end
+				goto l1
+			]], "no visible label 'l1' for <goto> at line 2")
 		end)
 
 		it("repeated label", function()
@@ -44,6 +47,13 @@ describe("goto statements :lua>=5.2", function()
 					::cont::
 				until xuxu < x
 			]], "local 'xuxu'")
+		end)
+
+		it("break outside a loop :lua>=5.4", function()
+			fail_parse([[
+				do end
+				break
+			]], "break outside loop at line 2")
 		end)
 	end)
 

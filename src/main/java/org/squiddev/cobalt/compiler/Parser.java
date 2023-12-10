@@ -484,11 +484,15 @@ final class Parser {
 		findGotos(activeLabels.get(label));
 	}
 
-	private static CompileException undefGoto(LabelDesc gt) {
-		return new CompileException(Lex.isReserved(gt.name)
-			? "<" + gt.name + "> at line " + gt.line + " not inside a loop"
-			: "no visible label '" + gt.name + "' for <goto> at line " + gt.line
-		);
+	private CompileException undefGoto(LabelDesc gt) {
+		// We report this error message on the label's line, rather than the line of the closing "end".
+		var buffer = lexer.createErrorMessage(gt.line);
+		if (Lex.isReserved(gt.name)) {
+			buffer.append(gt.name).append(" outside loop at line ").append(Integer.toString(gt.line));
+		} else {
+			buffer.append("no visible label '").append(gt.name).append("' for <goto> at line ").append(Integer.toString(gt.line));
+		}
+		return new CompileException(buffer.toString());
 	}
 
 	private void leaveBlock(FuncState fs) throws CompileException {
@@ -1044,13 +1048,13 @@ final class Parser {
 	}
 
 	private void breakStmt(int pc) throws CompileException, LuaError, UnwindThrowable {
-		int line = lexer.lastLine();
+		int line = lexer.token.line();
 		lexer.nextToken();
 		gotoLabel(pc, line, lexer.newString("break"));
 	}
 
 	private void gotoStat(int pc) throws CompileException, LuaError, UnwindThrowable {
-		int line = lexer.lastLine();
+		int line = lexer.token.line();
 		lexer.nextToken();
 		gotoLabel(pc, line, strCheckName());
 	}
@@ -1411,8 +1415,8 @@ final class Parser {
 				}
 			}
 			case TK_DBCOLON -> {
+				int line = lexer.token.line();
 				lexer.nextToken(); // skip ::
-				int line = lexer.lastLine();
 				labelStat(strCheckName(), line);
 			}
 			case TK_RETURN -> returnStmt();  /* stat -> retstat */
