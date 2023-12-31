@@ -68,13 +68,6 @@ import static org.squiddev.cobalt.compiler.LoadState.checkMode;
  * @see Prototype
  */
 public class LuaC {
-	protected static void _assert(boolean b) throws CompileException {
-		if (!b) {
-			// So technically this should fire a runtime exception but...
-			throw new CompileException("compiler assert failed");
-		}
-	}
-
 	public static final int MAXSTACK = 250;
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;

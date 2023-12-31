@@ -296,5 +296,7 @@ describe("goto statements :lua>=5.2", function()
 
 		goto()
 		print(goto)
+
+		if true then goto() end
 	]])
 end)

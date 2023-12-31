@@ -131,7 +131,7 @@ final class Lex {
 	private final HashMap<ByteBuffer, LuaString> strings = new HashMap<>();
 
 	final Token token = new Token();
-	final Token lookahead = new Token();
+	private final Token lookahead = new Token();
 
 	private byte[] buff = new byte[32];  /* buffer for tokens */
 	private int bufferSize; /* length of buffer */
@@ -622,9 +622,9 @@ final class Lex {
 		}
 	}
 
-	void lookahead() throws CompileException, LuaError, UnwindThrowable {
-		LuaC._assert(lookahead.token == TK_EOS);
-		lookahead.token = lexToken(lookahead);
+	Token lookahead() throws CompileException, LuaError, UnwindThrowable {
+		if (lookahead.token == TK_EOS) lookahead.token = lexToken(lookahead);
+		return lookahead;
 	}
 
 	static long packPosition(int line, int column) {

@@ -667,8 +667,7 @@ final class Parser {
 		// field -> listfield | recfield
 		switch (lexer.token.token()) {
 			case TK_NAME -> { // may be listfields or recfields
-				lexer.lookahead();
-				if (lexer.lookahead.token() != '=') { // expression?
+				if (lexer.lookahead().token() != '=') { // expression?
 					listField(cc);
 				} else {
 					recordField(cc);
@@ -1386,8 +1385,7 @@ final class Parser {
 		assert lexer.token.token() == TK_NAME;
 		if (lexer.token.stringContents() != gotoName) return false;
 
-		lexer.lookahead();
-		return lexer.lookahead.token() == TK_NAME;
+		return lexer.lookahead().token() == TK_NAME;
 	}
 
 	private void statement() throws CompileException, LuaError, UnwindThrowable {
