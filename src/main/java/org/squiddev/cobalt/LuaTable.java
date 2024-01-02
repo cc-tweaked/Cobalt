@@ -468,10 +468,6 @@ public final class LuaTable extends LuaValue {
 		int oldArraySize = array.length;
 		int oldHashSize = nodes.length;
 
-		if (newArraySize != 0 && newHashSize != 0 && newArraySize == oldArraySize && newHashSize == oldHashSize && !modeChange) {
-			throw new IllegalStateException("Attempting to resize with no change");
-		}
-
 		// Array part must grow
 		if (newArraySize > oldArraySize) {
 			array = setArrayVector(array, newArraySize, modeChange, weakValues);
@@ -521,9 +517,8 @@ public final class LuaTable extends LuaValue {
 			int i = nodes.length;
 			while (--i >= 0) {
 				Node node = nodes[i];
-				LuaValue key = node.key();
-				if (!key.isNil()) {
-					arrayCount += countInt(key, nums);
+				if (!node.value().isNil()) {
+					arrayCount += countInt(node.key(), nums);
 					totalCount++;
 				}
 			}
