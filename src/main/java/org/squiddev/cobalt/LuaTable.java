@@ -116,7 +116,7 @@ public final class LuaTable extends LuaValue {
 	 */
 	public void presize(int nArray) {
 		if (nArray > array.length) {
-			resize(1 << log2(nArray), nodes.length, false);
+			resize(nArray, nodes.length, false);
 		}
 	}
 

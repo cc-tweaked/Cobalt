@@ -56,6 +56,31 @@ describe("Lua tables", function()
 			expect(#{ 1, 2, 3, nil, 5, nil, 7, 8, 9 }):eq(9)
 			expect(#{ 1, nil, [2] = 2, 3 }):eq(3)
 		end)
+
+		it("behaves identically to PUC Lua after resizing", function()
+			local n = 8
+
+			-- We grow the array part to be of length N.
+			local tbl = {}
+			for i = 1, n do tbl[i] = true end
+			expect(#tbl):eq(n)
+
+			-- Then clear out all but the last value. This does not shrink the array part, so we
+			-- still have a length N.
+			for i = 1, n - 1 do tbl[i] = nil end
+			expect(#tbl):eq(n)
+		end)
+	end)
+
+	describe("can be constructed from varargs", function()
+		it("presizes the array", function()
+			local function create(...) return { ... } end
+
+			-- If we'd constructed this table normally, it'd have a length of 5. However,
+			-- SETLIST will presize the table to ensure the array part is of length 5. As
+			-- the last slot is full, the array is considered saturated.
+			expect(#create(nil, nil, nil, nil, 1)):eq(5)
+		end)
 	end)
 
 	describe("weak tables", function()

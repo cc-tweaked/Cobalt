@@ -554,6 +554,8 @@ public final class LuaInterpreter {
 						if (b == 0) {
 							b = di.top - a - 1;
 							int m = b - di.extras.count();
+							tbl.presize(offset + b);
+
 							int j = 1;
 							for (; j <= m; j++) tbl.rawset(offset + j, stack[a + j]);
 							for (; j <= b; j++) tbl.rawset(offset + j, di.extras.arg(j - m));
