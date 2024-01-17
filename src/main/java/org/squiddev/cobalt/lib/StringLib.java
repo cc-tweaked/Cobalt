@@ -152,7 +152,7 @@ public final class StringLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, GSubState subState, Varargs value) throws LuaError, UnwindThrowable {
+		public Varargs resume(LuaState state, GSubState subState, Varargs value) throws LuaError, UnwindThrowable {
 			return StringMatch.gsubRun(state, subState, value.first());
 		}
 	}
@@ -167,7 +167,7 @@ public final class StringLib {
 		}
 
 		@Override
-		public Varargs resumeThis(LuaState state, FormatState formatState, Varargs value) throws LuaError, UnwindThrowable {
+		public Varargs resume(LuaState state, FormatState formatState, Varargs value) throws LuaError, UnwindThrowable {
 			LuaString s = OperationHelper.checkToString(value.first());
 			formatState.current.format(formatState.buffer, s);
 			return StringFormat.format(state, formatState);

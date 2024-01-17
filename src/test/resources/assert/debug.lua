@@ -46,7 +46,7 @@ do -- Test Lua call stack
 	local result, message = coroutine.resume(co)
 	assert(not result)
 	assert(message == "debug.lua:44: stack overflow", message)
-	assert(n == 32767, ("Called %d times"):format(n))
+	assert(n == 32768, ("Called %d times"):format(n))
 end
 
 do -- Test Java call stack

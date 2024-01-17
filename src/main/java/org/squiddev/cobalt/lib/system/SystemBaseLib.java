@@ -3,6 +3,7 @@ package org.squiddev.cobalt.lib.system;
 import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
 
@@ -74,7 +75,7 @@ public class SystemBaseLib {
 		if (v.isNil(1)) {
 			throw new LuaError(v.arg(2).toString());
 		} else {
-			return OperationHelper.invoke(state, v.first(), Constants.NONE);
+			return Dispatch.invoke(state, v.first(), Constants.NONE);
 		}
 	}
 
@@ -84,7 +85,7 @@ public class SystemBaseLib {
 			LuaValue tostring = OperationHelper.getTable(state, state.globals(), valueOf("tostring"));
 			for (int i = 1, n = args.count(); i <= n; i++) {
 				if (i > 1) out.write('\t');
-				LuaValue value = OperationHelper.call(state, tostring, args.arg(i));
+				LuaValue value = Dispatch.call(state, tostring, args.arg(i));
 				LuaString s = value.checkLuaString();
 				int z = s.indexOf((byte) 0);
 

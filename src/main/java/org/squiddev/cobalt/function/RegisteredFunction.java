@@ -1,7 +1,6 @@
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.LuaTable;
 
 import java.util.function.Supplier;
 
@@ -59,12 +58,7 @@ public class RegisteredFunction {
 		return new RegisteredFunction(name, () -> LibFunction.createV(fn));
 	}
 
-	public static RegisteredFunction ofS(String name, SuspendedVarArgFunction.Signature fn) {
-		return new RegisteredFunction(name, () -> new SuspendedVarArgFunction() {
-			@Override
-			protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-				return fn.invoke(state, di, args);
-			}
-		});
+	public static RegisteredFunction ofS(String name, LibFunction.Suspended fn) {
+		return new RegisteredFunction(name, () -> LibFunction.createS(fn));
 	}
 }

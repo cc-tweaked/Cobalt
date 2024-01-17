@@ -100,7 +100,7 @@ public class CoroutineTest {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, LuaThread thread, Varargs value) throws LuaError, UnwindThrowable {
+		public Varargs resume(LuaState state, LuaThread thread, Varargs value) throws LuaError, UnwindThrowable {
 			while (thread.isAlive()) value = LuaThread.resume(state, thread, value);
 			return value;
 		}

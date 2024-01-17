@@ -32,10 +32,7 @@ import org.squiddev.cobalt.compiler.InputReader;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
+import org.squiddev.cobalt.function.*;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -115,7 +112,7 @@ public final class BaseLib {
 		int level = optional ? arg.optInteger(1) : arg.checkInteger();
 		Varargs.argCheck(level >= 0, 1, "level must be non-negative");
 		if (level == 0) return state.getCurrentThread();
-		LuaValue f = LuaThread.getCallstackFunction(state, level - 1);
+		LuaValue f = LuaThread.getCallstackFunction(state, level);
 		Varargs.argCheck(f != null, 1, "invalid level");
 		return f;
 	}
@@ -228,7 +225,7 @@ public final class BaseLib {
 		if (pairs.isNil()) {
 			return varargsOf(next, value, Constants.NIL);
 		} else {
-			return OperationHelper.invoke(state, pairs, value);
+			return Dispatch.invoke(state, pairs, value);
 		}
 	}
 
@@ -280,12 +277,12 @@ public final class BaseLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+		public Varargs resume(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
 			return call.resume(state, value).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+		public Varargs resumeError(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
 			return call.resumeError(state, error).asBoolAndResult();
 		}
 	}
@@ -303,12 +300,12 @@ public final class BaseLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+		public Varargs resume(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
 			return call.resume(state, value).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+		public Varargs resumeError(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
 			return call.resumeError(state, error).asBoolAndResult();
 		}
 	}
@@ -342,12 +339,12 @@ public final class BaseLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+		public Varargs resume(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
 			return call.resume(state, value).asResultOrFailure();
 		}
 
 		@Override
-		public Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+		public Varargs resumeError(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
 			return call.resumeError(state, error).asResultOrFailure();
 		}
 	}
@@ -379,7 +376,7 @@ public final class BaseLib {
 		@Override
 		public int read() throws LuaError, UnwindThrowable {
 			if (!bytes.hasRemaining()) {
-				LuaValue value = OperationHelper.call(state, func);
+				LuaValue value = Dispatch.call(state, func);
 				if (!fillBuffer(value)) return -1;
 			}
 

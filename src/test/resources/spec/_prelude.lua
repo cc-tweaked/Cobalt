@@ -228,8 +228,6 @@ function expect.error(fun, ...)
 		-- Do nothing
 	elseif res:sub(1, #line) == line then
 		res = res:sub(#line + 1)
-	elseif res:sub(1, 7) == "pcall: " then
-		res = res:sub(8)
 	end
 	return setmetatable({ value = res }, expect_mt)
 end

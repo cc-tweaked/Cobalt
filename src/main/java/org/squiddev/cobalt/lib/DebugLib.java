@@ -78,12 +78,7 @@ public final class DebugLib {
 			RegisteredFunction.ofV("debug", DebugLib::debug),
 			RegisteredFunction.ofV("getfenv", DebugLib::getfenv),
 			RegisteredFunction.ofV("gethook", DebugLib::gethook),
-			RegisteredFunction.ofFactory("getinfo", () -> new VarArgFunction() {
-				@Override
-				public Varargs invoke(LuaState state1, Varargs args) throws LuaError {
-					return DebugLib.getinfo(state1, args, this);
-				}
-			}),
+			RegisteredFunction.ofV("getinfo", DebugLib::getinfo),
 			RegisteredFunction.ofV("getlocal", DebugLib::getlocal),
 			RegisteredFunction.ofV("getmetatable", DebugLib::getmetatable),
 			RegisteredFunction.ofV("getregistry", DebugLib::getregistry),
@@ -147,11 +142,6 @@ public final class DebugLib {
 		}
 		thread.getDebugState().setHook(func == null ? null : new FunctionDebugHook(func), call, line, rtrn, count);
 
-		// See DebugState.onReturn
-		// TODO: Remove this once every function pushes/pops a debug frame.
-		DebugFrame returnInto = thread.getDebugState().getStack();
-		if (returnInto != null) returnInto.oldPc = returnInto.pc;
-
 		return NONE;
 	}
 
@@ -168,7 +158,7 @@ public final class DebugLib {
 		return object;
 	}
 
-	protected static Varargs getinfo(LuaState state, Varargs args, LuaValue level0func) throws LuaError {
+	private static Varargs getinfo(LuaState state, Varargs args) throws LuaError {
 		int arg = 1;
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 		LuaValue func = args.arg(arg);
@@ -178,18 +168,7 @@ public final class DebugLib {
 		DebugState ds = thread.getDebugState();
 		DebugFrame di;
 		if (func.isNumber()) {
-			int level = func.checkInteger();
-
-			// So if we're getting info on the current thread then we fake a debug.getinfo function
-			if (thread != state.getCurrentThread()) {
-				di = ds.getFrame(level);
-			} else if (level < 0) {
-				di = null;
-			} else if (level == 0) {
-				di = new DebugFrame(level0func.checkFunction());
-			} else {
-				di = ds.getFrame(level - 1);
-			}
+			di = ds.getFrame(func.checkInteger());
 		} else {
 			di = ds.findDebugInfo(func.checkFunction());
 		}
@@ -270,10 +249,7 @@ public final class DebugLib {
 				? variables[local - 1].name : NIL;
 		} else {
 			int level = args.arg(arg).checkInteger();
-			if (thread == state.getCurrentThread()) level--;
-
-			DebugState ds = thread.getDebugState();
-			DebugFrame di = ds.getFrame(level);
+			DebugFrame di = thread.getDebugState().getFrame(level);
 			if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
 
 			LuaString name = di.getLocalName(local);
@@ -290,9 +266,7 @@ public final class DebugLib {
 		int local = args.arg(arg + 1).checkInteger();
 		LuaValue value = args.arg(arg + 2);
 
-		DebugState ds = thread.getDebugState();
-		if (thread == state.getCurrentThread()) level--;
-		DebugFrame di = ds.getFrame(level);
+		DebugFrame di = thread.getDebugState().getFrame(level);
 		if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
 
 		LuaString name = di.getLocalName(local);
@@ -369,9 +343,7 @@ public final class DebugLib {
 		if (messageValue != NIL && !messageValue.isString()) return messageValue;
 		LuaString message = messageValue.optLuaString(null);
 
-		int level = thread == state.getCurrentThread()
-			? args.arg(a).optInteger(1) - 1
-			: args.arg(a).optInteger(0);
+		int level = args.arg(a).optInteger(thread == state.getCurrentThread() ? 1 : 0);
 
 		Buffer sb = new Buffer();
 		if (message != null) sb.append(message).append('\n');

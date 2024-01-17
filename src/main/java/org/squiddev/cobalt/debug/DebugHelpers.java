@@ -140,7 +140,7 @@ public final class DebugHelpers {
 		return fileLine(thread, 0);
 	}
 
-	public static String fileLine(LuaThread thread, int level) {
+	public static @Nullable String fileLine(LuaThread thread, int level) {
 		DebugState ds = thread.getDebugState();
 		DebugFrame di = ds.getFrame(level);
 		return di != null ? di.sourceLine() : null;

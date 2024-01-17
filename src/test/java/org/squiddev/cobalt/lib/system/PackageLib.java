@@ -28,10 +28,7 @@ package org.squiddev.cobalt.lib.system;
 import cc.tweaked.cobalt.internal.LegacyEnv;
 import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaClosure;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.RegisteredFunction;
+import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.BaseLib;
 
 import static org.squiddev.cobalt.ValueFactory.*;
@@ -174,7 +171,7 @@ public class PackageLib {
 		}
 
 		// set the environment of the current function
-		LuaFunction f = LuaThread.getCallstackFunction(state, 0);
+		LuaFunction f = LuaThread.getCallstackFunction(state, 1);
 		if (f == null) {
 			throw new LuaError("no calling function");
 		}
@@ -184,7 +181,7 @@ public class PackageLib {
 		LegacyEnv.setEnv(f, module);
 
 		// apply the functions
-		for (int i = 2; i <= n; i++) OperationHelper.call(state, args.arg(i), module);
+		for (int i = 2; i <= n; i++) Dispatch.call(state, args.arg(i), module);
 
 		// returns no results
 		return Constants.NONE;
@@ -270,7 +267,7 @@ public class PackageLib {
 			}
 
 			/* call loader with module name as argument */
-			chunk = OperationHelper.call(state, loader, name);
+			chunk = Dispatch.call(state, loader, name);
 			if (chunk instanceof LuaFunction) break;
 			if (chunk.isString()) {
 				sb.append(chunk);
@@ -279,7 +276,7 @@ public class PackageLib {
 
 		// load the module using the loader
 		OperationHelper.setTable(state, loaded, name, sentinel);
-		LuaValue result = OperationHelper.call(state, chunk, name);
+		LuaValue result = Dispatch.call(state, chunk, name);
 		if (!result.isNil()) {
 			OperationHelper.setTable(state, loaded, name, result);
 		} else if ((result = OperationHelper.getTable(state, loaded, name)) == sentinel) {

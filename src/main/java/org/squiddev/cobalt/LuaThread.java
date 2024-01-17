@@ -26,6 +26,7 @@ package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.lib.CoroutineLib;
 
@@ -316,7 +317,7 @@ public final class LuaThread extends LuaValue {
 					function = null;
 
 					try {
-						args = OperationHelper.invoke(state, toExecute, args);
+						args = Dispatch.invoke(state, toExecute, args);
 					} catch (Exception | VirtualMachineError e) {
 						args = null;
 						le = LuaError.wrap(e);

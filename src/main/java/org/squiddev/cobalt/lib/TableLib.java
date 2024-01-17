@@ -28,10 +28,10 @@ import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.function.SuspendedVarArgFunction;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -66,7 +66,7 @@ public final class TableLib {
 			RegisteredFunction.ofS("insert", TableLib::insert),
 			RegisteredFunction.ofS("move", TableLib::move),
 			RegisteredFunction.ofV("pack", TableLib::pack),
-			RegisteredFunction.ofFactory("sort", Sort::new),
+			RegisteredFunction.ofS("sort", Sort::sort),
 			RegisteredFunction.ofS("foreach", TableLib::foreach),
 			RegisteredFunction.ofS("foreachi", TableLib::foreachi),
 			RegisteredFunction.ofS("unpack", TableLib::unpack),
@@ -269,9 +269,8 @@ public final class TableLib {
 	}
 
 	// "sort" (table [, comp]) -> void
-	private static class Sort extends SuspendedVarArgFunction {
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+	private static class Sort {
+		private static Varargs sort(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			LuaValue table = checkTableLike(state, args, 1, TABLE_LEN | TABLE_READ | TABLE_WRITE);
 			return SuspendedAction.run(di, () -> {
 				int n = OperationHelper.intLength(state, table);
@@ -329,7 +328,7 @@ public final class TableLib {
 		private static boolean compare(LuaState state, LuaValue compare, LuaValue a, LuaValue b) throws LuaError, UnwindThrowable {
 			return compare.isNil()
 				? OperationHelper.lt(state, a, b)
-				: OperationHelper.call(state, compare, a, b).toBoolean();
+				: Dispatch.call(state, compare, a, b).toBoolean();
 		}
 
 	}
@@ -345,7 +344,7 @@ public final class TableLib {
 			Varargs n;
 			LuaValue k = NIL;
 			while (!(k = (n = table.next(k)).first()).isNil()) {
-				LuaValue r = OperationHelper.call(state, function, k, n.arg(2));
+				LuaValue r = Dispatch.call(state, function, k, n.arg(2));
 				if (!r.isNil()) return r;
 			}
 			return NIL;
@@ -364,7 +363,7 @@ public final class TableLib {
 			LuaValue v;
 			int k = 0;
 			while (!(v = table.rawget(++k)).isNil()) {
-				LuaValue r = OperationHelper.call(state, function, valueOf(k), v);
+				LuaValue r = Dispatch.call(state, function, valueOf(k), v);
 				if (!r.isNil()) return r;
 			}
 			return NIL;

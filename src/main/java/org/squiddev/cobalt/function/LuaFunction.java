@@ -24,7 +24,10 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.Constants;
+import org.squiddev.cobalt.LuaState;
+import org.squiddev.cobalt.LuaTable;
+import org.squiddev.cobalt.LuaValue;
 
 /**
  * Base class for functions implemented in Java.
@@ -54,115 +57,4 @@ public abstract sealed class LuaFunction extends LuaValue permits LibFunction, L
 	}
 
 	public abstract String debugName();
-
-	/**
-	 * Call {@code this} with 0 arguments, including metatag processing,
-	 * and return only the first return value.
-	 * <p>
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * @param state The current lua state
-	 * @return First return value {@code (this())}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError        If the invoked function throws an error.
-	 * @throws UnwindThrowable If this function transfers control to another coroutine.
-	 * @see #call(LuaState, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
-	 * @see #invoke(LuaState, Varargs)
-	 */
-	public abstract LuaValue call(LuaState state) throws LuaError, UnwindThrowable;
-
-	/**
-	 * Call {@code this} with 1 argument, including metatag processing,
-	 * and return only the first return value.
-	 * <p>
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param arg   First argument to supply to the called function
-	 * @return First return value {@code (this(arg))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError        If the invoked function throws an error.
-	 * @throws UnwindThrowable If this function transfers control to another coroutine.
-	 * @see #call(LuaState)
-	 * @see #call(LuaState, LuaValue, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
-	 * @see #invoke(LuaState, Varargs)
-	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable;
-
-	/**
-	 * Call {@code this} with 2 arguments, including metatag processing,
-	 * and return only the first return value.
-	 * <p>
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param arg1  First argument to supply to the called function
-	 * @param arg2  Second argument to supply to the called function
-	 * @return First return value {@code (this(arg1, arg2))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError        If the invoked function throws an error.
-	 * @throws UnwindThrowable If this function transfers control to another coroutine.
-	 * @see #call(LuaState)
-	 * @see #call(LuaState, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue, LuaValue)
-	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable;
-
-	/**
-	 * Call {@code this} with 3 arguments, including metatag processing,
-	 * and return only the first return value.
-	 * <p>
-	 * If {@code this} is a {@link LuaFunction}, call it,
-	 * and return only its first return value, dropping any others.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
-	 * If the return value is a {@link Varargs}, only the 1st value will be returned.
-	 * To get multiple values, use {@link #invoke(LuaState, Varargs)} instead.
-	 *
-	 * @param state The current lua state
-	 * @param arg1  First argument to supply to the called function
-	 * @param arg2  Second argument to supply to the called function
-	 * @param arg3  Second argument to supply to the called function
-	 * @return First return value {@code (this(arg1, arg2, arg3))}, or {@link Constants#NIL} if there were none.
-	 * @throws LuaError        If the invoked function throws an error.
-	 * @throws UnwindThrowable If this function transfers control to another coroutine.
-	 * @see #call(LuaState)
-	 * @see #call(LuaState, LuaValue)
-	 * @see #call(LuaState, LuaValue, LuaValue)
-	 */
-	public abstract LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable;
-
-	/**
-	 * Call {@code this} with variable arguments, including metatag processing,
-	 * and retain all return values in a {@link Varargs}.
-	 * <p>
-	 * If {@code this} is a {@link LuaFunction}, call it, and return all values.
-	 * Otherwise, look for the {@link Constants#CALL} metatag and call that.
-	 * <p>
-	 * To get a particular return value, us {@link Varargs#arg(int)}
-	 *
-	 * @param state The current lua state
-	 * @param args  Varargs containing the arguments to supply to the called function
-	 * @return All return values as a {@link Varargs} instance.
-	 * @throws LuaError        If the invoked function throws an error.
-	 * @throws UnwindThrowable If this function transfers control to another coroutine.
-	 * @see ValueFactory#varargsOf(LuaValue[])
-	 * @see #call(LuaState, LuaValue)
-	 */
-	public abstract Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
 }

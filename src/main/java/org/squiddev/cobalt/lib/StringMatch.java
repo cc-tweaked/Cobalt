@@ -2,6 +2,7 @@ package org.squiddev.cobalt.lib;
 
 import cc.tweaked.cobalt.internal.string.CharProperties;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.VarArgFunction;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -269,7 +270,7 @@ class StringMatch {
 		}
 
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
+		protected Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			for (; soffset < srclen; soffset++) {
 				ms.reset();
 				int res = ms.match(soffset, 0);
@@ -360,7 +361,7 @@ class StringMatch {
 				}
 				case TFUNCTION ->
 					// TODO: Ensure yields are handled correctly
-					replace = OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first();
+					replace = Dispatch.invoke(state, repl, push_captures(true, soffset, end)).first();
 				case TTABLE -> {
 					// Need to call push_onecapture here for the error checking
 					replace = OperationHelper.getTable(state, repl, push_onecapture(0, soffset, end));

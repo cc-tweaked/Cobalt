@@ -1,6 +1,7 @@
 package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.LuaFunction;
 
 import java.util.Objects;
@@ -17,21 +18,21 @@ public record FunctionDebugHook(LuaFunction function) implements DebugHook {
 
 	@Override
 	public void onCall(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-		OperationHelper.call(state, function, CALL);
+		Dispatch.call(state, function, CALL, Constants.NIL);
 	}
 
 	@Override
 	public void onReturn(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-		OperationHelper.call(state, function, RETURN);
+		Dispatch.call(state, function, RETURN, Constants.NIL);
 	}
 
 	@Override
 	public void onCount(LuaState state, DebugState ds, DebugFrame frame) throws LuaError, UnwindThrowable {
-		OperationHelper.call(state, function, COUNT);
+		Dispatch.call(state, function, COUNT, Constants.NIL);
 	}
 
 	@Override
 	public void onLine(LuaState state, DebugState ds, DebugFrame frame, int newLine) throws LuaError, UnwindThrowable {
-		OperationHelper.call(state, function, LINE, ValueFactory.valueOf(newLine));
+		Dispatch.call(state, function, LINE, ValueFactory.valueOf(newLine));
 	}
 }

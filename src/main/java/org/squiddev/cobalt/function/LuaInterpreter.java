@@ -37,128 +37,109 @@ import static org.squiddev.cobalt.debug.DebugFrame.*;
 /**
  * The main interpreter for {@link LuaInterpretedFunction}s.
  */
-public final class LuaInterpreter {
+final class LuaInterpreter {
 	private LuaInterpreter() {
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, int flags) throws LuaError, UnwindThrowable {
-		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxStackSize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
-
-		return setupCallFinish(state, function, NONE, stack, flags);
+	private static LuaValue[] createStack(Prototype prototype) {
+		LuaValue[] stack = new LuaValue[prototype.maxStackSize];
+		System.arraycopy(NILS, 0, stack, 0, prototype.maxStackSize);
+		return stack;
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg, int flags) throws LuaError, UnwindThrowable {
+	public static void setupCall(DebugState ds, DebugFrame frame, LuaInterpretedFunction function, int flags) throws UnwindThrowable, LuaError {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxStackSize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
+		LuaValue[] stack = createStack(p);
+		setupFrame(ds, frame, function, NONE, stack, flags);
+	}
+
+	public static void setupCall(DebugState ds, DebugFrame frame, LuaInterpretedFunction function, LuaValue arg, int flags) throws LuaError, UnwindThrowable {
+		Prototype p = function.p;
+		LuaValue[] stack = createStack(p);
 
 		switch (p.parameters) {
-			case 0 -> {
-				return setupCallFinish(state, function, arg, stack, flags);
-			}
+			case 0 -> setupFrame(ds, frame, function, arg, stack, flags);
 			default -> {
 				stack[0] = arg;
-				return setupCallFinish(state, function, NONE, stack, flags);
+				setupFrame(ds, frame, function, NONE, stack, flags);
 			}
 		}
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, int flags) throws LuaError, UnwindThrowable {
+	public static void setupCall(DebugState ds, DebugFrame frame, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxStackSize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
+		LuaValue[] stack = createStack(p);
 
 		switch (p.parameters) {
 			case 0 -> {
-				return setupCallFinish(state, function, p.isVarArg ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
+				setupFrame(ds, frame, function, p.isVarArg ? ValueFactory.varargsOf(arg1, arg2) : NONE, stack, flags);
 			}
 			case 1 -> {
 				stack[0] = arg1;
-				return setupCallFinish(state, function, arg2, stack, flags);
+				setupFrame(ds, frame, function, arg2, stack, flags);
 			}
 			default -> {
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return setupCallFinish(state, function, NONE, stack, flags);
+				setupFrame(ds, frame, function, NONE, stack, flags);
 			}
 		}
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int flags) throws LuaError, UnwindThrowable {
+	public static void setupCall(DebugState ds, DebugFrame frame, LuaInterpretedFunction function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxStackSize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
+		LuaValue[] stack = createStack(p);
 
 		switch (p.parameters) {
 			case 0 -> {
-				return setupCallFinish(state, function, p.isVarArg ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
+				setupFrame(ds, frame, function, p.isVarArg ? ValueFactory.varargsOf(arg1, arg2, arg3) : NONE, stack, flags);
 			}
 			case 1 -> {
 				stack[0] = arg1;
-				return setupCallFinish(state, function, p.isVarArg ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
+				setupFrame(ds, frame, function, p.isVarArg ? ValueFactory.varargsOf(arg2, arg3) : NONE, stack, flags);
 			}
 			case 2 -> {
 				stack[0] = arg1;
 				stack[1] = arg2;
-				return setupCallFinish(state, function, arg3, stack, flags);
+				setupFrame(ds, frame, function, arg3, stack, flags);
 			}
 			default -> {
 				stack[0] = arg1;
 				stack[1] = arg2;
 				stack[2] = arg3;
-				return setupCallFinish(state, function, NONE, stack, flags);
+				setupFrame(ds, frame, function, NONE, stack, flags);
 			}
 		}
 	}
 
-	static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, Varargs varargs, int flags) throws LuaError, UnwindThrowable {
-		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxStackSize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
-		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
-
-		return setupCallFinish(state, function, p.isVarArg ? varargs.subargs(p.parameters + 1) : NONE, stack, flags);
+	private static Varargs setupStack(Prototype prototype, LuaValue[] stack, LuaValue[] args, int argsStart, int argsSize) {
+		System.arraycopy(args, argsStart, stack, 0, Math.min(argsSize, prototype.parameters));
+		return prototype.isVarArg && argsSize > prototype.parameters
+			? ValueFactory.varargsOfCopy(args, argsStart + prototype.parameters, argsSize - prototype.parameters)
+			: NONE;
 	}
 
-	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize) throws LuaError, UnwindThrowable {
-		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxStackSize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
-
-		System.arraycopy(args, argStart, stack, 0, Math.min(argSize, p.parameters));
-
-		return setupCallFinish(
-			state, function,
-			p.isVarArg && argSize > p.parameters ? ValueFactory.varargsOfCopy(args, argStart + p.parameters, argSize - p.parameters) : NONE,
-			stack, 0
-		);
+	private static Varargs setupStack(Prototype prototype, LuaValue[] stack, Varargs varargs) {
+		for (int i = 0; i < prototype.parameters; i++) stack[i] = varargs.arg(i + 1);
+		return prototype.isVarArg ? varargs.subargs(prototype.parameters + 1) : NONE;
 	}
 
-	private static DebugFrame setupCall(LuaState state, LuaInterpretedFunction function, LuaValue[] args, int argStart, int argSize, Varargs varargs) throws LuaError, UnwindThrowable {
+	static void setupCall(DebugState ds, DebugFrame frame, LuaInterpretedFunction function, Varargs varargs, int flags) throws LuaError, UnwindThrowable {
 		Prototype p = function.p;
-		LuaValue[] stack = new LuaValue[p.maxStackSize];
-		System.arraycopy(NILS, 0, stack, 0, p.maxStackSize);
-
-		varargs = ValueFactory.varargsOfCopy(args, argStart, argSize, varargs);
-		for (int i = 0; i < p.parameters; i++) stack[i] = varargs.arg(i + 1);
-
-		return setupCallFinish(state, function, p.isVarArg ? varargs.subargs(p.parameters + 1) : NONE, stack, 0);
+		LuaValue[] stack = createStack(p);
+		Varargs args = setupStack(p, stack, varargs);
+		setupFrame(ds, frame, function, args, stack, flags);
 	}
 
-	private static DebugFrame setupCallFinish(LuaState state, LuaInterpretedFunction function, Varargs varargs, LuaValue[] stack, int flags) throws LuaError, UnwindThrowable {
-		Prototype p = function.p;
-
-		DebugState ds = DebugState.get(state);
-		DebugFrame di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
-		di.setFunction(function, varargs, stack);
+	private static void setupFrame(DebugState ds, DebugFrame di, LuaClosure function, Varargs varargs, LuaValue[] stack, int flags) throws UnwindThrowable, LuaError {
+		di.func = function;
+		di.closure = function;
+		di.varargs = varargs;
+		di.stack = stack;
 		di.flags |= flags;
 		di.extras = NONE;
 		di.top = di.pc = 0;
-		ds.onCall(di, NONE);
-
-		return di;
+		ds.onCall(di);
 	}
 
 	/*
@@ -418,9 +399,15 @@ public final class LuaInterpreter {
 						LuaValue val = stack[a];
 						if (val instanceof LuaInterpretedFunction) {
 							function = (LuaInterpretedFunction) val;
-							di = b > 0
-								? setupCall(state, function, stack, a + 1, b - 1) // exact arg count
-								: setupCall(state, function, stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
+
+							Prototype newPrototype = function.p;
+							LuaValue[] newStack = createStack(newPrototype);
+							DebugFrame newFrame = ds.pushInfo();
+							Varargs args = b > 0
+								? setupStack(newPrototype, newStack, stack, a + 1, b - 1) // Exact args count
+								: setupStack(newPrototype, newStack, ValueFactory.varargsOfCopy(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras)); // From previous top
+							setupFrame(ds, newFrame, function, args, newStack, 0);
+							di = newFrame;
 
 							continue newFrame;
 						} else {
@@ -449,12 +436,7 @@ public final class LuaInterpreter {
 						if (val instanceof LuaFunction func) {
 							functionVal = func;
 						} else {
-							LuaValue meta = val.metatag(state, Constants.CALL);
-							if (!(meta instanceof LuaFunction func)) {
-								throw ErrorFactory.operandError(state, val, "call", a);
-							}
-
-							functionVal = func;
+							functionVal = Dispatch.getCallMetamethod(state, val, a);
 							args = ValueFactory.varargsOf(val, args);
 						}
 
@@ -463,17 +445,19 @@ public final class LuaInterpreter {
 							di.cleanup();
 							ds.popInfo();
 
+							// FIXME: Return hook???!?
+
 							// Replace the current frame with a new one.
 							function = (LuaInterpretedFunction) functionVal;
-							di = setupCall(state, function, args, flags & FLAG_FRESH | FLAG_TAIL);
-
+							di = (flags & FLAG_FRESH) != 0 ? ds.pushJavaInfo() : ds.pushInfo();
+							setupCall(ds, di, function, args, (flags & FLAG_FRESH) | FLAG_TAIL);
 							continue newFrame;
 						} else {
-							Varargs v = OperationHelper.invoke(state, functionVal, args);
+							Varargs v = Dispatch.invoke(state, functionVal, args);
 							di.top = a + v.count();
 							di.extras = v;
+							break;
 						}
-						break;
 					}
 
 					case OP_RETURN: { // A B: return R(A), ... ,R(A+B-2) (see note)
@@ -482,19 +466,16 @@ public final class LuaInterpreter {
 						int flags = di.flags, top = di.top;
 						Varargs v = di.extras;
 						di.cleanup();
-						ds.onReturn(di);
 
-						Varargs ret = switch (b) {
-							case 0 -> ValueFactory.varargsOfCopy(stack, a, top - v.count() - a, v);
-							case 1 -> NONE;
-							case 2 -> stack[a];
-							default -> ValueFactory.varargsOfCopy(stack, a, b - 1);
-						};
+						Varargs ret = b > 0
+							? ValueFactory.varargsOfCopy(stack, a, b - 1)
+							: ValueFactory.varargsOfCopy(stack, a, top - v.count() - a, v);
 
 						if ((flags & FLAG_FRESH) != 0) {
 							// If we're a fresh invocation then return to the parent.
 							return ret;
 						} else {
+							ds.onReturn(di, ret);
 							di = ds.getStackUnsafe();
 							function = (LuaInterpretedFunction) di.func;
 							resume(state, di, function, ret);
@@ -526,7 +507,7 @@ public final class LuaInterpreter {
 					}
 
 					case OP_TFORCALL: {
-						Varargs result = OperationHelper.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
+						Varargs result = Dispatch.invoke(state, stack[a], ValueFactory.varargsOf(stack[a + 1], stack[a + 2]), a);
 						for (int c = GETARG_C(i); c >= 1; --c) stack[a + 2 + c] = result.arg(c);
 
 						i = code[pc++];
@@ -608,29 +589,27 @@ public final class LuaInterpreter {
 	private static void nativeCall(LuaState state, DebugFrame di, LuaValue[] stack, LuaValue val, int i, int a, int b, int c) throws UnwindThrowable, LuaError {
 		switch (i & (MASK_B | MASK_C)) {
 			case (1 << POS_B) | (0 << POS_C) -> {
-				Varargs v = di.extras = OperationHelper.invoke(state, val, NONE, a);
+				Varargs v = di.extras = Dispatch.invoke(state, val, NONE, a);
 				di.top = a + v.count();
 			}
 			case (2 << POS_B) | (0 << POS_C) -> {
-				Varargs v = di.extras = OperationHelper.invoke(state, val, stack[a + 1], a);
+				Varargs v = di.extras = Dispatch.invoke(state, val, stack[a + 1], a);
 				di.top = a + v.count();
 			}
-			case (1 << POS_B) | (1 << POS_C) -> OperationHelper.call(state, val, a);
-			case (2 << POS_B) | (1 << POS_C) -> OperationHelper.call(state, val, stack[a + 1], a);
-			case (3 << POS_B) | (1 << POS_C) -> OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
-			case (4 << POS_B) | (1 << POS_C) ->
-				OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
-			case (1 << POS_B) | (2 << POS_C) -> stack[a] = OperationHelper.call(state, val, a);
-			case (2 << POS_B) | (2 << POS_C) -> stack[a] = OperationHelper.call(state, val, stack[a + 1], a);
-			case (3 << POS_B) | (2 << POS_C) ->
-				stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], a);
+			case (1 << POS_B) | (1 << POS_C) -> Dispatch.call(state, val, a);
+			case (2 << POS_B) | (1 << POS_C) -> Dispatch.call(state, val, stack[a + 1], a);
+			case (3 << POS_B) | (1 << POS_C) -> Dispatch.call(state, val, stack[a + 1], stack[a + 2], a);
+			case (4 << POS_B) | (1 << POS_C) -> Dispatch.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
+			case (1 << POS_B) | (2 << POS_C) -> stack[a] = Dispatch.call(state, val, a);
+			case (2 << POS_B) | (2 << POS_C) -> stack[a] = Dispatch.call(state, val, stack[a + 1], a);
+			case (3 << POS_B) | (2 << POS_C) -> stack[a] = Dispatch.call(state, val, stack[a + 1], stack[a + 2], a);
 			case (4 << POS_B) | (2 << POS_C) ->
-				stack[a] = OperationHelper.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
+				stack[a] = Dispatch.call(state, val, stack[a + 1], stack[a + 2], stack[a + 3], a);
 			default -> {
 				Varargs args = b > 0 ?
 					ValueFactory.varargsOfCopy(stack, a + 1, b - 1) : // exact arg count
 					ValueFactory.varargsOfCopy(stack, a + 1, di.top - di.extras.count() - (a + 1), di.extras); // from prev top
-				Varargs v = OperationHelper.invoke(state, val, args, a);
+				Varargs v = Dispatch.invoke(state, val, args, a);
 				if (c > 0) {
 					while (--c > 0) stack[a + c - 1] = v.arg(c);
 				} else {
@@ -760,38 +739,6 @@ public final class LuaInterpreter {
 			}
 
 			default -> throw reportIllegalResume(state, function.p, pc);
-		}
-	}
-
-	public static Varargs resumeReturn(LuaState state, DebugState ds, DebugFrame di, LuaInterpretedFunction function) throws LuaError, UnwindThrowable {
-		int i = function.p.code[di.pc];
-
-		switch (GET_OPCODE(i)) {
-			case OP_RETURN -> {
-				int a = GETARG_A(i);
-				int b = GETARG_B(i);
-
-				Varargs ret = switch (b) {
-					case 0 -> ValueFactory.varargsOfCopy(di.stack, a, di.top - di.extras.count() - a, di.extras);
-					case 1 -> NONE;
-					case 2 -> di.stack[a];
-					default -> ValueFactory.varargsOfCopy(di.stack, a, b - 1);
-				};
-
-				int flags = di.flags;
-				ds.onReturnNoHook();
-
-				if ((flags & FLAG_FRESH) != 0) {
-					// If we're a fresh invocation then return to the parent.
-					return ret;
-				} else {
-					di = ds.getStackUnsafe();
-					function = (LuaInterpretedFunction) di.func;
-					resume(state, di, function, ret);
-					return execute(state, di, function);
-				}
-			}
-			default -> throw reportIllegalResume(state, function.p, di.pc);
 		}
 	}
 

@@ -108,12 +108,12 @@ public final class CoroutineLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, Void object, Varargs value) {
+		public Varargs resume(LuaState state, Void object, Varargs value) {
 			return varargsOf(Constants.TRUE, value);
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, Void object, LuaError error) {
+		public Varargs resumeError(LuaState state, Void object, LuaError error) {
 			return varargsOf(Constants.FALSE, error.getValue());
 		}
 	}
@@ -125,7 +125,7 @@ public final class CoroutineLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, Void object, Varargs value) {
+		public Varargs resume(LuaState state, Void object, Varargs value) {
 			return value;
 		}
 	}
@@ -143,7 +143,7 @@ public final class CoroutineLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, Void object, Varargs value) {
+		public Varargs resume(LuaState state, Void object, Varargs value) {
 			return value;
 		}
 	}

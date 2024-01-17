@@ -19,12 +19,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.AssertionFailureBuilder.assertionFailure;
 
 public class LuaSpecTest {
+	private static final Logger LOGGER = Logger.getLogger(LuaSpecTest.class.getName());
 	private static final Path ROOT = Path.of("src", "test", "resources", "spec");
 	private static final Pattern TAG = Pattern.compile(":([^ ]+)");
 	private final LuaState state;
@@ -37,7 +40,7 @@ public class LuaSpecTest {
 	}
 
 	public LuaSpecTest() throws IOException, LuaError, CompileException {
-		state = new LuaState();
+		state = LuaState.builder().errorReporter((error, message) -> LOGGER.log(Level.WARNING, message.get(), error)).build();
 		env = state.globals();
 		CoreLibraries.debugGlobals(state);
 		new SystemBaseLib(x -> null, System.in, System.out).add(env);

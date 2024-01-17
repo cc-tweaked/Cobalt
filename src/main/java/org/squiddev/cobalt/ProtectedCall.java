@@ -3,6 +3,7 @@ package org.squiddev.cobalt;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.unwind.SuspendedFunction;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -77,7 +78,7 @@ public class ProtectedCall {
 	 * @param state The current Lua VM.
 	 * @param args  The arguments returned from the yielding function or error handler.
 	 * @return The success/failure of calling this function.
-	 * @see Resumable#resume(LuaState, DebugFrame, Object, Varargs)
+	 * @see Resumable#resume(LuaState, Object, Varargs)
 	 */
 	public Result resume(LuaState state, Varargs args) throws UnwindThrowable {
 		if (currentTask != null) {
@@ -115,7 +116,7 @@ public class ProtectedCall {
 	 * @param error The error that occurred.
 	 * @return The success/failure of calling this function.
 	 * @throws UnwindThrowable If the error handler yields.
-	 * @see Resumable#resumeError(LuaState, DebugFrame, Object, LuaError)
+	 * @see Resumable#resumeError(LuaState, Object, LuaError)
 	 */
 	public Result resumeError(LuaState state, LuaError error) throws UnwindThrowable {
 		// If we've already had an error, then this must be a problem in the error handler and so fail. Otherwise the
@@ -125,7 +126,8 @@ public class ProtectedCall {
 
 	private Result callErrorHandler(LuaState state, Throwable error) throws UnwindThrowable {
 		// Mark the top frame as errored, meaning it will not be resumed.
-		DebugState.get(state).getStackUnsafe().flags |= FLAG_ERROR;
+		var debug = DebugState.get(state);
+		debug.getStackUnsafe().flags |= FLAG_ERROR;
 		if (currentTask != null) currentTask = null;
 
 		// And mark us as being in the error handler.
@@ -139,7 +141,8 @@ public class ProtectedCall {
 			value = luaError.getValue();
 		} else {
 			try {
-				value = OperationHelper.call(state, errorFunction, luaError.getValue());
+				debug.growStackIfError();
+				value = Dispatch.call(state, errorFunction, luaError.getValue());
 			} catch (Exception | VirtualMachineError t) {
 				value = ERROR_IN_HANDLER;
 			}
@@ -151,6 +154,7 @@ public class ProtectedCall {
 	private Result finishError(LuaState state, LuaValue result) {
 		// Unwind to this frame and then bits of state.
 		closeUntil(state, currentFrame);
+		DebugState.get(state).shrinkStackIfError();
 		finish(state);
 		return new Result(false, result);
 	}
@@ -212,7 +216,7 @@ public class ProtectedCall {
 
 		@Override
 		public Varargs call(LuaState state) throws LuaError, UnwindThrowable {
-			return OperationHelper.invoke(state, func, args);
+			return Dispatch.invoke(state, func, args);
 		}
 
 		@Override

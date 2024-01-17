@@ -508,7 +508,7 @@ while coroutine.status(co) == "suspended" do
 	a, b = coroutine.resume(co)
 	table.insert(t, 2, "'f'") -- one more recursive call to 'f'
 end
-table.remove(t, 1) -- t[1] = "'error'"
+t[1] = "'error'"
 checktraceback(co, t)
 
 

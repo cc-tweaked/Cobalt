@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.LuaFunction;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -165,7 +166,7 @@ public final class OperationHelper {
 	 * @throws UnwindThrowable If calling the metatable function yielded.
 	 */
 	public static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError, UnwindThrowable {
-		return call(state, getMetatable(state, tag, left, right, leftStack, rightStack), left, right);
+		return Dispatch.call(state, getMetatable(state, tag, left, right, leftStack, rightStack), left, right);
 	}
 
 	/**
@@ -208,7 +209,7 @@ public final class OperationHelper {
 			}
 		}
 
-		return OperationHelper.call(state, h, left, right);
+		return Dispatch.call(state, h, left, right);
 	}
 	//endregion
 
@@ -226,7 +227,7 @@ public final class OperationHelper {
 			default:
 				LuaValue h = left.metatag(state, Constants.LT);
 				if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
-					return OperationHelper.call(state, h, left, right).toBoolean();
+					return Dispatch.call(state, h, left, right).toBoolean();
 				} else {
 					throw ErrorFactory.compareError(left, right);
 				}
@@ -251,13 +252,13 @@ public final class OperationHelper {
 						DebugFrame frame = DebugState.get(state).getStackUnsafe();
 
 						frame.flags |= FLAG_LEQ;
-						boolean result = !OperationHelper.call(state, h, right, left).toBoolean();
+						boolean result = !Dispatch.call(state, h, right, left).toBoolean();
 						frame.flags ^= FLAG_LEQ;
 
 						return result;
 					}
 				} else if (h == right.metatag(state, Constants.LE)) {
-					return OperationHelper.call(state, h, left, right).toBoolean();
+					return Dispatch.call(state, h, left, right).toBoolean();
 				}
 
 				throw ErrorFactory.compareError(left, right);
@@ -283,7 +284,7 @@ public final class OperationHelper {
 				if (rightMeta == null) yield false;
 
 				LuaValue h = leftMeta.rawget(CachedMetamethod.EQ);
-				yield !(h.isNil() || h != rightMeta.rawget(CachedMetamethod.EQ)) && OperationHelper.call(state, h, left, right).toBoolean();
+				yield !(h.isNil() || h != rightMeta.rawget(CachedMetamethod.EQ)) && Dispatch.call(state, h, left, right).toBoolean();
 			}
 			default -> left == right || left.equals(right);
 		};
@@ -312,7 +313,7 @@ public final class OperationHelper {
 				if (h.isNil()) {
 					return valueOf(((LuaTable) value).length());
 				} else {
-					return OperationHelper.call(state, h, value);
+					return Dispatch.call(state, h, value);
 				}
 			}
 			case TSTRING:
@@ -322,7 +323,7 @@ public final class OperationHelper {
 				if (h.isNil()) {
 					throw ErrorFactory.operandError(state, value, "get length of", stack);
 				}
-				return OperationHelper.call(state, h, value);
+				return Dispatch.call(state, h, value);
 			}
 		}
 	}
@@ -372,86 +373,12 @@ public final class OperationHelper {
 			throw ErrorFactory.operandError(state, value, "perform arithmetic on", stack);
 		}
 
-		return OperationHelper.call(state, meta, value);
+		return Dispatch.call(state, meta, value);
 	}
 
 	private static boolean checkNumber(LuaValue lua, double value) {
 		return lua.type() == TNUMBER || !Double.isNaN(value);
 	}
-	//endregion
-
-	//region Calling
-	public static LuaValue call(LuaState state, LuaValue function) throws LuaError, UnwindThrowable {
-		return call(state, function, -1);
-	}
-
-	public static LuaValue call(LuaState state, LuaValue function, int stack) throws LuaError, UnwindThrowable {
-		if (function instanceof LuaFunction func) return func.call(state);
-
-		LuaValue meta = function.metatag(state, Constants.CALL);
-		if (meta instanceof LuaFunction metaFunc) return metaFunc.call(state, function);
-
-		throw ErrorFactory.operandError(state, function, "call", stack);
-
-	}
-
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg) throws LuaError, UnwindThrowable {
-		return call(state, function, arg, -1);
-	}
-
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg, int stack) throws LuaError, UnwindThrowable {
-		if (function instanceof LuaFunction func) return func.call(state, arg);
-
-		LuaValue meta = function.metatag(state, Constants.CALL);
-		if (meta instanceof LuaFunction metaFunc) return metaFunc.call(state, function, arg);
-
-		throw ErrorFactory.operandError(state, function, "call", stack);
-	}
-
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
-		return call(state, function, arg1, arg2, -1);
-	}
-
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, int stack) throws LuaError, UnwindThrowable {
-		if (function instanceof LuaFunction func) return func.call(state, arg1, arg2);
-
-		LuaValue meta = function.metatag(state, Constants.CALL);
-		if (meta instanceof LuaFunction metaFunc) return metaFunc.call(state, function, arg1, arg2);
-
-		throw ErrorFactory.operandError(state, function, "call", stack);
-	}
-
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
-		return call(state, function, arg1, arg2, arg3, -1);
-	}
-
-	public static LuaValue call(LuaState state, LuaValue function, LuaValue arg1, LuaValue arg2, LuaValue arg3, int stack) throws LuaError, UnwindThrowable {
-		if (function instanceof LuaFunction func) return func.call(state, arg1, arg2, arg3);
-
-		LuaValue meta = function.metatag(state, Constants.CALL);
-		if (meta instanceof LuaFunction metaFunc) {
-			return metaFunc.invoke(state, ValueFactory.varargsOf(function, arg1, arg2, arg3)).first();
-		}
-
-		throw ErrorFactory.operandError(state, function, "call", stack);
-
-	}
-
-	public static Varargs invoke(LuaState state, LuaValue function, Varargs args) throws LuaError, UnwindThrowable {
-		return invoke(state, function, args, -1);
-	}
-
-	public static Varargs invoke(LuaState state, LuaValue function, Varargs args, int stack) throws LuaError, UnwindThrowable {
-		if (function instanceof LuaFunction func) return func.invoke(state, args);
-
-		LuaValue meta = function.metatag(state, Constants.CALL);
-		if (meta instanceof LuaFunction metaFunc) {
-			return metaFunc.invoke(state, ValueFactory.varargsOf(function, args));
-		}
-
-		throw ErrorFactory.operandError(state, function, "call", stack);
-	}
-
 	//endregion
 
 	//region Tables
@@ -494,7 +421,7 @@ public final class OperationHelper {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 
-			if (tm instanceof LuaFunction metaFunc) return metaFunc.call(state, t, key);
+			if (tm instanceof LuaFunction metaFunc) return Dispatch.call(state, metaFunc, t, key);
 
 			t = tm;
 			stack = -1;
@@ -534,7 +461,7 @@ public final class OperationHelper {
 				throw ErrorFactory.operandError(state, t, "index", stack);
 			}
 			if (tm instanceof LuaFunction metaFunc) {
-				metaFunc.call(state, t, key, value);
+				Dispatch.call(state, metaFunc, t, key, value);
 				return;
 			}
 			t = tm;
@@ -547,7 +474,7 @@ public final class OperationHelper {
 
 	public static LuaValue toString(LuaState state, LuaValue value) throws LuaError, UnwindThrowable {
 		LuaValue h = value.metatag(state, Constants.TOSTRING);
-		return h.isNil() ? toStringDirect(value) : OperationHelper.call(state, h, value);
+		return h.isNil() ? toStringDirect(value) : Dispatch.call(state, h, value);
 	}
 
 	public static LuaString checkToString(LuaValue value) throws LuaError {
