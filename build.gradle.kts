@@ -175,3 +175,10 @@ tasks.test {
 		events("skipped", "failed")
 	}
 }
+
+val benchmark by tasks.registering(JavaExec::class) {
+	description = "Run our benchmarking suite"
+
+	classpath(sourceSets.test.map { it.runtimeClasspath })
+	mainClass = "cc.tweaked.cobalt.benchmark.BenchmarkFull"
+}

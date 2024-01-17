@@ -1,16 +1,10 @@
 package cc.tweaked.cobalt.benchmark;
 
-import org.openjdk.jmh.annotations.*;
 import org.squiddev.cobalt.ValueFactory;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Evaluates the nth Fibonacci number using a loop.
  */
-@State(Scope.Thread)
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class FibLoop extends LuaBenchmark {
 	public FibLoop() {
 		super("""

@@ -18,6 +18,8 @@ import java.util.function.Function;
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
+@Warmup(time = 3, timeUnit = TimeUnit.SECONDS)
+@Measurement(time = 3, timeUnit = TimeUnit.SECONDS)
 public abstract class LuaBenchmark {
 	private final String program;
 	private final Function<LuaState, Varargs> argsFactory;

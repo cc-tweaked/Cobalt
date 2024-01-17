@@ -5,7 +5,6 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.openjdk.jmh.runner.options.TimeValue;
 
 /**
  * Runs all benchmarks with a minimal number of warmup runs and forks, allowing for quick testing.
@@ -19,7 +18,6 @@ public final class BenchmarkFast {
 			.include("cc.tweaked.cobalt.benchmark.*")
 			.warmupIterations(1)
 			.measurementIterations(2)
-			.measurementTime(TimeValue.milliseconds(3000))
 			.jvmArgsPrepend("-server")
 			.resultFormat(ResultFormatType.JSON)
 			.forks(1)

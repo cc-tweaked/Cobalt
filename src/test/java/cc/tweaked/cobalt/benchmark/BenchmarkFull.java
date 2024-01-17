@@ -18,6 +18,7 @@ public final class BenchmarkFull {
 		Options opts = new OptionsBuilder()
 			.include("cc.tweaked.cobalt.benchmark.*")
 			.warmupIterations(3)
+			.warmupTime(TimeValue.milliseconds(1000))
 			.measurementIterations(5)
 			.measurementTime(TimeValue.milliseconds(3000))
 			.jvmArgsPrepend("-server")

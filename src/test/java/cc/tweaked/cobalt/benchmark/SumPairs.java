@@ -1,17 +1,11 @@
 package cc.tweaked.cobalt.benchmark;
 
-import org.openjdk.jmh.annotations.*;
 import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.ValueFactory;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Creates a table mapping strings to numbers, then loops over adding them all up.
  */
-@State(Scope.Thread)
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class SumPairs extends LuaBenchmark {
 	public SumPairs() {
 		super("""
