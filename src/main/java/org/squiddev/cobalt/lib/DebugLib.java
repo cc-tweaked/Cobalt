@@ -161,34 +161,37 @@ public final class DebugLib {
 	private static Varargs getinfo(LuaState state, Varargs args) throws LuaError {
 		int arg = 1;
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
-		LuaValue func = args.arg(arg);
+		LuaValue funcArg = args.arg(arg);
 		String what = args.arg(arg + 1).optString("flnStu");
 
-		// find the stack info
+		// Find the stack info
 		DebugState ds = thread.getDebugState();
-		DebugFrame di;
-		if (func.isNumber()) {
-			di = ds.getFrame(func.checkInteger());
+		DebugFrame callInfo;
+		LuaFunction function;
+		if (funcArg.isNumber()) {
+			callInfo = ds.getFrame(funcArg.checkInteger());
+			if (callInfo == null) return NIL;
+			function = callInfo.func;
 		} else {
-			di = ds.findDebugInfo(func.checkFunction());
+			callInfo = null;
+			function = funcArg.checkFunction();
 		}
-		if (di == null) return NIL;
 
 		// start a table
 		LuaTable info = new LuaTable();
-		LuaClosure c = di.closure;
+		LuaClosure closure = function instanceof LuaClosure c ? c : null;
 		for (int i = 0, j = what.length(); i < j; i++) {
 			switch (what.charAt(i)) {
 				case 'S' -> {
-					if (c != null) {
-						Prototype p = c.getPrototype();
+					if (closure != null) {
+						Prototype p = closure.getPrototype();
 						info.rawset(WHAT, p.lineDefined == 0 ? MAIN : LUA);
 						info.rawset(SOURCE, p.source);
 						info.rawset(SHORT_SRC, p.shortSource());
 						info.rawset(LINEDEFINED, valueOf(p.lineDefined));
 						info.rawset(LASTLINEDEFINED, valueOf(p.lastLineDefined));
 					} else {
-						String shortName = di.func == null ? "nil" : di.func.debugName();
+						String shortName = function == null ? "nil" : function.debugName();
 						LuaString name = valueOf("[C] " + shortName);
 						info.rawset(WHAT, C);
 						info.rawset(SOURCE, name);
@@ -198,28 +201,32 @@ public final class DebugLib {
 					}
 				}
 				case 'l' -> {
-					if (c == null) continue;
-					Prototype p = c.getPrototype();
-					int line = p.lineAt(di.pc);
-					int column = p.columnAt(di.pc);
+					if (callInfo == null || closure == null) {
+						info.rawset(CURRENTLINE, valueOf(-1));
+						continue;
+					}
+
+					Prototype p = closure.getPrototype();
+					int line = p.lineAt(callInfo.pc);
+					int column = p.columnAt(callInfo.pc);
 					info.rawset(CURRENTLINE, valueOf(line));
 					if (column > 0) info.rawset(CURRENTCOLUMN, valueOf(column));
 				}
 				case 'u' -> {
-					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().upvalues() : 0));
-					info.rawset(NPARAMS, valueOf(c != null ? c.getPrototype().parameters : 0));
-					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().isVarArg));
+					info.rawset(NUPS, valueOf(closure != null ? closure.getPrototype().upvalues() : 0));
+					info.rawset(NPARAMS, valueOf(closure != null ? closure.getPrototype().parameters : 0));
+					info.rawset(ISVARARG, valueOf(closure == null || closure.getPrototype().isVarArg));
 				}
 				case 'n' -> {
-					ObjectName kind = di.getFuncKind();
+					ObjectName kind = callInfo != null ? callInfo.getFuncKind() : null;
 					info.rawset(NAME, kind != null ? kind.name() : NIL);
 					info.rawset(NAMEWHAT, kind != null ? kind.what() : EMPTYSTRING);
 				}
 				case 'f' -> {
-					info.rawset(FUNC, di.func == null ? NIL : di.func);
+					info.rawset(FUNC, function == null ? NIL : function);
 				}
 				case 'L' -> {
-					if (di.func instanceof LuaClosure closure) {
+					if (closure != null) {
 						LuaTable lines = new LuaTable();
 						info.rawset(ACTIVELINES, lines);
 						int[] lineInfo = closure.getPrototype().lineInfo;
@@ -228,7 +235,9 @@ public final class DebugLib {
 						}
 					}
 				}
-				case 't' -> info.rawset(ISTAILCALL, valueOf((di.flags & DebugFrame.FLAG_TAIL) != 0));
+				case 't' -> {
+					info.rawset(ISTAILCALL, valueOf(callInfo != null && (callInfo.flags & DebugFrame.FLAG_TAIL) != 0));
+				}
 				default -> throw ErrorFactory.argError(arg + 1, "invalid option");
 			}
 		}

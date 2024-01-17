@@ -253,21 +253,6 @@ public final class DebugState {
 		return level >= 0 && level <= top ? stack[top - level] : null;
 	}
 
-	/**
-	 * Find the debug info for a function
-	 *
-	 * @param func The function to find
-	 * @return The debug info for this function
-	 */
-	public DebugFrame findDebugInfo(LuaFunction func) {
-		for (int i = top - 1; --i >= 0; ) {
-			if (stack[i].func == func) {
-				return stack[i];
-			}
-		}
-		return new DebugFrame(func);
-	}
-
 	public void onCall(DebugFrame frame) throws UnwindThrowable, LuaError {
 		if ((hookMask & HOOK_CALL) == 0 || inhook) return;
 

@@ -157,15 +157,9 @@ public final class DebugFrame {
 	public int pc = -1, oldPc = -1, top = -1;
 	public int flags;
 
-	public DebugFrame(DebugFrame previous) {
+	DebugFrame(DebugFrame previous) {
 		this.previous = previous;
 		func = null;
-	}
-
-	public DebugFrame(LuaFunction func) {
-		previous = null;
-		this.func = func;
-		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
 	}
 
 	public void cleanup() {
