@@ -110,10 +110,10 @@ public final class BaseLib {
 		if (arg instanceof LuaFunction) return arg;
 
 		int level = optional ? arg.optInteger(1) : arg.checkInteger();
-		Varargs.argCheck(level >= 0, 1, "level must be non-negative");
+		if (level < 0) throw ErrorFactory.argError(1, "level must be non-negative");
 		if (level == 0) return state.getCurrentThread();
 		LuaValue f = LuaThread.getCallstackFunction(state, level);
-		Varargs.argCheck(f != null, 1, "invalid level");
+		if (f == null) throw ErrorFactory.argError(1, "invalid level");
 		return f;
 	}
 

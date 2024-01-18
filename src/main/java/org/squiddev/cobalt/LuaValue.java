@@ -156,7 +156,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#NIL
 	 * @see Constants#NONE
 	 * @see #optValue(LuaValue)
-	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
 	 */
 	public final boolean isNil() {
@@ -499,7 +498,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#NIL
 	 * @see Constants#NONE
 	 * @see #isNil()
-	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
 	 */
 	public final LuaValue optValue(LuaValue defval) {
@@ -700,6 +698,7 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	@Override
+	@Deprecated
 	public LuaValue first() {
 		return this;
 	}

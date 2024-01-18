@@ -26,6 +26,7 @@ package org.squiddev.cobalt.lib;
 
 import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.Dispatch;
@@ -275,14 +276,14 @@ public final class TableLib {
 			return SuspendedAction.run(di, () -> {
 				int n = OperationHelper.intLength(state, table);
 
-				LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
+				LuaFunction compare = args.arg(2).optFunction(null);
 				if (n > 1) heapSort(state, table, n, compare);
 				return NONE;
 			});
 		}
 
 		@AutoUnwind
-		private static void heapSort(LuaState state, LuaValue table, int count, LuaValue compare) throws LuaError, UnwindThrowable {
+		private static void heapSort(LuaState state, LuaValue table, int count, @Nullable LuaFunction compare) throws LuaError, UnwindThrowable {
 			for (int start = count / 2 - 1; start >= 0; start--) {
 				siftDown(state, table, start, count - 1, compare);
 			}
@@ -298,7 +299,7 @@ public final class TableLib {
 		}
 
 		@AutoUnwind
-		private static void siftDown(LuaState state, LuaValue table, int start, int end, LuaValue compare) throws LuaError, UnwindThrowable {
+		private static void siftDown(LuaState state, LuaValue table, int start, int end, @Nullable LuaFunction compare) throws LuaError, UnwindThrowable {
 			LuaValue rootValue = OperationHelper.getTable(state, table, start + 1);
 
 			for (int root = start; root * 2 + 1 <= end; ) {
@@ -325,8 +326,8 @@ public final class TableLib {
 		}
 
 		@AutoUnwind
-		private static boolean compare(LuaState state, LuaValue compare, LuaValue a, LuaValue b) throws LuaError, UnwindThrowable {
-			return compare.isNil()
+		private static boolean compare(LuaState state, @Nullable LuaFunction compare, LuaValue a, LuaValue b) throws LuaError, UnwindThrowable {
+			return compare == null
 				? OperationHelper.lt(state, a, b)
 				: Dispatch.call(state, compare, a, b).toBoolean();
 		}
