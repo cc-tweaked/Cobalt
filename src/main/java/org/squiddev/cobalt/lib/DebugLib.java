@@ -50,7 +50,8 @@ public final class DebugLib {
 	private static final LuaString MAIN = valueOf("main");
 	private static final LuaString LUA = valueOf("Lua");
 	private static final LuaString C = valueOf("C");
-	private static final LuaString C_SOURCE = valueOf("[C]");
+	private static final LuaString C_SHORT_SOURCE = valueOf("[C]");
+	private static final LuaString C_SOURCE = valueOf("=[C]");
 	public static final LuaString QMARK = valueOf("?");
 	private static final LuaString EXTERNAL_HOOK = valueOf("external hook");
 
@@ -191,11 +192,9 @@ public final class DebugLib {
 						info.rawset(LINEDEFINED, valueOf(p.lineDefined));
 						info.rawset(LASTLINEDEFINED, valueOf(p.lastLineDefined));
 					} else {
-						String shortName = function == null ? "nil" : function.debugName();
-						LuaString name = valueOf("[C] " + shortName);
 						info.rawset(WHAT, C);
-						info.rawset(SOURCE, name);
-						info.rawset(SHORT_SRC, C_SOURCE);
+						info.rawset(SOURCE, C_SOURCE);
+						info.rawset(SHORT_SRC, C_SHORT_SOURCE);
 						info.rawset(LINEDEFINED, MINUSONE);
 						info.rawset(LASTLINEDEFINED, MINUSONE);
 					}

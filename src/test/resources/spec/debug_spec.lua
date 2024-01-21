@@ -67,4 +67,23 @@ describe("The debug library", function()
 			expect(counts.line):eq(59)
 		end)
 	end)
+
+	describe("debug.getinfo", function()
+		it("a native function :lua>=5.3", function()
+			expect(debug.getinfo(print)):matches {
+				nups = 0,
+				currentline = -1,
+				func = print,
+				istailcall = false,
+				isvararg = true,
+				lastlinedefined = -1,
+				linedefined = -1,
+				namewhat = "",
+				nparams = 0,
+				short_src = "[C]",
+				source = "=[C]",
+				what = "C",
+			}
+		end)
+	end)
 end)

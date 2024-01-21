@@ -3,6 +3,17 @@
 -- busted.
 
 
+local function key_compare(a, b)
+    local ta, tb = type(a), type(b)
+
+    if ta == "string" then return tb ~= "string" or a < b
+    elseif tb == "string" then return false
+    end
+
+    if ta == "number" then return tb ~= "number" or a < b end
+    return false
+end
+
 local function serialise(value, seen, indent)
 	local ty = type(value)
 	if ty == "string" then return (("%q"):format(value):gsub("\\n", "n"))
@@ -26,9 +37,13 @@ local function serialise(value, seen, indent)
 			if item:find("\n") then contents_len = math.huge end
 		end
 
+		table.sort(keys, key_compare)
+
 		local contents_len = 0
 		for i = 1, keysn - 1 do
-			local k, v, item = keys[i], value[k]
+			local k = keys[i]
+			local v = value[k]
+			local item
 			if type(k) == "string" and k:match("^[%a_][%w_]*$") then
 				item = ("%s = %s"):format(k, serialise(v, seen, indent + 1))
 			else
