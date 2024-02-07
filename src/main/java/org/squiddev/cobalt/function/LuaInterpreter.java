@@ -221,21 +221,21 @@ final class LuaInterpreter {
 					case OP_GETTABUP: {// A B C: R(A) := UpValue[B][RK(C)]
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.getTable(state, upvalues[b].getValue(), ISK(c) ? k[INDEXK(c)] : stack[c], -b - 1);
+						stack[a] = OperationHelper.getTable(state, upvalues[b].getValue(), getRK(stack, k, c), -b - 1);
 						break;
 					}
 
 					case OP_GETTABLE: { // A B C: R(A):= R(B)[RK(C)]
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.getTable(state, stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], b);
+						stack[a] = OperationHelper.getTable(state, stack[b], getRK(stack, k, c), b);
 						break;
 					}
 
 					case OP_SETTABUP: {// A B C: UpValue[A][RK(B)] := RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						OperationHelper.setTable(state, upvalues[a].getValue(), ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], -b - 1);
+						OperationHelper.setTable(state, upvalues[a].getValue(), getRK(stack, k, b), getRK(stack, k, c), -b - 1);
 						break;
 					}
 
@@ -246,7 +246,7 @@ final class LuaInterpreter {
 					case OP_SETTABLE: { // A B C: R(A)[RK(B)]:= RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						OperationHelper.setTable(state, stack[a], ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], a);
+						OperationHelper.setTable(state, stack[a], getRK(stack, k, b), getRK(stack, k, c), a);
 						break;
 					}
 
@@ -258,55 +258,55 @@ final class LuaInterpreter {
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
 						LuaValue o = stack[a + 1] = stack[b];
-						stack[a] = OperationHelper.getTable(state, o, ISK(c) ? k[INDEXK(c)] : stack[c], b);
+						stack[a] = OperationHelper.getTable(state, o, getRK(stack, k, c), b);
 						break;
 					}
 
 					case OP_ADD: { // A B C: R(A):= RK(B) + RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.add(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], b, c);
+						stack[a] = OperationHelper.add(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
 						break;
 					}
 
 					case OP_SUB: { // A B C: R(A):= RK(B) - RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.sub(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], b, c);
+						stack[a] = OperationHelper.sub(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
 						break;
 					}
 
 					case OP_MUL: { // A B C: R(A):= RK(B) * RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.mul(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], b, c);
+						stack[a] = OperationHelper.mul(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
 						break;
 					}
 
 					case OP_DIV: { // A B C: R(A):= RK(B) / RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.div(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], b, c);
+						stack[a] = OperationHelper.div(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
 						break;
 					}
 
 					case OP_MOD: { // A B C: R(A):= RK(B) % RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.mod(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], b, c);
+						stack[a] = OperationHelper.mod(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
 						break;
 					}
 
 					case OP_POW: { // A B C: R(A):= RK(B) ^ RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.pow(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c], b, c);
+						stack[a] = OperationHelper.pow(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
 						break;
 					}
 
 					case OP_UNM: { // A B: R(A):= -R(B)
 						int b = GETARG_B(i);
-						stack[a] = OperationHelper.neg(state, ISK(b) ? k[INDEXK(b)] : stack[b], b);
+						stack[a] = OperationHelper.neg(state, getRK(stack, k, b), b);
 						break;
 					}
 
@@ -338,7 +338,7 @@ final class LuaInterpreter {
 					case OP_EQ: { // A B C: if ((RK(B) == RK(C)) ~= A) then pc++
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						if (OperationHelper.eq(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c]) == (a != 0)) {
+						if (OperationHelper.eq(state, getRK(stack, k, b), getRK(stack, k, c)) == (a != 0)) {
 							// We assume the next instruction is a jump and read the branch from there.
 							pc += doJump(di, code[pc], 1);
 						} else {
@@ -350,7 +350,7 @@ final class LuaInterpreter {
 					case OP_LT: { // A B C: if ((RK(B) <  RK(C)) ~= A) then pc++
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						if (OperationHelper.lt(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c]) == (a != 0)) {
+						if (OperationHelper.lt(state, getRK(stack, k, b), getRK(stack, k, c)) == (a != 0)) {
 							pc += doJump(di, code[pc], 1);
 						} else {
 							pc++;
@@ -361,7 +361,7 @@ final class LuaInterpreter {
 					case OP_LE: { // A B C: if ((RK(B) <= RK(C)) ~= A) then pc++
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						if (OperationHelper.le(state, ISK(b) ? k[INDEXK(b)] : stack[b], ISK(c) ? k[INDEXK(c)] : stack[c]) == (a != 0)) {
+						if (OperationHelper.le(state, getRK(stack, k, b), getRK(stack, k, c)) == (a != 0)) {
 							pc += doJump(di, code[pc], 1);
 						} else {
 							pc++;
@@ -578,6 +578,10 @@ final class LuaInterpreter {
 				}
 			}
 		}
+	}
+
+	private static LuaValue getRK(LuaValue[] stack, LuaValue[] k, int slot) {
+		return ISK(slot) ? k[INDEXK(slot)] : stack[slot];
 	}
 
 	private static int doJump(DebugFrame frame, int i, int e) {
