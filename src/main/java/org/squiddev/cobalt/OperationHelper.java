@@ -31,6 +31,7 @@ import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.LuaFunction;
 
 import static org.squiddev.cobalt.Constants.*;
+import static org.squiddev.cobalt.Lua.*;
 import static org.squiddev.cobalt.LuaDouble.valueOf;
 import static org.squiddev.cobalt.LuaInteger.valueOf;
 import static org.squiddev.cobalt.debug.DebugFrame.FLAG_LEQ;
@@ -44,36 +45,24 @@ public final class OperationHelper {
 
 	//region Binary
 	public static LuaValue add(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		return add(state, left, right, -1, -1);
-	}
-
-	public static LuaValue add(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(dLeft + dRight);
 		} else {
-			return arithMetatable(state, ADD, left, right, leftIdx, rightIdx);
+			return arithMetatable(state, ADD, left, right);
 		}
 	}
 
 	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		return sub(state, left, right, -1, -1);
-	}
-
-	public static LuaValue sub(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(dLeft - dRight);
 		} else {
-			return arithMetatable(state, SUB, left, right, leftIdx, rightIdx);
+			return arithMetatable(state, SUB, left, right);
 		}
 	}
 
 	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		return mul(state, left, right, -1, -1);
-	}
-
-	public static LuaValue mul(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
 		if (left instanceof LuaInteger l && right instanceof LuaInteger r) {
 			return valueOf((long) l.intValue() * (long) r.intValue());
 		}
@@ -82,46 +71,34 @@ public final class OperationHelper {
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(dLeft * dRight);
 		} else {
-			return arithMetatable(state, MUL, left, right, leftIdx, rightIdx);
+			return arithMetatable(state, MUL, left, right);
 		}
 	}
 
 	public static LuaValue div(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		return div(state, left, right, -1, -1);
-	}
-
-	public static LuaValue div(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(div(dLeft, dRight));
 		} else {
-			return arithMetatable(state, DIV, left, right, leftIdx, rightIdx);
+			return arithMetatable(state, DIV, left, right);
 		}
 	}
 
 	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		return mod(state, left, right, -1, -1);
-	}
-
-	public static LuaValue mod(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(mod(dLeft, dRight));
 		} else {
-			return arithMetatable(state, MOD, left, right, leftIdx, rightIdx);
+			return arithMetatable(state, MOD, left, right);
 		}
 	}
 
 	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		return pow(state, left, right, -1, -1);
-	}
-
-	public static LuaValue pow(LuaState state, LuaValue left, LuaValue right, int leftIdx, int rightIdx) throws LuaError, UnwindThrowable {
 		double dLeft, dRight;
 		if (checkNumber(left, dLeft = left.toDouble()) && checkNumber(right, dRight = right.toDouble())) {
 			return valueOf(Math.pow(dLeft, dRight));
 		} else {
-			return arithMetatable(state, POW, left, right, leftIdx, rightIdx);
+			return arithMetatable(state, POW, left, right);
 		}
 	}
 
@@ -155,18 +132,16 @@ public final class OperationHelper {
 	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
 	 * or throws {@link LuaError} if neither is defined.
 	 *
-	 * @param state      The current lua state
-	 * @param tag        The metatag to look up
-	 * @param left       The left operand value to perform the operation with
-	 * @param right      The other operand value to perform the operation with
-	 * @param leftStack  Stack index of the LHS
-	 * @param rightStack Stack index of the RHS
+	 * @param state The current lua state
+	 * @param tag   The metatag to look up
+	 * @param left  The left operand value to perform the operation with
+	 * @param right The other operand value to perform the operation with
 	 * @return {@link LuaValue} resulting from metatag processing
 	 * @throws LuaError        if metatag was not defined for either operand or the underlying operator errored.
 	 * @throws UnwindThrowable If calling the metatable function yielded.
 	 */
-	public static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError, UnwindThrowable {
-		return Dispatch.call(state, getMetatable(state, tag, left, right, leftStack, rightStack), left, right);
+	private static LuaValue arithMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
+		return Dispatch.call(state, getMetatable(state, tag, left, right), left, right);
 	}
 
 	/**
@@ -175,28 +150,54 @@ public final class OperationHelper {
 	 * Finds the supplied metatag value for {@code this} or {@code op2} and invokes it,
 	 * or throws {@link LuaError} if neither is defined.
 	 *
-	 * @param state      The current lua state
-	 * @param tag        The metatag to look up
-	 * @param left       The left operand value to perform the operation with
-	 * @param right      The other operand value to perform the operation with
-	 * @param leftStack  Stack index of the LHS
-	 * @param rightStack Stack index of the RHS
+	 * @param state The current lua state
+	 * @param tag   The metatag to look up
+	 * @param left  The left operand value to perform the operation with
+	 * @param right The other operand value to perform the operation with
 	 * @return {@link LuaValue} resulting from metatag processing
 	 * @throws LuaError if metatag was not defined for either operand
 	 */
-	public static LuaValue getMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError {
+	private static LuaValue getMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right) throws LuaError {
 		LuaValue h = left.metatag(state, tag);
-		if (h.isNil()) {
-			h = right.metatag(state, tag);
-			if (h.isNil()) {
-				if (left.isNumber()) {
-					left = right;
-					leftStack = rightStack;
-				}
-				throw ErrorFactory.operandError(state, left, "perform arithmetic on", leftStack);
+		if (!h.isNil()) return h;
+
+		h = right.metatag(state, tag);
+		if (!h.isNil()) return h;
+
+
+		throw createArithmeticError(state, left, right);
+	}
+
+	private static LuaError createArithmeticError(LuaState state, LuaValue left, LuaValue right) {
+		// Read the current instruction and try to determine the registers involved. This allows us to avoid passing the
+		// registers from the interpreter to here.
+		// PUC Lua just does this by searching the stack for the given value, but that's not possible for us :(
+		int b = -1, c = -1;
+		DebugFrame frame = DebugState.get(state).getStack();
+		if (frame != null && frame.closure != null) {
+			var prototype = frame.closure.getPrototype();
+			if (frame.pc >= 0 && frame.pc <= prototype.code.length) {
+				int i = prototype.code[frame.pc];
+				assert (
+					getOpMode(GET_OPCODE(i)) == iABC && getBMode(GET_OPCODE(i)) == OpArgK && getCMode(GET_OPCODE(i)) == OpArgK
+				) : getOpName(GET_OPCODE(i)) + " is not an iABC/RK/RX instruction";
+
+				b = GETARG_B(i);
+				c = GETARG_C(i);
 			}
 		}
-		return h;
+
+		LuaValue value;
+		int stack;
+		if (!left.isNumber()) {
+			value = left;
+			stack = b;
+		} else {
+			value = right;
+			stack = c;
+		}
+
+		return ErrorFactory.operandError(state, value, "perform arithmetic on", stack);
 	}
 
 	public static LuaValue concatNonStrings(LuaState state, LuaValue left, LuaValue right, int leftStack, int rightStack) throws LuaError, UnwindThrowable {
@@ -303,10 +304,6 @@ public final class OperationHelper {
 	 * @throws UnwindThrowable If the {@code __len} metamethod yielded.
 	 */
 	public static LuaValue length(LuaState state, LuaValue value) throws LuaError, UnwindThrowable {
-		return length(state, value, -1);
-	}
-
-	public static LuaValue length(LuaState state, LuaValue value, int stack) throws LuaError, UnwindThrowable {
 		switch (value.type()) {
 			case Constants.TTABLE: {
 				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
@@ -320,9 +317,7 @@ public final class OperationHelper {
 				return valueOf(((LuaString) value).length());
 			default: {
 				LuaValue h = value.metatag(state, CachedMetamethod.LEN);
-				if (h.isNil()) {
-					throw ErrorFactory.operandError(state, value, "get length of", stack);
-				}
+				if (h.isNil()) throw createUnaryOpError(state, value, "get length of");
 				return Dispatch.call(state, h, value);
 			}
 		}
@@ -351,10 +346,6 @@ public final class OperationHelper {
 	 * @throws UnwindThrowable If the {@code __unm} metamethod yielded.
 	 */
 	public static LuaValue neg(LuaState state, LuaValue value) throws LuaError, UnwindThrowable {
-		return neg(state, value, -1);
-	}
-
-	public static LuaValue neg(LuaState state, LuaValue value, int stack) throws LuaError, UnwindThrowable {
 		int type = value.type();
 		if (type == TNUMBER) {
 			if (value instanceof LuaInteger) {
@@ -369,15 +360,34 @@ public final class OperationHelper {
 		}
 
 		LuaValue meta = value.metatag(state, Constants.UNM);
-		if (meta.isNil()) {
-			throw ErrorFactory.operandError(state, value, "perform arithmetic on", stack);
-		}
+		if (meta.isNil()) throw createUnaryOpError(state, value, "perform arithmetic on");
 
 		return Dispatch.call(state, meta, value);
 	}
 
 	private static boolean checkNumber(LuaValue lua, double value) {
 		return lua.type() == TNUMBER || !Double.isNaN(value);
+	}
+
+	private static LuaError createUnaryOpError(LuaState state, LuaValue value, String message) {
+		// Read the current instruction and try to determine the register involved. This allows us to avoid passing the
+		// registers from the interpreter to here.
+		// PUC Lua just does this by searching the stack for the given value, but that's not possible for us :(
+		int b = -1;
+		DebugFrame frame = DebugState.get(state).getStack();
+		if (frame != null && frame.closure != null) {
+			var prototype = frame.closure.getPrototype();
+			if (frame.pc >= 0 && frame.pc <= prototype.code.length) {
+				int i = prototype.code[frame.pc];
+				assert (
+					getOpMode(GET_OPCODE(i)) == iABC && getBMode(GET_OPCODE(i)) == OpArgR
+				) : getOpName(GET_OPCODE(i)) + " is not an iABC/RK instruction";
+
+				b = GETARG_B(i);
+			}
+		}
+
+		return ErrorFactory.operandError(state, value, message, b);
 	}
 	//endregion
 

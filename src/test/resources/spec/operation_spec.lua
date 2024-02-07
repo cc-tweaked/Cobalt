@@ -13,4 +13,31 @@ describe("Lua's base operators", function()
 			expect(public_key):eq(17511)
 		end)
 	end)
+
+	describe("error messages", function()
+		local function mk_adder(k) return function() return 2 + k end end
+
+		it("includes upvalue names in error messages :lua>=5.1 :lua<=5.2", function()
+			expect.error(mk_adder("hello")):strip_context():eq("attempt to perform arithmetic on upvalue 'k' (a string value)")
+		end)
+
+		it("includes upvalue names in error messages :lua==5.3 :!cobalt", function()
+			expect.error(mk_adder("hello")):strip_context():eq("attempt to perform arithmetic on a string value (upvalue 'k')")
+		end)
+
+		local function adder(k) return 2 + k end
+
+		it("includes local names in error messages :lua>=5.1 :lua<=5.2", function()
+			expect.error(adder, "hello"):strip_context():eq("attempt to perform arithmetic on local 'k' (a string value)")
+		end)
+
+		it("includes local names in error messages :lua==5.3 :!cobalt", function()
+			expect.error(adder, "hello"):strip_context():eq("attempt to perform arithmetic on a string value (local 'k')")
+		end)
+
+		it("includes no information in error messages :lua>=5.4 :!cobalt", function()
+			expect.error(mk_adder("hello")):strip_context():eq("attempt to add a 'number' with a 'string'")
+			expect.error(adder, "hello"):strip_context():eq("attempt to add a 'number' with a 'string'")
+		end)
+	end)
 end)

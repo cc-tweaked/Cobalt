@@ -221,9 +221,17 @@ end
 --- Add extra information to this error message.
 --
 -- @tparam string message Additional message to prepend in the case of failures.
--- @return The current
+-- @return The current expect object.
 function expect_mt:describe(message)
 	self._extra = tostring(message)
+	return self
+end
+
+--- Remove the position information from an error message.
+--
+-- @return The current expect object.
+function expect_mt:strip_context()
+	self.value = self.value:gsub("^[^:]+:%d+: ", "")
 	return self
 end
 

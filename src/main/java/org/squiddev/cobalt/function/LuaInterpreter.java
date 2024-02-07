@@ -265,48 +265,48 @@ final class LuaInterpreter {
 					case OP_ADD: { // A B C: R(A):= RK(B) + RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.add(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
+						stack[a] = OperationHelper.add(state, getRK(stack, k, b), getRK(stack, k, c));
 						break;
 					}
 
 					case OP_SUB: { // A B C: R(A):= RK(B) - RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.sub(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
+						stack[a] = OperationHelper.sub(state, getRK(stack, k, b), getRK(stack, k, c));
 						break;
 					}
 
 					case OP_MUL: { // A B C: R(A):= RK(B) * RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.mul(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
+						stack[a] = OperationHelper.mul(state, getRK(stack, k, b), getRK(stack, k, c));
 						break;
 					}
 
 					case OP_DIV: { // A B C: R(A):= RK(B) / RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.div(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
+						stack[a] = OperationHelper.div(state, getRK(stack, k, b), getRK(stack, k, c));
 						break;
 					}
 
 					case OP_MOD: { // A B C: R(A):= RK(B) % RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.mod(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
+						stack[a] = OperationHelper.mod(state, getRK(stack, k, b), getRK(stack, k, c));
 						break;
 					}
 
 					case OP_POW: { // A B C: R(A):= RK(B) ^ RK(C)
 						int b = GETARG_B(i);
 						int c = GETARG_C(i);
-						stack[a] = OperationHelper.pow(state, getRK(stack, k, b), getRK(stack, k, c), b, c);
+						stack[a] = OperationHelper.pow(state, getRK(stack, k, b), getRK(stack, k, c));
 						break;
 					}
 
 					case OP_UNM: { // A B: R(A):= -R(B)
 						int b = GETARG_B(i);
-						stack[a] = OperationHelper.neg(state, getRK(stack, k, b), b);
+						stack[a] = OperationHelper.neg(state, getRK(stack, k, b));
 						break;
 					}
 
@@ -316,7 +316,7 @@ final class LuaInterpreter {
 
 					case OP_LEN: { // A B: R(A):= length of R(B)
 						int b = GETARG_B(i);
-						stack[a] = OperationHelper.length(state, stack[b], b);
+						stack[a] = OperationHelper.length(state, stack[b]);
 						break;
 					}
 

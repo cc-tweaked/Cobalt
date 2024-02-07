@@ -264,7 +264,7 @@ public final class Lua {
 		return (t << 7) | (a << 6) | (b << 4) | (c << 2) | m;
 	}
 
-	public static final int[] opmodes = {
+	private static final int[] opmodes = {
 		opmode(0, 1, OpArgR, OpArgN, iABC),  // OP_MOVE
 		opmode(0, 1, OpArgK, OpArgN, iABx),  // OP_LOADK
 		opmode(0, 1, OpArgN, OpArgN, iABx),  // OP_LOADKX
