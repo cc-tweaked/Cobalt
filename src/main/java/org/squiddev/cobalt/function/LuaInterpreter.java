@@ -173,10 +173,8 @@ final class LuaInterpreter {
 
 			// process instructions
 			while (true) {
-				if (state.isInterrupted()) {
-					di.pc = pc;
-					state.handleInterrupt();
-				}
+				di.pc = pc;
+				if (state.isInterrupted()) state.handleInterrupt();
 				ds.onInstruction(di, pc);
 
 				// pull out instruction

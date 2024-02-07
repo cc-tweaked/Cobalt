@@ -26,7 +26,6 @@ package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.Dispatch;
-import org.squiddev.cobalt.function.LuaFunction;
 
 import java.util.Arrays;
 
@@ -328,7 +327,7 @@ public final class DebugState {
 	 * @throws UnwindThrowable If the hook transfers control to another coroutine.
 	 */
 	public void onInstruction(DebugFrame frame, int pc) throws LuaError, UnwindThrowable {
-		frame.pc = pc;
+		// TODO: Can we avoid the inhook here?
 		if (inhook || (hookMask & (HOOK_LINE | HOOK_COUNT)) != 0) onInstructionWorker(frame, pc);
 	}
 
