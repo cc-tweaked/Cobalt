@@ -576,8 +576,7 @@ public final class LuaTable extends LuaValue {
 	private int getFreePos() {
 		if (keys.length == 0) return -1;
 		while (lastFree >= 0) {
-			LuaValue last = key(lastFree--);
-			if (last == NIL) {
+			if (keys[lastFree--] == NIL) {
 				return lastFree + 1;
 			}
 		}
@@ -864,8 +863,6 @@ public final class LuaTable extends LuaValue {
 			rawset(keyI.intValue(), value, key);
 			return;
 		}
-
-		// TODO: Check valid key here instead of at the call site!
 
 		do {
 			int node = getNode(key);

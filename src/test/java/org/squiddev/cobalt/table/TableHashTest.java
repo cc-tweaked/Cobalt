@@ -266,4 +266,21 @@ public class TableHashTest {
 		for (int i = 0; i < 8; i++) t.rawset("new_key_" + i, Constants.TRUE);
 		assertEquals(8, TableOperations.getHashLength(t));
 	}
+
+	@Test
+	public void testWeakCanBeReplaced() throws LuaError {
+		var t = new LuaTable();
+
+		var mt = new LuaTable();
+		mt.rawset("__mode", ValueFactory.valueOf("k"));
+		t.setMetatable(null, mt);
+
+		for (int j = 0; j < 16; j++) {
+			for (int i = 0; i < 256; i++) t.rawset(new LuaTable(), Constants.TRUE);
+			System.gc();
+
+			int hash = TableOperations.getHashLength(t);
+			if (hash > 512) throw new AssertionError("Expected hash to be <=512, but is " + hash);
+		}
+	}
 }
