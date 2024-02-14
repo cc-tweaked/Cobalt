@@ -146,6 +146,19 @@ describe("Lua tables", function()
 				local k, v = next(t)
 				expect(v):eq("t1")
 			end)
+
+			it("behaves like an ephemeron table :lua>=5.2 :!cobalt", function()
+				local t = setmode({}, "k")
+
+				local t1 = {}
+				t[t1] = { t1 }
+				t1 = nil
+
+				collectgarbage()
+
+				local k, v = next(t)
+				expect(k):eq(nil)
+			end)
 		end)
 
 		describe("with weak values", function()
