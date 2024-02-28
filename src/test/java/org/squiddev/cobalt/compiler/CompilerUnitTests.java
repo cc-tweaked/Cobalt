@@ -26,10 +26,15 @@ package org.squiddev.cobalt.compiler;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.squiddev.cobalt.LuaError;
+import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.Print;
 import org.squiddev.cobalt.Prototype;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -44,28 +49,31 @@ public class CompilerUnitTests {
 		"all", "api", "attrib", "big", "calls", "checktable", "closure", "code", "constructs", "db", "errors",
 		"events", "files", "gc", "literals", "locals", "main", "math", "nextvar", "pm", "sort", "strings", "vararg",
 	})
-	public void lua51(String filename) throws IOException, CompileException {
+	public void lua51(String filename) throws IOException, CompileException, LuaError {
 		compareResults("/bytecode-compiler/lua5.1/", filename);
 	}
 
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"modulo", "construct", "bigattr", "controlchars", "comparators", "mathrandomseed", "varargs",
+		"multi-assign",
 	})
-	public void regression(String filename) throws IOException, CompileException {
+	public void regression(String filename) throws IOException, CompileException, LuaError {
 		compareResults("/bytecode-compiler/regressions/", filename);
 	}
 
-	private static void compareResults(String dir, String file) throws IOException, CompileException {
+	private static void compareResults(String dir, String file) throws IOException, CompileException, LuaError {
+		var state = LuaState.builder().bytecodeFormat(LuaBytecodeFormat.instance()).build();
+
 		// Compile source file
-		Prototype sourcePrototype = LuaC.compile(CompilerUnitTests.class.getResourceAsStream(dir + file + ".lua"), "@" + file + ".lua");
+		Prototype sourcePrototype = LuaC.compile(state, CompilerUnitTests.class.getResourceAsStream(dir + file + ".lua"), "@" + file + ".lua");
 		String sourceBytecode = dumpState(sourcePrototype);
 
 		// Load expected value from jar
-		Prototype expectedPrototype = LuaC.compile(CompilerUnitTests.class.getResourceAsStream(dir + file + ".lc"), file + ".lua");
+		Prototype expectedPrototype = LuaC.compile(state, CompilerUnitTests.class.getResourceAsStream(dir + file + ".lc"), file + ".lua");
 		String expectedBytecode = dumpState(expectedPrototype);
 
-		if (!expectedBytecode.equals(sourceBytecode)) {
+		if (Boolean.getBoolean("cobalt.update") && !expectedBytecode.equals(sourceBytecode)) {
 			try (OutputStream output = Files.newOutputStream(Paths.get("src/test/resources" + dir + file + ".lc"))) {
 				BytecodeDumper.dump(sourcePrototype, output, false);
 			}
@@ -76,17 +84,41 @@ public class CompilerUnitTests {
 		// Round-trip the bytecode
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		BytecodeDumper.dump(expectedPrototype, outputStream, false);
-		String redumpBytecode = dumpState(LuaC.compile(new ByteArrayInputStream(outputStream.toByteArray()), file + ".lua"));
+		String redumpBytecode = dumpState(LuaC.compile(state, new ByteArrayInputStream(outputStream.toByteArray()), file + ".lua"));
 
 		// compare again
 		assertEquals(sourceBytecode, redumpBytecode);
 	}
 
-	private static String dumpState(Prototype p) {
-		StringWriter output = new StringWriter();
-		try (PrintWriter ps = new PrintWriter(output)) {
-			Print.printFunction(ps, p, true, false);
+	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ValueSource(strings = {
+		"goto-close-1",
+		"goto-close-2",
+		"goto-if-1",
+		"goto-if-2",
+		"goto-nil",
+	})
+	public void listings(String file) throws IOException, CompileException, LuaError {
+		String dir = "/bytecode-compiler/listing/";
+		var state = LuaState.builder().build();
+
+		// Compile source file
+		Prototype sourcePrototype = LuaC.compile(state, CompilerUnitTests.class.getResourceAsStream(dir + file + ".lua"), "@" + file + ".lua");
+		String sourceBytecode = dumpState(sourcePrototype);
+
+		// Load expected value from jar
+		var expectedFile = Paths.get("src/test/resources" + dir + file + ".lc");
+		String expectedBytecode = Files.readString(expectedFile);
+
+		if (Boolean.getBoolean("cobalt.update") && !expectedBytecode.equals(sourceBytecode)) {
+			Files.writeString(expectedFile, sourceBytecode);
 		}
+		assertEquals(expectedBytecode, sourceBytecode);
+	}
+
+	private static String dumpState(Prototype p) {
+		StringBuilder output = new StringBuilder();
+		Print.printFunction(output, p, true, false);
 		return output.toString();
 	}
 }

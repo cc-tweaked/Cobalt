@@ -24,13 +24,12 @@
  */
 package org.squiddev.cobalt.lib;
 
+import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaState;
 import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 /**
- * The {@link CoreLibraries} class is a convenience class to standardize install "core" (i.e.
- * non-{@linkplain SystemLibraries system}) into the global state.
+ * Set up an environment with all core/safe globals installed.
  */
 public final class CoreLibraries {
 	private CoreLibraries() {
@@ -44,14 +43,14 @@ public final class CoreLibraries {
 	 * @see #debugGlobals(LuaState)
 	 * @see CoreLibraries
 	 */
-	public static LuaTable standardGlobals(LuaState state) {
-		LuaTable globals = state.getMainThread().getfenv();
-		new BaseLib().add(globals);
+	public static LuaTable standardGlobals(LuaState state) throws LuaError {
+		LuaTable globals = state.globals();
+		BaseLib.add(globals);
 		TableLib.add(state, globals);
 		StringLib.add(state, globals);
 		CoroutineLib.add(state, globals);
-		new MathLib().add(state, globals);
-		new Utf8Lib().add(state, globals);
+		MathLib.add(state, globals);
+		Utf8Lib.add(state, globals);
 		return globals;
 	}
 
@@ -64,7 +63,7 @@ public final class CoreLibraries {
 	 * @see CoreLibraries
 	 * @see DebugLib
 	 */
-	public static LuaTable debugGlobals(LuaState state) {
+	public static LuaTable debugGlobals(LuaState state) throws LuaError {
 		LuaTable _G = standardGlobals(state);
 		DebugLib.add(state, _G);
 		return _G;

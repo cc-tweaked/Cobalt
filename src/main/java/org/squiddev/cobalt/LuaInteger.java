@@ -75,7 +75,7 @@ public final class LuaInteger extends LuaNumber {
 	/**
 	 * The value being held by this instance.
 	 */
-	public final int v;
+	private final int v;
 
 	/**
 	 * Package protected constructor.
@@ -84,6 +84,10 @@ public final class LuaInteger extends LuaNumber {
 	 */
 	LuaInteger(int i) {
 		this.v = i;
+	}
+
+	public int intValue() {
+		return v;
 	}
 
 	@Override

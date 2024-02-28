@@ -70,7 +70,8 @@ class StringFormat {
 				continue;
 			}
 
-			LuaValue value = format.args.arg(++format.arg);
+			int argIndex = ++format.arg;
+			LuaValue value = format.args.arg(argIndex);
 			FormatDesc desc = new FormatDesc(fmt, i);
 			i += desc.length;
 
@@ -81,22 +82,22 @@ class StringFormat {
 				}
 				case 'i', 'd' -> {
 					desc.checkFlags(LEFT_ADJUST | EXPLICIT_PLUS | SPACE | ZERO_PAD | PRECISION);
-					desc.format(result, value.checkLong());
+					desc.format(result, toRealLong(argIndex, value));
 				}
 				case 'u' -> {
 					desc.checkFlags(LEFT_ADJUST | ZERO_PAD | PRECISION);
-					desc.format(result, value.checkLong());
+					desc.format(result, toRealLong(argIndex, value));
 				}
 				case 'o', 'x', 'X' -> {
 					desc.checkFlags(LEFT_ADJUST | ALTERNATE_FORM | ZERO_PAD | PRECISION);
-					desc.format(result, value.checkLong());
+					desc.format(result, toRealLong(argIndex, value));
 				}
 				case 'e', 'E', 'f', 'g', 'G', 'a', 'A' -> {
 					desc.checkFlags(LEFT_ADJUST | EXPLICIT_PLUS | SPACE | ALTERNATE_FORM | ZERO_PAD | PRECISION);
 					desc.format(result, value.checkDouble());
 				}
 				case 'q' -> {
-					desc.checkFlags(0);
+					if (desc.length != 1) throw new LuaError("specifier '%q' cannot have modifiers");
 					addQuoted(result, format.arg, value);
 				}
 				case 's' -> {
@@ -122,6 +123,19 @@ class StringFormat {
 		return result.toLuaString();
 	}
 
+	private static long toRealLong(int arg, LuaValue value) throws LuaError {
+		if (value instanceof LuaInteger i) return i.checkLong();
+
+		double asDouble = value.checkDouble();
+		long asLong = (long) asDouble;
+		double difference = asDouble - asLong;
+		if (-1 < difference && difference < 1) {
+			return asLong;
+		} else {
+			throw ErrorFactory.argError(arg, "not a number in proper range");
+		}
+	}
+
 	private static void addQuoted(Buffer buf, int arg, LuaValue s) throws LuaError {
 		switch (s.type()) {
 			case TSTRING -> addQuoted(buf, s.checkLuaString());
@@ -139,7 +153,7 @@ class StringFormat {
 				}
 			}
 			case TBOOLEAN, TNIL -> buf.append(s.toString());
-			default -> throw ErrorFactory.argError(arg, "value has no literal representation");
+			default -> throw ErrorFactory.argError(arg, "value has no literal form");
 		}
 	}
 

@@ -25,7 +25,6 @@
 package org.squiddev.cobalt.lib;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.compiler.BytecodeDumper;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.*;
 import org.squiddev.cobalt.lib.StringFormat.FormatState;
@@ -54,7 +53,7 @@ public final class StringLib {
 	private StringLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("len", StringLib::len),
 			RegisteredFunction.of("lower", StringLib::lower),
@@ -153,7 +152,7 @@ public final class StringLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, GSubState subState, Varargs value) throws LuaError, UnwindThrowable {
+		public Varargs resume(LuaState state, GSubState subState, Varargs value) throws LuaError, UnwindThrowable {
 			return StringMatch.gsubRun(state, subState, value.first());
 		}
 	}
@@ -168,7 +167,7 @@ public final class StringLib {
 		}
 
 		@Override
-		public Varargs resumeThis(LuaState state, FormatState formatState, Varargs value) throws LuaError, UnwindThrowable {
+		public Varargs resume(LuaState state, FormatState formatState, Varargs value) throws LuaError, UnwindThrowable {
 			LuaString s = OperationHelper.checkToString(value.first());
 			formatState.current.format(formatState.buffer, s);
 			return StringFormat.format(state, formatState);
@@ -245,11 +244,13 @@ public final class StringLib {
 	static LuaValue dump(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		LuaFunction f = arg1.checkFunction();
 		boolean strip = arg2.optBoolean(false);
-		if (!(f instanceof LuaClosure)) throw new LuaError("unable to dump given function");
+		var bytecode = state.getBytecodeFormat();
+
+		if (!(f instanceof LuaClosure closure) || bytecode == null) throw new LuaError("unable to dump given function");
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			BytecodeDumper.dump(((LuaClosure) f).getPrototype(), baos, strip);
+			bytecode.writeFunction(baos, closure.getPrototype(), strip);
 		} catch (IOException e) {
 			throw new LuaError(e.getMessage());
 		}

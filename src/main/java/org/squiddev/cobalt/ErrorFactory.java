@@ -35,7 +35,10 @@ import static org.squiddev.cobalt.Constants.NAME;
 /**
  * Factory class for errors
  */
-public class ErrorFactory {
+public final class ErrorFactory {
+	private ErrorFactory() {
+	}
+
 	/**
 	 * Get the name of a type suitable for error reporting. Unlike {@link LuaValue#luaTypeName()}, this will read the
 	 * {@link Constants#NAME __name} metatag.

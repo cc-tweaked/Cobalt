@@ -27,14 +27,13 @@ package org.squiddev.cobalt.function;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
-import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.debug.Upvalue;
 
 import java.io.InputStream;
 
 import static org.squiddev.cobalt.debug.DebugFrame.*;
-import static org.squiddev.cobalt.function.LuaInterpreter.*;
+import static org.squiddev.cobalt.function.LuaInterpreter.execute;
 
 /**
  * Extension of {@link LuaFunction} which executes lua bytecode.
@@ -78,7 +77,6 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
  * Since a {@link LuaInterpretedFunction} is a {@link LuaFunction} which is a {@link LuaValue},
  * all the value operations can be used directly such as:
  * <ul>
- * <li>{@link LuaValue#setfenv(LuaTable)}</li>
  * <li>{@link LuaFunction#call(LuaState)}</li>
  * <li>{@link LuaFunction#call(LuaState, LuaValue)}</li>
  * <li>{@link LuaFunction#invoke(LuaState, Varargs)}</li>
@@ -93,54 +91,27 @@ import static org.squiddev.cobalt.function.LuaInterpreter.*;
 public final class LuaInterpretedFunction extends LuaClosure implements Resumable<Object> {
 	private static final Upvalue[] NO_UPVALUES = new Upvalue[0];
 
-	public final Prototype p;
+	final Prototype p;
 	public final Upvalue[] upvalues;
 
 	/**
 	 * Supply the initial environment
 	 *
-	 * @param p   The prototype to run
-	 * @param env The environement to run in
+	 * @param p The prototype to run
 	 */
-	public LuaInterpretedFunction(Prototype p, LuaTable env) {
-		super(env);
+	public LuaInterpretedFunction(Prototype p) {
 		this.p = p;
-		this.upvalues = p.upvalues > 0 ? new Upvalue[p.upvalues] : NO_UPVALUES;
+		this.upvalues = p.upvalues() > 0 ? new Upvalue[p.upvalues()] : NO_UPVALUES;
 	}
 
 	public void nilUpvalues() {
-		int nups = p.upvalues;
+		int nups = p.upvalues();
 		if (nups > 0) {
 			Upvalue[] upvalues = this.upvalues;
 			for (int i = 0; i < nups; i++) {
 				upvalues[i] = new Upvalue(Constants.NIL);
 			}
 		}
-	}
-
-	@Override
-	public final LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
-		return execute(state, setupCall(state, this, FLAG_FRESH), this).first();
-	}
-
-	@Override
-	public final LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
-		return execute(state, setupCall(state, this, arg, FLAG_FRESH), this).first();
-	}
-
-	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
-		return execute(state, setupCall(state, this, arg1, arg2, FLAG_FRESH), this).first();
-	}
-
-	@Override
-	public final LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
-		return execute(state, setupCall(state, this, arg1, arg2, arg3, FLAG_FRESH), this).first();
-	}
-
-	@Override
-	public final Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
-		return execute(state, setupCall(state, this, varargs, FLAG_FRESH), this);
 	}
 
 	@Override
@@ -159,8 +130,9 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	}
 
 	@Override
-	public Varargs resume(LuaState state, DebugFrame frame, Object object, Varargs value) throws LuaError, UnwindThrowable {
+	public Varargs resume(LuaState state, Object object, Varargs value) throws LuaError, UnwindThrowable {
 		DebugState ds = DebugState.get(state);
+		var frame = ds.getStackUnsafe();
 
 		if ((frame.flags & (FLAG_ANY_HOOK | FLAG_INTERRUPTED)) != 0) {
 			// We're resuming in from a hook
@@ -173,16 +145,6 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 				frame.flags &= ~FLAG_INTERRUPTED;
 			} else if ((frame.flags & (FLAG_INSN_HOOK | FLAG_LINE_HOOK)) != 0) {
 				// Yielded within instruction hook, do nothing - we'll handle this inside the interpreter.
-			} else if ((frame.flags & FLAG_RETURN_HOOK) != 0) {
-				// Yielded while returning. This one's pretty simple, but verbose due to how returns are
-				// implemented
-				ds.inhook = false;
-				frame.flags &= ~FLAG_RETURN_HOOK;
-				return resumeReturn(state, ds, frame, this);
-			} else if ((frame.flags & FLAG_CALL_HOOK) != 0) {
-				// Yielded while calling. Finish off setupCall
-				ds.inhook = false;
-				frame.flags &= ~FLAG_CALL_HOOK;
 			} else {
 				throw new AssertionError("Incorrect debug flag set");
 			}
@@ -194,7 +156,7 @@ public final class LuaInterpretedFunction extends LuaClosure implements Resumabl
 	}
 
 	@Override
-	public Varargs resumeError(LuaState state, DebugFrame frame, Object object, LuaError error) throws LuaError, UnwindThrowable {
+	public Varargs resumeError(LuaState state, Object object, LuaError error) throws LuaError, UnwindThrowable {
 		throw error;
 	}
 }

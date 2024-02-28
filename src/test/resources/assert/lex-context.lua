@@ -5,5 +5,5 @@ local function fails(str, exp)
 end
 
 fails("return )", "x:1: unexpected symbol near ')'")
-fails("abc", "x:1: '=' expected near <eof>")
+fails("abc", "x:1: syntax error near <eof>")
 fails("abc =", "x:1: unexpected symbol near <eof>")

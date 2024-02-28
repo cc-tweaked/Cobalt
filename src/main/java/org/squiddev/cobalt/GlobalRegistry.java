@@ -25,7 +25,7 @@ public final class GlobalRegistry {
 	 * @param name The name of the registry table.
 	 * @return The subentry.
 	 */
-	public LuaTable getSubTable(LuaString name) {
+	public LuaTable getSubTable(LuaString name) throws LuaError {
 		LuaValue value = table.rawget(name);
 		if (value instanceof LuaTable table) return table;
 

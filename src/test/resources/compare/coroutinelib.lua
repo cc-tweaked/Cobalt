@@ -80,8 +80,8 @@ local echo = function(msg, ...)
 	return ...
 end
 local echocr = function(...)
-	echo('(echocr) first args', unpack(arg, 1, arg.n))
-	local a = arg
+	echo('(echocr) first args', ...)
+	local a = table.pack(...)
 	while true do
 		a = { echo('(echoch) yield returns', coroutine.yield(unpack(a))) }
 	end

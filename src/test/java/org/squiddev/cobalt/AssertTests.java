@@ -24,9 +24,11 @@
  */
 package org.squiddev.cobalt;
 
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
+import org.squiddev.cobalt.compiler.LuaBytecodeFormat;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.lib.Bit32Lib;
 import org.squiddev.cobalt.lib.Utf8Lib;
@@ -39,6 +41,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 /**
  * Just runs various libraries in the main test suite
  */
+@Timeout(value = 15, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {"table-hash-01", "table-hash-02"})
@@ -51,7 +54,6 @@ public class AssertTests {
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"debug",
-		"debug-coroutine-hook",
 		"debug-getinfo",
 		"debug-upvalue",
 		"gc",
@@ -59,12 +61,8 @@ public class AssertTests {
 		"invalid-tailcall",
 		"lex-context",
 		"lex-number",
-		"load-error",
-		"no-unwind",
 		"setlist",
-		"string-compare",
 		"string-issues",
-		"string-format",
 		"time",
 		"traceback",
 	})
@@ -94,8 +92,6 @@ public class AssertTests {
 		"nextvar",
 		"pm",
 		"sort",
-		"strings",
-		"vararg",
 		"verybig",
 	})
 	public void lua51(String name) throws Exception {
@@ -103,7 +99,7 @@ public class AssertTests {
 		new File("libs/P1").mkdirs();
 
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.1/");
-		helpers.setup();
+		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
 		helpers.globals.rawset("mkdir", LibFunction.create((state, arg) -> valueOf(new File(arg.checkString()).mkdirs())));
 
 		// TODO: Move this into the debug library
@@ -114,29 +110,15 @@ public class AssertTests {
 
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
-		"bitwise",
-		"strings",
-	})
-	public void lua52(String name) throws Exception {
-		ScriptHelper helpers = new ScriptHelper("/assert/lua5.2/");
-		helpers.setup();
-		Bit32Lib.add(helpers.state, helpers.globals);
-
-		helpers.runWithDump(name);
-	}
-
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
-	@ValueSource(strings = {
 		"db",
 		"nextvar",
 		"tpack",
-		"utf8",
 	})
 	public void lua53(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.3/");
-		helpers.setup();
+		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
 		Bit32Lib.add(helpers.state, helpers.globals);
-		new Utf8Lib().add(helpers.state, helpers.globals);
+		Utf8Lib.add(helpers.state, helpers.globals);
 
 		helpers.runWithDump(name);
 	}

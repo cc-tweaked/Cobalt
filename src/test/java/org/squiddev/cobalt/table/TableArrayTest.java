@@ -42,7 +42,7 @@ public class TableArrayTest {
 	private final LuaState state = new LuaState();
 
 	@Test
-	public void testInOrderIntegerKeyInsertion() {
+	public void testInOrderIntegerKeyInsertion() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -61,7 +61,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testResize() {
+	public void testResize() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		// NOTE: This order of insertion is important.
@@ -81,7 +81,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testOutOfOrderIntegerKeyInsertion() {
+	public void testOutOfOrderIntegerKeyInsertion() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 32; i > 0; --i) {
@@ -142,7 +142,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testBadInitialCapacity() {
+	public void testBadInitialCapacity() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
 		t.rawset(ValueFactory.valueOf("test"), LuaString.valueOf("foo"));
@@ -151,7 +151,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testRemove0() {
+	public void testRemove0() throws LuaError {
 		LuaTable t = new LuaTable(2, 0);
 
 		t.rawset(ValueFactory.valueOf(1), LuaString.valueOf("foo"));
@@ -169,7 +169,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testRemove1() {
+	public void testRemove1() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
 		assertEquals(0, t.size());
@@ -191,7 +191,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testRemove2() {
+	public void testRemove2() throws LuaError {
 		LuaTable t = new LuaTable(0, 1);
 
 		t.rawset(ValueFactory.valueOf("test"), LuaString.valueOf("foo"));
@@ -216,7 +216,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testInOrderlen() {
+	public void testInOrderlen() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -227,7 +227,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testOutOfOrderlen() {
+	public void testOutOfOrderlen() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int j = 8; j < 32; j += 8) {
@@ -239,7 +239,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testStringKeyslen() {
+	public void testStringKeyslen() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {
@@ -249,7 +249,7 @@ public class TableArrayTest {
 	}
 
 	@Test
-	public void testMixedKeyslen() {
+	public void testMixedKeyslen() throws LuaError {
 		LuaTable t = new LuaTable();
 
 		for (int i = 1; i <= 32; ++i) {

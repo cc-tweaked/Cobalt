@@ -24,79 +24,40 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.*;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.squiddev.cobalt.Constants;
+import org.squiddev.cobalt.LuaString;
+import org.squiddev.cobalt.LuaValue;
+import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.function.LocalVariable;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class BytecodeDumper {
-	/**
-	 * for header of binary files -- this is Lua 5.1
-	 */
-	public static final int LUAC_VERSION = 0x51;
+import static org.squiddev.cobalt.compiler.LuaBytecodeFormat.*;
 
-	/**
-	 * for header of binary files -- this is the official format
-	 */
-	public static final int LUAC_FORMAT = 0;
-
-	/**
-	 * size of header of binary files
-	 */
-	public static final int LUAC_HEADERSIZE = 12;
-
-	/**
-	 * set true to allow integer compilation
-	 */
-	public static boolean ALLOW_INTEGER_CASTING = false;
-
-	/**
-	 * format corresponding to non-number-patched lua, all numbers are floats or doubles
-	 */
-	public static final int NUMBER_FORMAT_FLOATS_OR_DOUBLES = 0;
-
-	/**
-	 * format corresponding to non-number-patched lua, all numbers are ints
-	 */
-	public static final int NUMBER_FORMAT_INTS_ONLY = 1;
-
-	/**
-	 * format corresponding to number-patched lua, all numbers are 32-bit (4 byte) ints
-	 */
-	public static final int NUMBER_FORMAT_NUM_PATCH_INT32 = 4;
-
-	/**
-	 * default number format
-	 */
-	public static final int NUMBER_FORMAT_DEFAULT = NUMBER_FORMAT_FLOATS_OR_DOUBLES;
-
-	// header fields
-	private boolean IS_LITTLE_ENDIAN = true;
-	private int NUMBER_FORMAT = NUMBER_FORMAT_DEFAULT;
-	private int SIZEOF_LUA_NUMBER = 8;
+class BytecodeDumper {
+	private static final boolean IS_LITTLE_ENDIAN = true;
+	private static final int NUMBER_FORMAT = 0;
+	private static final int SIZEOF_LUA_NUMBER = 8;
 	private static final int SIZEOF_INT = 4;
 	private static final int SIZEOF_SIZET = 4;
 	private static final int SIZEOF_INSTRUCTION = 4;
 
-	final DataOutputStream writer;
-	final boolean strip;
+	private final DataOutputStream writer;
+	private final boolean strip;
 
-	public BytecodeDumper(OutputStream w, boolean strip) {
-		this.writer = new DataOutputStream(w);
+	private BytecodeDumper(OutputStream w, boolean strip) {
+		writer = new DataOutputStream(w);
 		this.strip = strip;
 	}
 
-	void dumpBlock(final byte[] b, int size) throws IOException {
-		writer.write(b, 0, size);
-	}
-
-	void dumpChar(int b) throws IOException {
+	private void dumpChar(int b) throws IOException {
 		writer.write(b);
 	}
 
-	void dumpInt(int x) throws IOException {
+	private void dumpInt(int x) throws IOException {
 		if (IS_LITTLE_ENDIAN) {
 			writer.writeByte(x & 0xff);
 			writer.writeByte((x >> 8) & 0xff);
@@ -107,14 +68,22 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpString(LuaString s) throws IOException {
+	private void dumpNullableString(@Nullable LuaString s) throws IOException {
+		if (s == null) {
+			dumpInt(0);
+		} else {
+			dumpString(s);
+		}
+	}
+
+	private void dumpString(LuaString s) throws IOException {
 		final int len = s.length();
 		dumpInt(len + 1);
 		s.write((OutputStream) writer);
 		writer.write(0);
 	}
 
-	void dumpDouble(double d) throws IOException {
+	private void dumpDouble(double d) throws IOException {
 		long l = Double.doubleToLongBits(d);
 		if (IS_LITTLE_ENDIAN) {
 			dumpInt((int) l);
@@ -124,7 +93,7 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpCode(final Prototype f) throws IOException {
+	private void dumpCode(final Prototype f) throws IOException {
 		final int[] code = f.code;
 		int n = code.length;
 		dumpInt(n);
@@ -133,7 +102,7 @@ public class BytecodeDumper {
 		}
 	}
 
-	void dumpConstants(final Prototype f) throws IOException {
+	private void dumpConstants(final Prototype f) throws IOException {
 		final LuaValue[] k = f.constants;
 		int i, n = k.length;
 		dumpInt(n);
@@ -146,29 +115,8 @@ public class BytecodeDumper {
 					dumpChar(o.toBoolean() ? 1 : 0);
 				}
 				case Constants.TNUMBER -> {
-					switch (NUMBER_FORMAT) {
-						case NUMBER_FORMAT_FLOATS_OR_DOUBLES -> {
-							writer.write(Constants.TNUMBER);
-							dumpDouble(o.toDouble());
-						}
-						case NUMBER_FORMAT_INTS_ONLY -> {
-							if (!ALLOW_INTEGER_CASTING && !(o instanceof LuaInteger)) {
-								throw new IllegalArgumentException("not an integer: " + o);
-							}
-							writer.write(Constants.TNUMBER);
-							dumpInt(o.toInteger());
-						}
-						case NUMBER_FORMAT_NUM_PATCH_INT32 -> {
-							if (o instanceof LuaInteger oInt) {
-								writer.write(Constants.TINT);
-								dumpInt(oInt.v);
-							} else {
-								writer.write(Constants.TNUMBER);
-								dumpDouble(o.toDouble());
-							}
-						}
-						default -> throw new IllegalArgumentException("number format not supported: " + NUMBER_FORMAT);
-					}
+					writer.write(Constants.TNUMBER);
+					dumpDouble(o.toDouble());
 				}
 				case Constants.TSTRING -> {
 					writer.write(Constants.TSTRING);
@@ -177,21 +125,22 @@ public class BytecodeDumper {
 				default -> throw new IllegalArgumentException("bad type for " + o);
 			}
 		}
-		n = f.children.length;
-		dumpInt(n);
-		for (i = 0; i < n; i++) {
-			dumpFunction(f.children[i], f.source);
-		}
 	}
 
-	void dumpDebug(final Prototype f) throws IOException {
+	private void dumpDebug(final Prototype f) throws IOException {
+		if (f.source == null || strip) {
+			dumpInt(0);
+		} else {
+			dumpString(f.source);
+		}
+
 		int i, n;
-		n = (strip) ? 0 : f.lineInfo.length;
+		n = strip ? 0 : f.lineInfo.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
 			dumpInt(f.lineInfo[i]);
 		}
-		n = (strip) ? 0 : f.locals.length;
+		n = strip ? 0 : f.locals.length;
 		dumpInt(n);
 		for (i = 0; i < n; i++) {
 			LocalVariable lvi = f.locals[i];
@@ -199,32 +148,44 @@ public class BytecodeDumper {
 			dumpInt(lvi.startpc);
 			dumpInt(lvi.endpc);
 		}
-		n = (strip) ? 0 : f.upvalueNames.length;
+		n = strip ? 0 : f.upvalues();
 		dumpInt(n);
-		for (i = 0; i < n; i++) {
-			dumpString(f.upvalueNames[i]);
-		}
+		for (i = 0; i < n; i++) dumpNullableString(f.getUpvalueName(i));
 	}
 
-	void dumpFunction(final Prototype f, final LuaString string) throws IOException {
-		if (f.source == null || f.source.equals(string) || strip) {
-			dumpInt(0);
-		} else {
-			dumpString(f.source);
-		}
+	private void dumpFunction(final Prototype f) throws IOException {
 		dumpInt(f.lineDefined);
 		dumpInt(f.lastLineDefined);
-		dumpChar(f.upvalues);
 		dumpChar(f.parameters);
-		dumpChar(f.isVarArg);
+		dumpChar(f.isVarArg ? 1 : 0);
 		dumpChar(f.maxStackSize);
 		dumpCode(f);
 		dumpConstants(f);
+		dumpFunctions(f);
+		dumpUpvalues(f);
 		dumpDebug(f);
 	}
 
-	void dumpHeader() throws IOException {
-		writer.write(LoadState.LUA_SIGNATURE);
+	private void dumpUpvalues(Prototype f) throws IOException {
+		int n = f.upvalues();
+		dumpInt(n);
+		for (int i = 0; i < n; i++) {
+			var info = f.getUpvalue(i);
+			writer.writeBoolean(info.fromLocal());
+			writer.writeByte(info.byteIndex());
+		}
+	}
+
+	private void dumpFunctions(Prototype f) throws IOException {
+		int n = f.children.length;
+		dumpInt(n);
+		for (int i = 0; i < n; i++) {
+			dumpFunction(f.children[i]);
+		}
+	}
+
+	private void dumpHeader() throws IOException {
+		writer.write(LuaBytecodeFormat.LUA_SIGNATURE);
 		writer.write(LUAC_VERSION);
 		writer.write(LUAC_FORMAT);
 		writer.write(IS_LITTLE_ENDIAN ? 1 : 0);
@@ -233,40 +194,20 @@ public class BytecodeDumper {
 		writer.write(SIZEOF_INSTRUCTION);
 		writer.write(SIZEOF_LUA_NUMBER);
 		writer.write(NUMBER_FORMAT);
+		writer.write(LUAC_TAIL);
 	}
 
-	/*
-	 * Dump Lua function as precompiled chunk
+	/**
+	 * Dump Lua functions as a precompiled chunk.
+	 *
+	 * @param f     The function to dump.
+	 * @param w     The output stream to write to.
+	 * @param strip Whether to strip debug informtion.
+	 * @throws IOException If writing to the underlying stream failed.
 	 */
 	public static void dump(Prototype f, OutputStream w, boolean strip) throws IOException {
 		BytecodeDumper D = new BytecodeDumper(w, strip);
 		D.dumpHeader();
-		D.dumpFunction(f, null);
-	}
-
-	/**
-	 * @param f            the function to dump
-	 * @param w            the output stream to dump to
-	 * @param stripDebug   true to strip debugging info, false otherwise
-	 * @param numberFormat one of NUMBER_FORMAT_FLOATS_OR_DOUBLES, NUMBER_FORMAT_INTS_ONLY, NUMBER_FORMAT_NUM_PATCH_INT32
-	 * @param littleendian true to use little endian for numbers, false for big endian
-	 * @throws IOException              On stream write errors
-	 * @throws IllegalArgumentException if the number format it not supported
-	 */
-	public static void dump(Prototype f, OutputStream w, boolean stripDebug, int numberFormat, boolean littleendian) throws IOException {
-		switch (numberFormat) {
-			case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
-			case NUMBER_FORMAT_INTS_ONLY:
-			case NUMBER_FORMAT_NUM_PATCH_INT32:
-				break;
-			default:
-				throw new IllegalArgumentException("number format not supported: " + numberFormat);
-		}
-		BytecodeDumper D = new BytecodeDumper(w, stripDebug);
-		D.IS_LITTLE_ENDIAN = littleendian;
-		D.NUMBER_FORMAT = numberFormat;
-		D.SIZEOF_LUA_NUMBER = (numberFormat == NUMBER_FORMAT_INTS_ONLY ? 4 : 8);
-		D.dumpHeader();
-		D.dumpFunction(f, null);
+		D.dumpFunction(f);
 	}
 }

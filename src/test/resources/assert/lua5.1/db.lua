@@ -106,7 +106,7 @@ then
 else
   a=2
 end
-]], { 2, 4, 7 })
+]], { 2, 3, 4, 7 })
 
 test([[--
 if nil then
@@ -132,7 +132,7 @@ a=1
 while a<=3 do
   a=a+1
 end
-]], { 2, 3, 4, 3, 4, 3, 4, 3, 5 })
+]], { 1, 2, 3, 4, 3, 4, 3, 4, 3, 5 })
 
 test([[while math.sin(1) do
   if math.sin(1)
@@ -140,7 +140,7 @@ test([[while math.sin(1) do
     break
   end
 end
-a=1]], { 1, 2, 4, 7 })
+a=1]], { 1, 2, 3, 7 })
 
 test([[for i=1,3 do
   a=i
@@ -205,7 +205,7 @@ function f(a, b)
 	assert(debug.setlocal(2, 4, "ma��") == "B")
 	x = debug.getinfo(2)
 	assert(x.func == g and x.what == "Lua" and x.name == 'g' and
-			x.nups == 0 and string.find(x.source, "^@.*db%.lua"))
+			x.nups == 1 and string.find(x.source, "^@.*db%.lua$"))
 	glob = glob + 1
 	assert(debug.getinfo(1, "l").currentline == L + 1)
 	assert(debug.getinfo(1, "l").currentline == L + 2)
@@ -227,6 +227,7 @@ assert(debug.getinfo(1, "l").currentline == L + 11, L) -- check count of lines
 
 
 function g(...)
+	local arg = {...}
 	do local a, b, c; a = math.sin(40); end
 	local feijao
 	local AAAA, B = "xuxu", "mam�o"
@@ -274,7 +275,7 @@ assert(debug.gethook() == nil)
 
 X = nil
 a = {}
-function a:f(a, b, ...) local c = 13 end
+function a:f(a, b, ...) local arg = {...} local c = 13 end
 
 debug.sethook(function(e)
 	assert(e == "call")
@@ -300,7 +301,7 @@ debug.sethook(function(e)
 end, "c")
 
 a:f(1, 2, 3, 4, 5)
-assert(X.self == a and X.a == 1 and X.b == 2 and X.arg.n == 3 and X.c == nil)
+assert(X.self == a and X.a == 1 and X.b == 2 and X.c == nil)
 assert(XX == 12)
 assert(debug.gethook() == nil)
 
@@ -507,7 +508,7 @@ while coroutine.status(co) == "suspended" do
 	a, b = coroutine.resume(co)
 	table.insert(t, 2, "'f'") -- one more recursive call to 'f'
 end
-table.remove(t, 1) -- t[1] = "'error'"
+t[1] = "'error'"
 checktraceback(co, t)
 
 

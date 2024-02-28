@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.compiler.LoadState;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.function.LocalVariable;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 
@@ -41,7 +41,7 @@ import org.squiddev.cobalt.function.LuaInterpretedFunction;
  */
 public final class Prototype {
 	public final LuaString source;
-	private LuaString shortSource;
+	public final LuaString shortSource;
 
 	/**
 	 * Constants used by the function
@@ -55,11 +55,12 @@ public final class Prototype {
 	 */
 	public final Prototype[] children;
 
-	public final int upvalues;
+	private final UpvalueInfo[] upvalues;
+
 	public final int lineDefined;
 	public final int lastLineDefined;
 	public final int parameters;
-	public final int isVarArg;
+	public final boolean isVarArg;
 	public final int maxStackSize;
 
 	/**
@@ -74,14 +75,13 @@ public final class Prototype {
 	 */
 	public final LocalVariable[] locals;
 
-	public final LuaString[] upvalueNames;
-
 	public Prototype(
-		LuaString source,
-		LuaValue[] constants, int[] code, Prototype[] children, int parameters, int isVarArg, int maxStackSize, int upvalues,
-		int lineDefined, int lastLineDefined, int[] lineInfo, int[] columnInfo, LocalVariable[] locals, LuaString[] upvalueNames
+		LuaString source, LuaString shortSource,
+		LuaValue[] constants, int[] code, Prototype[] children, int parameters, boolean isVarArg, int maxStackSize, UpvalueInfo[] upvalues,
+		int lineDefined, int lastLineDefined, int[] lineInfo, int[] columnInfo, LocalVariable[] locals
 	) {
 		this.source = source;
+		this.shortSource = shortSource;
 
 		this.constants = constants;
 		this.code = code;
@@ -96,12 +96,10 @@ public final class Prototype {
 		this.lineInfo = lineInfo;
 		this.columnInfo = columnInfo;
 		this.locals = locals;
-		this.upvalueNames = upvalueNames;
 	}
 
-	public LuaString sourceShort() {
-		LuaString shortSource = this.shortSource;
-		return shortSource != null ? shortSource : (this.shortSource = LoadState.getShortName(source));
+	public LuaString shortSource() {
+		return shortSource;
 	}
 
 	public String toString() {
@@ -115,7 +113,7 @@ public final class Prototype {
 	 * @param pc     the program counter
 	 * @return the name, or null if not found
 	 */
-	public LuaString getLocalName(int number, int pc) {
+	public @Nullable LuaString getLocalName(int number, int pc) {
 		int i;
 		for (i = 0; i < locals.length && locals[i].startpc <= pc; i++) {
 			if (pc < locals[i].endpc) {  /* is variable active? */
@@ -126,13 +124,48 @@ public final class Prototype {
 		return null;  // not found
 	}
 
+	public int upvalues() {
+		return upvalues.length;
+	}
+
+	public UpvalueInfo getUpvalue(int upvalue) {
+		return upvalues[upvalue];
+	}
+
+	public @Nullable LuaString getUpvalueName(int index) {
+		return index >= 0 && index < upvalues.length ? upvalues[index].name() : null;
+	}
+
 	/**
 	 * Get the line of the instruction at the given offset.
 	 *
 	 * @param pc The program counter.
 	 * @return The line, or {@code -1} if not set.
 	 */
-	public int getLine(int pc) {
-		return lineInfo != null && pc >= 0 && pc <= lineInfo.length ? lineInfo[pc] : -1;
+	public int lineAt(int pc) {
+		return pc >= 0 && pc < lineInfo.length ? lineInfo[pc] : -1;
+	}
+
+	/**
+	 * Get the column of the instruction at the given offset.
+	 *
+	 * @param pc The program counter.
+	 * @return The column, or {@code -1} if not set.
+	 */
+	public int columnAt(int pc) {
+		return pc >= 0 && pc < columnInfo.length ? columnInfo[pc] : -1;
+	}
+
+	/**
+	 * Information about an upvalue.
+	 *
+	 * @param name      The name of this upvalue.
+	 * @param fromLocal Whether this upvalue comes from a local (if true) or an upvalue (if false).
+	 * @param byteIndex The short index of this upvalue. Use {@link #index()} when an int index is needed.
+	 */
+	public record UpvalueInfo(@Nullable LuaString name, boolean fromLocal, byte byteIndex) {
+		public int index() {
+			return byteIndex & 0xFF;
+		}
 	}
 }

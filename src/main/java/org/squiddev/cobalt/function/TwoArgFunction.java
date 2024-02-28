@@ -40,27 +40,27 @@ final class TwoArgFunction extends LibFunction {
 	}
 
 	@Override
-	public LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return function.call(state, NIL, NIL);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
 		return function.call(state, arg, NIL);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
 		return function.call(state, arg1, arg2);
 	}
 
 	@Override
-	public LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
 		return function.call(state, arg1, arg2);
 	}
 
 	@Override
-	public Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
+	protected Varargs invoke(LuaState state, Varargs varargs) throws LuaError, UnwindThrowable {
 		return function.call(state, varargs.first(), varargs.arg(2));
 	}
 }

@@ -24,18 +24,15 @@
  */
 package org.squiddev.cobalt.lib;
 
+import cc.tweaked.cobalt.internal.LegacyEnv;
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.InputReader;
 import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
-import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.function.ResumableVarArgFunction;
-import org.squiddev.cobalt.lib.system.ResourceLoader;
-import org.squiddev.cobalt.unwind.SuspendedTask;
+import org.squiddev.cobalt.function.*;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -47,12 +44,11 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
 /**
  * The basic global libraries in the Lua runtime.
  *
- * @see ResourceLoader
  * @see LibFunction
  * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.1">http://www.lua.org/manual/5.1/manual.html#5.1</a>
  */
-public class BaseLib {
+public final class BaseLib {
 	private static final LuaString FUNCTION_STR = valueOf("function");
 	private static final LuaString LOAD_MODE = valueOf("bt");
 	private static final LuaString ASSERTION_FAILED = valueOf("assertion failed!");
@@ -60,9 +56,13 @@ public class BaseLib {
 	private LuaValue next;
 	private LuaValue inext;
 
-	public void add(LuaTable env) {
+	private BaseLib() {
+	}
+
+	public static void add(LuaTable env) {
+		var self = new BaseLib();
 		env.rawset("_G", env);
-		env.rawset("_VERSION", valueOf("Lua 5.1"));
+		env.rawset("_VERSION", valueOf("Lua 5.2"));
 		RegisteredFunction.bind(env, new RegisteredFunction[]{
 			RegisteredFunction.of("error", BaseLib::error),
 			RegisteredFunction.ofV("setfenv", BaseLib::setfenv),
@@ -78,8 +78,8 @@ public class BaseLib {
 			RegisteredFunction.ofV("setmetatable", BaseLib::setmetatable),
 			RegisteredFunction.ofV("tostring", BaseLib::tostring),
 			RegisteredFunction.ofV("tonumber", BaseLib::tonumber),
-			RegisteredFunction.ofV("pairs", this::pairs),
-			RegisteredFunction.ofV("ipairs", this::ipairs),
+			RegisteredFunction.ofV("pairs", self::pairs),
+			RegisteredFunction.ofV("ipairs", self::ipairs),
 			RegisteredFunction.of("rawlen", BaseLib::rawlen),
 			RegisteredFunction.ofV("next", BaseLib::next),
 			RegisteredFunction.ofFactory("pcall", PCall::new),
@@ -88,8 +88,8 @@ public class BaseLib {
 		});
 
 		// remember next, and inext for use in pairs and ipairs
-		next = env.rawget("next");
-		inext = RegisteredFunction.ofS("inext", BaseLib::inext).create();
+		self.next = env.rawget("next");
+		self.inext = RegisteredFunction.ofS("inext", BaseLib::inext).create();
 	}
 
 	private static LuaValue error(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
@@ -101,26 +101,19 @@ public class BaseLib {
 		// setfenv(f, table) -> void
 		LuaTable t = args.arg(2).checkTable();
 		LuaValue f = getfenvobj(state, args.arg(1), false);
-		if (f.isThread()) {
-			f.setfenv(t);
-			return Constants.NONE;
-		}
-
-		if (f instanceof LibFunction || !f.setfenv(t)) {
-			throw new LuaError("'setfenv' cannot change environment of given object");
-		}
+		if (!LegacyEnv.setEnv(f, t)) throw new LuaError("'setfenv' cannot change environment of given object");
 
 		return f;
 	}
 
 	private static LuaValue getfenvobj(LuaState state, LuaValue arg, boolean optional) throws LuaError {
-		if (arg.isFunction()) return arg;
+		if (arg instanceof LuaFunction) return arg;
 
 		int level = optional ? arg.optInteger(1) : arg.checkInteger();
-		Varargs.argCheck(level >= 0, 1, "level must be non-negative");
+		if (level < 0) throw ErrorFactory.argError(1, "level must be non-negative");
 		if (level == 0) return state.getCurrentThread();
-		LuaValue f = LuaThread.getCallstackFunction(state, level - 1);
-		Varargs.argCheck(f != null, 1, "invalid level");
+		LuaValue f = LuaThread.getCallstackFunction(state, level);
+		if (f == null) throw ErrorFactory.argError(1, "invalid level");
 		return f;
 	}
 
@@ -135,11 +128,8 @@ public class BaseLib {
 	private static LuaValue getfenv(LuaState state, LuaValue args) throws LuaError {
 		// getfenv( [f] ) -> env
 		LuaValue f = getfenvobj(state, args, true);
-		if (f instanceof LibFunction) {
-			return state.getCurrentThread().getfenv();
-		} else {
-			return f.getfenv();
-		}
+		var env = LegacyEnv.getEnv(f);
+		return env == null ? state.globals() : env;
 	}
 
 	private static LuaValue getmetatable(LuaState state, Varargs args) throws LuaError {
@@ -183,8 +173,7 @@ public class BaseLib {
 		LuaTable t = args.arg(1).checkTable();
 		LuaValue k = args.checkValue(2);
 		LuaValue v = args.checkValue(3);
-		if (k.isNil()) throw new LuaError("table index is nil");
-		t.rawset(k.checkValidKey(), v);
+		t.rawset(k, v);
 		return t;
 	}
 
@@ -236,7 +225,7 @@ public class BaseLib {
 		if (pairs.isNil()) {
 			return varargsOf(next, value, Constants.NIL);
 		} else {
-			return OperationHelper.invoke(state, pairs, value);
+			return Dispatch.invoke(state, pairs, value);
 		}
 	}
 
@@ -270,7 +259,7 @@ public class BaseLib {
 			return v.isNil() ? NIL : varargsOf(valueOf(key), v);
 		}
 
-		return SuspendedTask.run(di, () -> {
+		return SuspendedAction.run(di, () -> {
 			LuaValue v = OperationHelper.getTable(state, table, key);
 			return v.isNil() ? NIL : varargsOf(valueOf(key), v);
 		});
@@ -288,12 +277,12 @@ public class BaseLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+		public Varargs resume(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
 			return call.resume(state, value).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+		public Varargs resumeError(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
 			return call.resumeError(state, error).asBoolAndResult();
 		}
 	}
@@ -311,12 +300,12 @@ public class BaseLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+		public Varargs resume(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
 			return call.resume(state, value).asBoolAndResult();
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+		public Varargs resumeError(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
 			return call.resumeError(state, error).asBoolAndResult();
 		}
 	}
@@ -328,7 +317,7 @@ public class BaseLib {
 			LuaValue scriptGen = args.arg(1);
 			LuaString chunkName = args.arg(2).optLuaString(null);
 			LuaString mode = args.arg(3).optLuaString(LOAD_MODE);
-			LuaTable funcEnv = args.arg(4).optTable(state.getCurrentThread().getfenv());
+			LuaValue funcEnv = args.arg(4).optTable(state.globals());
 
 			// If we're a string, load as normal
 			if (scriptGen.isString()) {
@@ -339,39 +328,37 @@ public class BaseLib {
 			LuaFunction function = scriptGen.checkFunction();
 			ProtectedCall call = new ProtectedCall(di, state.getCurrentThread().getErrorFunc());
 			di.state = call;
-			return call.apply(state, SuspendedTask.toFunction(() -> {
+			return call.apply(state, SuspendedAction.toFunction(() -> {
 				try {
 					InputReader stream = new FunctionInputReader(state, function);
-					return state.compiler.load(LuaC.compile(stream, chunkName == null ? FUNCTION_STR : chunkName, mode), funcEnv);
+					return state.compiler.load(LuaC.compile(state, stream, chunkName == null ? FUNCTION_STR : chunkName, mode), funcEnv);
 				} catch (CompileException e) {
 					return varargsOf(Constants.NIL, valueOf(e.getMessage()));
-				} catch (UncheckedLuaError e) {
-					throw e.getCause();
 				}
 			})).asResultOrFailure();
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
+		public Varargs resume(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
 			return call.resume(state, value).asResultOrFailure();
 		}
 
 		@Override
-		public Varargs resumeErrorThis(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
+		public Varargs resumeError(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
 			return call.resumeError(state, error).asResultOrFailure();
 		}
 	}
 
-	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName, LuaString mode, LuaTable env) {
+	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName, LuaString mode, LuaValue env) {
 		try {
 			return LoadState.load(state, is, chunkName, mode, env);
-		} catch (CompileException e) {
+		} catch (LuaError | CompileException e) {
 			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
 		}
 	}
 
 	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName) {
-		return loadStream(state, is, chunkName, null, state.getCurrentThread().getfenv());
+		return loadStream(state, is, chunkName, null, state.globals());
 	}
 
 	private static class FunctionInputReader implements InputReader {
@@ -387,15 +374,9 @@ public class BaseLib {
 		}
 
 		@Override
-		public int read() throws UnwindThrowable {
+		public int read() throws LuaError, UnwindThrowable {
 			if (!bytes.hasRemaining()) {
-				LuaValue value;
-				try {
-					value = OperationHelper.call(state, func);
-				} catch (LuaError e) {
-					throw new UncheckedLuaError(e);
-				}
-
+				LuaValue value = Dispatch.call(state, func);
 				if (!fillBuffer(value)) return -1;
 			}
 
@@ -403,14 +384,14 @@ public class BaseLib {
 		}
 
 		@Override
-		public int resume(Varargs varargs) throws CompileException, UnwindThrowable {
+		public int resume(Varargs varargs) throws LuaError, UnwindThrowable {
 			if (!fillBuffer(varargs.first())) return -1;
 			return read();
 		}
 
-		private boolean fillBuffer(LuaValue value) {
+		private boolean fillBuffer(LuaValue value) throws LuaError {
 			if (value.isNil()) return false;
-			if (!value.isString()) throw new UncheckedLuaError(new LuaError("reader function must return a string"));
+			if (!value.isString()) throw new LuaError(new LuaError("reader function must return a string"));
 
 			LuaString ls = OperationHelper.toStringDirect(value);
 			bytes = ls.toBuffer();

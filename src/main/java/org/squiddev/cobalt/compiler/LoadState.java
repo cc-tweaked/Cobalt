@@ -24,16 +24,12 @@
  */
 package org.squiddev.cobalt.compiler;
 
-import org.squiddev.cobalt.LuaState;
-import org.squiddev.cobalt.LuaString;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.Prototype;
+import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.CoreLibraries;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -60,15 +56,10 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see FunctionFactory
  * @see LuaClosure
  * @see LuaFunction
- * @see LoadState#load(LuaState, InputStream, LuaString, LuaTable)
+ * @see LoadState#load(LuaState, InputStream, LuaString, LuaValue)
  * @see LuaC
  */
 public final class LoadState {
-	/**
-	 * Signature byte indicating the file is a compiled binary chunk
-	 */
-	static final byte[] LUA_SIGNATURE = {27, 'L', 'u', 'a'};
-
 	/**
 	 * Name for compiled chunks
 	 */
@@ -85,7 +76,7 @@ public final class LoadState {
 		 * @param env       The function's environment.
 		 * @return The loaded function
 		 */
-		LuaClosure load(Prototype prototype, LuaTable env);
+		LuaClosure load(Prototype prototype, LuaValue env);
 	}
 
 	private LoadState() {
@@ -94,13 +85,14 @@ public final class LoadState {
 	/**
 	 * A basic {@link FunctionFactory} which loads into
 	 */
-	public static LuaClosure interpretedFunction(Prototype prototype, LuaTable env) {
-		LuaInterpretedFunction closure = new LuaInterpretedFunction(prototype, env);
+	public static LuaClosure interpretedFunction(Prototype prototype, LuaValue env) {
+		LuaInterpretedFunction closure = new LuaInterpretedFunction(prototype);
 		closure.nilUpvalues();
+		if (closure.upvalues.length > 0) closure.upvalues[0].setValue(env);
 		return closure;
 	}
 
-	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaTable env) throws IOException, CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, String name, LuaValue env) throws CompileException, LuaError {
 		return load(state, stream, valueOf(name), env);
 	}
 
@@ -115,12 +107,12 @@ public final class LoadState {
 	 * @throws IllegalArgumentException If the signature is bac
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaTable env) throws CompileException {
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaValue env) throws CompileException, LuaError {
 		return load(state, stream, name, null, env);
 	}
 
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaTable env) throws CompileException {
-		return state.compiler.load(LuaC.compile(stream, name, mode), env);
+	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaValue env) throws CompileException, LuaError {
+		return state.compiler.load(LuaC.compile(state, stream, name, mode), env);
 	}
 
 	/**
@@ -129,7 +121,7 @@ public final class LoadState {
 	 * @param name String name that appears in the chunk
 	 * @return source file name
 	 */
-	public static LuaString getSourceName(LuaString name) {
+	static LuaString getSourceName(LuaString name) {
 		if (name.length() > 0) {
 			return switch (name.charAt(0)) {
 				case '@', '=' -> name.substring(1);
@@ -150,7 +142,7 @@ public final class LoadState {
 	private static final LuaString EMPTY_STRING = valueOf("[string \"\"]");
 	private static final LuaString NEW_LINES = valueOf("\r\n");
 
-	public static LuaString getShortName(LuaString name) {
+	static LuaString getShortName(LuaString name) {
 		if (name.length() == 0) return EMPTY_STRING;
 		switch (name.charAt(0)) {
 			case '=' -> {
@@ -195,7 +187,7 @@ public final class LoadState {
 		return LuaString.valueOf(out, 0, offset);
 	}
 
-	public static void checkMode(LuaString mode, String current) throws CompileException {
+	static void checkMode(LuaString mode, String current) throws CompileException {
 		if (mode != null && mode.indexOf((byte) current.charAt(0)) == -1) {
 			throw new CompileException("attempt to load a " + current + " chunk (mode is " + mode + ")");
 		}

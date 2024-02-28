@@ -281,7 +281,7 @@ private class DowngradeMethodVisitor(
 		mw.visitMethodInsn(INVOKEVIRTUAL, STRING_BUILDER, "toString", "()Ljava/lang/String;", false)
 		mw.visitInsn(ARETURN)
 
-		mw.visitMaxs(2, argTypes.sumOf { it.size })
+		mw.visitMaxs(1 + argTypes.maxOf { it.size }, argTypes.sumOf { it.size })
 		mw.visitEnd()
 
 		return name
@@ -317,7 +317,7 @@ private class DowngradeMethodVisitor(
 
 			val fieldType = Type.getType(field.desc)
 			when (fieldType.sort) {
-				Type.BOOLEAN, Type.CHAR, Type.SHORT, Type.INT -> mw.visitJumpInsn(IF_ICMPNE, fail)
+				Type.BOOLEAN, Type.BYTE, Type.CHAR, Type.SHORT, Type.INT -> mw.visitJumpInsn(IF_ICMPNE, fail)
 				Type.FLOAT -> {
 					mw.visitInsn(FCMPL)
 					mw.visitJumpInsn(IFNE, fail)
@@ -338,7 +338,7 @@ private class DowngradeMethodVisitor(
 					mw.visitJumpInsn(IFNE, fail)
 				}
 
-				else -> throw IllegalArgumentException("$this is not a value type")
+				else -> throw IllegalArgumentException("${fieldType.sort} is not a value type")
 			}
 
 			size = size.coerceAtLeast(2 * fieldType.size)

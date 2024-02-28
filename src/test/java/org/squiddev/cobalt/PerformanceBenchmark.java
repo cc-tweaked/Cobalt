@@ -25,6 +25,7 @@
 package org.squiddev.cobalt;
 
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -44,7 +45,7 @@ public class PerformanceBenchmark {
 		final ScriptHelper helpers = new ScriptHelper("/perf/");
 
 		@Setup(Level.Iteration)
-		public void setup() {
+		public void setup() throws LuaError {
 			helpers.setupQuiet();
 		}
 	}
@@ -76,6 +77,7 @@ public class PerformanceBenchmark {
 			.measurementIterations(5)
 			.measurementTime(TimeValue.milliseconds(12000))
 			.jvmArgsPrepend("-server")
+			.resultFormat(ResultFormatType.JSON)
 			.forks(3)
 			.build();
 		new Runner(opts).run();

@@ -25,13 +25,13 @@
 package org.squiddev.cobalt.compiler;
 
 
+import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState.FunctionFactory;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
 import org.squiddev.cobalt.lib.BaseLib;
 import org.squiddev.cobalt.lib.CoreLibraries;
-import org.squiddev.cobalt.unwind.AutoUnwind;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,35 +68,28 @@ import static org.squiddev.cobalt.compiler.LoadState.checkMode;
  * @see Prototype
  */
 public class LuaC {
-	protected static void _assert(boolean b) throws CompileException {
-		if (!b) {
-			// So technically this should fire a runtime exception but...
-			throw new CompileException("compiler assert failed");
-		}
-	}
-
 	public static final int MAXSTACK = 250;
 	public static final int LUAI_MAXUPVALUES = 60;
 	public static final int LUAI_MAXVARS = 200;
 
 	public static int SET_OPCODE(int i, int o) {
-		return (i & (Lua.MASK_NOT_OP)) | ((o << Lua.POS_OP) & Lua.MASK_OP);
+		return (i & ~Lua.MASK_OP) | ((o << Lua.POS_OP) & Lua.MASK_OP);
 	}
 
 	public static int SETARG_A(int i, int u) {
-		return (i & (Lua.MASK_NOT_A)) | ((u << Lua.POS_A) & Lua.MASK_A);
+		return (i & ~Lua.MASK_A) | ((u << Lua.POS_A) & Lua.MASK_A);
 	}
 
 	public static int SETARG_B(int i, int u) {
-		return (i & (Lua.MASK_NOT_B)) | ((u << Lua.POS_B) & Lua.MASK_B);
+		return (i & ~Lua.MASK_B) | ((u << Lua.POS_B) & Lua.MASK_B);
 	}
 
 	public static int SETARG_C(int i, int u) {
-		return (i & (Lua.MASK_NOT_C)) | ((u << Lua.POS_C) & Lua.MASK_C);
+		return (i & ~Lua.MASK_C) | ((u << Lua.POS_C) & Lua.MASK_C);
 	}
 
 	public static int SETARG_Bx(int i, int u) {
-		return (i & (Lua.MASK_NOT_Bx)) | ((u << Lua.POS_Bx) & Lua.MASK_Bx);
+		return (i & ~Lua.MASK_Bx) | ((u << Lua.POS_Bx) & Lua.MASK_Bx);
 	}
 
 	public static int SETARG_sBx(int i, int u) {
@@ -116,6 +109,11 @@ public class LuaC {
 			((bc << Lua.POS_Bx) & Lua.MASK_Bx);
 	}
 
+	public static int CREATE_Ax(int o, int a) {
+		return ((o << Lua.POS_OP) & Lua.MASK_OP) |
+			((a << Lua.POS_Ax) & Lua.MASK_Ax);
+	}
+
 	public static int[] realloc(int[] v, int n) {
 		int[] a = new int[n];
 		if (v != null) System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
@@ -128,74 +126,50 @@ public class LuaC {
 		return a;
 	}
 
-	private LuaC() {
+	public static short[] realloc(short[] v, int n) {
+		short[] a = new short[n];
+		if (v != null) System.arraycopy(v, 0, a, 0, Math.min(v.length, n));
+		return a;
 	}
 
-	/**
-	 * Load lua thought to be a binary chunk from its first byte from an input stream.
-	 *
-	 * @param firstByte the first byte of the input stream
-	 * @param reader    InputStream to read, after having read the first byte already
-	 * @param name      Name to apply to the loaded chunk
-	 * @return {@link Prototype} that was loaded
-	 * @throws IllegalArgumentException If the signature is bac
-	 * @throws UnwindThrowable          If the reader unwinds.
-	 * @throws CompileException         If the stream cannot be loaded.
-	 */
-	@AutoUnwind
-	private static Prototype loadBinaryChunk(int firstByte, InputReader reader, LuaString name) throws CompileException, UnwindThrowable {
-		name = LoadState.getSourceName(name);
-		// check rest of signature
-		if (firstByte != LoadState.LUA_SIGNATURE[0]
-			|| reader.read() != LoadState.LUA_SIGNATURE[1]
-			|| reader.read() != LoadState.LUA_SIGNATURE[2]
-			|| reader.read() != LoadState.LUA_SIGNATURE[3]) {
-			throw new IllegalArgumentException("bad signature");
-		}
-
-		// load file as a compiled chunk
-		BytecodeLoader s = new BytecodeLoader(reader);
-		s.loadHeader();
-		return s.loadFunction(name);
+	private LuaC() {
 	}
 
 	/**
 	 * Compile a prototype or load as a binary chunk
 	 *
+	 * @param state  The current Lua state.
 	 * @param stream The stream to read
 	 * @param name   Name of the chunk
 	 * @return The compiled code
 	 * @throws CompileException If there is a syntax error.
 	 */
-	public static Prototype compile(InputStream stream, String name) throws CompileException {
-		return compile(stream, valueOf(name), null);
+	public static Prototype compile(LuaState state, InputStream stream, String name) throws CompileException, LuaError {
+		return compile(state, stream, valueOf(name), null);
 	}
 
-	public static Prototype compile(InputStream stream, LuaString name, LuaString mode) throws CompileException {
-		Object result;
-		try {
-			result = SuspendedTask.noYield(() -> {
-				try {
-					return compile(new InputStreamReader(stream), name, mode);
-				} catch (CompileException e) {
-					return e;
-				}
-			});
-		} catch (LuaError e) {
-			// Wish Java had an effect system :(.
-			throw new AssertionError("Lua compiler should never throw a Lua error", e);
-		}
+	public static Prototype compile(LuaState state, InputStream stream, LuaString name, LuaString mode) throws CompileException, LuaError {
+		Object result = SuspendedAction.noYield(() -> {
+			try {
+				return compile(state, new InputStreamReader(stream), name, mode);
+			} catch (CompileException e) {
+				return e;
+			}
+		});
 
 		if (result instanceof CompileException) throw (CompileException) result;
 		return (Prototype) result;
 	}
 
 	@AutoUnwind
-	public static Prototype compile(InputReader stream, LuaString name, LuaString mode) throws CompileException, UnwindThrowable {
+	public static Prototype compile(LuaState state, InputReader stream, LuaString name, LuaString mode) throws CompileException, LuaError, UnwindThrowable {
 		int firstByte = stream.read();
 		if (firstByte == '\033') {
 			checkMode(mode, "binary");
-			return loadBinaryChunk(firstByte, stream, name);
+			var bytecode = state.getBytecodeFormat();
+			if (bytecode == null) throw new CompileException("attempt to load a binary chunk");
+			var reader = bytecode.readFunction(name, stream);
+			return reader.call(state);
 		} else {
 			checkMode(mode, "text");
 			return loadTextChunk(firstByte, stream, name);
@@ -206,30 +180,15 @@ public class LuaC {
 	 * Parse the input
 	 */
 	@AutoUnwind
-	private static Prototype loadTextChunk(int firstByte, InputReader stream, LuaString name) throws CompileException, UnwindThrowable {
-		Parser parser = new Parser(stream, firstByte, name);
+	private static Prototype loadTextChunk(int firstByte, InputReader stream, LuaString name) throws CompileException, LuaError, UnwindThrowable {
+		Parser parser = new Parser(stream, firstByte, name, LoadState.getShortName(name));
 		parser.lexer.skipShebang();
-		FuncState funcstate = parser.openFunc();
-		funcstate.varargFlags = Lua.VARARG_ISVARARG; /* main func. is always vararg */
-
-		parser.lexer.nextToken(); // read first token
-		parser.chunk();
-		parser.check(Lex.TK_EOS);
-		Prototype prototype = parser.closeFunc();
-		LuaC._assert(funcstate.upvalues.size() == 0);
-		LuaC._assert(parser.fs == null);
-		return prototype;
+		return parser.mainFunction();
 	}
 
-	private static class InputStreamReader implements InputReader {
-		private final InputStream stream;
-
-		public InputStreamReader(InputStream stream) {
-			this.stream = stream;
-		}
-
+	public record InputStreamReader(InputStream stream) implements InputReader {
 		@Override
-		public int read() throws CompileException, UnwindThrowable {
+		public int read() throws CompileException {
 			try {
 				return stream.read();
 			} catch (IOException e) {

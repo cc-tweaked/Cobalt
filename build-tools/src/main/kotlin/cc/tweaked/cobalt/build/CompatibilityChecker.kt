@@ -112,10 +112,15 @@ class CompatibilityChecker(cv: ClassVisitor) : ClassRemapper(Opcodes.ASM9, cv, C
 		super.visitNestMember(nestMember)
 	}
 
-	override fun visitMethod(access: Int, name: String?, descriptor: String?, signature: String?, exceptions: Array<out String>?): MethodVisitor {
+	override fun visitMethod(access: Int, name: String?, descriptor: String?, signature: String?, exceptions: Array<out String>?): MethodVisitor? {
 		if (isInterface && name != "<clinit>") {
-			if ((access and Opcodes.ACC_STATIC) != 0) logger.error("Unsupported static method {}.{} on an interface", className, name)
-			else if ((access and Opcodes.ACC_ABSTRACT) == 0) logger.error("Unsupported default method {}.{} on an interface", className, name)
+			if ((access and Opcodes.ACC_STATIC) != 0) {
+				logger.error("Unsupported static method {}.{} on an interface", className, name)
+				return null
+			} else if ((access and Opcodes.ACC_ABSTRACT) == 0) {
+				logger.error("Unsupported default method {}.{} on an interface", className, name)
+				return null
+			}
 		}
 
 		return super.visitMethod(access, name, descriptor, signature, exceptions)

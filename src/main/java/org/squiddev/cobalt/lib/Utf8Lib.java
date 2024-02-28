@@ -9,7 +9,7 @@ import static org.squiddev.cobalt.Constants.NONE;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
 import static org.squiddev.cobalt.ValueFactory.varargsOf;
 
-public class Utf8Lib {
+public final class Utf8Lib {
 	private static final int[] LIMITS = {0xFF, 0x7F, 0x7FF, 0xFFFF};
 	public static final long MAX_UNICODE = 0x10FFFFL;
 
@@ -26,13 +26,17 @@ public class Utf8Lib {
 	 */
 	private LibFunction codesIter;
 
-	public void add(LuaState state, LuaTable env) {
-		codesIter = RegisteredFunction.ofV("utf8.codesIter", Utf8Lib::codesIter).create();
+	private Utf8Lib() {
+	}
+
+	public static void add(LuaState state, LuaTable env) throws LuaError {
+		var self = new Utf8Lib();
+		self.codesIter = RegisteredFunction.ofV("utf8.codesIter", Utf8Lib::codesIter).create();
 
 		LuaTable t = new LuaTable(0, 6);
 		RegisteredFunction.bind(t, new RegisteredFunction[]{
 			RegisteredFunction.ofV("char", Utf8Lib::char$),
-			RegisteredFunction.ofV("codes", this::codes),
+			RegisteredFunction.ofV("codes", self::codes),
 			RegisteredFunction.ofV("codepoint", Utf8Lib::codepoint),
 			RegisteredFunction.ofV("len", Utf8Lib::len),
 			RegisteredFunction.of("offset", Utf8Lib::offset),
@@ -85,8 +89,8 @@ public class Utf8Lib {
 		int i = posRelative(args.arg(2).optInteger(1), length);
 		int j = posRelative(args.arg(3).optInteger(i), length);
 
-		if (i < 1) throw ErrorFactory.argError(2, "out of range");
-		if (j > length) throw ErrorFactory.argError(3, "out of range");
+		if (i < 1) throw ErrorFactory.argError(2, "out of bounds");
+		if (j > length) throw ErrorFactory.argError(3, "out of bounds");
 		if (i > j) return NONE;
 
 		IntBuffer off = new IntBuffer();
@@ -115,7 +119,7 @@ public class Utf8Lib {
 		IntBuffer offset = new IntBuffer();
 		while (i <= j) {
 			long codepoint = decodeUtf8(s, i, offset);
-			if (codepoint < 0) return varargsOf(Constants.FALSE, valueOf(i + 1));
+			if (codepoint < 0) return varargsOf(NIL, valueOf(i + 1));
 
 			n++;
 			i += offset.value;
@@ -131,7 +135,7 @@ public class Utf8Lib {
 		int length = s.length();
 		int position = (n >= 0) ? 1 : length + 1;
 		position = posRelative(arg3.optInteger(position), length) - 1;
-		if (position < 0 || position > length) throw ErrorFactory.argError(3, "position out of range");
+		if (position < 0 || position > length) throw ErrorFactory.argError(3, "position out of bounds");
 
 		if (n == 0) {
 			while (position > 0 && isCont(s, position)) position--;

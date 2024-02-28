@@ -1,23 +1,19 @@
+import org.gradle.kotlin.dsl.support.uppercaseFirstChar
+
 plugins {
 	java
 	`maven-publish`
-	id("com.github.hierynomus.license") version "0.16.1"
 }
 
-group = "org.squiddev"
-version = "0.7.3"
+group = "cc.tweaked"
+version = "0.9.1"
 
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		languageVersion = JavaLanguageVersion.of(17)
 	}
 
 	withSourcesJar()
-}
-
-sourceSets {
-	// Put double conversion in a separate library, so we can run the signedness checker on it.
-	register("doubles")
 }
 
 repositories {
@@ -29,9 +25,15 @@ val buildTools by configurations.creating {
 	isCanBeResolved = true
 }
 
+val checkerFramework by configurations.creating {
+	isCanBeConsumed = false
+	isCanBeResolved = true
+}
+
 dependencies {
 	compileOnly(libs.checkerFramework.qual)
-	compileOnly(sourceSets["doubles"].output)
+
+	"checkerFramework"(libs.checkerFramework)
 
 	testCompileOnly(libs.checkerFramework.qual)
 	testImplementation(libs.bundles.test)
@@ -43,20 +45,29 @@ dependencies {
 }
 
 /**
- * Configure the checker framework for a given source set.
+ * Create a task which runs checker framework against our source code.
+ *
+ * This runs separately from the main compile task, allowing us to run checker framework multiple times with different
+ * options.
  */
-fun configureChecker(sourceSet: SourceSet, arguments: () -> List<String>) {
-	dependencies {
-		add(sourceSet.compileOnlyConfigurationName, libs.checkerFramework.qual)
-		add(sourceSet.annotationProcessorConfigurationName, libs.checkerFramework)
-	}
+fun runCheckerFramework(name: String, args: List<String>) {
+	val sourceSet = sourceSets.main.get()
 
-	tasks.named(sourceSet.compileJavaTaskName, JavaCompile::class) {
+	val runCheckerFramework = tasks.register("checker${name.uppercaseFirstChar()}", JavaCompile::class) {
+		description = "Runs CheckerFramework against the $name sources."
+		group = LifecycleBasePlugin.VERIFICATION_GROUP
+
+		javaCompiler = javaToolchains.compilerFor(java.toolchain)
+		source = sourceSet.java
+		classpath = sourceSets.main.get().compileClasspath
+
+		destinationDirectory = layout.buildDirectory.dir("classes/java/${sourceSet.name}Doubles")
+
+		options.annotationProcessorPath = checkerFramework
+		options.compilerArgs.add("-proc:only")
+		options.compilerArgs.addAll(args)
 		options.isFork = true
-		options.compilerArgumentProviders.add {
-			arguments()
-		}
-		options.forkOptions.jvmArgumentProviders.add {
+		options.forkOptions.jvmArgs!!.addAll(
 			listOf(
 				"--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
@@ -67,14 +78,28 @@ fun configureChecker(sourceSet: SourceSet, arguments: () -> List<String>) {
 				"--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
 				"--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
-			)
-		}
+			),
+		)
 	}
+
+	tasks.check { dependsOn(runCheckerFramework) }
 }
 
-configureChecker(sourceSets["doubles"]) {
-	listOf("-processor", "org.checkerframework.checker.signedness.SignednessChecker")
-}
+runCheckerFramework(
+	"doubles",
+	listOf(
+		"-processor", "org.checkerframework.checker.signedness.SignednessChecker",
+		"""-AonlyDefs=^cc\.tweaked\.cobalt\.internal\.doubles\.""",
+	),
+)
+
+runCheckerFramework(
+	"nonNull",
+	listOf(
+		"-processor", "org.checkerframework.checker.nullness.NullnessChecker",
+		"""-AonlyDefs=^cc\.tweaked\.cobalt\.""",
+	),
+)
 
 // Point compileJava to emit to classes/uninstrumentedJava/main, and then add a task to instrument these classes,
 // saving them back to the the original class directory. This is held together with so much string :(.
@@ -82,16 +107,9 @@ val mainSource = sourceSets.main.get()
 val javaClassesDir = mainSource.java.classesDirectory.get()
 val untransformedClasses = project.layout.buildDirectory.dir("classes/uninstrumentedJava/main")
 
-val allUntransformedClasses by tasks.registering(Copy::class) {
-	from(tasks.compileJava)
-	from(sourceSets["doubles"].output.classesDirs)
-	into(layout.buildDirectory.dir(name))
-
-	duplicatesStrategy = DuplicatesStrategy.WARN
-}
-
 val instrumentJava = tasks.register(mainSource.getTaskName("Instrument", "Java"), JavaExec::class) {
-	inputs.files(allUntransformedClasses).withPropertyName("inputDir")
+	dependsOn(tasks.compileJava, "cleanInstrumentJava")
+	inputs.dir(untransformedClasses).withPropertyName("inputDir")
 	outputs.dir(javaClassesDir).withPropertyName("outputDir")
 
 	javaLauncher.set(
@@ -100,25 +118,19 @@ val instrumentJava = tasks.register(mainSource.getTaskName("Instrument", "Java")
 			languageVersion.set(JavaLanguageVersion.of(8))
 		},
 	)
-	mainClass.set("cc.tweaked.cobalt.build.MainKt")
+	mainClass = "cc.tweaked.cobalt.build.MainKt"
 	classpath = buildTools
 
 	args = listOf(
-		allUntransformedClasses.get().destinationDir.absolutePath,
+		untransformedClasses.get().asFile.absolutePath,
 		javaClassesDir.asFile.absolutePath,
 	)
-
-	doFirst { project.delete(javaClassesDir) }
 }
 
 mainSource.compiledBy(instrumentJava)
 tasks.compileJava {
-	destinationDirectory.set(untransformedClasses)
+	destinationDirectory = untransformedClasses
 	finalizedBy(instrumentJava)
-}
-
-license {
-	include("*.java")
 }
 
 listOf(configurations.apiElements, configurations.runtimeElements).forEach { config ->
@@ -135,23 +147,23 @@ publishing {
 			from(components["java"])
 
 			pom {
-				name.set("Cobalt")
-				description.set("A reentrant fork of LuaJ for Lua 5.1")
-				url.set("https://github.com/SquidDev/Cobalt")
+				name = "Cobalt"
+				description = "A reentrant fork of LuaJ for Lua 5.2"
+				url = "https://github.com/SquidDev/Cobalt"
 
 				scm {
-					url.set("https://github.com/SquidDev/Cobalt.git")
+					url = "https://github.com/SquidDev/Cobalt.git"
 				}
 
 				issueManagement {
-					system.set("github")
-					url.set("https://github.com/SquidDev/Cobalt/issues")
+					system = "github"
+					url = "https://github.com/SquidDev/Cobalt/issues"
 				}
 
 				licenses {
 					license {
-						name.set("MIT")
-						url.set("https://github.com/SquidDev/Cobalt/blob/master/LICENSE")
+						name = "MIT"
+						url = "https://github.com/SquidDev/Cobalt/blob/master/LICENSE"
 					}
 				}
 			}
@@ -175,4 +187,11 @@ tasks.test {
 	testLogging {
 		events("skipped", "failed")
 	}
+}
+
+val benchmark by tasks.registering(JavaExec::class) {
+	description = "Run our benchmarking suite"
+
+	classpath(sourceSets.test.map { it.runtimeClasspath })
+	mainClass = "cc.tweaked.cobalt.benchmark.BenchmarkFull"
 }

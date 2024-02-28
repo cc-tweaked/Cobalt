@@ -29,11 +29,13 @@ import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.debug.DebugState;
 import org.squiddev.cobalt.function.LibFunction;
-import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.lib.system.ResourceLoader;
 import org.squiddev.cobalt.lib.system.SystemLibraries;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
 import java.util.function.Consumer;
@@ -53,23 +55,23 @@ public class ScriptHelper {
 		this.subdir = subdir;
 	}
 
-	public void setup() {
+	public void setup() throws LuaError {
 		setup(x -> {
 		});
 	}
 
-	public void setup(Consumer<LuaState.Builder> extend) {
+	public void setup(Consumer<LuaState.Builder> extend) throws LuaError {
 		LuaState.Builder builder = LuaState.builder();
 		extend.accept(builder);
 		setupCommon(builder.build());
 	}
 
-	public void setupQuiet() {
+	public void setupQuiet() throws LuaError {
 		setupCommon(new LuaState());
 		stdout.setOut(new VoidOutputStream());
 	}
 
-	private void setupCommon(LuaState state) {
+	private void setupCommon(LuaState state) throws LuaError {
 		this.state = state;
 		globals = SystemLibraries.debugGlobals(state, this::load, new VoidInputStream(), stdoutStream);
 		globals.rawset("id_", LibFunction.createV((state$, args) -> args));
@@ -110,6 +112,10 @@ public class ScriptHelper {
 			actualOutput = actualOutput.replaceAll("\r\n", "\n");
 			expectedOutput = expectedOutput.replaceAll("\r\n", "\n");
 
+			if (Boolean.getBoolean("cobalt.update") && !expectedOutput.equals(actualOutput)) {
+				Files.writeString(Path.of("src/test/resources", subdir, testName + ".out"), actualOutput);
+			}
+
 			assertEquals(expectedOutput, actualOutput);
 		} catch (LuaError e) {
 			System.out.println(output);
@@ -124,23 +130,19 @@ public class ScriptHelper {
 	 *
 	 * @param name The name of the file
 	 * @return The loaded LuaFunction
-	 * @throws IOException
 	 */
-	public LuaFunction loadScript(String name) throws IOException, CompileException {
-		InputStream script = load(name + ".lua");
-		if (script == null) fail("Could not load script for test case: " + name);
-		try {
+	public LuaClosure loadScript(String name) throws IOException, CompileException, LuaError {
+		try (InputStream script = load(name + ".lua")) {
+			if (script == null) fail("Could not load script for test case: " + name);
 			return LoadState.load(state, script, "@" + name + ".lua", globals);
-		} finally {
-			script.close();
 		}
 	}
 
-	public void runWithDump(String script) throws InterruptedException, LuaError, IOException, CompileException {
+	public void runWithDump(String script) throws LuaError, IOException, CompileException {
 		runWithDump(loadScript(script));
 	}
 
-	public void runWithDump(LuaFunction function) throws InterruptedException, LuaError {
+	public void runWithDump(LuaClosure function) throws LuaError {
 		try {
 			LuaThread.runMain(state, function);
 		} catch (LuaError e) {

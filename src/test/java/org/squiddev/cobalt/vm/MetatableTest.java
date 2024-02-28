@@ -44,8 +44,8 @@ public class MetatableTest {
 	private final LuaTable table = ValueFactory.tableOf();
 	private final LuaFunction function = LibFunction.create(s -> Constants.NIL);
 	private final LuaState state = new LuaState();
-	private final LuaThread thread = new LuaThread(state, function, table);
-	private final LuaClosure closure = DataFactory.closure();
+	private final LuaThread thread = new LuaThread(state, function);
+	private final LuaClosure closure = DataFactory.closure(state);
 	private final LuaUserdata userdata = ValueFactory.userdataOf(sampleobject);
 	private final LuaUserdata userdatamt = ValueFactory.userdataOf(sampledata, table);
 
@@ -264,7 +264,7 @@ public class MetatableTest {
 		assertEquals(rg, t.rawget("gg"));
 	}
 
-	private LuaTable makeTable(String key1, String val1, String key2, String val2) {
+	private LuaTable makeTable(String key1, String val1, String key2, String val2) throws LuaError {
 		return ValueFactory.tableOf(
 			valueOf(key1), valueOf(val1),
 			valueOf(key2), valueOf(val2)

@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -64,23 +65,22 @@ import static org.squiddev.cobalt.ValueFactory.*;
  * methods on {@link LuaValue}:
  * <ul>
  * <li>{@link ValueFactory#tableOf()} empty table</li>
- * <li>{@link ValueFactory#tableOf(int, int)} table with capacity</li>
  * <li>{@link ValueFactory#listOf(LuaValue[])} initialize array part</li>
- * <li>{@link ValueFactory#listOf(LuaValue[], Varargs)} initialize array part</li>
  * <li>{@link ValueFactory#tableOf(LuaValue[])} initialize named hash part</li>
- * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[])} initialize array and named parts</li>
- * <li>{@link ValueFactory#tableOf(LuaValue[], LuaValue[], Varargs)} initialize array and named parts</li>
  * </ul>
  *
  * @see LuaValue
  */
 public final class LuaTable extends LuaValue {
 	private static final Object[] EMPTY_ARRAY = new Object[0];
-	private static final Node[] EMPTY_NODES = new Node[0];
-	private static final LuaString N = valueOf("n");
+	private static final int[] EMPTY_NEXT = new int[0];
 
 	private Object[] array = EMPTY_ARRAY;
-	private Node[] nodes = EMPTY_NODES;
+
+	private Object[] keys = EMPTY_ARRAY;
+	private Object[] values = EMPTY_ARRAY;
+	private int[] next = EMPTY_NEXT;
+
 	private int lastFree = 0;
 
 	private boolean weakKeys;
@@ -99,55 +99,12 @@ public final class LuaTable extends LuaValue {
 	/**
 	 * Construct table with preset capacity.
 	 *
-	 * @param narray capacity of array part
-	 * @param nhash  capacity of hash part
+	 * @param arraySize capacity of array part
+	 * @param hashSize  capacity of hash part
 	 */
-	public LuaTable(int narray, int nhash) {
+	public LuaTable(int arraySize, int hashSize) {
 		super(TTABLE);
-		resize(narray, nhash, false);
-	}
-
-	/**
-	 * Construct table with named and unnamed parts.
-	 *
-	 * @param named   Named elements in order {@code key-a, value-a, key-b, value-b, ... }
-	 * @param unnamed Unnamed elements in order {@code value-1, value-2, ... }
-	 * @param lastarg Additional unnamed values beyond {@code unnamed.length}
-	 */
-	public LuaTable(LuaValue[] named, LuaValue[] unnamed, Varargs lastarg) {
-		super(TTABLE);
-		int nn = (named != null ? named.length : 0);
-		int nu = (unnamed != null ? unnamed.length : 0);
-		int nl = (lastarg != null ? lastarg.count() : 0);
-		resize(nu + nl, nn >> 1, false);
-		for (int i = 0; i < nu; i++) {
-			rawset(i + 1, unnamed[i]);
-		}
-		if (lastarg != null) {
-			for (int i = 1, n = lastarg.count(); i <= n; ++i) {
-				rawset(nu + i, lastarg.arg(i));
-			}
-		}
-		for (int i = 0; i < nn; i += 2) {
-			if (!named[i + 1].isNil()) {
-				rawset(named[i], named[i + 1]);
-			}
-		}
-	}
-
-	/**
-	 * Construct table of unnamed elements.
-	 *
-	 * @param varargs Unnamed elements in order {@code value-1, value-2, ... }
-	 */
-	public LuaTable(Varargs varargs) {
-		super(TTABLE);
-		int n = Math.max(varargs.count(), 0);
-		resize(n, 1, false);
-		rawset(N, valueOf(n));
-		for (int i = 1; i <= n; i++) {
-			rawset(i, varargs.arg(i));
-		}
+		resize(arraySize, hashSize, false);
 	}
 
 	@Override
@@ -164,7 +121,7 @@ public final class LuaTable extends LuaValue {
 	 */
 	public void presize(int nArray) {
 		if (nArray > array.length) {
-			resize(nodes.length, 1 << log2(nArray), false);
+			resize(nArray, keys.length, false);
 		}
 	}
 
@@ -212,7 +169,7 @@ public final class LuaTable extends LuaValue {
 	 * @param value the value to use, can be {@link Constants#NIL}, must not be null
 	 */
 	public void rawset(String key, LuaValue value) {
-		rawset(ValueFactory.valueOf(key), value);
+		rawsetImpl(ValueFactory.valueOf(key), value);
 	}
 
 	/**
@@ -250,7 +207,7 @@ public final class LuaTable extends LuaValue {
 				}
 			}
 			return m;
-		} else if (nodes.length == 0) {
+		} else if (keys.length == 0) {
 			// When no nodes are present and the last item is not nil,
 			// the size of the table is the exact same size its capacity,
 			// so we can directly return the array.length
@@ -290,12 +247,12 @@ public final class LuaTable extends LuaValue {
 	 * @see #length()
 	 */
 	public int size() {
-		int i = 0;
-		for (var k : array) if (!strengthen(k).isNil()) i++;
-		for (var e : nodes) {
-			if (!e.key().isNil() && !e.value().isNil()) i++;
+		int n = 0;
+		for (var k : array) if (!strengthen(k).isNil()) n++;
+		for (int i = 0; i < keys.length; i++) {
+			if (!key(i).isNil() && !value(i).isNil()) n++;
 		}
-		return i;
+		return n;
 	}
 
 	/**
@@ -334,10 +291,10 @@ public final class LuaTable extends LuaValue {
 		}
 
 		i -= array.length;
-		for (; i < nodes.length; i++) {
-			Node node = nodes[i];
-			LuaValue value = node.value();
-			if (!node.key().isNil() && !value.isNil()) return varargsOf(node.key(), value);
+		for (; i < keys.length; i++) {
+			LuaValue thisKey = key(i);
+			LuaValue thisValue = value(i);
+			if (!thisKey.isNil() && !thisValue.isNil()) return varargsOf(thisKey, thisValue);
 		}
 
 		return NIL;
@@ -356,22 +313,17 @@ public final class LuaTable extends LuaValue {
 		// Its in the array part so just return that
 		int arrayIndex = arraySlot(key);
 		if (arrayIndex > 0 && arrayIndex <= array.length) return arrayIndex;
-		if (nodes.length == 0) return -1;
+		if (keys.length == 0) return -1;
 
 		// Must be in the main part so try to find it in the chain.
 		int idx = hashSlot(key);
-		Node node = nodes[idx];
 		while (true) {
-			if (node.key().equals(key)) {
+			if (key(idx).equals(key)) {
 				return idx + array.length + 1;
 			}
 
-			if (node.next >= 0) {
-				idx = node.next;
-				node = nodes[node.next];
-			} else {
-				return -1;
-			}
+			idx = next[idx];
+			if (idx < 0) return -1;
 		}
 	}
 
@@ -404,9 +356,8 @@ public final class LuaTable extends LuaValue {
 	 * @return The array slot or 0 if not usable in an array
 	 */
 	private static int arraySlot(LuaValue value) {
-		if (value instanceof LuaInteger) {
-			int val = ((LuaInteger) value).v;
-
+		if (value instanceof LuaInteger i) {
+			int val = i.intValue();
 			if (val > 0) return val;
 		}
 
@@ -420,7 +371,7 @@ public final class LuaTable extends LuaValue {
 	 * @return slot to use
 	 */
 	private int hashSlot(LuaValue key) {
-		return hashSlot(key, nodes.length - 1);
+		return hashSlot(key, keys.length - 1);
 	}
 
 	private void dropWeakArrayValues() {
@@ -500,13 +451,21 @@ public final class LuaTable extends LuaValue {
 
 	private void setNodeVector(int size) {
 		if (size == 0) {
-			nodes = EMPTY_NODES;
+			keys = values = EMPTY_ARRAY;
+			next = EMPTY_NEXT;
 			lastFree = 0;
 		} else {
 			int lsize = log2(size);
 			size = 1 << lsize;
-			Node[] nodes = this.nodes = new Node[size];
-			for (int i = 0; i < size; i++) nodes[i] = new Node(weakKeys, weakValues);
+
+			keys = new Object[size];
+			values = new Object[size];
+			next = new int[size];
+
+			// TODO: It would be nice if we didn't need to fill here, as this can be quite slow.
+			Arrays.fill(keys, NIL);
+			Arrays.fill(values, NIL);
+			Arrays.fill(next, -1);
 
 			// All positions are free
 			lastFree = size - 1;
@@ -515,18 +474,15 @@ public final class LuaTable extends LuaValue {
 
 	private void resize(int newArraySize, int newHashSize, boolean modeChange) {
 		int oldArraySize = array.length;
-		int oldHashSize = nodes.length;
-
-		if (newArraySize != 0 && newHashSize != 0 && newArraySize == oldArraySize && newHashSize == oldHashSize && !modeChange) {
-			throw new IllegalStateException("Attempting to resize with no change");
-		}
+		int oldHashSize = keys.length;
 
 		// Array part must grow
 		if (newArraySize > oldArraySize) {
 			array = setArrayVector(array, newArraySize, modeChange, weakValues);
 		}
 
-		Node[] oldNode = nodes;
+		Object[] oldKeys = keys;
+		Object[] oldValues = values;
 		setNodeVector(newHashSize);
 
 		if (newArraySize < oldArraySize) {
@@ -549,10 +505,9 @@ public final class LuaTable extends LuaValue {
 
 		// Re-insert elements from hash part
 		for (int i = oldHashSize - 1; i >= 0; i--) {
-			Node old = oldNode[i];
-			LuaValue key = old.key();
-			LuaValue value = old.value();
-			if (!key.isNil() && !value.isNil()) rawset(key, value);
+			LuaValue key = key(oldKeys, oldValues, i, true);
+			LuaValue value = value(oldValues, i, true);
+			if (!key.isNil() && !value.isNil()) rawsetImpl(key, value);
 		}
 	}
 
@@ -567,11 +522,11 @@ public final class LuaTable extends LuaValue {
 		// Count the number of hash values that can be moved to the array, as well as the total count.
 		// See numusehash in ltable.c
 		{
-			int i = nodes.length;
+			int i = keys.length;
 			while (--i >= 0) {
-				Node node = nodes[i];
-				LuaValue key = node.key();
-				if (!key.isNil()) {
+				LuaValue key = key(keys, values, i, true);
+				LuaValue value = value(values, i, true);
+				if (!value.isNil()) {
 					arrayCount += countInt(key, nums);
 					totalCount++;
 				}
@@ -619,15 +574,53 @@ public final class LuaTable extends LuaValue {
 	 * @return The first slot in the map
 	 */
 	private int getFreePos() {
-		if (nodes.length == 0) return -1;
+		if (keys.length == 0) return -1;
 		while (lastFree >= 0) {
-			Node last = nodes[lastFree--];
-			if (last.key == NIL) {
+			if (keys[lastFree--] == NIL) {
 				return lastFree + 1;
 			}
 		}
 
 		return -1;
+	}
+
+	/**
+	 * Get the current key, converting it to a strong reference if required. If it is nil then it clears the key and
+	 * value (marking it as "dead").
+	 *
+	 * @return The entry's key.
+	 */
+	private LuaValue key(int slot) {
+		return key(keys, values, slot, weakKeys);
+	}
+
+	private static LuaValue key(Object[] keys, Object[] values, int slot, boolean weak) {
+		assert keys.length == values.length;
+		Object key = keys[slot];
+		if (key == NIL || !weak) return (LuaValue) key;
+
+		LuaValue strengthened = strengthen(key);
+		if (strengthened.isNil()) values[slot] = NIL; // We preserve the key so we can check it is nil
+
+		return strengthened;
+	}
+
+	private LuaValue value(int slot) {
+		return value(values, slot, weakValues);
+	}
+
+	/**
+	 * Get the current value, converting it to a strong reference if required.
+	 *
+	 * @return The entry's value.
+	 */
+	private static LuaValue value(Object[] values, int slot, boolean weak) {
+		Object value = values[slot];
+		if (value == NIL || !weak) return (LuaValue) value;
+
+		LuaValue strengthened = strengthen(value);
+		if (strengthened.isNil()) values[slot] = NIL;
+		return strengthened;
 	}
 
 	/**
@@ -640,103 +633,95 @@ public final class LuaTable extends LuaValue {
 	 * @param key The key to set
 	 * @throws IllegalArgumentException If this key cannot be used.
 	 */
-	private Node newKey(LuaValue key) {
+	private int newKey(LuaValue key) {
 		if (key.isNil()) throw new IllegalArgumentException("table index is nil");
 
 		// Rehash and let the rawgetter handle it
-		if (nodes.length == 0) {
+		if (keys.length == 0) {
 			rehash(key, false);
-			return null;
+			return -1;
 		}
 
-		Node mainNode = nodes[hashSlot(key)];
-		LuaValue mainKey = mainNode.key();
-		if (!mainKey.isNil() && !mainNode.value().isNil()) {
+		int mainNode = hashSlot(key);
+		LuaValue mainKey = key(mainNode);
+		if (!mainKey.isNil() && !value(mainNode).isNil()) {
 			// If we've got a collision then
-			final int freePos = getFreePos();
+			final int freeNode = getFreePos();
 
-			if (freePos < 0) {
+			if (freeNode < 0) {
 				rehash(key, false);
-				return null;
+				return -1;
 			}
 
-			final Node freeNode = nodes[freePos];
-
-			int otherPos = hashSlot(mainKey);
-			Node otherNode = nodes[otherPos];
+			int otherNode = hashSlot(mainKey);
 
 			if (otherNode != mainNode) {
 				// If the colliding position isn't at its main position then we move it to a free position
 
 				// Walk the chain to find the node just before the desired one
-				while (nodes[otherNode.next] != mainNode) {
-					otherNode = nodes[otherNode.next];
-				}
+				while (next[otherNode] != mainNode) otherNode = next[otherNode];
 
 				// Rechain other to point to the free position
-				otherNode.next = freePos;
+				next[otherNode] = freeNode;
 
 				// Copy colliding node into free position
-				freeNode.key = mainNode.key;
-				freeNode.value = mainNode.value;
-				freeNode.next = mainNode.next;
+				keys[freeNode] = keys[mainNode];
+				values[freeNode] = values[mainNode];
+				next[freeNode] = next[mainNode];
 
 				// Clear main node
-				mainNode.next = -1;
-				mainNode.key = NIL;
-				mainNode.value = NIL;
+				next[mainNode] = -1;
+				keys[mainNode] = NIL;
+				values[mainNode] = NIL;
 			} else {
 				// Colliding node is in the main position so we will assign to a free position.
 
-				if (mainNode.next != -1) {
+				if (next[mainNode] != -1) {
 					// We're inserting "after" the first node in the linked list so change the
 					// next node.
-					freeNode.next = mainNode.next;
+					next[freeNode] = next[mainNode];
 				} else {
-					assert freeNode.next == -1;
+					assert next[freeNode] == -1;
 				}
 
 				// Insert after the main node
-				mainNode.next = freePos;
+				next[mainNode] = freeNode;
 
 				mainNode = freeNode;
 			}
 		}
 
-		mainNode.key = weakKeys ? weaken(key) : key;
+		keys[mainNode] = weakKeys ? weaken(key) : key;
 
 		return mainNode;
 	}
 
-	private Node getNode(int search) {
-		if (nodes.length == 0) return null;
+	private int getNode(int search) {
+		if (keys.length == 0) return -1;
 
-		Node node = nodes[hashmod(search, nodes.length - 1)];
+		int node = hashmod(search, keys.length - 1);
 		while (true) {
-			LuaValue key = node.key();
-			if (key instanceof LuaInteger keyI && keyI.v == search) {
+			LuaValue key = key(node);
+			if (key instanceof LuaInteger keyI && keyI.intValue() == search) {
 				return node;
 			} else {
-				int next = node.next;
-				if (next == -1) return null;
-				node = nodes[next];
+				node = next[node];
+				if (node == -1) return -1;
 			}
 		}
 	}
 
-	private Node getNode(LuaValue search) {
-		if (nodes.length == 0 || search == NIL) return null;
+	private int getNode(LuaValue search) {
+		if (keys.length == 0 || search == NIL) return -1;
 
-		int slot = hashSlot(search);
-		Node node = nodes[slot];
+		int node = hashSlot(search);
 		while (true) {
-			LuaValue key = node.key();
+			LuaValue key = key(node);
 			if (key.equals(search)) {
 				return node;
 			} else {
-				int next = node.next;
-				if (next == -1) return null;
-				node = nodes[next];
+				node = next[node];
+				if (node == -1) return -1;
 			}
 		}
 	}
@@ -744,28 +729,28 @@ public final class LuaTable extends LuaValue {
 	public LuaValue rawget(int search) {
 		if (search > 0 && search <= array.length) {
 			return strengthen(array[search - 1]);
-		} else if (nodes.length == 0) {
+		} else if (keys.length == 0) {
 			return NIL;
 		} else {
-			Node node = getNode(search);
-			return node == null ? NIL : node.value();
+			int node = getNode(search);
+			return node == -1 ? NIL : value(node);
 		}
 	}
 
 	public LuaValue rawget(LuaValue search) {
-		if (search instanceof LuaInteger) return rawget(((LuaInteger) search).v);
+		if (search instanceof LuaInteger i) return rawget(i.intValue());
 
-		Node node = getNode(search);
-		return node == null ? NIL : node.value();
+		int node = getNode(search);
+		return node == -1 ? NIL : value(node);
 	}
 
 	public LuaValue rawget(CachedMetamethod search) {
 		int flag = 1 << search.ordinal();
 		if ((metatableFlags & flag) != 0) return NIL;
 
-		Node node = getNode(search.getKey());
-		if (node != null) {
-			LuaValue value = node.value();
+		int node = getNode(search.getKey());
+		if (node != -1) {
+			LuaValue value = value(node);
 			if (!value.isNil()) return value;
 		}
 
@@ -773,6 +758,11 @@ public final class LuaTable extends LuaValue {
 		return NIL;
 	}
 
+	/**
+	 * Check if this table has a {@code __newindex} metamethod.
+	 *
+	 * @return Whether this method has a {@code __newindex} metamethod.
+	 */
 	private boolean hasNewIndex() {
 		LuaTable metatable = this.metatable;
 		return metatable != null && metatable.rawget(CachedMetamethod.NEWINDEX) != NIL;
@@ -798,12 +788,12 @@ public final class LuaTable extends LuaValue {
 			return true;
 		}
 
-		Node node = getNode(key);
-		if (node == null) {
+		int node = getNode(key);
+		if (node == -1) {
 			if (hasNewIndex()) return false;
 		} else {
-			if (node.value() == NIL && hasNewIndex()) return false;
-			node.value = weakValues ? weaken(value) : value;
+			if (value(node) == NIL && hasNewIndex()) return false;
+			values[node] = weakValues ? weaken(value) : value;
 			return true;
 		}
 
@@ -821,19 +811,18 @@ public final class LuaTable extends LuaValue {
 	 * @see OperationHelper#setTable(LuaState, LuaValue, LuaValue, LuaValue)
 	 */
 	boolean trySet(LuaValue key, LuaValue value) throws LuaError {
-		if (key instanceof LuaInteger keyI) return trySet(keyI.v, value, key);
+		if (key instanceof LuaInteger keyI) return trySet(keyI.intValue(), value, key);
 
-		Node node = getNode(key);
-		if (node == null) {
+		int node = getNode(key);
+		if (node == -1) {
 			if (hasNewIndex()) return false;
 		} else {
-			if (node.value() == NIL && hasNewIndex()) return false;
-			node.value = weakValues ? weaken(value) : value;
+			if (value(node) == NIL && hasNewIndex()) return false;
+			values[node] = weakValues ? weaken(value) : value;
 			return true;
 		}
 
 		assert !hasNewIndex();
-		key.checkValidKey();
 		rawset(key, value);
 		return true;
 	}
@@ -849,36 +838,40 @@ public final class LuaTable extends LuaValue {
 				return;
 			}
 
-			Node node = getNode(key);
-			if (node == null) {
+			int node = getNode(key);
+			if (node == -1) {
 				if (valueOf == null) valueOf = valueOf(key);
 				node = newKey(valueOf);
 			}
 
 			// newKey will have handled this otherwise
-			if (node != null) {
-				node.value = weakValues ? weaken(value) : value;
+			if (node != -1) {
+				values[node] = weakValues ? weaken(value) : value;
 				return;
 			}
 		} while (true);
 	}
 
-	public void rawset(LuaValue key, LuaValue value) {
+	public void rawset(LuaValue key, LuaValue value) throws LuaError {
+		if (key.isNil()) throw new LuaError("table index is nil");
+		if (key instanceof LuaDouble d && Double.isNaN(d.doubleValue())) throw new LuaError("table index is NaN");
+		rawsetImpl(key, value);
+	}
+
+	public void rawsetImpl(LuaValue key, LuaValue value) {
 		if (key instanceof LuaInteger keyI) {
-			rawset(keyI.v, value, key);
+			rawset(keyI.intValue(), value, key);
 			return;
 		}
 
-		// TODO: Check valid key here instead of at the call site!
-
 		do {
-			Node node = getNode(key);
-			if (node == null) node = newKey(key);
+			int node = getNode(key);
+			if (node == -1) node = newKey(key);
 
 			// newKey will have handled this otherwise
-			if (node != null) {
+			if (node != -1) {
 				// if (value.isNil() && !weakKeys) node.key = weaken((LuaValue) node.key);
-				node.value = weakValues ? weaken(value) : value;
+				values[node] = weakValues ? weaken(value) : value;
 				metatableFlags = 0;
 				return;
 			}
@@ -950,58 +943,4 @@ public final class LuaTable extends LuaValue {
 		}
 	}
 	//endregion
-
-	/**
-	 * Represents a node in the hash element of the table.
-	 */
-	private static final class Node {
-		private final boolean weakKey;
-		private final boolean weakValue;
-		Object value = NIL;
-		Object key = NIL;
-		int next = -1;
-
-		Node(boolean weakKey, boolean weakValue) {
-			this.weakKey = weakKey;
-			this.weakValue = weakValue;
-		}
-
-		@Override
-		public String toString() {
-			String main = key + "=" + value;
-			if (next >= 0) main += "->" + next;
-			return main;
-		}
-
-		/**
-		 * Get the current key, converting it to a strong reference if
-		 * required. If it is nil then it clears the key and value (marking it
-		 * as "dead").
-		 *
-		 * @return The entry's key.
-		 */
-		LuaValue key() {
-			Object key = this.key;
-			if (key == NIL || !weakKey) return (LuaValue) key;
-
-			LuaValue strengthened = strengthen(key);
-			if (strengthened.isNil()) this.value = NIL; // We preserve the key so we can check it is nil
-
-			return strengthened;
-		}
-
-		/**
-		 * Get the current value, converting it to a strong reference if required.
-		 *
-		 * @return The entry's value.
-		 */
-		LuaValue value() {
-			Object value = this.value;
-			if (value == NIL || !weakValue) return (LuaValue) value;
-
-			LuaValue strengthened = strengthen(value);
-			if (strengthened.isNil()) this.value = NIL;
-			return strengthened;
-		}
-	}
 }

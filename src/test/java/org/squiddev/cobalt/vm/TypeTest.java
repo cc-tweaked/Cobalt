@@ -61,8 +61,9 @@ public class TypeTest {
 	private final LuaValue stringdouble = valueOf(samplestringdouble);
 	private final LuaTable table = tableOf();
 	private final LuaFunction somefunc = LibFunction.create(s -> NIL);
-	private final LuaThread thread = new LuaThread(new LuaState(), somefunc, table);
-	private final LuaClosure someclosure = DataFactory.closure();
+	private final LuaState state = new LuaState();
+	private final LuaThread thread = new LuaThread(state, somefunc);
+	private final LuaClosure someclosure = DataFactory.closure(state);
 	private final LuaUserdata userdataobj = userdataOf(sampleobject);
 	private final LuaUserdata userdatacls = userdataOf(sampledata);
 
@@ -72,26 +73,6 @@ public class TypeTest {
 	}
 
 	// ===================== type checks =======================
-	@Test
-	public void testIsFunction() {
-		assertFalse(somenil.isFunction());
-		assertFalse(sometrue.isFunction());
-		assertFalse(somefalse.isFunction());
-		assertFalse(zero.isFunction());
-		assertFalse(intint.isFunction());
-		assertFalse(longdouble.isFunction());
-		assertFalse(doubledouble.isFunction());
-		assertFalse(stringstring.isFunction());
-		assertFalse(stringint.isFunction());
-		assertFalse(stringlong.isFunction());
-		assertFalse(stringdouble.isFunction());
-		assertFalse(thread.isFunction());
-		assertFalse(table.isFunction());
-		assertFalse(userdataobj.isFunction());
-		assertFalse(userdatacls.isFunction());
-		assertTrue(somefunc.isFunction());
-		assertTrue(someclosure.isFunction());
-	}
 
 	@Test
 	public void testIsNil() {
@@ -496,50 +477,6 @@ public class TypeTest {
 		throwsError(userdatacls, "optLuaString", LuaString.class, valueOf("xyz"));
 	}
 
-	private void throwsErrorOptUserdataClass(LuaValue obj, Class<?> arg1, Object arg2) {
-		try {
-			obj.getClass().getMethod("optUserdata", Class.class, Object.class).invoke(obj, arg1, arg2);
-		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError)) {
-				fail("not a LuaError: " + e.getTargetException());
-			}
-			return; // pass
-		} catch (Exception e) {
-			fail("bad exception: " + e);
-		}
-		fail("failed to throw LuaError as required");
-	}
-
-	@Test
-	public void testOptUserdataClass() throws LuaError {
-		assertEquals(sampledata, somenil.optUserdata(MyData.class, sampledata));
-		assertEquals(sampleobject, somenil.optUserdata(Object.class, sampleobject));
-		throwsErrorOptUserdataClass(sometrue, Object.class, sampledata);
-		throwsErrorOptUserdataClass(zero, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(intint, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(longdouble, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(somefunc, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(someclosure, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(stringstring, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(stringint, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(stringlong, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(stringlong, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(stringdouble, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(table, MyData.class, sampledata);
-		throwsErrorOptUserdataClass(thread, MyData.class, sampledata);
-		assertEquals(sampleobject, userdataobj.optUserdata(Object.class, sampleobject));
-		assertEquals(sampledata, userdatacls.optUserdata(MyData.class, sampledata));
-		assertEquals(sampledata, userdatacls.optUserdata(Object.class, sampleobject));
-		// should fail due to wrong class
-		try {
-			Object o = userdataobj.optUserdata(MyData.class, sampledata);
-			fail("did not throw bad type error");
-			assertTrue(o instanceof MyData);
-		} catch (LuaError le) {
-			assertEquals("org.squiddev.cobalt.vm.TypeTest$MyData expected, got userdata", le.getMessage());
-		}
-	}
-
 	@Test
 	public void testOptValue() {
 		assertEquals(zero, somenil.optValue(zero));
@@ -791,74 +728,6 @@ public class TypeTest {
 		throwsErrorReq(table, "checkLuaString");
 		throwsErrorReq(userdataobj, "checkLuaString");
 		throwsErrorReq(userdatacls, "checkLuaString");
-	}
-
-	@Test
-	public void testCheckUserdata() {
-		throwsErrorReq(somenil, "checkUserdata");
-		throwsErrorReq(sometrue, "checkUserdata");
-		throwsErrorReq(somefalse, "checkUserdata");
-		throwsErrorReq(zero, "checkUserdata");
-		throwsErrorReq(intint, "checkUserdata");
-		throwsErrorReq(longdouble, "checkUserdata");
-		throwsErrorReq(doubledouble, "checkUserdata");
-		throwsErrorReq(somefunc, "checkUserdata");
-		throwsErrorReq(someclosure, "checkUserdata");
-		throwsErrorReq(stringstring, "checkUserdata");
-		throwsErrorReq(stringint, "checkUserdata");
-		throwsErrorReq(stringlong, "checkUserdata");
-		throwsErrorReq(stringdouble, "checkUserdata");
-		throwsErrorReq(table, "checkUserdata");
-		assertEquals(sampleobject, userdataobj.checkUserdata());
-		assertEquals(sampleobject, userdataobj.checkUserdata());
-		assertEquals(sampledata, userdatacls.checkUserdata());
-		assertEquals(sampledata, userdatacls.checkUserdata());
-	}
-
-	private void throwsErrorReqCheckUserdataClass(LuaValue obj, Class<?> arg) {
-		try {
-			obj.getClass().getMethod("checkUserdata", Class.class).invoke(obj, arg);
-		} catch (InvocationTargetException e) {
-			if (!(e.getTargetException() instanceof LuaError)) {
-				fail("not a LuaError: " + e.getTargetException());
-			}
-			return; // pass
-		} catch (Exception e) {
-			fail("bad exception: " + e);
-		}
-		fail("failed to throw LuaError as required");
-	}
-
-	@Test
-	public void testCheckUserdataClass() throws LuaError {
-		throwsErrorReqCheckUserdataClass(somenil, Object.class);
-		throwsErrorReqCheckUserdataClass(somenil, MyData.class);
-		throwsErrorReqCheckUserdataClass(sometrue, Object.class);
-		throwsErrorReqCheckUserdataClass(zero, MyData.class);
-		throwsErrorReqCheckUserdataClass(intint, MyData.class);
-		throwsErrorReqCheckUserdataClass(longdouble, MyData.class);
-		throwsErrorReqCheckUserdataClass(somefunc, MyData.class);
-		throwsErrorReqCheckUserdataClass(someclosure, MyData.class);
-		throwsErrorReqCheckUserdataClass(stringstring, MyData.class);
-		throwsErrorReqCheckUserdataClass(stringint, MyData.class);
-		throwsErrorReqCheckUserdataClass(stringlong, MyData.class);
-		throwsErrorReqCheckUserdataClass(stringlong, MyData.class);
-		throwsErrorReqCheckUserdataClass(stringdouble, MyData.class);
-		throwsErrorReqCheckUserdataClass(table, MyData.class);
-		throwsErrorReqCheckUserdataClass(thread, MyData.class);
-		assertEquals(sampleobject, userdataobj.checkUserdata(Object.class));
-		assertEquals(sampleobject, userdataobj.checkUserdata());
-		assertEquals(sampledata, userdatacls.checkUserdata(MyData.class));
-		assertEquals(sampledata, userdatacls.checkUserdata(Object.class));
-		assertEquals(sampledata, userdatacls.checkUserdata());
-		// should fail due to wrong class
-		try {
-			Object o = userdataobj.checkUserdata(MyData.class);
-			fail("did not throw bad type error");
-			assertTrue(o instanceof MyData);
-		} catch (LuaError le) {
-			assertEquals("org.squiddev.cobalt.vm.TypeTest$MyData expected, got userdata", le.getMessage());
-		}
 	}
 
 	/**

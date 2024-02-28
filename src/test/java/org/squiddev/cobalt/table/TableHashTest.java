@@ -248,4 +248,39 @@ public class TableHashTest {
 		assertEquals(ValueFactory.valueOf("bbb"), t.next(ValueFactory.valueOf("aa")).arg(2));
 		assertEquals(Constants.NIL, t.next(ValueFactory.valueOf("bb")));
 	}
+
+	@Test
+	public void testShrink() {
+		LuaTable t = new LuaTable();
+
+		// Setting our initial values creates the right hash part.
+		for (int i = 0; i < 16; i++) t.rawset("key_" + i, Constants.TRUE);
+		assertEquals(16, TableOperations.getHashLength(t));
+
+		// We then clear these values, and check the hash part is unchanged.
+		for (int i = 0; i < 16; i++) t.rawset("key_" + i, Constants.NIL);
+		assertEquals(16, TableOperations.getHashLength(t));
+
+		// We then repopulate with new objects, and assert the hash part has been recreated
+		// with the correct size.
+		for (int i = 0; i < 8; i++) t.rawset("new_key_" + i, Constants.TRUE);
+		assertEquals(8, TableOperations.getHashLength(t));
+	}
+
+	@Test
+	public void testWeakCanBeReplaced() throws LuaError {
+		var t = new LuaTable();
+
+		var mt = new LuaTable();
+		mt.rawset("__mode", ValueFactory.valueOf("k"));
+		t.setMetatable(null, mt);
+
+		for (int j = 0; j < 16; j++) {
+			for (int i = 0; i < 256; i++) t.rawset(new LuaTable(), Constants.TRUE);
+			System.gc();
+
+			int hash = TableOperations.getHashLength(t);
+			if (hash > 512) throw new AssertionError("Expected hash to be <=512, but is " + hash);
+		}
+	}
 }

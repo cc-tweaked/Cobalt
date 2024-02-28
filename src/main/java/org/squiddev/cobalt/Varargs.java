@@ -41,13 +41,14 @@ package org.squiddev.cobalt;
  *
  * @see ValueFactory#varargsOf(LuaValue[])
  * @see ValueFactory#varargsOf(LuaValue, Varargs)
- * @see ValueFactory#varargsOf(LuaValue[], Varargs)
  * @see ValueFactory#varargsOf(LuaValue, LuaValue, Varargs)
  * @see ValueFactory#varargsOfCopy(LuaValue[], int, int)
  * @see ValueFactory#varargsOfCopy(LuaValue[], int, int, Varargs)
  * @see LuaValue#subargs(int)
  */
 public abstract class Varargs {
+	Varargs() {
+	}
 
 	/**
 	 * Get the n-th argument value (1-based).
@@ -77,42 +78,6 @@ public abstract class Varargs {
 
 	public abstract void fill(LuaValue[] array, int offset);
 
-	// -----------------------------------------------------------------------
-	// utilities to get specific arguments and type-check them.
-	// -----------------------------------------------------------------------
-
-	/**
-	 * Gets the type of argument {@code i}
-	 *
-	 * @param i the index of the argument to convert, 1 is the first argument
-	 * @return int value corresponding to one of the LuaValue integer type values
-	 * @see LuaValue#type()
-	 */
-	public int type(int i) {
-		return arg(i).type();
-	}
-
-	/**
-	 * Tests if argument i is nil.
-	 *
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @return true if the argument is nil or does not exist, false otherwise
-	 * @see Constants#TNIL
-	 */
-	public boolean isNil(int i) {
-		return arg(i).isNil();
-	}
-
-	/**
-	 * Tests if a value exists at argument i.
-	 *
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @return true if the argument exists, false otherwise
-	 */
-	public boolean exists(int i) {
-		return i > 0 && i <= count();
-	}
-
 	/**
 	 * Return argument i as a LuaValue if it exists, or throw an error.
 	 *
@@ -129,30 +94,6 @@ public abstract class Varargs {
 	}
 
 	/**
-	 * Throw an error if {@code test} fails
-	 *
-	 * @param test user	 supplied assertion to test against
-	 * @param i    the index to report in any error message
-	 * @param msg  the error message to use when the test fails
-	 * @throws LuaError if the the value of {@code test} is {@code false}
-	 */
-	public static void argCheck(boolean test, int i, String msg) throws LuaError {
-		if (!test) {
-			throw ErrorFactory.argError(i, msg);
-		}
-	}
-
-	/**
-	 * Return true if there is no argument or nil at argument i.
-	 *
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @return true if argument i contains either no argument or nil
-	 */
-	public boolean isNoneOrNil(int i) {
-		return i > count() || arg(i).isNil();
-	}
-
-	/**
 	 * Convert the list of varargs values to a human readable java String.
 	 *
 	 * @return String value in human readable form such as {1,2}.
@@ -162,7 +103,7 @@ public abstract class Varargs {
 		sb.append("(");
 		for (int i = 1, n = count(); i <= n; i++) {
 			if (i > 1) sb.append(",");
-			sb.append(arg(i).toString());
+			sb.append(arg(i));
 		}
 		sb.append(")");
 		return sb.toString();

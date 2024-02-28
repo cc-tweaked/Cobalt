@@ -67,6 +67,7 @@ private val subclassRelations = mapOf(
 	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/LuaBoolean") to "org/squiddev/cobalt/LuaValue",
 	UnorderedPair("org/squiddev/cobalt/LuaValue", "org/squiddev/cobalt/LuaString") to "org/squiddev/cobalt/LuaValue",
 	UnorderedPair("org/squiddev/cobalt/Varargs", "org/squiddev/cobalt/LuaValue") to "org/squiddev/cobalt/Varargs",
+	UnorderedPair("org/squiddev/cobalt/LuaError", "org/squiddev/cobalt/compiler/CompileException") to "java/lang/Exception",
 )
 
 fun getCommonSuperclass(type1: String, type2: String): String? = subclassRelations[UnorderedPair(type1, type2)]

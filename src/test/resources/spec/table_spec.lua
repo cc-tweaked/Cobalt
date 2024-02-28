@@ -56,6 +56,31 @@ describe("Lua tables", function()
 			expect(#{ 1, 2, 3, nil, 5, nil, 7, 8, 9 }):eq(9)
 			expect(#{ 1, nil, [2] = 2, 3 }):eq(3)
 		end)
+
+		it("behaves identically to PUC Lua after resizing", function()
+			local n = 8
+
+			-- We grow the array part to be of length N.
+			local tbl = {}
+			for i = 1, n do tbl[i] = true end
+			expect(#tbl):eq(n)
+
+			-- Then clear out all but the last value. This does not shrink the array part, so we
+			-- still have a length N.
+			for i = 1, n - 1 do tbl[i] = nil end
+			expect(#tbl):eq(n)
+		end)
+	end)
+
+	describe("can be constructed from varargs", function()
+		it("presizes the array", function()
+			local function create(...) return { ... } end
+
+			-- If we'd constructed this table normally, it'd have a length of 5. However,
+			-- SETLIST will presize the table to ensure the array part is of length 5. As
+			-- the last slot is full, the array is considered saturated.
+			expect(#create(nil, nil, nil, nil, 1)):eq(5)
+		end)
 	end)
 
 	describe("weak tables", function()
@@ -120,6 +145,19 @@ describe("Lua tables", function()
 
 				local k, v = next(t)
 				expect(v):eq("t1")
+			end)
+
+			it("behaves like an ephemeron table :lua>=5.2 :!cobalt", function()
+				local t = setmode({}, "k")
+
+				local t1 = {}
+				t[t1] = { t1 }
+				t1 = nil
+
+				collectgarbage()
+
+				local k, v = next(t)
+				expect(k):eq(nil)
 			end)
 		end)
 
@@ -440,7 +478,7 @@ describe("Lua tables", function()
 			expect(table.remove(a, 1)):eq('a')
 			expect(table.remove(a, 1)):eq('b')
 			expect(table.remove(a, 1)):eq(nil)
-			assert(#a == 0 and a.n == nil)
+			expect(#a):eq(0) expect(a.n):eq(nil)
 		end)
 
 		it("test #5", function()
@@ -547,6 +585,87 @@ describe("Lua tables", function()
 	end)
 
 	describe("table.sort", function()
+		local function check(a, f)
+			f = f or function(x, y) return x < y end
+			for i = #a, 2, -1 do
+				local x, y = a[i], a[i - 1]
+				if f(x, y) then
+					fail(("%s, %s at %d are out of order"):format(x, y, i))
+				end
+			end
+		end
+
+		it("a basic sort", function()
+			local a = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+			table.sort(a)
+			check(a)
+		end)
+
+		it("various permutations", function()
+			local unpack = table.unpack or unpack
+			local function perm (s, n)
+				n = n or #s
+				if n == 1 then
+					local t = {unpack(s)}
+					table.sort(t)
+					check(t)
+				else
+					for i = 1, n do
+					s[i], s[n] = s[n], s[i]
+					perm(s, n - 1)
+					s[i], s[n] = s[n], s[i]
+					end
+				end
+			end
+
+			perm {}
+			perm {1}
+			perm {1,2}
+			perm {1,2,3}
+			perm {1,2,3,4}
+			perm {2,2,3,4}
+			perm {1,2,3,4,5}
+			perm {1,2,3,3,5}
+			perm {1,2,3,4,5,6}
+			perm {2,2,3,3,5,6}
+		end)
+
+		it("a long list of items", function()
+			local limit = 30000
+			local a = {}
+			for i = 1, limit do a[i] = math.random() end
+			table.sort(a)
+			check(a)
+		end)
+
+		it("reverse sort", function()
+			local limit = 30000
+			local a = {}
+			for i = 1, limit do a[i] = math.random() end
+
+			table.sort(a, function(x, y) return y < x end)
+			check(a, function(x, y) return y < x end)
+		end)
+
+		it("equal items", function()
+			local limit = 30000
+			local a = {}
+			for i = 1, limit do a[i] = false end
+
+			table.sort(a, function(x,y) return nil end)
+		end)
+
+		it("invalid sort order :lua>=5.2 :!cobalt", function()
+			local function check (t)
+				local function f(a, b) assert(a and b); return true end
+				expect.error(table.sort, t, f):eq("invalid order function for sorting")
+			end
+
+			check {1,2,3,4}
+			check {1,2,3,4,5}
+			check {1,2,3,4,5,6}
+		end)
+
 		it("behaves identically to PUC Lua on sparse tables", function()
 			local test = {[1]="e",[2]="a",[3]="d",[4]="c",[8]="b"}
 
@@ -571,6 +690,54 @@ describe("Lua tables", function()
 			expect(original):same { "e", "b", "c", "d", "a" }
 			expect(next(slice)):eq(nil)
 		end)
+
+		it("ignores negative lengths :lua>=5.2", function()
+			local t = setmetatable({}, { __len = function() return -1 end })
+			expect(#t):eq(-1)
+			table.sort(t, function() fail("Unexpected comparison") end)
+		end)
+
+		it("supports yielding in the comparator :cobalt", function()
+			expect.run_coroutine(function()
+				local x = { 32, 2, 4, 13 }
+				table.sort(x, function(a, b)
+					local x, y = coroutine.yield(a, b)
+					expect(x):eq(a)
+					expect(y):eq(b)
+
+					return a < b
+				end)
+
+				expect(x[1]):eq(2)
+				expect(x[2]):eq(4)
+				expect(x[3]):eq(13)
+				expect(x[4]):eq(32)
+			end)
+		end)
+
+		it("supports yielding in the metamethod :cobalt", function()
+			local meta = {
+				__lt = function(a, b)
+					local x, y = coroutine.yield(a, b)
+					expect(x):eq(a)
+					expect(y):eq(b)
+
+					return a.x < b.x
+				end,
+			}
+
+			local function create(val) return setmetatable({ x = val }, meta) end
+
+			expect.run_coroutine(function()
+				local x = { create(32), create(2), create(4), create(13) }
+				table.sort(x)
+
+				expect(x[1].x):eq(2)
+				expect(x[2].x):eq(4)
+				expect(x[3].x):eq(13)
+				expect(x[4].x):eq(32)
+			end)
+		end)
 	end)
 
 	describe("table.pack", function()
@@ -582,14 +749,80 @@ describe("Lua tables", function()
 	describe("table.unpack", function()
 		it("accepts nil arguments :lua>=5.2", function()
 			local a, b, c = table.unpack({ 1, 2, 3, 4, 5 }, nil, 2)
-			assert(a == 1)
-			assert(b == 2)
-			assert(c == nil)
+			expect(a):eq(1)
+			expect(b):eq(2)
+			expect(c):eq(nil)
 
 			local a, b, c = table.unpack({ 1, 2 }, nil, nil)
-			assert(a == 1)
-			assert(b == 2)
-			assert(c == nil)
+			expect(a):eq(1)
+			expect(b):eq(2)
+			expect(c):eq(nil)
+		end)
+
+		it("some basic functionality :lua>=5.2", function()
+			-- Largely copied from sort.lua
+			local a, lim = {}, 2000
+			for i = 1, lim do a[i] = i end
+
+			expect(select(lim, table.unpack(a))):eq(lim)
+			expect(select('#', table.unpack(a))):eq(lim)
+
+			local x, y, z
+
+			x = table.unpack(a)
+			expect(x):eq(1)
+
+			x = {table.unpack(a)}
+			expect(#x):eq(lim) expect(x[1]):eq(1) expect(x[lim]):eq(lim)
+
+			x = {table.unpack(a, lim-2)}
+			expect(#x):eq(3) expect(x[1]):eq(lim-2) expect(x[3]):eq(lim)
+
+			x = {table.unpack(a, 10, 6)}
+			expect(next(x)):eq(nil)   -- no elements
+
+			x = {table.unpack(a, 11, 10)}
+			expect(next(x)):eq(nil)   -- no elements
+
+			x, y = table.unpack(a, 10, 10)
+			expect(x):eq(10) expect(y):eq(nil)
+
+			x, y, z = table.unpack(a, 10, 11)
+			expect(x):eq(10) expect(y):eq(11) expect(z):eq(nil)
+
+			a, x = table.unpack{1}
+			expect(a):eq(1) expect(x):eq(nil)
+
+			a, x = table.unpack({1,2}, 1, 1)
+			expect(a):eq(1) expect(x):eq(nil)
+		end)
+
+		it("on large values :lua>=5.2", function()
+			local maxi = (2 ^ 31) - 1 -- maximum value for an int
+  			local mini = -(2 ^ 31)    -- minimum value for an int
+			expect.error(table.unpack, {}, 0, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, 1, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, 0, maxI):eq("too many results to unpack")
+			expect.error(table.unpack, {}, 1, maxI):eq("too many results to unpack")
+			expect.error(table.unpack, {}, mini, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, -maxi, maxi):eq("too many results to unpack")
+			expect.error(table.unpack, {}, minI, maxI):eq("too many results to unpack")
+			table.unpack({}, maxi, 0)
+			table.unpack({}, maxi, 1)
+			table.unpack({}, maxI, minI)
+			pcall(table.unpack, {}, 1, maxi + 1)
+			local a, b = table.unpack({[maxi] = 20}, maxi, maxi)
+			expect(a):eq(20) expect(b):eq(nil)
+			a, b = table.unpack({[maxi] = 20}, maxi - 1, maxi)
+			expect(a):eq(nil) expect(b):eq(20)
+			local t = {[maxI - 1] = 12, [maxI] = 23}
+			a, b = table.unpack(t, maxI - 1, maxI); assert(a == 12 and b == 23)
+			a, b = table.unpack(t, maxI, maxI); assert(a == 23 and b == nil)
+			a, b = table.unpack(t, maxI, maxI - 1); assert(a == nil and b == nil)
+			t = {[minI] = 12.3, [minI + 1] = 23.5}
+			a, b = table.unpack(t, minI, minI + 1); assert(a == 12.3 and b == 23.5)
+			a, b = table.unpack(t, minI, minI); assert(a == 12.3 and b == nil)
+			a, b = table.unpack(t, minI + 1, minI); assert(a == nil and b == nil)
 		end)
 
 		it("takes slices of tables :lua>=5.2", function()
@@ -606,9 +839,86 @@ describe("Lua tables", function()
 	end)
 
 	describe("table.concat", function()
+		it("returns empty strings on empty tables", function()
+			expect(table.concat{}):eq("")
+			expect(table.concat({}, 'x')):eq("")
+		end)
+
+		it("works with \\0", function()
+			expect(table.concat({'\0', '\0\1', '\0\1\2'}, '.\0.')):eq("\0.\0.\0\1.\0.\0\1\2")
+		end)
+
+		it("accepts various ranges", function()
+			local a = {}; for i=1,3000 do a[i] = "xuxu" end
+			expect(table.concat(a, "123").."123"):eq(string.rep("xuxu123", 3000))
+			expect(table.concat(a, "b", 20, 20)):eq("xuxu")
+			expect(table.concat(a, "", 20, 21)):eq("xuxuxuxu")
+			expect(table.concat(a, "", 22, 21)):eq("")
+			expect(table.concat(a, "x", 22, 21)):eq("")
+			expect(table.concat(a, "3", 2999)):eq("xuxu3xuxu")
+
+			local a = {"a","b","c"}
+			expect(table.concat(a, ",", 1, 0)):eq("")
+			expect(table.concat(a, ",", 1, 1)):eq("a")
+			expect(table.concat(a, ",", 1, 2)):eq("a,b")
+			expect(table.concat(a, ",", 2)):eq("b,c")
+			expect(table.concat(a, ",", 3)):eq("c")
+			expect(table.concat(a, ",", 4)):eq("")
+		end)
+
+		it("avoids integer overflow :!cobalt", function()
+			expect(table.concat({}, "x", 2^31-1, 2^31-2)):eq("")
+			expect(table.concat({}, "x", -2^31+1, -2^31)):eq("")
+			expect(table.concat({}, "x", 2^31-1, -2^31)):eq("")
+			expect(table.concat({[2^31-1] = "alo"}, "x", 2^31-1, 2^31-1)):eq("alo")
+		end)
+
+		it("errors on non-strings :!cobalt", function()
+			expect.error(table.concat, {"a", "b", {}})
+				:eq("invalid value (table) at index 3 in table for 'concat'")
+		end)
+
+		it("errors on non-strings :cobalt", function()
+			-- FIXME: This is entirely wrong!
+			expect.error(table.concat, {"a", "b", {}})
+				:eq("bad argument (string expected, got table)")
+		end)
+
 		it("uses metamethods :lua>=5.3", function()
 			local basic = make_slice({ "a", "b", "c", "d", "e" }, 2, 3)
 			expect(table.concat(basic)):eq("bcd")
+		end)
+	end)
+
+	describe("table.foreach :lua==5.1", function()
+		it("supports yielding :cobalt", function()
+			expect.run_coroutine(function()
+				local x = { 3, "foo", 4, 1 }
+				local idx = 1
+				table.foreach(x, function(key, val)
+					expect(key):eq(idx)
+					expect(val):eq(x[idx])
+					expect(coroutine.yield(val)):eq(val)
+
+					idx = idx + 1
+				end)
+			end)
+		end)
+	end)
+
+	describe("table.foreachi :lua==5.1", function()
+		it("supports yielding :cobalt", function()
+			expect.run_coroutine(function()
+				local x = { 3, "foo", 4, 1 }
+				local idx = 1
+				table.foreachi(x, function(key, val)
+					expect(key):eq(idx)
+					expect(val):eq(x[idx])
+					expect(coroutine.yield(val)):eq(val)
+
+					idx = idx + 1
+				end)
+			end)
 		end)
 	end)
 end)

@@ -148,7 +148,17 @@ private object DefinitionInterpreter : Interpreter<DefinedValue>(ASM9) {
 		else -> toValue(insn)
 	}
 
-	override fun binaryOperation(insn: AbstractInsnNode, value1: DefinedValue, value2: DefinedValue): DefinedValue? = toValue(insn)
+	override fun binaryOperation(insn: AbstractInsnNode, value1: DefinedValue, value2: DefinedValue): DefinedValue? =
+		when (insn.opcode) {
+			AALOAD -> {
+				val type = value1.type
+				if (type.sort != Type.ARRAY) throw IllegalStateException("Not an array.")
+				DefinedValue(type.elementType, Definition.Value(insn))
+			}
+
+			else -> toValue(insn)
+		}
+
 	override fun ternaryOperation(insn: AbstractInsnNode, value1: DefinedValue, value2: DefinedValue, value3: DefinedValue): DefinedValue? = toValue(insn)
 	override fun naryOperation(insn: AbstractInsnNode, values: MutableList<out DefinedValue>): DefinedValue? = toValue(insn)
 }

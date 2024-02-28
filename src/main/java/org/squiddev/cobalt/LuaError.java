@@ -25,7 +25,6 @@
 package org.squiddev.cobalt;
 
 import org.squiddev.cobalt.debug.DebugHelpers;
-import org.squiddev.cobalt.lib.UncheckedLuaError;
 
 import java.io.Serial;
 
@@ -134,7 +133,6 @@ public final class LuaError extends Exception {
 	 */
 	public static LuaError wrap(Throwable error) {
 		if (error instanceof LuaError) return (LuaError) error;
-		if (error instanceof UncheckedLuaError) return ((UncheckedLuaError) error).getCause();
 		return new LuaError(error);
 	}
 
@@ -162,12 +160,12 @@ public final class LuaError extends Exception {
 			if (calculateLevel) {
 				fileLine = DebugHelpers.fileLine(thread);
 			} else {
-				fileLine = DebugHelpers.fileLine(thread, level - 1);
+				fileLine = DebugHelpers.fileLine(thread, level);
 			}
 			if (fileLine != null) value = ValueFactory.valueOf(fileLine + ": " + value.toString());
 		}
 
-		traceback = getMessage() + "\n" + DebugHelpers.traceback(thread, level - 1);
+		traceback = getMessage() + "\n" + DebugHelpers.traceback(thread, level);
 	}
 
 	private static String rawToString(LuaValue value) {

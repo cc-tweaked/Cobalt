@@ -25,7 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
-import cc.tweaked.internal.string.CharProperties;
+import cc.tweaked.cobalt.internal.string.CharProperties;
 import org.squiddev.cobalt.Buffer;
 import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
@@ -50,7 +50,7 @@ public class FormatDesc {
 
 	private final int flags;
 	private final int width;
-	final int precision;
+	private final int precision;
 
 	final int conversion;
 
@@ -159,7 +159,10 @@ public class FormatDesc {
 	}
 
 	void format(Buffer buf, byte c) {
+		int nSpaces = width > 1 ? width - 1 : 0;
+		if (!leftAdjust()) pad(buf, ' ', nSpaces);
 		buf.append(c);
+		if (leftAdjust()) pad(buf, ' ', nSpaces);
 	}
 
 	public void format(Buffer buf, long number) {

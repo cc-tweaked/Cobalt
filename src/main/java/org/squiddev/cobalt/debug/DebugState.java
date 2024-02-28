@@ -25,7 +25,9 @@
 package org.squiddev.cobalt.debug;
 
 import org.squiddev.cobalt.*;
-import org.squiddev.cobalt.function.LuaFunction;
+import org.squiddev.cobalt.function.Dispatch;
+
+import java.util.Arrays;
 
 import static org.squiddev.cobalt.debug.DebugFrame.*;
 
@@ -40,15 +42,26 @@ public final class DebugState {
 
 	/**
 	 * The maximum size the Lua stack can be
+	 *
+	 * @see #pushInfo()
 	 */
-	public static final int MAX_SIZE = 32767;
+	private static final int MAX_SIZE = 32768;
+
+	/**
+	 * The maximum size the Lua stack can be in the event of an error.
+	 *
+	 * @see #growStackIfError()
+	 */
+	private static final int MAX_ERROR_SIZE = MAX_SIZE + 10;
 
 	/**
 	 * The maximum number of "Java" calls.
+	 *
+	 * @see #pushJavaInfo()
 	 */
-	public static final int MAX_JAVA_SIZE = 200;
+	private static final int MAX_JAVA_SIZE = 200;
 
-	public static final int DEFAULT_SIZE = 8;
+	private static final int DEFAULT_SIZE = 8;
 
 	private static final DebugFrame[] EMPTY = new DebugFrame[0];
 
@@ -133,19 +146,56 @@ public final class DebugState {
 
 		DebugFrame[] frames = stack;
 		int length = frames.length;
-		if (top >= length) {
-			if (top >= MAX_SIZE) throw new LuaError("stack overflow");
-			int newSize = length == 0 ? DEFAULT_SIZE : Math.min(MAX_SIZE, length + (length / 2));
-			DebugFrame[] f = new DebugFrame[newSize];
-			System.arraycopy(frames, 0, f, 0, length);
-			for (int i = frames.length; i < newSize; ++i) {
-				f[i] = new DebugFrame(i > 0 ? f[i - 1] : null);
-			}
-			frames = stack = f;
-		}
-
+		if (top >= length) frames = stack = growStackOrOverflow(frames, top);
 		this.top = top;
 		return frames[top];
+	}
+
+	/**
+	 * Grow the stack by a factor of 1.5, throwing {@code stack overflow} if we execed {@link #MAX_SIZE}.
+	 */
+	private static DebugFrame[] growStackOrOverflow(DebugFrame[] frames, int top) throws LuaError {
+		if (top >= MAX_SIZE) throw new LuaError("stack overflow");
+		int length = frames.length;
+		return growStack(frames, length == 0 ? DEFAULT_SIZE : Math.min(MAX_SIZE, length + (length / 2)));
+	}
+
+	/**
+	 * Grow the stack ignoring the maximum limit.
+	 */
+	private static DebugFrame[] growStack(DebugFrame[] frames, int newSize) {
+		// Create the new stack, copy the original elements, and then insert new ones with a reference to the previous
+		// entry.
+		// TODO: Remove "previous"
+		DebugFrame[] newFrames = new DebugFrame[newSize];
+		System.arraycopy(frames, 0, newFrames, 0, frames.length);
+		for (int i = frames.length; i < newSize; ++i) newFrames[i] = new DebugFrame(i > 0 ? newFrames[i - 1] : null);
+		return newFrames;
+	}
+
+	/**
+	 * Add additional space onto the stack for the error handler, in the event of a stack overflow.
+	 * <p>
+	 * This should be paired with a {@link #shrinkStackIfError()}.
+	 */
+	public void growStackIfError() {
+		var stack = this.stack;
+		// If we're at the top of the stack, and we're not already handling an error, grow it.
+		if (top == MAX_SIZE - 1 && stack.length == MAX_SIZE) this.stack = growStack(stack, MAX_ERROR_SIZE);
+	}
+
+	/**
+	 * Shrink the stack again after exiting from the error function.
+	 */
+	public void shrinkStackIfError() {
+		var stack = this.stack;
+
+		int max = Math.min(Math.max(DEFAULT_SIZE, top) * 3, MAX_SIZE);
+		// If thread is currently not handling a stack overflow and its size is larger than maximum "reasonable" size,
+		// shrink it.
+		if (top < MAX_SIZE && stack.length > max) {
+			this.stack = Arrays.copyOf(stack, Math.min(top * 2, MAX_SIZE));
+		}
 	}
 
 	/**
@@ -202,31 +252,15 @@ public final class DebugState {
 		return level >= 0 && level <= top ? stack[top - level] : null;
 	}
 
-	/**
-	 * Find the debug info for a function
-	 *
-	 * @param func The function to find
-	 * @return The debug info for this function
-	 */
-	public DebugFrame findDebugInfo(LuaFunction func) {
-		for (int i = top - 1; --i >= 0; ) {
-			if (stack[i].func == func) {
-				return stack[i];
-			}
-		}
-		return new DebugFrame(func);
-	}
-
-	public void onCall(DebugFrame frame, Varargs args) throws UnwindThrowable, LuaError {
+	public void onCall(DebugFrame frame) throws UnwindThrowable, LuaError {
 		if ((hookMask & HOOK_CALL) == 0 || inhook) return;
 
-		callHook(frame, args);
+		callHook(frame);
 	}
 
-	private void callHook(DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
+	private void callHook(DebugFrame frame) throws LuaError, UnwindThrowable {
 		inhook = true;
 		frame.flags |= FLAG_CALL_HOOK;
-		frame.extras = args;
 
 		try {
 			hook.onCall(state, this, frame);
@@ -245,6 +279,13 @@ public final class DebugState {
 	 */
 	public void onReturnNoHook() {
 		popInfo();
+
+		if ((hookMask & HOOK_LINE) != 0 && top >= 0) {
+			// Update the old PC if we're returning into a Lua function. This ensures that the line hook runs as expected,
+			// without us having to update it even when there's no hook.
+			DebugFrame returnInto = stack[top];
+			returnInto.oldPc = returnInto.pc;
+		}
 	}
 
 	/**
@@ -254,25 +295,20 @@ public final class DebugState {
 	 * @throws LuaError        On a runtime error within the hook.
 	 * @throws UnwindThrowable If the hook transfers control to another coroutine.
 	 */
-	public void onReturn(DebugFrame frame) throws LuaError, UnwindThrowable {
-		if ((hookMask & HOOK_RETURN) != 0 && !inhook) returnHook(frame);
-
-		popInfo();
-
-		// Update the old PC if we're returning into a Lua function. This ensures that the line hook runs as expected,
-		// without us having to update it even when there's no hook.
-		if (hookMask != 0 && top >= 0 && !inhook) {
-			DebugFrame returnInto = getStackUnsafe();
-			returnInto.oldPc = returnInto.pc;
-		}
+	public void onReturn(DebugFrame frame, Varargs result) throws LuaError, UnwindThrowable {
+		if ((hookMask & HOOK_RETURN) != 0 && !inhook) returnHook(frame, result);
+		onReturnNoHook();
 	}
 
-	private void returnHook(DebugFrame frame) throws LuaError, UnwindThrowable {
+	private void returnHook(DebugFrame frame, Varargs result) throws LuaError, UnwindThrowable {
 		inhook = true;
 		frame.flags |= FLAG_RETURN_HOOK;
 
 		try {
 			hook.onReturn(state, this, frame);
+		} catch (UnwindThrowable e) {
+			frame.extras = result;
+			throw e;
 		} catch (Exception | VirtualMachineError e) {
 			inhook = false;
 			throw e;
@@ -291,7 +327,7 @@ public final class DebugState {
 	 * @throws UnwindThrowable If the hook transfers control to another coroutine.
 	 */
 	public void onInstruction(DebugFrame frame, int pc) throws LuaError, UnwindThrowable {
-		frame.pc = pc;
+		// TODO: Can we avoid the inhook here?
 		if (inhook || (hookMask & (HOOK_LINE | HOOK_COUNT)) != 0) onInstructionWorker(frame, pc);
 	}
 
@@ -332,7 +368,7 @@ public final class DebugState {
 		// Similarly, if we've got a line hook and we've not yet run it, then do so.
 		if ((hookMask & HOOK_LINE) != 0 && (frame.flags & FLAG_LINE_HOOK) == 0) {
 			Prototype prototype = frame.closure.getPrototype();
-			int newLine = prototype.getLine(pc);
+			int newLine = prototype.lineAt(pc);
 			int oldPc = frame.oldPc;
 
 			/*
@@ -347,7 +383,7 @@ public final class DebugState {
 			*/
 			frame.flags |= FLAG_LINE_HOOK;
 
-			if (pc <= oldPc || newLine != prototype.getLine(oldPc)) {
+			if (pc <= oldPc || newLine != prototype.lineAt(oldPc)) {
 				inhook = true;
 				try {
 					hook.onLine(state, this, frame, newLine);
@@ -385,22 +421,50 @@ public final class DebugState {
 
 	@SuppressWarnings("unchecked")
 	public Varargs resume(DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
+		int flags = frame.flags;
+
 		// Continue executing the instruction hook.
-		if ((frame.flags & (FLAG_INSN_HOOK | FLAG_LINE_HOOK)) != 0) hookInstruction(frame, frame.pc);
+		if ((flags & (FLAG_INSN_HOOK | FLAG_LINE_HOOK)) != 0) hookInstruction(frame, frame.pc);
 
-		if (!(frame.func instanceof Resumable<?>)) {
+		if ((flags & FLAG_CALL_HOOK) != 0) {
+			// We yielded within the call hook: extract the arguments from the state and then execute.
+			assert inhook;
+			inhook = false;
+			frame.flags &= ~FLAG_CALL_HOOK;
+
+			// Reset the state and invoke the main function
+			Varargs result = Dispatch.invokeFrame(state, frame);
+			onReturn(frame, result);
+			return result;
+		} else if ((flags & FLAG_RETURN_HOOK) != 0) {
+			// We yielded within the return hook, so now can just return normally.
+			assert inhook;
+			inhook = false;
+			frame.flags &= ~FLAG_RETURN_HOOK;
+
+			// Just pop the frame
+			Varargs result = frame.extras;
+			onReturnNoHook();
+			return result;
+		} else if (!(frame.func instanceof Resumable<?>)) {
 			throw new NonResumableException(frame.func == null ? "null" : frame.func.debugName());
+		} else {
+			Varargs result = ((Resumable<Object>) frame.func).resume(state, frame.state, args);
+			onReturn(getStackUnsafe(), result);
+			return result;
 		}
-
-		return ((Resumable<Object>) frame.func).resume(state, frame, frame.state, args);
 	}
 
 	@SuppressWarnings("unchecked")
 	public Varargs resumeError(DebugFrame frame, LuaError error) throws LuaError, UnwindThrowable {
+		if ((frame.flags & FLAG_ANY_HOOK) != 0) throw error;
+
 		if (!(frame.func instanceof Resumable<?>)) {
 			throw new NonResumableException(frame.func == null ? "null" : frame.func.debugName());
 		}
 
-		return ((Resumable<Object>) frame.func).resumeError(state, frame, frame.state, error);
+		Varargs result = ((Resumable<Object>) frame.func).resumeError(state, frame.state, error);
+		onReturn(getStackUnsafe(), result);
+		return result;
 	}
 }

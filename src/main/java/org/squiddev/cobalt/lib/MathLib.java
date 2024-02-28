@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
@@ -43,10 +44,14 @@ import static org.squiddev.cobalt.ValueFactory.varargsOf;
  * @see CoreLibraries
  * @see <a href="http://www.lua.org/manual/5.1/manual.html#5.6">http://www.lua.org/manual/5.1/manual.html#5.6</a>
  */
-public class MathLib {
-	private Random random;
+public final class MathLib {
+	private @Nullable RandomState random;
 
-	public void add(LuaState state, LuaTable env) {
+	private MathLib() {
+	}
+
+	public static void add(LuaState state, LuaTable env) throws LuaError {
+		var self = new MathLib();
 		final RegisteredFunction[] functions = new RegisteredFunction[]{
 			RegisteredFunction.of("abs", (s, arg) -> valueOf(Math.abs(arg.checkDouble()))),
 			RegisteredFunction.of("ceil", (s, arg) -> valueOf(Math.ceil(arg.checkDouble()))),
@@ -75,8 +80,8 @@ public class MathLib {
 			RegisteredFunction.ofV("min", MathLib::min),
 			RegisteredFunction.ofV("modf", MathLib::modf),
 			// We need to capture the current random state. This is implemented as an upvalue in PUC Lua.
-			RegisteredFunction.ofV("randomseed", this::randomseed),
-			RegisteredFunction.ofV("random", this::random),
+			RegisteredFunction.ofV("randomseed", self::randomseed),
+			RegisteredFunction.ofV("random", self::random),
 		};
 
 		LuaTable t = new LuaTable(0, functions.length + 3);
@@ -143,34 +148,105 @@ public class MathLib {
 		return varargsOf(valueOf(intPart), valueOf(fracPart));
 	}
 
+	private RandomState getRandom() {
+		return random != null ? random : (random = new RandomState());
+	}
+
 	private Varargs randomseed(LuaState state, Varargs args) throws LuaError {
-		long seed = args.arg(1).checkLong();
-		random = new Random(seed);
-		return Constants.NONE;
+		var random = getRandom();
+		long part1, part2;
+		if (args.count() == 0) {
+			part1 = random.seeder.nextLong();
+			part2 = random.seeder.nextLong();
+		} else {
+			part1 = args.arg(1).checkLong();
+			part2 = args.arg(2).optLong(0);
+		}
+
+		random.seed(part1, part2);
+		return varargsOf(valueOf(part1), valueOf(part2));
 	}
 
 	private LuaValue random(LuaState state, Varargs args) throws LuaError {
-		if (random == null) random = new Random();
+		if (random == null) random = new RandomState();
 
 		switch (args.count()) {
 			case 0 -> {
 				return valueOf(random.nextDouble());
 			}
 			case 1 -> {
-				int m = args.arg(1).checkInteger();
-				if (m < 1) {
-					throw ErrorFactory.argError(1, "interval is empty");
-				}
-				return valueOf(1 + random.nextInt(m));
+				int high = args.arg(1).checkInteger();
+				if (high < 1) throw ErrorFactory.argError(1, "interval is empty");
+				return valueOf(1 + random.nextLong(high - 1));
 			}
-			default -> {
-				int m = args.arg(1).checkInteger();
-				int n = args.arg(2).checkInteger();
-				if (n < m) {
-					throw ErrorFactory.argError(2, "interval is empty");
-				}
-				return valueOf(m + random.nextInt(n + 1 - m));
+			case 2 -> {
+				long low = args.arg(1).checkLong();
+				long high = args.arg(2).checkLong();
+				if (high < low) throw ErrorFactory.argError(2, "interval is empty");
+				return valueOf(low + random.nextLong(high - low));
 			}
+			default -> throw new LuaError("wrong number of arguments");
+		}
+	}
+
+	private static class RandomState {
+		private static final int FIGS = 53;
+		private static final int SHIFT_FIGS = Long.SIZE - FIGS;
+		private static final double SCALE_FIG = 0.5 / (1L << (FIGS - 1));
+
+		final Random seeder = new Random();
+		private long state0, state1, state2, state3;
+
+		RandomState() {
+			seed(seeder.nextLong(), seeder.nextLong());
+		}
+
+		long nextLong() {
+			long state0 = this.state0;
+			long state1 = this.state1;
+			long state2 = this.state2 ^ state0;
+			long state3 = this.state3 ^ state1;
+			long res = Long.rotateLeft(state1 * 5, 7) * 9;
+			this.state0 = state0 ^ state3;
+			this.state1 = state1 ^ state2;
+			this.state2 = state2 ^ (state1 << 17);
+			this.state3 = Long.rotateLeft(state3, 45);
+			return res;
+		}
+
+		long nextLong(long n) {
+			long random = nextLong();
+			// If n + 1 is a power of 2, truncate it.
+			if ((n & (n + 1)) == 0) return random & n;
+
+			// Compute next power of 2 after n, minus 1.
+			long lim = (1L << (64 - Long.numberOfLeadingZeros(n))) - 1;
+			assert (lim & (lim + 1)) == 0;
+			assert lim > n && lim >> 1 < n;
+
+			// Project our random number into the range 0..lim.
+			random &= lim;
+
+			// If that's not inside 0..n, then just generate another random number.
+			while (Long.compareUnsigned(random, n) > 0) {
+				// If not inside 0..n, then abort.
+				random = nextLong() & lim;
+			}
+
+			return random;
+		}
+
+		double nextDouble() {
+			double value = (nextLong() >> SHIFT_FIGS) * SCALE_FIG;
+			return value < 0 ? value + 1 : value;
+		}
+
+		void seed(long part1, long part2) {
+			state0 = part1;
+			state1 = 0xff;
+			state2 = part2;
+			state3 = 0;
+			for (int i = 0; i < 16; i++) nextLong();
 		}
 	}
 }

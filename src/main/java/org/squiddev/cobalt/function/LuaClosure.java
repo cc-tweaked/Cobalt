@@ -24,18 +24,13 @@
  */
 package org.squiddev.cobalt.function;
 
-import org.squiddev.cobalt.LuaTable;
 import org.squiddev.cobalt.Prototype;
 import org.squiddev.cobalt.debug.Upvalue;
 
 /**
  * A lua function that provides a coroutine.
  */
-public abstract class LuaClosure extends LuaFunction {
-	public LuaClosure(LuaTable env) {
-		super(env);
-	}
-
+public abstract sealed class LuaClosure extends LuaFunction permits LuaInterpretedFunction {
 	/**
 	 * Get the prototype for this closure
 	 *
@@ -49,6 +44,6 @@ public abstract class LuaClosure extends LuaFunction {
 
 	@Override
 	public final String debugName() {
-		return getPrototype().sourceShort() + ":" + getPrototype().lineDefined;
+		return getPrototype().shortSource() + ":" + getPrototype().lineDefined;
 	}
 }

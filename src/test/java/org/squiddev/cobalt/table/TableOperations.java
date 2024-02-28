@@ -24,7 +24,7 @@ public final class TableOperations {
 	static {
 		Field nodesField, arrayField, lastFreeField;
 		try {
-			nodesField = LuaTable.class.getDeclaredField("nodes");
+			nodesField = LuaTable.class.getDeclaredField("keys");
 			nodesField.setAccessible(true);
 
 			arrayField = LuaTable.class.getDeclaredField("array");

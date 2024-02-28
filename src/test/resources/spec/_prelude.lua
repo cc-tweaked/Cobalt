@@ -3,6 +3,17 @@
 -- busted.
 
 
+local function key_compare(a, b)
+    local ta, tb = type(a), type(b)
+
+    if ta == "string" then return tb ~= "string" or a < b
+    elseif tb == "string" then return false
+    end
+
+    if ta == "number" then return tb ~= "number" or a < b end
+    return false
+end
+
 local function serialise(value, seen, indent)
 	local ty = type(value)
 	if ty == "string" then return (("%q"):format(value):gsub("\\n", "n"))
@@ -10,13 +21,30 @@ local function serialise(value, seen, indent)
 		if seen[value] then return tostring(value) end
 		seen[value] = true
 
-		local items = {}
-		local len, contents_len = rawlen(value), 0
-		for k, v in pairs(value) do
+		local length, keys, keysn = (rawlen and rawlen(value) or #value), {}, 1
+		for k in next, value do
+			if type(k) ~= "number" or k % 1 ~= 0 or k < 1 or k > length then
+				keys[keysn], keysn = k, keysn + 1
+			end
+		end
+
+		local items, contents_len = {}, 0
+		for i = 1, length do
+			local item = serialise(value[i], seen, indent + 1)
+
+			items[#items + 1] = item
+			contents_len = contents_len + #item
+			if item:find("\n") then contents_len = math.huge end
+		end
+
+		table.sort(keys, key_compare)
+
+		local contents_len = 0
+		for i = 1, keysn - 1 do
+			local k = keys[i]
+			local v = value[k]
 			local item
-			if type(k) == "number" and (k % 1) == 0 and k >= 1 and k <= len then
-				item = serialise(v, seen, indent + 1)
-			elseif type(k) == "string" and k:match("^[%a_][%w_]*$") then
+			if type(k) == "string" and k:match("^[%a_][%w_]*$") then
 				item = ("%s = %s"):format(k, serialise(v, seen, indent + 1))
 			else
 				item = ("[%s] = %s"):format(serialise(k, seen, indent + 1), serialise(v, seen, indent + 1))
@@ -84,6 +112,20 @@ function expect_mt:not_equals(value)
 end
 expect_mt.not_equal = expect_mt.not_equals
 expect_mt.ne = expect_mt.not_equals
+
+--- Assert that this expectation has the provided value
+--
+-- @param value The value to require this expectation to be equal to
+-- @throws If the values are not equal
+function expect_mt:close_to(value, delta)
+	if value ~= delta and math.abs(value - self.value) >= delta then
+		self:_fail(("Expected %s to be close to\n but got %s"):format(format(value), format(self.value)))
+	end
+
+	return self
+end
+expect_mt.equal = expect_mt.equals
+expect_mt.eq = expect_mt.equals
 
 --- Assert that this expectation has something of the provided type
 --
@@ -179,9 +221,17 @@ end
 --- Add extra information to this error message.
 --
 -- @tparam string message Additional message to prepend in the case of failures.
--- @return The current
+-- @return The current expect object.
 function expect_mt:describe(message)
 	self._extra = tostring(message)
+	return self
+end
+
+--- Remove the position information from an error message.
+--
+-- @return The current expect object.
+function expect_mt:strip_context()
+	self.value = self.value:gsub("^[^:]+:%d+: ", "")
 	return self
 end
 
@@ -201,10 +251,25 @@ function expect.error(fun, ...)
 		-- Do nothing
 	elseif res:sub(1, #line) == line then
 		res = res:sub(#line + 1)
-	elseif res:sub(1, 7) == "pcall: " then
-		res = res:sub(8)
 	end
 	return setmetatable({ value = res }, expect_mt)
+end
+
+local function assert_resume(ok, ...)
+	if ok then return { n = select('#', ...), ... } end
+	fail(...)
+end
+
+--- Run a function in a coroutine, "echoing" the yielded value back as the resumption value.
+function expect.run_coroutine(f)
+	local unpack = table.unpack or unpack
+	local co = coroutine.create(f)
+	local result = { n = 0 }
+	while coroutine.status(co) ~= "dead" do
+		result = assert_resume(coroutine.resume(co, unpack(result, 1, result.n)))
+	end
+
+	return unpack(result, 1, result.n)
 end
 
 --- Construct a new expectation from the provided value

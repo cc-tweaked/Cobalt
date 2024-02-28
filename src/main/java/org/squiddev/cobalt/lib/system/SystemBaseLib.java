@@ -1,10 +1,11 @@
 package org.squiddev.cobalt.lib.system;
 
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.RegisteredFunction;
 import org.squiddev.cobalt.lib.BaseLib;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -61,30 +62,30 @@ public class SystemBaseLib {
 
 	private Varargs loadfile(LuaState state, Varargs args) throws LuaError {
 		// loadfile( [filename] ) -> chunk | nil, msg
-		return args.isNil(1) ?
+		return args.first().isNil() ?
 			BaseLib.loadStream(state, in, STDIN_STR) :
 			SystemBaseLib.loadFile(state, resources, args.arg(1).checkString());
 	}
 
 	private Varargs dofile(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
 		// dofile( filename ) -> result1, ...
-		Varargs v = args.isNil(1) ?
+		Varargs v = args.first().isNil() ?
 			BaseLib.loadStream(state, in, STDIN_STR) :
 			SystemBaseLib.loadFile(state, resources, args.arg(1).checkString());
-		if (v.isNil(1)) {
+		if (v.first().isNil()) {
 			throw new LuaError(v.arg(2).toString());
 		} else {
-			return OperationHelper.invoke(state, v.first(), Constants.NONE);
+			return Dispatch.invoke(state, v.first(), Constants.NONE);
 		}
 	}
 
 	private Varargs print(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
 		// print(...) -> void
-		return SuspendedTask.run(frame, () -> {
-			LuaValue tostring = OperationHelper.getTable(state, state.getCurrentThread().getfenv(), valueOf("tostring"));
+		return SuspendedAction.run(frame, () -> {
+			LuaValue tostring = OperationHelper.getTable(state, state.globals(), valueOf("tostring"));
 			for (int i = 1, n = args.count(); i <= n; i++) {
 				if (i > 1) out.write('\t');
-				LuaValue value = OperationHelper.call(state, tostring, args.arg(i));
+				LuaValue value = Dispatch.call(state, tostring, args.arg(i));
 				LuaString s = value.checkLuaString();
 				int z = s.indexOf((byte) 0);
 

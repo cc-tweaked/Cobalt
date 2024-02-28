@@ -24,14 +24,15 @@
  */
 package org.squiddev.cobalt.lib;
 
+import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
+import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.DebugFrame;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.LibFunction;
 import org.squiddev.cobalt.function.LuaFunction;
 import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.function.SuspendedVarArgFunction;
-import org.squiddev.cobalt.unwind.AutoUnwind;
-import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.ValueFactory.valueOf;
@@ -57,7 +58,7 @@ public final class TableLib {
 	private TableLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("getn", TableLib::getn),
 			RegisteredFunction.of("maxn", TableLib::maxn),
@@ -66,7 +67,7 @@ public final class TableLib {
 			RegisteredFunction.ofS("insert", TableLib::insert),
 			RegisteredFunction.ofS("move", TableLib::move),
 			RegisteredFunction.ofV("pack", TableLib::pack),
-			RegisteredFunction.ofFactory("sort", Sort::new),
+			RegisteredFunction.ofS("sort", Sort::sort),
 			RegisteredFunction.ofS("foreach", TableLib::foreach),
 			RegisteredFunction.ofS("foreachi", TableLib::foreachi),
 			RegisteredFunction.ofS("unpack", TableLib::unpack),
@@ -128,7 +129,7 @@ public final class TableLib {
 			return v;
 		}
 
-		return SuspendedTask.run(frame, () -> {
+		return SuspendedAction.run(frame, () -> {
 			int size = OperationHelper.intLength(state, table);
 			int pos = args.arg(2).optInteger(size);
 			if (pos > size) return NONE;
@@ -147,7 +148,7 @@ public final class TableLib {
 	 * Concatenate the contents of a table efficiently.
 	 */
 	private static Varargs concat(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-		return SuspendedTask.run(di, () -> {
+		return SuspendedAction.run(di, () -> {
 			LuaValue table = checkTableLike(state, args, 1, TABLE_READ | TABLE_LEN);
 			int length = OperationHelper.intLength(state, table);
 
@@ -183,7 +184,7 @@ public final class TableLib {
 					return NONE;
 				}
 
-				return SuspendedTask.run(frame, () -> {
+				return SuspendedAction.run(frame, () -> {
 					int length = OperationHelper.intLength(state, table);
 					OperationHelper.setTable(state, table, length + 1, value);
 					return NONE;
@@ -201,7 +202,7 @@ public final class TableLib {
 					return NONE;
 				}
 
-				return SuspendedTask.run(frame, () -> {
+				return SuspendedAction.run(frame, () -> {
 					int end = Math.max(OperationHelper.intLength(state, table) + 1, position);
 
 					for (int i = end; i > position; i--) {
@@ -244,7 +245,7 @@ public final class TableLib {
 		}
 
 		// Otherwise do the "proper implementation.
-		return SuspendedTask.run(frame, () -> {
+		return SuspendedAction.run(frame, () -> {
 			if (to >= from + count || to <= from || !OperationHelper.eq(state, source, dest)) {
 				for (int i = 0; i < count; i++) {
 					LuaValue value = OperationHelper.getTable(state, source, from + i);
@@ -260,7 +261,7 @@ public final class TableLib {
 		});
 	}
 
-	private static LuaValue pack(LuaState state, Varargs args) {
+	public static LuaValue pack(LuaState state, Varargs args) throws LuaError {
 		int count = args.count();
 		LuaTable table = new LuaTable(count, 1);
 		for (int i = 1; i <= count; i++) table.rawset(i, args.arg(i));
@@ -269,21 +270,20 @@ public final class TableLib {
 	}
 
 	// "sort" (table [, comp]) -> void
-	private static class Sort extends SuspendedVarArgFunction {
-		@Override
-		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
+	private static class Sort {
+		private static Varargs sort(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			LuaValue table = checkTableLike(state, args, 1, TABLE_LEN | TABLE_READ | TABLE_WRITE);
-			return SuspendedTask.run(di, () -> {
+			return SuspendedAction.run(di, () -> {
 				int n = OperationHelper.intLength(state, table);
 
-				LuaValue compare = args.isNoneOrNil(2) ? NIL : args.arg(2).checkFunction();
+				LuaFunction compare = args.arg(2).optFunction(null);
 				if (n > 1) heapSort(state, table, n, compare);
 				return NONE;
 			});
 		}
 
 		@AutoUnwind
-		private static void heapSort(LuaState state, LuaValue table, int count, LuaValue compare) throws LuaError, UnwindThrowable {
+		private static void heapSort(LuaState state, LuaValue table, int count, @Nullable LuaFunction compare) throws LuaError, UnwindThrowable {
 			for (int start = count / 2 - 1; start >= 0; start--) {
 				siftDown(state, table, start, count - 1, compare);
 			}
@@ -299,7 +299,7 @@ public final class TableLib {
 		}
 
 		@AutoUnwind
-		private static void siftDown(LuaState state, LuaValue table, int start, int end, LuaValue compare) throws LuaError, UnwindThrowable {
+		private static void siftDown(LuaState state, LuaValue table, int start, int end, @Nullable LuaFunction compare) throws LuaError, UnwindThrowable {
 			LuaValue rootValue = OperationHelper.getTable(state, table, start + 1);
 
 			for (int root = start; root * 2 + 1 <= end; ) {
@@ -326,10 +326,10 @@ public final class TableLib {
 		}
 
 		@AutoUnwind
-		private static boolean compare(LuaState state, LuaValue compare, LuaValue a, LuaValue b) throws LuaError, UnwindThrowable {
-			return compare.isNil()
+		private static boolean compare(LuaState state, @Nullable LuaFunction compare, LuaValue a, LuaValue b) throws LuaError, UnwindThrowable {
+			return compare == null
 				? OperationHelper.lt(state, a, b)
-				: OperationHelper.call(state, compare, a, b).toBoolean();
+				: Dispatch.call(state, compare, a, b).toBoolean();
 		}
 
 	}
@@ -341,11 +341,11 @@ public final class TableLib {
 		LuaTable table = args.arg(1).checkTable();
 		LuaFunction function = args.arg(2).checkFunction();
 
-		return SuspendedTask.run(di, () -> {
+		return SuspendedAction.run(di, () -> {
 			Varargs n;
 			LuaValue k = NIL;
 			while (!(k = (n = table.next(k)).first()).isNil()) {
-				LuaValue r = OperationHelper.call(state, function, k, n.arg(2));
+				LuaValue r = Dispatch.call(state, function, k, n.arg(2));
 				if (!r.isNil()) return r;
 			}
 			return NIL;
@@ -360,11 +360,11 @@ public final class TableLib {
 		LuaTable table = args.arg(1).checkTable();
 		LuaFunction function = args.arg(2).checkFunction();
 
-		return SuspendedTask.run(di, () -> {
+		return SuspendedAction.run(di, () -> {
 			LuaValue v;
 			int k = 0;
 			while (!(v = table.rawget(++k)).isNil()) {
-				LuaValue r = OperationHelper.call(state, function, valueOf(k), v);
+				LuaValue r = Dispatch.call(state, function, valueOf(k), v);
 				if (!r.isNil()) return r;
 			}
 			return NIL;
@@ -385,13 +385,16 @@ public final class TableLib {
 			int end = endValue.isNil() ? tbl.length() : endValue.checkInteger();
 			if (start > end) return NONE;
 
-			LuaValue[] values = new LuaValue[end - start + 1];
-			for (int i = start; i <= end; i++) values[i - start] = tbl.rawget(i);
+			long size = (long) end - start + 1;
+			if (size < 0 || size >= Integer.MAX_VALUE) throw new LuaError("too many results to unpack");
+
+			LuaValue[] values = new LuaValue[(int) size];
+			for (int i = 0; i < size; i++) values[i] = tbl.rawget(start + i);
 			return varargsOf(values);
 		}
 
 		// Exactly the same code as above, but using OperationHelper.
-		return SuspendedTask.run(di, () -> {
+		return SuspendedAction.run(di, () -> {
 			int end = endValue.isNil() ? OperationHelper.intLength(state, table) : endValue.checkInteger();
 			if (start > end) return NONE;
 

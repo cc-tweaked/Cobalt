@@ -24,11 +24,26 @@ local handle = io.popen("git ls-files 'src/test/resources/spec/*_spec.lua'")
 for line in handle:lines() do files[#files + 1] = line end
 handle:close()
 
-local function check_version(name)
-	local version_check = name:match(":lua([^ ]+)")
-	if not version_check then return true end
+local function check_tags(name)
+	for tag in name:gmatch(":([^ ]+)") do
+		if tag == "cobalt" then
+			return false
+		elseif tag:sub(1, 3) == "lua" then
+			local version_check = tag:sub(4)
+			local fn, err = (loadstring or load)("return " .. version .. version_check, "=check.lua")
+			if not fn then error("Failed to load " .. name .. "(" .. err .. ")") end
 
-	return (loadstring or load)("return " .. version .. version_check, "=check.lua")()
+			if not fn() then return false end
+
+		elseif tag == "!cobalt" then
+			-- Skip
+		else
+			io.stderr:write(("Unknown tag %q\n"):format(tag))
+			os.exit(1)
+		end
+	end
+
+	return true
 end
 
 local tests = {}
@@ -38,7 +53,7 @@ function describe(name, func)
 	local old_path, old_active = path, active
 
 	path = path .. name .. " ▸ "
-	active = active and check_version(name)
+	active = active and check_tags(name)
 	func()
 
 	path, active = old_path, old_active
@@ -52,7 +67,7 @@ end
 function it(name, func)
 	if path == nil then error("Cannot define tasks at this time") end
 
-	local active = active and check_version(name)
+	local active = active and check_tags(name)
 	tests[#tests + 1] = { path = path, name = name, func = active and func }
 end
 

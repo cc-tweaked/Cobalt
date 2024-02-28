@@ -150,25 +150,12 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Check if {@code this} is a {@code function}
-	 *
-	 * @return true if this is a {@code function}, otherwise false
-	 * @see #checkFunction()
-	 * @see #optFunction(LuaFunction)
-	 * @see Constants#TFUNCTION
-	 */
-	public final boolean isFunction() {
-		return type == TFUNCTION;
-	}
-
-	/**
 	 * Check if {@code this} is {@code nil}
 	 *
 	 * @return true if this is {@code nil}, otherwise false
 	 * @see Constants#NIL
 	 * @see Constants#NONE
 	 * @see #optValue(LuaValue)
-	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
 	 */
 	public final boolean isNil() {
@@ -369,7 +356,6 @@ public abstract class LuaValue extends Varargs {
 	 * throws {@link LuaError} otherwise
 	 * @throws LuaError if was not a function or nil or none.
 	 * @see #checkFunction()
-	 * @see #isFunction()
 	 * @see Constants#TFUNCTION
 	 */
 	public final LuaFunction optFunction(LuaFunction defval) throws LuaError {
@@ -505,24 +491,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Check that optional argument is a userdata whose instance is of a type
-	 * and return the Object instance
-	 *
-	 * @param <T>    The type of this userdata.
-	 * @param c      Class to test userdata instance against
-	 * @param defval Object to return if {@code this} is nil or none
-	 * @return Object instance of the userdata if a {@link LuaUserdata} and instance is assignable to {@code c},
-	 * {@code defval} if nil or none,
-	 * throws {@link LuaError} if some other type
-	 * @throws LuaError if was not a userdata whose instance is assignable to {@code c} or nil or none.
-	 * @see #checkUserdata(Class)
-	 * @see Constants#TUSERDATA
-	 */
-	public final <T> T optUserdata(Class<T> c, T defval) throws LuaError {
-		return this == NIL ? defval : checkUserdata(c);
-	}
-
-	/**
 	 * Perform argument check that this is not nil or none.
 	 *
 	 * @param defval {@link LuaValue} to return if {@code this} is nil or none
@@ -530,7 +498,6 @@ public abstract class LuaValue extends Varargs {
 	 * @see Constants#NIL
 	 * @see Constants#NONE
 	 * @see #isNil()
-	 * @see Varargs#isNoneOrNil(int)
 	 * @see Constants#TNIL
 	 */
 	public final LuaValue optValue(LuaValue defval) {
@@ -717,43 +684,6 @@ public abstract class LuaValue extends Varargs {
 	public LuaThread checkThread() throws LuaError {
 		throw ErrorFactory.argError(this, "thread");
 	}
-
-	/**
-	 * Check that this is a {@link LuaUserdata}, or throw {@link LuaError} if it is not
-	 *
-	 * @return {@code this} if it is a {@link LuaUserdata}
-	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
-	 * @see #checkUserdata(Class)
-	 * @see Constants#TUSERDATA
-	 */
-	public Object checkUserdata() throws LuaError {
-		throw ErrorFactory.argError(this, "userdata");
-	}
-
-	/**
-	 * Check that this is a {@link LuaUserdata}, or throw {@link LuaError} if it is not
-	 *
-	 * @param <T> The type of this userdata.
-	 * @param c   The class of userdata to convert to
-	 * @return {@code this} if it is a {@link LuaUserdata}
-	 * @throws LuaError if {@code this} is not a {@link LuaUserdata}
-	 * @see #checkUserdata()
-	 * @see Constants#TUSERDATA
-	 */
-	public <T> T checkUserdata(Class<T> c) throws LuaError {
-		throw ErrorFactory.argError(this, "userdata");
-	}
-
-	/**
-	 * Check that this is a valid key in a table index operation, or throw {@link LuaError} if not
-	 *
-	 * @return {@code this} if valid as a table key
-	 * @throws LuaError if not valid as a table key
-	 * @see #isNil()
-	 */
-	public LuaValue checkValidKey() throws LuaError {
-		return this;
-	}
 	//endregion
 
 	// varargs references
@@ -768,6 +698,7 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	@Override
+	@Deprecated
 	public LuaValue first() {
 		return this;
 	}
@@ -806,30 +737,6 @@ public abstract class LuaValue extends Varargs {
 	}
 
 	/**
-	 * Get the environment for an instance.
-	 *
-	 * @return {@link LuaValue} currently set as the instance's environent.
-	 */
-	public LuaValue getfenv() {
-		return NIL;
-	}
-
-	/**
-	 * Set the environment on an object.
-	 * <p>
-	 * However, any object can serve as an environment if it contains suitable metatag
-	 * values to implement {@link OperationHelper#getTable(LuaState, LuaValue, LuaValue)} to provide the environment
-	 * values.
-	 *
-	 * @param env {@link LuaValue} (typically a {@link LuaTable}) containing the environment.
-	 * @return If the environment could be changed.
-	 * @see CoreLibraries
-	 */
-	public boolean setfenv(LuaTable env) {
-		return false;
-	}
-
-	/**
 	 * Get particular metatag, or return {@link Constants#NIL} if it doesn't exist
 	 *
 	 * @param state The current lua state
@@ -862,7 +769,6 @@ public abstract class LuaValue extends Varargs {
 	 * Instead use the corresponding static methods on LuaValue.
 	 *
 	 * @see ValueFactory#varargsOf(LuaValue[])
-	 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 	 */
 	protected static final class ArrayVarargs extends DepthVarargs {
 		private final LuaValue[] v;
@@ -877,7 +783,6 @@ public abstract class LuaValue extends Varargs {
 		 * @param v The initial values
 		 * @param r Remaining arguments
 		 * @see ValueFactory#varargsOf(LuaValue[])
-		 * @see ValueFactory#varargsOf(LuaValue[], Varargs)
 		 */
 		public ArrayVarargs(LuaValue[] v, Varargs r) {
 			super(depth(r) + 1);

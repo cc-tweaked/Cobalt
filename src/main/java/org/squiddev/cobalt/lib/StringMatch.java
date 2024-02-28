@@ -1,6 +1,8 @@
 package org.squiddev.cobalt.lib;
 
+import cc.tweaked.cobalt.internal.string.CharProperties;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.VarArgFunction;
 
 import static org.squiddev.cobalt.Constants.*;
@@ -32,10 +34,10 @@ class StringMatch {
 		for (int i = 0; i < 256; ++i) {
 			byte mask = 0;
 			if (i <= ' ' || i == 0x7f) mask |= MASK_CONTROL;
-			if (i >= '0' && i <= '9') mask |= MASK_DIGIT;
+			if (CharProperties.isDigit(i)) mask |= MASK_DIGIT;
 			if (i >= 'a' && i <= 'z') mask |= MASK_LOWERCASE;
 			if (i >= 'A' && i <= 'Z') mask |= MASK_UPPERCASE;
-			if ((i >= 'a' && i <= 'f') || (i >= 'A' && i <= 'F') || (i >= '0' && i <= '9')) mask |= MASK_HEXDIGIT;
+			if (CharProperties.isHex(i)) mask |= MASK_HEXDIGIT;
 			if ((i >= '!' && i <= '/') || (i >= ':' && i <= '@') || (i >= '[' && i <= '`') || (i >= '{' && i <= '~')) {
 				mask |= MASK_PUNCT;
 			}
@@ -268,7 +270,7 @@ class StringMatch {
 		}
 
 		@Override
-		public Varargs invoke(LuaState state, Varargs args) throws LuaError {
+		protected Varargs invoke(LuaState state, Varargs args) throws LuaError {
 			for (; soffset < srclen; soffset++) {
 				ms.reset();
 				int res = ms.match(soffset, 0);
@@ -359,7 +361,7 @@ class StringMatch {
 				}
 				case TFUNCTION ->
 					// TODO: Ensure yields are handled correctly
-					replace = OperationHelper.invoke(state, repl, push_captures(true, soffset, end)).first();
+					replace = Dispatch.invoke(state, repl, push_captures(true, soffset, end)).first();
 				case TTABLE -> {
 					// Need to call push_onecapture here for the error checking
 					replace = OperationHelper.getTable(state, repl, push_onecapture(0, soffset, end));
@@ -672,7 +674,7 @@ class StringMatch {
 		int match_capture(int soff, int l) throws LuaError {
 			l = check_capture(l);
 			int len = clen[l];
-			if ((s.length() - soff) >= len &&
+			if (len >= 0 && (s.length() - soff) >= len &&
 				LuaString.equals(s, cinit[l], s, soff, len)) {
 				return soff + len;
 			} else {

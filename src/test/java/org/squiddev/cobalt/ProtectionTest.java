@@ -48,7 +48,7 @@ public class ProtectionTest {
 	private Future<?> interrupt;
 
 	@BeforeEach
-	public void setup() {
+	public void setup() throws LuaError {
 		class Handler implements InterruptHandler {
 			@Override
 			public InterruptAction interrupted() throws LuaError {

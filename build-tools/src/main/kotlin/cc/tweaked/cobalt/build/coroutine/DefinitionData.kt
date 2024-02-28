@@ -62,6 +62,7 @@ interface DefinitionData {
 
 private val builtinMethods = run {
 	val opHelper = "org/squiddev/cobalt/OperationHelper"
+	val dispatch = "org/squiddev/cobalt/function/Dispatch"
 	val first = YieldType.Direct { mw ->
 		mw.visitMethodInsn(INVOKEVIRTUAL, VARARGS.internalName, "first", "()${LUA_VALUE.descriptor}", false)
 	}
@@ -73,10 +74,11 @@ private val builtinMethods = run {
 
 	mapOf(
 		Desc("org/squiddev/cobalt/compiler/InputReader", "read", "()I") to YieldType.Resume,
+		Desc("org/squiddev/cobalt/unwind/SuspendedFunction", "call", "(Lorg/squiddev/cobalt/LuaState;)Ljava/lang/Object;") to YieldType.Resume,
+		Desc(dispatch, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,
+		Desc(dispatch, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE, LUA_VALUE)) to first,
 		Desc(opHelper, "eq", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
 		Desc(opHelper, "lt", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
-		Desc(opHelper, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,
-		Desc(opHelper, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE, LUA_VALUE)) to first,
 		Desc(opHelper, "length", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE)) to first,
 		Desc(opHelper, "getTable", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, Type.INT_TYPE)) to first,
 		Desc(opHelper, "getTable", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,
@@ -102,7 +104,7 @@ class DefinitionScanner : DefinitionData {
 		private var autoUnwind: Boolean = false
 		var instrument: Boolean = false
 
-		override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String, interfaces: Array<out String>?) {
+		override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String?, interfaces: Array<out String>?) {
 			className = name
 			super.visit(version, access, name, signature, superName, interfaces)
 		}
@@ -153,7 +155,7 @@ class DefinitionScanner : DefinitionData {
 					clearLambda()
 
 					// If we're invoking the lambda metafactory to make an Action, then keep track of this lambda.
-					if (name == "run" && Type.getReturnType(descriptor) == SUSPENDED_TASK_ACTION && bootstrapMethodHandle == LAMBDA_METAFACTORY) {
+					if (name == "run" && Type.getReturnType(descriptor) == SUSPENDED_ACTION && bootstrapMethodHandle == LAMBDA_METAFACTORY) {
 						lastLambda = bootstrapMethodArguments[1] as Handle
 					}
 				}
@@ -161,7 +163,7 @@ class DefinitionScanner : DefinitionData {
 				override fun visitMethodInsn(opcode: Int, owner: String, callName: String, callDesc: String, isInterface: Boolean) {
 					// If we're invoking a static method on SuspendedTask, then both this function and the lambda should
 					// be instrumented.
-					if (opcode == INVOKESTATIC && owner == SUSPENDED_TASK.internalName) {
+					if (opcode == INVOKESTATIC && owner == SUSPENDED_ACTION.internalName) {
 						val lastLambda = this.lastLambda
 						if (lastLambda == null || !lastLambda.name.contains("lambda")) {
 							throw UnsupportedConstruct("$className.$name calls $owner.$callName with a non-lambda argument.")

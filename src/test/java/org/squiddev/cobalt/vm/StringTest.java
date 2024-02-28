@@ -42,7 +42,7 @@ public class StringTest {
 	private final LuaState state = new LuaState();
 
 	@BeforeEach
-	public void setup() {
+	public void setup() throws LuaError {
 		CoreLibraries.standardGlobals(state);
 	}
 

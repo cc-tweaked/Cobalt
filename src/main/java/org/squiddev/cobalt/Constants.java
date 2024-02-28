@@ -33,7 +33,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 /**
  * List of constants
  */
-public class Constants {
+public final class Constants {
 	/**
 	 * Type enumeration constant for lua numbers that are ints, for compatibility with lua 5.1 number patch only
 	 */
@@ -117,7 +117,7 @@ public class Constants {
 	/**
 	 * LuaValue constant corresponding to a {@link Varargs} list of no values
 	 */
-	public static final Varargs NONE = None._NONE;
+	public static final Varargs NONE = new None();
 
 	/**
 	 * LuaValue number constant equal to 0
@@ -245,6 +245,11 @@ public class Constants {
 	public static final LuaString LOADED = valueOf("_LOADED");
 
 	/**
+	 * LuaString constant with value "_ENV" for use as metatag
+	 */
+	public static final LuaString ENV = valueOf("_ENV");
+
+	/**
 	 * Constant limiting metatag loop processing
 	 */
 	public static final int MAXTAGLOOP = 100;
@@ -259,6 +264,9 @@ public class Constants {
 		Arrays.fill(NILS, NIL);
 	}
 
+	private Constants() {
+	}
+
 	/**
 	 * Varargs implemenation with no values.
 	 * <p>
@@ -268,8 +276,6 @@ public class Constants {
 	 * @see Constants#NONE
 	 */
 	private static final class None extends Varargs {
-		static None _NONE = new None();
-
 		@Override
 		public LuaValue arg(int i) {
 			return NIL;

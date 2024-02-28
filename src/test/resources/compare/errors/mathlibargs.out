@@ -130,10 +130,10 @@
 -		math.rad(<thread>)	...bad argument...
 ====== math.randomseed ======
 --- checkallpass
--		math.randomseed(1)	
--		math.randomseed(0.75)	
--		math.randomseed('-1')	
--		math.randomseed('-0.25')	
+-		math.randomseed(1)	1,0
+-		math.randomseed(0.75)	0,0
+-		math.randomseed('-1')	-1,0
+-		math.randomseed('-0.25')	0,0
 --- checkallerrors
 -		math.randomseed(nil)	...bad argument...
 -		math.randomseed('abc')	...bad argument...

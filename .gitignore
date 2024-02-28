@@ -3,8 +3,10 @@ hs_err_pid*
 /build
 /.gradle
 /build-tools/build
+/libs
 /*.txt
 /*.out
+/jmh-result*.json
 
 # Editors
 *.iml

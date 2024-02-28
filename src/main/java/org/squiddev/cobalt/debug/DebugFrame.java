@@ -28,8 +28,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.function.LuaClosure;
 import org.squiddev.cobalt.function.LuaFunction;
-import org.squiddev.cobalt.function.LuaInterpretedFunction;
-import org.squiddev.cobalt.function.LuaInterpreter;
 
 /**
  * Each thread will get a DebugState attached to it by the debug library
@@ -45,7 +43,7 @@ public final class DebugFrame {
 	public static final int FLAG_JAVA_STACK = 1 << 0;
 
 	/**
-	 * This is a fresh instance of a {@link LuaInterpreter}. The interpreter
+	 * This is a fresh instance of the interpreter. The interpreter
 	 * loop should not continue beyond functions marked with this flag.
 	 */
 	public static final int FLAG_FRESH = 1 << 1;
@@ -54,13 +52,12 @@ public final class DebugFrame {
 	 * Whether this function was tail called. When set, an additional "tail calls..." entry is added to the traceback.
 	 *
 	 * @see #flags
-	 * @see LuaInterpreter
 	 */
 	public static final int FLAG_TAIL = 1 << 2;
 
 	/**
 	 * If this function is a yielded, protected call. Namely, if one can
-	 * {@link Resumable#resumeError(LuaState, DebugFrame, Object, LuaError)} into it.
+	 * {@link Resumable#resumeError(LuaState, Object, LuaError)} into it.
 	 *
 	 * @see #flags
 	 * @see org.squiddev.cobalt.lib.CoroutineLib {@code coroutine.resume} sets this, in order to receive errors from the
@@ -84,7 +81,6 @@ public final class DebugFrame {
 	 *
 	 * @see #flags
 	 * @see OperationHelper#le(LuaState, LuaValue, LuaValue)
-	 * @see LuaInterpreter#resume(LuaState, DebugFrame, LuaInterpretedFunction, Varargs)
 	 */
 	public static final int FLAG_LEQ = 1 << 5;
 
@@ -97,18 +93,18 @@ public final class DebugFrame {
 	 * Whether this function is currently within an on-call debug hook.
 	 *
 	 * @see #flags
-	 * @see DebugState#onCall(DebugFrame, Varargs)
+	 * @see DebugState#onCall(DebugFrame)
 	 */
-	public static final int FLAG_CALL_HOOK = 1 << 10;
+	static final int FLAG_CALL_HOOK = 1 << 10;
 
 	/**
 	 * Whether this function is currently within an on-return debug hook. This is used when resuming a function after a
 	 * yield.
 	 *
 	 * @see #flags
-	 * @see DebugState#onReturn(DebugFrame)
+	 * @see DebugState#onReturn(DebugFrame, Varargs)
 	 */
-	public static final int FLAG_RETURN_HOOK = 1 << 11;
+	static final int FLAG_RETURN_HOOK = 1 << 11;
 
 	/**
 	 * Whether this function is currently within a line debug hook.
@@ -161,43 +157,9 @@ public final class DebugFrame {
 	public int pc = -1, oldPc = -1, top = -1;
 	public int flags;
 
-	public DebugFrame(DebugFrame previous) {
+	DebugFrame(DebugFrame previous) {
 		this.previous = previous;
 		func = null;
-	}
-
-	public DebugFrame(LuaFunction func) {
-		previous = null;
-		this.func = func;
-		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
-	}
-
-	/**
-	 * Set this debug frame to hold some Lua closure
-	 *
-	 * @param closure the function called
-	 * @param varargs The arguments to this function
-	 * @param stack   The current lua stack
-	 */
-	public void setFunction(LuaClosure closure, Varargs varargs, LuaValue[] stack) {
-		this.func = closure;
-		this.closure = closure;
-		this.varargs = varargs;
-		this.stack = stack;
-	}
-
-	/**
-	 * Set this debug frame to hold some Java function.
-	 *
-	 * @param func  the function called
-	 * @param state The state which will be used when resuming the function.
-	 * @param <S>   The type of the state used when resuming the function.
-	 * @param <T>   The type of the function
-	 */
-	public <S, T extends LuaFunction & Resumable<S>> void setFunction(T func, S state) {
-		this.func = func;
-		this.closure = func instanceof LuaClosure ? (LuaClosure) func : null;
-		this.state = state;
 	}
 
 	public void cleanup() {
@@ -278,9 +240,8 @@ public final class DebugFrame {
 		return DebugHelpers.getFuncName(previous, stackpos);
 	}
 
-	public String sourceLine() {
-		if (closure == null) return func == null ? "nil" : func.debugName();
-		return closure.getPrototype().sourceShort() + ":" + currentLine();
+	public @Nullable String sourceLine() {
+		return closure == null ? null : closure.getPrototype().shortSource() + ":" + currentLine();
 	}
 
 	public LuaString getLocalName(int index) {

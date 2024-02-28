@@ -25,6 +25,7 @@
 package org.squiddev.cobalt.lib;
 
 
+import cc.tweaked.cobalt.internal.LegacyEnv;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.debug.*;
 import org.squiddev.cobalt.function.*;
@@ -49,7 +50,8 @@ public final class DebugLib {
 	private static final LuaString MAIN = valueOf("main");
 	private static final LuaString LUA = valueOf("Lua");
 	private static final LuaString C = valueOf("C");
-	private static final LuaString C_SOURCE = valueOf("[C]");
+	private static final LuaString C_SHORT_SOURCE = valueOf("[C]");
+	private static final LuaString C_SOURCE = valueOf("=[C]");
 	public static final LuaString QMARK = valueOf("?");
 	private static final LuaString EXTERNAL_HOOK = valueOf("external hook");
 
@@ -72,17 +74,12 @@ public final class DebugLib {
 	private DebugLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LibFunction.setGlobalLibrary(state, env, "debug", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("debug", DebugLib::debug),
 			RegisteredFunction.ofV("getfenv", DebugLib::getfenv),
 			RegisteredFunction.ofV("gethook", DebugLib::gethook),
-			RegisteredFunction.ofFactory("getinfo", () -> new VarArgFunction() {
-				@Override
-				public Varargs invoke(LuaState state1, Varargs args) throws LuaError {
-					return DebugLib.getinfo(state1, args, this);
-				}
-			}),
+			RegisteredFunction.ofV("getinfo", DebugLib::getinfo),
 			RegisteredFunction.ofV("getlocal", DebugLib::getlocal),
 			RegisteredFunction.ofV("getmetatable", DebugLib::getmetatable),
 			RegisteredFunction.ofV("getregistry", DebugLib::getregistry),
@@ -113,7 +110,7 @@ public final class DebugLib {
 		if (ds.getHook() == null) {
 			hook = NIL;
 		} else if (ds.getHook() instanceof FunctionDebugHook) {
-			hook = ((FunctionDebugHook) ds.getHook()).getFunction();
+			hook = ((FunctionDebugHook) ds.getHook()).function();
 		} else {
 			hook = EXTERNAL_HOOK;
 		}
@@ -146,100 +143,89 @@ public final class DebugLib {
 		}
 		thread.getDebugState().setHook(func == null ? null : new FunctionDebugHook(func), call, line, rtrn, count);
 
-		// See DebugState.onReturn
-		// TODO: Remove this once every function pushes/pops a debug frame.
-		DebugFrame returnInto = thread.getDebugState().getStack();
-		if (returnInto != null) returnInto.oldPc = returnInto.pc;
-
 		return NONE;
 	}
 
-	private static Varargs getfenv(LuaState state, Varargs args) throws LuaError {
+	private static Varargs getfenv(LuaState state, Varargs args) {
 		LuaValue object = args.first();
-		LuaValue env = object.getfenv();
+		LuaValue env = LegacyEnv.getEnv(object);
 		return env != null ? env : NIL;
 	}
 
 	private static Varargs setfenv(LuaState state, Varargs args) throws LuaError {
 		LuaValue object = args.first();
 		LuaTable env = args.arg(2).checkTable();
-		if (!object.setfenv(env)) throw new LuaError("'setfenv' cannot change environment of given object");
+		if (!LegacyEnv.setEnv(object, env)) throw new LuaError("'setfenv' cannot change environment of given object");
 		return object;
 	}
 
-	protected static Varargs getinfo(LuaState state, Varargs args, LuaValue level0func) throws LuaError {
+	private static Varargs getinfo(LuaState state, Varargs args) throws LuaError {
 		int arg = 1;
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
-		LuaValue func = args.arg(arg);
+		LuaValue funcArg = args.arg(arg);
 		String what = args.arg(arg + 1).optString("flnStu");
 
-		// find the stack info
+		// Find the stack info
 		DebugState ds = thread.getDebugState();
-		DebugFrame di;
-		if (func.isNumber()) {
-			int level = func.checkInteger();
-
-			// So if we're getting info on the current thread then we fake a debug.getinfo function
-			if (thread != state.getCurrentThread()) {
-				di = ds.getFrame(level);
-			} else if (level < 0) {
-				di = null;
-			} else if (level == 0) {
-				di = new DebugFrame(level0func.checkFunction());
-			} else {
-				di = ds.getFrame(level - 1);
-			}
+		DebugFrame callInfo;
+		LuaFunction function;
+		if (funcArg.isNumber()) {
+			callInfo = ds.getFrame(funcArg.checkInteger());
+			if (callInfo == null) return NIL;
+			function = callInfo.func;
 		} else {
-			di = ds.findDebugInfo(func.checkFunction());
+			callInfo = null;
+			function = funcArg.checkFunction();
 		}
-		if (di == null) return NIL;
 
 		// start a table
 		LuaTable info = new LuaTable();
-		LuaClosure c = di.closure;
+		LuaClosure closure = function instanceof LuaClosure c ? c : null;
 		for (int i = 0, j = what.length(); i < j; i++) {
 			switch (what.charAt(i)) {
 				case 'S' -> {
-					if (c != null) {
-						Prototype p = c.getPrototype();
+					if (closure != null) {
+						Prototype p = closure.getPrototype();
 						info.rawset(WHAT, p.lineDefined == 0 ? MAIN : LUA);
 						info.rawset(SOURCE, p.source);
-						info.rawset(SHORT_SRC, p.sourceShort());
+						info.rawset(SHORT_SRC, p.shortSource());
 						info.rawset(LINEDEFINED, valueOf(p.lineDefined));
 						info.rawset(LASTLINEDEFINED, valueOf(p.lastLineDefined));
 					} else {
-						String shortName = di.func == null ? "nil" : di.func.debugName();
-						LuaString name = valueOf("[C] " + shortName);
 						info.rawset(WHAT, C);
-						info.rawset(SOURCE, name);
-						info.rawset(SHORT_SRC, C_SOURCE);
+						info.rawset(SOURCE, C_SOURCE);
+						info.rawset(SHORT_SRC, C_SHORT_SOURCE);
 						info.rawset(LINEDEFINED, MINUSONE);
 						info.rawset(LASTLINEDEFINED, MINUSONE);
 					}
 				}
 				case 'l' -> {
-					if (c == null) continue;
-					Prototype p = c.getPrototype();
-					int line = p.lineInfo == null || di.pc < 0 || di.pc >= p.lineInfo.length ? -1 : p.lineInfo[di.pc];
-					int column = p.columnInfo == null || di.pc < 0 || di.pc >= p.columnInfo.length ? -1 : p.columnInfo[di.pc];
+					if (callInfo == null || closure == null) {
+						info.rawset(CURRENTLINE, valueOf(-1));
+						continue;
+					}
+
+					Prototype p = closure.getPrototype();
+					int line = p.lineAt(callInfo.pc);
+					int column = p.columnAt(callInfo.pc);
 					info.rawset(CURRENTLINE, valueOf(line));
 					if (column > 0) info.rawset(CURRENTCOLUMN, valueOf(column));
 				}
 				case 'u' -> {
-					info.rawset(NUPS, valueOf(c != null ? c.getPrototype().upvalues : 0));
-					info.rawset(NPARAMS, valueOf(c != null ? c.getPrototype().parameters : 0));
-					info.rawset(ISVARARG, valueOf(c == null || c.getPrototype().isVarArg > 0));
+					info.rawset(NUPS, valueOf(closure != null ? closure.getPrototype().upvalues() : 0));
+					info.rawset(NPARAMS, valueOf(closure != null ? closure.getPrototype().parameters : 0));
+					info.rawset(ISVARARG, valueOf(closure == null || closure.getPrototype().isVarArg));
 				}
 				case 'n' -> {
-					ObjectName kind = di.getFuncKind();
+					ObjectName kind = callInfo != null ? callInfo.getFuncKind() : null;
 					info.rawset(NAME, kind != null ? kind.name() : NIL);
 					info.rawset(NAMEWHAT, kind != null ? kind.what() : EMPTYSTRING);
 				}
 				case 'f' -> {
-					info.rawset(FUNC, di.func == null ? NIL : di.func);
+					info.rawset(FUNC, function == null ? NIL : function);
 				}
 				case 'L' -> {
-					if (di.func instanceof LuaClosure closure) {
+					if (closure != null) {
 						LuaTable lines = new LuaTable();
 						info.rawset(ACTIVELINES, lines);
 						int[] lineInfo = closure.getPrototype().lineInfo;
@@ -248,7 +234,9 @@ public final class DebugLib {
 						}
 					}
 				}
-				case 't' -> info.rawset(ISTAILCALL, valueOf((di.flags & DebugFrame.FLAG_TAIL) != 0));
+				case 't' -> {
+					info.rawset(ISTAILCALL, valueOf(callInfo != null && (callInfo.flags & DebugFrame.FLAG_TAIL) != 0));
+				}
 				default -> throw ErrorFactory.argError(arg + 1, "invalid option");
 			}
 		}
@@ -260,8 +248,7 @@ public final class DebugLib {
 		LuaThread thread = args.arg(arg).isThread() ? args.arg(arg++).checkThread() : state.getCurrentThread();
 
 		int local = args.arg(arg + 1).checkInteger();
-		if (args.arg(arg).isFunction()) {
-			LuaFunction function = args.arg(arg).checkFunction();
+		if (args.arg(arg) instanceof LuaFunction function) {
 			if (!(function instanceof LuaClosure closure)) return NIL;
 
 			Prototype proto = closure.getPrototype();
@@ -270,10 +257,7 @@ public final class DebugLib {
 				? variables[local - 1].name : NIL;
 		} else {
 			int level = args.arg(arg).checkInteger();
-			if (thread == state.getCurrentThread()) level--;
-
-			DebugState ds = thread.getDebugState();
-			DebugFrame di = ds.getFrame(level);
+			DebugFrame di = thread.getDebugState().getFrame(level);
 			if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
 
 			LuaString name = di.getLocalName(local);
@@ -290,9 +274,7 @@ public final class DebugLib {
 		int local = args.arg(arg + 1).checkInteger();
 		LuaValue value = args.arg(arg + 2);
 
-		DebugState ds = thread.getDebugState();
-		if (thread == state.getCurrentThread()) level--;
-		DebugFrame di = ds.getFrame(level);
+		DebugFrame di = thread.getDebugState().getFrame(level);
 		if (di == null) throw new LuaError("bad argument #" + arg + " (level out of range)");
 
 		LuaString name = di.getLocalName(local);
@@ -333,11 +315,7 @@ public final class DebugLib {
 
 	private static LuaString findupvalue(LuaClosure c, int up) {
 		Prototype p = c.getPrototype();
-		if (up > 0 && p.upvalueNames != null && up <= p.upvalueNames.length) {
-			return p.upvalueNames[up - 1];
-		} else {
-			return null;
-		}
+		return p.getUpvalueName(up - 1);
 	}
 
 	private static Varargs getupvalue(LuaState state, Varargs args) throws LuaError {
@@ -371,13 +349,11 @@ public final class DebugLib {
 		LuaThread thread = args.arg(a).isThread() ? args.arg(a++).checkThread() : state.getCurrentThread();
 		LuaValue messageValue = args.arg(a++);
 		if (messageValue != NIL && !messageValue.isString()) return messageValue;
-		String message = messageValue.optString(null);
+		LuaString message = messageValue.optLuaString(null);
 
-		int level = thread == state.getCurrentThread()
-			? args.arg(a).optInteger(1) - 1
-			: args.arg(a).optInteger(0);
+		int level = args.arg(a).optInteger(thread == state.getCurrentThread() ? 1 : 0);
 
-		StringBuilder sb = new StringBuilder();
+		Buffer sb = new Buffer();
 		if (message != null) sb.append(message).append('\n');
 		return valueOf(DebugHelpers.traceback(sb, thread, level).toString());
 	}
@@ -385,7 +361,7 @@ public final class DebugLib {
 	private static LuaClosure getClosureForUpvalue(Varargs args, int offset, int upvalue) throws LuaError {
 		LuaFunction function = args.arg(offset).checkFunction();
 		if (function instanceof LuaClosure closure) {
-			if (upvalue >= 0 && upvalue < closure.getPrototype().upvalues) return closure;
+			if (upvalue >= 0 && upvalue < closure.getPrototype().upvalues()) return closure;
 		}
 
 		throw ErrorFactory.argError(offset, "invalid upvalue index");

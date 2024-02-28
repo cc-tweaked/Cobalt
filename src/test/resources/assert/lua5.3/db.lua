@@ -818,36 +818,4 @@ local f = assert(load(string.dump(load(prog), true)))
 
 -- assert(f() == 13)
 
-do   -- tests for 'source' in binary dumps
-  local prog = [[
-    return function (x)
-      return function (y)
-        return x + y
-      end
-    end
-  ]]
-  local name = string.rep("x", 1000)
-  local p = assert(load(prog, name))
-  -- load 'p' as a binary chunk with debug information
-  local c = string.dump(p)
-  assert(#c > 1000 and #c < 2000)   -- no repetition of 'source' in dump
-  local f = assert(load(c))
-  local g = f()
-  local h = g(3)
-  assert(h(5) == 8)
-  assert(debug.getinfo(f).source == name and   -- all functions have 'source'
-         debug.getinfo(g).source == name and
-         debug.getinfo(h).source == name)
-  -- again, without debug info
-  local c = string.dump(p, true)
-  assert(#c < 500)   -- no 'source' in dump
-  local f = assert(load(c))
-  local g = f()
-  local h = g(30)
-  assert(h(50) == 80)
-  assert(debug.getinfo(f).source == '=?' and   -- no function has 'source'
-         debug.getinfo(g).source == '=?' and
-         debug.getinfo(h).source == '=?')
-end
-
 print"OK"

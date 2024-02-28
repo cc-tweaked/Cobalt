@@ -20,20 +20,20 @@ val LUA_ERROR = Type.getObjectType("org/squiddev/cobalt/LuaError")
 /** The [org.squiddev.cobalt.UnwindThrowable] throwable. */
 val UNWIND_THROWABLE = Type.getObjectType("org/squiddev/cobalt/UnwindThrowable")
 
-/** The [org.squiddev.cobalt.unwind.AutoUnwind] annotation. */
-val AUTO_UNWIND = Type.getObjectType("org/squiddev/cobalt/unwind/AutoUnwind")
+/** The [cc.tweaked.cobalt.internal.unwind.AutoUnwind] annotation. */
+val AUTO_UNWIND = Type.getObjectType("cc/tweaked/cobalt/internal/unwind/AutoUnwind")
 
-/** The [org.squiddev.cobalt.unwind.Pause] throwable. */
-val PAUSE = Type.getObjectType("org/squiddev/cobalt/unwind/Pause")
+/** The [cc.tweaked.cobalt.internal.unwind.Pause] throwable. */
+val PAUSE = Type.getObjectType("cc/tweaked/cobalt/internal/unwind/Pause")
 
-/** The [org.squiddev.cobalt.unwind.UnwindState] class. */
-val UNWIND_STATE = Type.getObjectType("org/squiddev/cobalt/unwind/UnwindState")
+/** The [cc.tweaked.cobalt.internal.unwind.UnwindState] class. */
+val UNWIND_STATE = Type.getObjectType("cc/tweaked/cobalt/internal/unwind/UnwindState")
 
 /** The [org.squiddev.cobalt.unwind.SuspendedTask] class. */
 val SUSPENDED_TASK = Type.getObjectType("org/squiddev/cobalt/unwind/SuspendedTask")
 
-/** The [org.squiddev.cobalt.unwind.SuspendedTask.Action] class. */
-val SUSPENDED_TASK_ACTION = Type.getObjectType("org/squiddev/cobalt/unwind/SuspendedTask\$Action")
+/** The [cc.tweaked.cobalt.internal.unwind.SuspendedAction] class. */
+val SUSPENDED_ACTION = Type.getObjectType("cc/tweaked/cobalt/internal/unwind/SuspendedAction")
 
 /** The [org.squiddev.cobalt.unwind.SuspendedFunction] class. */
 val SUSPENDED_FUNCTION = Type.getObjectType("org/squiddev/cobalt/unwind/SuspendedFunction")

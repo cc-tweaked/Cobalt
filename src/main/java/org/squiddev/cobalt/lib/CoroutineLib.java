@@ -55,7 +55,7 @@ public final class CoroutineLib {
 	private CoroutineLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) {
+	public static void add(LuaState state, LuaTable env) throws LuaError {
 		LibFunction.setGlobalLibrary(state, env, "coroutine", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("create", CoroutineLib::create),
 			RegisteredFunction.ofV("running", CoroutineLib::running),
@@ -69,7 +69,7 @@ public final class CoroutineLib {
 
 	private static LuaValue create(LuaState state, LuaValue arg) throws LuaError {
 		final LuaFunction func = arg.checkFunction();
-		return new LuaThread(state, func, state.getCurrentThread().getfenv());
+		return new LuaThread(state, func);
 	}
 
 	private static Varargs running(LuaState state, Varargs args) {
@@ -88,8 +88,7 @@ public final class CoroutineLib {
 
 	private static LuaValue wrap(LuaState state, LuaValue arg) throws LuaError {
 		final LuaFunction func = arg.checkFunction();
-		final LuaTable env = func.getfenv();
-		final LuaThread thread = new LuaThread(state, func, env);
+		final LuaThread thread = new LuaThread(state, func);
 
 		return new Wrapped(thread);
 	}
@@ -109,12 +108,12 @@ public final class CoroutineLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, Void object, Varargs value) {
+		public Varargs resume(LuaState state, Void object, Varargs value) {
 			return varargsOf(Constants.TRUE, value);
 		}
 
 		@Override
-		protected Varargs resumeErrorThis(LuaState state, Void object, LuaError error) {
+		public Varargs resumeError(LuaState state, Void object, LuaError error) {
 			return varargsOf(Constants.FALSE, error.getValue());
 		}
 	}
@@ -126,7 +125,7 @@ public final class CoroutineLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, Void object, Varargs value) {
+		public Varargs resume(LuaState state, Void object, Varargs value) {
 			return value;
 		}
 	}
@@ -144,7 +143,7 @@ public final class CoroutineLib {
 		}
 
 		@Override
-		protected Varargs resumeThis(LuaState state, Void object, Varargs value) {
+		public Varargs resume(LuaState state, Void object, Varargs value) {
 			return value;
 		}
 	}
