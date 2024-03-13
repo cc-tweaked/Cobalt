@@ -38,22 +38,22 @@ final class ZeroArgFunction extends LibFunction {
 	}
 
 	@Override
-	protected LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state) throws LuaError {
 		return function.call(state);
 	}
 
 	@Override
-	protected LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state, LuaValue arg) throws LuaError {
 		return function.call(state);
 	}
 
 	@Override
-	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
 		return function.call(state);
 	}
 
 	@Override
-	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
+	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
 		return function.call(state);
 	}
 

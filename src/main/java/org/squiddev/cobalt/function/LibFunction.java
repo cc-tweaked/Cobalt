@@ -284,7 +284,7 @@ public sealed abstract class LibFunction extends LuaFunction
 	public static LibFunction createV(ManyArgs fn) {
 		return new VarArgFunction() {
 			@Override
-			protected Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+			protected Varargs invoke(LuaState state, Varargs args) throws LuaError {
 				return fn.invoke(state, args);
 			}
 		};
@@ -305,23 +305,23 @@ public sealed abstract class LibFunction extends LuaFunction
 	}
 
 	public interface ZeroArg {
-		LuaValue call(LuaState state) throws LuaError, UnwindThrowable;
+		LuaValue call(LuaState state) throws LuaError;
 	}
 
 	public interface OneArg {
-		LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable;
+		LuaValue call(LuaState state, LuaValue arg) throws LuaError;
 	}
 
 	public interface TwoArg {
-		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable;
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError;
 	}
 
 	public interface ThreeArg {
-		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable;
+		LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError;
 	}
 
 	public interface ManyArgs {
-		Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
+		Varargs invoke(LuaState state, Varargs args) throws LuaError;
 	}
 
 	/**

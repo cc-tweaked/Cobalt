@@ -76,9 +76,9 @@ public final class BaseLib {
 			RegisteredFunction.ofV("rawget", BaseLib::rawget),
 			RegisteredFunction.ofV("rawset", BaseLib::rawset),
 			RegisteredFunction.ofV("setmetatable", BaseLib::setmetatable),
-			RegisteredFunction.ofV("tostring", BaseLib::tostring),
+			RegisteredFunction.ofS("tostring", BaseLib::tostring),
 			RegisteredFunction.ofV("tonumber", BaseLib::tonumber),
-			RegisteredFunction.ofV("pairs", self::pairs),
+			RegisteredFunction.ofS("pairs", self::pairs),
 			RegisteredFunction.ofV("ipairs", self::ipairs),
 			RegisteredFunction.of("rawlen", BaseLib::rawlen),
 			RegisteredFunction.ofV("next", BaseLib::next),
@@ -199,9 +199,9 @@ public final class BaseLib {
 		return t;
 	}
 
-	private static LuaValue tostring(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private static LuaValue tostring(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		// tostring(e) -> value
-		return OperationHelper.toString(state, args.checkValue(1));
+		return SuspendedAction.run(di, () -> OperationHelper.toString(state, args.checkValue(1))).first();
 	}
 
 	private static LuaValue tonumber(LuaState state, Varargs args) throws LuaError {
@@ -218,14 +218,14 @@ public final class BaseLib {
 		}
 	}
 
-	private Varargs pairs(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private Varargs pairs(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
 		// pairs(t) -> iter-func, t, nil
 		LuaValue value = args.checkValue(1);
 		LuaValue pairs = value.metatag(state, Constants.PAIRS);
 		if (pairs.isNil()) {
 			return varargsOf(next, value, Constants.NIL);
 		} else {
-			return Dispatch.invoke(state, pairs, value);
+			return SuspendedAction.run(frame, () -> Dispatch.invoke(state, pairs, value));
 		}
 	}
 

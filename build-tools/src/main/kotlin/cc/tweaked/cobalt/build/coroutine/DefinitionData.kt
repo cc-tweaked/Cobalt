@@ -63,6 +63,7 @@ interface DefinitionData {
 private val builtinMethods = run {
 	val opHelper = "org/squiddev/cobalt/OperationHelper"
 	val dispatch = "org/squiddev/cobalt/function/Dispatch"
+	val nop = YieldType.Direct { }
 	val first = YieldType.Direct { mw ->
 		mw.visitMethodInsn(INVOKEVIRTUAL, VARARGS.internalName, "first", "()${LUA_VALUE.descriptor}", false)
 	}
@@ -75,11 +76,14 @@ private val builtinMethods = run {
 	mapOf(
 		Desc("org/squiddev/cobalt/compiler/InputReader", "read", "()I") to YieldType.Resume,
 		Desc("org/squiddev/cobalt/unwind/SuspendedFunction", "call", "(Lorg/squiddev/cobalt/LuaState;)Ljava/lang/Object;") to YieldType.Resume,
+		Desc(dispatch, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE)) to first,
 		Desc(dispatch, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,
 		Desc(dispatch, "call", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE, LUA_VALUE)) to first,
+		Desc(dispatch, "invoke", Type.getMethodDescriptor(VARARGS, LUA_STATE, LUA_VALUE, VARARGS)) to nop,
 		Desc(opHelper, "eq", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
 		Desc(opHelper, "lt", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to firstBool,
 		Desc(opHelper, "length", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE)) to first,
+		Desc(opHelper, "toString", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE)) to first,
 		Desc(opHelper, "getTable", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, Type.INT_TYPE)) to first,
 		Desc(opHelper, "getTable", Type.getMethodDescriptor(LUA_VALUE, LUA_STATE, LUA_VALUE, LUA_VALUE)) to first,
 		Desc(opHelper, "setTable", Type.getMethodDescriptor(Type.VOID_TYPE, LUA_STATE, LUA_VALUE, Type.INT_TYPE, LUA_VALUE)) to drop,

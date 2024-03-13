@@ -633,7 +633,7 @@ public class UnaryBinaryOperatorsTest {
 
 			// Ensures string arithmetic work as expected
 			var concat = LuaOperators.createBinOp(state, "..");
-			state.stringMetatable = tableOf(Constants.ADD, LibFunction.create((state, arg1, arg2) -> concat.apply(valueOf(arg1.toString()), valueOf(arg2.toString()))));
+			state.stringMetatable = tableOf(Constants.ADD, LibFunction.createS((state, di, args) -> concat.apply(valueOf(args.arg(1).toString()), valueOf(args.arg(2).toString()))));
 
 			assertEquals(valueOf("ab"), add.apply(valueOf("a"), valueOf("b")));
 			assertEquals(valueOf("a2"), add.apply(valueOf("a"), valueOf("2")));

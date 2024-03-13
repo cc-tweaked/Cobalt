@@ -34,7 +34,7 @@ public class SystemBaseLib {
 		RegisteredFunction.bind(env, new RegisteredFunction[]{
 			RegisteredFunction.of("collectgarbage", SystemBaseLib::collectgarbage),
 			RegisteredFunction.ofV("loadfile", this::loadfile),
-			RegisteredFunction.ofV("dofile", this::dofile),
+			RegisteredFunction.ofS("dofile", this::dofile),
 			RegisteredFunction.ofS("print", this::print),
 		});
 	}
@@ -67,7 +67,7 @@ public class SystemBaseLib {
 			SystemBaseLib.loadFile(state, resources, args.arg(1).checkString());
 	}
 
-	private Varargs dofile(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private Varargs dofile(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		// dofile( filename ) -> result1, ...
 		Varargs v = args.first().isNil() ?
 			BaseLib.loadStream(state, in, STDIN_STR) :
@@ -75,7 +75,7 @@ public class SystemBaseLib {
 		if (v.first().isNil()) {
 			throw new LuaError(v.arg(2).toString());
 		} else {
-			return Dispatch.invoke(state, v.first(), Constants.NONE);
+			return SuspendedAction.run(di, () -> Dispatch.invoke(state, v.first(), Constants.NONE));
 		}
 	}
 
