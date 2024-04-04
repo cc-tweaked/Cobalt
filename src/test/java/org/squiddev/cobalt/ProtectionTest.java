@@ -74,7 +74,7 @@ public class ProtectionTest {
 
 	@Timeout(3)
 	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
-	@ValueSource(strings = {"string", "loop"})
+	@ValueSource(strings = {"string", "loop", "load"})
 	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}

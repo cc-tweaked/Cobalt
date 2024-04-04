@@ -29,10 +29,10 @@ import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.CompileException;
 import org.squiddev.cobalt.compiler.InputReader;
-import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.compiler.LuaC;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.*;
+import org.squiddev.cobalt.unwind.SuspendedTask;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -69,7 +69,7 @@ public final class BaseLib {
 			RegisteredFunction.ofV("assert", BaseLib::assert_),
 			RegisteredFunction.of("getfenv", BaseLib::getfenv),
 			RegisteredFunction.ofV("getmetatable", BaseLib::getmetatable),
-			RegisteredFunction.ofV("loadstring", BaseLib::loadstring),
+			RegisteredFunction.ofS("loadstring", BaseLib::loadstring),
 			RegisteredFunction.ofV("select", BaseLib::select),
 			RegisteredFunction.ofV("type", BaseLib::type),
 			RegisteredFunction.ofV("rawequal", BaseLib::rawequal),
@@ -138,10 +138,11 @@ public final class BaseLib {
 		return mt != null ? mt.rawget(Constants.METATABLE).optValue(mt) : Constants.NIL;
 	}
 
-	private static Varargs loadstring(LuaState state, Varargs args) throws LuaError {
+	private static Varargs loadstring(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		// loadstring( string [,chunkname] ) -> chunk | nil, msg
 		LuaString script = args.arg(1).checkLuaString();
-		return BaseLib.loadStream(state, script.toInputStream(), args.arg(2).optLuaString(script));
+		InputStream is = script.toInputStream();
+		return loadStream(state, di, is, args.arg(2).optLuaString(script), null, state.globals());
 	}
 
 	private static Varargs select(LuaState state, Varargs args) throws LuaError {
@@ -311,7 +312,7 @@ public final class BaseLib {
 	}
 
 	// load( func|str [,chunkname[, mode[, env]]] ) -> chunk | nil, msg
-	static class Load extends ResumableVarArgFunction<ProtectedCall> {
+	static class Load extends ResumableVarArgFunction<Object> {
 		@Override
 		protected Varargs invoke(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 			LuaValue scriptGen = args.arg(1);
@@ -322,7 +323,7 @@ public final class BaseLib {
 			// If we're a string, load as normal
 			if (scriptGen.isString()) {
 				LuaString contents = scriptGen.checkLuaString();
-				return BaseLib.loadStream(state, contents.toInputStream(), chunkName == null ? contents : chunkName, mode, funcEnv);
+				return BaseLib.loadStream(state, di, contents.toInputStream(), chunkName == null ? contents : chunkName, mode, funcEnv);
 			}
 
 			LuaFunction function = scriptGen.checkFunction();
@@ -339,29 +340,35 @@ public final class BaseLib {
 		}
 
 		@Override
-		public Varargs resume(LuaState state, ProtectedCall call, Varargs value) throws UnwindThrowable {
-			return call.resume(state, value).asResultOrFailure();
+		public Varargs resume(LuaState state, Object funcState, Varargs value) throws UnwindThrowable, LuaError {
+			if (funcState instanceof ProtectedCall call) {
+				return call.resume(state, value).asResultOrFailure();
+			} else {
+				return ((SuspendedTask<Varargs>) funcState).resume(value);
+			}
 		}
 
 		@Override
-		public Varargs resumeError(LuaState state, ProtectedCall call, LuaError error) throws UnwindThrowable {
-			return call.resumeError(state, error).asResultOrFailure();
+		public Varargs resumeError(LuaState state, Object funcState, LuaError error) throws UnwindThrowable, LuaError {
+			if (funcState instanceof ProtectedCall call) {
+				return call.resumeError(state, error).asResultOrFailure();
+			} else {
+				return super.resumeError(state, funcState, error);
+			}
 		}
 	}
 
-	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName, LuaString mode, LuaValue env) {
-		try {
-			return LoadState.load(state, is, chunkName, mode, env);
-		} catch (LuaError | CompileException e) {
-			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
-		}
+	private static Varargs loadStream(LuaState state, DebugFrame frame, InputStream is, LuaString chunkName, LuaString mode, LuaValue env) throws UnwindThrowable, LuaError {
+		return SuspendedAction.run(frame, () -> {
+			try {
+				return state.compiler.load(LuaC.compile(state, new LuaC.InputStreamReader(state, is), chunkName, mode), env);
+			} catch (CompileException e) {
+				return varargsOf(Constants.NIL, valueOf(e.getMessage()));
+			}
+		});
 	}
 
-	public static Varargs loadStream(LuaState state, InputStream is, LuaString chunkName) {
-		return loadStream(state, is, chunkName, null, state.globals());
-	}
-
-	private static class FunctionInputReader implements InputReader {
+	private static class FunctionInputReader extends InputReader {
 		private static final ByteBuffer EMPTY = ByteBuffer.allocate(0);
 
 		private final LuaState state;
