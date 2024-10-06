@@ -71,7 +71,16 @@ public final class NumberParser {
 			}
 
 			if (digit >= base) return Double.NaN;
-			x = x * base + digit;
+
+			if (base == 10) {
+				try {
+					x = Math.addExact(Math.multiplyExact(x, base), digit);
+				} catch (ArithmeticException e) {
+					return Double.NaN;
+				}
+			} else {
+				x = x * base + digit;
+			}
 		}
 		return x;
 	}
@@ -119,7 +128,7 @@ public final class NumberParser {
 	}
 
 	private static double scanHexDouble(byte[] bytes, int index, int end) {
-		long result = 0; // The mantissa
+		double result = 0; // The mantissa
 		int exponent = 0;
 
 		int sigDigits = 0, nonSigDigits = 0; // Number of significant digits and non-significant digits (leading 0s).
@@ -187,6 +196,6 @@ public final class NumberParser {
 			exponent += givenExponent;
 		}
 
-		return Math.scalb((double) result, exponent);
+		return Math.scalb(result, exponent);
 	}
 }

@@ -65,6 +65,10 @@ describe("The base library", function()
 				expect('' .. 12):eq('12') expect(12.0 .. ''):eq('12')
 				expect(tostring(-1203 + 0.0)):eq("-1203")
 			end)
+
+			it("correctly handles 2^63", function()
+				expect(tostring(math.floor(2^63))):not_equals("9223372036854775807")
+			end)
 		end)
 
 		it("tables", function() expect(tostring {}):str_match('^table:') end)

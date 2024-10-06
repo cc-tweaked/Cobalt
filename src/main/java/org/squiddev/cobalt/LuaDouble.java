@@ -139,7 +139,7 @@ public final class LuaDouble extends LuaNumber {
 	@Override
 	public LuaString checkLuaString() {
 		long l = (long) v;
-		if (l == v) return ValueFactory.valueOf(Long.toString(l));
+		if (l == v && l != Long.MAX_VALUE) return ValueFactory.valueOf(Long.toString(l));
 		if (Double.isNaN(v)) return STR_NAN;
 		if (Double.isInfinite(v)) return v < 0 ? STR_NEGINF : STR_POSINF;
 

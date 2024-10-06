@@ -1,6 +1,14 @@
 describe("The Lua lexer/parser", function()
 	describe("numbers", function()
 		local load = loadstring or load
+		it("only wraps around hexadecimal numerals with neither an exponent nor radix point", function()
+			-- See https://github.com/cc-tweaked/Cobalt/issues/88
+			expect(tonumber(("9"):rep(19))):eq(1e19)
+			expect(tonumber("0xffffffffffffffff")):eq(-1)
+			expect(tonumber("0xffffffffffffffff.0")):eq(2^64)
+			expect(tonumber("0xffffffffffffffffp0")):eq(2^64)
+		end)
+
 		it("rejects numbers ending in 'f' or 'd'", function()
 			-- Java's Double.parseDouble accepts "2f" and "2d" as a valid number. Make sure we don't.
 			-- See https://github.com/SquidDev/Cobalt/issues/71
