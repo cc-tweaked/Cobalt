@@ -26,6 +26,7 @@ package org.squiddev.cobalt.table;
 
 import org.junit.jupiter.api.Test;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.function.LibFunction;
 
 import java.util.ArrayList;
 
@@ -277,4 +278,25 @@ public class TableTest {
 		assertEquals(Constants.NIL, t.next(valueOf(7)));
 	}
 
+	@Test
+	public void testCachedMetamethod() throws LuaError {
+		var t = new LuaTable();
+		var f = LibFunction.create(s -> Constants.NIL);
+
+		// The field is absent initially.
+		assertEquals(Constants.NIL, t.rawget(CachedMetamethod.INDEX));
+
+		// After setting the field, it is now present.
+		TableOperations.setValue(t, CachedMetamethod.INDEX.getKey(), f);
+		assertEquals(f, t.rawget(CachedMetamethod.INDEX));
+
+		// If we clear it, the field is no longer there.
+		TableOperations.setValue(t, CachedMetamethod.INDEX.getKey(), Constants.NIL);
+		assertEquals(Constants.NIL, t.rawget(CachedMetamethod.INDEX));
+
+		// HOWEVER, the node *is* still present. So setting it again will not create a new node. Ensure that we still
+		// reset the cache.
+		TableOperations.setValue(t, CachedMetamethod.INDEX.getKey(), f);
+		assertEquals(f, t.rawget(CachedMetamethod.INDEX));
+	}
 }
