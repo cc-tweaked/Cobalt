@@ -24,15 +24,13 @@
  */
 package org.squiddev.cobalt;
 
-import cc.tweaked.cobalt.internal.doubles.CharBuffer;
-
 /**
  * String buffer for use in string library methods, optimized for producing {@link LuaString} instances.
  *
  * @see LuaValue
  * @see LuaString
  */
-public final class Buffer implements CharBuffer {
+public final class Buffer {
 	/**
 	 * Default capacity for a buffer: 64
 	 */
@@ -181,7 +179,6 @@ public final class Buffer implements CharBuffer {
 	 * @return {@code this}, for chaining.
 	 * @see LuaString#encode(String, byte[], int)
 	 */
-	@Override
 	public Buffer append(String str) {
 		final int n = str.length();
 		ensure(n);

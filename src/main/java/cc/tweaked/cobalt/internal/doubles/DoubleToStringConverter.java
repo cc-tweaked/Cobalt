@@ -32,6 +32,7 @@
 package cc.tweaked.cobalt.internal.doubles;
 
 import org.checkerframework.checker.signedness.qual.Unsigned;
+import org.squiddev.cobalt.Buffer;
 
 import static cc.tweaked.cobalt.internal.doubles.Assert.requireArg;
 
@@ -120,7 +121,7 @@ public final class DoubleToStringConverter {
 	 * If either of them is NULL or the value is not special then the
 	 * function returns false.
 	 */
-	private static void handleSpecialValues(double value, FormatOptions fo, CharBuffer resultBuilder) {
+	private static void handleSpecialValues(double value, FormatOptions fo, Buffer resultBuilder) {
 		boolean sign = value < 0.0;
 
 		int effectiveWidth = fo.width();
@@ -164,7 +165,7 @@ public final class DoubleToStringConverter {
 		int length,
 		int exponent,
 		FormatOptions fo,
-		CharBuffer resultBuilder
+		Buffer resultBuilder
 	) {
 		requireArg(decimalDigits.length() != 0, "decimalDigits must not be empty");
 		requireArg(length <= decimalDigits.length(), "length must be smaller than decimalDigits");
@@ -246,7 +247,7 @@ public final class DoubleToStringConverter {
 		double value,
 		int digitsAfterPoint,
 		FormatOptions fo,
-		CharBuffer resultBuilder
+		Buffer resultBuilder
 	) {
 		int decimalPoint = decimalDigits.getPointPosition();
 		int digitsLength = decimalDigits.length();
@@ -395,7 +396,7 @@ public final class DoubleToStringConverter {
 	 *                                  MAX_FIXED_DIGITS_AFTER_POINT</code><br/>
 	 *                                  characters (one additional character for the sign, and one for the decimal point).
 	 */
-	public static void toFixed(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	public static void toFixed(double value, int requestedDigits, FormatOptions formatOptions, Buffer resultBuilder) {
 		// DOUBLE_CONVERSION_ASSERT(MAX_FIXED_DIGITS_BEFORE_POINT == 60);
 
 		if (Doubles.isSpecial(value)) {
@@ -442,7 +443,7 @@ public final class DoubleToStringConverter {
 	 * @param formatOptions
 	 * @throws IllegalArgumentException if <code>requestedDigits > MAX_EXPONENTIAL_DIGITS</code>
 	 */
-	public static void toExponential(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	public static void toExponential(double value, int requestedDigits, FormatOptions formatOptions, Buffer resultBuilder) {
 		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
@@ -512,7 +513,7 @@ public final class DoubleToStringConverter {
 	 * @throws IllegalArgumentException when <code>precision < MIN_PRECISION_DIGITS</code> or
 	 *                                  <code>precision > MAX_PRECISION_DIGITS</code>
 	 */
-	public static void toPrecision(double value, int precision, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	public static void toPrecision(double value, int precision, FormatOptions formatOptions, Buffer resultBuilder) {
 		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
@@ -562,7 +563,7 @@ public final class DoubleToStringConverter {
 	 * @param formatOptions   Additional options for this number's formatting.
 	 * @param resultBuilder   The buffer to output to.
 	 */
-	public static void toHex(double value, int requestedDigits, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	public static void toHex(double value, int requestedDigits, FormatOptions formatOptions, Buffer resultBuilder) {
 		if (Doubles.isSpecial(value)) {
 			handleSpecialValues(value, formatOptions, resultBuilder);
 			return;
@@ -651,7 +652,7 @@ public final class DoubleToStringConverter {
 		return (Double.doubleToRawLongBits(value) & Doubles.SIGN_MASK) != 0 && value != 0.0;
 	}
 
-	private static void appendSign(double value, FormatOptions formatOptions, CharBuffer resultBuilder) {
+	private static void appendSign(double value, FormatOptions formatOptions, Buffer resultBuilder) {
 		if (shouldEmitMinus(value)) {
 			resultBuilder.append('-');
 		} else if (formatOptions.spaceWhenPositive()) {
@@ -771,7 +772,7 @@ public final class DoubleToStringConverter {
 	 * Add character padding to the builder. If count is non-positive,
 	 * nothing is added to the builder.
 	 */
-	private static void addPadding(CharBuffer sb, char character, int count) {
+	private static void addPadding(Buffer sb, char character, int count) {
 		for (int i = count; i > 0; i--) sb.append(character);
 	}
 
