@@ -50,9 +50,16 @@ describe("The base library", function()
 				expect(tostring(-32767)):eq("-32767")
 			end)
 
-			it("integers :lua>=5.3", function()
+			it("large numbers :lua<=5.2", function()
+				expect(tostring(4611686018427387904)):eq("4.6116860184274e+18")
+				expect(tostring(-4611686018427387904)):eq("-4.6116860184274e+18")
+				expect(tostring(9223372036854775807)):eq("9.2233720368548e+18")
+			end)
+
+			it("integers :lua>=5.3 :!cobalt", function()
 				expect(tostring(4611686018427387904)):eq("4611686018427387904")
 				expect(tostring(-4611686018427387904)):eq("-4611686018427387904")
+				expect(tostring(9223372036854775807)):eq("9223372036854775807")
 			end)
 
 			it("integer-compatible floats are preserved :lua>=5.3 :!cobalt", function()
