@@ -11,41 +11,37 @@ public final class NumberParser {
 	private NumberParser() {
 	}
 
-	public static double parse(byte[] bytes, int offset, int length, int base) {
-		int index = offset, end = offset + length;
-		while (index < end && StringLib.isWhitespace(bytes[index])) index++;
-		while (index < end && StringLib.isWhitespace(bytes[end - 1])) end--;
+	public static double parse(byte[] bytes, int start, int length, int base) {
+		int end = start + length;
+		while (start < end && StringLib.isWhitespace(bytes[start])) start++;
+		while (start < end && StringLib.isWhitespace(bytes[end - 1])) end--;
 
+		var originalStart = start;
 		boolean isNeg = false;
-		if (index < end) {
-			switch (bytes[index]) {
-				case '+' -> index++;
+		if (start < end) {
+			switch (bytes[start]) {
+				case '+' -> start++;
 				case '-' -> {
-					index++;
+					start++;
 					isNeg = true;
 				}
 			}
 		}
 
-		if (index >= end) return Double.NaN;
+		if (start >= end) return Double.NaN;
 
-		if ((base == 10 || base == 16) && (bytes[index] == '0' && index + 1 < end && (bytes[index + 1] == 'x' || bytes[index + 1] == 'X'))) {
+		if ((base == 10 || base == 16) && (bytes[start] == '0' && start + 1 < end && (bytes[start + 1] == 'x' || bytes[start + 1] == 'X'))) {
 			base = 16;
-			index += 2;
+			start += 2;
 
-			if (index >= end) return Double.NaN;
+			if (start >= end) return Double.NaN;
 		}
 
-		double value = scanLong(base, bytes, index, end);
-		if (Double.isNaN(value)) {
-			value = switch (base) {
-				case 10 -> scanDouble(bytes, index, end);
-				case 16 -> scanHexDouble(bytes, index, end);
-				default -> Double.NaN;
-			};
-		}
-
-		return isNeg ? -value : value;
+		return switch (base) {
+			case 10 -> scanDouble(bytes, originalStart, end);
+			case 16 -> scanHexDouble(bytes, start, end, isNeg);
+			default -> scanLong(base, bytes, start, end, isNeg);
+		};
 	}
 
 	/**
@@ -54,11 +50,12 @@ public final class NumberParser {
 	 * @param base  the base to use, such as 10
 	 * @param start the index to start searching from
 	 * @param end   the first index beyond the search range
+	 * @param isNeg Whether this is a negative value.
 	 * @return double value if conversion is valid,
 	 * or Double.NaN if not
 	 */
-	private static double scanLong(int base, byte[] bytes, int start, int end) {
-		long x = 0;
+	private static double scanLong(int base, byte[] bytes, int start, int end, boolean isNeg) {
+		double x = 0;
 		for (int i = start; i < end; i++) {
 			var chr = bytes[i];
 			int digit;
@@ -73,7 +70,7 @@ public final class NumberParser {
 			if (digit >= base) return Double.NaN;
 			x = x * base + digit;
 		}
-		return x;
+		return isNeg ? -x : x;
 	}
 
 	/**
@@ -85,31 +82,11 @@ public final class NumberParser {
 	 * or Double.NaN if not
 	 */
 	private static double scanDouble(byte[] bytes, int start, int end) {
-		for (int i = start; i < end; i++) {
-			switch (bytes[i]) {
-				case '-':
-				case '+':
-				case '.':
-				case 'e':
-				case 'E':
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-					break;
-				default:
-					return Double.NaN;
-			}
-		}
 		char[] c = new char[end - start];
 		for (int i = start; i < end; i++) {
-			c[i - start] = (char) bytes[i];
+			var b = bytes[i];
+			if (!isValidDoubleCharacter(b)) return Double.NaN;
+			c[i - start] = (char) b;
 		}
 		try {
 			return Double.parseDouble(String.valueOf(c));
@@ -118,8 +95,12 @@ public final class NumberParser {
 		}
 	}
 
-	private static double scanHexDouble(byte[] bytes, int index, int end) {
-		long result = 0; // The mantissa
+	private static boolean isValidDoubleCharacter(byte b) {
+		return (b >= '0' && b <= '9') || b == '+' || b == '-' || b == '.' || b == 'E' || b == 'e';
+	}
+
+	private static double scanHexDouble(byte[] bytes, int index, int end, boolean isNeg) {
+		double result = 0; // The mantissa
 		int exponent = 0;
 
 		int sigDigits = 0, nonSigDigits = 0; // Number of significant digits and non-significant digits (leading 0s).
@@ -187,6 +168,7 @@ public final class NumberParser {
 			exponent += givenExponent;
 		}
 
-		return Math.scalb((double) result, exponent);
+		if (isNeg) result = -result;
+		return Math.scalb(result, exponent);
 	}
 }

@@ -3,6 +3,8 @@ package org.squiddev.cobalt.lib;
 import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
 import org.squiddev.cobalt.*;
 
+import java.math.BigDecimal;
+
 import static org.squiddev.cobalt.Constants.*;
 import static org.squiddev.cobalt.lib.FormatDesc.*;
 import static org.squiddev.cobalt.lib.StringLib.L_ESC;
@@ -82,15 +84,15 @@ class StringFormat {
 				}
 				case 'i', 'd' -> {
 					desc.checkFlags(LEFT_ADJUST | EXPLICIT_PLUS | SPACE | ZERO_PAD | PRECISION);
-					desc.format(result, toRealLong(argIndex, value));
+					desc.format(result, toSignedLong(argIndex, value));
 				}
 				case 'u' -> {
 					desc.checkFlags(LEFT_ADJUST | ZERO_PAD | PRECISION);
-					desc.format(result, toRealLong(argIndex, value));
+					desc.format(result, toUnsignedLong(argIndex, value));
 				}
 				case 'o', 'x', 'X' -> {
 					desc.checkFlags(LEFT_ADJUST | ALTERNATE_FORM | ZERO_PAD | PRECISION);
-					desc.format(result, toRealLong(argIndex, value));
+					desc.format(result, toUnsignedLong(argIndex, value));
 				}
 				case 'e', 'E', 'f', 'g', 'G', 'a', 'A' -> {
 					desc.checkFlags(LEFT_ADJUST | EXPLICIT_PLUS | SPACE | ALTERNATE_FORM | ZERO_PAD | PRECISION);
@@ -123,17 +125,38 @@ class StringFormat {
 		return result.toLuaString();
 	}
 
-	private static long toRealLong(int arg, LuaValue value) throws LuaError {
+	private static long toSignedLong(int arg, LuaValue value) throws LuaError {
 		if (value instanceof LuaInteger i) return i.checkLong();
 
 		double asDouble = value.checkDouble();
 		long asLong = (long) asDouble;
 		double difference = asDouble - asLong;
-		if (-1 < difference && difference < 1) {
-			return asLong;
+		if (-1 < difference && difference < 1) return asLong;
+
+		throw ErrorFactory.argError(arg, "not a number in proper range");
+	}
+
+	private static final BigDecimal U64_MAX = BigDecimal.valueOf(2).pow(64);
+
+	private static long toUnsignedLong(int arg, LuaValue value) throws LuaError {
+		if (value instanceof LuaInteger i) return i.checkLong();
+
+		double asDouble = value.checkDouble();
+		if (asDouble < 9223372036854775807.0) {
+			// If the value fits within a signed long, convert it directly.
+			var asLong = (long) asDouble;
+			var difference = asDouble - asLong;
+			if (-1 < difference && difference < 1) return asLong;
 		} else {
-			throw ErrorFactory.argError(arg, "not a number in proper range");
+			// Java doesn't have support (AFAICT) for converting doubles to unsigned longs. We instead
+			// convert to a big decimal, and restrict ourselves to values less than U64_MAX.
+			var asBigDecimal = new BigDecimal(asDouble);
+			if (asBigDecimal.compareTo(U64_MAX) <= 0) return asBigDecimal.longValue();
 		}
+
+		// The Lua 5.2 error here is "not a non-negative number in proper range". However, we support negative numbers
+		// (well, somewhat), so instead report a more generic message.
+		throw ErrorFactory.argError(arg, "not a number in proper range");
 	}
 
 	private static void addQuoted(Buffer buf, int arg, LuaValue s) throws LuaError {
