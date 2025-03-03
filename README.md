@@ -1,6 +1,6 @@
 # Cobalt
-Cobalt is an Lua implementation for Java, designed for use in the Minecraft mod
-[CC: Tweaked]. Is is based on [LuaJ 2.0][LuaJ], though has diverged
+Cobalt is a Lua implementation for Java, designed for use in the Minecraft mod
+[CC: Tweaked]. It is based on [LuaJ 2.0][LuaJ], though has diverged
 significantly over the years.
 
 ## Features
@@ -9,7 +9,7 @@ interesting additional features:
 
  - Backports much of the Lua 5.2-5.4 standard library.
  - Allows yielding _anywhere_ within a Lua program, including debug hooks and
-   any inside any native function.
+   inside any native function.
  - Support for interrupting and resuming the VM at arbitrary points.
  - Efficient concatenation of strings using ropes.
 
