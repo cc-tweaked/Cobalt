@@ -34,7 +34,7 @@ private object ExistenceCache {
 
 	private fun getClass(ty: Type): Class<*>? {
 		return when (ty.sort) {
-			Type.VOID -> Void::class.java
+			Type.VOID -> Void.TYPE
 			Type.BOOLEAN -> Boolean::class.java
 			Type.CHAR -> Char::class.java
 			Type.BYTE -> Byte::class.java
@@ -57,7 +57,7 @@ private object ExistenceCache {
 
 	private fun getMethod(className: String, methodName: String, descriptor: String): Executable? {
 		val klass = getClassFromInternal(className) ?: return null
-		getClass(Type.getReturnType(descriptor)) ?: return null
+		val retTy = getClass(Type.getReturnType(descriptor)) ?: return null
 
 		val argTypes = Type.getArgumentTypes(descriptor)
 		val args = arrayOfNulls<Class<*>>(argTypes.size)
@@ -68,8 +68,11 @@ private object ExistenceCache {
 		return if (methodName == "<init>") {
 			tryReflection { klass.getDeclaredConstructor(*args) }
 		} else {
-			tryReflection { klass.getMethod(methodName, *args) }
+			val method = tryReflection { klass.getMethod(methodName, *args) }
 				?: tryReflection { klass.getDeclaredMethod(methodName, *args) }
+				?: return null
+			if (method.returnType != retTy) return null
+			return method
 		}
 	}
 

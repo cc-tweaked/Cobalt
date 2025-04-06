@@ -225,6 +225,7 @@ private class DowngradeMethodVisitor(
 
 		val argTypes = Type.getArgumentTypes(descriptor)
 		var stackIdx = 0
+		var stackSlot = 0
 		var constantIdx = 1
 		val fragment = StringBuilder()
 
@@ -246,7 +247,7 @@ private class DowngradeMethodVisitor(
 					}
 
 					val ty = argTypes[stackIdx]
-					mw.visitVarInsn(ty.getOpcode(ILOAD), stackIdx)
+					mw.visitVarInsn(ty.getOpcode(ILOAD), stackSlot)
 
 					val tyDescriptor = when {
 						!ty.isReference -> ty.descriptor
@@ -258,6 +259,7 @@ private class DowngradeMethodVisitor(
 						STRING_BUILDER, "append", "($tyDescriptor)L$STRING_BUILDER;", false,
 					)
 					stackIdx++
+					stackSlot += ty.size
 				}
 
 				'\u0002' -> {
