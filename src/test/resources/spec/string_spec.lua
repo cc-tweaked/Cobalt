@@ -492,6 +492,22 @@ describe("The string library", function()
 				expect(string.format("%#10x", 100)):eq("      0x64")
 				expect(string.format("%#-17X", 100)):eq("0X64             ")
 			end)
+
+			it("negative numbers :lua~=5.2", function()
+				expect(string.format("%x", -1)):eq("ffffffffffffffff")
+			end)
+
+			it("with very large numbers :lua==5.1 :!cobalt", function()
+				expect(string.format("%x", 5e19)):eq("0")
+			end)
+
+			it("with very large numbers :lua==5.2", function()
+				expect.error(string.format, "%x", 5e19):str_match("number in proper range")
+			end)
+
+			it("with very large numbers :lua>=5.3 :!cobalt", function()
+				expect.error(string.format, "%x", 5e19):str_match("number has no integer representation")
+			end)
 		end)
 
 		describe("'a' option :lua>=5.2", function()
@@ -506,21 +522,20 @@ describe("The string library", function()
 				expect(string.format("%A", 0.0)):eq("0X0P+0")
 			end)
 
+			-- Broken on Cobalt as it converts "0.0" to an integer, so when we
+			-- take the negative, it stays as 0.
 			it("negative zero :!cobalt", function()
 				expect(string.format("%a", -0.0)):eq("-0x0p+0")
 			end)
 
-			it("weird numbers :!cobalt", function()
-				expect(string.format("%a", 1/0)):str_match("^inf")
-				expect(string.format("%A", -1/0)):str_match("^%-INF")
-				expect(string.format("%a", 0/0)):str_match("^%-?nan")
-				expect(string.format("%a", -0.0)):str_match("^%-0x0")
+			it("weird numbers", function()
+				expect(string.format("%a", 1/0)):eq("inf")
+				expect(string.format("%A", -1/0)):eq("-INF")
+				expect(string.format("%a", 0/0)):str_match("^%-?nan$")
 			end)
 		end)
 
-		-- We skip both these tests on Cobalt, as it's not clear what the correct
-		-- semantics should be
-		it("very large numbers :lua==5.2 :!cobalt", function()
+		it("very large numbers :lua<=5.2", function()
 			local x = 2^64 - 2^(64-53)
 			expect(x):eq(0xfffffffffffff800)
 			expect(tonumber(string.format("%u", x))):eq(x)

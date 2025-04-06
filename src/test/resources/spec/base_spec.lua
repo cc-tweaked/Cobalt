@@ -50,9 +50,16 @@ describe("The base library", function()
 				expect(tostring(-32767)):eq("-32767")
 			end)
 
-			it("integers :lua>=5.3", function()
+			it("large numbers :lua<=5.2", function()
+				expect(tostring(4611686018427387904)):eq("4.6116860184274e+18")
+				expect(tostring(-4611686018427387904)):eq("-4.6116860184274e+18")
+				expect(tostring(9223372036854775807)):eq("9.2233720368548e+18")
+			end)
+
+			it("integers :lua>=5.3 :!cobalt", function()
 				expect(tostring(4611686018427387904)):eq("4611686018427387904")
 				expect(tostring(-4611686018427387904)):eq("-4611686018427387904")
+				expect(tostring(9223372036854775807)):eq("9223372036854775807")
 			end)
 
 			it("integer-compatible floats are preserved :lua>=5.3 :!cobalt", function()
@@ -90,6 +97,37 @@ describe("The base library", function()
 			local obj = setmetatable({}, { __tostring = function() return false end })
 			expect(tostring(obj)):eq(false)
 		end)
+
+		it("supports yielding in __tostring :cobalt", function()
+			local obj = setmetatable({}, {
+				__tostring = function() return coroutine.yield("hello") .. "!", "extra" end
+			})
+			local res, extra = expect.run_coroutine(function() return tostring(obj) end)
+
+			expect(res):eq("hello!")
+			expect(extra):eq(nil)
+		end)
+	end)
+
+	describe("pairs", function()
+		it("supports yielding in _pairs :cobalt", function()
+			local function custom_next(self, k)
+				local k, v = next(self, k)
+				if k == nil then return nil else return k, v .. "!" end
+			end
+			local obj = setmetatable({ "a", "b", "c" }, {
+				__pairs = function(self) return coroutine.yield(custom_next), self end
+			})
+			expect.run_coroutine(function()
+				local n = 0
+				for i, x in pairs(obj) do
+					n = n + 1
+					expect(x):eq(obj[i] .. "!")
+				end
+
+				expect(n):eq(3)
+			end)
+		end)
 	end)
 
 	describe("ipairs", function()
@@ -119,6 +157,25 @@ describe("The base library", function()
 		it("uses metamethods on non-table values :lua>=5.3", function()
 			local inext = ipairs("hello")
 			expect(inext("hello", 0)):eq(nil)
+		end)
+
+		it("supports yielding in __index :cobalt", function()
+			local base = { "a", "b", "c" }
+			local obj = setmetatable({}, {
+				__index = function(self, i)
+					local item = coroutine.yield(base[i])
+					if item == nil then return nil else return item .. "!" end
+				end
+			})
+			expect.run_coroutine(function()
+				local n = 0
+				for i, x in ipairs(obj) do
+					n = n + 1
+					expect(x):eq(base[i] .. "!")
+				end
+
+				expect(n):eq(3)
+			end)
 		end)
 	end)
 

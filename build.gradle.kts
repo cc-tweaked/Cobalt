@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "cc.tweaked"
-version = "0.9.1"
+version = "0.9.5"
 
 java {
 	toolchain {
@@ -149,21 +149,21 @@ publishing {
 			pom {
 				name = "Cobalt"
 				description = "A reentrant fork of LuaJ for Lua 5.2"
-				url = "https://github.com/SquidDev/Cobalt"
+				url = "https://github.com/cc-tweaked/Cobalt"
 
 				scm {
-					url = "https://github.com/SquidDev/Cobalt.git"
+					url = "https://github.com/cc-tweaked/Cobalt.git"
 				}
 
 				issueManagement {
 					system = "github"
-					url = "https://github.com/SquidDev/Cobalt/issues"
+					url = "https://github.com/cc-tweaked/Cobalt/issues"
 				}
 
 				licenses {
 					license {
 						name = "MIT"
-						url = "https://github.com/SquidDev/Cobalt/blob/master/LICENSE"
+						url = "https://github.com/cc-tweaked/Cobalt/blob/master/LICENSE"
 					}
 				}
 			}
@@ -171,7 +171,7 @@ publishing {
 	}
 
 	repositories {
-		maven("https://squiddev.cc/maven") {
+		maven("https://maven.squiddev.cc") {
 			name = "SquidDev"
 			credentials(PasswordCredentials::class)
 		}

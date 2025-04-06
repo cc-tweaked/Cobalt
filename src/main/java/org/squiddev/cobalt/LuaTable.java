@@ -624,6 +624,17 @@ public final class LuaTable extends LuaValue {
 	}
 
 	/**
+	 * Set the value of a node. This is the inverse of {@link #value(int)}.
+	 *
+	 * @param slot  The node slot.
+	 * @param value The new value.
+	 */
+	private void setNodeValue(int slot, LuaValue value) {
+		values[slot] = weakValues ? weaken(value) : value;
+		metatableFlags = 0;
+	}
+
+	/**
 	 * Insert a new key into a hash table.
 	 * <p>
 	 * First check whether key's main position is free. If not, check whether the colliding node is in its main position
@@ -793,7 +804,7 @@ public final class LuaTable extends LuaValue {
 			if (hasNewIndex()) return false;
 		} else {
 			if (value(node) == NIL && hasNewIndex()) return false;
-			values[node] = weakValues ? weaken(value) : value;
+			setNodeValue(node, value);
 			return true;
 		}
 
@@ -818,7 +829,7 @@ public final class LuaTable extends LuaValue {
 			if (hasNewIndex()) return false;
 		} else {
 			if (value(node) == NIL && hasNewIndex()) return false;
-			values[node] = weakValues ? weaken(value) : value;
+			setNodeValue(node, value);
 			return true;
 		}
 
@@ -846,7 +857,7 @@ public final class LuaTable extends LuaValue {
 
 			// newKey will have handled this otherwise
 			if (node != -1) {
-				values[node] = weakValues ? weaken(value) : value;
+				setNodeValue(node, value);
 				return;
 			}
 		} while (true);
@@ -870,9 +881,7 @@ public final class LuaTable extends LuaValue {
 
 			// newKey will have handled this otherwise
 			if (node != -1) {
-				// if (value.isNil() && !weakKeys) node.key = weaken((LuaValue) node.key);
-				values[node] = weakValues ? weaken(value) : value;
-				metatableFlags = 0;
+				setNodeValue(node, value);
 				return;
 			}
 		} while (true);

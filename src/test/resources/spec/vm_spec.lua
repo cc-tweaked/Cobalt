@@ -93,4 +93,16 @@ describe("The Lua VM", function()
 			expect("bar!"):eq(varA.hello)
 		end)
 	end)
+
+	describe("error positions", function()
+		it("includes positions when there is a single frame", function()
+			local function f() string.gsub(nil) end
+			local ok, err = coroutine.resume(coroutine.create(f))
+
+			local info = debug.getinfo(f, "S")
+			local prefix = info.short_src .. ":" .. info.linedefined .. ": bad argument"
+			expect(ok):eq(false)
+			expect(err:sub(1, #prefix)):eq(prefix)
+		end)
+	end)
 end)

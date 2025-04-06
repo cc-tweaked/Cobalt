@@ -131,7 +131,7 @@ public final class DebugHelpers {
 	public static String fileLine(LuaThread thread) {
 		DebugState ds = thread.getDebugState();
 		DebugFrame di;
-		for (int i = 0, n = ds.top; i < n; i++) {
+		for (int i = 0, n = ds.top; i <= n; i++) {
 			di = ds.getFrame(i);
 			if (di != null && di.closure != null) {
 				return di.sourceLine();

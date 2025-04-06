@@ -2,10 +2,11 @@ package org.squiddev.cobalt.lib.system;
 
 import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
 import org.squiddev.cobalt.*;
+import org.squiddev.cobalt.compiler.CompileException;
+import org.squiddev.cobalt.compiler.LoadState;
 import org.squiddev.cobalt.debug.DebugFrame;
 import org.squiddev.cobalt.function.Dispatch;
 import org.squiddev.cobalt.function.RegisteredFunction;
-import org.squiddev.cobalt.lib.BaseLib;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -34,7 +35,7 @@ public class SystemBaseLib {
 		RegisteredFunction.bind(env, new RegisteredFunction[]{
 			RegisteredFunction.of("collectgarbage", SystemBaseLib::collectgarbage),
 			RegisteredFunction.ofV("loadfile", this::loadfile),
-			RegisteredFunction.ofV("dofile", this::dofile),
+			RegisteredFunction.ofS("dofile", this::dofile),
 			RegisteredFunction.ofS("print", this::print),
 		});
 	}
@@ -63,19 +64,19 @@ public class SystemBaseLib {
 	private Varargs loadfile(LuaState state, Varargs args) throws LuaError {
 		// loadfile( [filename] ) -> chunk | nil, msg
 		return args.first().isNil() ?
-			BaseLib.loadStream(state, in, STDIN_STR) :
+			SystemBaseLib.loadBasicStream(state, in, STDIN_STR) :
 			SystemBaseLib.loadFile(state, resources, args.arg(1).checkString());
 	}
 
-	private Varargs dofile(LuaState state, Varargs args) throws LuaError, UnwindThrowable {
+	private Varargs dofile(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
 		// dofile( filename ) -> result1, ...
 		Varargs v = args.first().isNil() ?
-			BaseLib.loadStream(state, in, STDIN_STR) :
+			SystemBaseLib.loadBasicStream(state, in, STDIN_STR) :
 			SystemBaseLib.loadFile(state, resources, args.arg(1).checkString());
 		if (v.first().isNil()) {
 			throw new LuaError(v.arg(2).toString());
 		} else {
-			return Dispatch.invoke(state, v.first(), Constants.NONE);
+			return SuspendedAction.run(di, () -> Dispatch.invoke(state, v.first(), Constants.NONE));
 		}
 	}
 
@@ -99,6 +100,14 @@ public class SystemBaseLib {
 		});
 	}
 
+	private static Varargs loadBasicStream(LuaState state, InputStream is, LuaString chunkName) {
+		try {
+			return LoadState.load(state, is, chunkName, state.globals());
+		} catch (LuaError | CompileException e) {
+			return varargsOf(Constants.NIL, valueOf(e.getMessage()));
+		}
+	}
+
 	/**
 	 * Load from a named file, returning the chunk or nil,error of can't load
 	 *
@@ -112,7 +121,7 @@ public class SystemBaseLib {
 			return varargsOf(Constants.NIL, valueOf("cannot open " + filename + ": No such file or directory"));
 		}
 		try {
-			return BaseLib.loadStream(state, is, valueOf("@" + filename));
+			return loadBasicStream(state, is, valueOf("@" + filename));
 		} finally {
 			try {
 				is.close();

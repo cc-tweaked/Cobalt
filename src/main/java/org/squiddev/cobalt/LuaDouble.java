@@ -126,24 +126,20 @@ public final class LuaDouble extends LuaNumber {
 
 	@Override
 	public String toString() {
-		long l = (long) v;
-		if (l == v) return Long.toString(l);
 		if (Double.isNaN(v)) return JSTR_NAN;
 		if (Double.isInfinite(v)) return v < 0 ? JSTR_NEGINF : JSTR_POSINF;
 
-		Buffer buffer = new Buffer(4);
+		Buffer buffer = new Buffer(16);
 		NUMBER_FORMAT.format(buffer, v);
 		return buffer.toString();
 	}
 
 	@Override
 	public LuaString checkLuaString() {
-		long l = (long) v;
-		if (l == v) return ValueFactory.valueOf(Long.toString(l));
 		if (Double.isNaN(v)) return STR_NAN;
 		if (Double.isInfinite(v)) return v < 0 ? STR_NEGINF : STR_POSINF;
 
-		Buffer buffer = new Buffer(4);
+		Buffer buffer = new Buffer(16);
 		NUMBER_FORMAT.format(buffer, v);
 		return buffer.toLuaString();
 	}

@@ -24,6 +24,19 @@ describe("The Lua lexer/parser", function()
 			expect(e"0x1p9999"):eq(math.huge)
 			expect(e"0x1.0p-1022"):ne(0)
 		end)
+
+		describe("large numbers", function()
+			it("outside of long range", function()
+				expect(tonumber("9999999999999999999")):eq(1e19)
+			end)
+
+			-- On Lua <=5.2, these are parsed as doubles and so lose precision. On
+			-- >=5.3, they're parsed as longs, so don't.
+			it("inside of long range :lua<=5.2", function()
+				expect(tonumber("999999999999999999")):eq(1e18)
+				expect(tonumber("0xde0b6b3a763ffff")):eq(1e18)
+			end)
+		end)
 	end)
 
 	describe("locals", function()

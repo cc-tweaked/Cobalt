@@ -65,7 +65,7 @@ public final class MathLib {
 			RegisteredFunction.of("tan", (s, arg) -> valueOf(Math.tan(arg.checkDouble()))),
 			RegisteredFunction.of("acos", (s, arg) -> valueOf(Math.acos(arg.checkDouble()))),
 			RegisteredFunction.of("asin", (s, arg) -> valueOf(Math.asin(arg.checkDouble()))),
-			RegisteredFunction.of("atan", (s, arg) -> valueOf(Math.atan(arg.checkDouble()))),
+			RegisteredFunction.of("atan", MathLib::atan),
 			RegisteredFunction.of("cosh", (s, arg) -> valueOf(Math.cosh(arg.checkDouble()))),
 			RegisteredFunction.of("log10", (s, arg) -> valueOf(Math.log10(arg.checkDouble()))),
 			RegisteredFunction.of("sinh", (s, arg) -> valueOf(Math.sinh(arg.checkDouble()))),
@@ -113,6 +113,14 @@ public final class MathLib {
 			return valueOf(Math.log(arg1.checkDouble()));
 		} else {
 			return valueOf(Math.log(arg1.checkDouble()) / Math.log(arg2.checkDouble()));
+		}
+	}
+
+	private static LuaValue atan(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		if (arg2.isNil()) {
+			return valueOf(Math.atan(arg1.checkDouble()));
+		} else {
+			return valueOf(Math.atan2(arg1.checkDouble(), arg2.checkDouble()));
 		}
 	}
 

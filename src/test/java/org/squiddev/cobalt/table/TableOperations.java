@@ -1,12 +1,10 @@
 package org.squiddev.cobalt.table;
 
-import org.squiddev.cobalt.LuaError;
-import org.squiddev.cobalt.LuaTable;
-import org.squiddev.cobalt.LuaValue;
-import org.squiddev.cobalt.Varargs;
+import org.squiddev.cobalt.*;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -20,9 +18,11 @@ public final class TableOperations {
 	private static final Field nodes;
 	private static final Field array;
 	private static final Field lastFree;
+	private static final Method trySet;
 
 	static {
 		Field nodesField, arrayField, lastFreeField;
+		Method trySetMethod;
 		try {
 			nodesField = LuaTable.class.getDeclaredField("keys");
 			nodesField.setAccessible(true);
@@ -32,12 +32,16 @@ public final class TableOperations {
 
 			lastFreeField = LuaTable.class.getDeclaredField("lastFree");
 			lastFreeField.setAccessible(true);
+
+			trySetMethod = LuaTable.class.getDeclaredMethod("trySet", LuaValue.class, LuaValue.class);
+			trySetMethod.setAccessible(true);
 		} catch (ReflectiveOperationException e) {
 			throw new RuntimeException(e);
 		}
 		nodes = nodesField;
 		array = arrayField;
 		lastFree = lastFreeField;
+		trySet = trySetMethod;
 	}
 
 	private TableOperations() {
@@ -104,5 +108,23 @@ public final class TableOperations {
 		} catch (IllegalAccessException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Set a value on a table, with the same behaviour as {@link OperationHelper#setTable(LuaState, LuaValue, LuaValue, LuaValue)}.
+	 *
+	 * @param table The table to update.
+	 * @param key   The key to set.
+	 * @param value The value to set.
+	 */
+	public static void setValue(LuaTable table, LuaValue key, LuaValue value) throws LuaError {
+		boolean success;
+		try {
+			success = (boolean) trySet.invoke(table, key, value);
+		} catch (ReflectiveOperationException e) {
+			throw new RuntimeException(e);
+		}
+
+		if (!success) table.rawset(key, value);
 	}
 }

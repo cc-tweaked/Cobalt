@@ -27,6 +27,7 @@ package org.squiddev.cobalt.compiler;
 
 import cc.tweaked.cobalt.internal.unwind.AutoUnwind;
 import cc.tweaked.cobalt.internal.unwind.SuspendedAction;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.squiddev.cobalt.*;
 import org.squiddev.cobalt.compiler.LoadState.FunctionFactory;
 import org.squiddev.cobalt.function.LuaInterpretedFunction;
@@ -145,13 +146,13 @@ public class LuaC {
 	 * @throws CompileException If there is a syntax error.
 	 */
 	public static Prototype compile(LuaState state, InputStream stream, String name) throws CompileException, LuaError {
-		return compile(state, stream, valueOf(name), null);
+		return compile(state, stream, valueOf(name));
 	}
 
-	public static Prototype compile(LuaState state, InputStream stream, LuaString name, LuaString mode) throws CompileException, LuaError {
+	public static Prototype compile(LuaState state, InputStream stream, LuaString name) throws CompileException, LuaError {
 		Object result = SuspendedAction.noYield(() -> {
 			try {
-				return compile(state, new InputStreamReader(stream), name, mode);
+				return compile(state, new InputStreamReader(stream), name, null);
 			} catch (CompileException e) {
 				return e;
 			}
@@ -186,9 +187,23 @@ public class LuaC {
 		return parser.mainFunction();
 	}
 
-	public record InputStreamReader(InputStream stream) implements InputReader {
+	public static final class InputStreamReader extends InputReader {
+		private final @Nullable LuaState state;
+		private final InputStream stream;
+
+		public InputStreamReader(InputStream stream) {
+			this(null, stream);
+		}
+
+		public InputStreamReader(@Nullable LuaState state, InputStream stream) {
+			this.state = state;
+			this.stream = stream;
+		}
+
 		@Override
-		public int read() throws CompileException {
+		public int read() throws CompileException, UnwindThrowable, LuaError {
+			if (state != null && state.isInterrupted()) state.handleInterrupt();
+
 			try {
 				return stream.read();
 			} catch (IOException e) {
@@ -198,8 +213,8 @@ public class LuaC {
 		}
 
 		@Override
-		public int resume(Varargs varargs) {
-			throw new IllegalStateException("Cannot resume a non-yielding InputReader.");
+		public int resume(Varargs varargs) throws CompileException, LuaError, UnwindThrowable {
+			return read();
 		}
 	}
 }

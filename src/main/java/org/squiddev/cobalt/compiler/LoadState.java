@@ -38,7 +38,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * Class to manage loading of {@link Prototype} instances.
  * <p>
  * The {@link LoadState} class exposes one main function,
- * namely {@link #load(LuaState, InputStream, LuaString, LuaTable)},
+ * namely {@link #load(LuaState, InputStream, LuaString, LuaValue)},
  * to be used to load code from a particular input stream.
  * <p>
  * A simple pattern for loading and executing code is
@@ -60,11 +60,6 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  * @see LuaC
  */
 public final class LoadState {
-	/**
-	 * Name for compiled chunks
-	 */
-	private static final LuaString SOURCE_BINARY_STRING = valueOf("=?");
-
 	/**
 	 * Construct our standard Lua function.
 	 */
@@ -108,29 +103,7 @@ public final class LoadState {
 	 * @throws CompileException         If the stream cannot be loaded.
 	 */
 	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaValue env) throws CompileException, LuaError {
-		return load(state, stream, name, null, env);
-	}
-
-	public static LuaClosure load(LuaState state, InputStream stream, LuaString name, LuaString mode, LuaValue env) throws CompileException, LuaError {
-		return state.compiler.load(LuaC.compile(state, stream, name, mode), env);
-	}
-
-	/**
-	 * Construct a source name from a supplied chunk name
-	 *
-	 * @param name String name that appears in the chunk
-	 * @return source file name
-	 */
-	static LuaString getSourceName(LuaString name) {
-		if (name.length() > 0) {
-			return switch (name.charAt(0)) {
-				case '@', '=' -> name.substring(1);
-				case 27 -> SOURCE_BINARY_STRING;
-				default -> name;
-			};
-		}
-
-		return name;
+		return state.compiler.load(LuaC.compile(state, stream, name), env);
 	}
 
 	private static final int NAME_LENGTH = 30;

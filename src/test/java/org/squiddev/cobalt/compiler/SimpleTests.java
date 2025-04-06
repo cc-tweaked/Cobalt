@@ -50,7 +50,7 @@ public class SimpleTests {
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
-			LuaFunction c = LoadState.interpretedFunction(LuaC.compile(state, is, valueOf("script"), null), _G);
+			LuaFunction c = LoadState.load(state, is, valueOf("script"), _G);
 			LuaThread.runMain(state, c);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);
@@ -127,7 +127,7 @@ public class SimpleTests {
 		String s = "print('\\z";
 		assertThrows(CompileException.class, () -> {
 			InputStream is = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
-			LoadState.interpretedFunction(LuaC.compile(state, is, valueOf("script"), null), _G);
+			LoadState.load(state, is, valueOf("script"), _G);
 		});
 	}
 
