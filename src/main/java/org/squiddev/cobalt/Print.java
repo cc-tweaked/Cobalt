@@ -151,6 +151,13 @@ public final class Print {
 				out.append("\t; ");
 				printConstant(out, f, bx);
 			}
+			case OP_LOADBOOL -> {
+				out.append("\t; ");
+				out.append(b != 0 ? "true" : "false");
+				if (c != 0) {
+					out.append(", to ").append(pc + 3);
+				}
+			}
 			case OP_GETUPVAL, OP_SETUPVAL -> {
 				out.append("\t; ");
 				printUpvalueName(out, f, b);
