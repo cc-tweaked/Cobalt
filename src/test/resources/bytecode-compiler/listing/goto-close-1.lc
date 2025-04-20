@@ -10,8 +10,8 @@
 	7	[12]	GETTABUP 	1 0 -1	; _ENV "assert"
 	8	[12]	EQ       	1 0 -2	; - true
 	9	[12]	JMP      	0 1	; to 11
-	10	[12]	LOADBOOL 	2 0 1
-	11	[12]	LOADBOOL 	2 1 0
+	10	[12]	LOADBOOL 	2 0 1	; false, to 12
+	11	[12]	LOADBOOL 	2 1 0	; true
 	12	[12]	CALL     	1 2 1
 	13	[12]	RETURN   	0 1
 constants (2) for goto-close-1.lua:0:

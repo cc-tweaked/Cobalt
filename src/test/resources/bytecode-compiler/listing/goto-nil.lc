@@ -6,10 +6,10 @@
 	3	[4]	GETTABUP 	2 0 -1	; _ENV "assert"
 	4	[4]	EQ       	1 1 -2	; - nil
 	5	[4]	JMP      	0 1	; to 7
-	6	[4]	LOADBOOL 	3 0 1
-	7	[4]	LOADBOOL 	3 1 0
+	6	[4]	LOADBOOL 	3 0 1	; false, to 8
+	7	[4]	LOADBOOL 	3 1 0	; true
 	8	[4]	CALL     	2 2 1
-	9	[5]	LOADBOOL 	1 1 0
+	9	[5]	LOADBOOL 	1 1 0	; true
 	10	[6]	EQ       	0 0 -2	; - nil
 	11	[6]	JMP      	0 3	; to 15
 	12	[7]	LOADK    	0 -3	; 1
@@ -21,8 +21,8 @@
 	18	[12]	JMP      	0 2	; to 21
 	19	[12]	EQ       	1 1 -5	; - true
 	20	[12]	JMP      	0 1	; to 22
-	21	[12]	LOADBOOL 	3 0 1
-	22	[12]	LOADBOOL 	3 1 0
+	21	[12]	LOADBOOL 	3 0 1	; false, to 23
+	22	[12]	LOADBOOL 	3 1 0	; true
 	23	[12]	CALL     	2 2 1
 	24	[12]	RETURN   	0 1
 constants (5) for goto-nil.lua:0:

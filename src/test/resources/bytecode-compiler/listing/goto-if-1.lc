@@ -1,16 +1,16 @@
 
 %main <goto-if-1.lua:0,0> (15 instructions, 60 bytes at goto-if-1.lua:0)
 0 param, 4 slots, 1 upvalues, 2 locals, 1 constants, 0 functions
-	1	[1]	LOADBOOL 	0 1 0
-	2	[2]	LOADBOOL 	1 0 0
-	3	[3]	LOADBOOL 	2 1 0
+	1	[1]	LOADBOOL 	0 1 0	; true
+	2	[2]	LOADBOOL 	1 0 0	; false
+	3	[3]	LOADBOOL 	2 1 0	; true
 	4	[3]	TEST     	2 1
 	5	[3]	JMP      	0 2	; to 8
 	6	[4]	JMP      	0 5	; to 12
-	7	[6]	LOADBOOL 	1 1 0
+	7	[6]	LOADBOOL 	1 1 0	; true
 	8	[8]	TEST     	0 0
 	9	[8]	JMP      	0 2	; to 12
-	10	[9]	LOADBOOL 	0 0 0
+	10	[9]	LOADBOOL 	0 0 0	; false
 	11	[9]	JMP      	0 -5	; to 7
 	12	[13]	GETTABUP 	2 0 -1	; _ENV "assert"
 	13	[13]	MOVE     	3 1
