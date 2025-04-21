@@ -40,4 +40,61 @@ describe("Lua's base operators", function()
 			expect.error(adder, "hello"):strip_context():eq("attempt to add a 'number' with a 'string'")
 		end)
 	end)
+
+	describe("comparison", function()
+		local function value(x) if type(x) == "number" then return x else return x.value end end
+		local comparable_mt = {
+			__lt = function(x, y) return value(x) < value(y) end,
+			__le = function(x, y) return value(x) <= value(y) end,
+		}
+
+		local function mk(x) return setmetatable({ value = x }, comparable_mt) end
+
+		it("compare homogenous values", function()
+			expect(mk(1) < mk(2)):eq(true)
+			expect(mk(2) < mk(2)):eq(false)
+			expect(mk(3) < mk(2)):eq(false)
+
+			expect(mk(1) <= mk(2)):eq(true)
+			expect(mk(2) <= mk(2)):eq(true)
+			expect(mk(3) <= mk(2)):eq(false)
+		end)
+
+		it("cannot compare heterogenous values :lua<=5.1 :!cobalt", function()
+			expect.error(function() return mk(1) < 2 end)
+				:str_match(": attempt to compare table with number$")
+		end)
+
+		it("cannot compare heterogenous values", function()
+			expect.error(function() return "2.0" < 2 end)
+				:str_match(": attempt to compare string with number$")
+		end)
+
+		it("compare heterogenous values :lua>=5.2", function()
+			expect(mk(1) < 2):eq(true)
+			expect(mk(2) < 2):eq(false)
+			expect(mk(3) < 2):eq(false)
+
+			expect(1 < mk(2)):eq(true)
+			expect(2 < mk(2)):eq(false)
+			expect(3 < mk(2)):eq(false)
+
+			expect(mk(1) <= 2):eq(true)
+			expect(mk(2) <= 2):eq(true)
+			expect(mk(3) <= 2):eq(false)
+
+			expect(1 <= mk(2)):eq(true)
+			expect(2 <= mk(2)):eq(true)
+			expect(3 <= mk(2)):eq(false)
+		end)
+
+		it("<= falls back to __lt", function()
+			local comparable_mt = { __lt = function(x, y) return value(x) < value(y) end }
+			local function mk(x) return setmetatable({ value = x }, comparable_mt) end
+
+			expect(mk(1) <= mk(2)):eq(true)
+			expect(mk(2) <= mk(2)):eq(true)
+			expect(mk(3) <= mk(2)):eq(false)
+		end)
+	end)
 end)

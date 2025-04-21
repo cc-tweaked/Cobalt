@@ -215,54 +215,46 @@ public final class OperationHelper {
 	//endregion
 
 	//region Compare
+	private static LuaValue getComparisonMetatable(LuaState state, LuaValue tag, LuaValue left, LuaValue right) throws LuaError {
+		LuaValue h = left.metatag(state, tag);
+		if (!h.isNil()) return h;
+
+		return right.metatag(state, tag);
+	}
+
 	public static boolean lt(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		int tLeft = left.type();
-		if (tLeft != right.type()) {
-			throw ErrorFactory.compareError(left, right);
-		}
-		switch (tLeft) {
-			case TNUMBER:
-				return left.toDouble() < right.toDouble();
-			case TSTRING:
-				return left.checkLuaString().compareTo(right.checkLuaString()) < 0;
-			default:
-				LuaValue h = left.metatag(state, Constants.LT);
-				if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
-					return Dispatch.call(state, h, left, right).toBoolean();
-				} else {
-					throw ErrorFactory.compareError(left, right);
-				}
-		}
+		int tLeft = left.type(), tRight = right.type();
+
+		if (tLeft == TNUMBER && tRight == TNUMBER) return left.toDouble() < right.toDouble();
+		if (tLeft == TSTRING && tRight == TSTRING) return left.checkLuaString().compareTo(right.checkLuaString()) < 0;
+
+		var mt = getComparisonMetatable(state, LT, left, right);
+		if (mt.isNil()) throw ErrorFactory.compareError(left, right);
+
+		return Dispatch.call(state, mt, left, right).toBoolean();
 	}
 
 	public static boolean le(LuaState state, LuaValue left, LuaValue right) throws LuaError, UnwindThrowable {
-		int tLeft = left.type();
-		if (tLeft != right.type()) {
-			throw ErrorFactory.compareError(left, right);
+		int tLeft = left.type(), tRight = right.type();
+
+		if (tLeft == TNUMBER && tRight == TNUMBER) return left.toDouble() <= right.toDouble();
+		if (tLeft == TSTRING && tRight == TSTRING) return left.checkLuaString().compareTo(right.checkLuaString()) <= 0;
+
+		{ // Prefer __le.
+			var leMt = getComparisonMetatable(state, LE, left, right);
+			if (!leMt.isNil()) return Dispatch.call(state, leMt, left, right).toBoolean();
 		}
-		switch (tLeft) {
-			case TNUMBER:
-				return left.toDouble() <= right.toDouble();
-			case TSTRING:
-				return left.checkLuaString().compareTo(right.checkLuaString()) <= 0;
-			default:
-				LuaValue h = left.metatag(state, Constants.LE);
-				if (h.isNil()) {
-					h = left.metatag(state, Constants.LT);
-					if (!h.isNil() && h == right.metatag(state, Constants.LT)) {
-						DebugFrame frame = DebugState.get(state).getStackUnsafe();
 
-						frame.flags |= FLAG_LEQ;
-						boolean result = !Dispatch.call(state, h, right, left).toBoolean();
-						frame.flags ^= FLAG_LEQ;
+		{ // If unavailable, fall back to __lt.
+			var ltMt = getComparisonMetatable(state, LT, left, right);
+			if (ltMt.isNil()) throw ErrorFactory.compareError(left, right);
+			DebugFrame frame = DebugState.get(state).getStackUnsafe();
 
-						return result;
-					}
-				} else if (h == right.metatag(state, Constants.LE)) {
-					return Dispatch.call(state, h, left, right).toBoolean();
-				}
+			frame.flags |= FLAG_LEQ;
+			boolean result = !Dispatch.call(state, ltMt, right, left).toBoolean();
+			frame.flags ^= FLAG_LEQ;
 
-				throw ErrorFactory.compareError(left, right);
+			return result;
 		}
 	}
 
