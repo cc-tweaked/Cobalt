@@ -101,8 +101,7 @@ public final class LuaDouble extends LuaNumber {
 	}
 
 	public int hashCode() {
-		long l = Double.doubleToLongBits(v);
-		return ((int) (l >> 32)) | (int) l;
+		return Double.hashCode(v);
 	}
 
 	public double doubleValue() {
