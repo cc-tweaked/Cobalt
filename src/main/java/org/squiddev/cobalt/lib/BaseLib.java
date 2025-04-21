@@ -59,7 +59,8 @@ public final class BaseLib {
 	private BaseLib() {
 	}
 
-	public static void add(LuaTable env) {
+	public static void add(LuaState state) {
+		var env = state.globals();
 		var self = new BaseLib();
 		env.rawset("_G", env);
 		env.rawset("_VERSION", valueOf("Lua 5.2"));

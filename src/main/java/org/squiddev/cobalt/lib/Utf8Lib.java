@@ -29,7 +29,7 @@ public final class Utf8Lib {
 	private Utf8Lib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) throws LuaError {
+	public static void add(LuaState state) throws LuaError {
 		var self = new Utf8Lib();
 		self.codesIter = RegisteredFunction.ofV("utf8.codesIter", Utf8Lib::codesIter).create();
 
@@ -43,7 +43,7 @@ public final class Utf8Lib {
 		});
 		t.rawset("charpattern", PATTERN);
 
-		LibFunction.setGlobalLibrary(state, env, "utf8", t);
+		LibFunction.setGlobalLibrary(state, "utf8", t);
 	}
 
 	public static int buildCharacter(byte[] buffer, long codepoint) {

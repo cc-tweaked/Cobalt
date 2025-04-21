@@ -73,7 +73,8 @@ public class ScriptHelper {
 
 	private void setupCommon(LuaState state) throws LuaError {
 		this.state = state;
-		globals = SystemLibraries.debugGlobals(state, this::load, new VoidInputStream(), stdoutStream);
+		globals = state.globals();
+		SystemLibraries.debugGlobals(state, this::load, new VoidInputStream(), stdoutStream);
 		globals.rawset("id_", LibFunction.createV((state$, args) -> args));
 		TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
 	}

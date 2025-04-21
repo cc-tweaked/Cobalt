@@ -39,18 +39,17 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
 
 public class SimpleTests {
 	private LuaState state;
-	private LuaTable _G;
 
 	@BeforeEach
 	public void setup() throws LuaError {
 		state = new LuaState();
-		_G = SystemLibraries.standardGlobals(state);
+		SystemLibraries.standardGlobals(state);
 	}
 
 	private void doTest(String script) {
 		try {
 			InputStream is = new ByteArrayInputStream(script.getBytes(StandardCharsets.UTF_8));
-			LuaFunction c = LoadState.load(state, is, valueOf("script"), _G);
+			LuaFunction c = LoadState.load(state, is, valueOf("script"), state.globals());
 			LuaThread.runMain(state, c);
 		} catch (Exception e) {
 			fail("i/o exception: " + e);
@@ -127,7 +126,7 @@ public class SimpleTests {
 		String s = "print('\\z";
 		assertThrows(CompileException.class, () -> {
 			InputStream is = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
-			LoadState.load(state, is, valueOf("script"), _G);
+			LoadState.load(state, is, valueOf("script"), state.globals());
 		});
 	}
 

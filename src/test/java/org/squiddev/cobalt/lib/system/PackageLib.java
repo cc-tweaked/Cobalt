@@ -70,11 +70,11 @@ public class PackageLib {
 		this.loader = loader;
 	}
 
-	public void add(LuaState state, LuaTable env) throws LuaError {
-		env.rawset("require", RegisteredFunction.ofV("require", (s, a) -> noYield(() -> require(s, a))).create());
-		env.rawset("module", RegisteredFunction.ofV("module", (s, a) -> noYield(() -> module(s, a))).create());
+	public void add(LuaState state) throws LuaError {
+		state.globals().rawset("require", RegisteredFunction.ofV("require", (s, a) -> noYield(() -> require(s, a))).create());
+		state.globals().rawset("module", RegisteredFunction.ofV("module", (s, a) -> noYield(() -> module(s, a))).create());
 
-		LibFunction.setGlobalLibrary(state, env, "package", packageTbl = tableOf(
+		LibFunction.setGlobalLibrary(state, "package", packageTbl = tableOf(
 			_LOADED, loaded(state),
 			_PRELOAD, state.registry().getSubTable(REGISTRY_PRELOAD),
 			_PATH, _PATH_DEFAULT,

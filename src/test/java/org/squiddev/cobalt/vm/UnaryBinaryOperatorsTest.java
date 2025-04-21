@@ -857,13 +857,13 @@ public class UnaryBinaryOperatorsTest {
 			tbl2.setMetatable(state, mt);
 			assertTrue(lt.apply(Constants.TRUE, Constants.FALSE));
 			assertFalse(lt.apply(Constants.FALSE, Constants.TRUE));
-			assertThrows(LuaError.class, () -> lt.apply(tbl, tbl3));
-			assertThrows(LuaError.class, () -> lt.apply(tbl3, tbl));
+			assertTrue(lt.apply(tbl, tbl3));
+			assertTrue(lt.apply(tbl3, tbl));
 
 			assertFalse(le.apply(Constants.TRUE, Constants.FALSE));
 			assertTrue(le.apply(Constants.FALSE, Constants.TRUE));
-			assertThrows(LuaError.class, () -> le.apply(tbl, tbl3));
-			assertThrows(LuaError.class, () -> le.apply(tbl3, tbl));
+			assertTrue(le.apply(tbl, tbl3));
+			assertTrue(le.apply(tbl3, tbl));
 
 
 			// always use right argument
@@ -876,13 +876,13 @@ public class UnaryBinaryOperatorsTest {
 			tbl2.setMetatable(state, mt);
 			assertFalse(lt.apply(Constants.TRUE, Constants.FALSE));
 			assertTrue(lt.apply(Constants.FALSE, Constants.TRUE));
-			assertThrows(LuaError.class, () -> lt.apply(tbl, tbl3));
-			assertThrows(LuaError.class, () -> lt.apply(tbl3, tbl));
+			assertTrue(lt.apply(tbl, tbl3));
+			assertTrue(lt.apply(tbl3, tbl));
 
 			assertTrue(le.apply(Constants.TRUE, Constants.FALSE));
 			assertFalse(le.apply(Constants.FALSE, Constants.TRUE));
-			assertThrows(LuaError.class, () -> le.apply(tbl, tbl3));
-			assertThrows(LuaError.class, () -> le.apply(tbl3, tbl));
+			assertTrue(le.apply(tbl, tbl3));
+			assertTrue(le.apply(tbl3, tbl));
 
 
 		} finally {

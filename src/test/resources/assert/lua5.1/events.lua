@@ -268,7 +268,7 @@ t1 = {}; c = {}; setmetatable(c, t1)
 d = {}
 t1.__eq = function() return true end
 t1.__lt = function() return true end
-assert(c ~= d and not pcall(function() return c < d end))
+assert(c ~= d and pcall(function() return c < d end))
 setmetatable(d, t1)
 assert(c == d and c < d and not (d <= c))
 t2 = {}

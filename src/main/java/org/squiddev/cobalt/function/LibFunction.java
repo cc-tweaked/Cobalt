@@ -259,8 +259,8 @@ public sealed abstract class LibFunction extends LuaFunction
 	 */
 	protected abstract Varargs invoke(LuaState state, Varargs args) throws LuaError, UnwindThrowable;
 
-	public static void setGlobalLibrary(LuaState state, LuaTable env, String name, LuaValue library) throws LuaError {
-		env.rawset(name, library);
+	public static void setGlobalLibrary(LuaState state, String name, LuaValue library) throws LuaError {
+		state.globals().rawset(name, library);
 		state.registry().getSubTable(Constants.LOADED).rawset(name, library);
 	}
 

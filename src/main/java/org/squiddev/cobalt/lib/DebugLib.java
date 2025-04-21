@@ -74,8 +74,8 @@ public final class DebugLib {
 	private DebugLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) throws LuaError {
-		LibFunction.setGlobalLibrary(state, env, "debug", RegisteredFunction.bind(new RegisteredFunction[]{
+	public static void add(LuaState state) throws LuaError {
+		LibFunction.setGlobalLibrary(state, "debug", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("debug", DebugLib::debug),
 			RegisteredFunction.ofV("getfenv", DebugLib::getfenv),
 			RegisteredFunction.ofV("gethook", DebugLib::gethook),

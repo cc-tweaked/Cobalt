@@ -461,10 +461,14 @@ boolean	thread	before	false	attempt to compare
 boolean	thread	before	false	attempt to compare
 true
 true
-boolean	thread	after-a	false	attempt to compare
-boolean	thread	after-a	false	attempt to compare
-boolean	thread	after-a	false	attempt to compare
-boolean	thread	after-a	false	attempt to compare
+mt.__lt()	false	thread.3
+boolean	thread	after-a	true	true
+mt.__le()	false	thread.3
+boolean	thread	after-a	true	true
+mt.__lt()	thread.3	false
+boolean	thread	after-a	true	true
+mt.__le()	thread.3	false
+boolean	thread	after-a	true	true
 true
 true
 ---- __tostring

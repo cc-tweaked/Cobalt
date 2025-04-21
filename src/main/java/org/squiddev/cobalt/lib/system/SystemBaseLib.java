@@ -31,8 +31,8 @@ public class SystemBaseLib {
 		this.out = out;
 	}
 
-	public void add(LuaTable env) {
-		RegisteredFunction.bind(env, new RegisteredFunction[]{
+	public void add(LuaState state) {
+		RegisteredFunction.bind(state.globals(), new RegisteredFunction[]{
 			RegisteredFunction.of("collectgarbage", SystemBaseLib::collectgarbage),
 			RegisteredFunction.ofV("loadfile", this::loadfile),
 			RegisteredFunction.ofS("dofile", this::dofile),

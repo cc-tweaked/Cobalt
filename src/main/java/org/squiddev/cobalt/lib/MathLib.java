@@ -50,7 +50,7 @@ public final class MathLib {
 	private MathLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) throws LuaError {
+	public static void add(LuaState state) throws LuaError {
 		var self = new MathLib();
 		final RegisteredFunction[] functions = new RegisteredFunction[]{
 			RegisteredFunction.of("abs", (s, arg) -> valueOf(Math.abs(arg.checkDouble()))),
@@ -90,7 +90,7 @@ public final class MathLib {
 		t.rawset("huge", LuaDouble.POSINF);
 		t.rawset("mod", t.rawget("fmod"));
 
-		LibFunction.setGlobalLibrary(state, env, "math", t);
+		LibFunction.setGlobalLibrary(state, "math", t);
 	}
 
 	private static LuaValue fmod(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {

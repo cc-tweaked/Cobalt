@@ -53,7 +53,7 @@ public final class StringLib {
 	private StringLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) throws LuaError {
+	public static void add(LuaState state) throws LuaError {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("len", StringLib::len),
 			RegisteredFunction.of("lower", StringLib::lower),
@@ -76,7 +76,7 @@ public final class StringLib {
 
 		t.rawset("gfind", t.rawget("gmatch"));
 
-		LibFunction.setGlobalLibrary(state, env, "string", t);
+		LibFunction.setGlobalLibrary(state, "string", t);
 		state.stringMetatable = tableOf(INDEX, t);
 	}
 

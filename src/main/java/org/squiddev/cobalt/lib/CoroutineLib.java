@@ -55,8 +55,8 @@ public final class CoroutineLib {
 	private CoroutineLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) throws LuaError {
-		LibFunction.setGlobalLibrary(state, env, "coroutine", RegisteredFunction.bind(new RegisteredFunction[]{
+	public static void add(LuaState state) throws LuaError {
+		LibFunction.setGlobalLibrary(state, "coroutine", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("create", CoroutineLib::create),
 			RegisteredFunction.ofV("running", CoroutineLib::running),
 			RegisteredFunction.of("status", CoroutineLib::status),

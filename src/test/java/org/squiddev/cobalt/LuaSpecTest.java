@@ -43,8 +43,8 @@ public class LuaSpecTest {
 		state = LuaState.builder().errorReporter((error, message) -> LOGGER.log(Level.WARNING, message.get(), error)).build();
 		env = state.globals();
 		CoreLibraries.debugGlobals(state);
-		new SystemBaseLib(x -> null, System.in, System.out).add(env);
-		Bit32Lib.add(state, env);
+		new SystemBaseLib(x -> null, System.in, System.out).add(state);
+		Bit32Lib.add(state);
 		TestLib.add(env);
 
 		// Set the "arg" global as we've have some tests which need it.

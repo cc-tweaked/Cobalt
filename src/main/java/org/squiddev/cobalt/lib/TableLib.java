@@ -58,7 +58,7 @@ public final class TableLib {
 	private TableLib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) throws LuaError {
+	public static void add(LuaState state) throws LuaError {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("getn", TableLib::getn),
 			RegisteredFunction.of("maxn", TableLib::maxn),
@@ -73,9 +73,9 @@ public final class TableLib {
 			RegisteredFunction.ofS("unpack", TableLib::unpack),
 		});
 
-		env.rawset("unpack", t.rawget("unpack"));
+		state.globals().rawset("unpack", t.rawget("unpack"));
 
-		LibFunction.setGlobalLibrary(state, env, "table", t);
+		LibFunction.setGlobalLibrary(state, "table", t);
 	}
 
 	private static LuaValue checkTableLike(LuaState state, Varargs args, int index, int flags) throws LuaError {

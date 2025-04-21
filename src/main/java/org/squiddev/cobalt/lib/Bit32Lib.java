@@ -38,8 +38,8 @@ public final class Bit32Lib {
 	private Bit32Lib() {
 	}
 
-	public static void add(LuaState state, LuaTable env) throws LuaError {
-		LibFunction.setGlobalLibrary(state, env, "bit32", RegisteredFunction.bind(new RegisteredFunction[]{
+	public static void add(LuaState state) throws LuaError {
+		LibFunction.setGlobalLibrary(state, "bit32", RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.ofV("band", Bit32Lib::band),
 			RegisteredFunction.of("bnot", Bit32Lib::bnot),
 			RegisteredFunction.ofV("bor", Bit32Lib::bor),

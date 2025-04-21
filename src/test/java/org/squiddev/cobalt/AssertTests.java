@@ -117,8 +117,8 @@ public class AssertTests {
 	public void lua53(String name) throws Exception {
 		ScriptHelper helpers = new ScriptHelper("/assert/lua5.3/");
 		helpers.setup(x -> x.bytecodeFormat(LuaBytecodeFormat.instance()));
-		Bit32Lib.add(helpers.state, helpers.globals);
-		Utf8Lib.add(helpers.state, helpers.globals);
+		Bit32Lib.add(helpers.state);
+		Utf8Lib.add(helpers.state);
 
 		helpers.runWithDump(name);
 	}
