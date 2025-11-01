@@ -25,6 +25,7 @@
 package org.squiddev.cobalt;
 
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedInvocationConstants;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -63,7 +64,7 @@ public class CoroutineTest {
 		});
 	}
 
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@MethodSource("getTests")
 	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		helpers.setup();
@@ -71,7 +72,7 @@ public class CoroutineTest {
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));
 	}
 
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@MethodSource("getTests")
 	public void runSuspend(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		var handler = new SuspendingHandler();

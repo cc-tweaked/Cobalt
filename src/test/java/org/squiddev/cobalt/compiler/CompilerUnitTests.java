@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt.compiler;
 
+import org.junit.jupiter.params.ParameterizedInvocationConstants;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.LuaError;
@@ -44,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Compiles Lua's test files to bytecode and asserts that it is equal to a golden file produced by luac.
  */
 public class CompilerUnitTests {
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"all", "api", "attrib", "big", "calls", "checktable", "closure", "code", "constructs", "db", "errors",
 		"events", "files", "gc", "literals", "locals", "main", "math", "nextvar", "pm", "sort", "strings", "vararg",
@@ -53,7 +54,7 @@ public class CompilerUnitTests {
 		compareResults("/bytecode-compiler/lua5.1/", filename);
 	}
 
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"modulo", "construct", "bigattr", "controlchars", "comparators", "mathrandomseed", "varargs",
 		"multi-assign",
@@ -90,7 +91,7 @@ public class CompilerUnitTests {
 		assertEquals(sourceBytecode, redumpBytecode);
 	}
 
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"goto-close-1",
 		"goto-close-2",

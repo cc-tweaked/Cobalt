@@ -509,7 +509,8 @@ class StringMatch {
 			return !sig;
 		}
 
-		boolean singlematch(int c, int poff, int ep) {
+		boolean singlematch(int c, int poff, int ep) throws LuaError {
+			if (state.isInterrupted()) state.handleInterruptWithoutYield();
 			return switch (p.charAt(poff)) {
 				case '.' -> true;
 				case L_ESC -> match_class(c, p.charAt(poff + 1));

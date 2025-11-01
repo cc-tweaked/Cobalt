@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "cc.tweaked"
-version = "0.9.6"
+version = "0.9.7"
 
 java {
 	toolchain {
@@ -74,6 +74,7 @@ fun runCheckerFramework(name: String, args: List<String>) {
 				"--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+				"--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
 				"--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",

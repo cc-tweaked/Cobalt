@@ -27,6 +27,7 @@ package org.squiddev.cobalt;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedInvocationConstants;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -73,7 +74,7 @@ public class ProtectionTest {
 	}
 
 	@Timeout(3)
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {"string", "loop", "load"})
 	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		LuaThread.runMain(helpers.state, helpers.loadScript(name));

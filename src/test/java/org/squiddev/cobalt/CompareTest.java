@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.junit.jupiter.params.ParameterizedInvocationConstants;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.LuaBytecodeFormat;
@@ -36,7 +37,7 @@ public class CompareTest {
 	 * Results are compared for exact match with
 	 * the installed C-based lua environment.
 	 */
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"baselibargs", "coroutinelibargs", "iolibargs", "mathlibargs", "modulelibargs", "operators", "stringlibargs", "tablelibargs",
 	})
@@ -52,7 +53,7 @@ public class CompareTest {
 	 * Results are compared for exact match with
 	 * the installed C-based lua environment.
 	 */
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"baselib", "coroutinelib", "debuglib", "errors", "iolib", "format", "functions", "manyupvals", "mathlib",
 		"metatags", "oslib", "stringlib", "tablelib", "tailcalls", "traceback", "upvalues", "vm",

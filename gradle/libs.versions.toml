@@ -1,15 +1,15 @@
 [versions]
-asm = "9.3"
-slf4j = "2.0.6"
+asm = "9.9"
+slf4j = "2.0.17"
 
-checkerFramework-plugin = "0.6.17"
-checkerFramework = "3.36.0"
+checkerFramework = "3.51.1"
 
-kotlin = "1.8.10"
-kotlin-coroutines = "1.6.4"
+kotlin = "2.2.21"
+kotlin-coroutines = "1.10.2"
 
-jmh = "1.23"
-junit = "5.9.2"
+jmh = "1.37"
+junit = "6.0.1"
+junitPlatform = "6.0.1"
 hamcrest = "2.2"
 
 [libraries]
@@ -33,6 +33,7 @@ hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }
 jmh = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
 jmh-processor = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 
@@ -41,7 +42,7 @@ asm = ["asm", "asm-analysis", "asm-commons", "asm-tree", "asm-util"]
 kotlin = ["kotlin-stdlib", "kotlin-coroutines"]
 
 test = ["junit-jupiter-api", "junit-jupiter-params", "hamcrest", "jmh"]
-testRuntime = ["junit-jupiter-engine"]
+testRuntime = ["junit-jupiter-engine", "junit-platform-launcher"]
 testAnnotationProcessor = ["jmh-processor"]
 
 [plugins]

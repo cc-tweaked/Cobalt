@@ -25,6 +25,7 @@
 package org.squiddev.cobalt;
 
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedInvocationConstants;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -43,7 +44,7 @@ import static org.squiddev.cobalt.ValueFactory.valueOf;
  */
 @Timeout(value = 15, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
 public class AssertTests {
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {"table-hash-01", "table-hash-02"})
 	public void tables(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/assert/table/");
@@ -51,7 +52,7 @@ public class AssertTests {
 		helpers.runWithDump(name);
 	}
 
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"debug",
 		"debug-getinfo",
@@ -72,7 +73,7 @@ public class AssertTests {
 		helpers.runWithDump(name);
 	}
 
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		// Skip all, api, big and main
 		"attrib",
@@ -108,7 +109,7 @@ public class AssertTests {
 		helpers.runWithDump(name);
 	}
 
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {
 		"db",
 		"nextvar",

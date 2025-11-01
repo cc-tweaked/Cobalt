@@ -24,6 +24,7 @@
  */
 package org.squiddev.cobalt;
 
+import org.junit.jupiter.params.ParameterizedInvocationConstants;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.squiddev.cobalt.compiler.CompileException;
@@ -32,7 +33,7 @@ import java.io.IOException;
 
 
 public class CoroutineLoopTest {
-	@ParameterizedTest(name = ParameterizedTest.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
+	@ParameterizedTest(name = ParameterizedInvocationConstants.ARGUMENTS_WITH_NAMES_PLACEHOLDER)
 	@ValueSource(strings = {"nested", "top"})
 	public void run(String name) throws IOException, CompileException, LuaError, InterruptedException {
 		ScriptHelper helpers = new ScriptHelper("/coroutine/loop-");
