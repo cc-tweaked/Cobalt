@@ -40,22 +40,22 @@ final class ThreeArgFunction extends LibFunction {
 	}
 
 	@Override
-	protected LuaValue call(LuaState state) throws LuaError {
+	protected LuaValue call(LuaState state) throws LuaError, UnwindThrowable {
 		return function.call(state, NIL, NIL, NIL);
 	}
 
 	@Override
-	protected LuaValue call(LuaState state, LuaValue arg) throws LuaError {
+	protected LuaValue call(LuaState state, LuaValue arg) throws LuaError, UnwindThrowable {
 		return function.call(state, arg, NIL, NIL);
 	}
 
 	@Override
-	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError, UnwindThrowable {
 		return function.call(state, arg1, arg2, NIL);
 	}
 
 	@Override
-	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
+	protected LuaValue call(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError, UnwindThrowable {
 		return function.call(state, arg1, arg2, arg3);
 	}
 
