@@ -38,6 +38,10 @@ describe("The Lua VM", function()
 				local a, b = coroutine.yield(x, y)
 				return a.x < b.x
 			end,
+			__le = function(x, y)
+				local a, b = coroutine.yield(x, y)
+				return a.x <= b.x
+			end,
 			__len = function(x)
 				return coroutine.yield(x).x
 			end,

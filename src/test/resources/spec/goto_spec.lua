@@ -22,16 +22,28 @@ describe("goto statements :lua>=5.2", function()
 			fail_parse([[::l1:: do ::l1:: end]], "label 'l1' already defined")
 		end)
 
-		it("undefined label", function()
-			fail_parse([[ goto l1; local aa ::l1:: ::l2:: print(3) ]], "into the scope of local 'aa'")
+		it("undefined label :lua<5.5", function()
+			fail_parse([[ goto l1; local aa ::l1:: ::l2:: print(3) ]], "<goto l1> at line 1 jumps into the scope of local 'aa'")
 		end)
 
-		it("jumping over variable definition", function()
+		it("undefined label :lua>=5.5 :!cobalt", function()
+			fail_parse([[ goto l1; local aa ::l1:: ::l2:: print(3) ]], "<goto l1> at line 1 jumps into the scope of 'aa'")
+		end)
+
+		it("jumping over variable definition :lua<5.5", function()
 			fail_parse([[
 			do local bb, cc; goto l1; end
 			local aa
 			::l1:: print(3)
-			]], "into the scope of local 'aa'")
+			]], "<goto l1> at line 1 jumps into the scope of local 'aa'")
+		end)
+
+		it("jumping over variable definition :lua>=5.5 :!cobalt", function()
+			fail_parse([[
+			do local bb, cc; goto l1; end
+			local aa
+			::l1:: print(3)
+			]], "<goto l1> at line 1 jumps into the scope of 'aa'")
 		end)
 
 		it("jumping into a block", function()
@@ -39,21 +51,38 @@ describe("goto statements :lua>=5.2", function()
 			fail_parse([[ goto l1 do ::l1:: end ]], "label 'l1'")
 		end)
 
-		it("within a repeat until", function()
+		it("within a repeat until :lua<5.5", function()
 			fail_parse([[
 				repeat
 					if x then goto cont end
 					local xuxu = 10
 					::cont::
 				until xuxu < x
-			]], "local 'xuxu'")
+			]], "<goto cont> at line 2 jumps into the scope of local 'xuxu'")
 		end)
 
-		it("break outside a loop :lua>=5.4", function()
+		it("within a repeat until :lua>=5.5 :!cobalt", function()
+			fail_parse([[
+				repeat
+					if x then goto cont end
+					local xuxu = 10
+					::cont::
+				until xuxu < x
+			]], "<goto cont> at line 2 jumps into the scope of 'xuxu'")
+		end)
+
+		it("break outside a loop :lua==5.4", function()
 			fail_parse([[
 				do end
 				break
 			]], "break outside loop at line 2")
+		end)
+
+		it("break outside a loop :lua>=5.5 :!cobalt", function()
+			fail_parse([[
+				do end
+				break
+			]], "break outside loop near 'break'")
 		end)
 	end)
 

@@ -88,7 +88,7 @@ describe("Lua's base operators", function()
 			expect(3 <= mk(2)):eq(false)
 		end)
 
-		it("<= falls back to __lt", function()
+		it("<= falls back to __lt :lua<5.5", function()
 			local comparable_mt = { __lt = function(x, y) return value(x) < value(y) end }
 			local function mk(x) return setmetatable({ value = x }, comparable_mt) end
 

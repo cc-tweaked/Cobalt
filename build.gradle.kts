@@ -35,6 +35,7 @@ dependencies {
 
 	"checkerFramework"(libs.checkerFramework)
 
+	testImplementation(platform(libs.junit.bom))
 	testCompileOnly(libs.checkerFramework.qual)
 	testImplementation(libs.bundles.test)
 	testRuntimeOnly(libs.bundles.testRuntime)

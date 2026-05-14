@@ -80,6 +80,35 @@ local function log_test(colour, test, status)
 	print(("\27[38:5:247m%s\27[38:5:%dm%s \27[38:5:247m(%s)\27[0m"):format(test.path, colour, test.name, status))
 end
 
+--- Get the contents of a file on and around a specific line.
+local function get_lines(file, lineno, context)
+	local handle = io.open(file)
+	if not handle then return end
+
+	for i = 1, lineno - 1 - context do handle:read("*l") end
+
+	local lines = {}
+	for lineno = lineno - context, lineno + context do
+		local line = handle:read("*l")
+		if line == nil then break end
+		lines[#lines + 1] = { lineno, line }
+	end
+	handle:close()
+
+	return lines
+end
+
+--- Find the first frame of a coroutine which isn't within the test code.
+local function find_error_frame(co)
+	for i = 1, 16 do
+		local info = debug.getinfo(co, i, "Sl")
+		if not info then break end
+		if info.source:sub(1, 1) == "@" and not info.source:match("_prelude%.lua$") then
+			return info
+		end
+	end
+end
+
 local total, skipped, failed = 0, 0, 0
 for _, test in ipairs(tests) do
 	if not test.func then
@@ -97,7 +126,22 @@ for _, test in ipairs(tests) do
 			failed = failed + 1
 
 			log_test(197, test, "failed")
-			print(debug.traceback(co, err))
+			print(err)
+
+			-- Print the surrounding lines
+			local info = find_error_frame(co)
+			if info then
+				local lines = get_lines(info.source:sub(2), info.currentline, 1)
+				for _, line in ipairs(lines) do
+					print(("\27[%sm%3d | %s\27[0m"):format(
+						line[1] == info.currentline and "34" or "38:5:247",
+						line[1], line[2]
+					))
+				end
+			end
+
+			-- And print the stack trace
+			print(debug.traceback(co))
 		else
 			if verbose then log_test(70, test, "passed") end
 		end

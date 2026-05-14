@@ -242,8 +242,8 @@ describe("The string library", function()
 		end)
 
 		it("errors on overflows :lua>=5.3 :!cobalt", function()
-			expect.error(string.rep, "aa", 2^30):eq("resulting string too large")
-			expect.error(string.rep, "", 2^30, "aa"):eq("resulting string too large")
+			expect.error(string.rep, "aa", 0x4000000000000000):eq("resulting string too large")
+			expect.error(string.rep, "", 0x4000000000000000, "aa"):eq("resulting string too large")
 		end)
 	end)
 
@@ -458,11 +458,17 @@ describe("The string library", function()
 			it("errors on too large ranges", function()
 				expect.error(string.format, "%1"..("0"):rep(600)..".3d", 10):str_match("too long")
 
-				local msg =  _VERSION == "Lua 5.4" and "invalid conversion" or "too long"
-				expect.error(string.format, "%100.3d", 10):str_match(msg)
-				expect.error(string.format, "%1.100d", 10):str_match(msg)
-
 				expect.error(string.format, "%10.1"..("0"):rep(600).."004d", 10):str_match("too long")
+			end)
+
+			it("errors on too large ranges :lua<5.4", function()
+				expect.error(string.format, "%100.3d", 10):str_match("too long")
+				expect.error(string.format, "%1.100d", 10):str_match("too long")
+			end)
+
+			it("errors on too large ranges :lua>=5.4 :!cobalt", function()
+				expect.error(string.format, "%100.3d", 10):str_match("invalid conversion")
+				expect.error(string.format, "%1.100d", 10):str_match("invalid conversion")
 			end)
 
 			it("supports various modifiers", function()

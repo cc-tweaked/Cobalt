@@ -51,10 +51,22 @@ describe("Lua tables", function()
 		it("behaves identically to PUC Lua on sparse tables", function()
 			-- Ensure the length operator on sparse tables behaves identically to PUC Lua.
 			expect(#{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, nil, 17, 18, [33] = {} }):eq(18)
+		end)
+
+		it("behaves identically to PUC Lua on sparse tables :lua<5.5", function()
+			-- Continuation of the above, but accounting for Lua 5.5's new table size.
 			expect(#{ 1, 2, 3, nil, 5, nil, nil, 8, 9 }):eq(9)
 			expect(#{ 1, 2, 3, nil, 5, nil, 7, 8 }):eq(8)
 			expect(#{ 1, 2, 3, nil, 5, nil, 7, 8, 9 }):eq(9)
 			expect(#{ 1, nil, [2] = 2, 3 }):eq(3)
+		end)
+
+		it("behaves identically to PUC Lua on sparse tables :lua>=5.5 :!cobalt", function()
+			-- Continuation of the above, but accounting for Lua 5.5's new table size.
+			expect(#{ 1, 2, 3, nil, 5, nil, nil, 8, 9 }):eq(3)
+			expect(#{ 1, 2, 3, nil, 5, nil, 7, 8 }):eq(3)
+			expect(#{ 1, 2, 3, nil, 5, nil, 7, 8, 9 }):eq(3)
+			expect(#{ 1, nil, [2] = 2, 3 }):eq(1)
 		end)
 
 		it("behaves identically to PUC Lua after resizing", function()
@@ -73,7 +85,7 @@ describe("Lua tables", function()
 	end)
 
 	describe("can be constructed from varargs", function()
-		it("presizes the array", function()
+		it("presizes the array :lua<5.5", function()
 			local function create(...) return { ... } end
 
 			-- If we'd constructed this table normally, it'd have a length of 5. However,
@@ -272,6 +284,9 @@ describe("Lua tables", function()
 	describe("rawlen :lua>=5.2", function()
 		it("behaves identically to PUC Lua on sparse tables", function()
 			expect(rawlen({[1]="e",[2]="a",[3]="b",[4]="c"})):eq(4)
+		end)
+
+		it("behaves identically to PUC Lua on sparse tables :lua<5.5", function()
 			expect(rawlen({[1]="e",[2]="a",[3]="b",[4]="c",[8]="f"})):eq(8)
 		end)
 	end)
@@ -556,11 +571,11 @@ describe("Lua tables", function()
 				local pos1, pos2
 				local a = setmetatable({}, {
 					__index = function (_,k) pos1 = k end,
-					__newindex = function (_,k) pos2 = k; error() end
+					__newindex = function (_,k) pos2 = k; error("<error msg>", 0) end
 				})
 				local st, msg = pcall(table.move, a, f, e, t)
 				expect(st):eq(false)
-				expect(msg):eq(nil)
+				expect(msg):eq("<error msg>")
 				expect(pos1):eq(x)
 				expect(pos2):eq(y)
 			end
@@ -666,7 +681,7 @@ describe("Lua tables", function()
 			check {1,2,3,4,5,6}
 		end)
 
-		it("behaves identically to PUC Lua on sparse tables", function()
+		it("behaves identically to PUC Lua on sparse tables :lua<5.5", function()
 			local test = {[1]="e",[2]="a",[3]="d",[4]="c",[8]="b"}
 
 			table.sort(test, function(a, b)
