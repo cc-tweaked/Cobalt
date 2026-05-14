@@ -49,6 +49,28 @@ describe("The utf8 library :lua>=5.3", function()
 			expect.error(utf8.offset, "𦧺", 1, 2):str_match("continuation byte")
 			expect.error(utf8.offset, "\x80", 1):str_match("continuation byte")
 		end)
+
+		it("errors on continuation bytes :lua>=5.5", function()
+			expect.error(utf8.offset, "\x9c", -1):str_match("continuation byte")
+		end)
+
+		it("returns the character's offset", function()
+			expect(utf8.offset("αβγ𦧺", 1)):eq(1)
+			expect(utf8.offset("αβγ𦧺", 2)):eq(3)
+			expect(utf8.offset("αβγ𦧺", 3)):eq(5)
+			expect(utf8.offset("αβγ𦧺", 4)):eq(7)
+			expect(utf8.offset("αβγ𦧺", 5)):eq(11)
+			expect(utf8.offset("αβγ𦧺", 6)):eq(nil)
+		end)
+
+		it("returns the character's end position :lua>=5.5", function()
+			expect { utf8.offset("αβγ𦧺", 1) }:same { 1, 2 }
+			expect { utf8.offset("αβγ𦧺", 2) }:same { 3, 4 }
+			expect { utf8.offset("αβγ𦧺", 3) }:same { 5, 6 }
+			expect { utf8.offset("αβγ𦧺", 4) }:same { 7, 10 }
+			expect { utf8.offset("αβγ𦧺", 5) }:same { 11, 11 }
+			expect { utf8.offset("αβγ𦧺", 6) }:same { nil }
+		end)
 	end)
 
 	describe("utf8.len", function()

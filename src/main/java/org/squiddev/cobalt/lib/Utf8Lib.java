@@ -39,7 +39,7 @@ public final class Utf8Lib {
 			RegisteredFunction.ofV("codes", self::codes),
 			RegisteredFunction.ofV("codepoint", Utf8Lib::codepoint),
 			RegisteredFunction.ofV("len", Utf8Lib::len),
-			RegisteredFunction.of("offset", Utf8Lib::offset),
+			RegisteredFunction.ofV("offset", Utf8Lib::offset),
 		});
 		t.rawset("charpattern", PATTERN);
 
@@ -128,13 +128,13 @@ public final class Utf8Lib {
 		return valueOf(n);
 	}
 
-	private static LuaValue offset(LuaState state, LuaValue arg1, LuaValue arg2, LuaValue arg3) throws LuaError {
-		LuaString s = arg1.checkLuaString();
-		int n = arg2.checkInteger();
+	private static Varargs offset(LuaState state, Varargs args) throws LuaError {
+		LuaString s = args.arg(1).checkLuaString();
+		int n = args.arg(2).checkInteger();
 
 		int length = s.length();
 		int position = (n >= 0) ? 1 : length + 1;
-		position = posRelative(arg3.optInteger(position), length) - 1;
+		position = posRelative(args.arg(3).optInteger(position), length) - 1;
 		if (position < 0 || position > length) throw ErrorFactory.argError(3, "position out of bounds");
 
 		if (n == 0) {
@@ -160,7 +160,16 @@ public final class Utf8Lib {
 			}
 		}
 
-		return n == 0 ? valueOf(position + 1) : NIL;
+		if (n != 0) return NIL;
+
+		if (isCont(s, position)) throw new LuaError("initial position is a continuation byte");
+
+		int endPosition = position;
+		if (position < s.length() && (s.byteAt(position) & 0x80) != 0) {
+			while (isCont(s, endPosition + 1)) endPosition++;
+		}
+
+		return varargsOf(valueOf(position + 1), valueOf(endPosition + 1));
 	}
 
 	private static long decodeUtf8(LuaString str, int index, IntBuffer offset) {
