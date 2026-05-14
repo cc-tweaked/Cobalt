@@ -119,8 +119,8 @@ public final class TableLib {
 		// create(seq[, rest]) -> table
 		int seq = arg1.checkInteger();
 		int rest = arg2.optInteger(0);
-		if (seq < 0) throw ErrorFactory.argError(1, "out of range");
-		if (rest < 0) throw ErrorFactory.argError(1, "out of range");
+		if (seq < 0 || seq >= Integer.MAX_VALUE - 1) throw ErrorFactory.argError(1, "out of range");
+		if (rest < 0 || rest >= Integer.MAX_VALUE - 1) throw ErrorFactory.argError(1, "out of range");
 		return new LuaTable(seq, rest);
 	}
 
