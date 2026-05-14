@@ -172,7 +172,7 @@ class StringFormat {
 					else if (value == Double.POSITIVE_INFINITY) buf.append("1e9999");
 					else if (value == Double.NEGATIVE_INFINITY) buf.append("-1e9999");
 					else if ((long) value == value) buf.append(Long.toString((long) value));
-					else DoubleToStringConverter.toHex(value, -1, DEFAULT_LOWER_OPTIONS, buf);
+					else DoubleToStringConverter.toHex(value, -1, DoubleToStringConverter.FormatOptions.DEFAULT, buf);
 				}
 			}
 			case TBOOLEAN, TNIL -> buf.append(s.toString());

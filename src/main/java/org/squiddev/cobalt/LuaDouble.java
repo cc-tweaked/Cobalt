@@ -24,7 +24,7 @@
  */
 package org.squiddev.cobalt;
 
-import org.squiddev.cobalt.lib.FormatDesc;
+import cc.tweaked.cobalt.internal.doubles.DoubleToStringConverter;
 
 /**
  * Extension of {@link LuaNumber} which can hold a Java double as its value.
@@ -81,7 +81,6 @@ public final class LuaDouble extends LuaNumber {
 	private static final LuaString STR_NAN = ValueFactory.valueOf(JSTR_NAN);
 	private static final LuaString STR_POSINF = ValueFactory.valueOf(JSTR_POSINF);
 	private static final LuaString STR_NEGINF = ValueFactory.valueOf(JSTR_NEGINF);
-	private static final FormatDesc NUMBER_FORMAT = FormatDesc.ofUnsafe(".14g");
 
 	/**
 	 * The value being held by this instance.
@@ -123,24 +122,40 @@ public final class LuaDouble extends LuaNumber {
 		return o instanceof LuaDouble && ((LuaDouble) o).v == v;
 	}
 
+	private LuaString toLuaStringPrecision(int precision) {
+		var buffer = new Buffer(16);
+		DoubleToStringConverter.toPrecision(v, precision, DoubleToStringConverter.FormatOptions.DEFAULT, buffer);
+		return buffer.toLuaString();
+	}
+
+	private LuaString toLuaStringAuto() {
+		var resultLow = toLuaStringPrecision(15);
+
+		// FIXME: While this matches Lua 5.5's implementation, it's horrible and inefficient. We should
+		//  be able to change DoubleConversion to handle this in the formatting code.
+		double valueLow;
+		try {
+			valueLow = Double.valueOf(resultLow.toString());
+		} catch (NumberFormatException e) {
+			valueLow = Double.NaN;
+		}
+		if (valueLow == v) return resultLow;
+
+		return toLuaStringPrecision(17);
+	}
+
 	@Override
 	public String toString() {
 		if (Double.isNaN(v)) return JSTR_NAN;
 		if (Double.isInfinite(v)) return v < 0 ? JSTR_NEGINF : JSTR_POSINF;
-
-		Buffer buffer = new Buffer(16);
-		NUMBER_FORMAT.format(buffer, v);
-		return buffer.toString();
+		return toLuaStringAuto().toString();
 	}
 
 	@Override
 	public LuaString checkLuaString() {
 		if (Double.isNaN(v)) return STR_NAN;
 		if (Double.isInfinite(v)) return v < 0 ? STR_NEGINF : STR_POSINF;
-
-		Buffer buffer = new Buffer(16);
-		NUMBER_FORMAT.format(buffer, v);
-		return buffer.toLuaString();
+		return toLuaStringAuto();
 	}
 
 	@Override

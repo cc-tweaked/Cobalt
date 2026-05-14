@@ -34,12 +34,6 @@ package cc.tweaked.cobalt.internal.doubles;
 import org.checkerframework.checker.signedness.qual.Unsigned;
 
 final class BigNumDtoa {
-
-	@SuppressWarnings("ImplicitNumericConversion")
-	private static final int ASCII_ZERO = '0';
-	@SuppressWarnings("ImplicitNumericConversion")
-	private static final int ASCII_NINE = '9';
-
 	public enum BignumDtoaMode {
 		/**
 		 * Return a fixed number of digits after the decimal point.

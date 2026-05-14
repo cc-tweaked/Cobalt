@@ -31,15 +31,6 @@ import org.squiddev.cobalt.LuaError;
 import org.squiddev.cobalt.LuaString;
 
 public class FormatDesc {
-	private static final DoubleToStringConverter.Symbols LOWER_SYMBOLS =
-		new DoubleToStringConverter.Symbols("inf", "nan", 'e', 'x', 'p', 'a');
-	private static final DoubleToStringConverter.Symbols UPPER_SYMBOLS =
-		new DoubleToStringConverter.Symbols("INF", "NAN", 'E', 'X', 'P', 'A');
-
-	static final DoubleToStringConverter.FormatOptions DEFAULT_LOWER_OPTIONS = new DoubleToStringConverter.FormatOptions(
-		LOWER_SYMBOLS, false, false, false, -1, false, false
-	);
-
 	private static final int MAX_FLAGS = 5;
 	static final int LEFT_ADJUST = 1 << 0;
 	static final int EXPLICIT_PLUS = 1 << 1;
@@ -293,7 +284,7 @@ public class FormatDesc {
 
 	private DoubleToStringConverter.FormatOptions doubleOpts(boolean caps) {
 		return new DoubleToStringConverter.FormatOptions(
-			caps ? UPPER_SYMBOLS : LOWER_SYMBOLS,
+			caps ? DoubleToStringConverter.Symbols.UPPER_SYMBOLS : DoubleToStringConverter.Symbols.LOWER_SYMBOLS,
 			explicitPlus(), space(), alternateForm(), width, zeroPad(), leftAdjust()
 		);
 	}

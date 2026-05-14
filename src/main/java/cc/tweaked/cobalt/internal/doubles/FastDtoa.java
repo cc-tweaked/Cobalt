@@ -36,15 +36,6 @@ import static cc.tweaked.cobalt.internal.doubles.Assert.requireArg;
 import static cc.tweaked.cobalt.internal.doubles.UnsignedValues.*;
 
 final class FastDtoa {
-	@SuppressWarnings("ImplicitNumericConversion")
-	private static final int ASCII_ZERO = '0';
-
-	/**
-	 * fastDtoa will produce at most FAST_DTOA_MAXIMAL_LENGTH digits.
-	 */
-	public static final int FAST_DTOA_MAXIMAL_LENGTH = 17;
-
-
 	/**
 	 * The minimal and maximal target exponent define the range of w's binary
 	 * exponent, where 'w' is the result of multiplying the input by a cached power

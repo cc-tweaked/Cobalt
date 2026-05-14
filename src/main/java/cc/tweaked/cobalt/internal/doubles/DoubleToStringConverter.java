@@ -724,7 +724,7 @@ public final class DoubleToStringConverter {
 	 *                        <p/>
 	 * @param mode            the {@link DtoaMode DtoaMode} used for the conversion
 	 *                        <p/>
-	 * @param requestedDigits for <b>FIXED</b> the number of digits after teh decimal point,
+	 * @param requestedDigits for <b>FIXED</b> the number of digits after the decimal point,
 	 *                        for <b>PRECISION</b> the number of digits where the first digit is not '0',
 	 *                        <p/>
 	 * @param buffer          the {@link DecimalRepBuf} initialized with enough space for the conversion(explained above). On
@@ -796,6 +796,8 @@ public final class DoubleToStringConverter {
 		char hexExponent,
 		char hexBase
 	) {
+		public static final Symbols LOWER_SYMBOLS = new Symbols("inf", "nan", 'e', 'x', 'p', 'a');
+		public static final Symbols UPPER_SYMBOLS = new Symbols("INF", "NAN", 'E', 'X', 'P', 'A');
 	}
 
 	/**
@@ -814,6 +816,9 @@ public final class DoubleToStringConverter {
 		boolean zeroPad,
 		boolean leftAdjust
 	) {
+		public static final FormatOptions DEFAULT = new FormatOptions(
+			Symbols.LOWER_SYMBOLS, false, false, false, -1, false, false
+		);
 	}
 
 	private record ExponentPart(char[] buffer, int start, int length) {
