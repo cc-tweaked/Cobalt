@@ -62,6 +62,7 @@ public final class TableLib {
 		LuaTable t = RegisteredFunction.bind(new RegisteredFunction[]{
 			RegisteredFunction.of("getn", TableLib::getn),
 			RegisteredFunction.of("maxn", TableLib::maxn),
+			RegisteredFunction.of("create", TableLib::create),
 			RegisteredFunction.ofS("remove", TableLib::remove),
 			RegisteredFunction.ofS("concat", TableLib::concat),
 			RegisteredFunction.ofS("insert", TableLib::insert),
@@ -112,6 +113,15 @@ public final class TableLib {
 		}
 
 		return valueOf(max);
+	}
+
+	private static LuaValue create(LuaState state, LuaValue arg1, LuaValue arg2) throws LuaError {
+		// create(seq[, rest]) -> table
+		int seq = arg1.checkInteger();
+		int rest = arg2.optInteger(0);
+		if (seq < 0) throw ErrorFactory.argError(1, "out of range");
+		if (rest < 0) throw ErrorFactory.argError(1, "out of range");
+		return new LuaTable(seq, rest);
 	}
 
 	private static Varargs remove(LuaState state, DebugFrame frame, Varargs args) throws LuaError, UnwindThrowable {
