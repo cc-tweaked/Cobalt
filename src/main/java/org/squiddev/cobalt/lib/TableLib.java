@@ -86,8 +86,8 @@ public final class TableLib {
 			if (metatable != null
 				// For each operation, check (flag => metatag!=nil).
 				&& ((flags & TABLE_LEN) == 0 || !metatable.rawget(CachedMetamethod.LEN).isNil())
-				&& ((flags & TABLE_READ) == 0 || metatable.rawget(CachedMetamethod.INDEX).isNil())
-				&& ((flags & TABLE_WRITE) == 0 || metatable.rawget(CachedMetamethod.NEWINDEX).isNil())
+				&& ((flags & TABLE_READ) == 0 || !metatable.rawget(CachedMetamethod.INDEX).isNil())
+				&& ((flags & TABLE_WRITE) == 0 || !metatable.rawget(CachedMetamethod.NEWINDEX).isNil())
 			) {
 				return value;
 			}
