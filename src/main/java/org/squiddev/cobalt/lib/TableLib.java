@@ -232,8 +232,8 @@ public final class TableLib {
 		int from = args.arg(2).checkInteger();
 		int end = args.arg(3).checkInteger();
 		int to = args.arg(4).checkInteger();
-		LuaValue dest = checkTableLike(state, args, args.arg(5).isNil() ? 1 : 5, TABLE_WRITE);
 		LuaValue source = checkTableLike(state, args, 1, TABLE_READ);
+		LuaValue dest = checkTableLike(state, args, args.arg(5).isNil() ? 1 : 5, TABLE_WRITE);
 
 		if (end < from) return dest;
 
