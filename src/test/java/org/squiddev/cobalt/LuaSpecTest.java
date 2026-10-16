@@ -55,6 +55,9 @@ public class LuaSpecTest {
 			LuaThread.runMain(state, expect);
 		}
 
+		// Add 5.1's newproxy for creating new userdata instances.
+		env.rawset("newproxy", RegisteredFunction.of("newproxy", state -> ValueFactory.userdataOf(new Object())).create());
+
 		env.rawset("describe", RegisteredFunction.of("describe", (state, arg1, function) -> {
 			String name = arg1.checkString();
 			if (nodes == null) throw new LuaError("Cannot register tests at this stage");
