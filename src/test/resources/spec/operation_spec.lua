@@ -1,4 +1,12 @@
 describe("Lua's base operators", function()
+	describe("division", function()
+		it("divide-by-zero", function()
+			expect(1.0 / 0):eq(math.huge)
+			expect(-1.0 / 0):eq(-math.huge)
+			expect(tostring(0 / 0)):str_match("^-?nan$")
+			expect(tostring((0 / 0) / 0)):str_match("^-?nan$")
+		end)
+	end)
 	describe("modulo (%)", function()
 		it("behaves correctly for large numbers :lua>=5.3", function()
 			-- See https://github.com/SquidDev-CC/CC-Tweaked/issues/404

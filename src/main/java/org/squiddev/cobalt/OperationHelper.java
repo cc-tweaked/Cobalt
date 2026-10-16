@@ -110,7 +110,7 @@ public final class OperationHelper {
 	 * @return Value of the division, taking into account positive and negative infinity, and Nan
 	 */
 	public static double div(double lhs, double rhs) {
-		return rhs != 0 ? lhs / rhs : lhs > 0 ? Double.POSITIVE_INFINITY : lhs == 0 ? Double.NaN : Double.NEGATIVE_INFINITY;
+		return lhs / rhs;
 	}
 
 	/**
