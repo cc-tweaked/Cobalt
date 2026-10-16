@@ -86,8 +86,8 @@ public final class TableLib {
 			if (metatable != null
 				// For each operation, check (flag => metatag!=nil).
 				&& ((flags & TABLE_LEN) == 0 || !metatable.rawget(CachedMetamethod.LEN).isNil())
-				&& ((flags & TABLE_READ) == 0 || metatable.rawget(CachedMetamethod.INDEX).isNil())
-				&& ((flags & TABLE_WRITE) == 0 || metatable.rawget(CachedMetamethod.NEWINDEX).isNil())
+				&& ((flags & TABLE_READ) == 0 || !metatable.rawget(CachedMetamethod.INDEX).isNil())
+				&& ((flags & TABLE_WRITE) == 0 || !metatable.rawget(CachedMetamethod.NEWINDEX).isNil())
 			) {
 				return value;
 			}
@@ -232,8 +232,8 @@ public final class TableLib {
 		int from = args.arg(2).checkInteger();
 		int end = args.arg(3).checkInteger();
 		int to = args.arg(4).checkInteger();
-		LuaValue dest = args.arg(5).optValue(args.first());
-		LuaValue source = checkTableLike(state, args, 1, TABLE_READ | TABLE_WRITE | TABLE_LEN);
+		LuaValue source = checkTableLike(state, args, 1, TABLE_READ);
+		LuaValue dest = checkTableLike(state, args, args.arg(5).isNil() ? 1 : 5, TABLE_WRITE);
 
 		if (end < from) return dest;
 
@@ -282,7 +282,7 @@ public final class TableLib {
 	// "sort" (table [, comp]) -> void
 	private static class Sort {
 		private static Varargs sort(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-			LuaValue table = checkTableLike(state, args, 1, TABLE_LEN | TABLE_READ | TABLE_WRITE);
+			LuaValue table = checkTableLike(state, args, 1, TABLE_READ | TABLE_WRITE | TABLE_LEN);
 			return SuspendedAction.run(di, () -> {
 				int n = OperationHelper.intLength(state, table);
 

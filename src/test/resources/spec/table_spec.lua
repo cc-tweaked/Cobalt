@@ -8,11 +8,31 @@ describe("Lua tables", function()
 		maxI, minI = 2^31 - 1, -2^31
 	end
 
+	--- Create a new (empty) table with the given metatable.
+	local function create_table_with_mt(mt)
+		return setmetatable({}, mt)
+	end
+
+	--- Create a new userdata with the given metatable.
+	local function create_userdata_with_mt(mt)
+		-- Create a new bit of userdata, either via newproxy (on Cobalt)
+		-- or with a closed file handle (on PUC Lua).
+		local userdata
+		if newproxy then
+			userdata = newproxy()
+		else
+			userdata = io.tmpfile()
+			userdata:close()
+		end
+		debug.setmetatable(userdata, mt)
+		return userdata
+	end
+
 	-- Create a slice of a table - the returned table is a view of the original contents, not a copy.
 	--
 	-- This is mostly intended for testing functions which use metamethods.
 	local function make_slice(tbl, start, len)
-		return setmetatable({}, {
+		return create_table_with_mt({
 			__len = function() return len end,
 			__index = function(self, i)
 				if i >= 1 and i <= len then return tbl[start + i - 1] end
@@ -318,16 +338,23 @@ describe("Lua tables", function()
 	-- Test both directly on a table and via a proxy
 	local function direct_and_proxy(name, func)
 		it(name, function()
-			local tbl = {}
 			return func(function(x) return x end)
 		end)
 
-		it(name .. " (with metatable) :lua>=5.3", function()
-			return func(function(tbl) return setmetatable({}, {
+		local function func_with_metatable(factory)
+			return func(function(tbl) return factory({
 				__len = function() return #tbl end,
 				__index = function(_, k) return tbl[k] end,
 				__newindex = function(_, k, v) tbl[k] = v end,
 			}) end)
+		end
+
+		it(name .. " (with metatable) :lua>=5.3", function()
+			return func_with_metatable(create_table_with_mt)
+		end)
+
+		it(name .. " (userdata with metatable) :lua>=5.3", function()
+			return func_with_metatable(create_userdata_with_mt)
 		end)
 	end
 
@@ -377,6 +404,14 @@ describe("Lua tables", function()
 				expect(tbl):same(mk_expected(i))
 			end
 		end)
+
+		it("errors on missing metamethods", function()
+			local tbl = {}
+			local len = function() return #tbl end
+			expect.error(table.insert, create_userdata_with_mt({ __index = tbl, __newindex = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.insert, create_userdata_with_mt({ __len = len, __newindex = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.insert, create_userdata_with_mt({ __len = len, __index = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+		end)
 	end)
 
 	describe("table.remove", function()
@@ -423,6 +458,14 @@ describe("Lua tables", function()
 				expect(table.remove(proxy)):eq("Value #" .. (32 - i + 1))
 				expect(tbl):same(mk_expect(32 - i))
 			end
+		end)
+
+		it("errors on missing metamethods", function()
+			local tbl = {}
+			local len = function() return #tbl end
+			expect.error(table.remove, create_userdata_with_mt({ __index = tbl, __newindex = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.remove, create_userdata_with_mt({ __len = len, __newindex = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.remove, create_userdata_with_mt({ __len = len, __index = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
 		end)
 	end)
 
@@ -597,6 +640,23 @@ describe("Lua tables", function()
 			expect.error(table.move, {}, 1, 2, maxI):str_match("wrap around")
 			expect.error(table.move, {}, minI, -2, 2):str_match("wrap around")
 		end)
+
+		it("errors on missing metamethods", function()
+			local tbl = {}
+			expect.error(table.move, create_userdata_with_mt({ __newindex = tbl }), 0, 1, 0):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.move, create_userdata_with_mt({ __index = tbl }), 0, 1, 0):str_match("bad argument .*%(table expected, got userdata%)")
+		end)
+
+		it("requires separate flags for source/dest", function()
+			local src, dest = { 10, 20, 30 }, {}
+			table.move(
+				create_userdata_with_mt({ __index = src }),
+				1, 3, 1,
+				create_userdata_with_mt({ __newindex = dest })
+			)
+			expect(src):same { 10, 20, 30 }
+			expect(dest):same { 10, 20, 30 }
+		end)
 	end)
 
 	describe("table.sort", function()
@@ -610,9 +670,9 @@ describe("Lua tables", function()
 			end
 		end
 
-		it("a basic sort", function()
+		direct_and_proxy("a basic sort", function(wrap)
 			local a = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
-			table.sort(a)
+			table.sort(wrap(a))
 			check(a)
 		end)
 
@@ -753,6 +813,14 @@ describe("Lua tables", function()
 				expect(x[4].x):eq(32)
 			end)
 		end)
+
+		it("errors on missing metamethods", function()
+			local tbl = {}
+			local len = function() return #tbl end
+			expect.error(table.sort, create_userdata_with_mt({ __index = tbl, __newindex = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.sort, create_userdata_with_mt({ __len = len, __newindex = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.sort, create_userdata_with_mt({ __len = len, __index = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+		end)
 	end)
 
 	describe("table.pack", function()
@@ -761,8 +829,8 @@ describe("Lua tables", function()
 		end)
 	end)
 
-	describe("table.unpack", function()
-		it("accepts nil arguments :lua>=5.2", function()
+	describe("table.unpack :lua>=5.2", function()
+		it("accepts nil arguments", function()
 			local a, b, c = table.unpack({ 1, 2, 3, 4, 5 }, nil, 2)
 			expect(a):eq(1)
 			expect(b):eq(2)
@@ -774,7 +842,7 @@ describe("Lua tables", function()
 			expect(c):eq(nil)
 		end)
 
-		it("some basic functionality :lua>=5.2", function()
+		it("some basic functionality", function()
 			-- Largely copied from sort.lua
 			local a, lim = {}, 2000
 			for i = 1, lim do a[i] = i end
@@ -812,7 +880,7 @@ describe("Lua tables", function()
 			expect(a):eq(1) expect(x):eq(nil)
 		end)
 
-		it("on large values :lua>=5.2", function()
+		it("on large values", function()
 			local maxi = (2 ^ 31) - 1 -- maximum value for an int
   			local mini = -(2 ^ 31)    -- minimum value for an int
 			expect.error(table.unpack, {}, 0, maxi):eq("too many results to unpack")
@@ -840,7 +908,7 @@ describe("Lua tables", function()
 			a, b = table.unpack(t, minI + 1, minI); assert(a == nil and b == nil)
 		end)
 
-		it("takes slices of tables :lua>=5.2", function()
+		it("takes slices of tables", function()
 			expect(table.pack(table.unpack({ 1, "foo" }))):same { n = 2, 1, "foo" }
 			expect(table.pack(table.unpack({ 1, "foo" }, 2))):same { n = 1, "foo" }
 			expect(table.pack(table.unpack({ 1, "foo" }, 2, 5))):same { n = 4, "foo" }
@@ -851,9 +919,39 @@ describe("Lua tables", function()
 			expect(table.pack(table.unpack(basic))):same { n = 3, "b", "c", "d" }
 			expect(table.pack(table.unpack(basic, 2))):same { n = 2, "c", "d" }
 		end)
+
+		direct_and_proxy("unpacks", function(wrap)
+			expect(table.pack(table.unpack(wrap({ "a", "b", "c" })))):same { n = 3, "a", "b", "c" }
+		end)
+
+		it("errors on missing metamethods :lua>=5.3 :lua<5.5", function()
+			local tbl = { "a", "b", "c" }
+			local len = function() return #tbl end
+			expect.error(table.unpack, create_userdata_with_mt({ __index = tbl })):eq("attempt to get length of a userdata value")
+			expect.error(table.unpack, create_userdata_with_mt({ __len = len })):eq("attempt to index a userdata value")
+			expect(table.pack(table.unpack(create_userdata_with_mt({ __len = len, __index = tbl })))):same  { n = 3, "a", "b", "c" }
+		end)
+
+		it("errors on missing metamethods :lua>=5.5 :!cobalt", function()
+			local tbl = { "a", "b", "c" }
+			local len = function() return #tbl end
+			expect.error(table.unpack, create_userdata_with_mt({ __index = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.unpack, create_userdata_with_mt({ __len = len })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect(table.pack(table.unpack(create_userdata_with_mt({ __len = len, __index = tbl })))):same  { n = 3, "a", "b", "c" }
+		end)
+
+		-- A consequence of the above: Lua 5.3/5.4 don't do validation on the argument, so you
+		-- can "unpack" a non-table value if you never index into it.
+		it("accepts invalid arguments on empty ranges :lua>=5.3 :lua<5.5", function()
+			expect(table.pack(table.unpack(nil, 2, 1))):same { n = 0}
+		end)
 	end)
 
 	describe("table.concat", function()
+		direct_and_proxy("concatenates strings", function(wrap)
+			expect(table.concat(wrap({ "a", "b", "c" }))):eq("abc")
+		end)
+
 		it("returns empty strings on empty tables", function()
 			expect(table.concat{}):eq("")
 			expect(table.concat({}, 'x')):eq("")
@@ -902,6 +1000,14 @@ describe("Lua tables", function()
 		it("uses metamethods :lua>=5.3", function()
 			local basic = make_slice({ "a", "b", "c", "d", "e" }, 2, 3)
 			expect(table.concat(basic)):eq("bcd")
+		end)
+
+		it("errors on missing metamethods :lua>=5.3", function()
+			local tbl = { "a", "b", "c" }
+			local len = function() return #tbl end
+			expect.error(table.concat, create_userdata_with_mt({ __index = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect.error(table.concat, create_userdata_with_mt({ __len = len })):str_match("bad argument .*%(table expected, got userdata%)")
+			expect(table.concat(create_userdata_with_mt({ __len = len, __index = tbl }))):eq("abc")
 		end)
 	end)
 
