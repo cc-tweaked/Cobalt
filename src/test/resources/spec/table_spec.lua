@@ -924,7 +924,7 @@ describe("Lua tables", function()
 			expect(table.pack(table.unpack(wrap({ "a", "b", "c" })))):same { n = 3, "a", "b", "c" }
 		end)
 
-		it("errors on missing metamethods :lua>=5.3 :lua<5.5 :!cobalt", function()
+		it("errors on missing metamethods :lua>=5.3 :lua<5.5", function()
 			local tbl = { "a", "b", "c" }
 			local len = function() return #tbl end
 			expect.error(table.unpack, create_userdata_with_mt({ __index = tbl })):eq("attempt to get length of a userdata value")
@@ -932,12 +932,18 @@ describe("Lua tables", function()
 			expect(table.pack(table.unpack(create_userdata_with_mt({ __len = len, __index = tbl })))):same  { n = 3, "a", "b", "c" }
 		end)
 
-		it("errors on missing metamethods :lua>=5.5", function()
+		it("errors on missing metamethods :lua>=5.5 :!cobalt", function()
 			local tbl = { "a", "b", "c" }
 			local len = function() return #tbl end
 			expect.error(table.unpack, create_userdata_with_mt({ __index = tbl })):str_match("bad argument .*%(table expected, got userdata%)")
 			expect.error(table.unpack, create_userdata_with_mt({ __len = len })):str_match("bad argument .*%(table expected, got userdata%)")
 			expect(table.pack(table.unpack(create_userdata_with_mt({ __len = len, __index = tbl })))):same  { n = 3, "a", "b", "c" }
+		end)
+
+		-- A consequence of the above: Lua 5.3/5.4 don't do validation on the argument, so you
+		-- can "unpack" a non-table value if you never index into it.
+		it("accepts invalid arguments on empty ranges :lua>=5.3 :lua<5.5", function()
+			expect(table.pack(table.unpack(nil, 2, 1))):same { n = 0}
 		end)
 	end)
 

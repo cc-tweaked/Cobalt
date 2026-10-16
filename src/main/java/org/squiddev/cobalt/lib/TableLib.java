@@ -385,7 +385,7 @@ public final class TableLib {
 	 * {@code unpack(table[, start[, stop]])}
 	 */
 	private static Varargs unpack(LuaState state, DebugFrame di, Varargs args) throws LuaError, UnwindThrowable {
-		LuaValue table = checkTableLike(state, args, 1, TABLE_READ | TABLE_LEN);
+		LuaValue table = args.arg(1);
 		int start = args.arg(2).optInteger(1);
 		LuaValue endValue = args.arg(3);
 
